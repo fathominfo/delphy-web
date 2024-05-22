@@ -1,0 +1,50 @@
+      <div class="mcc-display-options">
+        <div class="mcc-options-panel">
+          <div class="mcc-opt-list confidence">
+            <label >Credibility threshold <span class="mcc-opt--confidence-readout">90</span>%
+              <div class="mcc-opt--confidence-range block-slider">
+                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
+                <div class="slider--track"></div>
+                <div class="slider--track-filled"></div>
+                <div class="slider--thumb"></div>
+              </div>
+            </label>
+          </div>
+          <div class="mcc-opt-list y-spacing">
+            <p>Vertical spacing</p>
+            <div class="toggle-container">
+              <input type="radio" name="mcc-opt--y-spacing" value="even" class="mcc-opt" id="y-spacing--even" />
+              <label for="y-spacing--even">Even</label>
+              <input type="radio" name="mcc-opt--y-spacing" value="genetic" class="mcc-opt" id="y-spacing--genetic" />
+              <label for="y-spacing--genetic">SNP distance</label>
+            </div>
+          </div>
+          <div class="mcc-opt-list topology">
+            <p>Tree topology</p>
+            <div class="toggle-container">
+              <input type="radio" name="mcc-opt--topology" value="mcc" class="mcc-opt" id="topology--mcc" />
+              <label for="topology--mcc">MCC</label>
+              <input type="radio" name="mcc-opt--topology" value="mcs" class="mcc-opt" id="topology--mcs" />
+              <label for="topology--mcs">HFS</label>
+            </div>
+          </div>
+          <div class="mcc-opt-list color">
+            <p>Branch coloring</p>
+            <div class="toggle-container">
+              <input type="radio" name="mcc-opt--color" value="confidence" class="mcc-opt" id="color--confidence" />
+              <label for="color--confidence">Credibility</label>
+              <input type="radio" name="mcc-opt--color" value="metadata" class="mcc-opt" id="color--metadata" />
+              <label for="color--metadata">Metadata</label>
+            </div>
+          </div>
+          <div class="mcc-opt-list nodes">
+            <p>Inner nodes</p>
+            <div class="toggle-container">
+              <input type="radio" name="mcc-opt--nodes" value="all" class="mcc-opt" id="nodes--all" />
+              <label for="nodes--all">All</label>
+              <input type="radio" name="mcc-opt--nodes" value="mutations" class="mcc-opt" id="nodes--mutations" />
+              <label for="nodes--mutations">With mutations</label>
+            </div>
+          </div>
+        </div>
+      </div>

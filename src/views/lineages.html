@@ -1,0 +1,204 @@
+  <div id="lineages" class="view">
+    <section id="lineages--mcc">
+      <div class="lineages--mcc--header">
+        <h1>MCC</h1>
+        <button class="mcc-zoom-button reset" disabled>Reset zoom</button>
+      </div>
+      <div class="tree-canvas-container">
+        <canvas id="lineages--mcc-canvas" class="tree-canvas"></canvas>
+      </div>
+      <div class="tree-hint-container">
+        <div class="tree-hint hover">Hover to preview a node.</div>
+        <div class="tree-hint hover-root hidden">Previewing <span class="node root">Root</span>.</div>
+        <div class="tree-hint hover-mrca hidden">Previewing <span class="node mrca">MRCA of A and B</span>.</div>
+        <div class="tree-hint hover-node1 hidden">Previewing <span class="node node1">Selection A</span>.</div>
+        <div class="tree-hint hover-node2-descendant hidden">Previewing <span class="node node2">Selection B</span>, a descendant of A.</div>
+        <div class="tree-hint hover-node2-cousin hidden">Previewing <span class="node node2">Selection B</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+        <div class="tree-hint preview-node1 hidden">Previewing <span class="node node1">Selection A</span> <span class="click-hint">(click to confirm selection)</span>.</div>
+        <div class="tree-hint preview-node2-descendant hidden">Previewing <span class="node node2">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
+        <div class="tree-hint preview-node2-cousin hidden">Previewing <span class="node node2">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+        <div class="tree-hint max-selections hidden">Remove a selection to explore other nodes.</div>
+        <div class="tree-hint zoom hidden">Click and drag to zoom to a selection area.</div>
+      </div>
+      <div class="constrain-selection">
+        <input type="checkbox" id="lineages--constrain-selection" />
+        <label id="lineages--constrain-selection--label" for="lineages--constrain-selection">Only select branches appearing in <span class="cred-threshold"></span> or more of base trees</label>
+      </div>
+      {{> mcc_opts }}
+    </section>
+    <section id="lineages--right">
+      <section id="lineages--column-1">
+        <!-- <div class="sidebar--lookup">
+          <h1>Sequence lookup</h1>
+          <div class="id-lookup">
+            <form>
+              <label for="id-lookup--input">Look up a sequence id</label>
+              <div>
+                <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
+              </div>
+              <div class="autocomplete-suggestion"></div>
+            </form>
+          </div>
+        </div> -->
+        <div class="lineages--header">
+          <h1>Tree selections</h1>
+          <div class="id-lookup">
+            <form>
+              <label for="id-lookup--input">Look up a sequence id</label>
+              <div>
+                <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
+              </div>
+              <div class="autocomplete-suggestion"></div>
+            </form>
+          </div>
+        </div>
+        <div id="lineages--node-layout">
+          <div id="lineages--node-layout--chart">
+            <canvas id="lineages--node-layout--chart-canvas"></canvas>
+          </div>
+        </div>
+        <div id="lineages--node-list">
+          <div class="lineages--node-detail root active">
+            <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="node-info">
+              <div class="node-name">Root</div>
+              <div class="node-stats"><span class="node--tip-count">00 tips</span></div>
+              <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+              {{> lineages_node_metadata }}
+            </div>
+          </div>
+          <div class="lineages--node-detail mrca">
+            <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="node-info">
+              <div class="node-source">Automatically inferred</div>
+              <div class="node-name">MRCA of A and B</div>
+              <div class="node-stats"><span class="node--tip-count">00 tips</span>, 
+                <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
+                <span class="mono-hover">monophyletic
+                in <span class="node--confidence">00%</span> of base trees 
+              </div>
+              <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+              {{> lineages_node_metadata }}
+            </div>
+            <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
+          </div>
+          <div class="lineages--node-detail node1">
+            <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="node-info">
+              <div class="node-source">Previewing</div>
+              <div class="node-name">Selection A</div>
+              <div class="node-stats"><span class="node--tip-count">00 tips</span>, 
+                <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
+                <span class="mono-hover">monophyletic
+                in <span class="node--confidence">00%</span> of base trees 
+              </div>
+              <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+              {{> lineages_node_metadata }}
+            </div>
+            <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
+          </div>
+          <div class="lineages--node-detail node2">
+            <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="node-info">
+              <div class="node-source">Previewing</div>
+              <div class="node-name">Selection B</div>
+              <div class="node-stats"><span class="node--tip-count">00 tips</span>, 
+                <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
+                <span class="mono-hover">monophyletic
+                in <span class="node--confidence">00%</span> of base trees 
+              </div>
+              <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+              {{> lineages_node_metadata }}
+            </div>
+            <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
+          </div>
+        </div>
+        <div id="lineages--prevalence">
+          <h3>Mean lineage prevalence over time</h3>
+          <div class="lineages--prevalence--chart-container">
+            <canvas id="lineages--prevalence--chart"></canvas>
+            <div class="lineages--prevalence--readout hidden">
+              <div class="prevalence--date"></div>
+              <div class="prevalence--series root">
+                <div class="dot"></div>
+                <span class="value-label">##%</span>
+                <span class="series-label">Root</span>
+              </div>
+              <div class="prevalence--series mrca hidden">
+                <div class="dot"></div>
+                <span class="value-label">##%</span>
+                <span class="series-label">MRCA of A and B</span>
+              </div>
+              <div class="prevalence--series node1 hidden">
+                <div class="dot"></div>
+                <span class="value-label">##%</span>
+                <span class="series-label">Selection A</span>
+              </div>
+              <div class="prevalence--series node2 hidden">
+                <div class="dot"></div>
+                <span class="value-label">##%</span>
+                <span class="series-label">Selection B</span>
+              </div>
+            </div>
+          </div>
+          <div id="lineages--prevalence--date-labels">
+            <div id="lineages--prevalence--start-date" class="lineages--prevalence--date-label">December 2019</div>
+            <div id="lineages--prevalence--end-date" class="lineages--prevalence--date-label">May 2020</div>
+          </div>
+        </div>
+      </section>
+      <section id="lineages--column-2">
+        <div class="lineages--node-comparison">
+          <h1>Time distributions of <span class="lineages--node-comparison--ancestor-node">node</span> 
+            <span class="lineages--node-comparison--descendant-connector">and </span>
+            <span class="lineages--node-comparison--descendant-node">node</span>
+            <span class="lineages--node-overlap-item">
+              In <span class="lnoi-pct"></span>% of base trees,
+              <span class="root-message">
+                the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span> 
+              </span>
+              <span class="non-root-message">
+                the MRCA of the tips under 
+                <span class="lnoi-1"></span> and the MRCA of the tips under 
+                <span class="lnoi-2"></span> are the same inner node. 
+              </span> 
+            </span>
+          </h1>
+          <div class="lineages--node-comparison--time-chart-container">
+            <div class="lineages--node-comparison--time-chart">
+              <canvas></canvas>
+              <div class="time-chart--readout">
+                <div class="time-chart--date"></div>
+                <div class="time-chart--series">
+                  <span class="value-label">##%</span>
+                  <span class="series-label"></span>
+                </div>
+              </div>
+            </div>
+            <p class="lineages--node-comparison--mutation-header">
+              <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in
+              <span class="lineages--node-comparison--mutation-threshold">50%</span> of base trees;
+            </p>
+            <div class="lineages--node-comparison--mutation">
+              <div class="lineages--node-comparison--mutation-labels">
+                <a class="lineages--node-comparison--mutation-name mutation-name" href="">
+                  <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
+                </a>
+                <p class="lineages--node-comparison--mutation-prevalence"><span>99%</span> of base trees</p>
+              </div>
+              <div class="lineages--mutation-time-chart-container">
+                <canvas class="lineages--mutation-time-chart"></canvas>
+                <div class="time-chart--readout">
+                  <div class="time-chart--date"></div>
+                  <div class="time-chart--series">
+                    <span class="value-label">##%</span>
+                    <span class="series-label"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>

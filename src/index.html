@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="./favicon.ico" />
+  <link rel="stylesheet" type="text/css" href="./style/main.less" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delphy</title>
+  <!-- Matomo -->
+  <script type="text/javascript">
+  if (!window.location.host.match(/localhost/gi)) {
+    var _paq = window._paq = window._paq || [];
+    /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="//chronicle.fathom.info/";
+      _paq.push(['setTrackerUrl', u+'matomo.php']);
+      _paq.push(['setSiteId', '7']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+    })();
+  }
+  </script>
+  <!-- End Matomo Code -->
+</head>
+<body class="displaying-import-view">
+
+  {{> nav }}
+  {{> uploader }}
+  {{> runner }}
+  {{> lineages }}
+  {{> mutations }}
+  {{> customize }}
+  
+  {{> about }}
+
+  <div id="summary-loading-scrim">
+    <div>Loading…</div>
+  </div>
+
+
+  <div id="settings" class="view">
+    <h2>Settings</h2>
+  </div>
+  <div id="exporter" class="view">
+    <h2>Exporter</h2>
+  </div>
+  <script type="module" src="./ts/main.ts"></script>
+  </body>
+</html>

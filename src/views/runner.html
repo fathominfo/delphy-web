@@ -1,0 +1,154 @@
+  <div id="runner" class="view">
+    <div id="reloading-scrim">
+      <div id="reloading-inner">Loading</div>
+    </div>
+    <section id="runner--left">
+      <div id="runner--controls">
+        <div id="run-control" class="controls">
+          <input type="checkbox" id="run-input" />
+          <label for="run-input" id="run-input--label">
+            <svg id="run-input--running" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M10.62,20.31H14v-10H10.62Zm8.76-10H16v10h3.34Z"/></svg>
+            <svg id="run-input--paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M22,15,12,20V10Z"/></svg>
+          </label>
+          <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
+        </div>
+        <div id="step-control" class="controls">
+          <label for="step-options">Sample <span class="digit">1</span> tree per</label>
+          <select id="step-options">
+            <option value="7" >10,000,000 steps</option>
+            <option value="6" selected>1,000,000 steps</option>
+            <option value="5" >100,000 steps</option>
+            <option value="4" >10,000 steps</option>
+            <option value="3" >1,000 steps</option>
+            <option value="2" >100 steps</option>
+            <option value="1" >10 steps</option>
+            <option value="0" >1 step</option>
+          </select>
+        </div>
+      </div>
+      <div id="runner--advanced-container">
+        <button type="button" id="advanced-toggle"><div class="box"><div class="glyph"></div></div>Advanced options</button>
+      </div>
+      <div id="runner--tree">
+        <h1 class="tree-header">Sampled Tree</h1>
+        <canvas id="ui" class="tree-canvas"></canvas>
+      </div>
+      <div class="tree-scrubber">
+        <div class="tree-scrubber--text">
+          <div class="burn-in-label">No burn-in set.</div>
+          <div class="trees-label">Modeling from <span class="digit" id="run-mcc">0</span> / <span class="digit" id="run-trees">0</span> sampled tree<span class="plural">s</span>.</div>
+        </div>
+        <div class="burn-in-indicator no-burn-in"></div>
+        <div class="tree-scrubber--range-container">
+          <label for="tree-scrubber--range">Preview sampled tree</label>
+          <input type="range" class="tree-scrubber--range" id="tree-scrubber--range" min="0" step="1">
+        </div>
+        <div class="tree-scrubber--visualizer">
+          <canvas class="tree-scrubber--canvas"></canvas>
+          <div class="tree-scrubber--mcc-label hidden">
+            <div class="mcc">
+              MCC
+              <div class="previewing hidden">(previewing)</div>
+            </div>
+            <div class="mcc-indicator"></div>
+          </div>
+          <div class="tree-scrubber--preview-label previewing hidden">Previewing</div>
+        </div>
+      </div>
+    </section>
+    <section id="runner--mcc">
+      <h1 class="tree-header">Maximum Clade Credibility (MCC) Tree</h1>
+      <canvas id="ui_mcc" class="tree-canvas"></canvas>
+      <div id="ui_mcc--legend">
+        <!-- <div class="mcc-legend-swatch low-cred"></div>
+        <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
+        <div class="mcc-legend-swatch hi-cred"></div>
+        <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
+        <div class="mcc-opt-list confidence">
+          <label for="mcc-opt--confidence-range">Credibility threshold</label>
+          <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
+            Highlighting nodes in
+            <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
+            of base trees
+          </output>
+
+          <div class="mcc-opt--confidence-range block-slider">
+            <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
+            <div class="slider--track"></div>
+            <div class="slider--track-filled"></div>
+            <div class="slider--thumb"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+    <section id="runner--panel">
+      <div id="runner--panel--blocks" class="blocks">
+        <div class="block">
+          <div class="block-header">
+            <h1></h1>
+          </div>
+          <div class="block--chart">
+            <ul class="y-axis">
+              <li class="max"></li><li class="median"></li><li class="min"></li>
+            </ul>
+            <div class="graphic">
+              <div class="chart">
+                <canvas></canvas>
+              </div>
+              <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
+            </div>
+          </div>
+          <p class="block-readout"></p>
+        </div>
+      </div>
+      <div>
+        <input type="checkbox" id="burn-in-toggle" disabled />
+        <label for="burn-in-toggle" >Hide burn in</label>  
+      </div>
+      <div id="runner--export-list">
+        <button id="runner--export-csv">Export to CSV</button>
+      </div>
+
+    </section>
+
+    <div id="runner--advanced" class="hidden">
+      <form class="runner--advanced--content">
+        <div class="runner--advanced--header">
+          <h2 class="runner--advanced--title">Advanced options</h2>
+          <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
+        </div>
+        <div class="runner--advanced--section">
+          <fieldset class="mutation-rate-fieldset">
+            <legend><h3>Mutation rate</h3></legend>
+            <div>
+              <div class="input-container">
+                <input type="checkbox" id="site-rate-heterogeneity-toggle" name="isSiteHeterogeneity" autocomplete="off">
+                <label for="site-rate-heterogeneity-toggle">Enable site rate heterogeneity</label>
+              </div>
+            </div>
+            <div>
+              <div class="input-container">
+                <input type="checkbox" id="fixed-mutation-rate-toggle" name="isFixedMutationRate" autocomplete="off">
+                <label for="fixed-mutation-rate-toggle">Fix overall mutation rate</label>
+              </div>
+            </div>
+            <div>
+              <label id="overall-mutation-rate-label" class="related-inputs">
+                <p>Set initial mutation rate to</p>
+                <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
+                <p>&times; 10<sup>&minus;3</sup> mutations / site / year</p>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+        <div class="runner--advanced--section">
+          <p class="warning-text hidden">Updating these settings will erase your current progress and restart the run.</p>
+          <div class="button-container">
+            <button type="button" class="advanced--cancel-button">Cancel</button>
+            <button type="submit" class="advanced--submit-button warning-button" disabled autocomplete="off">Restart with selected options</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
