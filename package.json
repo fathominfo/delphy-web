@@ -1,7 +1,7 @@
 {
   "name": "sentinel-delphy-web",
   "private": true,
-  "version": "0.0.99",
+  "version": "0.995.0",
   "type": "module",
   "scripts": {
     "dev": "vite serve --config ./vite.config.js ./src",

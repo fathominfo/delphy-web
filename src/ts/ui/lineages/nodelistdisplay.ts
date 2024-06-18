@@ -12,6 +12,9 @@ const DEBUG = false;
 
 const TAU = Math.PI * 2;
 
+const TARGET = 200;
+const TOO_MANY = TARGET * 2;
+
 
 class NodeItem {
   div: HTMLDivElement;
@@ -137,18 +140,24 @@ class NodeItem {
   }
 
   setPrevalenceData(index: number, nodeDist: BaseTreeSeriesType, minDate: number, maxDate: number, color: string) {
+    // const t1 = Date.now();
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.rgb = color;
     const treeCount = nodeDist.length;
     // const seriesCount = nodeDist[0].length;
-    const dayCount = nodeDist[0][0].length;
+    const rawDayCount = nodeDist[0][0].length;
+    const rebinning = rawDayCount > TOO_MANY;
+    const dayCount = rebinning ? TARGET : rawDayCount;
+
     this.nTiles = REPORTING_NTILES.map(()=>Array(dayCount).fill(0));
     this.dailyDistribution = Array(dayCount);
+
     for (let d = 0; d < dayCount; d++) {
+      const dd = rebinning ? Math.round(d / (dayCount - 1) * (rawDayCount -1)) : d;
       const dist: number[] = Array(treeCount);
       for (let t = 0; t < treeCount; t++) {
-        dist[t] = nodeDist[t][index][d];
+        dist[t] = nodeDist[t][index][dd];
       }
       dist.sort(numericSortReverse);
       REPORTING_NTILES.forEach((ntile, i)=>{
@@ -157,7 +166,8 @@ class NodeItem {
       this.dailyDistribution[d] = dist;
     }
     this.dayCount = dayCount;
-    this.draw();
+    // console.debug(`             nodeListDisplay.NodeItem.setPrevalenceData ${index}    ${dayCount}            ${(Date.now()-t1)/1000}ms`);
+    requestAnimationFrame(()=>this.draw());
   }
 
 

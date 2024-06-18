@@ -19,7 +19,7 @@ import { NodePrevalenceCanvas } from './nodeprevalencecanvas';
 import { isTip } from '../../util/treeutils';
 import autocomplete from 'autocompleter';
 import { PdfCanvas } from '../../util/pdfcanvas';
-import { FieldTipCount } from '../nodemetadata';
+import { FieldTipCount, NodeMetadata } from '../nodemetadata';
 
 
 type KeyEventHandler = (event: KeyboardEvent)=>void;
@@ -600,6 +600,7 @@ export class LineagesUI extends MccUI {
   setChartData(rootIndex:number, mrcaIndex:number, node1Index:number, node2Index:number): void {
     const pythia = this.pythia
     if (pythia) {
+
       const mccRef = pythia.getMcc(),
         src: NodeComparisonData[] = [],
         minDate = pythia.getBaseTreeMinDate(),
@@ -607,19 +608,7 @@ export class LineagesUI extends MccUI {
         nodeConfidence = this.mccTreeCanvas.creds,
         summaryTree = this.mccTreeCanvas.tree as SummaryTree,
         nodeMetadata = this.sharedState.mccConfig.nodeMetadata,
-        tipIds = this.sharedState.getTipIds(),
-        getNodeMetadata = (nodeIndex:number)=>{
-          let md = undefined;
-          if (nodeMetadata) {
-            md = nodeMetadata.getNodeMetadata(nodeIndex);
-          } else if (nodeIndex < tipIds.length) {
-            const value =  tipIds[nodeIndex],
-              counts: FieldTipCount = {};
-            counts[value] = 1;
-            md = {id: {value, counts}};
-          }
-          return md;
-        };
+        tipIds = this.sharedState.getTipIds();
       if (node1Index === UNSET && node2Index === UNSET) {
         /* we clear all but the root node */
         this.nodeListDisplay.clearNode1();
@@ -643,7 +632,7 @@ export class LineagesUI extends MccUI {
           if (node1Index === UNSET) {
             this.nodeListDisplay.clearNode1();
             if (node2Index !== UNSET) {
-              this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index), node2Index);
+              this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index, nodeMetadata, tipIds), node2Index);
               nodePair = this.assembleNodePair(rootIndex, node2Index, NodePairType.rootToNode2, pythia);
               node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
               node2Times = pythia.getNodeTimeDistribution(node2Index, summaryTree);
@@ -654,7 +643,7 @@ export class LineagesUI extends MccUI {
             this.setSelectable(true);
           } else if (node2Index === UNSET || node2Index === node1Index) {
             /* we have node 1 without node 2 */
-            this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index), node1Index);
+            this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index, nodeMetadata, tipIds), node1Index);
             nodePair = this.assembleNodePair(rootIndex, node1Index, NodePairType.rootToNode1, pythia);
             node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
             node2Times = pythia.getNodeTimeDistribution(node1Index, summaryTree);
@@ -687,8 +676,8 @@ export class LineagesUI extends MccUI {
               indices[1] = [node2Index, node1Index];
             }
 
-            this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index), node1Index);
-            this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index), node2Index);
+            this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index, nodeMetadata, tipIds), node1Index);
+            this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index, nodeMetadata, tipIds), node2Index);
 
             nodePair = this.assembleNodePair(indices[0][0], indices[0][1], pairs[0], pythia);
             node1Times = pythia.getNodeTimeDistribution(indices[0][0], summaryTree);
@@ -704,9 +693,9 @@ export class LineagesUI extends MccUI {
           }
           this.nodeListDisplay.clearMRCA();
         } else {
-          this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index), node1Index);
-          this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index), node2Index);
-          this.nodeListDisplay.setMRCA(nodeConfidence[mrcaIndex], this.nodeChildCount[mrcaIndex], false, getNodeMetadata(mrcaIndex), mrcaIndex);
+          this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index, nodeMetadata, tipIds), node1Index);
+          this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index, nodeMetadata, tipIds), node2Index);
+          this.nodeListDisplay.setMRCA(nodeConfidence[mrcaIndex], this.nodeChildCount[mrcaIndex], false, getNodeMetadata(mrcaIndex, nodeMetadata, tipIds), mrcaIndex);
           nodePair = this.assembleNodePair(rootIndex, mrcaIndex, NodePairType.rootToMrca, pythia);
           node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
           node2Times = pythia.getNodeTimeDistribution(mrcaIndex, summaryTree);
@@ -721,15 +710,6 @@ export class LineagesUI extends MccUI {
           // this.disableSelections();
         }
       }
-      const getNodeDisplay = (index: DisplayNode, dn: DisplayNode) => {
-        return {
-          index: index,
-          color: getNodeColor(dn),
-          label: getNodeTypeName(dn),
-          type: dn,
-          className: getNodeClassName(dn)
-        };
-      }
       let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, node1Index, node2Index].map(getNodeDisplay);
       nodes = nodes.filter(({index})=>index>=0);
 
@@ -737,6 +717,8 @@ export class LineagesUI extends MccUI {
         nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),
         nodeDistributions = nodePrevalenceData.series,
         overlap = nodePrevalenceData.overlap;
+
+
       /*
       the list `nodes` has an indicator of whether the node in question is Root, MRCA, Selection A or B.
       Because the `overlap` list was built from a list that does not have that information, and where unset
@@ -762,7 +744,6 @@ export class LineagesUI extends MccUI {
       const zoomDateRange = zoomMaxDate - zoomMinDate;
       zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
 
-
       this.nodeComparisons = setComparisons(src, minDate, maxDate, this.goToMutations, this.nodeHighlightCallback,
         this.isApobecEnabled, zoomMinDate, zoomMaxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
@@ -772,6 +753,7 @@ export class LineagesUI extends MccUI {
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
+      this.nodePrevalenceCanvas.requestDraw();
       this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
       mccRef.release();
     }
@@ -1033,4 +1015,29 @@ export class LineagesUI extends MccUI {
 
 
 
+}
+
+
+const getNodeDisplay = (index: DisplayNode, dn: DisplayNode) => {
+  return {
+    index: index,
+    color: getNodeColor(dn),
+    label: getNodeTypeName(dn),
+    type: dn,
+    className: getNodeClassName(dn)
+  };
+}
+
+
+const getNodeMetadata = (nodeIndex:number, nodeMetadata: NodeMetadata | null, tipIds:string[])=>{
+  let md = undefined;
+  if (nodeMetadata) {
+    md = nodeMetadata.getNodeMetadata(nodeIndex);
+  } else if (nodeIndex < tipIds.length) {
+    const value =  tipIds[nodeIndex],
+      counts: FieldTipCount = {};
+    counts[value] = 1;
+    md = {id: {value, counts}};
+  }
+  return md;
 }

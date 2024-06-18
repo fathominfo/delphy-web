@@ -58,10 +58,8 @@ export class NodePrevalenceCanvas extends BaseTreeMeanCanvas {
     sometimes possible to get  zoomMinDate that is less than the this.minDate. How?
     [mark 231102]
     */
-    this.startIndex = Math.max(Math.floor(zoomMinDate - this.minDate), 0);
-    this.endIndex = Math.floor(zoomMaxDate - this.minDate);
-    this.startDateDiv.innerHTML = toFullDateString(zoomMinDate);
-    this.endDateDiv.innerHTML = toFullDateString(zoomMaxDate);
+    this.setDateRange(zoomMinDate, zoomMaxDate);
+    this.calculate();
 
     this.readout.querySelectorAll(".prevalence--series").forEach(series => series.classList.add("hidden"));
     this.readoutSeries = nodeClassNames.filter(className => className !== "").map(className => {
@@ -75,8 +73,7 @@ export class NodePrevalenceCanvas extends BaseTreeMeanCanvas {
     sometimes possible to get  zoomMinDate that is less than the this.minDate. How?
     [mark 231102]
     */
-    this.startIndex = Math.max(Math.floor(zoomMinDate - this.minDate), 0);
-    this.endIndex = Math.floor(zoomMaxDate - this.minDate);
+    super.setDateRange(zoomMinDate, zoomMaxDate);
     this.startDateDiv.innerHTML = toFullDateString(zoomMinDate);
     this.endDateDiv.innerHTML = toFullDateString(zoomMaxDate);
   }

@@ -5,6 +5,10 @@ const FILL_ALPHA = 0.8;
 const STROKE_ALPHA = 1.0;
 const LINE_WIDTH = 2;
 
+const TARGET = 200;
+const TOO_MANY = TARGET * 2;
+
+
 export class BaseTreeMeanCanvas {
   dist: BaseTreeSeriesType; // number[][][]
   treeCount: number;
@@ -97,34 +101,48 @@ export class BaseTreeMeanCanvas {
 
   }
 
+
+  setDateRange(zoomMinDate: number, zoomMaxDate: number) : void {
+    if (Number.isFinite(zoomMinDate) && Number.isFinite(zoomMaxDate)) {
+      this.startIndex = Math.max(0, Math.floor(zoomMinDate - this.minDate));
+      this.endIndex = Math.min(this.binCount-1, Math.floor(zoomMaxDate - this.minDate));
+    }
+  }
+
   calculate() : void {
 
     /**
     we want to collapse our incoming data from [tree][series][day]
     to [series][day] = average for all trees
     */
+    const {startIndex, endIndex} = this;
+    const rawDrawnCount = endIndex - startIndex;
+    const rebinning = rawDrawnCount >= TOO_MANY;
+    const drawnCount = rebinning ? TARGET : rawDrawnCount;
+
     const averages: number[][] = new Array(this.seriesCount);
     for (let s = 0; s < this.seriesCount; s++) {
       // for each tree, daily values for this series
-      averages[s] = Array(this.binCount);
-      for (let d = 0; d < this.binCount; d++) {
+      averages[s] = Array(drawnCount);
+      for (let d = 0; d < drawnCount; d++) {
         let tot = 0;
+        let dd = rebinning ? Math.round(d / (drawnCount-1) * (rawDrawnCount-1)) : d;
+        dd += startIndex;
         for (let t = 0; t < this.treeCount; t++) {
-          tot += this.dist[t][s][d];
+          tot += this.dist[t][s][dd];
         }
         averages[s][d] = tot / this.treeCount;
       }
     }
 
-    this.averageYPositions = averages.map(()=>Array(this.binCount));
-    for (let d = 0; d < this.binCount; d++) {
+    this.averageYPositions = averages.map(()=>Array(drawnCount));
+    for (let d = 0; d < drawnCount; d++) {
       let y = 0;
       for (let s = 0; s < this.seriesCount; s++) {
         y += averages[s][d];
         this.averageYPositions[s][d] = y;
       }
     }
-
 
     this.averages = averages;
   }
@@ -134,12 +152,9 @@ export class BaseTreeMeanCanvas {
   }
 
   protected draw() : void {
-    const { ctx, width, height, averageYPositions, binCount, seriesCount } = this;
+    const { ctx, width, height, averageYPositions, seriesCount } = this;
 
-    // console.log(`mean draw ${width} ${height} ${seriesCount} ${binCount}`, colors)
-    // averageYPositions.map((arr, index)=>console.log(index, Math.max(...arr)));
-    const {startIndex, endIndex} = this,
-      drawnCount = endIndex - startIndex;
+
     ctx.clearRect(0, 0, width, height);
 
     ctx.lineWidth = LINE_WIDTH;
@@ -154,15 +169,16 @@ export class BaseTreeMeanCanvas {
       ctx.beginPath();
       let startY = 0,
         ys: number[];
+      const L: number = averageYPositions[i].length;
       if (prevIndex === null) {
         ctx.moveTo(0, 0);
         ctx.lineTo(width, 0);
       } else {
-        ys = averageYPositions[prevIndex].slice(startIndex, endIndex);
+        ys = averageYPositions[prevIndex];
         startY = ys[0] * height;
         ctx.moveTo(0, startY);
-        for (let d = 1; d < binCount; d++) {
-          const x = d / drawnCount * width,
+        for (let d = 1; d < L; d++) {
+          const x = d / (L-1) * width,
             y = ys[d] * height;
           ctx.lineTo(x, y);
         }
@@ -170,9 +186,9 @@ export class BaseTreeMeanCanvas {
       ctx.stroke();
 
       /* trace the bottom */
-      ys = averageYPositions[i].slice(startIndex, endIndex);
-      for (let d = binCount - 1; d >= 0; d--) {
-        const x = d / drawnCount * width,
+      ys = averageYPositions[i];
+      for (let d = L - 1; d >= 0; d--) {
+        const x = d / (L-1) * width,
           y = ys[d] * height;
         ctx.lineTo(x, y);
       }

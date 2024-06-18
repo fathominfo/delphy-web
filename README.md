@@ -1,4 +1,4 @@
-Delphy
+Delphy Web
 ======
 
 Delphy Web is an HTML5 interface developed to run the "core" computational engine of Delphy - a fast, scalable, accurate and accessible tool for Bayesian phylogenetics based on Explicit Mutation-Annotated Trees - and visualize the results in near real time. The Delphy core is developed in collaboration with Patrick Varilly of [The Broad Institute, Inc](https://www.broadinstitute.org/)., and its separately licensed sources are hosted [here](https://github.com/broadinstitute/delphy).

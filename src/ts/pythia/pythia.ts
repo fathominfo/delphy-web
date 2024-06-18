@@ -22,6 +22,9 @@ const CORE_VERSIONING_SAVE_VERSION = 3;
 const NO_MORE_TREES = 0;
 const BIGINT_SIZE = 2;
 
+const TARGET = 200;
+const TOO_MANY = TARGET * 2;
+
 const stringToBytes = (s:string)=>{
   const bytes = new Uint8Array(s.length);
   for (let i = 0; i < s.length; i++) {
@@ -147,6 +150,11 @@ export class Pythia {
         const tipCount = (count + 1) / 2,
           targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
         this.stepsPerSample = targetStepSize;
+        // console.debug(`count: ${count}, tip count: ${tipCount}, steps: ${targetStepSize}`)
+        // if (this.run.getTree().getNumSites() > 100000) {  // TODO: <-- We need a better condition here :-)
+        //   console.log('Enabling Mpox hack');
+        //   this.run.setMpoxHackEnabled(true);
+        // }
         console.log(`Setting parallelism to ${navigator.hardwareConcurrency}`);
         this.run.setNumParts(navigator.hardwareConcurrency);
         this.sampleCurrentTree();
@@ -683,12 +691,14 @@ export class Pythia {
   }
 
   getPopulationNodeDistribution(nodeIndices: number[], minDate: number, maxDate: number, summaryTree: SummaryTree): NodeDistributionType {
+    const startTime = Date.now();
     const baseSeries: BaseTreeSeriesType = [],
       overlap: OverlapTally[] = [],
       nodeDist: NodeDistributionType = {series: baseSeries, overlap: overlap},
       treeCount = summaryTree.getNumBaseTrees(),
-      startDate = Math.floor(minDate-1),
-      range = maxDate - startDate + 1;
+      startDate = Math.floor(minDate-1);
+    let range = maxDate - startDate + 1;
+    if (range >= TOO_MANY) range = TARGET;
     if (treeCount > 0) {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
@@ -696,12 +706,6 @@ export class Pythia {
           popT0 = this.popT0Hist[baseTreeIndex],
           popN0 = this.popN0Hist[baseTreeIndex],
           popG = this.popGHist[baseTreeIndex],
-          // baseTreeIndices = nodeIndices.map(mccNodeIndex=>{
-          //   /* only plot population for exact matches */
-          //   const baseTreeNodeIndex = summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t),
-          //     isMonophyletic = summaryTree.isNodeMonophyleticInBaseTree(mccNodeIndex, t);
-          //   return isMonophyletic ? baseTreeNodeIndex : UNSET;
-          // }),
           baseTreeIndices = nodeIndices.map(mccNodeIndex=>summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t)),
           deduped = baseTreeIndices.map((n, i)=>i === baseTreeIndices.lastIndexOf(n) ? n : UNSET),
           treeDist = this.delphy.popModelProbeAncestorsOnTree(
@@ -725,6 +729,7 @@ export class Pythia {
         baseSeries.push(treeDist);
       }
     }
+    console.debug(`getPopulationNodeDistribution               ${(Date.now()-startTime)/1000}s`);
     return nodeDist;
   }
 
