@@ -6,6 +6,7 @@ import { toFullDateString } from '../../pythia/dates';
 import { DateLabel } from '../datelabel';
 
 import { MutationOfInterest } from '../../pythia/mutationsofinterest';
+import { hexToRGB } from '../colorchooser';
 
 /*
 for each day, for each tree, calculate the balance of two alleles
@@ -13,13 +14,84 @@ store those numbers for each day, sorted ascending.
 */
 type MedianSeriesType = number[][];
 
+const REPORTING_NTILES = [0.025, 0.5, 0.975];
+
+
+enum colorState  {
+  HIDDEN = 0,
+  MEDIAN = 1,
+  RANGE = 2
+}
+class ColorSet {
+
+  /*
+  to ensure a continuity of state
+  */
+  private actualState : number;
+  private targetState : colorState;
+  private baseColor: string;
+  removing: boolean;
+
+  constructor(color: string) {
+    console.log(color);
+    const [r,g,b] = hexToRGB(color);
+    this.baseColor = `rgba(${r},${g},${b},`;
+    this.actualState = 0;
+    this.targetState = colorState.MEDIAN;
+    this.removing = false;
+  }
+
+  update(): boolean {
+    const updating = this.isUpdating();
+    if (updating) {
+      const delta = this.targetState - this.actualState;
+      if (Math.abs(delta) < 0.001) {
+        this.actualState = this.targetState;
+      } else {
+        this.actualState += delta * 0.2;
+      }
+    }
+    return updating;
+  }
+
+  isUpdating() : boolean {
+    return this.actualState !== this.targetState;
+  }
+
+  getMedianColor(): string {
+    return `${this.baseColor} ${Math.min(1,this.actualState)})`;
+  }
+  getRangeColor(): string {
+    return `${this.baseColor} ${this.getRangeAlpha()}`;
+  }
+  getRangeAlpha(): number {
+    return Math.max(0,this.actualState-1);
+  }
+
+  showNothing() : void { this.targetState = colorState.HIDDEN;}
+  showMedian() : void { this.targetState = colorState.MEDIAN;}
+  showRange() : void { this.targetState = colorState.RANGE;}
+
+  remove() : void {
+    this.targetState = colorState.HIDDEN;
+    this.removing = true;
+  }
+
+  isRemovable(): boolean {
+    return this.removing && this.actualState === 0;
+  }
+
+}
+
+
 type MutationPrevalenceData = {
   src: MutationData,
   balances: MedianSeriesType,
-  ntiles: MedianSeriesType
+  ntiles: MedianSeriesType,
+  color: ColorSet
 }
 
-const REPORTING_NTILES = [0.025, 0.5, 0.975];
+
 
 const margin = {
   top: 2,
@@ -43,6 +115,7 @@ export class MutationPrevalenceCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   mutations: MutationPrevalenceData[];
+  mutationLookup: {[name: string]: MutationPrevalenceData}
   width: number;
   height: number;
 
@@ -55,6 +128,7 @@ export class MutationPrevalenceCanvas {
   hoverSeriesIndex: number;
 
   locked: boolean;
+  drawHandle: number;
 
   hintText: HTMLElement;
 
@@ -65,6 +139,8 @@ export class MutationPrevalenceCanvas {
     this.height = 0;
 
     this.mutations = [];
+    this.mutationLookup = {}
+    this.drawHandle = 0;
     this.dayCount = 0;
 
     // load font, then draw
@@ -79,7 +155,7 @@ export class MutationPrevalenceCanvas {
     ]).catch(()=>{}); // eslint-disable-line @typescript-eslint/no-empty-function
     promises.then(fonts => {
       if (fonts) {
-        window.requestAnimationFrame(() => this.draw());
+        this.launchDraw();
       } else {
         console.debug("Could not load MD fonts, using Roboto fallbacks");
         const backupPromises = Promise.all([
@@ -89,7 +165,7 @@ export class MutationPrevalenceCanvas {
         ]);
         backupPromises.then(fonts => {
           fonts.forEach(font => document.fonts.add(font));
-          window.requestAnimationFrame(() => this.draw());
+          this.launchDraw();
         });
       }
     });
@@ -119,13 +195,17 @@ export class MutationPrevalenceCanvas {
 
   setData(mutations: MutationData[], minDate: number, maxDate: number): void {
     mutations = mutations.filter(md => md.active === true);
-    this.mutations = mutations.map((src: MutationData)=>{
-      const alt: number = src.moi.mutation.to,
-        balances = this.medianizeSeries(src.alleleDist, alt),
-        ntiles = this.getNtiles(balances);
-      return {src, balances, ntiles}
-    });
-
+    mutations.forEach((src: MutationData)=>{
+      if (this.mutationLookup[src.name] === undefined) {
+        const alt: number = src.moi.mutation.to,
+          balances = this.medianizeSeries(src.alleleDist, alt),
+          ntiles = this.getNtiles(balances),
+          color = new ColorSet(src.color),
+          prevalenceData = {src, balances, ntiles, color};
+        this.mutations.push(prevalenceData);
+        this.mutationLookup[src.name] = prevalenceData;
+      }
+    })
     this.minDate = minDate;
     this.maxDate = maxDate;
 
@@ -133,10 +213,29 @@ export class MutationPrevalenceCanvas {
       this.dayCount = this.mutations[0].ntiles.length;
     }
 
-    this.draw();
+    this.launchDraw();
   }
 
-  draw(): void {
+
+  launchDraw(): void {
+    if (this.drawHandle === 0) {
+      this.drawHandle = window.setInterval(()=>this.update(), 30);
+    }
+  }
+
+
+  update(): void {
+    // console.debug(`updating ${Date.now()}`)
+    let updating = false;
+    this.mutations.forEach(m=>updating = m.color.update() || updating);
+    requestAnimationFrame(()=>this._draw())
+    if (!updating) {
+      clearInterval(this.drawHandle);
+      this.drawHandle = 0;
+    }
+  }
+
+  _draw(): void {
     const {ctx, width, height} = this;
 
     ctx.clearRect(0, 0, width, height);
@@ -145,20 +244,18 @@ export class MutationPrevalenceCanvas {
 
     this.drawAxes();
 
-    ctx.globalAlpha = 1;
+    this.mutations.forEach(({color}, i)=> {
+      if (color.getRangeAlpha() > 0) this.drawSeriesNtiles(i);
+    });
+    this.drawMedianSeries();
+
     if (this.hoverSeriesIndex === UNSET) {
-      ctx.globalCompositeOperation = "hard-light";
-      this.drawMedianSeries();
       this.hintText.classList.add("hidden");
     } else {
-      this.drawSeriesNtiles(this.hoverSeriesIndex);
       this.hintText.classList.remove("hidden");
     }
 
 
-    ctx.globalAlpha = 1;
-
-    /* draw the medians in color */
 
     this.drawLegend();
 
@@ -182,7 +279,7 @@ export class MutationPrevalenceCanvas {
       bottom = height - margin.bottom,
       heightRange = bottom - margin.top,
       data = this.mutations[index],
-      color = data.src.color,
+      color = data.color.getRangeColor(),
       dailyCounts = data.ntiles,
       n = dailyCounts.length;
     ctx.fillStyle = color;
@@ -212,7 +309,7 @@ export class MutationPrevalenceCanvas {
 
   strokeMedian(data: MutationPrevalenceData) {
     const {ctx, width, height} = this;
-    const {color} = data.src,
+    const color = data.color.getMedianColor(),
       ntiles = data.ntiles;
     ctx.strokeStyle = color;
     ctx.beginPath();
@@ -235,7 +332,7 @@ export class MutationPrevalenceCanvas {
     ctx.globalAlpha = 1;
 
     /* draw the medians in color */
-    ctx.globalCompositeOperation = "source-over"; // default
+    // ctx.globalCompositeOperation = "source-over"; // default
     ctx.lineWidth = 2;
     this.mutations.forEach((data: MutationPrevalenceData)=>this.strokeMedian(data));
   }
@@ -554,7 +651,9 @@ export class MutationPrevalenceCanvas {
         const legendIndex = Math.floor((e.offsetY - LEGEND_Y) / LINE_HEIGHT);
         if (legendIndex >= 0 && legendIndex < this.mutations.length) {
           this.hoverSeriesIndex = legendIndex;
+          this.mutations.forEach((m, i)=> i === legendIndex? m.color.showRange() : m.color.showNothing());
         } else {
+          this.mutations.forEach(m=>m.color.showMedian());
           this.hoverSeriesIndex = UNSET;
         }
       } else {
@@ -562,7 +661,7 @@ export class MutationPrevalenceCanvas {
       }
     }
 
-    window.requestAnimationFrame(() => this.draw());
+    this.launchDraw();
   }
 
   handleMouseout = () => {
@@ -570,8 +669,9 @@ export class MutationPrevalenceCanvas {
     this.hoverDateIndex = UNSET;
     if (!this.locked) {
       this.hoverSeriesIndex = UNSET;
+      this.mutations.forEach(m=>m.color.showMedian());
     }
-    window.requestAnimationFrame(() => this.draw());
+    this.launchDraw();
   }
 
 
@@ -582,10 +682,11 @@ export class MutationPrevalenceCanvas {
       const legendIndex = Math.floor((e.offsetY - LEGEND_Y) / LINE_HEIGHT);
       if (legendIndex >= 0 && legendIndex < this.mutations.length) {
         this.hoverSeriesIndex = legendIndex;
+        this.mutations.forEach((m, i)=> i === legendIndex? m.color.showRange() : m.color.showNothing());
         this.locked = true;
       }
     }
-    window.requestAnimationFrame(() => this.draw());
+    this.launchDraw();
   }
 
 
@@ -600,13 +701,18 @@ export class MutationPrevalenceCanvas {
     const index = this.mutations.map((md: MutationPrevalenceData)=>md.src.moi).indexOf(moi as MutationOfInterest);
     // console.log('setHighlight', this.locked, this.hoverSeriesIndex, moi?getMutationName(moi.mutation):'–', lock, index);
     if (!this.locked || lock) {
+      if (index >= 0) {
+        this.mutations.forEach((m, i)=> i === index? m.color.showRange() : m.color.showNothing());
+      } else {
+        this.mutations.forEach(m=> m.color.showMedian());
+      }
       this.hoverSeriesIndex = index;
       this.locked = lock;
-      requestAnimationFrame(()=>this.draw());
+      this.launchDraw();
     } else if (index === this.hoverSeriesIndex) {
       /* are we turning off the lock?  */
       this.locked = false;
-      requestAnimationFrame(()=>this.draw());
+      this.launchDraw();
     }
   }
 

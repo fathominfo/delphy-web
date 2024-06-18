@@ -8,6 +8,8 @@ export class UIScreen {
   sharedState: SharedState;
   resizeHandler: ()=>void;
   zoomHandler: ZoomFnc;
+  isApobecEnabled: boolean;
+
 
 
   constructor(sharedState: SharedState, selector: string) {
@@ -19,6 +21,7 @@ export class UIScreen {
     this.sharedState = sharedState;
     this.resizeHandler = ()=>this.resize();
     this.pythia = null;
+    this.isApobecEnabled = false;
     this.zoomHandler = (vZoom:number, vZoomScroll: number, hZoom:number, hZoomScroll: number)=>{
       console.debug(`if we could zoom, we would zoom to ${hZoom * 100}%, ${vZoom * 100}% vertical centered at ${hZoomScroll*100}, ${vZoomScroll*100}`);
     };
@@ -28,6 +31,7 @@ export class UIScreen {
 
   activate() {
     this.pythia = this.sharedState.pythia;
+    this.isApobecEnabled = this.pythia.getIsApobecEnabled();
     // this.worker.onmessage = (message:any)=>this.handleMessage(message.data);
     window.addEventListener('resize', this.resizeHandler);
     this.resize();

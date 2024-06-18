@@ -42,8 +42,9 @@ class MutationTimeline {
   timeCanvas: TimeDistributionCanvas;
   goToMutations: MutationFunctionType;
 
-  constructor(mutation: MutationDistribution, minDate: number, maxDate: number, goToMutations: MutationFunctionType) {
+  constructor(mutation: MutationDistribution, minDate: number, maxDate: number, goToMutations: MutationFunctionType, isApobecRun: boolean) {
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
+    this.div.classList.toggle('is-apobec', mutation.isApobecCtx && isApobecRun);
     const canvas = this.div.querySelector(mutationCanvasSelector) as HTMLCanvasElement,
       ctx = canvas?.getContext('2d'),
       nameLabel = this.div.querySelector(mutationNameSelector) as HTMLParagraphElement,
@@ -114,7 +115,7 @@ export class NodeComparison {
   nodeHighlightCallback: NodeCallback;
 
   constructor(nodeComparisonData : NodeComparisonData, minDate: number, maxDate: number,
-    goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback) {
+    goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback, isApobecRun: boolean) {
     this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
@@ -163,7 +164,7 @@ export class NodeComparison {
     }
 
 
-    this.setMutations();
+    this.setMutations(isApobecRun);
 
     const createSeries = (dn: DisplayNode, i: number) => {
       const typeName = getNodeTypeName(dn);
@@ -211,13 +212,13 @@ export class NodeComparison {
     this.node2Span.classList.add(getNodeClassName(descendantType));
   }
 
-  setMutations():void {
+  setMutations(isApobecRun: boolean):void {
     const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold),
       count = shownMutations.length,
       minDate = this.minDate,
       maxDate = this.maxDate;
     this.mutationTimelines = shownMutations.map((md:MutationDistribution)=>{
-      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations);
+      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, isApobecRun);
       mt.appendTo(this.mutationContainer);
       return mt;
     });
@@ -281,11 +282,11 @@ export class NodeComparison {
 
 
 export function setComparisons(nodeComparisonData: NodeComparisonData[], minDate: number, maxDate: number,
-  goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback,
+  goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback, isApobecRun: boolean,
   zoomMinDate: number, zoomMaxDate: number): NodeComparison[] {
   nodeComparisonContainer.innerHTML = '';
   const comps: NodeComparison[] = nodeComparisonData.map(ncd=>{
-    const nc = new NodeComparison(ncd, minDate, maxDate, goToMutations, nodeHighlightCallback);
+    const nc = new NodeComparison(ncd, minDate, maxDate, goToMutations, nodeHighlightCallback, isApobecRun);
     nc.setDateRange(zoomMinDate, zoomMaxDate);
     nc.requestDraw();
     return nc;

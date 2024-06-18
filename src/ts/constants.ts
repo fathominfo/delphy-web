@@ -6,7 +6,7 @@ export const RANDOM_SEED = 0; // generate a new unknown seed
 
 export const MAX_TREE_SNAPSHOTS = 50;
 export const GENOME_LENGTH = 29891;
-export const MU_FACTOR = 365 * 1000;
+export const MU_FACTOR = 365 * 1e5;
 
 
 export type TipsByNodeIndex = number[][];
@@ -156,6 +156,7 @@ export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts, sort
 export type RunParamConfig = {
   stepsPerSample: number,
   mutationRate: number,
+  apobecEnabled: boolean,
   siteRateHeterogeneityEnabled: boolean,
   mutationRateIsFixed: boolean
 };

@@ -469,6 +469,12 @@ export class Delphy {
     run_get_num_mutations: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_is_mu_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
     run_set_mu_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_mpox_hack_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_mpox_hack_enabled: (ctx: DelphyContextPtr, run: RunPtr, mpoxHackEnabled: boolean) => void,
+    run_get_mpox_mu: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_mpox_mu: (ctx: DelphyContextPtr, run: RunPtr, mpox_mu: number) => void,
+    run_get_mpox_mu_star: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_mpox_mu_star: (ctx: DelphyContextPtr, run: RunPtr, mpox_mu_star: number) => void,
     run_is_only_displacing_inner_nodes: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
     run_set_only_displacing_inner_nodes: (ctx: DelphyContextPtr, run: RunPtr, b: boolean) => void,
     run_are_topology_moves_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
@@ -664,6 +670,12 @@ export class Delphy {
       run_get_num_mutations: Module['_delphy_run_get_num_mutations'],
       run_is_mu_move_enabled: Module['_delphy_run_is_mu_move_enabled'],
       run_set_mu_move_enabled: Module['_delphy_run_set_mu_move_enabled'],
+      run_is_mpox_hack_enabled: Module['_delphy_run_is_mpox_hack_enabled'],
+      run_set_mpox_hack_enabled: Module['_delphy_run_set_mpox_hack_enabled'],
+      run_get_mpox_mu: Module['_delphy_run_get_mpox_mu'],
+      run_set_mpox_mu: Module['_delphy_run_set_mpox_mu'],
+      run_get_mpox_mu_star: Module['_delphy_run_get_mpox_mu_star'],
+      run_set_mpox_mu_star: Module['_delphy_run_set_mpox_mu_star'],
       run_is_only_displacing_inner_nodes: Module['_delphy_run_is_only_displacing_inner_nodes'],
       run_set_only_displacing_inner_nodes: Module['_delphy_run_set_only_displacing_inner_nodes'],
       run_are_topology_moves_enabled: Module['_delphy_run_are_topology_moves_enabled'],
@@ -1148,6 +1160,30 @@ export class Run {
 
   setMuMoveEnabled(enabled: boolean): void {
     Delphy.delphyCoreRaw.run_set_mu_move_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
+  isMpoxHackEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_mpox_hack_enabled(this.delphy.ctx, this.run);
+  }
+
+  setMpoxHackEnabled(mpoxHackEnabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_mpox_hack_enabled(this.delphy.ctx, this.run, mpoxHackEnabled);
+  }
+
+  getMpoxMu(): number {
+    return Delphy.delphyCoreRaw.run_get_mpox_mu(this.delphy.ctx, this.run);
+  }
+
+  setMpoxMu(mpox_mu: number): void {
+    Delphy.delphyCoreRaw.run_set_mpox_mu(this.delphy.ctx, this.run, mpox_mu);
+  }
+
+  getMpoxMuStar(): number {
+    return Delphy.delphyCoreRaw.run_get_mpox_mu_star(this.delphy.ctx, this.run);
+  }
+
+  setMpoxMuStar(mpox_mu_star: number): void {
+    Delphy.delphyCoreRaw.run_set_mpox_mu_star(this.delphy.ctx, this.run, mpox_mu_star);
   }
 
   isOnlyDisplacingInnerNodes(): boolean {

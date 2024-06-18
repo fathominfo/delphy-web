@@ -764,7 +764,7 @@ export class LineagesUI extends MccUI {
 
 
       this.nodeComparisons = setComparisons(src, minDate, maxDate, this.goToMutations, this.nodeHighlightCallback,
-        zoomMinDate, zoomMaxDate);
+        this.isApobecEnabled, zoomMinDate, zoomMaxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
       this.nodeRelationChart.setData(src, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       // const nodeColors = nodes.map(({color})=>color),

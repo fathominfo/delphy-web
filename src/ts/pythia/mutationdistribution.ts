@@ -5,12 +5,14 @@ export class MutationDistribution {
   times: number[];
   // treeIndices: number[];
   possibleTrees: number;
+  isApobecCtx: boolean;
 
-  constructor(mut: Mutation, totalTrees: number) {
+  constructor(mut: Mutation, totalTrees: number, isApobecCtx: boolean) {
     this.mutation = mut;
     this.times = [];
     // this.treeIndices = [];
     this.possibleTrees = totalTrees;
+    this.isApobecCtx = isApobecCtx;
   }
 
   // addTime(t: number, treeIndex: number): void {

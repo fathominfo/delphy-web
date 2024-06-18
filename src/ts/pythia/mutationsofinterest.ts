@@ -1,6 +1,7 @@
 import { PhyloTree, MccTree, Mutation } from './delphy_api';
 import { getMutationName } from '../constants';
 import { isTip } from '../util/treeutils';
+import { checkApobecCtx } from './pythia';
 
 export const enum FeatureOfInterest {
   Reversals = "reversals",
@@ -25,6 +26,7 @@ export interface MutationOfInterest {
   confidence: number;
   baseTipCounts: number[];
   medianTipCount: number;
+  isApobec: number;
   features?: {[key: string]: InterestData}
 }
 
@@ -93,17 +95,20 @@ const gatherBaseTreeMutationsOfInterest = (tree: PhyloTree, all: {[name: string]
     addToAll = (intro: Introduction)=>{
       const mutation = intro.mutation,
         nodeIndex = intro.nodeIndex,
-        name = getMutationName(mutation);
+        name = getMutationName(mutation),
+        isApobecCtx = checkApobecCtx(mutation, tree.getRootSequence());
       let moi = all[name]
       if (!moi) {
         const treeCount = 0,
           confidence = 0,
           medianTipCount = 0,
-          baseTipCounts: number[] = [];
-        moi = {mutation, name, treeCount, confidence, medianTipCount, baseTipCounts};
+          baseTipCounts: number[] = [],
+          isApobec = 0;
+        moi = {mutation, name, treeCount, confidence, medianTipCount, baseTipCounts, isApobec};
         all[name] = moi;
       }
       moi.treeCount++;
+      if (isApobecCtx) moi.isApobec++;
       moi.baseTipCounts.push(nodeCounts[nodeIndex]);
     };
   let uniques: {[name:string]: Introduction};

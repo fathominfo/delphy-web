@@ -220,6 +220,7 @@ export class MutationsUI extends MccUI {
 
   activate() {
     super.activate();
+    this.div.classList.toggle('apobec-disabled', !this.isApobecEnabled);
     if (this.sharedState.mutationsNeedReloading) {
       console.debug('need to reset mutations');
       this.clearRows();
@@ -232,7 +233,7 @@ export class MutationsUI extends MccUI {
 
     super.resize()
     this.prevalence.resize();
-    this.prevalence.draw();
+    this.prevalence.launchDraw();
     this.rows.forEach(row => {
       row.timeCanvas.resize();
       row.timeCanvas.draw();
@@ -418,6 +419,7 @@ export class MutationsUI extends MccUI {
     (moiHtml.querySelector(".moi-tips--inner") as HTMLDivElement).style.width = `${Math.round(moi.medianTipCount / this.tipCount * 100)}%`;
     // (moiHtml.querySelector(".moi-trees") as HTMLElement).innerText = getPercentLabel(moi.confidence);
     (moiHtml.querySelector(".moi-trees") as HTMLElement).innerText = `${getPercentLabel(moi.confidence)}%`;
+    (moiHtml.querySelector(".moi-apobec") as HTMLElement).innerText = moi.isApobec >= moi.treeCount * .5 ? '+' : '';
     if (moi.features) {
       const features = (moiHtml.querySelector(".moi-feature") as HTMLElement);
       features.innerHTML = '';
@@ -464,7 +466,7 @@ export class MutationsUI extends MccUI {
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
         this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
-        minDate, maxDate, this.displayOption);
+        minDate, maxDate, this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
       this.rows.forEach(row => row.updateRows(this.rows));
 
@@ -478,7 +480,7 @@ export class MutationsUI extends MccUI {
 
   updateMutationHistory(): void {
     this.prevalence.setData(this.selectedMutations, this.minDate, this.maxDate);
-    this.prevalence.draw();
+    this.prevalence.launchDraw();
   }
 
 

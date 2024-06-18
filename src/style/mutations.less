@@ -51,6 +51,12 @@
   overflow: hidden;
 
 
+  &.apobec-disabled {
+    .moi-apobec, .header-button[value="apobec"] {
+      display: none;
+    }
+  }
+
   .zoom-buttons {
     display: none;
   }
@@ -546,6 +552,11 @@
   text-align: right;
 }
 
+.moi-apobec {
+  text-align: center;
+}
+
+
 
 #mutations--main {
   flex: 1;
@@ -1040,6 +1051,21 @@
       position: relative;
     }
 
+    .is-apobec {
+      display: none;
+      position: absolute;
+      right: -25px;
+      font-family: MDSystemNarrow, RobotoCondensed, sans-serif;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      font-size: 10px;
+      color: #777;
+    }
+
+  }
+
+  &.is-apobec .is-apobec {
+    display: inline-block;
   }
 
 

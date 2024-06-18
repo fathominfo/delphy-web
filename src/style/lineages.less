@@ -814,6 +814,10 @@ details {
   + .lineages--node-comparison--mutation {
     margin-top: 0.5em;
   }
+
+  &.is-apobec .lineages--node-comparison--mutation-is-apobec {
+    display: inline-block;
+  }
 }
 
 .lineages--node-comparison--mutation-labels {
@@ -824,6 +828,15 @@ details {
   color: black;
   margin: 0;
   text-decoration: none;
+}
+
+.lineages--node-comparison--mutation-is-apobec {
+  display: none;
+  font-family: MDSystemNarrow, RobotoCondensed, sans-serif;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-size: 10px;
+  color: #777;
 }
 
 

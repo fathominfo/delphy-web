@@ -47,6 +47,13 @@ export class ColorChooser {
 }
 
 
+export const hexToRGB = (hex:string)=>{
+  const r = parseInt(`0x${hex.substring(1,3)}`, 16),
+    g = parseInt(`0x${hex.substring(3,5)}`, 16),
+    b = parseInt(`0x${hex.substring(5,7)}`, 16);
+  return [r,g,b]
+}
+
 
 
 const PALETTE_SOURCES: {[name: string]: string[]} = {

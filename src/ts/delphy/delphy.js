@@ -716,10 +716,10 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  85944: ($0, $1) => { delphyRunCallback($0, $1); },  
- 85975: ($0) => { delphyRunCallback($0); },  
- 86002: ($0, $1) => { delphyRunCallback($0, $1); },  
- 86033: () => { return (typeof wasmOffsetConverter !== 'undefined'); }
+  86432: ($0, $1) => { delphyRunCallback($0, $1); },  
+ 86463: ($0) => { delphyRunCallback($0); },  
+ 86490: ($0, $1) => { delphyRunCallback($0, $1); },  
+ 86521: () => { return (typeof wasmOffsetConverter !== 'undefined'); }
 };
 function HaveOffsetConverter() { return typeof wasmOffsetConverter !== 'undefined'; }
 
@@ -5650,6 +5650,12 @@ var _delphy_run_get_num_mutations = Module['_delphy_run_get_num_mutations'] = (a
 var _delphy_run_get_log_coalescent_prior = Module['_delphy_run_get_log_coalescent_prior'] = (a0, a1) => (_delphy_run_get_log_coalescent_prior = Module['_delphy_run_get_log_coalescent_prior'] = wasmExports['delphy_run_get_log_coalescent_prior'])(a0, a1);
 var _delphy_run_get_log_other_priors = Module['_delphy_run_get_log_other_priors'] = (a0, a1) => (_delphy_run_get_log_other_priors = Module['_delphy_run_get_log_other_priors'] = wasmExports['delphy_run_get_log_other_priors'])(a0, a1);
 var _delphy_run_get_total_branch_length = Module['_delphy_run_get_total_branch_length'] = (a0, a1) => (_delphy_run_get_total_branch_length = Module['_delphy_run_get_total_branch_length'] = wasmExports['delphy_run_get_total_branch_length'])(a0, a1);
+var _delphy_run_is_mpox_hack_enabled = Module['_delphy_run_is_mpox_hack_enabled'] = (a0, a1) => (_delphy_run_is_mpox_hack_enabled = Module['_delphy_run_is_mpox_hack_enabled'] = wasmExports['delphy_run_is_mpox_hack_enabled'])(a0, a1);
+var _delphy_run_set_mpox_hack_enabled = Module['_delphy_run_set_mpox_hack_enabled'] = (a0, a1, a2) => (_delphy_run_set_mpox_hack_enabled = Module['_delphy_run_set_mpox_hack_enabled'] = wasmExports['delphy_run_set_mpox_hack_enabled'])(a0, a1, a2);
+var _delphy_run_get_mpox_mu = Module['_delphy_run_get_mpox_mu'] = (a0, a1) => (_delphy_run_get_mpox_mu = Module['_delphy_run_get_mpox_mu'] = wasmExports['delphy_run_get_mpox_mu'])(a0, a1);
+var _delphy_run_set_mpox_mu = Module['_delphy_run_set_mpox_mu'] = (a0, a1, a2) => (_delphy_run_set_mpox_mu = Module['_delphy_run_set_mpox_mu'] = wasmExports['delphy_run_set_mpox_mu'])(a0, a1, a2);
+var _delphy_run_get_mpox_mu_star = Module['_delphy_run_get_mpox_mu_star'] = (a0, a1) => (_delphy_run_get_mpox_mu_star = Module['_delphy_run_get_mpox_mu_star'] = wasmExports['delphy_run_get_mpox_mu_star'])(a0, a1);
+var _delphy_run_set_mpox_mu_star = Module['_delphy_run_set_mpox_mu_star'] = (a0, a1, a2) => (_delphy_run_set_mpox_mu_star = Module['_delphy_run_set_mpox_mu_star'] = wasmExports['delphy_run_set_mpox_mu_star'])(a0, a1, a2);
 var _delphy_run_is_only_displacing_inner_nodes = Module['_delphy_run_is_only_displacing_inner_nodes'] = (a0, a1) => (_delphy_run_is_only_displacing_inner_nodes = Module['_delphy_run_is_only_displacing_inner_nodes'] = wasmExports['delphy_run_is_only_displacing_inner_nodes'])(a0, a1);
 var _delphy_run_set_only_displacing_inner_nodes = Module['_delphy_run_set_only_displacing_inner_nodes'] = (a0, a1, a2) => (_delphy_run_set_only_displacing_inner_nodes = Module['_delphy_run_set_only_displacing_inner_nodes'] = wasmExports['delphy_run_set_only_displacing_inner_nodes'])(a0, a1, a2);
 var _delphy_run_are_topology_moves_enabled = Module['_delphy_run_are_topology_moves_enabled'] = (a0, a1) => (_delphy_run_are_topology_moves_enabled = Module['_delphy_run_are_topology_moves_enabled'] = wasmExports['delphy_run_are_topology_moves_enabled'])(a0, a1);
@@ -5716,8 +5722,8 @@ var dynCall_jiji = Module['dynCall_jiji'] = (a0, a1, a2, a3, a4) => (dynCall_jij
 var dynCall_iiiiij = Module['dynCall_iiiiij'] = (a0, a1, a2, a3, a4, a5, a6) => (dynCall_iiiiij = Module['dynCall_iiiiij'] = wasmExports['dynCall_iiiiij'])(a0, a1, a2, a3, a4, a5, a6);
 var dynCall_iiiiijj = Module['dynCall_iiiiijj'] = (a0, a1, a2, a3, a4, a5, a6, a7, a8) => (dynCall_iiiiijj = Module['dynCall_iiiiijj'] = wasmExports['dynCall_iiiiijj'])(a0, a1, a2, a3, a4, a5, a6, a7, a8);
 var dynCall_iiiiiijj = Module['dynCall_iiiiiijj'] = (a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) => (dynCall_iiiiiijj = Module['dynCall_iiiiiijj'] = wasmExports['dynCall_iiiiiijj'])(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-var ___start_em_js = Module['___start_em_js'] = 86090;
-var ___stop_em_js = Module['___stop_em_js'] = 86151;
+var ___start_em_js = Module['___start_em_js'] = 86578;
+var ___stop_em_js = Module['___stop_em_js'] = 86639;
 
 // include: postamble.js
 // === Auto-generated postamble setup entry stuff ===

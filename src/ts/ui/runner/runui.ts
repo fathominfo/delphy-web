@@ -41,6 +41,7 @@ export class RunUI extends UIScreen {
 
   private logPosteriorCanvas: HistCanvas;
   private muCanvas: HistCanvas;
+  private muStarCanvas: HistCanvas;
   private TCanvas: HistCanvas;
   private mutCountCanvas: HistCanvas;
   private popGrowthCanvas: HistCanvas;
@@ -70,11 +71,13 @@ export class RunUI extends UIScreen {
 
 
   advanced: HTMLElement;
-  mutationRateFieldset: HTMLFieldSetElement;
+  // mutationRateFieldset: HTMLFieldSetElement;
   siteHeterogeneityToggle: HTMLInputElement;
   fixedRateToggle: HTMLInputElement;
   mutationRateLabel: HTMLLabelElement;
   mutationRateInput: HTMLInputElement;
+  // apobecFieldset: HTMLFieldSetElement;
+  apobecToggle: HTMLInputElement;
 
 
   /* useful when updating the advanced run parameters */
@@ -123,10 +126,11 @@ export class RunUI extends UIScreen {
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', kneeHandler);
     this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', kneeHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;3</sup> mutations / site / year", kneeHandler);
+    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", kneeHandler);
+    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", kneeHandler);
     this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', kneeHandler);
     this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', kneeHandler);
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.TCanvas, this.mutCountCanvas, this.popGrowthCanvas];
+    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas, this.popGrowthCanvas];
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
     this.timelineIndices = [];
@@ -144,11 +148,13 @@ export class RunUI extends UIScreen {
 
     const openAdvancedButton = this.div.querySelector("#advanced-toggle") as HTMLButtonElement;
     this.advanced = this.div.querySelector("#runner--advanced") as HTMLElement;
-    this.mutationRateFieldset = this.div.querySelector(".mutation-rate-fieldset") as HTMLFieldSetElement,
+    // this.mutationRateFieldset = this.div.querySelector(".mutation-rate-fieldset") as HTMLFieldSetElement,
     this.siteHeterogeneityToggle = this.div.querySelector("#site-rate-heterogeneity-toggle") as HTMLInputElement,
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement,
     this.mutationRateLabel = this.div.querySelector("#overall-mutation-rate-label") as HTMLLabelElement,
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
+    // this.apobecFieldset = this.div.querySelector(".apobec-fieldset") as HTMLFieldSetElement,
+    this.apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
 
     this.disableAnimation = false;
 
@@ -193,6 +199,15 @@ export class RunUI extends UIScreen {
       submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
     });
 
+    // this.siteHeterogeneityToggle.addEventListener("change", () => {
+    //   this.apobecFieldset.disabled = this.siteHeterogeneityToggle.checked;
+    // });
+    // this.fixedRateToggle.addEventListener("change", () => {
+    //   this.apobecFieldset.disabled = this.fixedRateToggle.checked;
+    // });
+    // this.apobecToggle.addEventListener("change", ()=>{
+    //   this.mutationRateFieldset.disabled = this.apobecToggle.checked;
+    // });
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
     const advancedCloseButton = this.div.querySelector(".close-button") as HTMLButtonElement;
     [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
@@ -223,6 +238,7 @@ export class RunUI extends UIScreen {
     this.runParams = {
       stepsPerSample: Math.pow(10, power),
       mutationRate: 1.0,
+      apobecEnabled: false,
       siteRateHeterogeneityEnabled: false,
       mutationRateIsFixed: false
     }
@@ -250,6 +266,7 @@ export class RunUI extends UIScreen {
       currentMu = pythia.getCurrentMu();
     /* TODO: why is pythia getting a mutation rate of 1 in some cases?  */
     params.stepsPerSample = pythia.stepsPerSample;
+    params.apobecEnabled = pythia.getIsApobecEnabled();
     params.siteRateHeterogeneityEnabled = pythia.getSiteRateHeterogeneityEnabled();
     params.mutationRateIsFixed = !pythia.getdMutationRateMovesEnabled();
     params.mutationRate = params.mutationRateIsFixed ? currentMu : UNSET;
@@ -257,12 +274,12 @@ export class RunUI extends UIScreen {
 
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
 
-
+    this.isApobecEnabled = params.apobecEnabled;
 
     // update checks
     this.siteHeterogeneityToggle.checked = params.siteRateHeterogeneityEnabled;
     this.fixedRateToggle.checked = params.mutationRateIsFixed;
-
+    this.apobecToggle.checked = params.apobecEnabled;
 
     // set mutation rate values
     const muFixed = (currentMu * MU_FACTOR).toFixed(2);
@@ -270,6 +287,11 @@ export class RunUI extends UIScreen {
 
     // toggle canvases
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
+    this.toggleHistCanvasVisibility(this.muStarCanvas, this.isApobecEnabled);
+
+    // disable fieldsets
+    // this.mutationRateFieldset.disabled = params.apobecEnabled;
+    // this.apobecFieldset.disabled = params.mutationRateIsFixed || params.siteRateHeterogeneityEnabled;
 
     console.log(`pythia? ${!!this.pythia}`, currentMu, params);
   }
@@ -310,6 +332,7 @@ export class RunUI extends UIScreen {
     });
     // this.logPosteriorCanvas.sizeCanvas();
     // this.muCanvas.sizeCanvas();
+    // this.muStarCanvas.sizeCanvas();
     // this.TCanvas.sizeCanvas();
     // this.mutCountCanvas.sizeCanvas();
 
@@ -370,10 +393,13 @@ export class RunUI extends UIScreen {
       const hideBurnIn = this.sharedState.hideBurnIn,
         mccIndex = this.mccIndex,
         sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
-        {muHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
+        {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
       this.treeScrubber.setData(last, kneeIndex, mccIndex);
       this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       this.muCanvas.setData(muHist.map(n=>n*MU_FACTOR), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      if (this.isApobecEnabled) {
+        this.muStarCanvas.setData(muStarHist.map(n=>n*MU_FACTOR), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      }
       this.TCanvas.setData(totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       this.popGrowthCanvas.setData(popGHist.map(g=>POP_GROWTH_FACTOR/g), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
@@ -421,6 +447,9 @@ export class RunUI extends UIScreen {
       }
       this.logPosteriorCanvas.draw();
       this.muCanvas.draw();
+      if (this.isApobecEnabled) {
+        this.muStarCanvas.draw();
+      }
       this.TCanvas.draw();
       this.mutCountCanvas.draw();
       this.popGrowthCanvas.draw();
@@ -503,6 +532,9 @@ export class RunUI extends UIScreen {
       parseFloat(formData.overallMutationRate as string) : this.runParams.mutationRate;
     newParams = this.fixMutationRate(newParams, isFixedMutationRate, overallMutationRate);
 
+    const isApobec = formData.isApobec === "on";
+    newParams = this.setApobec(newParams, isApobec);
+
     this.confirmRestart(newParams);
   }
 
@@ -543,6 +575,7 @@ export class RunUI extends UIScreen {
     if (this.fixedRateToggle.checked !== this.runParams.mutationRateIsFixed) return true;
     const currentMu = this.sharedState.pythia.getCurrentMu();
     if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (currentMu * MU_FACTOR).toFixed(2)) return true;
+    if (this.apobecToggle.checked !== this.runParams.apobecEnabled) return true;
     return false;
   }
 
@@ -551,6 +584,12 @@ export class RunUI extends UIScreen {
       steps = Math.pow(10, stepPower);
     newParams.stepsPerSample = steps;
     this.confirmRestart(newParams);
+  }
+
+  private setApobec(runParams: RunParamConfig, enabled:boolean): RunParamConfig {
+    const newParams = copyDict(runParams);
+    newParams.apobecEnabled = enabled;
+    return newParams;
   }
 
   private fixMutationRate(runParams: RunParamConfig, isFixed: boolean, rate: number) : RunParamConfig {

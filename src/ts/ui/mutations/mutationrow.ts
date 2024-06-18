@@ -77,7 +77,8 @@ export class MutationRow {
     shiftRow: (row: MutationRow, direction: number) => void,
     setMutationActive: (name: string, active: boolean) => void,
     minDate: number, maxDate: number,
-    displayOption: DisplayOption) {
+    displayOption: DisplayOption,
+    isApobecEnabled: boolean) {
 
     const moi = mutationData.moi;
     this.moi = moi;
@@ -146,6 +147,8 @@ export class MutationRow {
     (nameDiv.querySelector(".allele-from") as HTMLElement).innerText = `${nameParts[0]}`;
     (nameDiv.querySelector(".site") as HTMLElement).innerText = `${nameParts[1]}`;
     (nameDiv.querySelector(".allele-to") as HTMLElement).innerText = `${nameParts[2]}`;
+
+    this.rowDiv.classList.toggle('is-apobec', isApobecEnabled && moi.isApobec >= moi.treeCount * .5);
 
     (this.rowDiv.querySelector(".stats--tip-count strong") as HTMLElement).innerText = `${moi.medianTipCount}`;
     (this.rowDiv.querySelector(".stats--confidence strong") as HTMLElement).innerText = `${getPercentLabel(moi.confidence)}%`;

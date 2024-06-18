@@ -1,4 +1,5 @@
-import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation} from './delphy_api';
+import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
+  RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, RunParamConfig, NodeDistributionType, OverlapTally, CoreVersionInfo} from '../constants';
@@ -387,7 +388,12 @@ export class Pythia {
 
   sampleCurrentTree():void {
     if (this.run) {
-      this.muHist.push(this.run.getMu());
+      if (this.run.isMpoxHackEnabled()) {
+        this.muHist.push(this.run.getMpoxMu());
+        this.muStarHist.push(this.run.getMpoxMuStar());
+      } else {
+        this.muHist.push(this.run.getMu());
+      }
       this.totalBranchLengthHist.push(this.run.getTotalBranchLength());
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
@@ -469,6 +475,7 @@ export class Pythia {
     // console.debug('setting params', runParams)
     this.stepsPerSample = runParams.stepsPerSample;
     run.setAlphaMoveEnabled(runParams.siteRateHeterogeneityEnabled);
+    run.setMpoxHackEnabled(runParams.apobecEnabled);
     run.setMuMoveEnabled(!runParams.mutationRateIsFixed);
     this.setSiteRateHeterogeneityEnabled(runParams.siteRateHeterogeneityEnabled);
     if (runParams.mutationRate > 0) {
@@ -484,6 +491,17 @@ export class Pythia {
 
   getBaseTreeCount() : number {
     return this.treeHist.length;
+  }
+
+  getIsApobecEnabled() : boolean {
+    return !!(this.run?.isMpoxHackEnabled());
+  }
+
+  setIsApobecEnabled(itIs: boolean) : void {
+    if (!this.run) {
+      throw new Error( 'no run on which to set apobec enabled');
+    }
+    this.run.setMpoxHackEnabled(itIs);
   }
 
   setMutationRateMovesEnabled(theyAre: boolean) : void {
@@ -574,12 +592,14 @@ export class Pythia {
     downstreamMccNodeIndex: number, tree: SummaryTree): MutationDistribution[] {
     let muts: MutationDistribution[] = [];
     if (downstreamMccNodeIndex !== UNSET) {
+      let rootSeq: Uint8Array;
       const treeCount = tree.getNumBaseTrees(),
         mutationLookup: { [name: string]: MutationDistribution } = {},
         tallyMutation = (mut:Mutation)=>{
           const name:string = getMutationName(mut);
           if (mutationLookup[name] === undefined) {
-            mutationLookup[name] = new MutationDistribution(mut, treeCount);
+            const isApobecCtx = checkApobecCtx(mut, rootSeq);
+            mutationLookup[name] = new MutationDistribution(mut, treeCount, isApobecCtx);
           }
           mutationLookup[name].addTime(mut.time);
         },
@@ -596,6 +616,7 @@ export class Pythia {
           const upstreamIndex = upstreamTrees[treeIndex];
           if (upstreamIndex !== undefined) {
             const baseTree = tree.getBaseTree(treeIndex);
+            rootSeq = baseTree.getRootSequence();
             let index = tree.getCorrespondingNodeInBaseTree(downstreamMccNodeIndex, treeIndex);
             while (index >= 0 && index !== upstreamIndex) {
               baseTree.forEachMutationOf(index, tallyMutation);
@@ -821,7 +842,7 @@ export class Pythia {
       knee
       step size
       siteRateHeterogeneityEnabled
-
+      apobecEnabled
       mutationRateIsFixed
       mutationRate
       size of the tree info
@@ -905,7 +926,7 @@ export class Pythia {
     write32(this.kneeIndex);
     write32(this.stepsPerSample);
     write32(this.run && this.run.isAlphaMoveEnabled() ? 1 : 0);
-    write32(0);
+    write32(this.run && this.run.isMpoxHackEnabled() ? 1 : 0);
     write32(this.run && this.run.isMuMoveEnabled() ? 1 : 0);
     write32f(this.run?.getMu() || 0);
     write32(getSize(infoBuffer));
@@ -1031,9 +1052,9 @@ export class Pythia {
 
     const knee = read32(),
       stepsPerSample = read32(),
-      siteRateHeterogeneityEnabled = read32() === 1;
-    read32(); // placeholder for future config option
-    const isMuMoveEnabled = read32() === 1,
+      siteRateHeterogeneityEnabled = read32() === 1,
+      apobecEnabled = read32() === 1,
+      isMuMoveEnabled = read32() === 1,
       mutationRate = read32f(),
       treeInfoSize = read32(),
       treeBuffers = [],
@@ -1087,6 +1108,7 @@ export class Pythia {
       this.sampleCurrentTree();
     }
     this.run.setAlphaMoveEnabled(siteRateHeterogeneityEnabled);
+    this.run.setMpoxHackEnabled(apobecEnabled);
     this.run.setMuMoveEnabled(isMuMoveEnabled);
     if (!isMuMoveEnabled) {
       this.run.setMu(mutationRate);
@@ -1117,6 +1139,12 @@ export class Pythia {
   getBeastOutputs(): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
     const run = this.delphy.createRun(this.treeHist[0].copy());
+    if (this.run) {
+      // These options can influence output
+      run.setAlphaMoveEnabled(this.run.isAlphaMoveEnabled());
+      run.setMpoxHackEnabled(this.run.isMpoxHackEnabled());
+      run.setMuMoveEnabled(this.run.isMuMoveEnabled());
+    }
     const bout = run.createBeastyOutput();
     for (let i = 0; i < treeCount; ++i) {
       run.getTree().copyFrom(this.treeHist[i]);
@@ -1145,6 +1173,25 @@ export class Pythia {
     }
   }
 }
+
+
+
+/*
+we will designate any mutation like TC -> TT and the complementary GA -> AA
+as happening in an APOBEC context
+*/
+
+export const checkApobecCtx = (mut: Mutation, rootSeq: Uint8Array)=>{
+  if (mut.from === RealSeqLetter_C && mut.to === RealSeqLetter_T && rootSeq[mut.site-1] === RealSeqLetter_T) {
+    return true;
+  }
+  if (mut.from === RealSeqLetter_G && mut.to === RealSeqLetter_A && rootSeq[mut.site+1] === RealSeqLetter_A) {
+    return true;
+  }
+  return false;
+}
+
+
 
 
 
