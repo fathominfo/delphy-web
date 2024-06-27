@@ -15,9 +15,10 @@ export class NodeMetadata {
 
   metadata: Metadata;
   tree: Tree;
+  /*  tipMetadataRow[treeTipIndex] = metadataRowIndex  */
   tipMetadataRow: number[];
   indicesRootToTip: number[];
-  /* indexed by node, then column */
+  /* nodeValues[treeTipIndex] = metadata row */
   nodeValues: NodeFieldData[][];
 
 
@@ -36,19 +37,36 @@ export class NodeMetadata {
       columns = metadata.header,
       columnCount = columns.length;
     this.tipMetadataRow = [];
+    /*
+    tipMetadataRow will be indexed by tree tip position,
+        with the value pointing to the corresponding row in the metadata file
+
+    */
+    let missingCount = 0;
     for (let i = 0; i < nodeCount; i++) {
       nodeValues[i] = Array(columnCount);
       if (isTip(nameSource, i)) {
         const tipName = nameSource.getNameOf(i).split('|')[0],
           mdIndex = idColumn.indexOf(tipName);
         this.tipMetadataRow[i] = mdIndex;
-        for (let c=0; c < columnCount; c++) {
-          const value = metadata.rows[mdIndex][c],
-            counts: FieldTipCount = {};
-          counts[value] = 1;
-          nodeValues[i][c] = {value, counts};
+        const metadataRow = metadata.rows[mdIndex];
+        if (metadataRow) {
+          for (let c=0; c < columnCount; c++) {
+            const value = metadataRow[c],
+              counts: FieldTipCount = {};
+            counts[value] = 1;
+            nodeValues[i][c] = {value, counts};
+          }
+        } else {
+        //   console.debug(`${tipName} note found in metadata (index ${mdIndex})`);
+          missingCount++;
         }
       }
+    }
+    if (missingCount===0) {
+      console.debug(`all tips have matches in the metadata file`);
+    } else {
+      console.debug(`${missingCount} tips in the tree did not have matching ids in the metadata`);
     }
     this.indicesRootToTip = [];
     this.nodeValues = nodeValues;
@@ -112,7 +130,9 @@ export class NodeMetadata {
       getIndexOptions = (index:number, options: string[][])=>{
         const leftIndex = tree.getLeftChildIndexOf(index),
           rightIndex = tree.getRightChildIndexOf(index),
-          withDupes = options[leftIndex].concat(options[rightIndex]);
+          leftOpts = options[leftIndex] || [],
+          rightOpts = options[rightIndex] || [],
+          withDupes = leftOpts.concat(rightOpts);
         return withDupes;
       };
     }
@@ -155,7 +175,7 @@ export class NodeMetadata {
       /* if is tip */
       const index = indicesRootToTip[i],
         mdIndex: number | undefined = tipMetadataRow[index];
-      if (mdIndex !== undefined) {
+      if (mdIndex !== undefined && nodeValues[index][column]) {
         const value = nodeValues[index][column].value;
         options[index] = [value];
       } else {
@@ -204,8 +224,8 @@ export class NodeMetadata {
     }
 
     /* now tally the tips with each metadata value upward from the tips */
-    tipMetadataRow.forEach(tipIndex=>{
-      const value = this.nodeValues[tipIndex][column].value;
+    this.nodeValues.forEach((tipMetadata, tipIndex)=>{
+      const value = tipMetadata[column].value;
       let parent = tree.getParentIndexOf(tipIndex);
       while (parent !== -1) {
         const tally = this.nodeValues[parent][column].counts;
@@ -214,7 +234,6 @@ export class NodeMetadata {
         parent = tree.getParentIndexOf(parent);
       }
     });
-
   }
 
 

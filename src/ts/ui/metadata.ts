@@ -1,4 +1,5 @@
 import { UNDEF } from './common';
+import { NodeMetadata } from './nodemetadata';
 
 type Row = string[];
 type ColCount = [value: string, count: number];
@@ -16,12 +17,12 @@ export class ColumnSummary {
     this.unique = 0;
   }
 
+  initValue(value: string): void {
+    this.values[value] = 0;
+  }
+
   add(value: string): void {
-    if (this.values[value] === undefined) {
-      this.values[value] = 1;
-    } else {
-      this.values[value]++;
-    }
+    this.values[value]++;
   }
 
   setSorted(): void {
@@ -93,14 +94,27 @@ export class Metadata {
     this.header = header;
     this.rows = rows;
     this.columnSummaries = this.header.map(()=>new ColumnSummary());
-    this.summarize();
   }
 
-  summarize(): void {
+  summarize(nodeMetadata: NodeMetadata): void {
+    /*
+    track all the different values in the metadata file…
+    */
     this.rows.forEach(row => {
       row.forEach((value, colNum) => {
-        this.columnSummaries[colNum].add(value);
+        this.columnSummaries[colNum].initValue(value);
       });
+    });
+    /*
+    …but only tally the ones that show up in the tree
+    */
+    nodeMetadata.tipMetadataRow.forEach((metadataRowIndex)=>{
+      const row = this.rows[metadataRowIndex];
+      if (row) {
+        row.forEach((value, colNum) => {
+          this.columnSummaries[colNum].add(value);
+        });
+      }
     });
     this.columnSummaries.forEach(cs=>cs.setSorted());
   }

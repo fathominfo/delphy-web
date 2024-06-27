@@ -135,6 +135,7 @@ export class MccConfig {
   setMetadata(metadata: Metadata, tree: SummaryTree) : void {
     this.metadata = metadata;
     this.nodeMetadata = new NodeMetadata(metadata, tree, tree.getBaseTree(0));
+    this.metadata.summarize(this.nodeMetadata);
     this.updateCallback();
   }
 

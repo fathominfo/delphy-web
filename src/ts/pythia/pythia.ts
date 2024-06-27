@@ -691,7 +691,7 @@ export class Pythia {
   }
 
   getPopulationNodeDistribution(nodeIndices: number[], minDate: number, maxDate: number, summaryTree: SummaryTree): NodeDistributionType {
-    const startTime = Date.now();
+    // const startTime = Date.now();
     const baseSeries: BaseTreeSeriesType = [],
       overlap: OverlapTally[] = [],
       nodeDist: NodeDistributionType = {series: baseSeries, overlap: overlap},
@@ -729,7 +729,7 @@ export class Pythia {
         baseSeries.push(treeDist);
       }
     }
-    console.debug(`getPopulationNodeDistribution               ${(Date.now()-startTime)/1000}s`);
+    // console.debug(`getPopulationNodeDistribution               ${(Date.now()-startTime)/1000}s`);
     return nodeDist;
   }
 
