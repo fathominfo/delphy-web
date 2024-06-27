@@ -716,10 +716,10 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  86432: ($0, $1) => { delphyRunCallback($0, $1); },  
- 86463: ($0) => { delphyRunCallback($0); },  
- 86490: ($0, $1) => { delphyRunCallback($0, $1); },  
- 86521: () => { return (typeof wasmOffsetConverter !== 'undefined'); }
+  86528: ($0, $1) => { delphyRunCallback($0, $1); },  
+ 86559: ($0) => { delphyRunCallback($0); },  
+ 86586: ($0, $1) => { delphyRunCallback($0, $1); },  
+ 86617: () => { return (typeof wasmOffsetConverter !== 'undefined'); }
 };
 function HaveOffsetConverter() { return typeof wasmOffsetConverter !== 'undefined'; }
 
@@ -5722,8 +5722,8 @@ var dynCall_jiji = Module['dynCall_jiji'] = (a0, a1, a2, a3, a4) => (dynCall_jij
 var dynCall_iiiiij = Module['dynCall_iiiiij'] = (a0, a1, a2, a3, a4, a5, a6) => (dynCall_iiiiij = Module['dynCall_iiiiij'] = wasmExports['dynCall_iiiiij'])(a0, a1, a2, a3, a4, a5, a6);
 var dynCall_iiiiijj = Module['dynCall_iiiiijj'] = (a0, a1, a2, a3, a4, a5, a6, a7, a8) => (dynCall_iiiiijj = Module['dynCall_iiiiijj'] = wasmExports['dynCall_iiiiijj'])(a0, a1, a2, a3, a4, a5, a6, a7, a8);
 var dynCall_iiiiiijj = Module['dynCall_iiiiiijj'] = (a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) => (dynCall_iiiiiijj = Module['dynCall_iiiiiijj'] = wasmExports['dynCall_iiiiiijj'])(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-var ___start_em_js = Module['___start_em_js'] = 86578;
-var ___stop_em_js = Module['___stop_em_js'] = 86639;
+var ___start_em_js = Module['___start_em_js'] = 86674;
+var ___stop_em_js = Module['___stop_em_js'] = 86735;
 
 // include: postamble.js
 // === Auto-generated postamble setup entry stuff ===
