@@ -14,6 +14,13 @@ _TO COME_: Whitepaper with overview of key ideas and accuracy+speed benchmarks (
 
 _TO COME_: Preprint with full details and benchmarking (expected: late June 2024)
 
+System Requirements
+-------------------
+Delphy-web includes a precompiled WebAssembly bundle of the [Delphy core](https://github.com/broadinstitute/delphy), so requires no compilation.  An official deployment is hosted by Fathom Information Design [here](https://delphy.fathom.info).  Instructions for running it locally and/or deploying it elsewhere can be found in [INSTALL.md](INSTALL.md).
+
+Delphy-web was developed and is primarily tested under on a Mac (macOS Monterrey 12.7.4 running on an Intel Mac with a 2.4 GHz 8-core Intel Core i9 processor).  It has specifically been tested in Brave 1.66.118 (which in turn builds on Chromium 125.0.6422.147; macOS Monterrey 12.7.4, x86-64), Brave 1.67.116 (which in turn builds on Chromium 126.0.6478.114; Ubuntu 22.04.4 LTS, x86-64), Firefox 126.0.2 (on Ubuntu 22.04.4 LTS, x86-64) and Safari 17.5 (macOS Monterey 12.7.5, x86-64).
+
+
 Credits and Acknowledgements
 ----------------------------
 
