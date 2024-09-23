@@ -5,15 +5,13 @@
 /* eslint-disable prefer-spread */
 /* eslint-disable prefer-rest-params */
 
-// Kick off loading Emscripten very badly modularized shim.  The actual shim code runs after this entire
-// file is processed, and communicates with the outside world via a global object `Module`.
-function loadScript(src: string): void {
-  const s = document.createElement('script');
-  s.src = src;
-  s.type = "text/javascript";                   // <-- this is important
-  document.getElementsByTagName('head')[0].appendChild(s);
-}
-loadScript("./ts/delphy/delphy.js");
+// Emscripten's very badly modularized shim loads *after* this file loads: it's
+// loaded in `index.html` by the tag `<script type="text/javascript"
+// src="./ts/delphy/delphy.js" defer>`.  So this is a good moment to set up the
+// global object `Module` that Emscripten uses to communicate with the outside
+// world, and fill it in with any initial values of settings (e.g.,
+// INITIAL_MEMORY) and callbacks (e.g., onRuntimeInitialized).
+
 // By default, globalThis does not have the properties for 'Module' and
 // 'delphy*'. This would cause the typescript linter to fail.
 // It would be nice to avoid casting globalThis as 'any', but for portability's
