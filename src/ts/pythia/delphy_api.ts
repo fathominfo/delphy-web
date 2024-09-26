@@ -29,8 +29,18 @@ let stringToUTF8OnStack: (str: string) => number = function() {
 let stackAlloc: (size: number) => number = function() {
   return (stackAlloc = globalAny['stackAlloc']).apply(null, arguments);
 }
-let withStackSave: (f: any) => any = function() {
-  return (withStackSave = globalAny['withStackSave']).apply(null, arguments);
+// withStackSave was removed from the Emscripten shim around Apr 2024
+// https://github.com/emscripten-core/emscripten/issues/21763
+let stackSave: () => number = function() {
+  return (stackSave = globalAny['stackSave']).apply(null, arguments);
+}
+let stackRestore: (sp: number) => void = function() {
+  return (stackRestore = globalAny['stackRestore']).apply(null, arguments);
+}
+function withStackSave(f: any): any {
+  const sp = stackSave();
+  try { return f(); }
+  finally { stackRestore(sp); }
 }
 
 // Crude callbacks system
