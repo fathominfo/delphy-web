@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 import {PhyloTree} from '../../pythia/delphy_api';
-import {MU_FACTOR, RunParamConfig, copyDict} from '../../constants';
+import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, RunParamConfig, copyDict} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -78,6 +78,12 @@ export class RunUI extends UIScreen {
   mutationRateInput: HTMLInputElement;
   // apobecFieldset: HTMLFieldSetElement;
   apobecToggle: HTMLInputElement;
+  fixedFinalPopSizeToggle: HTMLInputElement;
+  fixedFinalPopSizeLabel: HTMLLabelElement;
+  fixedFinalPopSizeInput: HTMLInputElement;
+  fixedPopGrowthRateToggle: HTMLInputElement;
+  fixedPopGrowthRateLabel: HTMLLabelElement;
+  fixedPopGrowthRateInput: HTMLInputElement;
 
 
   /* useful when updating the advanced run parameters */
@@ -155,6 +161,12 @@ export class RunUI extends UIScreen {
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
     // this.apobecFieldset = this.div.querySelector(".apobec-fieldset") as HTMLFieldSetElement,
     this.apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
+    this.fixedFinalPopSizeToggle = this.div.querySelector("#fixed-final-pop-size-toggle") as HTMLInputElement,
+    this.fixedFinalPopSizeLabel = this.div.querySelector("#overall-final-pop-size-label") as HTMLLabelElement,
+    this.fixedFinalPopSizeInput = this.div.querySelector("#overall-final-pop-size-input") as HTMLInputElement;
+    this.fixedPopGrowthRateToggle = this.div.querySelector("#fixed-pop-growth-rate-toggle") as HTMLInputElement,
+    this.fixedPopGrowthRateLabel = this.div.querySelector("#overall-pop-growth-rate-label") as HTMLLabelElement,
+    this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
 
     this.disableAnimation = false;
 
@@ -240,7 +252,11 @@ export class RunUI extends UIScreen {
       mutationRate: 1.0,
       apobecEnabled: false,
       siteRateHeterogeneityEnabled: false,
-      mutationRateIsFixed: false
+      mutationRateIsFixed: false,
+      finalPopSizeIsFixed: false,
+      finalPopSize: 3.0, // years
+      popGrowthRateIsFixed: false,
+      popGrowthRate: 0.0  // e-foldings / year
     }
   }
 
@@ -263,13 +279,19 @@ export class RunUI extends UIScreen {
   setParamsFromRun() : void {
     const params = this.runParams,
       pythia = this.sharedState.pythia,
-      currentMu = pythia.getCurrentMu();
+      currentMu = pythia.getCurrentMu(),
+      currentFinalPopSize = pythia.getFinalPopSize(),
+      currentPopGrowthRate = pythia.getPopGrowthRate();
     /* TODO: why is pythia getting a mutation rate of 1 in some cases?  */
     params.stepsPerSample = pythia.stepsPerSample;
     params.apobecEnabled = pythia.getIsApobecEnabled();
     params.siteRateHeterogeneityEnabled = pythia.getSiteRateHeterogeneityEnabled();
     params.mutationRateIsFixed = !pythia.getdMutationRateMovesEnabled();
     params.mutationRate = params.mutationRateIsFixed ? currentMu : UNSET;
+    params.finalPopSizeIsFixed = !pythia.getFinalPopSizeMovesEnabled();
+    params.finalPopSize = params.finalPopSizeIsFixed ? currentFinalPopSize : UNSET;
+    params.popGrowthRateIsFixed = !pythia.getPopGrowthRateMovesEnabled();
+    params.popGrowthRate = params.popGrowthRateIsFixed ? currentPopGrowthRate : UNSET;
     const currentStepSetting = Math.round(Math.log(params.stepsPerSample) / Math.log(10));
 
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
@@ -280,14 +302,21 @@ export class RunUI extends UIScreen {
     this.siteHeterogeneityToggle.checked = params.siteRateHeterogeneityEnabled;
     this.fixedRateToggle.checked = params.mutationRateIsFixed;
     this.apobecToggle.checked = params.apobecEnabled;
+    this.fixedFinalPopSizeToggle.checked = params.finalPopSizeIsFixed;
+    this.fixedPopGrowthRateToggle.checked = params.popGrowthRateIsFixed;
 
-    // set mutation rate values
+    // set field values
     const muFixed = (currentMu * MU_FACTOR).toFixed(2);
     this.mutationRateInput.value = `${muFixed}`;
+    const finalPopSizeFixed = (currentFinalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2);
+    this.fixedFinalPopSizeInput.value = `${finalPopSizeFixed}`;
+    const popGrowthRateFixed = (currentPopGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
+    this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
 
     // toggle canvases
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
     this.toggleHistCanvasVisibility(this.muStarCanvas, this.isApobecEnabled);
+    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed);
 
     // disable fieldsets
     // this.mutationRateFieldset.disabled = params.apobecEnabled;
@@ -532,6 +561,16 @@ export class RunUI extends UIScreen {
       parseFloat(formData.overallMutationRate as string) : this.runParams.mutationRate;
     newParams = this.fixMutationRate(newParams, isFixedMutationRate, overallMutationRate);
 
+    const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
+    const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
+      parseFloat(formData.overallFinalPopSize as string) : this.runParams.finalPopSize;
+    newParams = this.fixFinalPopSize(newParams, isFixedFinalPopSize, overallFinalPopSize);
+
+    const isFixedPopGrowthRate = formData.isFixedPopGrowthRate === "on";
+    const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
+      parseFloat(formData.overallPopGrowthRate as string) : this.runParams.popGrowthRate;
+    newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
+
     const isApobec = formData.isApobec === "on";
     newParams = this.setApobec(newParams, isApobec);
 
@@ -575,6 +614,10 @@ export class RunUI extends UIScreen {
     if (this.fixedRateToggle.checked !== this.runParams.mutationRateIsFixed) return true;
     const currentMu = this.sharedState.pythia.getCurrentMu();
     if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (currentMu * MU_FACTOR).toFixed(2)) return true;
+    const currentFinalPopSize = this.sharedState.pythia.getFinalPopSize();
+    if (parseFloat(this.fixedFinalPopSizeInput.value).toFixed(2) !== (currentFinalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2)) return true;
+    const currentPopGrowthRate = this.sharedState.pythia.getPopGrowthRate();
+    if (parseFloat(this.fixedPopGrowthRateInput.value).toFixed(2) !== (currentPopGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2)) return true;
     if (this.apobecToggle.checked !== this.runParams.apobecEnabled) return true;
     return false;
   }
@@ -596,6 +639,20 @@ export class RunUI extends UIScreen {
     const newParams = copyDict(runParams);
     newParams.mutationRateIsFixed = isFixed;
     newParams.mutationRate = rate / MU_FACTOR;
+    return newParams;
+  }
+
+  private fixFinalPopSize(runParams: RunParamConfig, isFixed: boolean, finalPopSize: number) : RunParamConfig {
+    const newParams = copyDict(runParams);
+    newParams.finalPopSizeIsFixed = isFixed;
+    newParams.finalPopSize = finalPopSize / FINAL_POP_SIZE_FACTOR;
+    return newParams;
+  }
+
+  private fixPopGrowthRate(runParams: RunParamConfig, isFixed: boolean, rate: number) : RunParamConfig {
+    const newParams = copyDict(runParams);
+    newParams.popGrowthRateIsFixed = isFixed;
+    newParams.popGrowthRate = rate / POP_GROWTH_RATE_FACTOR;
     return newParams;
   }
 

@@ -489,6 +489,14 @@ export class Pythia {
     if (runParams.mutationRate > 0) {
       run.setMu(runParams.mutationRate);
     }
+    this.setFinalPopSizeMovesEnabled(!runParams.finalPopSizeIsFixed);
+    if (runParams.finalPopSizeIsFixed) {
+      run.setPopN0(runParams.finalPopSize);
+    }
+    this.setPopGrowthRateMovesEnabled(!runParams.popGrowthRateIsFixed);
+    if (runParams.popGrowthRateIsFixed) {
+      run.setPopG(runParams.popGrowthRate);
+    }
   }
 
 
@@ -519,6 +527,13 @@ export class Pythia {
     this.run.setMuMoveEnabled(theyAre);
   }
 
+  getCurrentMu() : number {
+    if (!this.run) {
+      throw new Error( 'no run from which to get mu');
+    }
+    return this.run.getMu();
+  }
+
   setMutationRate(rate: number) : void {
     if (!this.run) {
       throw new Error( 'no run on which to set mutation rate');
@@ -534,6 +549,64 @@ export class Pythia {
     return !!this.run.isMuMoveEnabled();
   }
 
+  setFinalPopSizeMovesEnabled(theyAre: boolean) : void {
+    if (!this.run) {
+      throw new Error( 'no run on which to set final pop size move enabled');
+    }
+    this.run.setFinalPopSizeMoveEnabled(theyAre);
+  }
+
+  getFinalPopSize() : number {
+    if (!this.run) {
+      throw new Error( 'no run from which to get final pop size');
+    }
+    return this.run.getPopN0();
+  }
+
+  setFinalPopSize(finalPopSize: number) : void {
+    if (!this.run) {
+      throw new Error( 'no run on which to set final pop size');
+    }
+    this.run.setPopN0(finalPopSize);
+  }
+
+  getFinalPopSizeMovesEnabled() : boolean {
+    if (!this.run) {
+      throw new Error( 'no run from which to get final pop size move enabled');
+    }
+    /* run.isFinalPopSizeMoveEnabled() returns a truthy integer 1, so convert that to an actual boolean */
+    return !!this.run.isFinalPopSizeMoveEnabled();
+  }
+
+  setPopGrowthRateMovesEnabled(theyAre: boolean) : void {
+    if (!this.run) {
+      throw new Error( 'no run on which to set pop growth rate move enabled');
+    }
+    this.run.setPopGrowthRateMoveEnabled(theyAre);
+  }
+
+  getPopGrowthRate() : number {
+    if (!this.run) {
+      throw new Error( 'no run from which to get pop growth rate');
+    }
+    return this.run.getPopG();
+  }
+
+  setPopGrowthRate(rate: number) : void {
+    if (!this.run) {
+      throw new Error( 'no run on which to set pop growth rate');
+    }
+    this.run.setPopG(rate);
+  }
+
+  getPopGrowthRateMovesEnabled() : boolean {
+    if (!this.run) {
+      throw new Error( 'no run from which to get pop growth rate move enabled');
+    }
+    /* run.isPopGrowthRateMoveEnabled() returns a truthy integer 1, so convert that to an actual boolean */
+    return !!this.run.isPopGrowthRateMoveEnabled();
+  }
+
   setSiteRateHeterogeneityEnabled(itIs: boolean) : void {
     if (!this.run) {
       throw new Error( 'no run on which to set alpha moves enabled');
@@ -543,13 +616,6 @@ export class Pythia {
 
   getSiteRateHeterogeneityEnabled() : boolean {
     return !!(this.run?.isAlphaMoveEnabled());
-  }
-
-  getCurrentMu() : number {
-    if (!this.run) {
-      throw new Error( 'no run from which to get mu');
-    }
-    return this.run.getMu();
   }
 
 

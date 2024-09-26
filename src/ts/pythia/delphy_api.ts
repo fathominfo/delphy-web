@@ -491,6 +491,10 @@ export class Delphy {
     run_set_repartitioning_enabled: (ctx: DelphyContextPtr, run: RunPtr, b: boolean) => void,
     run_is_alpha_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
     run_set_alpha_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_final_pop_size_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_final_pop_size_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_pop_growth_rate_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_pop_growth_rate_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
     run_get_params_to_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, fb: FbHolderPtr) => void,
     run_set_params_from_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, paramsFb: CharPtr) => void,
     run_export_beast_input: (ctx: DelphyContextPtr, run: RunPtr) => StringPtr,
@@ -692,6 +696,10 @@ export class Delphy {
       run_set_repartitioning_enabled: Module['_delphy_run_set_repartitioning_enabled'],
       run_is_alpha_move_enabled: Module['_delphy_run_is_alpha_move_enabled'],
       run_set_alpha_move_enabled: Module['_delphy_run_set_alpha_move_enabled'],
+      run_is_final_pop_size_move_enabled: Module['_delphy_run_is_final_pop_size_move_enabled'],
+      run_set_final_pop_size_move_enabled: Module['_delphy_run_set_final_pop_size_move_enabled'],
+      run_is_pop_growth_rate_move_enabled: Module['_delphy_run_is_pop_growth_rate_move_enabled'],
+      run_set_pop_growth_rate_move_enabled: Module['_delphy_run_set_pop_growth_rate_move_enabled'],
       run_get_params_to_flatbuffer: Module['_delphy_run_get_params_to_flatbuffer'],
       run_set_params_from_flatbuffer: Module['_delphy_run_set_params_from_flatbuffer'],
       run_export_beast_input: Module['_delphy_run_export_beast_input'],
@@ -1224,6 +1232,22 @@ export class Run {
 
   setAlphaMoveEnabled(enabled: boolean): void {
     Delphy.delphyCoreRaw.run_set_alpha_move_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
+  isFinalPopSizeMoveEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_final_pop_size_move_enabled(this.delphy.ctx, this.run);
+  }
+
+  setFinalPopSizeMoveEnabled(enabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_final_pop_size_move_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
+  isPopGrowthRateMoveEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_pop_growth_rate_move_enabled(this.delphy.ctx, this.run);
+  }
+
+  setPopGrowthRateMoveEnabled(enabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_pop_growth_rate_move_enabled(this.delphy.ctx, this.run, enabled);
   }
 
   getParamsToFlatbuffer(): ArrayBuffer {
