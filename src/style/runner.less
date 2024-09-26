@@ -361,13 +361,15 @@ input:checked + #run-input--label {
 
   p {
     margin: 0;
+    &.unit { display: inline-block;}
   }
 
   fieldset {
     all: unset;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
+    margin-bottom: 12px;
 
     .disabled-text {
       display: none;
@@ -379,6 +381,11 @@ input:checked + #run-input--label {
       .disabled-text {
         display: block;
       }
+    }
+
+    .inline-unit {
+      display: flex;
+      gap: 8px;
     }
   }
 
@@ -395,6 +402,14 @@ input:checked + #run-input--label {
     flex-direction: column;
     gap: 10px;
     align-items: flex-start;
+    opacity: 0.3;
+    pointer-events: none;
+    margin-bottom: 8px;
+  }
+
+  .input-container:has(>input:checked) + .related-inputs {
+    opacity: 1;
+    pointer-events: all;
   }
 
   .input-container {

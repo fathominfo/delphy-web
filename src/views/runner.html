@@ -124,51 +124,47 @@
             <div class="disabled-text">
               <p>Delphy does not support setting the mutation rate while <span class="small-caps">APOBEC</span> context detection is enabled.</p>
             </div>
-            <div>
-              <div class="input-container">
-                <input type="checkbox" id="site-rate-heterogeneity-toggle" name="isSiteHeterogeneity" autocomplete="off">
-                <label for="site-rate-heterogeneity-toggle">Enable site rate heterogeneity</label>
-              </div>
+            <div class="input-container">
+              <input type="checkbox" id="site-rate-heterogeneity-toggle" name="isSiteHeterogeneity" autocomplete="off">
+              <label for="site-rate-heterogeneity-toggle">Enable site rate heterogeneity</label>
             </div>
-            <div>
-              <div class="input-container">
-                <input type="checkbox" id="fixed-mutation-rate-toggle" name="isFixedMutationRate" autocomplete="off">
-                <label for="fixed-mutation-rate-toggle">Fix overall mutation rate</label>
-              </div>
+            <div class="input-container">
+              <input type="checkbox" id="fixed-mutation-rate-toggle" name="isFixedMutationRate" autocomplete="off">
+              <label for="fixed-mutation-rate-toggle">Fix overall mutation rate</label>
             </div>
-            <div>
-              <label id="overall-mutation-rate-label" class="related-inputs">
-                <p>Set initial mutation rate to</p>
+            <label id="overall-mutation-rate-label" class="related-inputs">
+              <p>Set initial mutation rate to</p>
+              <div class="inline-unit">
                 <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
-                <p>&times; 10<sup>&minus;5</sup> mutations / site / year</p>
-              </label>
-            </div>
-            <div>
-              <div class="input-container">
-                <input type="checkbox" id="fixed-final-pop-size-toggle" name="isFixedFinalPopSize" autocomplete="off">
-                <label for="fixed-final-pop-size-toggle">Fix effective population size at time of latest tip</label>
+                <p">&times; 10<sup>&minus;5</sup> mutations / site / year</p>
               </div>
+            </label>
+          </fieldset>
+          <fieldset class="population-model-fieldset">
+            <legend><h3>Population model</h3></legend>
+            <div class="input-container">
+              <input type="checkbox" id="fixed-final-pop-size-toggle" name="isFixedFinalPopSize" autocomplete="off">
+              <label for="fixed-final-pop-size-toggle">Fix effective population size at time of latest tip</label>
             </div>
-            <div>
-              <label id="overall-final-pop-size-label" class="related-inputs">
-                <p>Set initial effective population size at time of latest tip</p>
+            <label id="overall-final-pop-size-label" class="related-inputs">
+              <p>Set initial effective population size at time of latest tip</p>
+              <div class="inline-unit">
                 <input type="number" id="overall-final-pop-size-input" value="3.00" step="0.01" min="0.00" name="overallFinalPopSize" autocomplete="off" />
                 <p> years</p>
-              </label>
-            </div>
-            <div>
-              <div class="input-container">
-                <input type="checkbox" id="fixed-pop-growth-rate-toggle" name="isFixedPopGrowthRate" autocomplete="off">
-                <label for="fixed-pop-growth-rate-toggle">Fix effective population size growth rate</label>
               </div>
+            </label>
+            <div class="input-container">
+              <input type="checkbox" id="fixed-pop-growth-rate-toggle" name="isFixedPopGrowthRate" autocomplete="off">
+              <label for="fixed-pop-growth-rate-toggle">Fix effective population size growth rate</label>
             </div>
-            <div>
-              <label id="overall-pop-growth-rate-label" class="related-inputs">
-                <p>Set initial effective population size growth rate</p>
+            <label id="overall-pop-growth-rate-label" class="related-inputs">
+              <p>Set initial effective population size growth rate to</p>
+              <div class="inline-unit">
                 <input type="number" id="overall-pop-growth-rate-input" value="0.00" step="0.01" name="overallPopGrowthRate" autocomplete="off" />
                 <p> e-foldings / year</p>
-              </label>
-            </div>
+              </div>
+            </label>
+        
           </fieldset>
         </div>
         <div class="runner--advanced--section">
