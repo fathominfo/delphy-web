@@ -518,22 +518,31 @@ export class CustomizeUI extends MccUI {
 
   parseMetadataFile(file: File) {
     let separator = "";
-    if (file.type === "text/tab-separated-values") {
+    if (file.type === "text/tab-separated-values" || file.name.endsWith(".tsv")) {
       separator = "\t";
-    } else if (file.type === "text/csv") {
+    } else if (file.type === "text/csv" || file.name.endsWith(".csv")) {
       separator = ",";
-    } else {
-      console.error(`uploaded metadata file has unsupported MIME type "${file.type}"`);
-      return;
     }
 
     const url = URL.createObjectURL(file);
     fetch(url)
       .then(res => res.text())
       .then(text => {
+        if ("" === separator) {
+          /* take a peek at the first line and guess */
+          const nl = text.indexOf('\n');
+          const first = text.substring(0, nl);
+          const commaCount = first.split(',').length - 1;
+          const tabCount = first.split('\t').length - 1;
+          separator = commaCount > tabCount ? ',' : '\t';
+        }
         const metadata = new Metadata(file.name, text, separator);
         this.sharedState.mccConfig.setMetadata(metadata, this.mccTreeCanvas.tree as SummaryTree);
         this.endMetadataLoading();
+      })
+      .catch(err=>{
+        console.log(err);
+        alert("error loading metadata file. Please check that it is formatted correctly.");
       });
   }
 
