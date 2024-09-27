@@ -627,6 +627,8 @@ export class RunUI extends UIScreen {
     const currentPopGrowthRate = this.sharedState.pythia.getPopGrowthRate();
     if (parseFloat(this.fixedPopGrowthRateInput.value).toFixed(2) !== (currentPopGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2)) return true;
     if (this.apobecToggle.checked !== this.runParams.apobecEnabled) return true;
+    if (this.fixedFinalPopSizeToggle.checked !== this.runParams.finalPopSizeIsFixed) return true;
+    if (this.fixedPopGrowthRateToggle.checked !== this.runParams.popGrowthRateIsFixed) return true;
     return false;
   }
 
