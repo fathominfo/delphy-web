@@ -542,7 +542,7 @@ export class CustomizeUI extends MccUI {
       })
       .catch(err=>{
         console.log(err);
-        alert("error loading metadata file. Please check that it is formatted correctly.");
+        alert("error loading metadata file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
       });
   }
 
