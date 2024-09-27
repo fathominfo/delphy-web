@@ -10,8 +10,13 @@ let runCallback = ()=>{console.debug('runCallback not assigned')},
   configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)},
   errCallback = (msg:string)=>{
     console.log(msg);
-    alert(msg);
-    info.classList.remove("hidden")
+    requestAnimationFrame(()=>{
+      info.classList.remove("hidden");
+      uploadDiv.classList.remove('parsing');
+      uploadDiv.classList.remove('loading');
+      uploadDiv.classList.add('error');
+      setTimeout(()=>alert(msg), 0);
+    });
   }
 
 const maybeUploadDiv = document.querySelector("#uploader");

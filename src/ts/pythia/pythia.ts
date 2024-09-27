@@ -129,7 +129,7 @@ export class Pythia {
           .then(()=>this.runReadyCallback())
           .catch((err)=>{
             console.log(err);
-            errCallback(`Error loading the fasta file. Please check that it formatted correctly.`)
+            errCallback(`Error loading the fasta file. Please check that it is formatted correctly.`)
           });
       });
   }
