@@ -214,9 +214,15 @@ export class RunUI extends UIScreen {
     // this.siteHeterogeneityToggle.addEventListener("change", () => {
     //   this.apobecFieldset.disabled = this.siteHeterogeneityToggle.checked;
     // });
-    // this.fixedRateToggle.addEventListener("change", () => {
-    //   this.apobecFieldset.disabled = this.fixedRateToggle.checked;
-    // });
+    this.fixedRateToggle.addEventListener("change", () => {
+      this.mutationRateInput.disabled = !this.fixedRateToggle.checked;
+    });
+    this.fixedFinalPopSizeToggle.addEventListener("change", () => {
+      this.fixedFinalPopSizeInput.disabled = !this.fixedFinalPopSizeToggle.checked;
+    });
+    this.fixedPopGrowthRateToggle.addEventListener("change", () => {
+      this.fixedPopGrowthRateInput.disabled = !this.fixedPopGrowthRateToggle.checked;
+    });
     // this.apobecToggle.addEventListener("change", ()=>{
     //   this.mutationRateFieldset.disabled = this.apobecToggle.checked;
     // });
@@ -304,7 +310,9 @@ export class RunUI extends UIScreen {
     this.apobecToggle.checked = params.apobecEnabled;
     this.fixedFinalPopSizeToggle.checked = params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateToggle.checked = params.popGrowthRateIsFixed;
-
+    this.mutationRateInput.disabled = !params.mutationRateIsFixed;
+    this.fixedFinalPopSizeInput.disabled = !params.finalPopSizeIsFixed;
+    this.fixedPopGrowthRateInput.disabled = !params.popGrowthRateIsFixed;
     // set field values
     const muFixed = (currentMu * MU_FACTOR).toFixed(2);
     this.mutationRateInput.value = `${muFixed}`;
