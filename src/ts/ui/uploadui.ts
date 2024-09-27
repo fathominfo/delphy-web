@@ -7,7 +7,12 @@ const DEMO_PATH = './ma_sars_cov_2.fasta'
 let pythia : Pythia;
 
 let runCallback = ()=>{console.debug('runCallback not assigned')},
-  configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)};
+  configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)},
+  errCallback = (msg:string)=>{
+    console.log(msg);
+    alert(msg);
+    info.classList.remove("hidden")
+  }
 
 const maybeUploadDiv = document.querySelector("#uploader");
 if (!maybeUploadDiv) {
@@ -56,7 +61,7 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
       .then(fastaBytesJs => {
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
-        pythia.initRunFromFasta(fastaBytesJs, runCallback);
+        pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
       })
   });
 
@@ -161,7 +166,7 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
           const fastaBytesJs = event.target?.result as ArrayBuffer;
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback);
+          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
         });
         reader.readAsArrayBuffer(file);
       } else {
@@ -175,7 +180,7 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
-              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback);
+              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
             });
             reader.readAsArrayBuffer(file);
           } else {

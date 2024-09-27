@@ -115,7 +115,7 @@ export class Pythia {
     this.runReadyCallback = ()=>{return;};
   }
 
-  initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void):void {
+  initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     console.log("Loading FASTA file...");
     const startTime = Date.now();
     this.runReadyCallback = runReadyCallback;
@@ -125,7 +125,12 @@ export class Pythia {
         console.log("Creating run", phyloTree);
         this.sourceTree = phyloTree;
         console.log(`fasta parsed and initial tree generated in ${Date.now() - startTime}ms`);
-        this.instantiateRun().then(()=>this.runReadyCallback());
+        this.instantiateRun()
+          .then(()=>this.runReadyCallback())
+          .catch((err)=>{
+            console.log(err);
+            errCallback(`Error loading the fasta file. Please check that it formatted correctly.`)
+          });
       });
   }
 

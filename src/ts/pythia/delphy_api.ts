@@ -166,6 +166,10 @@ export class Delphy {
 
     return Delphy.delphyCoreRaw.parse_fasta_into_initial_tree_async(this.ctx, fastaBytesWasm, numFastaBytes)
       .then(phyloTreePtr => new PhyloTree(this, phyloTreePtr))
+      .catch(err=>{
+        console.log(`caught error during pares`, err);
+        return new PhyloTree(this, 0);
+      })
       .finally(() => Delphy.delphyCoreRaw.free(fastaBytesWasm));
   }
 
