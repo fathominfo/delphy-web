@@ -7,6 +7,8 @@ export const RANDOM_SEED = 0; // generate a new unknown seed
 export const MAX_TREE_SNAPSHOTS = 50;
 export const GENOME_LENGTH = 29891;
 export const MU_FACTOR = 365 * 1e5;
+export const FINAL_POP_SIZE_FACTOR = 1e0 / 365.0;
+export const POP_GROWTH_RATE_FACTOR = 365 * 1e0;
 
 
 export type TipsByNodeIndex = number[][];
@@ -158,7 +160,11 @@ export type RunParamConfig = {
   mutationRate: number,
   apobecEnabled: boolean,
   siteRateHeterogeneityEnabled: boolean,
-  mutationRateIsFixed: boolean
+  mutationRateIsFixed: boolean,
+  finalPopSizeIsFixed: boolean,
+  finalPopSize: number,
+  popGrowthRateIsFixed: boolean,
+  popGrowthRate: number
 };
 
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */
