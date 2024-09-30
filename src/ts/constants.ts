@@ -44,6 +44,15 @@ export const GENE_POSITIONS: {[mutation_string: string]: geneProp} = {
 const NUC_LOOKUP:string[] = [];
 const AMBI_NUC_LOOKUP :string[] = [];
 
+export const STAGES = {
+  "initialization" : 0,
+  "selecting" : 1,
+  "loading" : 2,
+  "parsing" : 3,
+  "loaded": 4
+};
+
+
 
 {
 
