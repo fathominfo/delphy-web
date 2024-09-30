@@ -9,7 +9,7 @@ const STAGE_LABELS = [
 ];
 let stage = STAGES.initialization;
 
-let showFormatCallback:()=>void = ()=>{};
+let showFormatCallback:()=>void = ()=>{console.debug("errors.showFormatCallback has not been assigned")};
 
 export const setStage = (newStage:number)=>{
   stage = newStage;
