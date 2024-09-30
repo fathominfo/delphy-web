@@ -16,17 +16,17 @@ setShowFormat(showFormatHints);
 
 
 let runCallback = ()=>{console.debug('runCallback not assigned')},
-  configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)},
-  errCallback = (msg:string)=>{
-    console.log(msg);
-    requestAnimationFrame(()=>{
-      showFormatHints()
-      uploadDiv.classList.remove('parsing');
-      uploadDiv.classList.remove('loading');
-      uploadDiv.classList.add('error');
-      setTimeout(()=>alert(msg), 0);
-    });
-  }
+  configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)};
+const errCallback = (msg:string)=>{
+  console.log(msg);
+  requestAnimationFrame(()=>{
+    showFormatHints()
+    uploadDiv.classList.remove('parsing');
+    uploadDiv.classList.remove('loading');
+    uploadDiv.classList.add('error');
+    setTimeout(()=>alert(msg), 0);
+  });
+}
 
 const maybeUploadDiv = document.querySelector("#uploader");
 if (!maybeUploadDiv) {
