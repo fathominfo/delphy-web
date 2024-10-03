@@ -12,6 +12,7 @@ import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
 import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
+import { BurninPrompt } from './burninprompt';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -55,6 +56,8 @@ export class RunUI extends UIScreen {
   private timelineIndices:DateLabel[];
   private mccTimelineIndices:DateLabel[];
   private baseTree: PhyloTree | null;
+
+  private burninPrompt: BurninPrompt;
 
 
 
@@ -167,6 +170,8 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateToggle = this.div.querySelector("#fixed-pop-growth-rate-toggle") as HTMLInputElement,
     this.fixedPopGrowthRateLabel = this.div.querySelector("#overall-pop-growth-rate-label") as HTMLLabelElement,
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
+
+    this.burninPrompt = new BurninPrompt();
 
     this.disableAnimation = false;
 
@@ -432,14 +437,23 @@ export class RunUI extends UIScreen {
         sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
         {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
       this.treeScrubber.setData(last, kneeIndex, mccIndex);
+
+      const muud = muHist.map(n=>n*MU_FACTOR);
+      const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
+      const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
+      const serieses = [logPosteriorHist, muud,
+        totalLengthYear, numMutationsHist, popHistGrowth];
       this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      this.muCanvas.setData(muHist.map(n=>n*MU_FACTOR), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       if (this.isApobecEnabled) {
-        this.muStarCanvas.setData(muStarHist.map(n=>n*MU_FACTOR), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+        const muudStar = muStarHist.map(n=>n*MU_FACTOR);
+        this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+        serieses.push(muudStar);
       }
-      this.TCanvas.setData(totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      this.popGrowthCanvas.setData(popGHist.map(g=>POP_GROWTH_FACTOR/g), kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      this.burninPrompt.evalAllSeries(serieses);
       this.requestDraw();
       // console.log('mu', this.pythia.getCurrentMu(), this.pythia.getdMutationRateMovesEnabled());
       if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
