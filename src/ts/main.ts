@@ -9,6 +9,9 @@ import { CustomizeUI } from './ui/customize/customizeui';
 import { Screens, NavigateFunctionType } from './ui/common';
 import { SharedState } from './sharedstate';
 import { ConfigExport } from './ui/mccconfig';
+import { initErrors, setStage } from './errors';
+import { STAGES } from './constants';
+
 
 
 function onReady(p:Pythia):void {
@@ -93,12 +96,15 @@ function onReady(p:Pythia):void {
     sharedState.importConfig(config);
   };
   bindUpload(p, runCallback, configCallback);
+  setStage(STAGES.selecting);
   const loc = window.location;
   if (loc.search.length > 1) {
     const dataUrl = `${loc.origin}${loc.pathname}${loc.search.substring(1)}`;
     loadNow(dataUrl);
   }
 }
+
+initErrors();
 
 setReadyCallback(onReady);
 
@@ -123,3 +129,5 @@ const loadListener = ()=>{
     });
 }
 document.addEventListener('DOMContentLoaded', loadListener);
+
+

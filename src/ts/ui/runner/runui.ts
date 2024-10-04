@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 import {PhyloTree} from '../../pythia/delphy_api';
-import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, RunParamConfig, copyDict} from '../../constants';
+import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, RunParamConfig, copyDict, STAGES} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -12,6 +12,7 @@ import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
 import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
+import { setStage } from '../../errors';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -271,6 +272,7 @@ export class RunUI extends UIScreen {
 
   activate():void {
     super.activate();
+    setStage(STAGES.loaded);
     if (this.sharedState.hideBurnIn) {
       this.hideBurnIn = this.sharedState.hideBurnIn;
       this.burnInToggle.checked = this.sharedState.hideBurnIn;
