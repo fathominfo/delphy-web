@@ -1,4 +1,5 @@
 
+const ACCEPTABLE_RANGE_IN_STDDEV = 2;
 
 const MIN_LENGTH = 10;
 
@@ -19,7 +20,7 @@ export class BurninPrompt {
       const stdDev = Math.sqrt(sumDeltaSq/secondHalf.length);
       for (let i = midpoint - 1; i >= 0; i--) {
         const delta = Math.abs(series[i] - avg);
-        if (delta > stdDev*3) {
+        if (delta > stdDev * ACCEPTABLE_RANGE_IN_STDDEV) {
           break;
         }
         index = i;

@@ -49,6 +49,7 @@ export class RunUI extends UIScreen {
   private histCanvases: HistCanvas[];
 
   private credibilityInput: BlockSlider;
+  private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
   private hideBurnIn: boolean;
   private minDate:SoftFloat;
@@ -92,6 +93,7 @@ export class RunUI extends UIScreen {
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
 
+  kneeHandler : kneeListenerType;
 
 
   constructor(sharedState: SharedState, divSelector: string) {
@@ -99,9 +101,12 @@ export class RunUI extends UIScreen {
     const DEBOUNCE_TIME = 300; // ms
     let lastRequestedBurnInPct = -1;
 
-    const kneeHandler: kneeListenerType = (pct:number)=>{
+    this.kneeHandler = (pct:number)=>{
       this.burnInToggle.disabled = pct <= 0;
       if (this.pythia) {
+        if (pct > 0 && this.pythia.kneeIndex === 0) {
+          requestAnimationFrame(()=>this.burnInWrapper.classList.remove("unset"));
+        }
         this.pythia.setKneeIndexByPct(pct);
         lastRequestedBurnInPct = pct;
         /* debounce the requests for the mcc */
@@ -127,18 +132,19 @@ export class RunUI extends UIScreen {
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
-    this.burnInToggle = document.querySelector("#burn-in-toggle") as HTMLInputElement;
+    this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
+    this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
     const stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
     const prevStepPower = stepSelector.value;
     this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
 
-    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', kneeHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', kneeHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", kneeHandler);
-    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", kneeHandler);
-    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', kneeHandler);
-    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', kneeHandler);
+    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', this.kneeHandler);
+    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', this.kneeHandler);
+    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", this.kneeHandler);
+    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", this.kneeHandler);
+    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', this.kneeHandler);
+    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', this.kneeHandler);
     this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas, this.popGrowthCanvas];
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
@@ -453,7 +459,16 @@ export class RunUI extends UIScreen {
       this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      this.burninPrompt.evalAllSeries(serieses);
+
+      if (this.pythia && this.pythia.kneeIndex <= 0) {
+        const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
+        if (candidateIndex > 0) {
+          /* calculate the pct */
+          const pct = 1.0 * candidateIndex / last;
+          this.kneeHandler(pct);
+          this.announceAutoKnee(candidateIndex, pct);
+        }
+      }
       this.requestDraw();
       // console.log('mu', this.pythia.getCurrentMu(), this.pythia.getdMutationRateMovesEnabled());
       if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
@@ -466,7 +481,6 @@ export class RunUI extends UIScreen {
       }
     }
   }
-
 
   private requestDraw():void {
     requestAnimationFrame(()=>this.draw());
@@ -510,6 +524,9 @@ export class RunUI extends UIScreen {
       let stepCountPlural = 's';
       if (stepCount === 1) {
         stepCountPlural = '';
+      }
+      if (treeCount === 1) {
+        this.burnInWrapper.classList.remove("pre");
       }
       this.stepCountPluralText.innerHTML = stepCountPlural;
 
@@ -685,6 +702,11 @@ export class RunUI extends UIScreen {
     newParams.siteRateHeterogeneityEnabled = enabled;
     newParams.mutationRate = rate / MU_FACTOR;
     return newParams;
+  }
+
+
+  private announceAutoKnee(candidateIndex: number, pct: number) : void {
+    console.log(`setting the knee at ${candidateIndex} ${pct* 100}%`);
   }
 
 
