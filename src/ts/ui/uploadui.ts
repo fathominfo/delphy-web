@@ -1,3 +1,5 @@
+import { STAGES } from '../constants';
+import { setShowFormat, setStage } from '../errors';
 import {Pythia} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
 
@@ -6,8 +8,25 @@ const DEMO_PATH = './ma_sars_cov_2.fasta'
 
 let pythia : Pythia;
 
+const showFormatHints = ()=>{
+  info.classList.remove("hidden");
+}
+setShowFormat(showFormatHints);
+
+
+
 let runCallback = ()=>{console.debug('runCallback not assigned')},
   configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)};
+const errCallback = (msg:string)=>{
+  console.log(msg);
+  requestAnimationFrame(()=>{
+    showFormatHints()
+    uploadDiv.classList.remove('parsing');
+    uploadDiv.classList.remove('loading');
+    uploadDiv.classList.add('error');
+    setTimeout(()=>alert(msg), 0);
+  });
+}
 
 const maybeUploadDiv = document.querySelector("#uploader");
 if (!maybeUploadDiv) {
@@ -40,8 +59,10 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
   document.body.addEventListener("dragover", (event:DragEvent)=>handleDrag(event));
   document.body.addEventListener("dragleave", () => handleDragLeave());
   document.body.addEventListener("drop", (event:DragEvent)=>{
+    setStage(STAGES.loading);
     uploadDiv.classList.add('loading');
     handleFileUpload(event).then(()=>{
+      setStage(STAGES.parsing);
       uploadDiv.classList.remove('loading');
       uploadDiv.classList.add('parsing');
       // console.log(item);
@@ -50,13 +71,15 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
     });
   });
   document.querySelector("#uploader--demo-button")?.addEventListener("click", ()=>{
+    setStage(STAGES.loading);
     uploadDiv.classList.add('loading');
     fetch(DEMO_PATH)
       .then(r => r.arrayBuffer())
       .then(fastaBytesJs => {
+        setStage(STAGES.parsing);
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
-        pythia.initRunFromFasta(fastaBytesJs, runCallback);
+        pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
       })
   });
 
@@ -72,6 +95,7 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
   if (fileInput) {
     fileInput?.addEventListener("change", ()=>{
       if (fileInput.files) {
+        setStage(STAGES.loading);
         uploadDiv.classList.add('loading');
         checkFiles(fileInput.files);
       }
@@ -85,11 +109,13 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
 
 const loadNow = (url:string)=>{
   console.log(`fetching from ${url}`);
+  setStage(STAGES.loading);
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
   fetch(url)
     .then(r => r.blob())
     .then(blob => {
+      setStage(STAGES.parsing);
       uploadDiv.classList.remove('loading');
       uploadDiv.classList.add('parsing');
       const fname = url.split('/').pop() || '';
@@ -128,6 +154,7 @@ const handleFileUpload = (event: DragEvent)=>{
       event.preventDefault();
       event.stopPropagation();
       uploadDiv.classList.add('loading');
+      setStage(STAGES.loading);
       const files = event.dataTransfer.files;
       checkFiles(files);
     }
@@ -145,6 +172,7 @@ const checkFiles = (files: File[] | FileList)=>{
       if (extension === 'dphy') {
         /* we are loading a saved run */
         reader.addEventListener('load', event=>{
+          setStage(STAGES.parsing);
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
           const bytesJs = event.target?.result;
@@ -158,10 +186,11 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.readAsArrayBuffer(file);
       } else if (extension === 'fasta' || extension === 'fa') {
         reader.addEventListener('load', event=>{
+          setStage(STAGES.parsing);
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
           const fastaBytesJs = event.target?.result as ArrayBuffer;
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback);
+          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
         });
         reader.readAsArrayBuffer(file);
       } else {
@@ -172,10 +201,11 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.remove('loading');
           // do we have a fasta file? this check is simplistic:
           if (text[0] === '>') {
+            setStage(STAGES.parsing);
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
-              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback);
+              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
             });
             reader.readAsArrayBuffer(file);
           } else {
@@ -183,6 +213,7 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.remove('loading');
             uploadDiv.classList.remove('parsing');
             uploadDiv.classList.remove('direct-loading');
+            setStage(STAGES.initialization);
           }
         }
         reader.addEventListener('load', onload);

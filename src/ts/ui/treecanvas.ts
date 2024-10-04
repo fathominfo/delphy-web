@@ -50,8 +50,8 @@ type DrawBranchFnc =  (i:number, ctx:CanvasRenderingContext2D | Context2d)=>void
     if (!fonts) {
       console.debug("Could not load MD fonts, using Roboto fallbacks");
       const backupPromises = Promise.all([
-        (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-bold.woff2')", {weight: '700', style: 'normal'})).load(),
-        (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-medium.woff2')", {weight: '500', style: 'normal'})).load(),
+        (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-bold.ttf')", {weight: '700', style: 'normal'})).load(),
+        (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
       ]);
       backupPromises.then(fonts => {
         fonts.forEach(font => document.fonts.add(font));
