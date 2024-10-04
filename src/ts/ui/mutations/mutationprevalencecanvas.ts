@@ -159,7 +159,7 @@ export class MutationPrevalenceCanvas {
       } else {
         console.debug("Could not load MD fonts, using Roboto fallbacks");
         const backupPromises = Promise.all([
-          (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-medium.woff2')", {weight: '500', style: 'normal'})).load(),
+          (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
           (new FontFace("RobotoMono", "url('/assets/fonts/roboto_mono/roboto-mono-regular.woff2')", {weight: '400', style: 'normal'})).load(),
           (new FontFace("RobotoMono", "url('/assets/fonts/roboto_mono/roboto-mono-semibold.woff2')", {weight: '600', style: 'normal'})).load(),
         ]);
