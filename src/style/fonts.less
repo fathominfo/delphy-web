@@ -94,6 +94,12 @@
   font-style: normal;
   src: url('/assets/fonts/roboto/roboto-regular.woff2') format('woff2');
 }
+
+// 
+//  We use .ttf fonts here because the jsPdf library doesn't work with
+//  .woff2 fonts, and there's no need to import woff2 when we already have
+//  .ttf, right? [mark 241004]
+//
 @font-face {
   font-family: 'Roboto';
   font-weight: 500;
