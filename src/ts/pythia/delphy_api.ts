@@ -173,6 +173,22 @@ export class Delphy {
       .finally(() => Delphy.delphyCoreRaw.free(fastaBytesWasm));
   }
 
+  parseMapleIntoInitialTreeAsync(mapleBytes: ArrayBuffer): Promise<PhyloTree> {
+    const numMapleBytes = mapleBytes.byteLength;
+    const mapleBytesView = new Uint8Array(mapleBytes, 0, numMapleBytes);
+    const mapleBytesWasm = Delphy.delphyCoreRaw.malloc(numMapleBytes);
+    const mapleBytesWasmView = new Uint8Array(Module.HEAPU8.buffer, mapleBytesWasm, numMapleBytes);
+    mapleBytesWasmView.set(mapleBytesView);
+
+    return Delphy.delphyCoreRaw.parse_maple_into_initial_tree_async(this.ctx, mapleBytesWasm, numMapleBytes)
+      .then(phyloTreePtr => new PhyloTree(this, phyloTreePtr))
+      .catch(err=>{
+        console.log(`caught error during pares`, err);
+        return new PhyloTree(this, 0);
+      })
+      .finally(() => Delphy.delphyCoreRaw.free(mapleBytesWasm));
+  }
+
   createRun(phyloTree: PhyloTree, prngSeed = 0): Run {
     return new Run(this, phyloTree, prngSeed);
   }
@@ -360,6 +376,11 @@ export class Delphy {
       (ctx: DelphyContextPtr,
        fastaBytes: CharPtr,
        numFastaBytes: number)
+        => Promise<PhyloTreePtr>,
+    parse_maple_into_initial_tree_async:
+      (ctx: DelphyContextPtr,
+       mapleBytes: CharPtr,
+       numMapleBytes: number)
         => Promise<PhyloTreePtr>,
 
     // Phylo_tree
@@ -606,6 +627,7 @@ export class Delphy {
 
       // Input
       parse_fasta_into_initial_tree_async: wrapRawAsyncApi(Module['_delphy_parse_fasta_into_initial_tree_async']),
+      parse_maple_into_initial_tree_async: wrapRawAsyncApi(Module['_delphy_parse_maple_into_initial_tree_async']),
 
       // PhyloTree
       phylo_tree_copy: Module['_delphy_phylo_tree_copy'],
