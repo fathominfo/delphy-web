@@ -1,5 +1,6 @@
 import { UNDEF } from './common';
 import { NodeMetadata } from './nodemetadata';
+import { handleLine } from '../util/commaseparatedline';
 
 type Row = string[];
 type ColCount = [value: string, count: number];
@@ -70,8 +71,16 @@ export class Metadata {
       }
       return value;
     };
-    const rows = text.split('\n').map(line=>line.split(delimiter).map(cleanup)),
-      header = rows.shift();
+
+    const lines = text.split('\n');
+    const rows = [];
+    while (lines.length) {
+      const row = handleLine(lines, delimiter)
+      rows.push(row.map(cleanup));
+    }
+
+
+    const header = rows.shift();
     if (!header) {
       throw new Error("could not parse the metadata file");
     }
@@ -102,7 +111,11 @@ export class Metadata {
     */
     this.rows.forEach(row => {
       row.forEach((value, colNum) => {
-        this.columnSummaries[colNum].initValue(value);
+        if (!this.columnSummaries[colNum]) {
+          console.warn(`no column summary for column ${colNum + 1} (value: '${value}')`);
+        } else {
+          this.columnSummaries[colNum].initValue(value);
+        }
       });
     });
     /*
