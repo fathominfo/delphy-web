@@ -140,7 +140,7 @@ export class Pythia {
           .then(()=>this.runReadyCallback())
           .catch((err)=>{
             console.log(err);
-            errCallback(`Error loading the file. Please check that it is formatted correctly.`)
+            errCallback(`Error loading the file. Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
           });
       });
   }
