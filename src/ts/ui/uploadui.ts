@@ -161,6 +161,13 @@ const handleFileUpload = (event: DragEvent)=>{
   });
 }
 
+
+const displayParsingState = ()=>{
+  setStage(STAGES.parsing);
+  uploadDiv.classList.remove('loading');
+  uploadDiv.classList.add('parsing');
+}
+
 const checkFiles = (files: File[] | FileList)=>{
   if (files) {
     for (let i = 0; i < files.length; i++) {
@@ -172,9 +179,7 @@ const checkFiles = (files: File[] | FileList)=>{
       if (extension === 'dphy') {
         /* we are loading a saved run */
         reader.addEventListener('load', event=>{
-          setStage(STAGES.parsing);
-          uploadDiv.classList.remove('loading');
-          uploadDiv.classList.add('parsing');
+          displayParsingState();
           const bytesJs = event.target?.result;
           if (bytesJs) {
             const mccConfig = pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback);
@@ -186,11 +191,18 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.readAsArrayBuffer(file);
       } else if (extension === 'fasta' || extension === 'fa') {
         reader.addEventListener('load', event=>{
+          displayParsingState();
+          const fastaBytesJs = event.target?.result as ArrayBuffer;
+          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
+        });
+        reader.readAsArrayBuffer(file);
+      } else if (extension === 'maple') {
+        reader.addEventListener('load', event=>{
           setStage(STAGES.parsing);
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
-          const fastaBytesJs = event.target?.result as ArrayBuffer;
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
+          const mapleBytesJs = event.target?.result as ArrayBuffer;
+          if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback);
         });
         reader.readAsArrayBuffer(file);
       } else {
