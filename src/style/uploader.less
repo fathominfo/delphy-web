@@ -105,7 +105,7 @@
 .uploader--message {
   .t25();
   .smoothly(all);
-  display: flex;
+  // display: flex;
   justify-content: center;
   align-items: center;
   padding: 15px;
@@ -179,12 +179,16 @@
   border: 1px dashed @del;
   font-weight: 400;
   cursor: pointer;
-  padding: 25px;
+  padding: 25px 20px;
 
   &:hover {
     background-color: fade(@del, 15%);
     color: lighten(@del, 10%);
     border: 1px dashed lighten(@del, 10%);
+  }
+
+  .file-types {
+    color: @del;
   }
 }
 
