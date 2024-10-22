@@ -491,13 +491,13 @@ export class RunUI extends UIScreen {
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
 
-    if (this.pythia && !this.sharedState.kneeIsCurated) {
+    if (!this.sharedState.kneeIsCurated) {
       const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
       if (candidateIndex > 0) {
         /* calculate the pct */
         const pct = 1.0 * candidateIndex / last;
         this.kneeHandler(pct);
-        this.announceAutoKnee(candidateIndex, pct);
+        // this.announceAutoKnee(candidateIndex, pct);
       }
     }
     this.requestDraw();
@@ -736,9 +736,9 @@ export class RunUI extends UIScreen {
   }
 
 
-  private announceAutoKnee(candidateIndex: number, pct: number) : void {
-    console.log(`setting the knee at ${candidateIndex} ${pct* 100}%`);
-  }
+  // private announceAutoKnee(candidateIndex: number, pct: number) : void {
+  //   console.log(`setting the knee at ${candidateIndex} ${pct* 100}%`);
+  // }
 
 
 
