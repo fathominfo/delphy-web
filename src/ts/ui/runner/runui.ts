@@ -94,32 +94,43 @@ export class RunUI extends UIScreen {
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
 
+  kneeIsCurated: boolean;
+
   kneeHandler : kneeListenerType;
 
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
-    const DEBOUNCE_TIME = 300; // ms
+    const DEBOUNCE_TIME = 100; // ms
     let lastRequestedBurnInPct = -1;
 
     this.kneeHandler = (pct:number)=>{
       this.burnInToggle.disabled = pct <= 0;
       if (this.pythia) {
-        if (pct > 0 && this.pythia.kneeIndex === 0) {
+        const currentKnee = this.pythia.kneeIndex;
+        if (pct > 0 && currentKnee === 0) {
           requestAnimationFrame(()=>this.burnInWrapper.classList.remove("unset"));
         }
-        this.pythia.setKneeIndexByPct(pct);
         lastRequestedBurnInPct = pct;
-        /* debounce the requests for the mcc */
+        /* wait until the pct has settled before requesting the mcc */
         setTimeout(()=>{
+          console.debug(`lastRequestedBurnInPct ${lastRequestedBurnInPct}    pct ${pct}`);
           if (this.pythia && pct === lastRequestedBurnInPct) {
+            this.pythia.setKneeIndexByPct(pct);
             this.pythia.recalcMccTree().then(()=>{
-              this.updateRunData();
+              if (currentKnee !== this.pythia?.kneeIndex) {
+                this.updateRunData();
+              }
             });
           }
         }, DEBOUNCE_TIME);
       }
     };
+
+    const curatedKneeHandler = (pct:number)=>{
+      this.kneeIsCurated = true;
+      this.kneeHandler(pct);
+    }
 
     const sampleHandler: sampleListenerType = ()=>{
       this.updateRunData();
@@ -140,12 +151,12 @@ export class RunUI extends UIScreen {
     const prevStepPower = stepSelector.value;
     this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
 
-    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', this.kneeHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', this.kneeHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", this.kneeHandler);
-    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", this.kneeHandler);
-    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', this.kneeHandler);
-    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', this.kneeHandler);
+    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
+    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
+    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
+    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
+    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
+    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
     this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas, this.popGrowthCanvas];
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
@@ -155,7 +166,7 @@ export class RunUI extends UIScreen {
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
     this.is_running = false;
     this.timerHandle = 0;
-    this.stepCount = 0;
+    this.stepCount = -1;
     this.maxDate = -1;
     this.mccIndex = -1
     this.baseTree = null;
@@ -181,6 +192,7 @@ export class RunUI extends UIScreen {
     this.burninPrompt = new BurninPrompt();
 
     this.disableAnimation = false;
+    this.kneeIsCurated = false;
 
     this.burnInToggle.addEventListener('change', ()=>{
       this.hideBurnIn = this.burnInToggle.checked;
@@ -394,93 +406,99 @@ export class RunUI extends UIScreen {
     }
   }
 
+  pingPythiaForUpdate(): void {
+    if (!this.pythia) return;
+    const stepsHist = this.pythia.stepsHist,
+      last = stepsHist.length - 1;
+    if (this.stepCount === stepsHist[last]) return;
+    this.updateRunData();
+  }
+
+
 
 
   updateRunData():void {
-    if (this.pythia) {
-      const stepsHist = this.pythia.stepsHist,
-        last = stepsHist.length - 1;
-      if (this.treeScrubber.showLatestBaseTree) {
-        this.baseTree = this.pythia.treeHist[last];
-      } else {
-        this.baseTree = this.pythia.treeHist[this.treeScrubber.sampledIndex];
-      }
-      if (this.baseTree) {
-        // const run = this.pythia.run;
-        const tree = this.baseTree;
-        const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
-        let earliestMCCDate = earliestBaseDate;
-        const stepsHist = this.pythia.stepsHist,
-          last = stepsHist.length - 1,
-          mccRef = this.pythia.getMcc();
-        // console.debug(`RunUI set ${mccRef.getManager().id} ${mccRef.getRefNo()}`)
-        this.baseTree = this.pythia.treeHist[last];
-        this.stepCount = stepsHist[last] || 0;
-        this.treeCanvas.positionTreeNodes(tree);
-        if (mccRef) {
-          const oldRef = this.mccRef;
-          this.mccRef = mccRef;
-          this.mccIndex = this.pythia.getMccIndex();
-          // console.log(`this.mccIndex`, this.mccIndex)
-          const mccTree = mccRef.getMcc(),
-            nodeConfidence = mccRef.getNodeConfidence();
-          if (mccTree !== this.mccTreeCanvas.tree) {
-            this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
-            this.sharedState.resetSelections();
-          }
-          earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
-          if (oldRef) {
-            oldRef.release();
-          }
+    if (!this.pythia) return;
+    const stepsHist = this.pythia.stepsHist,
+      last = stepsHist.length - 1;
+    if (this.treeScrubber.showLatestBaseTree) {
+      this.baseTree = this.pythia.treeHist[last];
+    } else {
+      this.baseTree = this.pythia.treeHist[this.treeScrubber.sampledIndex];
+    }
+    if (this.baseTree) {
+      // const run = this.pythia.run;
+      const tree = this.baseTree;
+      const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
+      let earliestMCCDate = earliestBaseDate;
+      const mccRef = this.pythia.getMcc();
+      // console.debug(`RunUI set ${mccRef.getManager().id} ${mccRef.getRefNo()}`)
+      this.baseTree = this.pythia.treeHist[last];
+      this.stepCount = stepsHist[last] || 0;
+      this.treeCanvas.positionTreeNodes(tree);
+      if (mccRef) {
+        const oldRef = this.mccRef;
+        this.mccRef = mccRef;
+        this.mccIndex = this.pythia.getMccIndex();
+        // console.log(`this.mccIndex`, this.mccIndex)
+        const mccTree = mccRef.getMcc(),
+          nodeConfidence = mccRef.getNodeConfidence();
+        if (mccTree !== this.mccTreeCanvas.tree) {
+          this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+          this.sharedState.resetSelections();
         }
-        this.minDate.setTarget(earliestBaseDate);
-        this.mccMinDate.setTarget(earliestMCCDate);
+        earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
+        if (oldRef) {
+          oldRef.release();
+        }
       }
-      this.minDate.update();
-      this.mccMinDate.update();
-      this.timelineIndices = getTimelineIndices(this.minDate.value, this.pythia.maxDate);
-      this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
-      const hideBurnIn = this.sharedState.hideBurnIn,
-        mccIndex = this.mccIndex,
-        sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
-        {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
-      this.treeScrubber.setData(last, kneeIndex, mccIndex);
+      this.minDate.setTarget(earliestBaseDate);
+      this.mccMinDate.setTarget(earliestMCCDate);
+    }
+    this.minDate.update();
+    this.mccMinDate.update();
+    this.timelineIndices = getTimelineIndices(this.minDate.value, this.pythia.maxDate);
+    this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
+    const hideBurnIn = this.sharedState.hideBurnIn,
+      mccIndex = this.mccIndex,
+      sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
+      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
+    this.treeScrubber.setData(last, kneeIndex, mccIndex);
 
-      const muud = muHist.map(n=>n*MU_FACTOR);
-      const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-      const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
-      const serieses = [logPosteriorHist, muud,
-        totalLengthYear, numMutationsHist, popHistGrowth];
-      this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      if (this.isApobecEnabled) {
-        const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-        this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-        serieses.push(muudStar);
-      }
-      this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    const muud = muHist.map(n=>n*MU_FACTOR);
+    const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
+    const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
+    const serieses = [logPosteriorHist, muud,
+      totalLengthYear, numMutationsHist, popHistGrowth];
+    this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    if (this.isApobecEnabled) {
+      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
+      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      serieses.push(muudStar);
+    }
+    this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
 
-      if (this.pythia && this.pythia.kneeIndex <= 0) {
-        const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
-        if (candidateIndex > 0) {
-          /* calculate the pct */
-          const pct = 1.0 * candidateIndex / last;
-          this.kneeHandler(pct);
-          this.announceAutoKnee(candidateIndex, pct);
-        }
+    if (this.pythia && !this.kneeIsCurated) {
+      const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
+      if (candidateIndex > 0) {
+        /* calculate the pct */
+        const pct = 1.0 * candidateIndex / last;
+        this.kneeHandler(pct);
+        this.announceAutoKnee(candidateIndex, pct);
       }
-      this.requestDraw();
-      // console.log('mu', this.pythia.getCurrentMu(), this.pythia.getdMutationRateMovesEnabled());
-      if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
-        if (this.drawHandle !== 0) {
-          clearInterval(this.drawHandle);
-          this.drawHandle = 0;
-        }
-      } else if (this.drawHandle === 0) {
-        this.drawHandle = window.setInterval(()=> this.updateRunData(), 30);
+    }
+    this.requestDraw();
+    // console.log('mu', this.pythia.getCurrentMu(), this.pythia.getdMutationRateMovesEnabled());
+    if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
+      if (this.drawHandle !== 0) {
+        clearInterval(this.drawHandle);
+        this.drawHandle = 0;
       }
+    } else if (this.drawHandle === 0) {
+      this.drawHandle = window.setInterval(()=> this.pingPythiaForUpdate(), 30);
     }
   }
 
@@ -539,7 +557,7 @@ export class RunUI extends UIScreen {
 
   start():void {
     if (this.timerHandle === 0) {
-      this.timerHandle = setInterval(()=>this.updateRunData(), 30) as unknown as number;
+      this.timerHandle = setInterval(()=>this.pingPythiaForUpdate(), 30) as unknown as number;
     }
     if (this.pythia) {
       this.is_running = true;
