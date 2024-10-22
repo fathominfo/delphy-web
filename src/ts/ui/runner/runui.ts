@@ -355,6 +355,19 @@ export class RunUI extends UIScreen {
     // this.mutationRateFieldset.disabled = params.apobecEnabled;
     // this.apobecFieldset.disabled = params.mutationRateIsFixed || params.siteRateHeterogeneityEnabled;
 
+    const treeCount = pythia.treeHist.length;
+    if (treeCount > 1) {
+      this.burnInWrapper.classList.remove("pre");
+      const kneeIndex = pythia.kneeIndex;
+      if (kneeIndex > 0) {
+        this.kneeIsCurated = true;
+        this.burnInWrapper.classList.remove("unset");
+      } else {
+        //
+      }
+    }
+
+
     console.log(`pythia? ${!!this.pythia}`, currentMu, params);
   }
 
@@ -497,8 +510,8 @@ export class RunUI extends UIScreen {
         clearInterval(this.drawHandle);
         this.drawHandle = 0;
       }
-    } else if (this.drawHandle === 0) {
-      this.drawHandle = window.setInterval(()=> this.pingPythiaForUpdate(), 30);
+    // } else if (this.drawHandle === 0) {
+    //   this.drawHandle = window.setInterval(()=> this.pingPythiaForUpdate(), 30);
     }
   }
 
@@ -557,6 +570,7 @@ export class RunUI extends UIScreen {
 
   start():void {
     if (this.timerHandle === 0) {
+      this.updateRunData();
       this.timerHandle = setInterval(()=>this.pingPythiaForUpdate(), 30) as unknown as number;
     }
     if (this.pythia) {
