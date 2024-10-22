@@ -9,6 +9,7 @@ export class BurninPrompt {
     let index = -1;
     if (series.length >= MIN_LENGTH) {
       const midpoint = Math.ceil(series.length / 2);
+      const last = series.length - 1;
       const secondHalf = series.slice(midpoint);
       /* get the stddev of the second half */
       const sum = secondHalf.reduce((tot, c)=>tot+(c||0), 0);
@@ -18,7 +19,7 @@ export class BurninPrompt {
         return tot + d * d;
       }, 0);
       const stdDev = Math.sqrt(sumDeltaSq/secondHalf.length);
-      for (let i = midpoint - 1; i >= 0; i--) {
+      for (let i = last - 1; i >= 0; i--) {
         const delta = Math.abs(series[i] - avg);
         if (delta > stdDev * ACCEPTABLE_RANGE_IN_STDDEV) {
           break;
