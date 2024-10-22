@@ -117,19 +117,30 @@ export class Pythia {
 
   initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     console.log("Loading FASTA file...");
+    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(bytesJs);
+    this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
+  }
+
+  initRunFromMaple(mapleBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+    console.log("Loading Maple file...");
+    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(bytesJs);
+    this.initRunFromBytes(mapleBytesJs, callBack, runReadyCallback, errCallback);
+  }
+
+  initRunFromBytes(bytesJs:ArrayBuffer, delphyMethod:(b:ArrayBuffer)=>Promise<PhyloTree>, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     const startTime = Date.now();
     this.runReadyCallback = runReadyCallback;
-    this.fb = fastaBytesJs.slice(0);
-    this.delphy.parseFastaIntoInitialTreeAsync(fastaBytesJs)
+    this.fb = bytesJs.slice(0);
+    delphyMethod(bytesJs)
       .then(phyloTree => {
         console.log("Creating run", phyloTree);
         this.sourceTree = phyloTree;
-        console.log(`fasta parsed and initial tree generated in ${Date.now() - startTime}ms`);
+        console.log(`file parsed and initial tree generated in ${Date.now() - startTime}ms`);
         this.instantiateRun()
           .then(()=>this.runReadyCallback())
           .catch((err)=>{
             console.log(err);
-            errCallback(`Error loading the fasta file. Please check that it is formatted correctly.`)
+            errCallback(`Error loading the file. Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
           });
       });
   }

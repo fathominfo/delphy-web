@@ -1,10 +1,10 @@
 <div class="uploader--info-content hidden">
   <div>
-    <h2>Formatting for FASTA files</h2>
+    <h2>Formatting for Sequence files</h2>
     <p>
-      FASTA files need to be aligned, and the metadata line 
-      (after the &#8202;<code>&gt;</code>&#8202;) should be &#8202;<code>|</code>&#8202; delimited with the 
-      date in the last position. The date should be formatted 
+      Delphy can accept FASTA and MAPLE files. They need to be aligned, and the metadata line 
+      should be &#8202;<code>|</code>&#8202; delimited with the 
+      date in the last position. Dates should be formatted 
       &#8202;<code>YYYY-MM-DD</code>&#8202;. 
     </p>
     <p>
@@ -14,10 +14,16 @@
   <div class="details">
     <h2>Metadata</h2>
     <p>
-      Metadata can be uploaded in a &#8202;<code>csv</code>&#8202; or &#8202;<code>tsv</code>&#8202; file. It should have one header
-      row with column names. After the header, there should be one row per 
-      sequence. There must be one column named &#8202;<code>id</code>&#8202;, and it should 
-      contain the unique identifier for the sequence. 
+      Metadata can be uploaded in a &#8202;<code>csv</code>&#8202; or &#8202;<code>tsv</code>&#8202; file. 
+      It should have one header row with column names. 
+      After the header, there should be one row per sequence. 
+      There must be one column named &#8202;<code>id</code>&#8202; containing the unique identifier for the sequence. 
     </p>
   </div>
+
+  <div>
+    For more information and example files, please see the <a href="https://github.com/fathominfo/delphy-web/wiki" target="_">wiki</a>. 
+    To contact us, please email us at <a href="mailto:delphy@fathom.info">delphy@fathom.info</a>.
+  </div>
+
 </div>
