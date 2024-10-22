@@ -698,41 +698,41 @@ export class RunUI extends UIScreen {
   }
 
   private setStepsPerRefresh(stepPower:number): void {
-    const newParams = copyDict(this.runParams),
+    const newParams = copyDict(this.runParams) as RunParamConfig,
       steps = Math.pow(10, stepPower);
     newParams.stepsPerSample = steps;
     this.confirmRestart(newParams);
   }
 
   private setApobec(runParams: RunParamConfig, enabled:boolean): RunParamConfig {
-    const newParams = copyDict(runParams);
+    const newParams = copyDict(runParams) as RunParamConfig;
     newParams.apobecEnabled = enabled;
     return newParams;
   }
 
   private fixMutationRate(runParams: RunParamConfig, isFixed: boolean, rate: number) : RunParamConfig {
-    const newParams = copyDict(runParams);
+    const newParams = copyDict(runParams) as RunParamConfig;
     newParams.mutationRateIsFixed = isFixed;
     newParams.mutationRate = rate / MU_FACTOR;
     return newParams;
   }
 
   private fixFinalPopSize(runParams: RunParamConfig, isFixed: boolean, finalPopSize: number) : RunParamConfig {
-    const newParams = copyDict(runParams);
+    const newParams = copyDict(runParams) as RunParamConfig;
     newParams.finalPopSizeIsFixed = isFixed;
     newParams.finalPopSize = finalPopSize / FINAL_POP_SIZE_FACTOR;
     return newParams;
   }
 
   private fixPopGrowthRate(runParams: RunParamConfig, isFixed: boolean, rate: number) : RunParamConfig {
-    const newParams = copyDict(runParams);
+    const newParams = copyDict(runParams) as RunParamConfig;
     newParams.popGrowthRateIsFixed = isFixed;
     newParams.popGrowthRate = rate / POP_GROWTH_RATE_FACTOR;
     return newParams;
   }
 
   private setSiteRateHeterogeneityEnabled(runParams: RunParamConfig, enabled:boolean, rate: number) : RunParamConfig {
-    const newParams = copyDict(runParams);
+    const newParams = copyDict(runParams) as RunParamConfig;
     newParams.siteRateHeterogeneityEnabled = enabled;
     newParams.mutationRate = rate / MU_FACTOR;
     return newParams;
