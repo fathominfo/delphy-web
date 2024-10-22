@@ -108,7 +108,7 @@ export class RunUI extends UIScreen {
       this.burnInToggle.disabled = pct <= 0;
       if (this.pythia) {
         const currentKnee = this.pythia.kneeIndex;
-        if (pct > 0 && currentKnee === 0) {
+        if (pct > 0 && this.kneeIsCurated) {
           requestAnimationFrame(()=>this.burnInWrapper.classList.remove("unset"));
         }
         lastRequestedBurnInPct = pct;
@@ -357,10 +357,10 @@ export class RunUI extends UIScreen {
 
     const treeCount = pythia.treeHist.length;
     if (treeCount > 1) {
-      this.burnInWrapper.classList.remove("pre");
       const kneeIndex = pythia.kneeIndex;
       if (kneeIndex > 0) {
         this.kneeIsCurated = true;
+        this.burnInWrapper.classList.remove("pre");
         this.burnInWrapper.classList.remove("unset");
       } else {
         //
@@ -558,7 +558,7 @@ export class RunUI extends UIScreen {
       if (stepCount === 1) {
         stepCountPlural = '';
       }
-      if (treeCount === 1) {
+      if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }
       this.stepCountPluralText.innerHTML = stepCountPlural;
