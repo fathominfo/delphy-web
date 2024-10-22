@@ -15,6 +15,7 @@ export class SharedState {
   goTo: NavigateFunctionType;
   private tipIds: string[];
   mutationsNeedReloading: boolean;
+  kneeIsCurated: boolean;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
@@ -22,6 +23,7 @@ export class SharedState {
     this.nodeList = [];
     this.mutationList = [];
     this.hideBurnIn = false;
+    this.kneeIsCurated = false;
     this.goTo = goTo;
     this.tipIds = [];
     this.mutationsNeedReloading = false;

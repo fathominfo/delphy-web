@@ -94,8 +94,6 @@ export class RunUI extends UIScreen {
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
 
-  kneeIsCurated: boolean;
-
   kneeHandler : kneeListenerType;
 
 
@@ -108,7 +106,7 @@ export class RunUI extends UIScreen {
       this.burnInToggle.disabled = pct <= 0;
       if (this.pythia) {
         const currentKnee = this.pythia.kneeIndex;
-        if (pct > 0 && this.kneeIsCurated) {
+        if (pct > 0 && this.sharedState.kneeIsCurated) {
           requestAnimationFrame(()=>this.burnInWrapper.classList.remove("unset"));
         }
         lastRequestedBurnInPct = pct;
@@ -128,7 +126,7 @@ export class RunUI extends UIScreen {
     };
 
     const curatedKneeHandler = (pct:number)=>{
-      this.kneeIsCurated = true;
+      this.sharedState.kneeIsCurated = true;
       this.kneeHandler(pct);
     }
 
@@ -192,7 +190,6 @@ export class RunUI extends UIScreen {
     this.burninPrompt = new BurninPrompt();
 
     this.disableAnimation = false;
-    this.kneeIsCurated = false;
 
     this.burnInToggle.addEventListener('change', ()=>{
       this.hideBurnIn = this.burnInToggle.checked;
@@ -359,7 +356,7 @@ export class RunUI extends UIScreen {
     if (treeCount > 1) {
       const kneeIndex = pythia.kneeIndex;
       if (kneeIndex > 0) {
-        this.kneeIsCurated = true;
+        this.sharedState.kneeIsCurated = true;
         this.burnInWrapper.classList.remove("pre");
         this.burnInWrapper.classList.remove("unset");
       } else {
@@ -494,7 +491,7 @@ export class RunUI extends UIScreen {
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
 
-    if (this.pythia && !this.kneeIsCurated) {
+    if (this.pythia && !this.sharedState.kneeIsCurated) {
       const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
       if (candidateIndex > 0) {
         /* calculate the pct */
