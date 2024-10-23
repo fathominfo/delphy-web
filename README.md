@@ -12,7 +12,7 @@ References
 
 * [Whitepaper with overview of key ideas and accuracy+speed benchmarks](https://github.com/broadinstitute/delphy/blob/main/delphywp.pdf)
 
-* _TO COME_: Preprint with full details and benchmarking (expected: late July 2024)
+* _TO COME_: Preprint with full details and benchmarking
 
 System Requirements
 -------------------
