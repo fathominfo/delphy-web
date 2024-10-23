@@ -116,7 +116,7 @@
   padding: 15px;
   border-radius: 4px;
   text-align: center;
-  max-height: 6em;
+  // max-height: 6em;
 }
 
 #uploader--demo-button {
@@ -324,7 +324,7 @@
   left: 0;
   right: 0;
   width: 20vw;
-  margin: 15px auto;
+  margin: 15px auto 85px;
   background-color: fade(@toggle, 50%);
   border-radius: 4px;
   display: grid;
@@ -344,6 +344,7 @@
   }
 
   &.progressing {
+    margin-bottom: 15px;
     #uploader--progress-container {display: block;}
     p {display: none;}
   }
