@@ -14,6 +14,25 @@ const showFormatHints = ()=>{
 setShowFormat(showFormatHints);
 
 
+/* show a progress bar when possible */
+const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
+const progressBar = document.querySelector("#uploader--progress") as HTMLDivElement;
+const progressLabel = document.querySelector("#uploader--progress-label") as HTMLDivElement;
+const showProgress = (unit: string, total: number, soFar: number)=>{
+  /* if we aren't tracking progress, yield to the main status message */
+  if (soFar === 0 || soFar === total) {
+    activateProgressBar(false);
+  } else {
+    activateProgressBar(true);
+    const pct = 100 * soFar / total;
+    const label = `${soFar} / ${total} ${unit}`;
+    progressBar.style.width = `${pct}%`;
+    progressLabel.textContent = label;
+  }
+};
+const activateProgressBar = (showit=true)=>{
+  statusContainer.classList.toggle("progressing", showit);
+}
 
 let runCallback = ()=>{console.debug('runCallback not assigned')},
   configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)};
@@ -183,8 +202,12 @@ const checkFiles = (files: File[] | FileList)=>{
           displayParsingState();
           const bytesJs = event.target?.result;
           if (bytesJs) {
-            const mccConfig = pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback);
-            configCallback(mccConfig as ConfigExport);
+            const progressCallback = (p:number, t:number)=>{
+              const action = `${p === 1 ? 'tree' : 'trees'  } loaded`;
+              showProgress(action, t, p);
+            };
+            pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
+              .then(mccConfig=>configCallback(mccConfig as ConfigExport));
           } else {
             alert(`could not read file.`);
           }

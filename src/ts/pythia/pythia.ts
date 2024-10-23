@@ -14,6 +14,7 @@ import { UNSET } from '../ui/common';
 type returnless = ()=>void;
 
 type emptyResolveType = (m:undefined)=>void;
+type configResolveType = (conf:ConfigExport)=>void;
 
 const SAVE_FORMAT_VERSION = 3;
 
@@ -1048,7 +1049,7 @@ export class Pythia {
 
 
 
-  initRunFromSaveFile = (raw: ArrayBuffer, runReadyCallback:()=>void)=>{
+  async initRunFromSaveFile(raw: ArrayBuffer, runReadyCallback:()=>void, progressCallback:(progress:number, total:number)=>void): Promise<ConfigExport> {
     const startTime = Date.now();
     this.runReadyCallback = runReadyCallback;
     let pos = 0;
@@ -1091,7 +1092,7 @@ export class Pythia {
         asInt[3] = buffer[pos++];
         return floatCache[0];
       },
-      readBuffer = (length: number)=>{
+      readBuffer = (length: number):Uint8Array=>{
         const buf = new Uint8Array(length);
         for (let j = 0; j < length; j++) {
           buf[j] = buffer[pos++];
@@ -1144,8 +1145,8 @@ export class Pythia {
       isMuMoveEnabled = read32() === 1,
       mutationRate = read32f(),
       treeInfoSize = read32(),
-      treeBuffers = [],
-      paramBuffers = [];
+      treeBuffers:Uint8Array[] = [],
+      paramBuffers:Uint8Array[] = [];
     const treeInfo = readBuffer(treeInfoSize);
 
     let treeSize = read32();
@@ -1180,9 +1181,10 @@ export class Pythia {
     this.run = this.delphy.createRun(firstTree);
     console.log(`Setting parallelism to ${navigator.hardwareConcurrency}`);
     this.run.setNumParts(navigator.hardwareConcurrency);
+    let config = {} as ConfigExport;
 
     for (let i = 0; i < treeCount; i++) {
-      console.debug(`loading tree ${i} @ ${Date.now() - startTime}ms`);
+      progressCallback(i, treeCount);
       const tree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[i], treeInfo);
       this.run.getTree().copyFrom(tree);
       tree.delete();
@@ -1191,9 +1193,10 @@ export class Pythia {
       } catch (err) {
         console.warn(`error reading parameters for tree ${i}:`, err);
       }
-
       this.sampleCurrentTree();
+      await yieldToMain();
     }
+    progressCallback(treeCount, treeCount);
     this.run.setAlphaMoveEnabled(siteRateHeterogeneityEnabled);
     this.run.setMpoxHackEnabled(apobecEnabled);
     this.run.setMuMoveEnabled(isMuMoveEnabled);
@@ -1211,15 +1214,14 @@ export class Pythia {
         this.runReadyCallback();
       })
       .catch(err=>{console.debug(err)});
-
-    let config = {};
     try {
       config = JSON.parse(metadataString) as ConfigExport;
     } catch (err) {
       console.warn(`could not parse config export: `, config);
     }
-    return config;
-  };
+    const prom = new Promise((resolve: configResolveType)=>resolve(config));
+    return prom;
+  }
 
 
   // BEASTY OUTPUT
@@ -1311,3 +1313,4 @@ Delphy.waitForInit()
   });
 
 
+const yieldToMain = ()=>new Promise((resolve:emptyResolveType)=>{setTimeout(resolve, 0)});
