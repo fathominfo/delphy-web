@@ -177,7 +177,7 @@ export type RunParamConfig = {
 };
 
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */
-export const copyDict = (obj:object)=>JSON.parse(JSON.stringify(obj));
+export const copyDict = (obj:object)=>structuredClone(obj);
 
 
 

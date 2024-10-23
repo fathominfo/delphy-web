@@ -231,6 +231,19 @@ export class CustomizeUI extends MccUI {
 
     (this.div.querySelector("#export-dphy") as HTMLButtonElement).addEventListener('click', ()=>{
       if (this.pythia) {
+        /*
+        if the knee has been only set via the auto estimator
+        we don't want to export it. In that case:
+          1) get the current knee index
+          2) set pythia knee index to 0
+          3) export pythia etc
+          4) restore the knee index
+        */
+        const exportKnee = this.sharedState.kneeIsCurated;
+        const pythiaKnee = this.pythia.kneeIndex;
+        if (!exportKnee) {
+          this.pythia.setKneeIndexByPct(0);
+        }
         const config = this.sharedState.exportConfig(),
           outBuffer = this.pythia.getSaveBuffer(config),
           file = new Blob([outBuffer], {type: "application/octet-binary;charset=utf-8"}),
@@ -242,6 +255,9 @@ export class CustomizeUI extends MccUI {
         document.body.appendChild(a);
         a.click();
         setTimeout(()=>a.remove(), 10000);
+        if (!exportKnee) {
+          this.pythia.setKneeIndexByPct(pythiaKnee / this.pythia.getBaseTreeCount());
+        }
       }
     });
 
