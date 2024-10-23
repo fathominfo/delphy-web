@@ -1,5 +1,6 @@
 
 const ACCEPTABLE_RANGE_IN_STDDEV = 5;
+const TYPICAL_RANGE_IN_STDDEV = 2;
 
 const MIN_LENGTH = 10;
 
@@ -19,12 +20,25 @@ export class BurninPrompt {
         return tot + d * d;
       }, 0);
       const stdDev = Math.sqrt(sumDeltaSq/secondHalf.length);
+
+      // Look backwards for first point that's more too far away from mean
       for (let i = last - 1; i >= 0; i--) {
         const delta = Math.abs(series[i] - avg);
         if (delta > stdDev * ACCEPTABLE_RANGE_IN_STDDEV) {
           break;
         }
         index = i;
+      }
+
+      // Then look forward from there to first point that's close to mean
+      if (index !== -1) {
+        for (let i = index; i < series.length - MIN_LENGTH; i++) {
+          const delta = Math.abs(series[i] - avg);
+          if (delta < stdDev * TYPICAL_RANGE_IN_STDDEV) {
+            break;
+          }
+          index = i;
+        }
       }
     }
     return index;

@@ -478,8 +478,13 @@ export class RunUI extends UIScreen {
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
     const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
-    const serieses = [logPosteriorHist, muud,
-      totalLengthYear, numMutationsHist, popHistGrowth];
+    const serieses = [
+      logPosteriorHist,
+      muud,
+      totalLengthYear,
+      //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
+      //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
+    ];
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     if (this.isApobecEnabled) {
