@@ -58,7 +58,7 @@ export class BurninPrompt {
       }
       results.push(res);
     });
-    console.log(index, results.join(' '))
+    // console.log(index, results.join(' '))
     return index;
 
   }
