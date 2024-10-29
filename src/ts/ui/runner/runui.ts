@@ -14,6 +14,7 @@ import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
+import { EffectiveSampleSize } from './effectivesamplesize';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -60,6 +61,7 @@ export class RunUI extends UIScreen {
   private baseTree: PhyloTree | null;
 
   private burninPrompt: BurninPrompt;
+  private ess: EffectiveSampleSize;
 
 
 
@@ -188,6 +190,8 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
 
     this.burninPrompt = new BurninPrompt();
+    this.ess = new EffectiveSampleSize();
+    this.ess.testIt();
 
     this.disableAnimation = false;
 
