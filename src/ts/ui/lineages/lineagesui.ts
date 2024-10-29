@@ -273,7 +273,7 @@ export class LineagesUI extends MccUI {
         });
         if (allIds) {
           suggestions = allIds.filter(id => {
-            return id.toLowerCase().startsWith(text);
+            return id.toLowerCase().includes(text);
           })
             .filter(id => !selectedIds.includes(id))
             .map(id => {
