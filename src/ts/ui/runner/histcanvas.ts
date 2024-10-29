@@ -1,5 +1,6 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, resizeCanvas, UNSET } from '../common';
+import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { kneeListenerType } from './runcommon';
 
 const maybeChartContainer = document.querySelector('#runner--panel--blocks');
@@ -63,6 +64,7 @@ export class HistCanvas {
   data:number[];
   mccIndex: number;
   sampleIndex: number;
+  ess: number;
 
 
   displayMin: number;
@@ -124,6 +126,7 @@ export class HistCanvas {
       throw new Error(`This chart container does not have an element with the class ".block-readout".`);
     }
     this.ctx = maybe_ctx;
+    this.ctx.font = 'MDSystem, Roboto, sans-serif';
     this.maxLabel = this.getLI('.max');
     this.minLabel = this.getLI('.min');
     this.avgLabel = this.getLI('.median');
@@ -132,6 +135,7 @@ export class HistCanvas {
     this.lastStepLabel = this.getLI('.step-last');
     this.readout = maybeReadout;
     this.data = [];
+    this.ess = UNSET;
     this.displayMin = UNSET;
     this.displayMax = UNSET;
     this.dataMin = UNSET;
@@ -244,6 +248,8 @@ export class HistCanvas {
     this.currentKneeIndex = kneeIndex;
     this.sampleIndex = sampleIndex;
 
+    this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
+
     if (!this.settingKnee) {
       this.savedKneeIndex = kneeIndex;
     }
@@ -278,16 +284,16 @@ export class HistCanvas {
       mccIndex -= this.savedKneeIndex;
       sampleIndex -= this.savedKneeIndex;
     }
-    const {ctx, width, height} = this;
+    const {ctx, width, height, ess} = this;
     ctx.clearRect(0, 0, width + 1, height + 1);
     this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
     this.drawHistogram(data, kneeIndex);
-    this.drawLabels(data, kneeIndex);
+    this.drawLabels(data, kneeIndex, ess);
   }
 
   drawSeries(data:number[], kneeIndex:number, mccIndex:number, sampleIndex: number) {
-    // if (this.label === 'Active Mutation Rate μ') {
-    //   console.log(stepCount, kneeIndex)
+    // if (this.label === "Mutation Rate μ") {
+    //   console.log( `   `, this.label, kneeIndex, ess)
     // }
 
 
@@ -475,10 +481,10 @@ export class HistCanvas {
 
 
 
-  drawLabels(data:number[], kneeIndex:number) {
+  drawLabels(data:number[], kneeIndex:number, ess: number) {
     const count:number = data.length;
     this.count = count;
-    const {ctx, traceWidth, chartHeight} = this;
+    const {ctx, traceWidth, chartHeight, distLeft} = this;
 
 
     /* draw background and borders for the charts */
@@ -538,6 +544,9 @@ export class HistCanvas {
       this.readout.innerHTML = `0 ${this.unit}`;
     }
     this.canvas.classList.toggle('kneed', kneeIndex > 0);
+    ctx.fillStyle = 'black';
+    const label = `ESS: ${  ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
+    ctx.fillText(label, distLeft - 80, chartHeight - 10);
   }
 
 }
