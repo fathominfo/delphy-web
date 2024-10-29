@@ -64,6 +64,7 @@ export class HistCanvas {
   data:number[];
   mccIndex: number;
   sampleIndex: number;
+  sampleCount: number;
   ess: number;
 
 
@@ -136,6 +137,7 @@ export class HistCanvas {
     this.readout = maybeReadout;
     this.data = [];
     this.ess = UNSET;
+    this.sampleCount = UNSET;
     this.displayMin = UNSET;
     this.displayMax = UNSET;
     this.dataMin = UNSET;
@@ -247,7 +249,8 @@ export class HistCanvas {
     this.hideBurnIn = hideBurnIn;
     this.currentKneeIndex = kneeIndex;
     this.sampleIndex = sampleIndex;
-
+    this.count = data.length;
+    this.sampleCount = data.length - kneeIndex;
     this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
 
     if (!this.settingKnee) {
@@ -296,9 +299,7 @@ export class HistCanvas {
     //   console.log( `   `, this.label, kneeIndex, ess)
     // }
 
-
-    const count:number = data.length;
-    this.count = count;
+    const {count, ess, sampleCount} = this;
     const {ctx, traceWidth} = this;
     let chartHeight = this.chartHeight,
       top = 0;
@@ -325,7 +326,7 @@ export class HistCanvas {
       ctx.lineTo(3, chartHeight * 0.5);
       ctx.stroke();
     } else if (data.length > 1) {
-      const {displayMin, displayMax} = this;
+      const {displayMin, displayMax, distLeft} = this;
       const valRange = displayMax - displayMin;
 
       if (this.isDiscrete && valRange < 20) {
@@ -334,16 +335,34 @@ export class HistCanvas {
         chartHeight -= h;
       }
 
+
+      const stepW = Math.min(MAX_STEP_SIZE, traceWidth / count || 1);
+      const autoCorrelationTime = sampleCount / ess;
+      const essWidth = stepW * autoCorrelationTime;
+      /*
+      draw stripes of width essWidth from the start of the burn in
+      */
+      const burnInX = TICK_LENGTH + kneeIndex * stepW;
+      ctx.strokeStyle = '#ddd';
+      ctx.beginPath();
+      let essX = burnInX;
+      while (essX < distLeft && essWidth >=1) {
+        ctx.moveTo(essX, 0);
+        ctx.lineTo(essX, chartHeight);
+        essX += essWidth;
+      }
+      ctx.stroke();
+
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
         // console.log(displayMax);
         ctx.strokeStyle = TRACE_COLOR;
+        ctx.beginPath();
         ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
         ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
         ctx.stroke();
       } else {
         const verticalScale = chartHeight / (valRange || 1);
-        const stepW = Math.min(MAX_STEP_SIZE, traceWidth / count || 1);
         // find the middlemost step
         let n = data[0],
           x = 0,
@@ -354,7 +373,7 @@ export class HistCanvas {
           sampleY = UNSET;
         if (kneeIndex > 0) {
           ctx.strokeStyle = KNEE_LINE_COLOR;
-          x = TICK_LENGTH + kneeIndex * stepW;
+          x = burnInX;
           ctx.beginPath();
           ctx.moveTo(x, 0);
           ctx.lineTo(x, chartHeight);
@@ -411,8 +430,6 @@ export class HistCanvas {
 
 
   drawHistogram(data:number[], kneeIndex:number) {
-    const count:number = data.length;
-    this.count = count;
     const {ctx, distLeft, chartHeight} = this;
 
 
