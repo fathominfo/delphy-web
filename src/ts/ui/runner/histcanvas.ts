@@ -546,7 +546,7 @@ export class HistCanvas {
     this.canvas.classList.toggle('kneed', kneeIndex > 0);
     ctx.fillStyle = 'black';
     const label = `ESS: ${  ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
-    ctx.fillText(label, distLeft - 80, chartHeight - 10);
+    ctx.fillText(label, distLeft - 70, chartHeight - 2);
   }
 
 }
