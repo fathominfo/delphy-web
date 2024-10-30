@@ -81,6 +81,7 @@ export class HistCanvas {
   distLeft: number;
   chartHeight: number;
   count: number;
+  displayCount: number;
   /*
   distinguish between the knee index
   that is used as the leftmost sample when we are
@@ -153,6 +154,7 @@ export class HistCanvas {
     this.mccIndex = UNSET;
     this.sampleIndex = UNSET;
     this.count = 0;
+    this.displayCount = 0;
     this.savedKneeIndex = UNSET;
     this.currentKneeIndex = UNSET;
     this.settingKnee = false;
@@ -250,6 +252,7 @@ export class HistCanvas {
     this.currentKneeIndex = kneeIndex;
     this.sampleIndex = sampleIndex;
     this.count = data.length;
+    this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
     this.sampleCount = data.length - kneeIndex;
     this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
 
@@ -299,7 +302,7 @@ export class HistCanvas {
     //   console.log( `   `, this.label, kneeIndex, ess)
     // }
 
-    const {count, ess, sampleCount} = this;
+    const {displayCount, ess, sampleCount} = this;
     const {ctx, traceWidth} = this;
     let chartHeight = this.chartHeight,
       top = 0;
@@ -336,7 +339,7 @@ export class HistCanvas {
       }
 
 
-      const stepW = Math.min(MAX_STEP_SIZE, traceWidth / count || 1);
+      const stepW = Math.min(MAX_STEP_SIZE, traceWidth / displayCount || 1);
       const autoCorrelationTime = sampleCount / ess;
       const essWidth = stepW * autoCorrelationTime;
       /*
