@@ -1,6 +1,16 @@
 /*
 from pvarilly:
 
+Effective Sample Size represents the number of unrelated samples. If you
+sample often, you will end up getting related samples. But for a good model,
+you need unrelated samples. Thus we model how many sequential samples do you
+need to look at in order to get independnt values: this interval is called the
+auto correlation time. From that we can calculate how many intervals we have
+in all the samples, which is equivalent to the number of unrelated samples,
+i.e. the effective sample size.
+
+How to determine this?
+
 you're trying to see if a fluctuation at some time (deltaA[j]) goes,
 on average, in the same direction as a fluctuation a little later (deltaA[j+i]).
 If too little time separates these two measurements, then deltaA[j] and
