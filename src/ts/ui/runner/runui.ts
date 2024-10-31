@@ -576,7 +576,7 @@ export class RunUI extends UIScreen {
       }
       const essIsUsable = ess > 0;
       this.essWrapper.classList.toggle("unset", !essIsUsable);
-      if (essIsUsable) this.essReadout.textContent = ess.toLocaleString();
+      if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
       else this.essReadout.textContent = "0";
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
