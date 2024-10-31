@@ -290,11 +290,11 @@ export class HistCanvas {
       mccIndex -= this.savedKneeIndex;
       sampleIndex -= this.savedKneeIndex;
     }
-    const {ctx, width, height, ess} = this;
+    const {ctx, width, height} = this;
     ctx.clearRect(0, 0, width + 1, height + 1);
     this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
     this.drawHistogram(data, kneeIndex);
-    this.drawLabels(data, kneeIndex, ess);
+    this.drawLabels(data, kneeIndex);
   }
 
   drawSeries(data:number[], kneeIndex:number, mccIndex:number, sampleIndex: number) {
@@ -488,10 +488,10 @@ export class HistCanvas {
 
 
 
-  drawLabels(data:number[], kneeIndex:number, ess: number) {
+  drawLabels(data:number[], kneeIndex:number) {
     const count:number = data.length;
     this.count = count;
-    const {ctx, traceWidth, chartHeight, distLeft} = this;
+    const {ctx, traceWidth, chartHeight} = this;
 
 
     /* draw background and borders for the charts */
@@ -551,9 +551,9 @@ export class HistCanvas {
       this.readout.innerHTML = `0 ${this.unit}`;
     }
     this.canvas.classList.toggle('kneed', kneeIndex > 0);
-    ctx.fillStyle = 'black';
-    const label = `ESS: ${  ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
-    ctx.fillText(label, distLeft - 70, chartHeight - 2);
+    // ctx.fillStyle = 'black';
+    // const label = `ESS: ${  this.ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
+    // ctx.fillText(label, this.distLeft - 70, chartHeight - 2);
   }
 
 
