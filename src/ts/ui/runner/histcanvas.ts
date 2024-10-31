@@ -302,7 +302,7 @@ export class HistCanvas {
     //   console.log( `   `, this.label, kneeIndex, ess)
     // }
 
-    const {displayCount, ess, sampleCount} = this;
+    const {displayCount} = this;
     const {ctx, traceWidth} = this;
     let chartHeight = this.chartHeight,
       top = 0;
@@ -329,7 +329,7 @@ export class HistCanvas {
       ctx.lineTo(3, chartHeight * 0.5);
       ctx.stroke();
     } else if (data.length > 1) {
-      const {displayMin, displayMax, distLeft} = this;
+      const {displayMin, displayMax} = this;
       const valRange = displayMax - displayMin;
 
       if (this.isDiscrete && valRange < 20) {
@@ -340,21 +340,8 @@ export class HistCanvas {
 
 
       const stepW = Math.min(MAX_STEP_SIZE, traceWidth / displayCount || 1);
-      const autoCorrelationTime = sampleCount / ess;
-      const essWidth = stepW * autoCorrelationTime;
-      /*
-      draw stripes of width essWidth from the start of the burn in
-      */
       const burnInX = TICK_LENGTH + kneeIndex * stepW;
-      ctx.strokeStyle = '#ddd';
-      ctx.beginPath();
-      let essX = burnInX;
-      while (essX < distLeft && essWidth >=1) {
-        ctx.moveTo(essX, 0);
-        ctx.lineTo(essX, chartHeight);
-        essX += essWidth;
-      }
-      ctx.stroke();
+      // this.drawEssIntervals(stepW, burnInX);
 
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
@@ -568,6 +555,27 @@ export class HistCanvas {
     const label = `ESS: ${  ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
     ctx.fillText(label, distLeft - 70, chartHeight - 2);
   }
+
+
+  drawEssIntervals(stepW: number, burnInX: number) {
+    const {sampleCount, ess, ctx, distLeft, chartHeight} = this;
+    const autoCorrelationTime = sampleCount / ess;
+    const essWidth = stepW * autoCorrelationTime;
+    const rightEdge = distLeft - TRACE_MARGIN;
+    /*
+    draw stripes of width essWidth from the start of the burn in
+    */
+    ctx.strokeStyle = '#ddd';
+    ctx.beginPath();
+    let essX = burnInX;
+    while (essX < rightEdge && essWidth >=1) {
+      ctx.moveTo(essX, 0);
+      ctx.lineTo(essX, chartHeight);
+      essX += essWidth;
+    }
+    ctx.stroke();
+  }
+
 
 }
 

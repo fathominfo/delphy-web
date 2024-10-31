@@ -862,14 +862,13 @@ input:checked + #run-input--label {
 
 
 
-#burn-in-wrapper {
-  p {display: none;}
+#burn-in-wrapper, #ess-readout {
+  p {
+    display: block;
+    margin: 0;
+  }
   height: 1.5em;
   &.unset {
-    p {
-      display: block;
-      margin: 0;
-    }
     input, label {display: none;}
     &.pre {opacity: 0.3;}
   }

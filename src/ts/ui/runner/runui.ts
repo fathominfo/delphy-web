@@ -50,6 +50,8 @@ export class RunUI extends UIScreen {
   private histCanvases: HistCanvas[];
 
   private credibilityInput: BlockSlider;
+  private essWrapper: HTMLDivElement;
+  private essReadout: HTMLSpanElement;
   private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
   private hideBurnIn: boolean;
@@ -60,7 +62,7 @@ export class RunUI extends UIScreen {
   private baseTree: PhyloTree | null;
 
   private burninPrompt: BurninPrompt;
-
+  private ess: number;
 
 
   is_running: boolean;
@@ -142,6 +144,8 @@ export class RunUI extends UIScreen {
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
+    this.essWrapper = document.querySelector("#ess-readout") as HTMLDivElement;
+    this.essReadout = this.essWrapper.querySelector("span") as HTMLSpanElement;
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
@@ -188,6 +192,7 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
 
     this.burninPrompt = new BurninPrompt();
+    this.ess = UNSET;
 
     this.disableAnimation = false;
 
@@ -474,7 +479,6 @@ export class RunUI extends UIScreen {
       sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
       {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
     this.treeScrubber.setData(last, kneeIndex, mccIndex);
-
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
     const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
@@ -485,6 +489,7 @@ export class RunUI extends UIScreen {
       //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
       //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
     ];
+
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     if (this.isApobecEnabled) {
@@ -495,7 +500,16 @@ export class RunUI extends UIScreen {
     this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-
+    const essCandidates: number[] = [
+      this.logPosteriorCanvas.ess,
+      this.muCanvas.ess,
+      this.TCanvas.ess,
+      this.mutCountCanvas.ess,
+      this.popGrowthCanvas.ess];
+    if (this.isApobecEnabled) {
+      essCandidates.push(this.muStarCanvas.ess);
+    }
+    this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
       const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
       if (candidateIndex > 0) {
@@ -523,7 +537,7 @@ export class RunUI extends UIScreen {
 
   private draw():void {
     if (this.pythia) {
-      const {stepCount, minDate}  = this;
+      const {stepCount, minDate, ess}  = this;
       const {maxDate} = this.pythia;
       // const mccRef = this.pythia.getMcc();
       this.treeCanvas.draw(minDate.value, maxDate, this.timelineIndices);
@@ -560,6 +574,10 @@ export class RunUI extends UIScreen {
       if (stepCount === 1) {
         stepCountPlural = '';
       }
+      const essIsUsable = ess > 0;
+      this.essWrapper.classList.toggle("unset", !essIsUsable);
+      if (essIsUsable) this.essReadout.textContent = ess.toLocaleString();
+      else this.essReadout.textContent = "0";
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }
