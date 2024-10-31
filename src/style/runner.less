@@ -860,18 +860,44 @@ input:checked + #run-input--label {
 
 }
 
+#burn-in-wrapper {
+  height: 1.5em;
+  label .hint {color: #aaa}
+}
 
 
-#burn-in-wrapper, #ess-readout {
+#burn-in-wrapper, #ess-wrapper {
   p {
     display: block;
     margin: 0;
   }
-  height: 1.5em;
   &.unset {
     input, label {display: none;}
     &.pre {opacity: 0.3;}
   }
+}
 
-  label .hint {color: #aaa}
+#ess-wrapper {
+  // display: flex;
+  width: fit-content;
+}
+
+#ess-readout {
+  span {
+    display: inline-block;
+    width: 4em;
+    text-align: end;
+  }  
+}
+
+#sample-meter {
+  margin: 6px 0;
+  font-size: 24px;
+  display: flex;
+  justify-content: end;
+  .meter-step {opacity: 0.3; }
+  &.pre .meter-step.l1 { opacity: 1; }
+  &.explore .meter-step.l2 { opacity: 1; }
+  &.robust .meter-step.l3 { opacity: 1; }
+  &.publish .meter-step.l4 { opacity: 1; }
 }

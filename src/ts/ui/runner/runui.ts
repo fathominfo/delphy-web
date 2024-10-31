@@ -17,6 +17,12 @@ import { setStage } from '../../errors';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
+
+
+const USABLE_ESS  = 10;
+const PUBLISHABLE_ESS = 200;
+const ROBUST_ESS = 100;
+
 // const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
 
@@ -52,6 +58,7 @@ export class RunUI extends UIScreen {
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
   private essReadout: HTMLSpanElement;
+  private essMeter: HTMLDivElement;
   private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
   private hideBurnIn: boolean;
@@ -144,8 +151,9 @@ export class RunUI extends UIScreen {
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
-    this.essWrapper = document.querySelector("#ess-readout") as HTMLDivElement;
+    this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
     this.essReadout = this.essWrapper.querySelector("span") as HTMLSpanElement;
+    this.essMeter = this.essWrapper.querySelector("#sample-meter") as HTMLDivElement;
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
@@ -578,6 +586,12 @@ export class RunUI extends UIScreen {
       this.essWrapper.classList.toggle("unset", !essIsUsable);
       if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
       else this.essReadout.textContent = "0";
+      const essClass: string  = ess < USABLE_ESS ? "pre"
+        : ess > PUBLISHABLE_ESS ? "publish"
+          : ess < ROBUST_ESS ? "explore"
+            : "robust" ;
+      this.essMeter.setAttribute("class", essClass);
+
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }
