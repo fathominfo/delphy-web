@@ -49,7 +49,8 @@ export const STAGES = {
   "selecting" : 1,
   "loading" : 2,
   "parsing" : 3,
-  "loaded": 4
+  "loaded": 4,
+  "resetting" : 5
 };
 
 
