@@ -30,7 +30,8 @@ const shownCodes: boolean[] = [];
 
 const onError = (err: ErrorEvent)=>{
   console.warn(`Error encountered in the ${STAGE_LABELS[stage]} stage\n`, err);
-  if (!shownCodes[stage]) {
+  // if (!shownCodes[stage]) {
+  {
     shownCodes[stage] = true;
     let msg = "";
     switch(stage) {

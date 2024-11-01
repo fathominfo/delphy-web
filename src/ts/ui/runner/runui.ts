@@ -17,7 +17,7 @@ import { setStage } from '../../errors';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
-// const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
+const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
 
 // const enum restartOption {
@@ -653,7 +653,7 @@ export class RunUI extends UIScreen {
   }
 
 
-  private confirmRestart(newParams: RunParamConfig): void {
+  private confirmRestart(newParams: RunParamConfig, skipDialog=true): void {
     this.advanced.classList.add("hidden");
 
     const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
@@ -662,18 +662,26 @@ export class RunUI extends UIScreen {
       if (!this.pythia) {
         throw new Error("pythia interface unavalailable, cannot restart");
       }
-      if (this.mccRef) {
-        this.mccRef.release();
-        this.mccRef = null;
-      }
-      this.div.classList.add('reloading');
-      this.disableAnimation = true;
-      this.pythia.reset(newParams).then(()=>{
-        this.div.classList.remove('reloading');
-        this.stepCount = 0;
+      const okToGo = skipDialog || window.confirm(RESET_MESSAGE);
+      if (okToGo) {
+        setStage(STAGES.resetting);
+        if (this.mccRef) {
+          this.mccRef.release();
+          this.mccRef = null;
+        }
+        this.div.classList.add('reloading');
+        this.disableAnimation = true;
+        this.pythia.reset(newParams).then(()=>{
+          this.div.classList.remove('reloading');
+          this.stepCount = 0;
+          this.setParamsFromRun();
+          this.disableAnimation = false;
+          setStage(STAGES.loaded);
+        });
+      } else {
+        // they canceled
         this.setParamsFromRun();
-        this.disableAnimation = false;
-      });
+      }
     } else {
       if (this.pythia) {
         this.pythia.setParams(newParams);
@@ -703,7 +711,7 @@ export class RunUI extends UIScreen {
     const newParams = copyDict(this.runParams) as RunParamConfig,
       steps = Math.pow(10, stepPower);
     newParams.stepsPerSample = steps;
-    this.confirmRestart(newParams);
+    this.confirmRestart(newParams, false);
   }
 
   private setApobec(runParams: RunParamConfig, enabled:boolean): RunParamConfig {
