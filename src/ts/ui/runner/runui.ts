@@ -152,7 +152,7 @@ export class RunUI extends UIScreen {
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
     this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
-    this.essReadout = this.essWrapper.querySelector("span") as HTMLSpanElement;
+    this.essReadout = this.essWrapper.querySelector(".readout") as HTMLSpanElement;
     this.essMeter = this.essWrapper.querySelector("#sample-meter") as HTMLDivElement;
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
@@ -586,10 +586,18 @@ export class RunUI extends UIScreen {
       this.essWrapper.classList.toggle("unset", !essIsUsable);
       if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
       else this.essReadout.textContent = "0";
-      const essClass: string  = ess < USABLE_ESS ? "pre"
-        : ess > PUBLISHABLE_ESS ? "publish"
-          : ess < ROBUST_ESS ? "explore"
-            : "robust" ;
+      let essClass  = "pre";
+      if (ess >= USABLE_ESS) {
+        if (ess >= ROBUST_ESS) {
+          if (ess >= PUBLISHABLE_ESS) {
+            essClass = "publish";
+          } else {
+            essClass = "robust";
+          }
+        } else {
+          essClass = "explore";
+        }
+      }
       this.essMeter.setAttribute("class", essClass);
 
       if (treeCount > 1) {

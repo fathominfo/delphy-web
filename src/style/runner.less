@@ -883,11 +883,45 @@ input:checked + #run-input--label {
 }
 
 #ess-readout {
-  span {
+  .readout {
     display: inline-block;
     width: 4em;
     text-align: end;
   }  
+}
+
+
+#ess-readout--tooltip {
+  display: inline-block;
+  position: relative;
+
+  .icon {
+    position: relative;
+    display: inline-block;
+    font-style: italic;
+    border: solid gray 1px;
+    padding: 0 8px;
+    border-radius: 12px;
+    z-index: 3;
+  }
+  .message {
+    width: 18em;
+    top: -5px;
+    right: 0;
+    position: absolute;
+    z-index: 1;
+    background-color: rgba(255,255,255, 0.95);
+    padding: 5px 20px 5px 10px;
+    border-radius: 5px;
+    border: solid 1px #ddd;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  &:hover .message {
+    opacity: 1;
+    pointer-events: all;
+  }
 }
 
 #sample-meter {
