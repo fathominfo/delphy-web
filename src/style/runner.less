@@ -882,8 +882,11 @@ input:checked + #run-input--label {
   width: fit-content;
   p {
     display: block;
-    margin: 0;
+    color: #555;
+    font-size: 12px;
+    margin: 5px 0;
   }
+  a {color: #c0c0c0;}
   &.unset.pre #ess-meter-steps{
     opacity: 0.3;
   }
@@ -899,30 +902,27 @@ input:checked + #run-input--label {
 }
 
 
-#ess-desc {
-  color: #999;
-  a {color: #999;}
-  font-size: 13px;
-
-  .indented {
-    padding-left: 1em;
-  }
-}
-
 #ess-meter-steps {
-  margin: 6px 0;
-  justify-content: space-between;
-  width: 100%;
-  padding-left: 0;
-  li {
-    display: inline-block;
-    padding-right: 10px;  
-    color: #999;
-    list-style: none; 
-    &.selected {
-      font-weight: 700;
-      color: #000;
+  div {
+    display: none;
+    h3 {
+      flex-grow: 1;
+      width: 100px;
+      text-transform: uppercase;
+      margin: 0;
+      height: 100%;
+      vertical-align: middle;
+      padding: 17px 20px 0 0;
     }
+    p {      
+      color: #555;
+      font-size: 12px;
+    }
+  }
+  &.converging .converging,
+  &.stable .stable,
+  &.publish .publish {
+    display: flex;
   }
 }
 

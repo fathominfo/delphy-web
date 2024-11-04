@@ -84,25 +84,22 @@
     </section>
     <section id="runner--panel">
       <div id="ess-wrapper" class="pre">
-        <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span>
-        </h1>
-        <div id="ess-desc" class="pre">
-          <p>
-            ESS is a measure of how robust the model is 
-            (more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a>).
-          </p>
-          <p class="indented">
-            * At 10-15 samples, the model is stable enough for initial reporting and exploration. 
-            More samples will tighten the margin of error, and reduce the chance that the model is 
-            stuck in a local minimum. 
-          </p>
-          <p class="indented">
-            * Most publications require models with 200 effective samples or more.
-          </p>
+        <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span></h1>
+        <div id="ess-meter-steps" class="converging">
+          <div class="converging">
+            <h3 class="step-label">Converging</h3>
+            <p>Not enough statistically independent samples to be reliable.</p>
+          </div>
+          <div class="stable">
+            <h3 class="step-label">Stable</h3>
+            <p>Enough samples for initial exploration. Further samples will refine the margin of error.</p>
+          </div>
+          <div class="publish">
+            <h3 class="step-label">Robust</h3>
+            <p>Very high probability that the model will have escaped any local minima.</p>
+          </div>
         </div>
-        <ol id="ess-meter-steps">
-          <li><span class="step-label"></span></li>
-        </ol>
+        <p>Learn more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a></p>
       </div>
       <div id="burn-in-wrapper" class="pre">
         <input type="checkbox" id="burn-in-toggle" disabled />

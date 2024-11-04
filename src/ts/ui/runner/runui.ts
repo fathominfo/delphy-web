@@ -18,12 +18,12 @@ import { setStage } from '../../errors';
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
-type ESS_THRESHOLD = {threshold: number, label: string, className: string};
+type ESS_THRESHOLD = {threshold: number, className: string};
 
 const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
-  {threshold: 0, label: "Stabilizing", className: "converging"},
-  {threshold: 10, label: "Stable", className: "stable"},
-  {threshold: 100, label: "Publication Ready", className: "publish"}
+  {threshold: 0, className: "converging"},
+  {threshold: 10, className: "stable"},
+  {threshold: 100, className: "publish"}
 ];
 
 // const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
@@ -288,23 +288,6 @@ export class RunUI extends UIScreen {
         this.advanced.classList.add("hidden");
       }
     })
-
-
-    /* set the steps of the ESS meter */
-    const template = this.essMeter.querySelector("li") as HTMLLIElement;
-    template.remove();
-    this.essMeter.innerHTML = '';
-    ESS_THRESHOLDS.forEach((et:ESS_THRESHOLD)=>{
-      const li = template.cloneNode(true) as HTMLLIElement;
-      li.classList.add(et.className);
-      const labelSpan = li.querySelector(".step-label") as HTMLSpanElement;
-      labelSpan.textContent = et.label;
-      this.essMeter.appendChild(li);
-    })
-
-
-
-
 
     const power = parseInt(prevStepPower);
     this.runParams = {
@@ -603,7 +586,7 @@ export class RunUI extends UIScreen {
         stepCountPlural = '';
       }
       const essIsUsable = ess > 0;
-      let essClass  = "pre";
+      let essClass  = "converging";
       this.essWrapper.classList.toggle("unset", !essIsUsable);
       if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
       else this.essReadout.textContent = "0";
@@ -613,9 +596,6 @@ export class RunUI extends UIScreen {
         }
       });
       this.essMeter.setAttribute("class", essClass);
-      this.essMeter.querySelectorAll("li").forEach(li=>{
-        li.classList.toggle("selected", li.classList.contains(essClass));
-      });
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }
