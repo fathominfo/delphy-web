@@ -83,6 +83,31 @@
       </div>
     </section>
     <section id="runner--panel">
+      <div id="ess-wrapper" class="pre">
+        <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span>
+        </h1>
+        <div id="ess-desc" class="pre">
+          <p>
+            ESS is a measure of how robust the model is 
+            (more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a>).
+          </p>
+          <p class="indented">
+            * At 10-15 samples, the model is stable enough for initial reporting and exploration. 
+            More samples will tighten the margin of error, and reduce the chance that the model is 
+            stuck in a local minimum. 
+          </p>
+          <p class="indented">
+            * Most publications require models with 200 effective samples or more.
+          </p>
+        </div>
+        <ol id="ess-meter-steps">
+          <li><span class="step-label"></span></li>
+        </ol>
+      </div>
+      <div id="burn-in-wrapper" class="pre">
+        <input type="checkbox" id="burn-in-toggle" disabled />
+        <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>  
+      </div>
       <div id="runner--panel--blocks" class="blocks">
         <div class="block">
           <div class="block-header">
@@ -101,26 +126,6 @@
           </div>
           <p class="block-readout"></p>
         </div>
-      </div>
-      <div id="ess-wrapper" class="pre">
-        <div id="ess-readout">Minimum Effective Sample Size
-          <div id="ess-readout--tooltip"><span class="icon">i</span>
-            <div class="message">
-              The Minimum Effective Sample Size of all the traces. For more on Effective 
-              Sample Size, please see the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a>
-            </div>
-          </div>: <span class="readout">0</span>
-        </div>
-        <div id="sample-meter" class="pre">
-          <span class="meter-step l1">😞</span>
-          <span class="meter-step l2">😐</span>
-          <span class="meter-step l3">🙂</span>
-          <span class="meter-step l4">🤩</span>
-        </div>
-      </div>
-      <div id="burn-in-wrapper" class="pre">
-        <input type="checkbox" id="burn-in-toggle" disabled />
-        <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>  
       </div>
       <div id="runner--export-list">
         <button id="runner--export-csv">Export Traces to CSV</button>

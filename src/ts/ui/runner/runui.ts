@@ -18,10 +18,13 @@ import { setStage } from '../../errors';
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
+type ESS_THRESHOLD = {threshold: number, label: string, className: string};
 
-const USABLE_ESS  = 10;
-const PUBLISHABLE_ESS = 200;
-const ROBUST_ESS = 100;
+const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
+  {threshold: 0, label: "Stabilizing", className: "converging"},
+  {threshold: 10, label: "Stable", className: "stable"},
+  {threshold: 100, label: "Publication Ready", className: "publish"}
+];
 
 // const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
@@ -153,7 +156,7 @@ export class RunUI extends UIScreen {
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
     this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
     this.essReadout = this.essWrapper.querySelector(".readout") as HTMLSpanElement;
-    this.essMeter = this.essWrapper.querySelector("#sample-meter") as HTMLDivElement;
+    this.essMeter = this.essWrapper.querySelector("#ess-meter-steps") as HTMLDivElement;
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
@@ -285,6 +288,23 @@ export class RunUI extends UIScreen {
         this.advanced.classList.add("hidden");
       }
     })
+
+
+    /* set the steps of the ESS meter */
+    const template = this.essMeter.querySelector("li") as HTMLLIElement;
+    template.remove();
+    this.essMeter.innerHTML = '';
+    ESS_THRESHOLDS.forEach((et:ESS_THRESHOLD)=>{
+      const li = template.cloneNode(true) as HTMLLIElement;
+      li.classList.add(et.className);
+      const labelSpan = li.querySelector(".step-label") as HTMLSpanElement;
+      labelSpan.textContent = et.label;
+      this.essMeter.appendChild(li);
+    })
+
+
+
+
 
     const power = parseInt(prevStepPower);
     this.runParams = {
@@ -583,23 +603,19 @@ export class RunUI extends UIScreen {
         stepCountPlural = '';
       }
       const essIsUsable = ess > 0;
+      let essClass  = "pre";
       this.essWrapper.classList.toggle("unset", !essIsUsable);
       if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
       else this.essReadout.textContent = "0";
-      let essClass  = "pre";
-      if (ess >= USABLE_ESS) {
-        if (ess >= ROBUST_ESS) {
-          if (ess >= PUBLISHABLE_ESS) {
-            essClass = "publish";
-          } else {
-            essClass = "robust";
-          }
-        } else {
-          essClass = "explore";
+      ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
+        if (ess >= et.threshold) {
+          essClass = et.className;
         }
-      }
+      });
       this.essMeter.setAttribute("class", essClass);
-
+      this.essMeter.querySelectorAll("li").forEach(li=>{
+        li.classList.toggle("selected", li.classList.contains(essClass));
+      });
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }
