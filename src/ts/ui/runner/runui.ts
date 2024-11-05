@@ -36,6 +36,7 @@ export class RunUI extends UIScreen {
   private mccTreeCountText: HTMLSpanElement;
 
   private stepCountPluralText: HTMLSpanElement;
+  private stepSelector: HTMLSelectElement;
 
   private treeCanvas: TreeCanvas;
   private mccTreeCanvas: MccTreeCanvas;
@@ -145,8 +146,8 @@ export class RunUI extends UIScreen {
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
-    const stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
-    const prevStepPower = stepSelector.value;
+    this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
+    const prevStepPower = this.stepSelector.value;
     this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
@@ -203,8 +204,8 @@ export class RunUI extends UIScreen {
     }
     this.credibilityInput = new BlockSlider((this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement), credibilityCallback);
 
-    stepSelector.addEventListener('input', ()=>{
-      const power = parseInt(stepSelector.value);
+    this.stepSelector.addEventListener('input', ()=>{
+      const power = parseInt(this.stepSelector.value);
       this.setStepsPerRefresh(power);
     });
     exportButton.addEventListener("click", ()=>{
@@ -426,6 +427,7 @@ export class RunUI extends UIScreen {
       clearTimeout(this.timerHandle);
       this.timerHandle = 0;
       this.runControl.classList.remove("stopping");
+      this.stepSelector.disabled = false;
     }
   }
 
@@ -598,6 +600,7 @@ export class RunUI extends UIScreen {
       this.is_running = false;
       this.runControl.checked = false;
       this.runControl.classList.add("stopping");
+      this.stepSelector.disabled = true;
       this.pythia.pauseRun();
     }
   }
