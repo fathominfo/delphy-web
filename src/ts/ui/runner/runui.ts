@@ -90,7 +90,8 @@ export class RunUI extends UIScreen {
   fixedPopGrowthRateToggle: HTMLInputElement;
   fixedPopGrowthRateLabel: HTMLLabelElement;
   fixedPopGrowthRateInput: HTMLInputElement;
-
+  submitAdvancedButton: HTMLButtonElement;
+  restartWarning: HTMLElement;
 
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
@@ -224,13 +225,13 @@ export class RunUI extends UIScreen {
 
     });
 
-    const restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
-    const submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
+    this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
+    this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     openAdvancedButton.addEventListener("click", ()=>{
       this.advanced.classList.remove("hidden");
-      restartWarning.classList.add("hidden");
-      submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
-      submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+      this.restartWarning.classList.add("hidden");
+      this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
+      this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
     });
 
     // this.siteHeterogeneityToggle.addEventListener("change", () => {
@@ -254,13 +255,7 @@ export class RunUI extends UIScreen {
       this.advanced.classList.add("hidden");
     }));
     const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
-    advancedForm.addEventListener("input", () => {
-      const willRestart = this.getWillRestart();
-      if (this.stepCount > 0) {
-        restartWarning.classList.toggle("hidden", !willRestart);
-      }
-      submitAdvancedButton.disabled = !willRestart;
-    });
+    advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
     this.advanced.addEventListener("click", e => {
       if (e.target === this.advanced) {
@@ -289,6 +284,15 @@ export class RunUI extends UIScreen {
   }
 
 
+  enableAdvancedFormSubmit() : void {
+    const willRestart = this.getWillRestart();
+    if (this.stepCount > 0) {
+      this.restartWarning.classList.toggle("hidden", !willRestart);
+    }
+    /* don't enable the form while waiting for samples from the delphy engine */
+    const isPausedAndWaitingForSample = !this.is_running && this.timerHandle !== 0;
+    this.submitAdvancedButton.disabled = isPausedAndWaitingForSample || !willRestart;
+  }
 
 
   activate():void {
@@ -427,6 +431,7 @@ export class RunUI extends UIScreen {
       clearTimeout(this.timerHandle);
       this.timerHandle = 0;
       this.runControl.classList.remove("stopping");
+      this.enableAdvancedFormSubmit();
       this.stepSelector.disabled = false;
     }
   }
