@@ -39,6 +39,12 @@ const APP_MAGIC_NUMBER = "DPHY",
   APP_MAGIC_NUMBER_BYTES = stringToBytes(APP_MAGIC_NUMBER),
   APP_MAGIC_NUMBER_SIZE = APP_MAGIC_NUMBER_BYTES.byteLength;
 
+enum sequenceFileFormat {
+  UNSUPPORTED,
+  FASTA,
+  MAPLE
+}
+
 export class Pythia {
 
   private mccRefManager: MccRefManager | null;
@@ -65,6 +71,7 @@ export class Pythia {
   kneeIndex: number;
   runReadyCallback: ()=>void;
   fb: ArrayBuffer;
+  fileFormat: sequenceFileFormat;
   maxDate: number;
   tipCounts: TipsByNodeIndex;
   /*
@@ -103,6 +110,7 @@ export class Pythia {
     this.mccRefManager = null;
     this.currentMccRef = null;
     this.fb = new ArrayBuffer(0);
+    this.fileFormat = sequenceFileFormat.UNSUPPORTED;
     this.maxDate = -1;
     this.tipCounts = [];
     this.mccNodeBackLinks = [];
@@ -119,12 +127,14 @@ export class Pythia {
   initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     console.log("Loading FASTA file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(bytesJs);
+    this.fileFormat = sequenceFileFormat.FASTA;
     this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
   }
 
   initRunFromMaple(mapleBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     console.log("Loading Maple file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(bytesJs);
+    this.fileFormat = sequenceFileFormat.MAPLE;
     this.initRunFromBytes(mapleBytesJs, callBack, runReadyCallback, errCallback);
   }
 
@@ -442,13 +452,13 @@ export class Pythia {
   async reset(runParams: RunParamConfig): Promise<void> {
     const prom = new Promise((resolve: emptyResolveType)=>{
       if (this.stepsHist.length > 1) {
-        const rereadingFasta = this.fb.byteLength > 0;
+        const rereadingSequences = this.fb.byteLength > 0;
         let firstTree: PhyloTree | null = null;
         if (this.run) {
           this.run.delete();
           this.run = null;
         }
-        if (!rereadingFasta) {
+        if (!rereadingSequences) {
           firstTree = this.treeHist[0].copy();
         }
         this.isRunning = false;
@@ -469,16 +479,27 @@ export class Pythia {
         const fastaBytesJs = this.fb;
         this.fb = fastaBytesJs.slice(0);
         this.mcs = null;
-        if (rereadingFasta) {
-          this.delphy.parseFastaIntoInitialTreeAsync(this.fb)
-            .then(phyloTree => {
-              this.sourceTree = phyloTree;
-              this.instantiateRun().then(()=>{
-                this.setParams(runParams);
-                this.runReadyCallback();
-                resolve(undefined);
-              });
+        if (rereadingSequences) {
+          const handleParseResults = (phyloTree:PhyloTree) => {
+            this.sourceTree = phyloTree;
+            this.instantiateRun().then(()=>{
+              this.setParams(runParams);
+              this.runReadyCallback();
+              resolve(undefined);
             });
+          };
+          switch (this.fileFormat) {
+          case sequenceFileFormat.MAPLE:
+            this.delphy.parseMapleIntoInitialTreeAsync(this.fb)
+              .then(handleParseResults);
+            break;
+          case sequenceFileFormat.FASTA:
+            this.delphy.parseFastaIntoInitialTreeAsync(this.fb)
+              .then(handleParseResults);
+            break;
+          case sequenceFileFormat.UNSUPPORTED:
+            throw new Error("Cannot reset run: file format either unknown or unsupported")
+          }
         } else if (firstTree) {
           this.sourceTree = firstTree;
           this.instantiateRun().then(()=>{
