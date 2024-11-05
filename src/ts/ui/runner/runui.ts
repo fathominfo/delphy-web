@@ -156,7 +156,7 @@ export class RunUI extends UIScreen {
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
     this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
     this.essReadout = this.essWrapper.querySelector(".readout") as HTMLSpanElement;
-    this.essMeter = this.essWrapper.querySelector("#ess-meter-steps") as HTMLDivElement;
+    this.essMeter = this.essWrapper.querySelector("#ess-meter-stages") as HTMLDivElement;
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();

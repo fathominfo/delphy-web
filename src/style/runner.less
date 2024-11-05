@@ -886,8 +886,8 @@ input:checked + #run-input--label {
     font-size: 12px;
     margin: 5px 0;
   }
-  a {color: #c0c0c0;}
-  &.unset.pre #ess-meter-steps{
+  a {color: #555;}
+  &.unset.pre #ess-meter-stages{
     opacity: 0.3;
   }
 }
@@ -902,17 +902,20 @@ input:checked + #run-input--label {
 }
 
 
-#ess-meter-steps {
+#ess-meter-stages {
   div {
     display: none;
+    a {text-decoration: none;}
     h3 {
       flex-grow: 1;
       width: 100px;
       text-transform: uppercase;
-      margin: 0;
-      height: 100%;
+      margin: 5px 10px 3px 0;
+      // height: 100%;
       vertical-align: middle;
-      padding: 17px 20px 0 0;
+      padding: 10px 10px 8px;
+      border: solid 1px #cacaca;
+      text-align: center;
     }
     p {      
       color: #555;
