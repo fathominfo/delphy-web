@@ -894,30 +894,32 @@ input:checked + #run-input--label {
 
 
 #ess-readout {
+  display: flex;
+  justify-content: space-between;
   .readout {
-    display: inline-block;
-    width: 4em;
-    text-align: end;
-  }  
+    .tabular();
+  }
 }
 
 
 #ess-meter-stages {
-  div {
+  .stage {
     display: none;
-    a {text-decoration: none;}
-    h3 {
-      flex-grow: 1;
-      width: 100px;
-      text-transform: uppercase;
+    align-items: start;
+    a {
+      text-decoration: none;
+      display: block;
       margin: 5px 10px 3px 0;
-      // height: 100%;
-      vertical-align: middle;
       padding: 10px 10px 8px;
       border: solid 1px #cacaca;
       text-align: center;
+      text-transform: uppercase;
+      .t10();
     }
-    p {      
+    .stage-label {
+      width: 100px;
+    }
+    p {
       color: #555;
       font-size: 12px;
     }
