@@ -129,13 +129,29 @@
   display: inline-block;
   text-align: center;
   cursor: pointer;
+  position: relative;
   svg {
     fill: rgb(0, 79, 158);
   }
+  #run-input--stopping {
+    fill: none;
+    stroke: rgb(0, 79, 158);
+    stroke-width: 2;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    animation: rotation 3s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
 }
 
-#run-input--running {
-  display: none;
+#run-input--running, #run-input--stopping {
+    display: none;
 }
 
 input:checked + #run-input--label {
@@ -146,6 +162,12 @@ input:checked + #run-input--label {
     display: none;
   }
 }
+
+input.stopping + #run-input--label {
+  #run-input--paused {opacity: 0.2;}
+  #run-input--stopping {display: inline-block;}
+}
+
 
 #run-steps {
   display: inline-block;
@@ -876,4 +898,13 @@ input:checked + #run-input--label {
   }
 
   label .hint {color: #aaa}
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(359deg);
+  }
 }

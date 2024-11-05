@@ -422,6 +422,11 @@ export class RunUI extends UIScreen {
       last = stepsHist.length - 1;
     if (this.stepCount === stepsHist[last]) return;
     this.updateRunData();
+    if (!this.is_running && this.timerHandle !== 0) {
+      clearTimeout(this.timerHandle);
+      this.timerHandle = 0;
+      this.runControl.classList.remove("stopping");
+    }
   }
 
 
@@ -578,18 +583,21 @@ export class RunUI extends UIScreen {
     if (this.pythia) {
       this.is_running = true;
       this.runControl.checked = true;
+      this.runControl.classList.remove("stopping");
       this.pythia.startRun(null);
     }
   }
 
   stop():void {
-    if (this.timerHandle !== 0) {
-      clearTimeout(this.timerHandle);
-      this.timerHandle = 0;
-    }
+    /* don't stop checking for results until the current iteration is done. */
+    // if (this.timerHandle !== 0) {
+    //   clearTimeout(this.timerHandle);
+    //   this.timerHandle = 0;
+    // }
     if (this.pythia) {
       this.is_running = false;
       this.runControl.checked = false;
+      this.runControl.classList.add("stopping");
       this.pythia.pauseRun();
     }
   }
