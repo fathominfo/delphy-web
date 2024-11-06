@@ -527,8 +527,9 @@ export class RunUI extends UIScreen {
       this.logPosteriorCanvas.ess,
       this.muCanvas.ess,
       this.TCanvas.ess,
-      this.mutCountCanvas.ess,
-      this.popGrowthCanvas.ess];
+      // this.mutCountCanvas.ess,
+      // this.popGrowthCanvas.ess
+    ];
     if (this.isApobecEnabled) {
       essCandidates.push(this.muStarCanvas.ess);
     }
