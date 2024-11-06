@@ -5,7 +5,8 @@ const STAGE_LABELS = [
   "selecting file",
   "loading",
   "parsing",
-  "ready"
+  "ready",
+  "resetting"
 ];
 let stage = STAGES.initialization;
 
@@ -28,8 +29,9 @@ add a last chance error handler
 const shownCodes: boolean[] = [];
 
 const onError = (err: ErrorEvent)=>{
-  console.warn(STAGE_LABELS[stage], err);
-  if (!shownCodes[stage]) {
+  console.warn(`Error encountered in the ${STAGE_LABELS[stage]} stage\n`, err);
+  // if (!shownCodes[stage]) {
+  {
     shownCodes[stage] = true;
     let msg = "";
     switch(stage) {
@@ -46,6 +48,16 @@ const onError = (err: ErrorEvent)=>{
       break;
     case STAGES.parsing:
       msg = "Could not parse your file. Please check that the fasta file is formatted correctly, reload the page, and try again. ";
+      msg += "If you continue to have trouble, please let us know at delphy@fathom.info.";
+      showFormatCallback();
+      break;
+    case STAGES.loaded:
+      msg = "An unknown error occured while running your file. Please try again.";
+      msg += "If you continue to have trouble, please let us know at delphy@fathom.info.";
+      showFormatCallback();
+      break;
+    case STAGES.resetting:
+      msg = "An unknown error encountered while resetting the parameters. If you reload the page and edit the parameters before the run, it should work fine.";
       msg += "If you continue to have trouble, please let us know at delphy@fathom.info.";
       showFormatCallback();
       break;
