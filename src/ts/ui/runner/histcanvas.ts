@@ -1,5 +1,6 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, resizeCanvas, UNSET } from '../common';
+import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { kneeListenerType } from './runcommon';
 
 const maybeChartContainer = document.querySelector('#runner--panel--blocks');
@@ -63,6 +64,8 @@ export class HistCanvas {
   data:number[];
   mccIndex: number;
   sampleIndex: number;
+  sampleCount: number;
+  ess: number;
 
 
   displayMin: number;
@@ -78,6 +81,7 @@ export class HistCanvas {
   distLeft: number;
   chartHeight: number;
   count: number;
+  displayCount: number;
   /*
   distinguish between the knee index
   that is used as the leftmost sample when we are
@@ -124,6 +128,7 @@ export class HistCanvas {
       throw new Error(`This chart container does not have an element with the class ".block-readout".`);
     }
     this.ctx = maybe_ctx;
+    this.ctx.font = 'MDSystem, Roboto, sans-serif';
     this.maxLabel = this.getLI('.max');
     this.minLabel = this.getLI('.min');
     this.avgLabel = this.getLI('.median');
@@ -132,6 +137,8 @@ export class HistCanvas {
     this.lastStepLabel = this.getLI('.step-last');
     this.readout = maybeReadout;
     this.data = [];
+    this.ess = UNSET;
+    this.sampleCount = UNSET;
     this.displayMin = UNSET;
     this.displayMax = UNSET;
     this.dataMin = UNSET;
@@ -147,6 +154,7 @@ export class HistCanvas {
     this.mccIndex = UNSET;
     this.sampleIndex = UNSET;
     this.count = 0;
+    this.displayCount = 0;
     this.savedKneeIndex = UNSET;
     this.currentKneeIndex = UNSET;
     this.settingKnee = false;
@@ -243,6 +251,10 @@ export class HistCanvas {
     this.hideBurnIn = hideBurnIn;
     this.currentKneeIndex = kneeIndex;
     this.sampleIndex = sampleIndex;
+    this.count = data.length;
+    this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
+    this.sampleCount = data.length - kneeIndex;
+    this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
 
     if (!this.settingKnee) {
       this.savedKneeIndex = kneeIndex;
@@ -286,13 +298,11 @@ export class HistCanvas {
   }
 
   drawSeries(data:number[], kneeIndex:number, mccIndex:number, sampleIndex: number) {
-    // if (this.label === 'Active Mutation Rate μ') {
-    //   console.log(stepCount, kneeIndex)
+    // if (this.label === "Mutation Rate μ") {
+    //   console.log( `   `, this.label, kneeIndex, ess)
     // }
 
-
-    const count:number = data.length;
-    this.count = count;
+    const {displayCount} = this;
     const {ctx, traceWidth} = this;
     let chartHeight = this.chartHeight,
       top = 0;
@@ -328,16 +338,21 @@ export class HistCanvas {
         chartHeight -= h;
       }
 
+
+      const stepW = Math.min(MAX_STEP_SIZE, traceWidth / displayCount || 1);
+      const burnInX = TICK_LENGTH + kneeIndex * stepW;
+      // this.drawEssIntervals(stepW, burnInX);
+
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
         // console.log(displayMax);
         ctx.strokeStyle = TRACE_COLOR;
+        ctx.beginPath();
         ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
         ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
         ctx.stroke();
       } else {
         const verticalScale = chartHeight / (valRange || 1);
-        const stepW = Math.min(MAX_STEP_SIZE, traceWidth / count || 1);
         // find the middlemost step
         let n = data[0],
           x = 0,
@@ -348,7 +363,7 @@ export class HistCanvas {
           sampleY = UNSET;
         if (kneeIndex > 0) {
           ctx.strokeStyle = KNEE_LINE_COLOR;
-          x = TICK_LENGTH + kneeIndex * stepW;
+          x = burnInX;
           ctx.beginPath();
           ctx.moveTo(x, 0);
           ctx.lineTo(x, chartHeight);
@@ -405,8 +420,6 @@ export class HistCanvas {
 
 
   drawHistogram(data:number[], kneeIndex:number) {
-    const count:number = data.length;
-    this.count = count;
     const {ctx, distLeft, chartHeight} = this;
 
 
@@ -538,7 +551,31 @@ export class HistCanvas {
       this.readout.innerHTML = `0 ${this.unit}`;
     }
     this.canvas.classList.toggle('kneed', kneeIndex > 0);
+    // ctx.fillStyle = 'black';
+    // const label = `ESS: ${  this.ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
+    // ctx.fillText(label, this.distLeft - 70, chartHeight - 2);
   }
+
+
+  drawEssIntervals(stepW: number, burnInX: number) {
+    const {sampleCount, ess, ctx, distLeft, chartHeight} = this;
+    const autoCorrelationTime = sampleCount / ess;
+    const essWidth = stepW * autoCorrelationTime;
+    const rightEdge = distLeft - TRACE_MARGIN;
+    /*
+    draw stripes of width essWidth from the start of the burn in
+    */
+    ctx.strokeStyle = '#ddd';
+    ctx.beginPath();
+    let essX = burnInX;
+    while (essX < rightEdge && essWidth >=1) {
+      ctx.moveTo(essX, 0);
+      ctx.lineTo(essX, chartHeight);
+      essX += essWidth;
+    }
+    ctx.stroke();
+  }
+
 
 }
 

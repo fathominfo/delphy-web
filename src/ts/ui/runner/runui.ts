@@ -17,6 +17,15 @@ import { setStage } from '../../errors';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
+
+type ESS_THRESHOLD = {threshold: number, className: string};
+
+const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
+  {threshold: 0, className: "converging"},
+  {threshold: 10, className: "stable"},
+  {threshold: 100, className: "publish"}
+];
+
 const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
 
@@ -51,6 +60,9 @@ export class RunUI extends UIScreen {
   private histCanvases: HistCanvas[];
 
   private credibilityInput: BlockSlider;
+  private essWrapper: HTMLDivElement;
+  private essReadout: HTMLSpanElement;
+  private essMeter: HTMLDivElement;
   private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
   private hideBurnIn: boolean;
@@ -61,7 +73,7 @@ export class RunUI extends UIScreen {
   private baseTree: PhyloTree | null;
 
   private burninPrompt: BurninPrompt;
-
+  private ess: number;
 
 
   is_running: boolean;
@@ -114,7 +126,7 @@ export class RunUI extends UIScreen {
         lastRequestedBurnInPct = pct;
         /* wait until the pct has settled before requesting the mcc */
         setTimeout(()=>{
-          console.debug(`lastRequestedBurnInPct ${lastRequestedBurnInPct}    pct ${pct}`);
+          // console.debug(`lastRequestedBurnInPct ${lastRequestedBurnInPct}    pct ${pct}`);
           if (this.pythia && pct === lastRequestedBurnInPct) {
             this.pythia.setKneeIndexByPct(pct);
             this.pythia.recalcMccTree().then(()=>{
@@ -144,6 +156,9 @@ export class RunUI extends UIScreen {
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
+    this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
+    this.essReadout = this.essWrapper.querySelector(".readout") as HTMLSpanElement;
+    this.essMeter = this.essWrapper.querySelector("#ess-meter-stages") as HTMLDivElement;
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
@@ -190,6 +205,7 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
 
     this.burninPrompt = new BurninPrompt();
+    this.ess = UNSET;
 
     this.disableAnimation = false;
 
@@ -486,7 +502,6 @@ export class RunUI extends UIScreen {
       sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
       {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
     this.treeScrubber.setData(last, kneeIndex, mccIndex);
-
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
     const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
@@ -497,6 +512,7 @@ export class RunUI extends UIScreen {
       //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
       //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
     ];
+
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     if (this.isApobecEnabled) {
@@ -507,7 +523,16 @@ export class RunUI extends UIScreen {
     this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-
+    const essCandidates: number[] = [
+      this.logPosteriorCanvas.ess,
+      this.muCanvas.ess,
+      this.TCanvas.ess,
+      this.mutCountCanvas.ess,
+      this.popGrowthCanvas.ess];
+    if (this.isApobecEnabled) {
+      essCandidates.push(this.muStarCanvas.ess);
+    }
+    this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
       const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
       if (candidateIndex > 0) {
@@ -535,7 +560,7 @@ export class RunUI extends UIScreen {
 
   private draw():void {
     if (this.pythia) {
-      const {stepCount, minDate}  = this;
+      const {stepCount, minDate, ess}  = this;
       const {maxDate} = this.pythia;
       // const mccRef = this.pythia.getMcc();
       this.treeCanvas.draw(minDate.value, maxDate, this.timelineIndices);
@@ -572,6 +597,17 @@ export class RunUI extends UIScreen {
       if (stepCount === 1) {
         stepCountPlural = '';
       }
+      const essIsUsable = ess > 0;
+      let essClass  = "converging";
+      this.essWrapper.classList.toggle("unset", !essIsUsable);
+      if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
+      else this.essReadout.textContent = "0";
+      ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
+        if (ess >= et.threshold) {
+          essClass = et.className;
+        }
+      });
+      this.essMeter.setAttribute("class", essClass);
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }
