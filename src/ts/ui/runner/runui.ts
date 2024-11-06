@@ -17,7 +17,7 @@ import { setStage } from '../../errors';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
-// const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
+const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
 
 // const enum restartOption {
@@ -36,6 +36,7 @@ export class RunUI extends UIScreen {
   private mccTreeCountText: HTMLSpanElement;
 
   private stepCountPluralText: HTMLSpanElement;
+  private stepSelector: HTMLSelectElement;
 
   private treeCanvas: TreeCanvas;
   private mccTreeCanvas: MccTreeCanvas;
@@ -89,7 +90,8 @@ export class RunUI extends UIScreen {
   fixedPopGrowthRateToggle: HTMLInputElement;
   fixedPopGrowthRateLabel: HTMLLabelElement;
   fixedPopGrowthRateInput: HTMLInputElement;
-
+  submitAdvancedButton: HTMLButtonElement;
+  restartWarning: HTMLElement;
 
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
@@ -145,8 +147,8 @@ export class RunUI extends UIScreen {
     this.burnInWrapper = document.querySelector("#burn-in-wrapper") as HTMLDivElement;
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
-    const stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
-    const prevStepPower = stepSelector.value;
+    this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
+    const prevStepPower = this.stepSelector.value;
     this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
@@ -203,8 +205,8 @@ export class RunUI extends UIScreen {
     }
     this.credibilityInput = new BlockSlider((this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement), credibilityCallback);
 
-    stepSelector.addEventListener('input', ()=>{
-      const power = parseInt(stepSelector.value);
+    this.stepSelector.addEventListener('input', ()=>{
+      const power = parseInt(this.stepSelector.value);
       this.setStepsPerRefresh(power);
     });
     exportButton.addEventListener("click", ()=>{
@@ -223,13 +225,13 @@ export class RunUI extends UIScreen {
 
     });
 
-    const restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
-    const submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
+    this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
+    this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     openAdvancedButton.addEventListener("click", ()=>{
       this.advanced.classList.remove("hidden");
-      restartWarning.classList.add("hidden");
-      submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
-      submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+      this.restartWarning.classList.add("hidden");
+      this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
+      this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
     });
 
     // this.siteHeterogeneityToggle.addEventListener("change", () => {
@@ -253,13 +255,7 @@ export class RunUI extends UIScreen {
       this.advanced.classList.add("hidden");
     }));
     const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
-    advancedForm.addEventListener("input", () => {
-      const willRestart = this.getWillRestart();
-      if (this.stepCount > 0) {
-        restartWarning.classList.toggle("hidden", !willRestart);
-      }
-      submitAdvancedButton.disabled = !willRestart;
-    });
+    advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
     this.advanced.addEventListener("click", e => {
       if (e.target === this.advanced) {
@@ -288,6 +284,15 @@ export class RunUI extends UIScreen {
   }
 
 
+  enableAdvancedFormSubmit() : void {
+    const willRestart = this.getWillRestart();
+    if (this.stepCount > 0) {
+      this.restartWarning.classList.toggle("hidden", !willRestart);
+    }
+    /* don't enable the form while waiting for samples from the delphy engine */
+    const isPausedAndWaitingForSample = !this.is_running && this.timerHandle !== 0;
+    this.submitAdvancedButton.disabled = isPausedAndWaitingForSample || !willRestart;
+  }
 
 
   activate():void {
@@ -422,6 +427,13 @@ export class RunUI extends UIScreen {
       last = stepsHist.length - 1;
     if (this.stepCount === stepsHist[last]) return;
     this.updateRunData();
+    if (!this.is_running && this.timerHandle !== 0) {
+      clearTimeout(this.timerHandle);
+      this.timerHandle = 0;
+      this.runControl.classList.remove("stopping");
+      this.enableAdvancedFormSubmit();
+      this.stepSelector.disabled = false;
+    }
   }
 
 
@@ -578,18 +590,22 @@ export class RunUI extends UIScreen {
     if (this.pythia) {
       this.is_running = true;
       this.runControl.checked = true;
+      this.runControl.classList.remove("stopping");
       this.pythia.startRun(null);
     }
   }
 
   stop():void {
-    if (this.timerHandle !== 0) {
-      clearTimeout(this.timerHandle);
-      this.timerHandle = 0;
-    }
+    /* don't stop checking for results until the current iteration is done. */
+    // if (this.timerHandle !== 0) {
+    //   clearTimeout(this.timerHandle);
+    //   this.timerHandle = 0;
+    // }
     if (this.pythia) {
       this.is_running = false;
       this.runControl.checked = false;
+      this.runControl.classList.add("stopping");
+      this.stepSelector.disabled = true;
       this.pythia.pauseRun();
     }
   }
@@ -653,7 +669,7 @@ export class RunUI extends UIScreen {
   }
 
 
-  private confirmRestart(newParams: RunParamConfig): void {
+  private confirmRestart(newParams: RunParamConfig, skipDialog=true): void {
     this.advanced.classList.add("hidden");
 
     const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
@@ -662,18 +678,26 @@ export class RunUI extends UIScreen {
       if (!this.pythia) {
         throw new Error("pythia interface unavalailable, cannot restart");
       }
-      if (this.mccRef) {
-        this.mccRef.release();
-        this.mccRef = null;
-      }
-      this.div.classList.add('reloading');
-      this.disableAnimation = true;
-      this.pythia.reset(newParams).then(()=>{
-        this.div.classList.remove('reloading');
-        this.stepCount = 0;
+      const okToGo = skipDialog || window.confirm(RESET_MESSAGE);
+      if (okToGo) {
+        setStage(STAGES.resetting);
+        if (this.mccRef) {
+          this.mccRef.release();
+          this.mccRef = null;
+        }
+        this.div.classList.add('reloading');
+        this.disableAnimation = true;
+        this.pythia.reset(newParams).then(()=>{
+          this.div.classList.remove('reloading');
+          this.stepCount = 0;
+          this.setParamsFromRun();
+          this.disableAnimation = false;
+          setStage(STAGES.loaded);
+        });
+      } else {
+        // they canceled
         this.setParamsFromRun();
-        this.disableAnimation = false;
-      });
+      }
     } else {
       if (this.pythia) {
         this.pythia.setParams(newParams);
@@ -703,7 +727,7 @@ export class RunUI extends UIScreen {
     const newParams = copyDict(this.runParams) as RunParamConfig,
       steps = Math.pow(10, stepPower);
     newParams.stepsPerSample = steps;
-    this.confirmRestart(newParams);
+    this.confirmRestart(newParams, false);
   }
 
   private setApobec(runParams: RunParamConfig, enabled:boolean): RunParamConfig {
