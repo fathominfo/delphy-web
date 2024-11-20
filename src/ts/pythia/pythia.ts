@@ -126,7 +126,12 @@ export class Pythia {
 
   initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     console.log("Loading FASTA file...");
-    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(bytesJs);
+    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
+      bytesJs,
+      (stage) => console.log(`Entering stage ${stage}`),
+      (numSeqsSoFar) => console.log(`Read ${numSeqsSoFar} sequences so far`),
+      (tipsSoFar, totalTips) => console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`),
+      (warningMsg) => console.log(`WARNING: ${warningMsg}`));
     this.fileFormat = sequenceFileFormat.FASTA;
     this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
   }
@@ -150,9 +155,13 @@ export class Pythia {
         this.instantiateRun()
           .then(()=>this.runReadyCallback())
           .catch((err)=>{
-            console.log(err);
-            errCallback(`Error loading the file. Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
+            console.error(err);
+            errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
           });
+      })
+      .catch(err => {
+        console.error(err);
+        errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
       });
   }
 

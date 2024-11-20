@@ -46,9 +46,10 @@ function withStackSave(f: any): any {
 // Crude callbacks system
 // ======================
 
-// activeCallbacks[n] holds a currently pending callback with id 'n'.  Ids are assigned using the
-// lowest available number.  There can be up to MAX_ACTIVE_CALLBACKS in flight.  When a
-// callback is invoked from the C++ side, the callback slot is freed and may be reused later.
+// activeCallbacks[n] holds a currently pending callback with id 'n'.  Ids are assigned
+// using the lowest available number.  There can be up to MAX_ACTIVE_CALLBACKS in flight.
+// When a callback is invoked from the C++ side, the callback slot is freed and may be
+// reused later.
 const activeCallbacks: {[callbackId: number]: {onresult: any, onerror: any}} = {};
 const MAX_ACTIVE_CALLBACKS = 1000;
 function registerCallback(onresult: any, onerror: any): number {  // return callback id
@@ -67,24 +68,26 @@ function useCallback(callbackId: number): {onresult: any, onerror: any} {
     console.log(`Bad callback, slot ${callbackId} is empty!`);
   }
   const cb = activeCallbacks[callbackId];
-  delete activeCallbacks[callbackId];  // Free slot before calling callback to permit efficient callback chaining
+  // Free slot before calling callback to permit efficient callback chaining
+  delete activeCallbacks[callbackId];
   return cb;
 }
 globalAny['delphyRunCallback'] = function(callbackId: number, ...params: any[]): void {
-  // This function must be visible to EM_ASM on the C++ side, and its name must not be minified,
-  // hence the "globalThis[<str>]" junk
+  // This function must be visible to EM_ASM on the C++ side, and its name must not be
+  // minified, hence the "globalAny[<str>]" junk
   useCallback(callbackId).onresult(...params);
 }
 globalAny['delphyFailCallback'] = function(callbackId: number, ...params: any[]): void {
-  // This function must be visible to EM_ASM on the C++ side, and its name must not be minified,
-  // hence the "globalThis[<str>]" junk
+  // This function must be visible to EM_ASM on the C++ side, and its name must not be
+  // minified, hence the "globalAny[<str>]" junk
   useCallback(callbackId).onerror(...params);
 }
 
 // Generic wrapper for async API call with callbacks.
-// Given a C++ API function `f` that takes a callback_id as its last parameter, return another function
-// that takes one fewer parameter but returns a promise that will be resolved with the API's result
-// on the main thread.
+//
+// Given a C++ API function `f` that takes a callback_id as its last parameter, return
+// another function that takes one fewer parameter but returns a promise that will be
+// resolved with the API's result on the main thread.
 const wrapRawAsyncApi = <T>(func: any) => (...args: any[]) => new Promise<T>((resolve, reject) => {
   func(...args, registerCallback(
     (result: any) => resolve(result),
@@ -92,9 +95,74 @@ const wrapRawAsyncApi = <T>(func: any) => (...args: any[]) => new Promise<T>((re
 });
 
 
+// For reporting progress and warnings, we adapt the above to a slightly janky system
+// of hooks, which are first registered, can then be called many times from the WASM side,
+// and are finally deregistered.
+const activeHooks: {[hookId: number]: any} = {};
+const MAX_ACTIVE_HOOKS = 1000;
+const NOOP_HOOK = -1;
+function registerHook(hook: any): number {  // return hook id
+  for (let i = 0; i < MAX_ACTIVE_HOOKS; ++i) {
+    if (!((`${i}`) in activeHooks)) {
+      // Found a slot
+      activeHooks[i] = hook;
+      return i;
+    }
+  }
+  throw "No more hook slots available!";
+}
+function useHook(hookId: number): any {
+  if (!(hookId in activeHooks)) {
+    console.log(`Bad hook, slot ${hookId} is empty!`);
+  }
+  return activeHooks[hookId];
+}
+function deregisterHook(hookId: number): void {
+  if (!(hookId in activeHooks)) {
+    console.log(`Bad hook, slot ${hookId} is empty!`);
+  }
+  delete activeHooks[hookId];
+}
+
+globalAny['delphyRunHook'] = function(hookId: number, ...params: any[]): void {
+  // Special case: hookId == NOOP_HOOK means ignore calls to the hook
+  if (hookId === NOOP_HOOK) {
+    return;
+  }
+
+  // This function must be visible to EM_ASM on the C++ side, and its name must not be
+  // minified, hence the "globalAny[<str>]" junk
+  useHook(hookId)(...params);
+}
+
+// Generic wrapper for managing registration/deregistration of hooks.
+//
+// Usage: withHook(myJsHookFunction, (hookId) => doSomething(1, 2, 3, hookId));
+//
+// function withHook(hookFunction: any, body: (id: number) => any) {
+//   let hookId = registerHook(hookFunction);
+//   try {
+//     return body(hookId);
+//   } finally {
+//     deregisterHook(hookId);
+//   }
+// }
+
+// Generic wrapper for managing registration/deregistration of hooks of async methods.
+// Postpones deregistration until Promise completes (successfully or unsuccessfully).
+//
+// Usage: withHookAsync(myJsHookFunction, (hookId) => doSomethingAsync(1, 2, 3, hookId));
+//
+function withHookAsync<T>(hookFunction: any, body: (hookId: number) => Promise<T>): Promise<T> {
+  const hookId = registerHook(hookFunction);
+  return body(hookId).finally(() => deregisterHook(hookId));
+}
+
+
 // JS interface to Delphy core
 // ===========================
 
+export type HookId = number;
 export type CharPtr = number;
 export type DoublePtr = number;
 export type StringPtr = number;
@@ -157,21 +225,32 @@ export class Delphy {
     return UTF8ToString(rawCommitString);
   }
 
-  parseFastaIntoInitialTreeAsync(fastaBytes: ArrayBuffer): Promise<PhyloTree> {
+  parseFastaIntoInitialTreeAsync(
+    fastaBytes: ArrayBuffer,
+    stageProgressHook: (stage: number) => void = () => void 0,
+    fastaReadProgressHook: (seqsSoFar: number) => void = () => void 0,
+    initialBuildProgressHook: (tipsSoFar: number, totalTips: number) => void = () => void 0,
+    warningHook: (msg: string) => void = () => void 0
+  ): Promise<PhyloTree> {
     const numFastaBytes = fastaBytes.byteLength;
     const fastaBytesView = new Uint8Array(fastaBytes, 0, numFastaBytes);
     const fastaBytesWasm = Delphy.delphyCoreRaw.malloc(numFastaBytes);
     const fastaBytesWasmView = new Uint8Array(Module.HEAPU8.buffer, fastaBytesWasm, numFastaBytes);
     fastaBytesWasmView.set(fastaBytesView);
 
-    return Delphy.delphyCoreRaw.parse_fasta_into_initial_tree_async(this.ctx, fastaBytesWasm, numFastaBytes)
+    return withHookAsync(stageProgressHook, (stageProgressHookId) =>
+      withHookAsync(fastaReadProgressHook, (fastaReadProgressHookId) =>
+        withHookAsync(initialBuildProgressHook, (initialBuildProgressHookId) =>
+          withHookAsync(warningHook, (warningHookId) =>
+
+            Delphy.delphyCoreRaw.parse_fasta_into_initial_tree_async(this.ctx, fastaBytesWasm, numFastaBytes,
+              stageProgressHookId,
+              fastaReadProgressHookId,
+              initialBuildProgressHookId,
+              warningHookId)))))
       .then(phyloTreePtr => {
         const pt = new PhyloTree(this, phyloTreePtr);
         return pt;
-      })
-      .catch(err=>{
-        console.log(`caught error during pares`, err);
-        return new PhyloTree(this, 0);
       })
       .finally(() => Delphy.delphyCoreRaw.free(fastaBytesWasm));
   }
@@ -378,7 +457,11 @@ export class Delphy {
     parse_fasta_into_initial_tree_async:
       (ctx: DelphyContextPtr,
        fastaBytes: CharPtr,
-       numFastaBytes: number)
+       numFastaBytes: number,
+       stageProgressHookId: HookId,
+       fastaReadProgressHookId: HookId,
+       initialBuildProgressHookId: HookId,
+       warningHookId: HookId)
         => Promise<PhyloTreePtr>,
     parse_maple_into_initial_tree_async:
       (ctx: DelphyContextPtr,
