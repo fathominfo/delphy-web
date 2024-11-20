@@ -124,17 +124,20 @@ export class Pythia {
     this.runReadyCallback = ()=>{return;};
   }
 
-  initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+  initRunFromFasta(fastaBytesJs:ArrayBuffer,
+    runReadyCallback:()=>void,
+    errCallback:(msg:string)=>void,
+    stageCallback:(stage:number)=>void,
+    parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
+    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    warningCallback:(msg:string)=>void):void {
     console.log("Loading FASTA file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
       bytesJs,
-      (stage) => console.log(`Entering stage ${stage}`),
-      (numSeqsSoFar, bytesSoFar, totalBytes) => {
-        console.log(`Read ${numSeqsSoFar} sequences so far `
-                    + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
-      },
-      (tipsSoFar, totalTips) => console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`),
-      (warningMsg) => console.log(`WARNING: ${warningMsg}`));
+      stageCallback,
+      parseProgressCallback,
+      initTreeProgressCallback,
+      warningCallback);
     this.fileFormat = sequenceFileFormat.FASTA;
     this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
   }

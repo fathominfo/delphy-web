@@ -18,24 +18,39 @@ setShowFormat(showFormatHints);
 const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
 const progressBar = document.querySelector("#uploader--progress") as HTMLDivElement;
 const progressLabel = document.querySelector("#uploader--progress-label") as HTMLDivElement;
-const showProgress = (unit: string, total: number, soFar: number)=>{
-  /* if we aren't tracking progress, yield to the main status message */
+const showProgress = (label:string, total: number, soFar: number)=>{
   if (soFar === 0 || soFar === total) {
     activateProgressBar(false);
   } else {
     activateProgressBar(true);
     const pct = 100 * soFar / total;
-    const label = `${soFar} / ${total} ${unit}`;
     progressBar.style.width = `${pct}%`;
     progressLabel.textContent = label;
   }
+};
+const showSimpleProgress = (unit: string, total: number, soFar: number)=>{
+  const label = `${soFar} / ${total} ${unit}`;
+  showProgress(label, total, soFar);
 };
 const activateProgressBar = (showit=true)=>{
   statusContainer.classList.toggle("progressing", showit);
 }
 
-let runCallback = ()=>{console.debug('runCallback not assigned')},
-  configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)};
+let runCallback = ()=>console.debug('runCallback not assigned'),
+  configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config),
+  stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
+  parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
+    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
+    showProgress(label, totalBytes, bytesSoFar);
+    // console.log(`Read ${numSeqsSoFar} sequences so far `
+    //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
+  },
+  initTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
+    const label = `Building initial tree`;
+    // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
+    showProgress(label, totalTips, tipsSoFar);
+  },
+  loadWarningCallback = (msg: string)=>console.log(msg);
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{
@@ -98,7 +113,6 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         setStage(STAGES.parsing);
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
-        // pythia.initRunFromFasta(bytesJs, runCallback, errCallback);
         pythia.initRunFromMaple(bytesJs, runCallback, errCallback);
       })
   });
@@ -204,7 +218,7 @@ const checkFiles = (files: File[] | FileList)=>{
           if (bytesJs) {
             const progressCallback = (p:number, t:number)=>{
               const action = `${p === 1 ? 'tree' : 'trees'  } loaded`;
-              showProgress(action, t, p);
+              showSimpleProgress(action, t, p);
             };
             pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
               .then(mccConfig=>configCallback(mccConfig as ConfigExport));
@@ -217,7 +231,7 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.addEventListener('load', event=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
+          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
       } else if (extension === 'maple') {
@@ -241,7 +255,7 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
-              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
+              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
             });
             reader.readAsArrayBuffer(file);
           } else {
