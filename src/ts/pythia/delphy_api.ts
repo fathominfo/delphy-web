@@ -228,7 +228,7 @@ export class Delphy {
   parseFastaIntoInitialTreeAsync(
     fastaBytes: ArrayBuffer,
     stageProgressHook: (stage: number) => void = () => void 0,
-    fastaReadProgressHook: (seqsSoFar: number) => void = () => void 0,
+    fastaReadProgressHook: (seqsSoFar: number, bytesSoFar: number, totalBytes: number) => void = () => void 0,
     initialBuildProgressHook: (tipsSoFar: number, totalTips: number) => void = () => void 0,
     warningHook: (msg: string) => void = () => void 0
   ): Promise<PhyloTree> {

@@ -129,7 +129,10 @@ export class Pythia {
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
       bytesJs,
       (stage) => console.log(`Entering stage ${stage}`),
-      (numSeqsSoFar) => console.log(`Read ${numSeqsSoFar} sequences so far`),
+      (numSeqsSoFar, bytesSoFar, totalBytes) => {
+        console.log(`Read ${numSeqsSoFar} sequences so far `
+                    + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
+      },
       (tipsSoFar, totalTips) => console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`),
       (warningMsg) => console.log(`WARNING: ${warningMsg}`));
     this.fileFormat = sequenceFileFormat.FASTA;
