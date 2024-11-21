@@ -187,6 +187,11 @@ export type MutationListIteratorPtr = number;
 
 export const kNoNode: NodeIndex = -1;
 
+export enum SequenceWarningCode {
+  NoValidDate = 1,
+  AmbiguityPrecisionLoss = 2,
+}
+
 export class Delphy {
 
   public ctx: DelphyContextPtr;  // Need to pass this on every API call
@@ -231,7 +236,7 @@ export class Delphy {
     fastaReadProgressHook: (seqsSoFar: number, bytesSoFar: number, totalBytes: number) => void = () => void 0,
     analysisProgressHook: (seqsSoFar: number, totalSeqs: number) => void = () => void 0,
     initialBuildProgressHook: (tipsSoFar: number, totalTips: number) => void = () => void 0,
-    warningHook: (msg: string) => void = () => void 0
+    warningHook: (seqId: string, warningCode: SequenceWarningCode, detail: string) => void = () => void 0
   ): Promise<PhyloTree> {
     const numFastaBytes = fastaBytes.byteLength;
     const fastaBytesView = new Uint8Array(fastaBytes, 0, numFastaBytes);

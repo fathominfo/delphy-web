@@ -2,6 +2,7 @@ import { STAGES } from '../constants';
 import { setShowFormat, setStage } from '../errors';
 import {Pythia} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
+import {SequenceWarningCode} from '../pythia/delphy_api';
 
 const DEMO_PATH = './ma_sars_cov_2.maple'
 
@@ -56,7 +57,9 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
     // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
     showProgress(label, totalTips, tipsSoFar);
   },
-  loadWarningCallback = (msg: string)=>console.log(msg);
+  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: string) => {
+    console.warn(`WARNING (code = ${SequenceWarningCode[warningCode]} - sequence '${seqId}'): ${detail}`);
+  };
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{

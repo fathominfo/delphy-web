@@ -1,5 +1,6 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
-  RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T} from './delphy_api';
+  RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
+  SequenceWarningCode} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, RunParamConfig, NodeDistributionType, OverlapTally, CoreVersionInfo} from '../constants';
@@ -131,7 +132,7 @@ export class Pythia {
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
-    warningCallback:(msg:string)=>void):void {
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:string)=>void):void {
     console.log("Loading FASTA file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
       bytesJs,
