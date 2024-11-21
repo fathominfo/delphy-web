@@ -5,7 +5,7 @@ import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 
 const DEMO_PATH = './ma_sars_cov_2.maple'
-
+type SiteAmbiguity = {site: number, state: string};
 
 let pythia : Pythia;
 
@@ -26,7 +26,7 @@ const showProgress = (label:string, total: number, soFar: number)=>{
     activateProgressBar(true);
     const pct = 100 * soFar / total;
     progressBar.style.width = `${pct}%`;
-    progressLabel.textContent = label;
+    progressLabel.innerHTML = label;
   }
 };
 const showSimpleProgress = (unit: string, total: number, soFar: number)=>{
@@ -39,6 +39,11 @@ const activateProgressBar = (showit=true)=>{
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
+
+const qcNoDateSequences:string[] = [],
+  qcAmbiguousSiteSequences: {[seqid: string]: SiteAmbiguity[] } = {},
+  qcOther: {[seqId: string]: any[] } = {};
+let qcAmbiguousSiteCount = 0;
 const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
   parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
     const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
@@ -47,7 +52,20 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
     //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
   },
   analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
-    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
+    let label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
+    let c;
+    if (qcAmbiguousSiteCount > 0) {
+      c = Object.keys(qcAmbiguousSiteSequences).length;
+      label += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} fixed`;
+    }
+    c = qcNoDateSequences.length;
+    if (c > 0) {
+      label += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
+    }
+    c = Object.keys(qcOther).length;
+    if (c > 0) {
+      label += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
+    }
     showProgress(label, totalSeqs, numSeqsSoFar);
     // console.log(`Read ${numSeqsSoFar} sequences so far `
     //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
@@ -60,13 +78,23 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
   loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => {
     switch (warningCode) {
     case SequenceWarningCode.NoValidDate:
-      console.warn(`WARNING (sequence '${seqId}') - No valid date`);
+      qcNoDateSequences.push(seqId);
+      // console.warn(`WARNING (sequence '${seqId}') - No valid date`);
       break;
     case SequenceWarningCode.AmbiguityPrecisionLoss:
-      console.warn(`WARNING (sequence '${seqId}') - Ambiguous state ${detail.originalState} at site ${detail.site+1} changed to N`);
+      if (qcAmbiguousSiteSequences[seqId] === undefined) {
+        qcAmbiguousSiteSequences[seqId] = [];
+      }
+      qcAmbiguousSiteSequences[seqId].push({site: detail.site, state: detail.originalState});
+      qcAmbiguousSiteCount++;
+      // console.warn(`WARNING (sequence '${seqId}') - Ambiguous state ${detail.originalState} at site ${detail.site+1} changed to N`);
       break;
     default:
-      console.warn(`WARNING (sequence '${seqId}') - UNKNOWN CODE - detail = ${detail}`);
+      if (qcOther[seqId] === undefined) {
+        qcOther[seqId] = [];
+      }
+      qcOther[seqId].push(detail);
+      // console.warn(`WARNING (sequence '${seqId}') - UNKNOWN CODE - detail:`, detail);
       break;
     }
   };
