@@ -132,7 +132,7 @@ export class Pythia {
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
-    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:string)=>void):void {
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void {
     console.log("Loading FASTA file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
       bytesJs,

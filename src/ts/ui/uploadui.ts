@@ -57,8 +57,18 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
     // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
     showProgress(label, totalTips, tipsSoFar);
   },
-  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: string) => {
-    console.warn(`WARNING (code = ${SequenceWarningCode[warningCode]} - sequence '${seqId}'): ${detail}`);
+  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => {
+    switch (warningCode) {
+    case SequenceWarningCode.NoValidDate:
+      console.warn(`WARNING (sequence '${seqId}') - No valid date`);
+      break;
+    case SequenceWarningCode.AmbiguityPrecisionLoss:
+      console.warn(`WARNING (sequence '${seqId}') - Ambiguous state ${detail.originalState} at site ${detail.site+1} changed to N`);
+      break;
+    default:
+      console.warn(`WARNING (sequence '${seqId}') - UNKNOWN CODE - detail = ${detail}`);
+      break;
+    }
   };
 const errCallback = (msg:string)=>{
   console.log(msg);
