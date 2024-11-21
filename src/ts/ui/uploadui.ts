@@ -42,7 +42,7 @@ let runCallback = ()=>console.debug('runCallback not assigned'),
 
 const qcNoDateSequences:string[] = [],
   qcAmbiguousSiteSequences: {[seqid: string]: SiteAmbiguity[] } = {},
-  qcOther: {[seqId: string]: any[] } = {};
+  qcOther: {[seqId: string]: any[] } = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
 let qcAmbiguousSiteCount = 0;
 const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
   parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
@@ -75,7 +75,7 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
     // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
     showProgress(label, totalTips, tipsSoFar);
   },
-  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => {
+  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     switch (warningCode) {
     case SequenceWarningCode.NoValidDate:
       qcNoDateSequences.push(seqId);
