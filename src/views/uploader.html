@@ -27,10 +27,41 @@
 
       <div class="uploader--or">or</div>
 
-      <label class="uploader--url-message">Load from a url
-        <br/><span class="file-types">.maple, .fasta, or .dphy</span>
-        <input type="text" id="uploader--url-input" name="uploader--url-input">
-      </label>
+      <div id="uploader--url-message">
+        <p>Load from a url
+          <br/><span class="file-types">.maple, .fasta, or .dphy</span>
+        </p>
+        <input type="text" id="uploader--url-input" />
+        <div id="uploader--proxy-info">
+          <p>
+            When a file is located on a different server, delphy might not 
+            be able to load it directly. When this happens, you have the option 
+            of routing the file through a proxy server we have set up. We won't 
+            read the contents of the file at all, it's just a means of providing 
+            access to the file. 
+          </p>
+          <p>
+            Alternatively, you can download the file to your local machine, and 
+            load it directly. 
+          </p>
+          <div>
+            <input type="checkbox" id="uploader--proxy-info-noshow" />
+            <label for="uploader--proxy-info-noshow">don't show me this again</label>
+          </div>
+        </div>
+        <div id="uploader--proxy-controls">
+          <label for="uploader--proxy-allow">Allow loading by proxy</label> 
+          <input type="checkbox" id="uploader--proxy-allow" />  
+          <button id="uploader--proxy-info-activate">
+            <span class="uploader--proxy-info-activate--open box"><span class="glyph"></span></span>
+            <span class="uploader--proxy-info-activate--close">X</span>
+          </button>
+          <label id="uploader--proxy-info-activate-label" for="uploader--proxy-info-activate">
+            <span class="uploader--proxy-info-activate--open">Learn more</span>
+            <span class="uploader--proxy-info-activate--close">Close</span>
+          </label>
+        </div>
+      </div>
       
 
 

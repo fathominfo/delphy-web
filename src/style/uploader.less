@@ -208,7 +208,7 @@
   gap: 10px;
 }
 
-.uploader--info-toggle {
+.uploader--info-toggle, #uploader--proxy-info-activate {
   appearance: none;
   background: none;
   border: none;
@@ -255,7 +255,7 @@
   }
 }
 
-.uploader--info-content {
+.uploader--info-content, #uploader--proxy-info {
   .t15();
   display: flex;
   flex-direction: column;
@@ -316,6 +316,52 @@
       }
     }
   }
+}
+
+#uploader--url-message {
+  position: relative;
+
+  &.proxy-info {
+    #uploader--proxy-info {display: block;}
+    .uploader--proxy-info-activate--open {display: none;}
+    .uploader--proxy-info-activate--close {display: inline;}
+  }
+}
+
+.uploader--proxy-info-activate--close {display: none;}
+
+#uploader--proxy-info {
+  position: absolute;
+  bottom: 0px;
+  padding-bottom: 70px;
+  z-index: 1;
+  display: none;
+}
+
+#uploader--proxy-controls {
+  position: relative;
+  z-index: 2;
+}
+
+#uploader--proxy-info-activate {
+  position: relative;
+  display: inline-flex;
+}
+
+#uploader--proxy-info-activate-label {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.15s opacity;
+  color: @uploader-info-detail-header;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 18px;
+}
+
+#uploader--proxy-info-activate:hover + #uploader--proxy-info-activate-label {
+  opacity: 1;
+  pointer-events: all;
 }
 
 #uploader--status {

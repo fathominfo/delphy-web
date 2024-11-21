@@ -126,16 +126,19 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         }
       });
     }
-    const button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
-    button.focus();
     const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
-    urlInput.addEventListener("change", ()=>{
-      console.log(`loading from  "${urlInput.value}"`);
-      loadNow(urlInput.value);
-    });
+    urlInput.addEventListener("change", ()=>loadNow(urlInput.value));
+    const urlDiv = document.querySelector("#uploader--url-message") as HTMLDivElement;
+    let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
+    button?.addEventListener("click", ()=>urlDiv?.classList.toggle("proxy-info"));
+
+    button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
+    button.focus();
 
   }
 }
+
+
 
 const loadNow = (url:string, byProxy=false)=>{
   setStage(STAGES.loading);
@@ -173,8 +176,8 @@ const loadNow = (url:string, byProxy=false)=>{
       .catch((err:TypeError)=>{
         console.log(err);
         if (!byProxy && !url.startsWith(PROXY_PATH)) {
-          console.log("gonna retry by proxy");
-          loadNow(url, true);
+          // console.log("gonna retry by proxy");
+          // loadNow(url, true);
         }
       });
   }
@@ -294,22 +297,6 @@ const checkFiles = (files: File[] | FileList)=>{
     }
   }
 }
-
-
-// const handleMessage = (message)=>{
-//   const data = message.data;
-//   switch(data.type) {
-//   case 'loaded':
-//     runCallback();
-//     break;
-//   case 'fail':
-//     alert('bad parse');
-//     break;
-
-//   }
-// };
-
-
 
 
 export { bindUpload, hideUpload, loadNow };
