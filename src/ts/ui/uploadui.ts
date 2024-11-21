@@ -45,6 +45,12 @@ let runCallback = ()=>console.debug('runCallback not assigned'),
     // console.log(`Read ${numSeqsSoFar} sequences so far `
     //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
   },
+  analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
+    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
+    showProgress(label, totalSeqs, numSeqsSoFar);
+    // console.log(`Read ${numSeqsSoFar} sequences so far `
+    //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
+  },
   initTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
     const label = `Building initial tree`;
     // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
@@ -231,7 +237,7 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.addEventListener('load', event=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
+          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
       } else if (extension === 'maple') {
@@ -255,7 +261,7 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
-              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
+              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
             });
             reader.readAsArrayBuffer(file);
           } else {

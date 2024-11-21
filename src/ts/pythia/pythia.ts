@@ -129,6 +129,7 @@ export class Pythia {
     errCallback:(msg:string)=>void,
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
+    analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
     warningCallback:(msg:string)=>void):void {
     console.log("Loading FASTA file...");
@@ -136,6 +137,7 @@ export class Pythia {
       bytesJs,
       stageCallback,
       parseProgressCallback,
+      analysisProgressCallback,
       initTreeProgressCallback,
       warningCallback);
     this.fileFormat = sequenceFileFormat.FASTA;
