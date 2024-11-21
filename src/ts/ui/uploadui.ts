@@ -37,8 +37,8 @@ const activateProgressBar = (showit=true)=>{
 }
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
-  configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config),
-  stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
+  configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
+const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
   parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
     const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
     showProgress(label, totalBytes, bytesSoFar);
