@@ -1,5 +1,5 @@
 import { Pythia, setReadyCallback } from './pythia/pythia';
-import { bindUpload, hideUpload, loadNow } from './ui/uploadui';
+import { bindUpload, hideUpload } from './ui/uploadui';
 import { NavLabel, bindNav, activateView } from  "./ui/nav";
 import { UIScreen } from './ui/uiscreen';
 import { RunUI } from './ui/runner/runui';
@@ -97,11 +97,6 @@ function onReady(p:Pythia):void {
   };
   bindUpload(p, runCallback, configCallback);
   setStage(STAGES.selecting);
-  const loc = window.location;
-  if (loc.search.length > 1) {
-    const dataUrl = `${loc.origin}${loc.pathname}${loc.search.substring(1)}`;
-    loadNow(dataUrl);
-  }
 }
 
 initErrors();

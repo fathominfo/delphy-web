@@ -4,7 +4,7 @@ import {Pythia} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
 
 const DEMO_PATH = './ma_sars_cov_2.maple'
-
+const PROXY_PATH = 'https://delphy.fathom.info/proxy/';
 
 let pythia : Pythia;
 
@@ -111,37 +111,73 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
     domElement.classList.remove('hidden');
   })
 
-  const fileInput = uploadDiv.querySelector("#uploader--file-input") as HTMLInputElement;
-  if (fileInput) {
-    fileInput?.addEventListener("change", ()=>{
-      if (fileInput.files) {
-        setStage(STAGES.loading);
-        uploadDiv.classList.add('loading');
-        checkFiles(fileInput.files);
-      }
+  const loc = window.location;
+  if (loc.search.length > 1) {
+    const dataUrl = `${loc.origin}${loc.pathname}${loc.search.substring(1)}`;
+    loadNow(dataUrl);
+  } else {
+    const fileInput = uploadDiv.querySelector("#uploader--file-input") as HTMLInputElement;
+    if (fileInput) {
+      fileInput?.addEventListener("change", ()=>{
+        if (fileInput.files) {
+          setStage(STAGES.loading);
+          uploadDiv.classList.add('loading');
+          checkFiles(fileInput.files);
+        }
+      });
+    }
+    const button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
+    button.focus();
+    const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
+    urlInput.addEventListener("change", ()=>{
+      console.log(`loading from  "${urlInput.value}"`);
+      loadNow(urlInput.value);
     });
 
   }
-
-  const button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
-  button.focus();
 }
 
-const loadNow = (url:string)=>{
-  console.log(`fetching from ${url}`);
+const loadNow = (url:string, byProxy=false)=>{
   setStage(STAGES.loading);
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
-  fetch(url)
-    .then(r => r.blob())
-    .then(blob => {
-      setStage(STAGES.parsing);
-      uploadDiv.classList.remove('loading');
-      uploadDiv.classList.add('parsing');
-      const fname = url.split('/').pop() || '';
-      const asFile = new File([blob], fname);
-      checkFiles([asFile]);
-    });
+  const options:RequestInit = byProxy ? {} : {mode: 'no-cors'};
+  let urlOk = !byProxy;
+  if (byProxy && !url.startsWith(PROXY_PATH)) {
+    if (url.startsWith("https://")) {
+      url = `${ PROXY_PATH }${ url.substring(8)}`;
+      urlOk = true;
+    }
+  }
+  if (!urlOk) {
+    console.warn(`bad url for proxying, needs to start with https ${url}`)
+  } else {
+    console.log(`fetching from ${url}`);
+    fetch(url, options)
+      .then(response => {
+        if (!response.ok) {
+          console.log(`we connected, but got status code ${response.status}`);
+          throw new Error(response.statusText);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        setStage(STAGES.parsing);
+        uploadDiv.classList.remove('loading');
+        uploadDiv.classList.add('parsing');
+        const fname = url.split('/').pop() || '';
+        const asFile = new File([blob], fname);
+        // blob.text().then(txt=>console.log(txt));
+        checkFiles([asFile]);
+      })
+      .catch((err:TypeError)=>{
+        console.log(err);
+        if (!byProxy && !url.startsWith(PROXY_PATH)) {
+          console.log("gonna retry by proxy");
+          loadNow(url, true);
+        }
+      });
+  }
 };
 
 
