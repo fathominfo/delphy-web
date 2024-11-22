@@ -113,7 +113,10 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
 
   const loc = window.location;
   if (loc.search.length > 1) {
-    const dataUrl = `${loc.origin}${loc.pathname}${loc.search.substring(1)}`;
+    let dataUrl = loc.search.substring(1);
+    if (!dataUrl.startsWith("http")) {
+      dataUrl = `${loc.origin}${loc.pathname}${dataUrl}`;
+    }
     loadNow(dataUrl);
   } else {
     const fileInput = uploadDiv.querySelector("#uploader--file-input") as HTMLInputElement;
