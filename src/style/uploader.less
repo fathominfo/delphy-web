@@ -25,7 +25,7 @@
   }
 
   &.disabled {
-    .uploader--message, #uploader--demo-button {
+    #uploader--message, #uploader--demo-button {
       pointer-events: none;
       opacity: 0.4;
     }
@@ -46,7 +46,7 @@
   }
 
   &.dragging {
-    .uploader--message {
+    #uploader--message {
       background-color: fade(@del, 20%);
       color: lighten(@del, 20%);
       border: 1px dashed lighten(@del, 10%);
@@ -66,7 +66,7 @@
   
     #uploader--demo-button,
     .uploader--or,
-    .uploader--message {
+    #uploader--message {
       display: none;
     }
 
@@ -107,7 +107,8 @@
 }
 
 #uploader--demo-button,
-.uploader--message {
+#uploader--message, 
+#uploader--url-message {
   .t25();
   .smoothly(all);
   // display: flex;
@@ -178,22 +179,40 @@
   }
 }
 
-.uploader--message {
-  background-color: fade(@del, 10%);
+#uploader--message, #uploader--url-message {
   color: lighten(@del, 10%);
-  border: 1px dashed @del;
+  border-width: 1px;
   font-weight: 400;
-  cursor: pointer;
   padding: 25px 20px;
 
   &:hover {
-    background-color: fade(@del, 15%);
     color: lighten(@del, 10%);
-    border: 1px dashed lighten(@del, 10%);
   }
 
   .file-types {
     color: @del;
+  }
+}
+
+#uploader--message {
+  cursor: pointer;
+  background-color: fade(@del, 10%);
+  border-color: @del;
+  border-style: dashed;
+
+  &:hover {
+    background-color: fade(@del, 15%);
+    border-color: lighten(@del, 10%);
+  }
+}
+
+#uploader--url-message {
+  background-color: fade(@del, 5%);
+  border-style: solid;
+  border-color: fade(@del, 10%);
+  &:hover {
+    background-color: fade(@del, 15%);
+    border-color: fade(@del, 40%);
   }
 }
 
@@ -246,7 +265,6 @@
     padding: 3px;
 
     .glyph {
-      .masked(url("/assets/icons/question.svg"));
       background-color: @toggle;
       .smoothly(background-color);
       width: 80%;
@@ -255,7 +273,19 @@
   }
 }
 
-.uploader--info-content, #uploader--proxy-info {
+.uploader--info-toggle .box .glyph {
+  .masked(url("/assets/icons/question.svg"));
+}
+
+#uploader--proxy-info-activate .uploader--proxy-info-activate--open .glyph {
+  .masked(url("/assets/icons/question.svg"));
+}
+
+#uploader--proxy-info-activate .uploader--proxy-info-activate--close .glyph {
+  .masked(url("/assets/icons/exit-lg.svg"));
+}
+
+.uploader--info-content, #uploader--proxy-info, #uploader--proxy-popup {
   .t15();
   display: flex;
   flex-direction: column;
@@ -324,16 +354,36 @@
   &.proxy-info {
     #uploader--proxy-info {display: block;}
     .uploader--proxy-info-activate--open {display: none;}
-    .uploader--proxy-info-activate--close {display: inline;}
+    .uploader--proxy-info-activate--close {display: unset;}
   }
+}
+
+#uploader--url-input {
+  width: 100%;
+  padding: 2px 5px;
+  margin: 10px 0px 20px;
+  font-size: 15px;
 }
 
 #uploader--proxy-popup {
   display: none;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 3;
+  p {
+    margin: 20px 0;
+  }
 
   &.active {
     display: block;
   }
+}
+
+.uploader--button-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
 }
 
 .uploader--proxy-info-activate--close {display: none;}

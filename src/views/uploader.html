@@ -23,7 +23,7 @@
       <div class="uploader--or">or</div>
 
       <input type="file" id="uploader--file-input" name="uploader--file-input">
-      <label for="uploader--file-input" class="uploader--message">Upload or drag a file <br/><span class="file-types">.maple, .fasta, or .dphy</span></label>
+      <label for="uploader--file-input" id="uploader--message">Upload or drag a file <br/><span class="file-types">.maple, .fasta, or .dphy</span></label>
 
       <div class="uploader--or">or</div>
 
@@ -32,7 +32,8 @@
           <br/><span class="file-types">.maple, .fasta, or .dphy</span>
         </p>
         <form id="uploader--url-form">
-          <input type="text" id="uploader--url-input" />
+          <input type="text" id="uploader--url-input" 
+            placeholder="Enter the URL of a .maple, .fasta, or .dphy file"/>
         </form>
         <div id="uploader--proxy-info">
           <p>
@@ -51,34 +52,6 @@
             <label for="uploader--proxy-info-noshow">don't show me this again</label>
           </div>
         </div>
-        <div id="uploader--proxy-popup">
-          <p>
-            Delphy encountered a network error while trying to retrieve 
-            <a class="uploader--remote-url echo" target="_"></a>. This could be because
-            that website <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS"
-            target="_">isn't set up to share files with other websites</a>. You have the 
-            option of requesting the file via a proxy server we have set up, which will
-            request the file via a tunnel on delphy.fathom.info.
-          </p>
-          <p>
-            Please note that, although
-            the remote file will pass through the delphy server, the server does not
-            read the contents of the file. 
-          </p>
-          <p>
-            Alternatively, you can <a class="uploader--remote-url" download target="_">download the file</a> to your local machine, and 
-            open it in delphy directly. 
-          </p>
-          <label>
-            Try requesting the file via delphy.fathom.info? 
-            <button id="uploader--try-proxy">Yes, please.</button>
-            <button id="uploader--no-proxy">No, thanks.</button>
-          </label>
-          <!-- <label>
-            Save this preference? 
-            <input type="checkbox" id="uploader--save-try-proxy" />
-          </label> -->
-        </div>
         <div id="uploader--proxy-controls">
           <label for="uploader--proxy-allow">Allow loading by proxy</label> 
           <input type="checkbox" id="uploader--proxy-allow" />  
@@ -93,7 +66,36 @@
         </div>
       </div>
       
-
+      <div id="uploader--proxy-popup">
+        <p>
+          Delphy encountered a network error while trying to retrieve 
+          <a class="uploader--remote-url echo" target="_"></a>. This could be because
+          that website <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS"
+          target="_">isn't set up to share files with other websites</a>. You have the 
+          option of requesting the file via a proxy server we have set up, which will
+          request the file via a tunnel on delphy.fathom.info.
+        </p>
+        <p>
+          Please note that, although
+          the remote file will pass through the delphy server, the server does not
+          read the contents of the file. 
+        </p>
+        <p>
+          Alternatively, you can <a class="uploader--remote-url" download target="_">download the file</a> to your local machine, and 
+          open it in delphy directly. 
+        </p>
+        <p>
+          Try requesting the file via delphy.fathom.info? 
+        </p>
+        <div class="uploader--button-row">
+          <button id="uploader--try-proxy">Yes, please.</button>
+          <button id="uploader--no-proxy">No, thanks.</button>
+        </div>
+        <!-- <label>
+          Save this preference? 
+          <input type="checkbox" id="uploader--save-try-proxy" />
+        </label> -->
+      </div>
 
       <div id="uploader--status">
         <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
