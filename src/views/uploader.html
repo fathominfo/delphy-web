@@ -68,17 +68,17 @@
       
       <div id="uploader--proxy-popup">
         <p>
-          Delphy encountered a network error while trying to retrieve 
-          <a class="uploader--remote-url echo" target="_"></a>. This could be because
-          that website <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS"
-          target="_">isn't set up to share files with other websites</a>. You have the 
-          option of requesting the file via a proxy server we have set up, which will
-          request the file via a tunnel on delphy.fathom.info.
+          Delphy encountered a network error while trying to retrieve the requested 
+          file. A common source of this error is when a server 
+          <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" target="_">
+          isn't set up to share files with other websites</a>, and perhaps 
+          <span class="uploader--remote-host">that website</span> is like that? 
+          You can try requesting the file via a proxy server we have 
+          set up, which will request the file via a tunnel on delphy.fathom.info.
         </p>
         <p>
-          Please note that, although
-          the remote file will pass through the delphy server, the server does not
-          read the contents of the file. 
+          Please note that, although the remote file will pass through the delphy server, 
+          the server does not read the contents of the file. 
         </p>
         <p>
           Alternatively, you can <a class="uploader--remote-url" download target="_">download the file</a> to your local machine, and 
@@ -88,8 +88,12 @@
           Try requesting the file via delphy.fathom.info? 
         </p>
         <div class="uploader--button-row">
-          <button id="uploader--try-proxy">Yes, please.</button>
-          <button id="uploader--no-proxy">No, thanks.</button>
+          <label> Yes, please
+            <button id="uploader--try-proxy"></button>
+          </label>
+          <label> No, thanks.
+            <button id="uploader--no-proxy"></button>
+          </label>
         </div>
         <!-- <label>
           Save this preference? 

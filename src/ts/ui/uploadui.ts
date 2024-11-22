@@ -111,6 +111,28 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
     domElement.classList.remove('hidden');
   })
 
+
+  const fileInput = uploadDiv.querySelector("#uploader--file-input") as HTMLInputElement;
+  if (fileInput) {
+    fileInput?.addEventListener("change", ()=>{
+      if (fileInput.files) {
+        setStage(STAGES.loading);
+        uploadDiv.classList.add('loading');
+        checkFiles(fileInput.files);
+      }
+    });
+  }
+  const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
+  const urlForm = uploadDiv.querySelector("#uploader--url-form") as HTMLFormElement;
+  urlInput.addEventListener("change", ()=>loadNow(urlInput.value));
+  urlForm.addEventListener("submit", (event:SubmitEvent)=>{
+    event.preventDefault();
+    loadNow(urlInput.value);
+    return false;
+  });
+  const urlDiv = document.querySelector("#uploader--url-message") as HTMLDivElement;
+  let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
+  button?.addEventListener("click", ()=>urlDiv?.classList.toggle("proxy-info"));
   const loc = window.location;
   if (loc.search.length > 1) {
     let dataUrl = loc.search.substring(1);
@@ -119,31 +141,8 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
     }
     loadNow(dataUrl);
   } else {
-    const fileInput = uploadDiv.querySelector("#uploader--file-input") as HTMLInputElement;
-    if (fileInput) {
-      fileInput?.addEventListener("change", ()=>{
-        if (fileInput.files) {
-          setStage(STAGES.loading);
-          uploadDiv.classList.add('loading');
-          checkFiles(fileInput.files);
-        }
-      });
-    }
-    const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
-    const urlForm = uploadDiv.querySelector("#uploader--url-form") as HTMLFormElement;
-    urlInput.addEventListener("change", ()=>loadNow(urlInput.value));
-    urlForm.addEventListener("submit", (event:SubmitEvent)=>{
-      event.preventDefault();
-      loadNow(urlInput.value);
-      return false;
-    });
-    const urlDiv = document.querySelector("#uploader--url-message") as HTMLDivElement;
-    let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
-    button?.addEventListener("click", ()=>urlDiv?.classList.toggle("proxy-info"));
-
     button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
     button.focus();
-
   }
 }
 
@@ -194,15 +193,11 @@ const loadNow = (url:string, byProxy=false)=>{
 };
 
 const showProxyOption = (url:string)=>{
+  const urlDict = new URL(url);
   uploadDiv.classList.remove('loading');
   const popup = document.querySelector("#uploader--proxy-popup") as HTMLDivElement;
-  popup.querySelectorAll(".uploader--remote-url").forEach(maybeURL=>{
-    const urlElement = maybeURL as HTMLAnchorElement;
-    urlElement.href = url;
-    if (urlElement.classList.contains("echo")) {
-      urlElement.textContent = url;
-    }
-  });
+  const fileLink = popup.querySelector(".uploader--remote-url") as HTMLAnchorElement;
+  const serverSpan = popup.querySelector(".uploader--remote-host") as HTMLSpanElement;
   const yesProxyButton = popup.querySelector("#uploader--try-proxy") as HTMLButtonElement;
   const noProxyButton = popup.querySelector("#uploader--no-proxy") as HTMLButtonElement;
   const yesHandler = ()=>{
@@ -215,6 +210,8 @@ const showProxyOption = (url:string)=>{
     noProxyButton.removeEventListener("click", dismiss);
     popup.classList.remove("active");
   }
+  fileLink.href = url;
+  serverSpan.textContent = urlDict.hostname;
   yesProxyButton.addEventListener("click", yesHandler);
   noProxyButton.addEventListener("click", dismiss);
   popup.classList.add("active");

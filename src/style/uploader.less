@@ -378,6 +378,27 @@
   &.active {
     display: block;
   }
+
+  label {
+    position: relative;
+    padding: 0.5rem 1rem;
+    background-color: @details-code;
+    color: @details-code-text;
+    border-radius: 2px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+    transition: 0.15s all;
+    &:hover {
+      background-color: lighten(@details-code, 10%);
+      color: white;
+    }
+  }
+  button {
+    position: absolute;
+    width: 0; 
+    opacity: 0;
+  }
 }
 
 .uploader--button-row {
