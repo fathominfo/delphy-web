@@ -1,4 +1,4 @@
 [
-{"filename":"ma_sars_cov_2.maple", "pathogen": "SARS-CoV-2"},
-{"filename":"ma_sars_cov_2.fasta", "pathogen": "SARS-CoV-2"}
+{"filename":"ma_sars_cov_2.maple", "pathogen": "SARS-CoV-2 (maple)"},
+{"filename":"ma_sars_cov_2.fasta", "pathogen": "SARS-CoV-2 (fasta)"}
 ]
