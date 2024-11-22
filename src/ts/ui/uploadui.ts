@@ -127,7 +127,13 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
       });
     }
     const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
+    const urlForm = uploadDiv.querySelector("#uploader--url-form") as HTMLFormElement;
     urlInput.addEventListener("change", ()=>loadNow(urlInput.value));
+    urlForm.addEventListener("submit", (event:SubmitEvent)=>{
+      event.preventDefault();
+      loadNow(urlInput.value);
+      return false;
+    });
     const urlDiv = document.querySelector("#uploader--url-message") as HTMLDivElement;
     let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
     button?.addEventListener("click", ()=>urlDiv?.classList.toggle("proxy-info"));
@@ -178,10 +184,39 @@ const loadNow = (url:string, byProxy=false)=>{
         if (!byProxy && !url.startsWith(PROXY_PATH)) {
           // console.log("gonna retry by proxy");
           // loadNow(url, true);
+          showProxyOption(url);
         }
       });
   }
 };
+
+const showProxyOption = (url:string)=>{
+  uploadDiv.classList.remove('loading');
+  const popup = document.querySelector("#uploader--proxy-popup") as HTMLDivElement;
+  popup.querySelectorAll(".uploader--remote-url").forEach(maybeURL=>{
+    const urlElement = maybeURL as HTMLAnchorElement;
+    urlElement.href = url;
+    if (urlElement.classList.contains("echo")) {
+      urlElement.textContent = url;
+    }
+  });
+  const yesProxyButton = popup.querySelector("#uploader--try-proxy") as HTMLButtonElement;
+  const noProxyButton = popup.querySelector("#uploader--no-proxy") as HTMLButtonElement;
+  const yesHandler = ()=>{
+    dismiss();
+    loadNow(url, true);
+  }
+  const dismiss = ()=>{
+    uploadDiv.classList.remove('direct-loading');
+    yesProxyButton.removeEventListener("click", yesHandler);
+    noProxyButton.removeEventListener("click", dismiss);
+    popup.classList.remove("active");
+  }
+  yesProxyButton.addEventListener("click", yesHandler);
+  noProxyButton.addEventListener("click", dismiss);
+  popup.classList.add("active");
+}
+
 
 
 const hideUpload = ()=>{
