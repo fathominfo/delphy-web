@@ -6,6 +6,9 @@ import {SequenceWarningCode} from '../pythia/delphy_api';
 
 const DEMO_PATH = './ma_sars_cov_2.maple'
 type SiteAmbiguity = {site: number, state: string};
+type InvalidStateWarning = {state: string};
+type InvalidGapWarning = {startSite: number, endSite: number};
+type InvalidMutationWarning = {from: string, site: number, to: string};
 
 let pythia : Pythia;
 
@@ -40,38 +43,81 @@ const activateProgressBar = (showit=true)=>{
 let runCallback = ()=>console.debug('runCallback not assigned'),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
 
-const qcNoDateSequences:string[] = [],
+let qcNoDateSequences:string[] = [],
   qcAmbiguousSiteSequences: {[seqid: string]: SiteAmbiguity[] } = {},
+  qcInvalidStateSequences: {[seqid: string]: InvalidStateWarning[] } = {},
+  qcInvalidGapSequences: {[seqid: string]: InvalidGapWarning[] } = {},
+  qcInvalidMutationSequences: {[seqid: string]: InvalidMutationWarning[] } = {},
   qcOther: {[seqId: string]: any[] } = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
-let qcAmbiguousSiteCount = 0;
-const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
+let qcAmbiguousSiteCount = 0,
+  qcInvalidStateCount = 0,
+  qcInvalidGapCount = 0,
+  qcInvalidMutationCount = 0;
+
+const clearQc = ()=>{
+  qcNoDateSequences = [];
+
+  qcAmbiguousSiteSequences = {};
+  qcAmbiguousSiteCount = 0;
+
+  qcInvalidStateSequences = {};
+  qcInvalidStateCount = 0;
+
+  qcInvalidGapSequences = {};
+  qcInvalidGapCount = 0;
+
+  qcInvalidMutationSequences = {};
+  qcInvalidMutationCount = 0;
+
+  qcOther = {};
+}
+const warningsLabelAddendum = () => {
+    let result = "";
+    let c;
+    if (qcAmbiguousSiteCount > 0) {
+      c = Object.keys(qcAmbiguousSiteSequences).length;
+      result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
+    }
+    c = qcNoDateSequences.length;
+    if (c > 0) {
+      result += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
+    }
+    if (qcInvalidStateCount > 0) {
+      c = Object.keys(qcInvalidStateSequences).length;
+      result += `<br/> ${c} invalid state${c === 1 ? '' : 's'}`;
+    }
+    if (qcInvalidGapCount > 0) {
+      c = Object.keys(qcInvalidGapSequences).length;
+      result += `<br/> ${c} invalid gap${c === 1 ? '' : 's'}`;
+    }
+    if (qcInvalidMutationCount > 0) {
+      c = Object.keys(qcInvalidMutationSequences).length;
+      result += `<br/> ${c} invalid mutation${c === 1 ? '' : 's'}`;
+    }
+    c = Object.keys(qcOther).length;
+    if (c > 0) {
+      result += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
+    }
+    return result;
+  },
+  stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
   parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
-    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
+    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read${
+      warningsLabelAddendum()}`;
     showProgress(label, totalBytes, bytesSoFar);
     // console.log(`Read ${numSeqsSoFar} sequences so far `
     //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
   },
   analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
-    let label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
-    let c;
-    if (qcAmbiguousSiteCount > 0) {
-      c = Object.keys(qcAmbiguousSiteSequences).length;
-      label += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} fixed`;
-    }
-    c = qcNoDateSequences.length;
-    if (c > 0) {
-      label += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
-    }
-    c = Object.keys(qcOther).length;
-    if (c > 0) {
-      label += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
-    }
+    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed${
+      warningsLabelAddendum()}`;
     showProgress(label, totalSeqs, numSeqsSoFar);
     // console.log(`Read ${numSeqsSoFar} sequences so far `
     //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
   },
   initTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
-    const label = `Building initial tree`;
+    const label = `Building initial tree${
+      warningsLabelAddendum()}`;
     // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
     showProgress(label, totalTips, tipsSoFar);
   },
@@ -79,7 +125,7 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
     switch (warningCode) {
     case SequenceWarningCode.NoValidDate:
       qcNoDateSequences.push(seqId);
-      // console.warn(`WARNING (sequence '${seqId}') - No valid date`);
+      console.warn(`WARNING (sequence '${seqId}') - No valid date`);
       break;
     case SequenceWarningCode.AmbiguityPrecisionLoss:
       if (qcAmbiguousSiteSequences[seqId] === undefined) {
@@ -87,14 +133,38 @@ const stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
       }
       qcAmbiguousSiteSequences[seqId].push({site: detail.site, state: detail.originalState});
       qcAmbiguousSiteCount++;
-      // console.warn(`WARNING (sequence '${seqId}') - Ambiguous state ${detail.originalState} at site ${detail.site+1} changed to N`);
+      console.warn(`WARNING (sequence '${seqId}') - Ambiguous state ${detail.originalState} at site ${detail.site+1} changed to N`);
+      break;
+    case SequenceWarningCode.InvalidState:
+      if (qcInvalidStateSequences[seqId] === undefined) {
+        qcInvalidStateSequences[seqId] = [];
+      }
+      qcInvalidStateSequences[seqId].push({state: detail.state});
+      qcInvalidStateCount++;
+      console.warn(`WARNING (sequence '${seqId}') - Invalid state ${detail.state}`);
+      break;
+    case SequenceWarningCode.InvalidGap:
+      if (qcInvalidGapSequences[seqId] === undefined) {
+        qcInvalidGapSequences[seqId] = [];
+      }
+      qcInvalidGapSequences[seqId].push({startSite: detail.startSite, endSite: detail.endSite});
+      qcInvalidGapCount++;
+      console.warn(`WARNING (sequence '${seqId}') - Invalid gap [${detail.startSite+1}, ${detail.endSite+1})`);
+      break;
+    case SequenceWarningCode.InvalidMutation:
+      if (qcInvalidMutationSequences[seqId] === undefined) {
+        qcInvalidMutationSequences[seqId] = [];
+      }
+      qcInvalidMutationSequences[seqId].push({from: detail.from, site: detail.site, to: detail.to});
+      qcInvalidMutationCount++;
+      console.warn(`WARNING (sequence '${seqId}') - Invalid mutation from ${detail.from} to ${detail.to} at site ${detail.site+1}`);
       break;
     default:
       if (qcOther[seqId] === undefined) {
         qcOther[seqId] = [];
       }
       qcOther[seqId].push(detail);
-      // console.warn(`WARNING (sequence '${seqId}') - UNKNOWN CODE - detail:`, detail);
+      console.warn(`WARNING (sequence '${seqId}') - UNKNOWN CODE - detail:`, detail);
       break;
     }
   };
@@ -160,7 +230,8 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         setStage(STAGES.parsing);
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
-        pythia.initRunFromMaple(bytesJs, runCallback, errCallback);
+        clearQc();
+        pythia.initRunFromMaple(bytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
       })
   });
 
@@ -278,6 +349,7 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.addEventListener('load', event=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
+          clearQc();
           if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
@@ -287,7 +359,8 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
           const mapleBytesJs = event.target?.result as ArrayBuffer;
-          if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback);
+          clearQc();
+          if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
       } else {
@@ -302,6 +375,7 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
+              clearQc();
               if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
             });
             reader.readAsArrayBuffer(file);

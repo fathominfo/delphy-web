@@ -145,9 +145,20 @@ export class Pythia {
     this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
   }
 
-  initRunFromMaple(mapleBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+  initRunFromMaple(mapleBytesJs:ArrayBuffer,
+    runReadyCallback:()=>void,
+    errCallback:(msg:string)=>void,
+    stageCallback:(stage:number)=>void,
+    parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
+    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void {
     console.log("Loading Maple file...");
-    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(bytesJs);
+    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(
+      bytesJs,
+      stageCallback,
+      parseProgressCallback,
+      initTreeProgressCallback,
+      warningCallback);
     this.fileFormat = sequenceFileFormat.MAPLE;
     this.initRunFromBytes(mapleBytesJs, callBack, runReadyCallback, errCallback);
   }

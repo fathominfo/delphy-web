@@ -190,6 +190,9 @@ export const kNoNode: NodeIndex = -1;
 export enum SequenceWarningCode {
   NoValidDate = 1,
   AmbiguityPrecisionLoss = 2,
+  InvalidState = 3,
+  InvalidGap = 4,
+  InvalidMutation = 5,
 }
 
 export class Delphy {
@@ -233,7 +236,7 @@ export class Delphy {
   parseFastaIntoInitialTreeAsync(
     fastaBytes: ArrayBuffer,
     stageProgressHook: (stage: number) => void = () => void 0,
-    fastaReadProgressHook: (seqsSoFar: number, bytesSoFar: number, totalBytes: number) => void = () => void 0,
+    readProgressHook: (seqsSoFar: number, bytesSoFar: number, totalBytes: number) => void = () => void 0,
     analysisProgressHook: (seqsSoFar: number, totalSeqs: number) => void = () => void 0,
     initialBuildProgressHook: (tipsSoFar: number, totalTips: number) => void = () => void 0,
     warningHook: (seqId: string, warningCode: SequenceWarningCode, detail: any) => void = () => void 0
@@ -245,37 +248,45 @@ export class Delphy {
     fastaBytesWasmView.set(fastaBytesView);
 
     return withHookAsync(stageProgressHook, (stageProgressHookId) =>
-      withHookAsync(fastaReadProgressHook, (fastaReadProgressHookId) =>
+      withHookAsync(readProgressHook, (readProgressHookId) =>
         withHookAsync(analysisProgressHook, (analysisProgressHookId) =>
           withHookAsync(initialBuildProgressHook, (initialBuildProgressHookId) =>
             withHookAsync(warningHook, (warningHookId) =>
 
               Delphy.delphyCoreRaw.parse_fasta_into_initial_tree_async(this.ctx, fastaBytesWasm, numFastaBytes,
                 stageProgressHookId,
-                fastaReadProgressHookId,
+                readProgressHookId,
                 analysisProgressHookId,
                 initialBuildProgressHookId,
                 warningHookId))))))
-      .then(phyloTreePtr => {
-        const pt = new PhyloTree(this, phyloTreePtr);
-        return pt;
-      })
+      .then(phyloTreePtr => new PhyloTree(this, phyloTreePtr))
       .finally(() => Delphy.delphyCoreRaw.free(fastaBytesWasm));
   }
 
-  parseMapleIntoInitialTreeAsync(mapleBytes: ArrayBuffer): Promise<PhyloTree> {
+  parseMapleIntoInitialTreeAsync(
+    mapleBytes: ArrayBuffer,
+    stageProgressHook: (stage: number) => void = () => void 0,
+    readProgressHook: (seqsSoFar: number, bytesSoFar: number, totalBytes: number) => void = () => void 0,
+    initialBuildProgressHook: (tipsSoFar: number, totalTips: number) => void = () => void 0,
+    warningHook: (seqId: string, warningCode: SequenceWarningCode, detail: any) => void = () => void 0
+  ): Promise<PhyloTree> {
     const numMapleBytes = mapleBytes.byteLength;
     const mapleBytesView = new Uint8Array(mapleBytes, 0, numMapleBytes);
     const mapleBytesWasm = Delphy.delphyCoreRaw.malloc(numMapleBytes);
     const mapleBytesWasmView = new Uint8Array(Module.HEAPU8.buffer, mapleBytesWasm, numMapleBytes);
     mapleBytesWasmView.set(mapleBytesView);
 
-    return Delphy.delphyCoreRaw.parse_maple_into_initial_tree_async(this.ctx, mapleBytesWasm, numMapleBytes)
+    return withHookAsync(stageProgressHook, (stageProgressHookId) =>
+      withHookAsync(readProgressHook, (readProgressHookId) =>
+        withHookAsync(initialBuildProgressHook, (initialBuildProgressHookId) =>
+          withHookAsync(warningHook, (warningHookId) =>
+
+            Delphy.delphyCoreRaw.parse_maple_into_initial_tree_async(this.ctx, mapleBytesWasm, numMapleBytes,
+              stageProgressHookId,
+              readProgressHookId,
+              initialBuildProgressHookId,
+              warningHookId)))))
       .then(phyloTreePtr => new PhyloTree(this, phyloTreePtr))
-      .catch(err=>{
-        console.log(`caught error during pares`, err);
-        return new PhyloTree(this, 0);
-      })
       .finally(() => Delphy.delphyCoreRaw.free(mapleBytesWasm));
   }
 
@@ -467,7 +478,7 @@ export class Delphy {
        fastaBytes: CharPtr,
        numFastaBytes: number,
        stageProgressHookId: HookId,
-       fastaReadProgressHookId: HookId,
+       readProgressHookId: HookId,
        analysisProgressHookId: HookId,
        initialBuildProgressHookId: HookId,
        warningHookId: HookId)
@@ -475,7 +486,11 @@ export class Delphy {
     parse_maple_into_initial_tree_async:
       (ctx: DelphyContextPtr,
        mapleBytes: CharPtr,
-       numMapleBytes: number)
+       numMapleBytes: number,
+       stageProgressHookId: HookId,
+       readProgressHookId: HookId,
+       initialBuildProgressHookId: HookId,
+       warningHookId: HookId)
         => Promise<PhyloTreePtr>,
 
     // Phylo_tree
