@@ -75,7 +75,7 @@ const warningsLabelAddendum = () => {
     let result = "";
     let c;
     if (qcAmbiguousSiteCount > 0) {
-      c = Object.keys(qcAmbiguousSiteSequences).length;
+      c = qcAmbiguousSiteCount; //Object.keys(qcAmbiguousSiteSequences).length;
       result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
     }
     c = qcNoDateSequences.length;
