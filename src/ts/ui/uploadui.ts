@@ -107,6 +107,18 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         demoOptContainer?.appendChild(copy);
       })
     });
+  const sequenceFileLink = document.querySelector("#uploader--src-sequences") as HTMLAnchorElement;
+  const metadataFileLink = document.querySelector("#uploader--src-metadata") as HTMLAnchorElement;
+  demoForm.addEventListener("change", ()=>{
+    const selection = demoForm.filename.value as string;
+    const extensionPosition = selection.lastIndexOf(".") + 1;
+    const metadataFilename = `${selection.substring(0, extensionPosition)  }csv`;
+    sequenceFileLink.href = selection;
+    sequenceFileLink.download = selection;
+    metadataFileLink.href = metadataFilename;
+    metadataFileLink.download = metadataFilename;
+
+  });
 
   document.querySelector("#uploader--demo-button")?.addEventListener("click", ()=>{
     const fileToLoad = demoForm.filename.value as string;
