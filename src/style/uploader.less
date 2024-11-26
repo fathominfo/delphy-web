@@ -141,37 +141,51 @@
 }
 
 #uploader--demo-form {
-  width: 200%;
+  // width: 200%;
   position: relative;
   left: 50%;
-  display: flex;
+  // display: flex;
   transform: translate(-50%, 0);
   justify-content: center;
   
   .uploader--demo-option {
-    background-color: fade(@del, 10%);
-    color: lighten(@del, 10%);
-    border: 1px solid @del;
-    padding: 3px 8px;
-    display: inline-block;
-    position: relative;
-    cursor: pointer;
-    border-radius: 5px;
-    margin: 5px;
-    font-size: 15px;
+    margin: 0;
+    a {
+      font-size: 15px;
+      line-height: 18px;
+    }
 
-    input {
-      opacity: 0;
-      width: 0;
-      position: absolute;
-    }
-    
-    &:has(input:checked) {
-      background-color: fade(@del, 30%);
-      color: white;
+    label {
+      background-color: fade(@del, 10%);
+      color: lighten(@del, 10%);
+      border: 1px solid fade(@del, 10%);
+      padding: 3px 8px;
+      display: inline-block;
+      position: relative;
+      cursor: pointer;
+      border-radius: 5px;
+      margin: 5px;
+      font-size: 15px;
+      transition: all 0.15s;
       
-    }
+
+      &:hover {
+        border-color: @del;
+      }
+
+      input {
+        opacity: 0;
+        width: 0;
+        position: absolute;
+      }
+      
+      &:has(input:checked) {
+        background-color: fade(@del, 30%);
+        color: white; 
+        border-color: @del;
+      }
     }  
+  }
 }
 
 #uploader--src-download {

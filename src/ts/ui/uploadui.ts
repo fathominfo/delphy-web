@@ -93,7 +93,10 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
   const demoForm = document.querySelector("#uploader--demo-form") as HTMLFormElement;
   const demoFileOptTemplate = demoForm.querySelector(".uploader--demo-option") as HTMLLabelElement;
   const demoOptContainer = demoFileOptTemplate.parentNode;
+  const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
+  const pathLabel = runButton.querySelector(".selection") as HTMLSpanElement;
   demoFileOptTemplate.remove();
+  const pathogenLabels: {[fname:string]:string} = {};
   fetch(DEMO_FILES)
     .then(r=>r.json())
     .then(optionList=>{
@@ -101,26 +104,28 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
         const input = copy.querySelector("input") as HTMLInputElement;
         const span = copy.querySelector("span") as HTMLSpanElement;
+        const extensionPosition = filename.lastIndexOf(".");
+        const zipFilename = `${filename.substring(0, extensionPosition)}.zip`;
+        const anchor = copy.querySelector("a") as HTMLAnchorElement;
         input.value = filename;
         input.checked = i === 0;
         span.textContent = pathogen;
+        anchor.href = zipFilename;
+        anchor.download = zipFilename;
         demoOptContainer?.appendChild(copy);
+        pathogenLabels[filename] = pathogen;
+        if (input.checked) {
+          pathLabel.textContent = pathogen;
+        }
       })
     });
-  const sequenceFileLink = document.querySelector("#uploader--src-sequences") as HTMLAnchorElement;
-  const metadataFileLink = document.querySelector("#uploader--src-metadata") as HTMLAnchorElement;
   demoForm.addEventListener("change", ()=>{
     const selection = demoForm.filename.value as string;
-    const extensionPosition = selection.lastIndexOf(".") + 1;
-    const metadataFilename = `${selection.substring(0, extensionPosition)  }csv`;
-    sequenceFileLink.href = selection;
-    sequenceFileLink.download = selection;
-    metadataFileLink.href = metadataFilename;
-    metadataFileLink.download = metadataFilename;
-
+    const labelText = pathogenLabels[selection];
+    pathLabel.textContent = labelText;
   });
 
-  document.querySelector("#uploader--demo-button")?.addEventListener("click", ()=>{
+  runButton.addEventListener("click", ()=>{
     const fileToLoad = demoForm.filename.value as string;
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
