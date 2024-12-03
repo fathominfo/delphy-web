@@ -132,7 +132,7 @@ export class Pythia {
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
-    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void {
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading FASTA file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
       bytesJs,
@@ -151,7 +151,7 @@ export class Pythia {
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
-    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void {
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading Maple file...");
     const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(
       bytesJs,
