@@ -10,12 +10,19 @@
 
 #uploader {
   .t25();
+}
+
+#uploader--central-column {
+  position: relative;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: white;
   padding: 72px;
   gap: 50px;
+  left: 50%;
+  transform: translate(-50%, 0);
 
   .symbol {
     .smoothly(color);
@@ -460,6 +467,11 @@
   right: 20px;
   font-size: 15px;
   line-height: 18px;
+  a, a:visited {
+    color: @toggle-text;
+  }
+
+
 }
 
 
@@ -479,4 +491,14 @@
     width: 20vw;
   }
 
+}
+
+@media (max-height: 1062px) {
+  #uploader {
+    overflow: auto;
+  }
+
+  #uploader--central-column {
+    justify-content: unset;
+  }
 }
