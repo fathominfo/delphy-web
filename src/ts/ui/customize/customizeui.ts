@@ -10,6 +10,7 @@ import { MccTree, SummaryTree } from '../../pythia/delphy_api';
 import { MccTreeCanvas } from '../mcctreecanvas';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
+import { MccConfig } from '../mccconfig';
 
 /* global NodeListOf */
 
@@ -533,33 +534,7 @@ export class CustomizeUI extends MccUI {
 
 
   parseMetadataFile(file: File) {
-    let separator = "";
-    if (file.type === "text/tab-separated-values" || file.name.endsWith(".tsv")) {
-      separator = "\t";
-    } else if (file.type === "text/csv" || file.name.endsWith(".csv")) {
-      separator = ",";
-    }
-
-    const url = URL.createObjectURL(file);
-    fetch(url)
-      .then(res => res.text())
-      .then(text => {
-        if ("" === separator) {
-          /* take a peek at the first line and guess */
-          const nl = text.indexOf('\n');
-          const first = text.substring(0, nl);
-          const commaCount = first.split(',').length - 1;
-          const tabCount = first.split('\t').length - 1;
-          separator = commaCount > tabCount ? ',' : '\t';
-        }
-        const metadata = new Metadata(file.name, text, separator);
-        this.sharedState.mccConfig.setMetadata(metadata, this.mccTreeCanvas.tree as SummaryTree);
-        this.endMetadataLoading();
-      })
-      .catch(err=>{
-        console.log(err);
-        alert("error loading metadata file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
-      });
+    parseMetadataFile(file, this.sharedState.mccConfig, this.mccTreeCanvas, ()=>this.endMetadataLoading());
   }
 
 
@@ -596,5 +571,37 @@ export class CustomizeUI extends MccUI {
 }
 
 
-
-
+/*
+adding metadata does not have to be part of the customize page.
+If we _do_ decide to move it out of here, this is what it will require.
+[mark 241125]
+*/
+const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccTreeCanvas, callback: ()=>void)=>{
+  let separator = "";
+  if (file.type === "text/tab-separated-values" || file.name.endsWith(".tsv")) {
+    separator = "\t";
+  } else if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+    separator = ",";
+  }
+  const reader = new FileReader();
+  try {
+    reader.addEventListener("load", ()=>{
+      const text = reader.result as string;
+      if ("" === separator) {
+        /* take a peek at the first line and guess */
+        const nl = text.indexOf('\n');
+        const first = text.substring(0, nl);
+        const commaCount = first.split(',').length - 1;
+        const tabCount = first.split('\t').length - 1;
+        separator = commaCount > tabCount ? ',' : '\t';
+      }
+      const metadata = new Metadata(file.name, text, separator);
+      mccConfig.setMetadata(metadata, mccTreeCanvas.tree as SummaryTree);
+      callback();
+    });
+    reader.readAsText(file);
+  } catch (err) {
+    console.log(err);
+    alert("error loading metadata file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
+  }
+}

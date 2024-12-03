@@ -1,0 +1,5 @@
+[
+{"filename":"ma_sars_cov_2.maple", "pathogen": "SARS-CoV-2"},
+{"filename":"ebola.fasta", "pathogen": "Ebola"},
+{"filename":"zika.fasta", "pathogen": "Zika"}
+]
