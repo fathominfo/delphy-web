@@ -88,13 +88,20 @@ export class RecordQuality {
   }
 
 
-  hasAnyWarnings() {
-    return this.hasAmbiguousSites()
-      || this.hasMissingDates()
+  hasAnyIssues() {
+    return this.hasMissingDates()
+      || this.hasAmbiguousSites()
       || this.hasInvalidStates()
       || this.hasInvalidGaps()
       || this.hasInvalidMutations()
       || this.hasOther();
+  }
+
+  hasSequencingIssues() {
+    return this.hasAmbiguousSites()
+    || this.hasInvalidStates()
+    || this.hasInvalidGaps()
+    || this.hasInvalidMutations();
   }
 
   hasAmbiguousSites() {return this.ambiguousSiteCount > 0; }

@@ -58,3 +58,28 @@
     color: #777;
   }
 }
+
+.qc-category {
+  
+  overflow-y: hidden;
+  .inactive-header  { display: none; }
+
+  .scrollable {
+    overflow-y: auto;
+    max-height: 200px;
+    li {
+      list-style-type: circle;
+    }
+  }
+  
+  &.inactive {
+    .active-header  { display: none; }
+    .inactive-header  { display: block; }
+    div, p { display: none;}
+  }
+}
+
+#qc--other.inactive, .qc--error-type.inactive {
+  display: none;
+}
+

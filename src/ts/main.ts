@@ -79,7 +79,7 @@ function onReady(p:Pythia):void {
 
   const runCallback = ()=>{
     sharedState.setTipIds();
-    if (!sharedState.qc.hasAnyWarnings()) {
+    if (!sharedState.qc.hasAnyIssues()) {
       toggleQCButton.classList.add("hidden");
     } else {
       setQCPanel(sharedState);

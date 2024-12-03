@@ -10,20 +10,13 @@
 
 #uploader {
   .t25();
-}
 
-#uploader--central-column {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  
   color: white;
   padding: 72px;
-  gap: 50px;
-  left: 50%;
-  transform: translate(-50%, 0);
-
+  
+  a, a:visited {
+    color: @toggle-text;
+  }
   .symbol {
     .smoothly(color);
     font-size: 20px;
@@ -60,10 +53,6 @@
     }
   }
 
-  a, a:visited {
-    color: @toggle-text;
-  }
-
   &.direct-loading {
 
     &.loading #uploader--status-load, 
@@ -81,6 +70,20 @@
       bottom: unset;
     }
   }
+
+}
+
+#uploader--central-column {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  gap: 50px;
+  left: 50%;
+  transform: translate(-50%, 0);
+
+
 
 }
 
@@ -436,6 +439,7 @@
 
   &.progressing {
     margin-bottom: 15px;
+    opacity: 1;
     #uploader--progress-container {display: block;}
     p {display: none;}
   }

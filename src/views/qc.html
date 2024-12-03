@@ -1,7 +1,79 @@
 <div id="qc">
   <div class="qc--content">
     <button type="button" class="close-button">Close</button>
+    <h2>Data issues with uploaded sequences</h2>
+    <div id="qc--metadata" class="qc-category">
+      <h3 class="active-header">Metadata Issues</h3>
+      <h3 class="inactive-header">No metadata issues to report</h3>
+      <p>metadata needs to be  <code>|</code>  delimited with the date in the last position.</p>
+      <div id="qc--dates" class="qc--error-type">
+        <h4>Unformatted dates</h4>
+        <p> Dates should be formatted  <code>YYYY-MM-DD</code> . </p>
+        <div class="scrollable">
+          <ul>
+          </ul>
+        </div>
+
+      </div>
+    </div>
     
+    <div id="qc--sequences" class="qc-category">
+      <h3 class="active-header">Sequence Issues</h3>
+      <h3 class="inactive-header">No sequence issues no report</h3>
+
+      <div id="qc--ambiguities" class="qc--error-type">
+        <p>
+          The following sequences contain ambiguous letters. The letters at these sites
+          were replaced with 'N'.
+        </p>
+        <div class="scrollable">
+          <ul>
+            <li><span class="seq"></span>: <span class="data"></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="qc--state" class="qc--error-type">
+        <p>
+          The following sequences contain invalid states.
+        </p>
+        <div class="scrollable">
+          <ul>
+            <li><span class="seq"></span>: <span class="data"></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="qc--gaps" class="qc--error-type">
+        <p>
+          The following sequences contain invalid gaps.
+        </p>
+        <div class="scrollable">
+          <ul>
+            <li><span class="seq"></span>: <span class="data"></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="qc--mutations" class="qc--error-type">
+        <p>
+          The following sequences contain invalid mutations.
+        </p>
+        <div class="scrollable">
+          <ul>
+            <li><span class="seq"></span>: <span class="data"></span></li>
+          </ul>
+        </div>
+    </div>
+  
+    <div id="qc--other" class="qc-category">
+      <h3>Other Issues</h3>
+      <div class="scrollable">
+        <ul>
+          <li><span class="seq"></span>: <span class="data"></span></li>
+        </ul>
+      </div>
+    </div>
   
 
 </div>
