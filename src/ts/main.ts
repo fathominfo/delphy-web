@@ -95,7 +95,7 @@ function onReady(p:Pythia):void {
   const configCallback = (config: ConfigExport)=>{
     sharedState.importConfig(config);
   };
-  bindUpload(p, runCallback, configCallback);
+  bindUpload(p, sharedState, runCallback, configCallback);
   setStage(STAGES.selecting);
   const loc = window.location;
   if (loc.search.length > 1) {

@@ -1,16 +1,15 @@
 import { STAGES } from '../constants';
 import { setShowFormat, setStage } from '../errors';
+import { SharedState } from '../sharedstate';
 import {Pythia} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
+import { RecordQuality } from '../recordquality';
 
 const DEMO_PATH = './ma_sars_cov_2.maple'
-type SiteAmbiguity = {site: number, state: string};
-type InvalidStateWarning = {state: string};
-type InvalidGapWarning = {startSite: number, endSite: number};
-type InvalidMutationWarning = {from: string, site: number, to: string};
 
 let pythia : Pythia;
+let qc: RecordQuality;
 
 const showFormatHints = ()=>{
   info.classList.remove("hidden");
@@ -43,59 +42,31 @@ const activateProgressBar = (showit=true)=>{
 let runCallback = ()=>console.debug('runCallback not assigned'),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
 
-let qcNoDateSequences:string[] = [],
-  qcAmbiguousSiteSequences: {[seqid: string]: SiteAmbiguity[] } = {},
-  qcInvalidStateSequences: {[seqid: string]: InvalidStateWarning[] } = {},
-  qcInvalidGapSequences: {[seqid: string]: InvalidGapWarning[] } = {},
-  qcInvalidMutationSequences: {[seqid: string]: InvalidMutationWarning[] } = {},
-  qcOther: {[seqId: string]: any[] } = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
-let qcAmbiguousSiteCount = 0,
-  qcInvalidStateCount = 0,
-  qcInvalidGapCount = 0,
-  qcInvalidMutationCount = 0;
 
-const clearQc = ()=>{
-  qcNoDateSequences = [];
-
-  qcAmbiguousSiteSequences = {};
-  qcAmbiguousSiteCount = 0;
-
-  qcInvalidStateSequences = {};
-  qcInvalidStateCount = 0;
-
-  qcInvalidGapSequences = {};
-  qcInvalidGapCount = 0;
-
-  qcInvalidMutationSequences = {};
-  qcInvalidMutationCount = 0;
-
-  qcOther = {};
-}
 const warningsLabelAddendum = () => {
     let result = "";
-    let c;
-    if (qcAmbiguousSiteCount > 0) {
-      c = qcAmbiguousSiteCount; //Object.keys(qcAmbiguousSiteSequences).length;
+    let c = qc.getAmbiguousSiteCount();
+    if (c > 0) {
       result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
     }
-    c = qcNoDateSequences.length;
+    c = qc.getNoDateCount();
     if (c > 0) {
       result += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
     }
-    if (qcInvalidStateCount > 0) {
-      c = Object.keys(qcInvalidStateSequences).length;
+    if (qc.hasInvalidStates()) {
+      c = qc.getInvalidStateSequenceCount();
       result += `<br/> ${c} invalid state${c === 1 ? '' : 's'}`;
     }
-    if (qcInvalidGapCount > 0) {
-      c = Object.keys(qcInvalidGapSequences).length;
+    if (qc.hasInvalidGaps()) {
+      c = qc.getInvalidGapSequenceCount();
       result += `<br/> ${c} invalid gap${c === 1 ? '' : 's'}`;
     }
-    if (qcInvalidMutationCount > 0) {
-      c = Object.keys(qcInvalidMutationSequences).length;
+    if (qc.hasInvalidMutations()) {
+      c = qc.getInvalidMutationSequenceCount();
       result += `<br/> ${c} invalid mutation${c === 1 ? '' : 's'}`;
     }
-    c = Object.keys(qcOther).length;
-    if (c > 0) {
+    if (qc.hasOther()) {
+      c = qc.getOtherCount();
       result += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
     }
     return result;
@@ -122,51 +93,7 @@ const warningsLabelAddendum = () => {
     showProgress(label, totalTips, tipsSoFar);
   },
   loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    switch (warningCode) {
-    case SequenceWarningCode.NoValidDate:
-      qcNoDateSequences.push(seqId);
-      console.warn(`WARNING (sequence '${seqId}') - No valid date`);
-      break;
-    case SequenceWarningCode.AmbiguityPrecisionLoss:
-      if (qcAmbiguousSiteSequences[seqId] === undefined) {
-        qcAmbiguousSiteSequences[seqId] = [];
-      }
-      qcAmbiguousSiteSequences[seqId].push({site: detail.site, state: detail.originalState});
-      qcAmbiguousSiteCount++;
-      console.warn(`WARNING (sequence '${seqId}') - Ambiguous state ${detail.originalState} at site ${detail.site+1} changed to N`);
-      break;
-    case SequenceWarningCode.InvalidState:
-      if (qcInvalidStateSequences[seqId] === undefined) {
-        qcInvalidStateSequences[seqId] = [];
-      }
-      qcInvalidStateSequences[seqId].push({state: detail.state});
-      qcInvalidStateCount++;
-      console.warn(`WARNING (sequence '${seqId}') - Invalid state ${detail.state}`);
-      break;
-    case SequenceWarningCode.InvalidGap:
-      if (qcInvalidGapSequences[seqId] === undefined) {
-        qcInvalidGapSequences[seqId] = [];
-      }
-      qcInvalidGapSequences[seqId].push({startSite: detail.startSite, endSite: detail.endSite});
-      qcInvalidGapCount++;
-      console.warn(`WARNING (sequence '${seqId}') - Invalid gap [${detail.startSite+1}, ${detail.endSite+1})`);
-      break;
-    case SequenceWarningCode.InvalidMutation:
-      if (qcInvalidMutationSequences[seqId] === undefined) {
-        qcInvalidMutationSequences[seqId] = [];
-      }
-      qcInvalidMutationSequences[seqId].push({from: detail.from, site: detail.site, to: detail.to});
-      qcInvalidMutationCount++;
-      console.warn(`WARNING (sequence '${seqId}') - Invalid mutation from ${detail.from} to ${detail.to} at site ${detail.site+1}`);
-      break;
-    default:
-      if (qcOther[seqId] === undefined) {
-        qcOther[seqId] = [];
-      }
-      qcOther[seqId].push(detail);
-      console.warn(`WARNING (sequence '${seqId}') - UNKNOWN CODE - detail:`, detail);
-      break;
-    }
+    qc.parseWarning(seqId, warningCode, detail);
   };
 const errCallback = (msg:string)=>{
   console.log(msg);
@@ -202,8 +129,9 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
+function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
   pythia = p;
+  qc = sstate.qc;
   runCallback = callback;
   configCallback = setConfig;
   uploadDiv.classList.remove('disabled');
@@ -230,7 +158,7 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         setStage(STAGES.parsing);
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
-        clearQc();
+        qc.reset();
         pythia.initRunFromMaple(bytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
       })
   });
@@ -349,7 +277,7 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.addEventListener('load', event=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
-          clearQc();
+          qc.reset();
           if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
@@ -359,7 +287,7 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
           const mapleBytesJs = event.target?.result as ArrayBuffer;
-          clearQc();
+          qc.reset();
           if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
@@ -375,7 +303,7 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
-              clearQc();
+              qc.reset();
               if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
             });
             reader.readAsArrayBuffer(file);
