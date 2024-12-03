@@ -23,7 +23,11 @@
       <div class="uploader--or">or</div>
 
       <input type="file" id="uploader--file-input" name="uploader--file-input">
-      <label for="uploader--file-input" class="uploader--message">Upload or drag a file <br/><span class="file-types">.maple, .fasta, or .dphy</span></label>
+      <label for="uploader--file-input" class="uploader--message">
+        Click here or drag a file to open
+        <br/><span class="file-types">.maple, .fasta, or .dphy</span>
+        <p class="uploader--byline">All files stay on your system. Nothing is uploaded to the server.</p>
+      </label>
       
       <div id="uploader--status">
         <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
@@ -41,9 +45,15 @@
     </div>
 
     <div class="uploader--info">
-      <button class="uploader--info-toggle"><div class="box"><div class="glyph"></div></div> Uploading data</button>
+      <button class="uploader--info-toggle"><div class="box"><div class="glyph"></div></div> Loading data</button>
       {{> info }}
     </div>
 
     <p id="uploader--privacy"><a href="/privacy/" target="_">Privacy.</a> </p>
+
+    <div id="uploader--version-info">
+      <p class="version-info">Delphy core version <span class="core-version"></span></p>
+      <p class="ui-version-info">UI version <span class="ui-version"></span></p>
+    </div>
+
   </div>
