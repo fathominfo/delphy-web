@@ -146,9 +146,12 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
 
   document.querySelectorAll('.version-info').forEach((domElement)=>{
     const coreVersion = p.coreVersion;
-    (domElement.querySelector('.core-version') as HTMLElement).innerText = coreVersion.version;
-    (domElement.querySelector('.core-build') as HTMLElement).innerText = `${coreVersion.build}`;
-    (domElement.querySelector('.core-commit') as HTMLElement).innerText = coreVersion.commit;
+    const versionEle = (domElement.querySelector('.core-version') as HTMLElement);
+    const buildEle = (domElement.querySelector('.core-build') as HTMLElement);
+    const commitEle = (domElement.querySelector('.core-commit') as HTMLElement);
+    if (versionEle) versionEle.innerText = coreVersion.version;
+    if (buildEle) buildEle.innerText = `${coreVersion.build}`;
+    if (commitEle) commitEle.innerText = coreVersion.commit;
     domElement.classList.remove('hidden');
   })
 
