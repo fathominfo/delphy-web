@@ -45,12 +45,13 @@ let runCallback = ()=>console.debug('runCallback not assigned'),
 
 const warningsLabelAddendum = () => {
     let result = "";
-    let c = qc.getAmbiguousSiteCount();
-    if (c > 0) {
+    let c;
+    if (qc.hasAmbiguousSites()) {
+      c = qc.getAmbiguousSiteCount();
       result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
     }
-    c = qc.getNoDateCount();
-    if (c > 0) {
+    if (qc.hasMissingDates()) {
+      c = qc.getNoDateCount();
       result += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
     }
     if (qc.hasInvalidStates()) {

@@ -11,6 +11,7 @@ import { SharedState } from './sharedstate';
 import { ConfigExport } from './ui/mccconfig';
 import { initErrors, setStage } from './errors';
 import { STAGES } from './constants';
+import { setQCPanel } from './ui/qcpanel';
 
 
 
@@ -38,6 +39,17 @@ function onReady(p:Pythia):void {
   viewButtons.push(new NavLabel("Customize", customizeUI, "#customize"));
   bindNav(viewButtons);
 
+  const qc = document.querySelector("#qc") as HTMLElement;
+  const toggleQCButton = document.querySelector("#nav--qc") as HTMLButtonElement;
+  const closeQCButton = qc.querySelector(".close-button") as HTMLButtonElement;
+  toggleQCButton.addEventListener("click", () => {
+    qc.classList.toggle("active");
+    toggleQCButton.classList.toggle("active");
+  });
+  closeQCButton.addEventListener("click", () => {
+    qc.classList.remove("active");
+    toggleQCButton.classList.remove("active");
+  });
   const about = document.querySelector("#about") as HTMLElement;
   const toggleAboutButton = document.querySelector("#nav--about") as HTMLButtonElement;
   const closeAboutButton = about.querySelector(".close-button") as HTMLButtonElement;
@@ -67,6 +79,11 @@ function onReady(p:Pythia):void {
 
   const runCallback = ()=>{
     sharedState.setTipIds();
+    if (!sharedState.qc.hasAnyWarnings()) {
+      toggleQCButton.classList.add("hidden");
+    } else {
+      setQCPanel(sharedState);
+    }
     hideUpload();
     activateView(runUI);
     /*

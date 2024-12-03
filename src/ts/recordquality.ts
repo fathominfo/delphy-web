@@ -87,7 +87,19 @@ export class RecordQuality {
     }
   }
 
+
+  hasAnyWarnings() {
+    return this.hasAmbiguousSites()
+      || this.hasMissingDates()
+      || this.hasInvalidStates()
+      || this.hasInvalidGaps()
+      || this.hasInvalidMutations()
+      || this.hasOther();
+  }
+
+  hasAmbiguousSites() {return this.ambiguousSiteCount > 0; }
   getAmbiguousSiteCount() { return this.ambiguousSiteCount; }
+  hasMissingDates() {return this.noDateSequences.length > 0; }
   getNoDateCount() { return this.noDateSequences.length; }
   hasInvalidStates() {return this.invalidStateCount > 0;}
   getInvalidStateSequenceCount() {return Object.keys(this.invalidStateSequences).length;}
