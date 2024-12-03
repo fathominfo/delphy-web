@@ -3,8 +3,9 @@ import { setShowFormat, setStage } from '../errors';
 import {Pythia} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
 
-const DEMO_PATH = './ma_sars_cov_2.maple'
+const DEMO_FILES = './demofiles.json'
 
+type DemoOption = {filename:string, pathogen:string};
 
 let pythia : Pythia;
 
@@ -89,17 +90,57 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
       // runCallback(tree, refSeq, count);
     });
   });
-  document.querySelector("#uploader--demo-button")?.addEventListener("click", ()=>{
+  const demoForm = document.querySelector("#uploader--demo-form") as HTMLFormElement;
+  const demoFileOptTemplate = demoForm.querySelector(".uploader--demo-option") as HTMLLabelElement;
+  const demoOptContainer = demoFileOptTemplate.parentNode;
+  const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
+  const pathLabel = runButton.querySelector(".selection") as HTMLSpanElement;
+  demoFileOptTemplate.remove();
+  const pathogenLabels: {[fname:string]:string} = {};
+  fetch(DEMO_FILES)
+    .then(r=>r.json())
+    .then(optionList=>{
+      (optionList as Array<DemoOption>).forEach(({filename, pathogen}, i)=>{
+        const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
+        const input = copy.querySelector("input") as HTMLInputElement;
+        const span = copy.querySelector("span") as HTMLSpanElement;
+        const extensionPosition = filename.lastIndexOf(".");
+        const zipFilename = `${filename.substring(0, extensionPosition)}.zip`;
+        const anchor = copy.querySelector("a") as HTMLAnchorElement;
+        input.value = filename;
+        input.checked = i === 0;
+        span.textContent = pathogen;
+        anchor.href = zipFilename;
+        anchor.download = zipFilename;
+        demoOptContainer?.appendChild(copy);
+        pathogenLabels[filename] = pathogen;
+        if (input.checked) {
+          pathLabel.textContent = pathogen;
+        }
+      })
+    });
+  demoForm.addEventListener("change", ()=>{
+    const selection = demoForm.filename.value as string;
+    const labelText = pathogenLabels[selection];
+    pathLabel.textContent = labelText;
+  });
+
+  runButton.addEventListener("click", ()=>{
+    const fileToLoad = demoForm.filename.value as string;
+    console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
     uploadDiv.classList.add('loading');
-    fetch(DEMO_PATH)
+    fetch(fileToLoad)
       .then(r => r.arrayBuffer())
       .then(bytesJs => {
         setStage(STAGES.parsing);
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
-        // pythia.initRunFromFasta(bytesJs, runCallback, errCallback);
-        pythia.initRunFromMaple(bytesJs, runCallback, errCallback);
+        if (fileToLoad.endsWith(".maple")) {
+          pythia.initRunFromMaple(bytesJs, runCallback, errCallback);
+        } else {
+          pythia.initRunFromFasta(bytesJs, runCallback, errCallback);
+        }
       })
   });
 
