@@ -49,6 +49,7 @@ function onReady(p:Pythia):void {
   closeQCButton.addEventListener("click", () => {
     qc.classList.remove("active");
     toggleQCButton.classList.remove("active");
+    toggleQCButton.classList.remove("uninspected");
   });
   const about = document.querySelector("#about") as HTMLElement;
   const toggleAboutButton = document.querySelector("#nav--about") as HTMLButtonElement;
