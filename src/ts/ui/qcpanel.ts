@@ -1,4 +1,3 @@
-import { InvalidGapWarning, InvalidMutationWarning, InvalidStateWarning, SiteAmbiguity } from "../recordquality";
 import { SharedState } from "../sharedstate";
 
 const metadataDiv = document.querySelector("#qc--metadata") as HTMLDivElement;
@@ -25,14 +24,14 @@ export const setQCPanel = (sharedState: SharedState)=>{
   }
 
   if (showSequencing) {
-    setAmbiguous(qc.ambiguousSiteSequences);
-    setInvalidState(qc.invalidStateSequences);
-    setInvalidGaps(qc.invalidGapSequences);
-    setInvalidMutations(qc.invalidMutationSequences);
+    setQCDiv("#qc--ambiguities", qc.ambiguousSiteSequences, amb=>`${amb.site}:${amb.state}`);
+    setQCDiv("#qc--state", qc.invalidStateSequences, item=>item.state);
+    setQCDiv("#qc--gaps", qc.invalidGapSequences, gap=>`${gap.startSite}:${gap.endSite}`);
+    setQCDiv("#qc--mutations", qc.invalidMutationSequences, mut=>`${mut.from}:${mut.site}:${mut.to}`);
   }
 
   if (showOther) {
-    setOther(qc.other);
+    setQCDiv("#qc--other", qc.other, JSON.stringify);
   }
 
 }
@@ -49,118 +48,35 @@ const setDateIssues = (noDateSequences:string[])=>{
   });
 }
 
-const setAmbiguous = (seqs: {[seqid: string]: SiteAmbiguity[] })=>{
-  const div = sequencesDiv.querySelector("#qc--ambiguities") as HTMLDivElement;
+
+
+/*
+@param formatter: takes input and returns a string. At this point in time, the inputs are of type
+InvalidGapWarning, InvalidMutationWarning, InvalidStateWarning, SiteAmbiguity.
+These all hold information about various QC errors, and the formatter function transforms these
+into legible strings for display.
+
+*/
+const setQCDiv = (cssSelector:string, seqs: {[seqId: string]: any[] }, formatter:(data:any)=>string)=>{
+  const div = sequencesDiv.querySelector(cssSelector) as HTMLDivElement;
   let anyEntries = false;
   const ul = div.querySelector("ul") as HTMLUListElement;
   const template = ul.querySelector("li") as HTMLLIElement;
   template.remove();
-  Object.entries(seqs).forEach(([seq, ambs])=>{
+  Object.entries(seqs).forEach(([seq, data])=>{
     const li = template.cloneNode(true) as HTMLLIElement;
     const seqSpan = li.querySelector(".seq") as HTMLSpanElement;
     const dataSpan = li.querySelector(".data") as HTMLSpanElement;
     seqSpan.textContent = seq;
     let siteList = '';
-    ambs.forEach((a,i)=>{
+    data.forEach((a,i)=>{
       if (i > 0) siteList += ', ';
-      siteList += `${a.site}:${a.state}`;
+      siteList += formatter(a);
     })
     dataSpan.textContent = siteList;
     ul.appendChild(li);
     anyEntries = true;
   });
   div.classList.toggle('inactive', !anyEntries);
+
 };
-
-const setInvalidState = (seqs: {[seqid: string]: InvalidStateWarning[] })=>{
-  const div = sequencesDiv.querySelector("#qc--state") as HTMLDivElement;
-  let anyEntries = false;
-  const ul = div.querySelector("ul") as HTMLUListElement;
-  const template = ul.querySelector("li") as HTMLLIElement;
-  template.remove();
-  Object.entries(seqs).forEach(([seq, states])=>{
-    const li = template.cloneNode(true) as HTMLLIElement;
-    const seqSpan = li.querySelector(".seq") as HTMLSpanElement;
-    const dataSpan = li.querySelector(".data") as HTMLSpanElement;
-    seqSpan.textContent = seq;
-    let siteList = '';
-    states.forEach((a,i)=>{
-      if (i > 0) siteList += ', ';
-      siteList += `${a.state}`;
-    })
-    dataSpan.textContent = siteList;
-    ul.appendChild(li);
-    anyEntries = true;
-  });
-  div.classList.toggle('inactive', !anyEntries);
-};
-
-const setInvalidGaps = (seqs: {[seqid: string]: InvalidGapWarning[] })=>{
-  const div = sequencesDiv.querySelector("#qc--gaps") as HTMLDivElement;
-  let anyEntries = false;
-  const ul = div.querySelector("ul") as HTMLUListElement;
-  const template = ul.querySelector("li") as HTMLLIElement;
-  template.remove();
-  Object.entries(seqs).forEach(([seq, sites])=>{
-    const li = template.cloneNode(true) as HTMLLIElement;
-    const seqSpan = li.querySelector(".seq") as HTMLSpanElement;
-    const dataSpan = li.querySelector(".data") as HTMLSpanElement;
-    seqSpan.textContent = seq;
-    let siteList = '';
-    sites.forEach((a,i)=>{
-      if (i > 0) siteList += ', ';
-      siteList += `${a.startSite}:${a.endSite}`;
-    })
-    dataSpan.textContent = siteList;
-    ul.appendChild(li);
-    anyEntries = true;
-  });
-  div.classList.toggle('inactive', !anyEntries);
-};
-
-const setInvalidMutations = (seqs: {[seqid: string]: InvalidMutationWarning[] })=>{
-  const div = sequencesDiv.querySelector("#qc--mutations") as HTMLDivElement;
-  let anyEntries = false;
-  const ul = div.querySelector("ul") as HTMLUListElement;
-  const template = ul.querySelector("li") as HTMLLIElement;
-  template.remove();
-  Object.entries(seqs).forEach(([seq, ambs])=>{
-    const li = template.cloneNode(true) as HTMLLIElement;
-    const seqSpan = li.querySelector(".seq") as HTMLSpanElement;
-    const dataSpan = li.querySelector(".data") as HTMLSpanElement;
-    seqSpan.textContent = seq;
-    let siteList = '';
-    ambs.forEach((m,i)=>{
-      if (i > 0) siteList += ', ';
-      siteList += `${m.from}:${m.site}:${m.to}`;
-    })
-    dataSpan.textContent = siteList;
-    ul.appendChild(li);
-    anyEntries = true;
-  });
-  div.classList.toggle('inactive', !anyEntries);
-};
-
-
-const setOther = (seqs: {[seqId: string]: any[] })=>{ // eslint-disable-line @typescript-eslint/no-explicit-any
-  const div = sequencesDiv.querySelector("#qc--ambiguities") as HTMLDivElement;
-  let anyEntries = false;
-  const ul = div.querySelector("ul") as HTMLUListElement;
-  const template = ul.querySelector("li") as HTMLLIElement;
-  template.remove();
-  Object.entries(seqs).forEach(([seq, ambs])=>{
-    const li = template.cloneNode(true) as HTMLLIElement;
-    const seqSpan = li.querySelector(".seq") as HTMLSpanElement;
-    const dataSpan = li.querySelector(".data") as HTMLSpanElement;
-    seqSpan.textContent = seq;
-    let siteList = '';
-    ambs.forEach((a,i)=>{
-      if (i > 0) siteList += ', ';
-      siteList += JSON.stringify(a);
-    })
-    dataSpan.textContent = siteList;
-    ul.appendChild(li);
-    anyEntries = true;
-  });
-  div.classList.toggle('inactive', !anyEntries);
-}
