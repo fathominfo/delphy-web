@@ -37,6 +37,7 @@
       
         <div class="uploader--or">or</div>
 
+
         <input type="file" id="uploader--file-input" name="uploader--file-input">
         <label for="uploader--file-input" class="uploader--message">
           Click here or drag a file to open
@@ -44,6 +45,55 @@
           <p class="uploader--byline">All files stay on your system. Nothing is uploaded to the server.</p>
         </label>
         
+      
+
+        <div class="uploader--or">or</div>
+
+        <div id="uploader--url-message">
+          <p>Load from a url
+            <br/><span class="file-types">.maple, .fasta, or .dphy</span>
+          </p>
+          <form id="uploader--url-form">
+            <input type="text" id="uploader--url-input" 
+              placeholder="Enter the URL of a .maple, .fasta, or .dphy file"/>
+          </form>
+        </div>
+        
+        <div id="uploader--proxy-popup">
+          <p>
+            Delphy encountered a network error while trying to retrieve the requested 
+            file. A common source of this error is when a server 
+            <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" target="_">
+            isn't set up to share files with other websites</a>, and perhaps 
+            <span class="uploader--remote-host">that website</span> is like that? 
+            You can try requesting the file via a proxy server we have 
+            set up, which will request the file via a tunnel on delphy.fathom.info.
+          </p>
+          <p>
+            Please note that, although the remote file will pass through the delphy server, 
+            the server does not read the contents of the file. 
+          </p>
+          <p>
+            Alternatively, you can <a class="uploader--remote-url" download target="_">download the file</a> to your local machine, and 
+            open it in delphy directly. 
+          </p>
+          <p>
+            Try requesting the file via delphy.fathom.info? 
+          </p>
+          <div class="uploader--button-row">
+            <label> Yes, please
+              <button id="uploader--try-proxy"></button>
+            </label>
+            <label> No, thanks.
+              <button id="uploader--no-proxy"></button>
+            </label>
+          </div>
+          <!-- <label>
+            Save this preference? 
+            <input type="checkbox" id="uploader--save-try-proxy" />
+          </label> -->
+        </div>
+
         <div id="uploader--status">
           <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
           <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
@@ -55,12 +105,6 @@
               <div id="uploader--progress"></div>
             </div>
           </div>
-        
-
-
-          
-          
-
         </div>
       </div>
     </div>

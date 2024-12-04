@@ -114,7 +114,8 @@
 }
 
 #uploader--demo-button,
-.uploader--message {
+.uploader--message, 
+#uploader--url-message {
   width: 100%;
   .t25();
   .smoothly(all);
@@ -257,19 +258,15 @@
   }
 }
 
-.uploader--message {
-  background-color: fade(@del, 10%);
+.uploader--message, #uploader--url-message {
   color: lighten(@del, 10%);
-  border: 1px dashed @del;
+  border-width: 1px;
   font-weight: 400;
-  cursor: pointer;
   padding: 25px 20px;
   line-height: 30px;
 
   &:hover {
-    background-color: fade(@del, 15%);
     color: lighten(@del, 10%);
-    border: 1px dashed lighten(@del, 10%);
   }
 
   .file-types {
@@ -277,6 +274,27 @@
   }
 }
 
+.uploader--message {
+  cursor: pointer;
+  background-color: fade(@del, 10%);
+  border-color: @del;
+  border-style: dashed;
+
+  &:hover {
+    background-color: fade(@del, 15%);
+    border-color: lighten(@del, 10%);
+  }
+}
+
+#uploader--url-message {
+  background-color: fade(@del, 5%);
+  border-style: solid;
+  border-color: fade(@del, 10%);
+  &:hover {
+    background-color: fade(@del, 15%);
+    border-color: fade(@del, 40%);
+  }
+}
 .uploader--byline {
   display: block;
   padding: 5px 0 0;
@@ -294,12 +312,10 @@
   display: flex;
   flex-direction: column;
   align-items: end;
-  gap: 10px;
-
-  
+  gap: 10px; 
 }
 
-.uploader--info-toggle {
+.uploader--info-toggle, #uploader--proxy-info-activate {
   appearance: none;
   background: none;
   border: none;
@@ -337,7 +353,6 @@
     padding: 3px;
 
     .glyph {
-      .masked(url("/assets/icons/question.svg"));
       background-color: @toggle;
       .smoothly(background-color);
       width: 80%;
@@ -346,7 +361,19 @@
   }
 }
 
-.uploader--info-content {
+.uploader--info-toggle .box .glyph {
+  .masked(url("/assets/icons/question.svg"));
+}
+
+#uploader--proxy-info-activate .uploader--proxy-info-activate--open .glyph {
+  .masked(url("/assets/icons/question.svg"));
+}
+
+#uploader--proxy-info-activate .uploader--proxy-info-activate--close .glyph {
+  .masked(url("/assets/icons/exit-lg.svg"));
+}
+
+.uploader--info-content, #uploader--proxy-info, #uploader--proxy-popup {
   .t15();
   display: flex;
   flex-direction: column;
@@ -407,6 +434,102 @@
       }
     }
   }
+}
+
+#uploader--url-message {
+  position: relative;
+
+  &.proxy-info {
+    #uploader--proxy-info {display: block;}
+    .uploader--proxy-info-activate--open {display: none;}
+    .uploader--proxy-info-activate--close {display: unset;}
+  }
+}
+
+#uploader--url-input {
+  width: 100%;
+  padding: 2px 5px;
+  margin: 10px 0px 20px;
+  font-size: 15px;
+}
+
+#uploader--proxy-popup {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 3;
+  p {
+    margin: 20px 0;
+  }
+
+  &.active {
+    display: block;
+  }
+
+  label {
+    position: relative;
+    padding: 0.5rem 1rem;
+    background-color: @details-code;
+    color: @details-code-text;
+    border-radius: 2px;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+    transition: 0.15s all;
+    &:hover {
+      background-color: lighten(@details-code, 10%);
+      color: white;
+    }
+  }
+  button {
+    position: absolute;
+    width: 0; 
+    opacity: 0;
+  }
+}
+
+.uploader--button-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.uploader--proxy-info-activate--close {display: none;}
+
+#uploader--proxy-info {
+  position: absolute;
+  bottom: 0px;
+  padding-bottom: 70px;
+  z-index: 1;
+  display: none;
+}
+
+#uploader--proxy-controls {
+  display: none;
+  position: relative;
+  z-index: 2;
+}
+
+#uploader--proxy-info-activate {
+  position: relative;
+  display: inline-flex;
+}
+
+#uploader--proxy-info-activate-label {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.15s opacity;
+  color: @uploader-info-detail-header;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 18px;
+}
+
+#uploader--proxy-info-activate:hover + #uploader--proxy-info-activate-label {
+  opacity: 1;
+  pointer-events: all;
 }
 
 #uploader--status {
