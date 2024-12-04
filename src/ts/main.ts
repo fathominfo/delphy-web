@@ -114,8 +114,10 @@ const loadListener = ()=>{
     .then((data:any)=>{ // eslint-disable-line @typescript-eslint/no-explicit-any
       document.querySelectorAll(".ui-version-info").forEach(domElement=>{
         (domElement as HTMLElement).classList.remove("hidden");
-        (domElement.querySelector(".ui-version") as HTMLElement).innerHTML = data.version;
-        (domElement.querySelector(".ui-commit") as HTMLElement).innerHTML = data.commit;
+        const versionEle = domElement.querySelector(".ui-version") as HTMLElement;
+        const commitEle = domElement.querySelector(".ui-commit") as HTMLElement;
+        if (versionEle) versionEle.innerHTML = data.version;
+        if (commitEle) commitEle.innerHTML = data.commit;
       });
       document.removeEventListener('DOMContentLoaded', loadListener);
     })
