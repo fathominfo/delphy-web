@@ -32,7 +32,7 @@
   }
 
   &.disabled {
-    #uploader--message, #uploader--demo-button {
+    .uploader--message, #uploader--demo-button {
       pointer-events: none;
       opacity: 0.4;
     }
@@ -53,7 +53,7 @@
   }
 
   &.dragging {
-    #uploader--message {
+    .uploader--message {
       background-color: fade(@del, 20%);
       color: lighten(@del, 20%);
       border: 1px dashed lighten(@del, 10%);
@@ -73,7 +73,7 @@
   
     #uploader--demo-button,
     .uploader--or,
-    #uploader--message {
+    .uploader--message {
       display: none;
     }
 
@@ -114,7 +114,7 @@
 }
 
 #uploader--demo-button,
-#uploader--message, 
+.uploader--message, 
 #uploader--url-message {
   width: 100%;
   .t25();
@@ -258,7 +258,7 @@
   }
 }
 
-#uploader--message, #uploader--url-message {
+.uploader--message, #uploader--url-message {
   color: lighten(@del, 10%);
   border-width: 1px;
   font-weight: 400;
@@ -274,7 +274,7 @@
   }
 }
 
-#uploader--message {
+.uploader--message {
   cursor: pointer;
   background-color: fade(@del, 10%);
   border-color: @del;
