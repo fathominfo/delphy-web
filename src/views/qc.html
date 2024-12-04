@@ -1,14 +1,18 @@
 <div id="qc">
   <div class="qc--content">
     <button type="button" class="close-button">Close</button>
-    <h2>Data issues with uploaded sequences</h2>
+    <h1>Data issues with uploaded sequences</h1>
     <div id="qc--metadata" class="qc-category">
-      <h3 class="active-header">Metadata Issues</h3>
-      <h3 class="inactive-header">No metadata issues to report</h3>
-      <p>metadata needs to be  <code>|</code>  delimited with the date in the last position.</p>
+      <h2 class="active-header">Metadata Issues</h2>
+      <h2 class="inactive-header">No metadata issues to report</h2>
+      <p>
+        Metadata needs to be  <code>|</code>  delimited with the date in the last position.
+        Dates should be formatted  <code>YYYY-MM-DD</code> .
+      </p>
       <div id="qc--dates" class="qc--error-type">
-        <h4>Unformatted dates</h4>
-        <p> Dates should be formatted  <code>YYYY-MM-DD</code> . </p>
+        <p>
+          The following sequences are either missing dates or the dates are formatted incorrectly.
+        </p>
         <div class="scrollable">
           <ul>
           </ul>
@@ -18,8 +22,8 @@
     </div>
     
     <div id="qc--sequences" class="qc-category">
-      <h3 class="active-header">Sequence Issues</h3>
-      <h3 class="inactive-header">No sequence issues no report</h3>
+      <h2 class="active-header">Sequence Issues</h2>
+      <h2 class="inactive-header">No sequence issues no report</h2>
 
       <div id="qc--ambiguities" class="qc--error-type">
         <p>
@@ -67,7 +71,7 @@
     </div>
   
     <div id="qc--other" class="qc-category">
-      <h3>Other Issues</h3>
+      <h2>Other Issues</h2>
       <div class="scrollable">
         <ul>
           <li><span class="seq"></span>: <span class="data"></span></li>

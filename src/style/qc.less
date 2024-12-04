@@ -20,14 +20,28 @@
     opacity: 1;
     pointer-events: all;
   }
+
+  h1 {
+    margin: 0px;
+  }
+  h2 {
+    text-transform: uppercase;
+    font-family: MDSystemNarrow, RobotoCondensed, sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+  }
 }
 
 .qc--content {
   position: absolute;
+  display: flex;
   top: 0;
   bottom: 0;
   right: 0;
   width: 500px;
+  height: 100%;
+  gap: 40px;
+
 
   flex-direction: column;
   padding: 84px 72px;
@@ -41,9 +55,13 @@
     padding: 0;
     font: inherit;
     color: #777;
-    text-align: left;
+    width: 100%;
+    text-align: right;
     cursor: pointer;
     text-decoration: underline;
+    position: absolute;
+    right: 30px;
+    top: 83px;
 
     &:hover {
       color: #555;
@@ -54,8 +72,21 @@
     font-style: italic;
   }
 
-  .about--info {
-    color: #777;
+  ul {
+    margin: 0;
+    padding-inline-start: 10px;
+  }
+  li {
+    list-style-type: ">";
+    font-family: 'MD IO';
+    font-size: 13px;
+    padding-left: 3px;
+  }
+
+  .scrollable {
+    overflow-y: auto;
+    max-height: 200px;
+    
   }
 }
 
@@ -64,14 +95,6 @@
   overflow-y: hidden;
   .inactive-header  { display: none; }
 
-  .scrollable {
-    overflow-y: auto;
-    max-height: 200px;
-    li {
-      list-style-type: circle;
-    }
-  }
-  
   &.inactive {
     .active-header  { display: none; }
     .inactive-header  { display: block; }
