@@ -57,7 +57,7 @@ These all hold information about various QC errors, and the formatter function t
 into legible strings for display.
 
 */
-const setQCDiv = (cssSelector:string, seqs: {[seqId: string]: any[] }, formatter:(data:any)=>string)=>{
+const setQCDiv = (cssSelector:string, seqs: {[seqId: string]: any[] }, formatter:(data:any)=>string)=>{ // eslint-disable-line  @typescript-eslint/no-explicit-any
   const div = sequencesDiv.querySelector(cssSelector) as HTMLDivElement;
   let anyEntries = false;
   const ul = div.querySelector("ul") as HTMLUListElement;
