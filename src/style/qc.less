@@ -19,7 +19,8 @@
   pointer-events: none;
   .smoothly(opacity);
   z-index: 20;
-
+  height: 100%;
+  
   &.active {
     opacity: 1;
     pointer-events: all;
@@ -38,18 +39,20 @@
 
 .qc--content {
   position: absolute;
-  display: flex;
   top: 0;
   bottom: 0;
   right: 0;
   width: 500px;
-  height: 100%;
+  min-height: 100%;
   gap: 40px;
-
-
-  flex-direction: column;
   padding: 84px 72px;
   background-color: @soft-gray;
+
+
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
   .t15();
 
   .close-button {
@@ -90,8 +93,8 @@
 
   .scrollable {
     overflow-y: auto;
-    max-height: 200px;
-    
+    // flex-shrink: 2;
+    min-height: 24px;
   }
 
   code {
@@ -105,9 +108,7 @@
 
 }
 
-.qc-category {
-  
-  overflow-y: hidden;
+.qc--category {
   .inactive-header  { display: none; }
 
   &.inactive {
@@ -121,3 +122,22 @@
   display: none;
 }
 
+.qc--category, .qc--error-type {
+  display: flex;
+  flex-direction: column;
+  flex-basis: content;
+  min-height: 1px;
+  max-height: fit-content;
+}
+
+#qc--metadata {
+  min-height: 225px;
+}
+
+#qc--ambiguities {
+  min-height: 150px;
+}
+
+#qc--state, #qc--gaps, #qc--mutations, #qc--other {
+  min-height: 90px;
+}

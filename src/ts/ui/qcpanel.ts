@@ -1,8 +1,9 @@
 import { SharedState } from "../sharedstate";
 
-const metadataDiv = document.querySelector("#qc--metadata") as HTMLDivElement;
-const sequencesDiv = document.querySelector("#qc--sequences") as HTMLDivElement;
-const otherDiv = document.querySelector("#qc--other") as HTMLDivElement;
+const parentDiv = document.querySelector("#qc") as HTMLDivElement;
+const metadataDiv = parentDiv.querySelector("#qc--metadata") as HTMLDivElement;
+const sequencesDiv = parentDiv.querySelector("#qc--sequences") as HTMLDivElement;
+const otherDiv = parentDiv.querySelector("#qc--other") as HTMLDivElement;
 
 
 /*
@@ -40,7 +41,7 @@ export const setQCPanel = (sharedState: SharedState)=>{
 
 const setDateIssues = (noDateSequences:string[])=>{
   /* might need to add logic to hide this if we end up tracking other metadata issues */
-  const ul = metadataDiv.querySelector("#qc--dates ul") as HTMLUListElement;
+  const ul = parentDiv.querySelector("#qc--dates ul") as HTMLUListElement;
   noDateSequences.forEach(seq=>{
     const li = document.createElement("li") as HTMLLIElement;
     li.textContent = seq;
@@ -58,7 +59,7 @@ into legible strings for display.
 
 */
 const setQCDiv = (cssSelector:string, seqs: {[seqId: string]: any[] }, formatter:(data:any)=>string)=>{ // eslint-disable-line  @typescript-eslint/no-explicit-any
-  const div = sequencesDiv.querySelector(cssSelector) as HTMLDivElement;
+  const div = parentDiv.querySelector(cssSelector) as HTMLDivElement;
   let anyEntries = false;
   const ul = div.querySelector("ul") as HTMLUListElement;
   const template = ul.querySelector("li") as HTMLLIElement;
