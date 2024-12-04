@@ -1,7 +1,10 @@
 import { STAGES } from '../constants';
 import { setShowFormat, setStage } from '../errors';
+import { SharedState } from '../sharedstate';
 import {Pythia} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
+import {SequenceWarningCode} from '../pythia/delphy_api';
+import { RecordQuality } from '../recordquality';
 
 const DEMO_FILES = './demofiles.json'
 const PROXY_PATH = 'https://delphy.fathom.info/proxy/';
@@ -10,6 +13,7 @@ const PROXY_PATH = 'https://delphy.fathom.info/proxy/';
 type DemoOption = {filename:string, pathogen:string};
 
 let pythia : Pythia;
+let qc: RecordQuality;
 
 const showFormatHints = ()=>{
   info.classList.remove("hidden");
@@ -21,24 +25,81 @@ setShowFormat(showFormatHints);
 const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
 const progressBar = document.querySelector("#uploader--progress") as HTMLDivElement;
 const progressLabel = document.querySelector("#uploader--progress-label") as HTMLDivElement;
-const showProgress = (unit: string, total: number, soFar: number)=>{
-  /* if we aren't tracking progress, yield to the main status message */
+const showProgress = (label:string, total: number, soFar: number)=>{
   if (soFar === 0 || soFar === total) {
     activateProgressBar(false);
   } else {
     activateProgressBar(true);
     const pct = 100 * soFar / total;
-    const label = `${soFar} / ${total} ${unit}`;
     progressBar.style.width = `${pct}%`;
-    progressLabel.textContent = label;
+    progressLabel.innerHTML = label;
   }
+};
+const showSimpleProgress = (unit: string, total: number, soFar: number)=>{
+  const label = `${soFar} / ${total} ${unit}`;
+  showProgress(label, total, soFar);
 };
 const activateProgressBar = (showit=true)=>{
   statusContainer.classList.toggle("progressing", showit);
 }
 
-let runCallback = ()=>{console.debug('runCallback not assigned')},
-  configCallback = (config: ConfigExport)=>{console.debug('configCallback not assigned', config)};
+let runCallback = ()=>console.debug('runCallback not assigned'),
+  configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
+
+
+const warningsLabelAddendum = () => {
+    let result = "";
+    let c;
+    if (qc.hasAmbiguousSites()) {
+      c = qc.getAmbiguousSiteCount();
+      result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
+    }
+    if (qc.hasMissingDates()) {
+      c = qc.getNoDateCount();
+      result += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
+    }
+    if (qc.hasInvalidStates()) {
+      c = qc.getInvalidStateSequenceCount();
+      result += `<br/> ${c} invalid state${c === 1 ? '' : 's'}`;
+    }
+    if (qc.hasInvalidGaps()) {
+      c = qc.getInvalidGapSequenceCount();
+      result += `<br/> ${c} invalid gap${c === 1 ? '' : 's'}`;
+    }
+    if (qc.hasInvalidMutations()) {
+      c = qc.getInvalidMutationSequenceCount();
+      result += `<br/> ${c} invalid mutation${c === 1 ? '' : 's'}`;
+    }
+    if (qc.hasOther()) {
+      c = qc.getOtherCount();
+      result += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
+    }
+    return result;
+  },
+  stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
+  parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
+    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read${
+      warningsLabelAddendum()}`;
+    showProgress(label, totalBytes, bytesSoFar);
+    // console.log(`Read ${numSeqsSoFar} sequences so far `
+    //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
+  },
+  analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
+    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed${
+      warningsLabelAddendum()}`;
+    showProgress(label, totalSeqs, numSeqsSoFar);
+    // console.log(`Read ${numSeqsSoFar} sequences so far `
+    //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
+  },
+  initTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
+    const label = `Building initial tree${
+      warningsLabelAddendum()}`;
+    // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
+    showProgress(label, totalTips, tipsSoFar);
+  },
+  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    qc.parseWarning(seqId, warningCode, detail);
+  };
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{
@@ -73,8 +134,9 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
+function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
   pythia = p;
+  qc = sstate.qc;
   runCallback = callback;
   configCallback = setConfig;
   uploadDiv.classList.remove('disabled');
@@ -138,10 +200,11 @@ function bindUpload(p:Pythia, callback : ()=>void, setConfig : (config: ConfigEx
         setStage(STAGES.parsing);
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
+        qc.reset();
         if (fileToLoad.endsWith(".maple")) {
-          pythia.initRunFromMaple(bytesJs, runCallback, errCallback);
+          pythia.initRunFromMaple(bytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
         } else {
-          pythia.initRunFromFasta(bytesJs, runCallback, errCallback);
+          pythia.initRunFromFasta(bytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
         }
       })
   });
@@ -324,7 +387,7 @@ const checkFiles = (files: File[] | FileList)=>{
           if (bytesJs) {
             const progressCallback = (p:number, t:number)=>{
               const action = `${p === 1 ? 'tree' : 'trees'  } loaded`;
-              showProgress(action, t, p);
+              showSimpleProgress(action, t, p);
             };
             pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
               .then(mccConfig=>configCallback(mccConfig as ConfigExport));
@@ -337,7 +400,8 @@ const checkFiles = (files: File[] | FileList)=>{
         reader.addEventListener('load', event=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
+          qc.reset();
+          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
       } else if (extension === 'maple') {
@@ -346,7 +410,8 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.remove('loading');
           uploadDiv.classList.add('parsing');
           const mapleBytesJs = event.target?.result as ArrayBuffer;
-          if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback);
+          qc.reset();
+          if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
         });
         reader.readAsArrayBuffer(file);
       } else {
@@ -361,7 +426,8 @@ const checkFiles = (files: File[] | FileList)=>{
             uploadDiv.classList.add('parsing');
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
-              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback);
+              qc.reset();
+              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
             });
             reader.readAsArrayBuffer(file);
           } else {

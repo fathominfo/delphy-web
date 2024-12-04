@@ -2,6 +2,7 @@ import { Pythia } from './pythia/pythia';
 import { MccConfig, ConfigExport } from './ui/mccconfig';
 import { Mutation } from './pythia/delphy_api';
 import { NavigateFunctionType } from './ui/common';
+import { RecordQuality } from './recordquality';
 
 
 
@@ -16,6 +17,7 @@ export class SharedState {
   private tipIds: string[];
   mutationsNeedReloading: boolean;
   kneeIsCurated: boolean;
+  qc: RecordQuality;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
@@ -27,6 +29,7 @@ export class SharedState {
     this.goTo = goTo;
     this.tipIds = [];
     this.mutationsNeedReloading = false;
+    this.qc = new RecordQuality();
   }
 
 

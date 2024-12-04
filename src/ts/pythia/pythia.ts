@@ -1,5 +1,6 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
-  RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T} from './delphy_api';
+  RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
+  SequenceWarningCode} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, RunParamConfig, NodeDistributionType, OverlapTally, CoreVersionInfo} from '../constants';
@@ -124,16 +125,40 @@ export class Pythia {
     this.runReadyCallback = ()=>{return;};
   }
 
-  initRunFromFasta(fastaBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+  initRunFromFasta(fastaBytesJs:ArrayBuffer,
+    runReadyCallback:()=>void,
+    errCallback:(msg:string)=>void,
+    stageCallback:(stage:number)=>void,
+    parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
+    analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
+    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading FASTA file...");
-    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(bytesJs);
+    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
+      bytesJs,
+      stageCallback,
+      parseProgressCallback,
+      analysisProgressCallback,
+      initTreeProgressCallback,
+      warningCallback);
     this.fileFormat = sequenceFileFormat.FASTA;
     this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
   }
 
-  initRunFromMaple(mapleBytesJs:ArrayBuffer, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+  initRunFromMaple(mapleBytesJs:ArrayBuffer,
+    runReadyCallback:()=>void,
+    errCallback:(msg:string)=>void,
+    stageCallback:(stage:number)=>void,
+    parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
+    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading Maple file...");
-    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(bytesJs);
+    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(
+      bytesJs,
+      stageCallback,
+      parseProgressCallback,
+      initTreeProgressCallback,
+      warningCallback);
     this.fileFormat = sequenceFileFormat.MAPLE;
     this.initRunFromBytes(mapleBytesJs, callBack, runReadyCallback, errCallback);
   }
@@ -150,9 +175,13 @@ export class Pythia {
         this.instantiateRun()
           .then(()=>this.runReadyCallback())
           .catch((err)=>{
-            console.log(err);
-            errCallback(`Error loading the file. Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
+            console.error(err);
+            errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
           });
+      })
+      .catch(err => {
+        console.error(err);
+        errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
       });
   }
 
