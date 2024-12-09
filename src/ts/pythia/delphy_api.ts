@@ -546,6 +546,20 @@ export class Delphy {
        nodeIndex: NodeIndex,
        newTime: number)
         => void,
+    phylo_tree_get_min_time_of: (ctx: DelphyContextPtr, phyloTree: PhyloTreePtr, nodeIndex: NodeIndex) => number,
+    phylo_tree_set_min_time_of:
+      (ctx: DelphyContextPtr,
+       phyloTree: PhyloTreePtr,
+       nodeIndex: NodeIndex,
+       newTime: number)
+        => void,
+    phylo_tree_get_max_time_of: (ctx: DelphyContextPtr, phyloTree: PhyloTreePtr, nodeIndex: NodeIndex) => number,
+    phylo_tree_set_max_time_of:
+      (ctx: DelphyContextPtr,
+       phyloTree: PhyloTreePtr,
+       nodeIndex: NodeIndex,
+       newTime: number)
+        => void,
 
     phylo_tree_get_mutation_list_iterators_of:
       (ctx: DelphyContextPtr,
@@ -766,6 +780,10 @@ export class Delphy {
       phylo_tree_set_name_of: Module['_delphy_phylo_tree_set_name_of'],
       phylo_tree_get_time_of: Module['_delphy_phylo_tree_get_time_of'],
       phylo_tree_set_time_of: Module['_delphy_phylo_tree_set_time_of'],
+      phylo_tree_get_min_time_of: Module['_delphy_phylo_tree_get_min_time_of'],
+      phylo_tree_set_min_time_of: Module['_delphy_phylo_tree_set_min_time_of'],
+      phylo_tree_get_max_time_of: Module['_delphy_phylo_tree_get_max_time_of'],
+      phylo_tree_set_max_time_of: Module['_delphy_phylo_tree_set_max_time_of'],
 
       phylo_tree_get_mutation_list_iterators_of: Module['_delphy_phylo_tree_get_mutation_list_iterators_of'],
       phylo_tree_clear_mutations_of: Module['_delphy_phylo_tree_clear_mutations_of'],
@@ -1014,6 +1032,22 @@ export class PhyloTree implements MutableTree {
 
   setTimeOf(nodeIndex: NodeIndex, newTime: number): void {
     return Delphy.delphyCoreRaw.phylo_tree_set_time_of(this.delphy.ctx, this.phyloTreePtr_, nodeIndex, newTime);
+  }
+
+  getMinTimeOf(nodeIndex: NodeIndex): number {
+    return Delphy.delphyCoreRaw.phylo_tree_get_min_time_of(this.delphy.ctx, this.phyloTreePtr_, nodeIndex);
+  }
+
+  setMinTimeOf(nodeIndex: NodeIndex, newTime: number): void {
+    return Delphy.delphyCoreRaw.phylo_tree_set_min_time_of(this.delphy.ctx, this.phyloTreePtr_, nodeIndex, newTime);
+  }
+
+  getMaxTimeOf(nodeIndex: NodeIndex): number {
+    return Delphy.delphyCoreRaw.phylo_tree_get_max_time_of(this.delphy.ctx, this.phyloTreePtr_, nodeIndex);
+  }
+
+  setMaxTimeOf(nodeIndex: NodeIndex, newTime: number): void {
+    return Delphy.delphyCoreRaw.phylo_tree_set_max_time_of(this.delphy.ctx, this.phyloTreePtr_, nodeIndex, newTime);
   }
 
   getNumSites(): SiteIndex {
