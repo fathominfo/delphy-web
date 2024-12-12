@@ -752,7 +752,8 @@ export class LineagesUI extends MccUI {
       //   nodeLabels = nodes.map(({label}) => label);
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
+      // this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
+      this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, minDate, maxDate);
       this.nodePrevalenceCanvas.requestDraw();
       this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
       mccRef.release();
