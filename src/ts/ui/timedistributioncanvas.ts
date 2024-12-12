@@ -131,9 +131,6 @@ export class TimeDistributionCanvas {
     const {distribution, color} = ds;
     const {bands, bandwidth, bandTimes, kde} = distribution;
     // const {bands, bandTimes, bandMax, bandwidth, kde} = distribution;
-
-
-
     ctx.fillStyle = color;
     ctx.strokeStyle = "none";
     this.setAlpha(ds);
@@ -142,7 +139,7 @@ export class TimeDistributionCanvas {
       x = this.xFor(t, width),
       val = ds.distribution.getMinBand();
     const THRESHOLD = val;
-    ctx.moveTo(t, xheight);
+    ctx.moveTo(x, xheight);
     for (let i = 0; i < bandTimes.length; i++) {
       t = bandTimes[i];
       x = this.xFor(t, width);
@@ -165,6 +162,34 @@ export class TimeDistributionCanvas {
     ctx.fill();
   }
 
+
+  drawCertainty(ds: DistributionSeries) {
+    const {ctx, width, xheight} = this;
+    const {distribution, color} = ds;
+    const {median} = distribution;
+    const ogWidth = ctx.lineWidth;
+    const dateLabel = toFullDateString(distribution.median);
+    const textMetrics = measureText(ctx, dateLabel);
+    ctx.lineWidth *= 1.5;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = "none";
+    const index = this.series.indexOf(ds);
+    const alpha = index === this.hoverSeriesIndex ? 0.6 : 0.3;
+    this.ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    const x = this.xFor(median, width);
+    const top = margin.top + textMetrics.height + PADDING;
+    const bottom = xheight;
+    ctx.moveTo(x, bottom);
+    ctx.lineTo(x, top);
+    ctx.lineTo(x - 4, top + 4);
+    ctx.moveTo(x, top);
+    ctx.lineTo(x + 4, top + 4);
+    ctx.stroke();
+    ctx.lineWidth = ogWidth;
+  }
+
+
   setAlpha(ds: DistributionSeries) : void  {
     let alpha = 0.2;
     if (this.isHighlighting) {
@@ -178,12 +203,11 @@ export class TimeDistributionCanvas {
   }
 
   labelMedian(ds: DistributionSeries) {
-    if (ds.distribution.total === 0) return;
     const {ctx, width, xheight} = this;
     const {distribution, color} = ds;
 
     const index = this.series.indexOf(ds);
-
+    const isCertain = ds.distribution.total === 0;
     const x = this.xFor(distribution.median, width);
     let textX = x;
     ctx.fillStyle = color;
@@ -231,12 +255,13 @@ export class TimeDistributionCanvas {
       textX = constrain(textX, textWidth / 2, width - textWidth / 2);
 
       ctx.globalAlpha = 0.7;
-      if (this.hoverSeriesIndex === index) {
+      if (this.hoverSeriesIndex === index || isCertain) {
         ctx.fillText(dateLabel, textX, topY);
       } else {
         ctx.fillText(dateLabel, textX, middleY);
       }
-
+      /* values that are certain do not need min and max drawn */
+      if (isCertain) return;
       if (this.hoverSeriesIndex === index) {
         ctx.textBaseline = "middle";
 
@@ -250,7 +275,7 @@ export class TimeDistributionCanvas {
       middleY += textMetrics.height;
       topY += textMetrics.height;
     }
-
+    if (isCertain) return;
     if (this.hoverSeriesIndex === index) {
       ctx.globalAlpha = 0.9;
     } else {
@@ -410,6 +435,8 @@ export class TimeDistributionCanvas {
 
       if (distribution.range > 0) {
         this.drawDistribution(ds);
+      } else {
+        this.drawCertainty(ds);
       }
 
       this.labelMedian(ds);
