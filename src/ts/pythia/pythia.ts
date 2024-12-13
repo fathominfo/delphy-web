@@ -67,6 +67,7 @@ export class Pythia {
   popN0Hist: number[];
   popGHist: number[];
   stepsHist : number[];
+  minDateHist: number[];
   paramsHist: ArrayBuffer[];
   treeHist: PhyloTree[];
   kneeIndex: number;
@@ -105,6 +106,7 @@ export class Pythia {
     this.popN0Hist = [];
     this.popGHist = [];
     this.stepsHist = [];
+    this.minDateHist = [];
     this.paramsHist = [];
     this.treeHist = [];
     this.kneeIndex = 0;
@@ -112,7 +114,8 @@ export class Pythia {
     this.currentMccRef = null;
     this.fb = new ArrayBuffer(0);
     this.fileFormat = sequenceFileFormat.UNSUPPORTED;
-    this.maxDate = -1;
+    /* dates are measured as # of days from 2020-01-01 */
+    this.maxDate = UNSET;
     this.tipCounts = [];
     this.mccNodeBackLinks = [];
     this.mcs = null;
@@ -195,13 +198,14 @@ export class Pythia {
           */
         const count = this.sourceTree.getSize(),
           startTime = Date.now();
-        let t = this.sourceTree.getTimeOf(0);
+        let maxDate = this.sourceTree.getTimeOf(0);
         for (let i = 0; i < count; i++) {
           if (isTip(this.sourceTree, i)) {
-            t = Math.max(t, this.sourceTree.getTimeOf(i));
+            maxDate = Math.max(maxDate, this.sourceTree.getMaxTimeOf(i));
           }
         }
-        this.maxDate = t;
+        console.log(`setting maxDate to ${maxDate}`)
+        this.maxDate = maxDate;
         this.run = this.delphy.createRun(this.sourceTree);
         const tipCount = (count + 1) / 2,
           targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
@@ -467,9 +471,20 @@ export class Pythia {
       this.popGHist.push(this.run.getPopG());
       this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
-      // copy() is crucial: the underlying tree keeps changing!
-      this.treeHist.push(this.run.getTree().copy());
+      this.trackTree(this.run);
     }
+  }
+
+  trackTree(run: Run) {
+    // copy() is crucial: the underlying tree keeps changing!
+    const tree = run.getTree().copy();
+    this.treeHist.push(tree);
+    let minDate = this.maxDate;
+    const count = tree.getSize();
+    for (let i = 0; i < count; i++) {
+      minDate = Math.min(minDate, tree.getTimeOf(i));
+    }
+    this.minDateHist.push(minDate);
   }
 
 
@@ -698,11 +713,7 @@ export class Pythia {
 
 
   getBaseTreeMinDate():number {
-    let minDate = 0;
-    this.treeHist.slice(this.kneeIndex).forEach((tree:PhyloTree)=>{
-      const d = tree.getTimeOf(tree.getRootIndex());
-      minDate = Math.min(minDate, d);
-    })
+    const minDate = Math.min(...this.minDateHist.slice(this.kneeIndex));
     return minDate;
   }
 
@@ -1224,7 +1235,7 @@ export class Pythia {
     let t = firstTree.getTimeOf(0);
     for (let i = 0; i < count; i++) {
       if (isTip(firstTree,i)) {
-        t = Math.max(t, firstTree.getTimeOf(i));
+        t = Math.max(t, firstTree.getMaxTimeOf(i));
       }
     }
     this.maxDate = t;
