@@ -94,18 +94,27 @@ export class BaseTreeMeanCanvas {
     this.maxDate = maxDate;
     this.startIndex = 0;
     this.endIndex = Math.floor(maxDate - minDate + 1);
-
+    this.averageYPositions.length = 0;
     // console.log('base tree set', this.minDate, this.maxDate, this.startIndex, this.endIndex);
-
-    this.calculate();
-
+    // this.calculate();
   }
 
 
   setDateRange(zoomMinDate: number, zoomMaxDate: number) : void {
     if (Number.isFinite(zoomMinDate) && Number.isFinite(zoomMaxDate)) {
+
       this.startIndex = Math.max(0, Math.floor(zoomMinDate - this.minDate));
-      this.endIndex = Math.min(this.binCount-1, Math.floor(zoomMaxDate - this.minDate));
+      const slots = Math.min(this.binCount-1, Math.floor(zoomMaxDate - zoomMinDate));
+      this.endIndex = this.startIndex + slots;
+      // this.endIndex = this.startIndex + Math.min(this.binCount-1, Math.floor(zoomMaxDate - zoomMinDate));
+      // console.log(`setDateRange `,
+      //   'binCount',        this.binCount,
+      //   'minDate',         this.minDate,
+      //   'maxDate',         this.maxDate,
+      //   'startIndex',      this.startIndex,
+      //   'endIndex',        this.endIndex,
+      //   'zoomMinDate',     zoomMinDate,
+      //   'zoomMaxDate',     zoomMaxDate);
     }
   }
 
@@ -134,7 +143,6 @@ export class BaseTreeMeanCanvas {
         averages[s][d] = tot / this.treeCount;
       }
     }
-
     this.averageYPositions = averages.map(()=>Array(drawnCount));
     for (let d = 0; d < drawnCount; d++) {
       let y = 0;
@@ -152,14 +160,13 @@ export class BaseTreeMeanCanvas {
   }
 
   protected draw() : void {
-    const { ctx, width, height, averageYPositions, seriesCount } = this;
-
+    const { ctx, width, height, averageYPositions } = this;
 
     ctx.clearRect(0, 0, width, height);
 
     ctx.lineWidth = LINE_WIDTH;
 
-    for (let i = 0; i < seriesCount; i++) {
+    for (let i = 0; i < averageYPositions.length; i++) {
       const prevIndex = (i > 0) ? i - 1 : null;
 
       // set color
