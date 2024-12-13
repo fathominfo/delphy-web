@@ -22,24 +22,26 @@
       <div class="uploader--tagline">Rapidly generate a summary tree and begin exploring your data.</div>
 
       <div class="uploader--entry-points">
-        <button id="uploader--demo-button"><span class="symbol">&#9654;</span>Run <span class="selection">SARS-CoV-2</span> demo</button>
-        <form id="uploader--demo-form">
-          <p  class="uploader--demo-option">
-            <label>
-              <input type="radio" name="filename" value="ma_sars_cov_2.maple" checked/>
-              <span>SARS-CoV-2</span>
-            </label>
-            <a href="ma_sars_cov_2.maple" target="_" >
-              <span class="box"><span class="glyph"></span></span>Download input data
-            </a>
-          </p>
-        </form>
+        <div id="uploader--demo">
+          <button id="uploader--demo-button"><span class="symbol">&#9654;</span>Run <span class="selection">SARS-CoV-2</span> demo</button>
+          <form id="uploader--demo-form">
+            <p  class="uploader--demo-option">
+              <label>
+                <input type="radio" name="filename" value="ma_sars_cov_2.maple" checked/>
+                <span>SARS-CoV-2</span>
+              </label>
+              <a href="ma_sars_cov_2.maple" target="_" >
+                <span class="box"><span class="glyph"></span></span>Download input data
+              </a>
+            </p>
+          </form>
+        </div>
       
         <div class="uploader--or">or</div>
 
 
         <input type="file" id="uploader--file-input" name="uploader--file-input">
-        <label for="uploader--file-input" class="uploader--message">
+        <label id="uploader--file-input--label" for="uploader--file-input" class="uploader--message">
           Click here or drag a file to open
           <br/><span class="file-types">.maple, .fasta, or .dphy</span>
           <p class="uploader--byline">All files stay on your system. Nothing is uploaded to the server.</p>
