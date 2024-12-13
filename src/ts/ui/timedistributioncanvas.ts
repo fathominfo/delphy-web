@@ -4,7 +4,7 @@ import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabe
 
 const margin = {
   top: 5,
-  right: 0,
+  right: 10,
   bottom: 0,
   left: 0
 };
@@ -46,6 +46,7 @@ export class TimeDistributionCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   width: number;
+  drawWidth: number;
   height: number;
   xheight: number;
   minDate: number;
@@ -74,6 +75,7 @@ export class TimeDistributionCanvas {
     }
     this.ctx = maybeCtx;
     this.width = 0;
+    this.drawWidth = 0;
     this.height = 0;
     this.xheight = 0;
     this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
@@ -114,6 +116,7 @@ export class TimeDistributionCanvas {
   resize():void {
     const {width, height} = resizeCanvas(this.canvas);
     this.width = width;
+    this.drawWidth = width - margin.right;
     this.height = height;
     this.xheight = this.height;
     this.ctx.textBaseline = 'top';
@@ -126,7 +129,7 @@ export class TimeDistributionCanvas {
   }
 
   drawDistribution(ds: DistributionSeries) {
-    const {ctx, width, xheight, allSeriesBandMax} = this;
+    const {ctx, drawWidth, xheight, allSeriesBandMax} = this;
     // const {ctx, width, xheight} = this;
     const {distribution, color} = ds;
     const {bands, bandwidth, bandTimes, kde} = distribution;
@@ -136,13 +139,13 @@ export class TimeDistributionCanvas {
     this.setAlpha(ds);
     ctx.beginPath();
     let t = bandTimes[0],
-      x = this.xFor(t, width),
+      x = this.xFor(t, drawWidth),
       val = ds.distribution.getMinBand();
     const THRESHOLD = val;
     ctx.moveTo(x, xheight);
     for (let i = 0; i < bandTimes.length; i++) {
       t = bandTimes[i];
-      x = this.xFor(t, width);
+      x = this.xFor(t, drawWidth);
       val = bands[i];
       const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
       // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
@@ -151,7 +154,7 @@ export class TimeDistributionCanvas {
     if (kde){
       while (val > THRESHOLD) {
         t += bandwidth;
-        x = this.xFor(t, width);
+        x = this.xFor(t, drawWidth);
         val = kde.value_at(t);
         const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
         // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
@@ -164,7 +167,7 @@ export class TimeDistributionCanvas {
 
 
   drawCertainty(ds: DistributionSeries) {
-    const {ctx, width, xheight} = this;
+    const {ctx, drawWidth, xheight} = this;
     const {distribution, color} = ds;
     const {median} = distribution;
     const ogWidth = ctx.lineWidth;
@@ -177,7 +180,7 @@ export class TimeDistributionCanvas {
     const alpha = index === this.hoverSeriesIndex ? 0.6 : 0.3;
     this.ctx.globalAlpha = alpha;
     ctx.beginPath();
-    const x = this.xFor(median, width);
+    const x = this.xFor(median, drawWidth);
     const top = margin.top + textMetrics.height + PADDING;
     const bottom = xheight;
     ctx.moveTo(x, bottom);
@@ -203,12 +206,12 @@ export class TimeDistributionCanvas {
   }
 
   labelMedian(ds: DistributionSeries) {
-    const {ctx, width, xheight} = this;
+    const {ctx, width, drawWidth, xheight} = this;
     const {distribution, color} = ds;
 
     const index = this.series.indexOf(ds);
     const isCertain = ds.distribution.total === 0;
-    const x = this.xFor(distribution.median, width);
+    const x = this.xFor(distribution.median, drawWidth);
     let textX = x;
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
@@ -230,8 +233,8 @@ export class TimeDistributionCanvas {
       maxDateStr = toFullDateString(maxDate);
     const minDateMetrics = measureText(ctx, minDateStr),
       maxDateMetrics = measureText(ctx, maxDateStr);
-    let minX = this.xFor(minDate, width),
-      maxX = this.xFor(maxDate, width);
+    let minX = this.xFor(minDate, drawWidth),
+      maxX = this.xFor(maxDate, drawWidth);
     if (minX - minDateMetrics.width < margin.left) {
       minX = margin.left + minDateMetrics.width;
     }
@@ -310,14 +313,14 @@ export class TimeDistributionCanvas {
   }
 
   drawBaseline() {
-    const {ctx, width, xheight} = this;
+    const {ctx, drawWidth, xheight} = this;
 
     ctx.globalAlpha = 0.2;
     ctx.lineWidth = 2;
     ctx.strokeStyle = `${LINE_COLOR} 1)`;
     ctx.beginPath();
     ctx.moveTo(0, xheight);
-    ctx.lineTo(width, xheight);
+    ctx.lineTo(drawWidth, xheight);
     ctx.stroke();
   }
 
@@ -340,7 +343,7 @@ export class TimeDistributionCanvas {
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     const label = "95% HPD";
-    const textX = this.textOnRight ? this.width / 2 : 0;
+    const textX = this.textOnRight ? this.drawWidth / 2 : 0;
     ctx.fillText(label, textX, LINE_HEIGHT);
 
     ctx.font = CHART_TEXT_FONT;
@@ -459,7 +462,7 @@ export class TimeDistributionCanvas {
   }
 
   xForInverse(x: number): number {
-    const rescaled = x / this.width,
+    const rescaled = x / this.drawWidth,
       firstDate = this.minDate + this.startIndex,
       lastDate = this.minDate + this.endIndex;
     return rescaled * (lastDate - firstDate) + firstDate;
@@ -482,8 +485,8 @@ export class TimeDistributionCanvas {
       this.series.forEach((ds, i) => {
         if (!ds) return;
         if (!this.hoverDate) return;
-        // let x1 = this.xFor(ds.distribution.min, this.width),
-        //   x2 = this.xFor(ds.distribution.max, this.width);
+        // let x1 = this.xFor(ds.distribution.min, this.drawWidth),
+        //   x2 = this.xFor(ds.distribution.max, this.drawWidth);
         // if (ds.distribution.range === 0) {
         //   x1 -= HOVER_ALLOWANCE;
         //   x2 += HOVER_ALLOWANCE;
