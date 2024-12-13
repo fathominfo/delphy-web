@@ -133,6 +133,7 @@
 
 #uploader--demo-button {
   appearance: none;
+  margin-bottom: 30px;
   background-color: @demo;
   color: @demo-text;
   border: 1px solid @demo;
@@ -455,6 +456,22 @@
   margin: 10px 0px 20px;
   font-size: 15px;
 }
+
+
+// to control collapsing on the load screen
+#uploader--demo, 
+#uploader--file-input--label, 
+#uploader--url-message, 
+.uploader--or {
+  transition: all 0.15s;
+  &.collapsing {
+    overflow: hidden;
+    padding: 0;
+  }
+
+}
+
+
 
 #uploader--proxy-popup {
   display: none;
