@@ -20,6 +20,14 @@ const showFormatHints = ()=>{
 }
 setShowFormat(showFormatHints);
 
+const maybeUploadDiv = document.querySelector("#uploader");
+if (!maybeUploadDiv) {
+  throw new Error("could not find the uploader div in the html");
+}
+const uploadDiv = maybeUploadDiv as HTMLDivElement;
+const demoDiv = uploadDiv.querySelector("#uploader--demo") as HTMLInputElement;
+const fileLabel = uploadDiv.querySelector("#uploader--file-input--label") as HTMLLabelElement;
+const urlDiv = uploadDiv.querySelector("#uploader--url-message") as HTMLDivElement;
 
 /* show a progress bar when possible */
 const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
@@ -111,12 +119,6 @@ const errCallback = (msg:string)=>{
   });
 }
 
-const maybeUploadDiv = document.querySelector("#uploader");
-if (!maybeUploadDiv) {
-  throw new Error("could not find the uploader div in the html");
-}
-const uploadDiv = maybeUploadDiv as HTMLDivElement;
-
 const info = uploadDiv.querySelector(".uploader--info-content") as HTMLElement;
 const infoToggle = uploadDiv.querySelector(".uploader--info-toggle") as HTMLButtonElement;
 infoToggle.addEventListener("click", () => info.classList.toggle("hidden"));
@@ -193,6 +195,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     const fileToLoad = demoForm.filename.value as string;
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
+    hideOthers(demoDiv);
     uploadDiv.classList.add('loading');
     fetch(fileToLoad)
       .then(r => r.arrayBuffer())
@@ -226,6 +229,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     fileInput?.addEventListener("change", ()=>{
       if (fileInput.files) {
         setStage(STAGES.loading);
+        hideOthers(fileLabel);
+        fileInput.blur();
         uploadDiv.classList.add('loading');
         checkFiles(fileInput.files);
       }
@@ -239,7 +244,6 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     loadNow(urlInput.value);
     return false;
   });
-  const urlDiv = document.querySelector("#uploader--url-message") as HTMLDivElement;
   let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
   button?.addEventListener("click", ()=>urlDiv?.classList.toggle("proxy-info"));
   const loc = window.location;
@@ -259,6 +263,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
 const loadNow = (url:string, byProxy=false)=>{
   setStage(STAGES.loading);
+  hideOthers(urlDiv);
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
   const options:RequestInit = byProxy ? {} : {mode: 'no-cors'};
@@ -352,6 +357,7 @@ const handleDragLeave = ()=>{
 }
 
 const handleFileUpload = (event: DragEvent)=>{
+  hideOthers(fileLabel);
   return new Promise(()=>{
     if (event && event.dataTransfer) {
       event.preventDefault();
@@ -445,5 +451,20 @@ const checkFiles = (files: File[] | FileList)=>{
   }
 }
 
+
+function hideOthers(originEle: HTMLElement) {
+  const collapsing = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
+  uploadDiv.querySelectorAll(".uploader--or").forEach(ele=>collapsing.push(ele as HTMLDivElement));
+  requestAnimationFrame(()=>{
+    collapsing.forEach(ele=>{
+      const ht = ele.offsetHeight;
+      ele.style.height = `${ht}px`;
+      ele.classList.add("collapsing")
+    });
+    requestAnimationFrame(()=>collapsing.forEach(ele=>{
+      ele.style.height = `0`;
+    }));
+  });
+}
 
 export { bindUpload, hideUpload, loadNow };
