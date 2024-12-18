@@ -741,8 +741,8 @@ export class LineagesUI extends MccUI {
       nodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "" });
 
       let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
-      const zoomDateRange = zoomMaxDate - zoomMinDate;
-      zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
+      // const zoomDateRange = zoomMaxDate - zoomMinDate;
+      // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
 
       this.nodeComparisons = setComparisons(src, minDate, maxDate, this.goToMutations, this.nodeHighlightCallback,
         this.isApobecEnabled, zoomMinDate, zoomMaxDate);
@@ -752,7 +752,8 @@ export class LineagesUI extends MccUI {
       //   nodeLabels = nodes.map(({label}) => label);
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
+      // this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
+      this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, minDate, maxDate);
       this.nodePrevalenceCanvas.requestDraw();
       this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
       mccRef.release();
