@@ -1,6 +1,6 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
-  SequenceWarningCode} from './delphy_api';
+  SequenceWarningCode, PopModel, ExpPopModel} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, RunParamConfig, NodeDistributionType, OverlapTally, CoreVersionInfo} from '../constants';
@@ -63,9 +63,7 @@ export class Pythia {
   logPosteriorHist : number[];
   logGHist : number[];
   numMutationsHist : number[];
-  popT0Hist: number[];
-  popN0Hist: number[];
-  popGHist: number[];
+  popModelHist: PopModel[];
   stepsHist : number[];
   minDateHist: number[];
   paramsHist: ArrayBuffer[];
@@ -102,9 +100,7 @@ export class Pythia {
     this.logPosteriorHist = [];
     this.logGHist = [];
     this.numMutationsHist = [];
-    this.popT0Hist = [];
-    this.popN0Hist = [];
-    this.popGHist = [];
+    this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
     this.paramsHist = [];
@@ -466,9 +462,7 @@ export class Pythia {
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
       this.numMutationsHist.push(this.run.getNumMutations());
-      this.popT0Hist.push(this.run.getPopT0());
-      this.popN0Hist.push(this.run.getPopN0());
-      this.popGHist.push(this.run.getPopG());
+      this.popModelHist.push(this.run.getPopModel());
       this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);
@@ -514,9 +508,7 @@ export class Pythia {
         this.logPosteriorHist.length = 0;
         this.logGHist.length = 0;
         this.numMutationsHist.length = 0;
-        this.popT0Hist.length = 0;
-        this.popN0Hist.length = 0;
-        this.popGHist.length = 0;
+        this.popModelHist.length = 0;
         this.stepsHist.length = 0;
         this.paramsHist.length = 0;
         this.kneeIndex = 0;
@@ -571,13 +563,28 @@ export class Pythia {
     if (runParams.mutationRate > 0) {
       run.setMu(runParams.mutationRate);
     }
+
+    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
+    //
+    // This is what used to be here
+    // ----
+    // this.setFinalPopSizeMovesEnabled(!runParams.finalPopSizeIsFixed);
+    // if (runParams.finalPopSizeIsFixed) {
+    //   run.setPopN0(runParams.finalPopSize);
+    // }
+    // this.setPopGrowthRateMovesEnabled(!runParams.popGrowthRateIsFixed);
+    // if (runParams.popGrowthRateIsFixed) {
+    //   run.setPopG(runParams.popGrowthRate);
+    // }
+    // ----
     this.setFinalPopSizeMovesEnabled(!runParams.finalPopSizeIsFixed);
-    if (runParams.finalPopSizeIsFixed) {
-      run.setPopN0(runParams.finalPopSize);
-    }
     this.setPopGrowthRateMovesEnabled(!runParams.popGrowthRateIsFixed);
-    if (runParams.popGrowthRateIsFixed) {
-      run.setPopG(runParams.popGrowthRate);
+    const curPopModel = run.getPopModel();
+    if (curPopModel instanceof ExpPopModel) {
+      const t0 = curPopModel.t0;
+      const n0 = (runParams.finalPopSizeIsFixed ? runParams.finalPopSize : curPopModel.n0);
+      const g = (runParams.popGrowthRateIsFixed ? runParams.popGrowthRate : curPopModel.g);
+      run.setPopModel(new ExpPopModel(t0, n0, g));
     }
   }
 
@@ -642,14 +649,26 @@ export class Pythia {
     if (!this.run) {
       throw new Error( 'no run from which to get final pop size');
     }
-    return this.run.getPopN0();
+    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
+    const curPopModel = this.run.getPopModel();
+    if (curPopModel instanceof ExpPopModel) {
+      return curPopModel.n0;
+    } else {
+      throw new Error("don't know what to do here");
+    }
   }
 
   setFinalPopSize(finalPopSize: number) : void {
     if (!this.run) {
       throw new Error( 'no run on which to set final pop size');
     }
-    this.run.setPopN0(finalPopSize);
+    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
+    const curPopModel = this.run.getPopModel();
+    if (curPopModel instanceof ExpPopModel) {
+      this.run.setPopModel(new ExpPopModel(curPopModel.t0, finalPopSize, curPopModel.g));
+    } else {
+      throw new Error("don't know what to do here");
+    }
   }
 
   getFinalPopSizeMovesEnabled() : boolean {
@@ -671,14 +690,26 @@ export class Pythia {
     if (!this.run) {
       throw new Error( 'no run from which to get pop growth rate');
     }
-    return this.run.getPopG();
+    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
+    const curPopModel = this.run.getPopModel();
+    if (curPopModel instanceof ExpPopModel) {
+      return curPopModel.g;
+    } else {
+      throw new Error("don't know what to do here");
+    }
   }
 
   setPopGrowthRate(rate: number) : void {
     if (!this.run) {
       throw new Error( 'no run on which to set pop growth rate');
     }
-    this.run.setPopG(rate);
+    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
+    const curPopModel = this.run.getPopModel();
+    if (curPopModel instanceof ExpPopModel) {
+      this.run.setPopModel(new ExpPopModel(curPopModel.t0, curPopModel.n0, rate));
+    } else {
+      throw new Error("don't know what to do here");
+    }
   }
 
   getPopGrowthRateMovesEnabled() : boolean {
@@ -847,13 +878,11 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           baseTreeIndices = nodeIndices.map(mccNodeIndex=>summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t)),
           deduped = baseTreeIndices.map((n, i)=>i === baseTreeIndices.lastIndexOf(n) ? n : UNSET),
           treeDist = this.delphy.popModelProbeAncestorsOnTree(
-            tree, popT0, popN0, popG, deduped, startDate - 1, maxDate, range);
+            tree, popModel, deduped, startDate - 1, maxDate, range);
         baseTreeIndices.forEach((nodeIndex, i)=>{
           const d = deduped[i];
           if (d !== nodeIndex) {
@@ -943,11 +972,9 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           treeDist = this.delphy.popModelProbeSiteStatesOnTree(
-            tree, popT0, popN0, popG, site, startDate - 1, maxDate, range);
+            tree, popModel, site, startDate - 1, maxDate, range);
         //   maxTValue = Math.max(...treeDist[RealSeqLetter_T]);
         // if (maxTValue === 0) {
         //   console.log("???", treeDist);
