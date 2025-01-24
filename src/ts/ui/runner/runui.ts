@@ -88,19 +88,27 @@ export class RunUI extends UIScreen {
 
 
   advanced: HTMLElement;
-  // mutationRateFieldset: HTMLFieldSetElement;
   siteHeterogeneityToggle: HTMLInputElement;
   fixedRateToggle: HTMLInputElement;
   mutationRateLabel: HTMLLabelElement;
   mutationRateInput: HTMLInputElement;
-  // apobecFieldset: HTMLFieldSetElement;
-  apobecToggle: HTMLInputElement;
+  popModelExpInput: HTMLInputElement;
+  popModelSkygridInput: HTMLInputElement;
+  popModelSkygridDetail: HTMLDivElement;
+  popModelExpDetail: HTMLDivElement;
+  skygridStartDateInput: HTMLInputElement;
+  skygridIntervalCountInput: HTMLInputElement;
+  skygridGammaInput: HTMLInputElement;
+  skygridFlatInterpolationInput: HTMLInputElement;
+  skygridLogLinearInterpolationInput: HTMLInputElement;
   fixedFinalPopSizeToggle: HTMLInputElement;
   fixedFinalPopSizeLabel: HTMLLabelElement;
   fixedFinalPopSizeInput: HTMLInputElement;
   fixedPopGrowthRateToggle: HTMLInputElement;
   fixedPopGrowthRateLabel: HTMLLabelElement;
   fixedPopGrowthRateInput: HTMLInputElement;
+
+  apobecToggle: HTMLInputElement;
   submitAdvancedButton: HTMLButtonElement;
   restartWarning: HTMLElement;
 
@@ -192,7 +200,19 @@ export class RunUI extends UIScreen {
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement,
     this.mutationRateLabel = this.div.querySelector("#overall-mutation-rate-label") as HTMLLabelElement,
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
-    // this.apobecFieldset = this.div.querySelector(".apobec-fieldset") as HTMLFieldSetElement,
+    this.popModelExpInput = this.div.querySelector("#popmodel-selector-expgrowth") as HTMLInputElement;
+    this.popModelSkygridInput = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
+
+    this.popModelExpDetail = this.div.querySelector("#popmodel-exponential") as HTMLInputElement;
+    this.popModelSkygridDetail = this.div.querySelector("#popmodel-skygrid") as HTMLInputElement;
+
+    this.skygridStartDateInput = this.div.querySelector("popmodel-skygrid-k") as HTMLInputElement;
+    this.skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
+    this.skygridGammaInput = this.div.querySelector("#popmodel-skygrid-gamma") as HTMLInputElement;
+    this.skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
+    this.skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
+
+
     this.apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
     this.fixedFinalPopSizeToggle = this.div.querySelector("#fixed-final-pop-size-toggle") as HTMLInputElement,
     this.fixedFinalPopSizeLabel = this.div.querySelector("#overall-final-pop-size-label") as HTMLLabelElement,
@@ -237,7 +257,7 @@ export class RunUI extends UIScreen {
       }
 
     });
-
+    const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
     this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     openAdvancedButton.addEventListener("click", ()=>{
@@ -253,6 +273,19 @@ export class RunUI extends UIScreen {
     this.fixedRateToggle.addEventListener("change", () => {
       this.mutationRateInput.disabled = !this.fixedRateToggle.checked;
     });
+    const handlePopModelToggle = ()=>{
+      const which = advancedForm.popmodel.value;
+      if (which === 'exp-growth') {
+        this.popModelExpDetail.classList.remove("hidden");
+        this.popModelSkygridDetail.classList.add("hidden");
+      } else if (which === 'skygrid') {
+        this.popModelExpDetail.classList.add("hidden");
+        this.popModelSkygridDetail.classList.remove("hidden");
+      }
+    };
+    this.popModelExpInput.addEventListener("change", handlePopModelToggle);
+    this.popModelSkygridInput.addEventListener("change",handlePopModelToggle);
+
     this.fixedFinalPopSizeToggle.addEventListener("change", () => {
       this.fixedFinalPopSizeInput.disabled = !this.fixedFinalPopSizeToggle.checked;
     });
@@ -267,7 +300,6 @@ export class RunUI extends UIScreen {
     [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
       this.advanced.classList.add("hidden");
     }));
-    const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
     advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
     this.advanced.addEventListener("click", e => {
