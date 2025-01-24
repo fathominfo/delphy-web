@@ -1,6 +1,7 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
-  SequenceWarningCode, PopModel, ExpPopModel} from './delphy_api';
+  SequenceWarningCode, PopModel, ExpPopModel, SkygridPopModel,
+  SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, RunParamConfig, NodeDistributionType, OverlapTally, CoreVersionInfo} from '../constants';
@@ -202,9 +203,35 @@ export class Pythia {
         }
         console.log(`setting maxDate to ${maxDate}`)
         this.maxDate = maxDate;
-        this.run = this.delphy.createRun(this.sourceTree);
         const tipCount = (count + 1) / 2,
           targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
+        /*
+
+
+        default to creatig a run with skygrid population model
+
+
+        */
+        const skygridStartDate = this.getSkygridStartDate();
+        const skygridIntervalCount = this.getSkygridNumIntervals();
+        const skygridIntervalDuration = skygridStartDate / skygridIntervalCount;
+        const knotCount = skygridIntervalCount + 1;
+        const skygridGamma = this.getSkygridGamma();
+        const skyGridInterpolation = SkygridPopModelType.LogLinear;
+        const knots: number[] = [];
+        const gamma: number[] = [];
+        let t = skygridStartDate;
+        for (let i = 0; i < knotCount; i++) {
+          knots.push(t);
+          gamma.push(skygridGamma);
+          t += skygridIntervalDuration;
+        }
+        // constructor(public type: SkygridPopModelType, public x: number[], public gamma: number[]) {
+        const popModel: PopModel = new SkygridPopModel(skyGridInterpolation, knots, gamma);
+
+        this.run = this.delphy.createRun(this.sourceTree);
+        this.run.setPopModel(popModel);
+
         this.stepsPerSample = targetStepSize;
         // console.debug(`count: ${count}, tip count: ${tipCount}, steps: ${targetStepSize}`)
         // if (this.run.getTree().getNumSites() > 100000) {  // TODO: <-- We need a better condition here :-)
@@ -731,6 +758,44 @@ export class Pythia {
     return !!(this.run?.isAlphaMoveEnabled());
   }
 
+  // pop model
+
+  getPopModelIsSkygrid() : boolean {
+    if (!this.run) {
+      throw new Error( 'no run from which to get pop growth rate move enabled');
+    }
+    return this.run.getPopModel() instanceof SkygridPopModel;
+  }
+
+  getSkygridStartDate() : number {
+    if (!this.sourceTree) {
+      throw new Error( 'no source tree from which to estimate start date');
+    }
+    const rootDate = this.sourceTree.getMinTimeOf(this.sourceTree.getRootIndex()) || 0;
+    const dateRange = this.maxDate - rootDate;
+    return this.maxDate - 2 * dateRange;
+  }
+
+  getSkygridNumIntervals() : number {
+    if (!this.sourceTree) {
+      throw new Error( 'no source tree from which to estimate number of intervals');
+    }
+    const count = this.sourceTree.getSize();
+    const tipCount = (count + 1) / 2;
+    return Math.round(tipCount / 15);
+  }
+
+  getSkygridGamma() : number {
+    return Math.log(1000);
+  }
+
+  getSkygridIsLogLinear() : boolean {
+    if (!this.run) {
+      throw new Error( 'no run from which to get pop growth rate move enabled');
+    }
+    const model = this.run.getPopModel() as SkygridPopModel;
+    return model?.type === SkygridPopModelType.LogLinear || false;
+  }
 
 
 

@@ -168,13 +168,22 @@ export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts, sort
 export type RunParamConfig = {
   stepsPerSample: number,
   mutationRate: number,
-  apobecEnabled: boolean,
   siteRateHeterogeneityEnabled: boolean,
   mutationRateIsFixed: boolean,
+  popModelIsSkygrid: boolean,
+  // exponential population model params
   finalPopSizeIsFixed: boolean,
   finalPopSize: number,
   popGrowthRateIsFixed: boolean,
-  popGrowthRate: number
+  popGrowthRate: number,
+  // skygrid population model params
+  skygridStartDate: number,
+  skygridNumIntervals: number,
+  skygridGamma: number,
+  skygridIsLogLinear: boolean,
+  //
+  apobecEnabled: boolean
+
 };
 
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */

@@ -315,7 +315,7 @@ export class RunUI extends UIScreen {
       if (e.key === "Escape" && !this.advanced.classList.contains("hidden")) {
         this.advanced.classList.add("hidden");
       }
-    })
+    });
 
     const power = parseInt(prevStepPower);
     this.runParams = {
@@ -324,10 +324,15 @@ export class RunUI extends UIScreen {
       apobecEnabled: false,
       siteRateHeterogeneityEnabled: false,
       mutationRateIsFixed: false,
+      popModelIsSkygrid: false,
       finalPopSizeIsFixed: false,
       finalPopSize: 3.0, // years
       popGrowthRateIsFixed: false,
-      popGrowthRate: 0.0  // e-foldings / year
+      popGrowthRate: 0.0,  // e-foldings / year
+      skygridStartDate: 0,
+      skygridNumIntervals: 0,
+      skygridGamma: Math.log(1000),
+      skygridIsLogLinear: true
     }
   }
 
@@ -373,6 +378,14 @@ export class RunUI extends UIScreen {
     params.finalPopSize = params.finalPopSizeIsFixed ? currentFinalPopSize : UNSET;
     params.popGrowthRateIsFixed = !pythia.getPopGrowthRateMovesEnabled();
     params.popGrowthRate = params.popGrowthRateIsFixed ? currentPopGrowthRate : UNSET;
+
+    params.popModelIsSkygrid = pythia.getPopModelIsSkygrid();
+    params.skygridStartDate = pythia.getSkygridStartDate();
+    params.skygridNumIntervals = pythia.getSkygridNumIntervals();
+    params.skygridGamma = pythia.getSkygridGamma();
+    params.skygridIsLogLinear = pythia.getSkygridIsLogLinear();
+
+
     const currentStepSetting = Math.round(Math.log(params.stepsPerSample) / Math.log(10));
 
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
