@@ -214,7 +214,7 @@ export class Pythia {
         */
         const skygridStartDate = this.getSkygridStartDate();
         const skygridIntervalCount = this.getSkygridNumIntervals();
-        const skygridIntervalDuration = skygridStartDate / skygridIntervalCount;
+        const skygridIntervalDuration = (this.maxDate - skygridStartDate) / skygridIntervalCount;
         const knotCount = skygridIntervalCount + 1;
         const skygridGamma = this.getSkygridGamma();
         const skyGridInterpolation = SkygridPopModelType.LogLinear;
@@ -771,7 +771,7 @@ export class Pythia {
     if (!this.sourceTree) {
       throw new Error( 'no source tree from which to estimate start date');
     }
-    const rootDate = this.sourceTree.getMinTimeOf(this.sourceTree.getRootIndex()) || 0;
+    const rootDate = this.sourceTree.getTimeOf(this.sourceTree.getRootIndex()) || 0;
     const dateRange = this.maxDate - rootDate;
     return this.maxDate - 2 * dateRange;
   }
