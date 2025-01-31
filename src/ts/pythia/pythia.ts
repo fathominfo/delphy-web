@@ -1289,14 +1289,9 @@ export class Pythia {
   getBeastOutputs(): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
     const run = this.delphy.createRun(this.treeHist[0].copy());
-    if (this.run) {
-      // These options can influence output
-      run.setAlphaMoveEnabled(this.run.isAlphaMoveEnabled());
-      run.setMpoxHackEnabled(this.run.isMpoxHackEnabled());
-      run.setMuMoveEnabled(this.run.isMuMoveEnabled());
-    }
+    run.setParamsFromFlatbuffer(this.paramsHist[1]);  // Some options can influence output
     const bout = run.createBeastyOutput();
-    for (let i = 0; i < treeCount; ++i) {
+    for (let i = 1; i < treeCount; ++i) {  // Skip first tree (for now!  Really, we have to fix things so that changing the Advanced Options resamples the zeroth tree & params)
       run.getTree().copyFrom(this.treeHist[i]);
       run.setParamsFromFlatbuffer(this.paramsHist[i]);
       bout.snapshot();
