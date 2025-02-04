@@ -31,7 +31,7 @@ export class UIScreen {
 
   activate() {
     this.pythia = this.sharedState.pythia;
-    this.isApobecEnabled = this.pythia.getIsApobecEnabled();
+    this.isApobecEnabled = this.pythia.runParams?.apobecEnabled || false;
     // this.worker.onmessage = (message:any)=>this.handleMessage(message.data);
     window.addEventListener('resize', this.resizeHandler);
     setTimeout(()=>this.resize(), 10);

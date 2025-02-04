@@ -165,27 +165,6 @@ const NUM_ALLELES = 4;
 export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts, sortMutList, compareMutationLists, siteIndexToLabel, siteLabelToIndex, mutationEquals, getAllele, NUM_ALLELES};
 
 
-export type RunParamConfig = {
-  stepsPerSample: number,
-  mutationRate: number,
-  siteRateHeterogeneityEnabled: boolean,
-  mutationRateIsFixed: boolean,
-  popModelIsSkygrid: boolean,
-  // exponential population model params
-  finalPopSizeIsFixed: boolean,
-  finalPopSize: number,
-  popGrowthRateIsFixed: boolean,
-  popGrowthRate: number,
-  // skygrid population model params
-  skygridStartDate: number,
-  skygridNumIntervals: number,
-  skygridGamma: number,
-  skygridIsLogLinear: boolean,
-  //
-  apobecEnabled: boolean
-
-};
-
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */
 export const copyDict = (obj:object)=>structuredClone(obj);
 
