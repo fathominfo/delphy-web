@@ -556,7 +556,7 @@ export class Pythia {
       throw new Error("can't change parameters of run that has already gathered samples");
     }
 
-    this.runParams = copyDict(runParams);
+    this.runParams = copyDict(runParams) as RunParamConfig;
 
     // console.debug('setting params', runParams)
     run.setAlphaMoveEnabled(runParams.siteRateHeterogeneityEnabled);

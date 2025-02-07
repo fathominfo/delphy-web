@@ -652,7 +652,7 @@ export class RunUI extends UIScreen {
     const form = e.target as HTMLFormElement;
     const formData = Object.fromEntries(new FormData(form));
 
-    let newParams = copyDict(this.getRunParams());
+    let newParams = copyDict(this.getRunParams()) as RunParamConfig;
 
     const isSiteHeterogeneity = formData.isSiteHeterogeneity === "on";
     newParams = this.setSiteRateHeterogeneityEnabled(newParams, isSiteHeterogeneity);
