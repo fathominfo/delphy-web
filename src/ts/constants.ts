@@ -165,18 +165,6 @@ const NUM_ALLELES = 4;
 export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts, sortMutList, compareMutationLists, siteIndexToLabel, siteLabelToIndex, mutationEquals, getAllele, NUM_ALLELES};
 
 
-export type RunParamConfig = {
-  stepsPerSample: number,
-  mutationRate: number,
-  apobecEnabled: boolean,
-  siteRateHeterogeneityEnabled: boolean,
-  mutationRateIsFixed: boolean,
-  finalPopSizeIsFixed: boolean,
-  finalPopSize: number,
-  popGrowthRateIsFixed: boolean,
-  popGrowthRate: number
-};
-
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */
 export const copyDict = (obj:object)=>structuredClone(obj);
 
