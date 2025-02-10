@@ -562,7 +562,6 @@ export class Pythia {
     run.setAlphaMoveEnabled(runParams.siteRateHeterogeneityEnabled);
     run.setMpoxHackEnabled(runParams.apobecEnabled);
     run.setMuMoveEnabled(!runParams.mutationRateIsFixed);
-    run.setAlphaMoveEnabled(runParams.siteRateHeterogeneityEnabled);
     if (runParams.mutationRate > 0) {
       run.setMu(runParams.mutationRate);
     }
