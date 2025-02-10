@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 import {PhyloTree} from '../../pythia/delphy_api';
-import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, RunParamConfig, copyDict, STAGES} from '../../constants';
+import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -14,6 +14,7 @@ import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
+import { RunParamConfig } from '../../pythia/pythia';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -82,10 +83,8 @@ export class RunUI extends UIScreen {
 
 
   stepCount: number;
-  maxDate:number;
   mccIndex: number;
   private drawHandle: number;
-  private runParams: RunParamConfig;
 
 
   advanced: HTMLElement;
@@ -163,7 +162,6 @@ export class RunUI extends UIScreen {
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
-    const prevStepPower = this.stepSelector.value;
     this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
@@ -182,7 +180,6 @@ export class RunUI extends UIScreen {
     this.is_running = false;
     this.timerHandle = 0;
     this.stepCount = -1;
-    this.maxDate = -1;
     this.mccIndex = -1
     this.baseTree = null;
     this.drawHandle = 0;
@@ -284,19 +281,6 @@ export class RunUI extends UIScreen {
         this.advanced.classList.add("hidden");
       }
     })
-
-    const power = parseInt(prevStepPower);
-    this.runParams = {
-      stepsPerSample: Math.pow(10, power),
-      mutationRate: 1.0,
-      apobecEnabled: false,
-      siteRateHeterogeneityEnabled: false,
-      mutationRateIsFixed: false,
-      finalPopSizeIsFixed: false,
-      finalPopSize: 3.0, // years
-      popGrowthRateIsFixed: false,
-      popGrowthRate: 0.0  // e-foldings / year
-    }
   }
 
 
@@ -321,31 +305,26 @@ export class RunUI extends UIScreen {
     if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
     this.runControl.addEventListener("change", this.runControlHandler);
     this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.setParamsFromRun();
+    this.updateParamsUI();
     setTimeout(()=>this.runControl.focus(), 100);
   }
 
-  setParamsFromRun() : void {
-    const params = this.runParams,
-      pythia = this.sharedState.pythia,
-      currentMu = pythia.getCurrentMu(),
-      currentFinalPopSize = pythia.getFinalPopSize(),
-      currentPopGrowthRate = pythia.getPopGrowthRate();
-    /* TODO: why is pythia getting a mutation rate of 1 in some cases?  */
-    params.stepsPerSample = pythia.stepsPerSample;
-    params.apobecEnabled = pythia.getIsApobecEnabled();
-    params.siteRateHeterogeneityEnabled = pythia.getSiteRateHeterogeneityEnabled();
-    params.mutationRateIsFixed = !pythia.getdMutationRateMovesEnabled();
-    params.mutationRate = params.mutationRateIsFixed ? currentMu : UNSET;
-    params.finalPopSizeIsFixed = !pythia.getFinalPopSizeMovesEnabled();
-    params.finalPopSize = params.finalPopSizeIsFixed ? currentFinalPopSize : UNSET;
-    params.popGrowthRateIsFixed = !pythia.getPopGrowthRateMovesEnabled();
-    params.popGrowthRate = params.popGrowthRateIsFixed ? currentPopGrowthRate : UNSET;
+  getRunParams(): RunParamConfig {
+    const pythia = this.sharedState.pythia;
+    const params = pythia.runParams;
+    if (!params) {
+      throw new Error(`this.runParams needed before it's set?`);
+    }
+    return params;
+  }
+
+  updateParamsUI() : void {
+    const pythia = this.sharedState.pythia;
+    const params = this.getRunParams();
+
     const currentStepSetting = Math.round(Math.log(params.stepsPerSample) / Math.log(10));
 
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
-
-    this.isApobecEnabled = params.apobecEnabled;
 
     // update checks
     this.siteHeterogeneityToggle.checked = params.siteRateHeterogeneityEnabled;
@@ -357,16 +336,16 @@ export class RunUI extends UIScreen {
     this.fixedFinalPopSizeInput.disabled = !params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateInput.disabled = !params.popGrowthRateIsFixed;
     // set field values
-    const muFixed = (currentMu * MU_FACTOR).toFixed(2);
+    const muFixed = (params.mutationRate * MU_FACTOR).toFixed(2);
     this.mutationRateInput.value = `${muFixed}`;
-    const finalPopSizeFixed = (currentFinalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2);
+    const finalPopSizeFixed = (params.finalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2);
     this.fixedFinalPopSizeInput.value = `${finalPopSizeFixed}`;
-    const popGrowthRateFixed = (currentPopGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
+    const popGrowthRateFixed = (params.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
     this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
 
     // toggle canvases
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
-    this.toggleHistCanvasVisibility(this.muStarCanvas, this.isApobecEnabled);
+    this.toggleHistCanvasVisibility(this.muStarCanvas, params.apobecEnabled);
     this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed);
 
     // disable fieldsets
@@ -384,9 +363,6 @@ export class RunUI extends UIScreen {
         //
       }
     }
-
-
-    console.log(`pythia? ${!!this.pythia}`, currentMu, params);
   }
 
   setCladeCred() : void {
@@ -515,7 +491,7 @@ export class RunUI extends UIScreen {
 
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    if (this.isApobecEnabled) {
+    if (this.getRunParams().apobecEnabled) {
       const muudStar = muStarHist.map(n=>n*MU_FACTOR);
       this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       serieses.push(muudStar);
@@ -530,7 +506,7 @@ export class RunUI extends UIScreen {
       // this.mutCountCanvas.ess,
       // this.popGrowthCanvas.ess
     ];
-    if (this.isApobecEnabled) {
+    if (this.getRunParams().apobecEnabled) {
       essCandidates.push(this.muStarCanvas.ess);
     }
     this.ess = Math.min.apply(null, essCandidates);
@@ -544,7 +520,6 @@ export class RunUI extends UIScreen {
       }
     }
     this.requestDraw();
-    // console.log('mu', this.pythia.getCurrentMu(), this.pythia.getdMutationRateMovesEnabled());
     if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
       if (this.drawHandle !== 0) {
         clearInterval(this.drawHandle);
@@ -585,7 +560,7 @@ export class RunUI extends UIScreen {
       }
       this.logPosteriorCanvas.draw();
       this.muCanvas.draw();
-      if (this.isApobecEnabled) {
+      if (this.getRunParams().apobecEnabled) {
         this.muStarCanvas.draw();
       }
       this.TCanvas.draw();
@@ -677,26 +652,24 @@ export class RunUI extends UIScreen {
     const form = e.target as HTMLFormElement;
     const formData = Object.fromEntries(new FormData(form));
 
-    let newParams: RunParamConfig;
+    let newParams = copyDict(this.getRunParams()) as RunParamConfig;
 
     const isSiteHeterogeneity = formData.isSiteHeterogeneity === "on";
-    const siteMutationRate = (formData.siteMutationRate !== undefined) ?
-      parseFloat(formData.siteMutationRate as string) : this.runParams.mutationRate;
-    newParams = this.setSiteRateHeterogeneityEnabled(this.runParams, isSiteHeterogeneity, siteMutationRate);
+    newParams = this.setSiteRateHeterogeneityEnabled(newParams, isSiteHeterogeneity);
 
     const isFixedMutationRate = formData.isFixedMutationRate === "on";
     const overallMutationRate = (formData.overallMutationRate !== undefined) ?
-      parseFloat(formData.overallMutationRate as string) : this.runParams.mutationRate;
+      parseFloat(formData.overallMutationRate as string) : this.getRunParams().mutationRate;
     newParams = this.fixMutationRate(newParams, isFixedMutationRate, overallMutationRate);
 
     const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
     const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
-      parseFloat(formData.overallFinalPopSize as string) : this.runParams.finalPopSize;
+      parseFloat(formData.overallFinalPopSize as string) : this.getRunParams().finalPopSize;
     newParams = this.fixFinalPopSize(newParams, isFixedFinalPopSize, overallFinalPopSize);
 
     const isFixedPopGrowthRate = formData.isFixedPopGrowthRate === "on";
     const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
-      parseFloat(formData.overallPopGrowthRate as string) : this.runParams.popGrowthRate;
+      parseFloat(formData.overallPopGrowthRate as string) : this.getRunParams().popGrowthRate;
     newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
 
     const isApobec = formData.isApobec === "on";
@@ -716,52 +689,45 @@ export class RunUI extends UIScreen {
         throw new Error("pythia interface unavalailable, cannot restart");
       }
       const okToGo = skipDialog || window.confirm(RESET_MESSAGE);
-      if (okToGo) {
-        setStage(STAGES.resetting);
-        if (this.mccRef) {
-          this.mccRef.release();
-          this.mccRef = null;
-        }
-        this.div.classList.add('reloading');
-        this.disableAnimation = true;
-        this.pythia.reset(newParams).then(()=>{
-          this.div.classList.remove('reloading');
-          this.stepCount = 0;
-          this.setParamsFromRun();
-          this.disableAnimation = false;
-          setStage(STAGES.loaded);
-        });
-      } else {
+      if (!okToGo) {
         // they canceled
-        this.setParamsFromRun();
+        this.updateParamsUI();
+        return;
       }
-    } else {
-      if (this.pythia) {
-        this.pythia.setParams(newParams);
-      }
-      this.setParamsFromRun();
-      this.updateRunData();
-
     }
+
+    setStage(STAGES.resetting);
+    if (this.mccRef) {
+      this.mccRef.release();
+      this.mccRef = null;
+    }
+    this.div.classList.add('reloading');
+    this.disableAnimation = true;
+    this.sharedState.pythia.reset(newParams).then(()=>{
+      this.div.classList.remove('reloading');
+      this.stepCount = 0;
+      this.updateParamsUI();
+      this.updateRunData();
+      this.disableAnimation = false;
+      setStage(STAGES.loaded);
+    });
   }
 
   private getWillRestart(): boolean {
-    if (this.siteHeterogeneityToggle.checked !== this.runParams.siteRateHeterogeneityEnabled) return true;
-    if (this.fixedRateToggle.checked !== this.runParams.mutationRateIsFixed) return true;
-    const currentMu = this.sharedState.pythia.getCurrentMu();
-    if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (currentMu * MU_FACTOR).toFixed(2)) return true;
-    const currentFinalPopSize = this.sharedState.pythia.getFinalPopSize();
-    if (parseFloat(this.fixedFinalPopSizeInput.value).toFixed(2) !== (currentFinalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2)) return true;
-    const currentPopGrowthRate = this.sharedState.pythia.getPopGrowthRate();
-    if (parseFloat(this.fixedPopGrowthRateInput.value).toFixed(2) !== (currentPopGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2)) return true;
-    if (this.apobecToggle.checked !== this.runParams.apobecEnabled) return true;
-    if (this.fixedFinalPopSizeToggle.checked !== this.runParams.finalPopSizeIsFixed) return true;
-    if (this.fixedPopGrowthRateToggle.checked !== this.runParams.popGrowthRateIsFixed) return true;
+    const runParams = this.getRunParams();
+    if (this.siteHeterogeneityToggle.checked !== runParams.siteRateHeterogeneityEnabled) return true;
+    if (this.fixedRateToggle.checked !== runParams.mutationRateIsFixed) return true;
+    if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (runParams.mutationRate * MU_FACTOR).toFixed(2)) return true;
+    if (parseFloat(this.fixedFinalPopSizeInput.value).toFixed(2) !== (runParams.finalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2)) return true;
+    if (parseFloat(this.fixedPopGrowthRateInput.value).toFixed(2) !== (runParams.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2)) return true;
+    if (this.apobecToggle.checked !== runParams.apobecEnabled) return true;
+    if (this.fixedFinalPopSizeToggle.checked !== runParams.finalPopSizeIsFixed) return true;
+    if (this.fixedPopGrowthRateToggle.checked !== runParams.popGrowthRateIsFixed) return true;
     return false;
   }
 
   private setStepsPerRefresh(stepPower:number): void {
-    const newParams = copyDict(this.runParams) as RunParamConfig,
+    const newParams = copyDict(this.getRunParams()) as RunParamConfig,
       steps = Math.pow(10, stepPower);
     newParams.stepsPerSample = steps;
     this.confirmRestart(newParams, false);
@@ -794,10 +760,9 @@ export class RunUI extends UIScreen {
     return newParams;
   }
 
-  private setSiteRateHeterogeneityEnabled(runParams: RunParamConfig, enabled:boolean, rate: number) : RunParamConfig {
+  private setSiteRateHeterogeneityEnabled(runParams: RunParamConfig, enabled:boolean) : RunParamConfig {
     const newParams = copyDict(runParams) as RunParamConfig;
     newParams.siteRateHeterogeneityEnabled = enabled;
-    newParams.mutationRate = rate / MU_FACTOR;
     return newParams;
   }
 

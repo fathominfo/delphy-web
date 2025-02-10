@@ -3,7 +3,7 @@ import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   SequenceWarningCode} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
-import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, RunParamConfig, NodeDistributionType, OverlapTally, CoreVersionInfo} from '../constants';
+import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
@@ -46,6 +46,50 @@ enum sequenceFileFormat {
   MAPLE
 }
 
+// FIXME: Rename things like `mutationRate` to emphasize these are the *initial* values
+export type RunParamConfig = {
+  stepsPerSample: number,
+  mutationRate: number,
+  apobecEnabled: boolean,
+  siteRateHeterogeneityEnabled: boolean,
+  mutationRateIsFixed: boolean,
+  finalPopSizeIsFixed: boolean,
+  finalPopSize: number,
+  popGrowthRateIsFixed: boolean,
+  popGrowthRate: number
+};
+
+function calcMaxDateOfTree(tree: PhyloTree): number {
+  let maxDate = -Number.MAX_VALUE;
+  const count = tree.getSize();
+  for (let i = 0; i < count; i++) {
+    if (isTip(tree, i)) {
+      maxDate = Math.max(maxDate, tree.getMaxTimeOf(i));
+    }
+  }
+  return maxDate;
+}
+
+function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
+  const count = tree.getSize(),
+    tipCount = (count + 1) / 2,
+    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
+
+  return {
+    stepsPerSample: targetStepSize,
+    mutationRate: 1e-3 / 365.0,  // 1e-3 mutations / site / year
+    apobecEnabled: false,
+    siteRateHeterogeneityEnabled: false,
+    mutationRateIsFixed: false,
+
+    // Defaults for exponential pop model
+    finalPopSizeIsFixed: false,
+    finalPopSize: 1000.0, // days
+    popGrowthRateIsFixed: false,
+    popGrowthRate: 0.0,  // e-foldings / year
+  };
+}
+
 export class Pythia {
 
   private mccRefManager: MccRefManager | null;
@@ -54,25 +98,27 @@ export class Pythia {
   private run: Run | null;
   private mcs: MostCommonSplitTree | null;
 
-  sourceTree: PhyloTree | null;
-  stepsPerSample: number;
+  initialTree: PhyloTree | null;    // Immutable snapshot of initial tree
+  runParams: RunParamConfig | null; // Immutable once run has been initialized
+
   isRunning: boolean;
-  muHist : number[];
-  muStarHist: number[];
-  totalBranchLengthHist : number[];
-  logPosteriorHist : number[];
-  logGHist : number[];
-  numMutationsHist : number[];
-  popT0Hist: number[];
-  popN0Hist: number[];
-  popGHist: number[];
-  stepsHist : number[];
-  minDateHist: number[];
-  paramsHist: ArrayBuffer[];
-  treeHist: PhyloTree[];
-  kneeIndex: number;
+
+  muHist : number[] = [];
+  muStarHist: number[] = [];
+  totalBranchLengthHist : number[] = [];
+  logPosteriorHist : number[] = [];
+  logGHist : number[] = [];
+  numMutationsHist : number[] = [];
+  popT0Hist: number[] = [];
+  popN0Hist: number[] = [];
+  popGHist: number[] = [];
+  stepsHist : number[] = [];
+  minDateHist: number[] = [];
+  paramsHist: ArrayBuffer[] = [];
+  treeHist: PhyloTree[] = [];
+  kneeIndex = 0;
+
   runReadyCallback: ()=>void;
-  fb: ArrayBuffer;
   fileFormat: sequenceFileFormat;
   maxDate: number;
   tipCounts: TipsByNodeIndex;
@@ -93,26 +139,12 @@ export class Pythia {
     }
     this.delphy = globalDelphy;
     this.run = null;
-    this.stepsPerSample = 100_000;
-    this.sourceTree = null;
+    this.initialTree = null;
+    this.runParams = null;
     this.isRunning = false;
-    this.muHist = [];
-    this.muStarHist = [];
-    this.totalBranchLengthHist = [];
-    this.logPosteriorHist = [];
-    this.logGHist = [];
-    this.numMutationsHist = [];
-    this.popT0Hist = [];
-    this.popN0Hist = [];
-    this.popGHist = [];
-    this.stepsHist = [];
-    this.minDateHist = [];
-    this.paramsHist = [];
-    this.treeHist = [];
-    this.kneeIndex = 0;
+    this.resetHist();
     this.mccRefManager = null;
     this.currentMccRef = null;
-    this.fb = new ArrayBuffer(0);
     this.fileFormat = sequenceFileFormat.UNSUPPORTED;
     /* dates are measured as # of days from 2020-01-01 */
     this.maxDate = UNSET;
@@ -137,15 +169,16 @@ export class Pythia {
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading FASTA file...");
-    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseFastaIntoInitialTreeAsync(
-      bytesJs,
+    this.fileFormat = sequenceFileFormat.FASTA;
+    const treePromise = this.delphy.parseFastaIntoInitialTreeAsync(
+      fastaBytesJs,
       stageCallback,
       parseProgressCallback,
       analysisProgressCallback,
       initTreeProgressCallback,
-      warningCallback);
-    this.fileFormat = sequenceFileFormat.FASTA;
-    this.initRunFromBytes(fastaBytesJs, callBack, runReadyCallback, errCallback);
+      warningCallback
+    );
+    this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback);
   }
 
   initRunFromMaple(mapleBytesJs:ArrayBuffer,
@@ -156,31 +189,28 @@ export class Pythia {
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading Maple file...");
-    const callBack:(b:ArrayBuffer)=>Promise<PhyloTree> = bytesJs=>this.delphy.parseMapleIntoInitialTreeAsync(
-      bytesJs,
+    this.fileFormat = sequenceFileFormat.MAPLE;
+    const treePromise = this.delphy.parseMapleIntoInitialTreeAsync(
+      mapleBytesJs,
       stageCallback,
       parseProgressCallback,
       initTreeProgressCallback,
-      warningCallback);
-    this.fileFormat = sequenceFileFormat.MAPLE;
-    this.initRunFromBytes(mapleBytesJs, callBack, runReadyCallback, errCallback);
+      warningCallback
+    );
+    this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback);
   }
 
-  initRunFromBytes(bytesJs:ArrayBuffer, delphyMethod:(b:ArrayBuffer)=>Promise<PhyloTree>, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+  initRunFromTreePromise(futureTree:Promise<PhyloTree>, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
     const startTime = Date.now();
     this.runReadyCallback = runReadyCallback;
-    this.fb = bytesJs.slice(0);
-    delphyMethod(bytesJs)
+    futureTree
       .then(phyloTree => {
         console.log("Creating run", phyloTree);
-        this.sourceTree = phyloTree;
         console.log(`file parsed and initial tree generated in ${Date.now() - startTime}ms`);
-        this.instantiateRun()
-          .then(()=>this.runReadyCallback())
-          .catch((err)=>{
-            console.error(err);
-            errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`)
-          });
+        return this.instantiateRun(phyloTree, makeDefaultRunParamConfig(phyloTree));
+      })
+      .then(() => {
+        this.runReadyCallback();
       })
       .catch(err => {
         console.error(err);
@@ -188,50 +218,45 @@ export class Pythia {
       });
   }
 
-  async instantiateRun() : Promise<void>{
-    const prom = new Promise((resolve: emptyResolveType, reject: emptyResolveType)=>{
-      if (this.sourceTree) {
-        /*
-          Assuming the max date will always be on a tip,
-          and the times of the tips don't change,
-          we can get the max date now.
-          */
-        const count = this.sourceTree.getSize(),
-          startTime = Date.now();
-        let maxDate = this.sourceTree.getTimeOf(0);
-        for (let i = 0; i < count; i++) {
-          if (isTip(this.sourceTree, i)) {
-            maxDate = Math.max(maxDate, this.sourceTree.getMaxTimeOf(i));
-          }
-        }
-        console.log(`setting maxDate to ${maxDate}`)
-        this.maxDate = maxDate;
-        this.run = this.delphy.createRun(this.sourceTree);
-        const tipCount = (count + 1) / 2,
-          targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
-        this.stepsPerSample = targetStepSize;
-        // console.debug(`count: ${count}, tip count: ${tipCount}, steps: ${targetStepSize}`)
-        // if (this.run.getTree().getNumSites() > 100000) {  // TODO: <-- We need a better condition here :-)
-        //   console.log('Enabling Mpox hack');
-        //   this.run.setMpoxHackEnabled(true);
-        // }
-        console.log(`Setting parallelism to ${navigator.hardwareConcurrency}`);
-        this.run.setNumParts(navigator.hardwareConcurrency);
-        this.sampleCurrentTree();
-        this.delphy.deriveMccTreeAsync(this.treeHist.slice(this.kneeIndex))
-          .then((mccTree:MccTree) => {
-            this.updateMcc(mccTree);
-            console.debug(`run instantiated and mcc updated in ${Date.now() - startTime}ms`);
-            resolve(undefined);
-          })
-          .catch(err=>{
-            console.debug(err);
-            reject(undefined);
-          })
-      } else {
-        reject(undefined);
-      }
+  async instantiateRun(initialTree: PhyloTree, runParams: RunParamConfig) : Promise<Run>{
+    const prom = new Promise((resolve: (run: Run) => void, reject: emptyResolveType)=>{
+      const startTime = Date.now();
 
+      this.initialTree = initialTree;  // We take over this tree, and never mutate it
+
+      /*
+        Assuming the max date will always be on a tip,
+        and the times of the tips don't change,
+        we can get the max date now.
+      */
+      this.maxDate = calcMaxDateOfTree(this.initialTree);
+
+      // Set up new run
+      if (this.run) {
+        this.run.delete();
+        this.run = null;
+      }
+      const runTree = this.initialTree.copy();
+      const run = this.run = this.delphy.createRun(runTree);  // Core takes possession of runTree's contents, leaving it a husk
+      runTree.delete();
+
+      this.resetHist();
+      this.setParams(runParams);
+      this.sampleCurrentTree();
+
+      console.log(`Setting parallelism to ${navigator.hardwareConcurrency}`);
+      this.run.setNumParts(navigator.hardwareConcurrency);
+
+      this.delphy.deriveMccTreeAsync(this.treeHist.slice(this.kneeIndex))
+        .then((mccTree:MccTree) => {
+          this.updateMcc(mccTree);
+          console.debug(`run instantiated and mcc updated in ${Date.now() - startTime}ms`);
+          resolve(run);
+        })
+        .catch(err=>{
+          console.debug(err);
+          reject(undefined);
+        });
     });
     return prom;
   }
@@ -422,15 +447,9 @@ export class Pythia {
 
 
 
-  setSteps(steps:number):void {
-    this.stepsPerSample = steps;
-    console.debug(`steps: ${steps}`)
-  }
-
   runSteps(callBack:()=>void):void {
-    const run = this.run;
-    if (run){
-      run.runStepsAsync(this.stepsPerSample)
+    if (this.run && this.runParams){
+      this.run.runStepsAsync(this.runParams.stepsPerSample)
         .then(callBack);
     }
   }
@@ -453,6 +472,26 @@ export class Pythia {
     }
   }
 
+
+  resetHist(): void {
+    this.muHist = [];
+    this.muStarHist = [];
+    this.totalBranchLengthHist = [];
+    this.logPosteriorHist = [];
+    this.logGHist = [];
+    this.numMutationsHist = [];
+    this.popT0Hist = [];
+    this.popN0Hist = [];
+    this.popGHist = [];
+    this.stepsHist = [];
+    this.minDateHist = [];
+    this.paramsHist = [];
+    if (this.treeHist) {
+      this.treeHist.forEach((tree:PhyloTree)=>tree.delete());
+    }
+    this.treeHist = [];
+    this.kneeIndex = 0;
+  }
 
   sampleCurrentTree():void {
     if (this.run) {
@@ -493,66 +532,16 @@ export class Pythia {
   }
 
 
-  async reset(runParams: RunParamConfig): Promise<void> {
-    const prom = new Promise((resolve: emptyResolveType)=>{
-      if (this.stepsHist.length > 1) {
-        const rereadingSequences = this.fb.byteLength > 0;
-        let firstTree: PhyloTree | null = null;
-        if (this.run) {
-          this.run.delete();
-          this.run = null;
-        }
-        if (!rereadingSequences) {
-          firstTree = this.treeHist[0].copy();
-        }
-        this.isRunning = false;
-        this.treeHist.forEach((tree:PhyloTree)=>tree.delete());
-        this.treeHist.length = 0;
-        this.muHist.length = 0;
-        this.muStarHist.length = 0;
-        this.totalBranchLengthHist.length = 0;
-        this.logPosteriorHist.length = 0;
-        this.logGHist.length = 0;
-        this.numMutationsHist.length = 0;
-        this.popT0Hist.length = 0;
-        this.popN0Hist.length = 0;
-        this.popGHist.length = 0;
-        this.stepsHist.length = 0;
-        this.paramsHist.length = 0;
-        this.kneeIndex = 0;
-        const fastaBytesJs = this.fb;
-        this.fb = fastaBytesJs.slice(0);
-        this.mcs = null;
-        if (rereadingSequences) {
-          const handleParseResults = (phyloTree:PhyloTree) => {
-            this.sourceTree = phyloTree;
-            this.instantiateRun().then(()=>{
-              this.setParams(runParams);
-              this.runReadyCallback();
-              resolve(undefined);
-            });
-          };
-          switch (this.fileFormat) {
-          case sequenceFileFormat.MAPLE:
-            this.delphy.parseMapleIntoInitialTreeAsync(this.fb)
-              .then(handleParseResults);
-            break;
-          case sequenceFileFormat.FASTA:
-            this.delphy.parseFastaIntoInitialTreeAsync(this.fb)
-              .then(handleParseResults);
-            break;
-          case sequenceFileFormat.UNSUPPORTED:
-            throw new Error("Cannot reset run: file format either unknown or unsupported")
-          }
-        } else if (firstTree) {
-          this.sourceTree = firstTree;
-          this.instantiateRun().then(()=>{
-            this.setParams(runParams);
-            this.runReadyCallback();
-            resolve(undefined);
-          });
-        }
+  async reset(newRunParams: RunParamConfig): Promise<void> {
+    const prom = new Promise((resolve: emptyResolveType, reject: emptyResolveType)=>{
+      if (!this.initialTree) {
+        reject(undefined);
+        return;
       }
+      this.instantiateRun(this.initialTree, newRunParams).then(() => {
+        this.runReadyCallback();
+        resolve(undefined);
+      });
     });
     return prom;
   }
@@ -562,23 +551,45 @@ export class Pythia {
     if (!run) {
       throw new Error('failed to create new run after reset');
     }
+
+    if (this.stepsHist.length > 0) {
+      throw new Error("can't change parameters of run that has already gathered samples");
+    }
+
+    this.runParams = copyDict(runParams) as RunParamConfig;
+
     // console.debug('setting params', runParams)
-    this.stepsPerSample = runParams.stepsPerSample;
     run.setAlphaMoveEnabled(runParams.siteRateHeterogeneityEnabled);
     run.setMpoxHackEnabled(runParams.apobecEnabled);
     run.setMuMoveEnabled(!runParams.mutationRateIsFixed);
-    this.setSiteRateHeterogeneityEnabled(runParams.siteRateHeterogeneityEnabled);
     if (runParams.mutationRate > 0) {
       run.setMu(runParams.mutationRate);
     }
-    this.setFinalPopSizeMovesEnabled(!runParams.finalPopSizeIsFixed);
+
+    run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
     if (runParams.finalPopSizeIsFixed) {
       run.setPopN0(runParams.finalPopSize);
     }
-    this.setPopGrowthRateMovesEnabled(!runParams.popGrowthRateIsFixed);
+    run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
     if (runParams.popGrowthRateIsFixed) {
       run.setPopG(runParams.popGrowthRate);
     }
+  }
+
+  extractRunParamsFromRun(run: Run): RunParamConfig {
+    const result = makeDefaultRunParamConfig(run.getTree());
+
+    result.mutationRate = run.getMu();
+    result.apobecEnabled = !!(run.isMpoxHackEnabled());
+    result.siteRateHeterogeneityEnabled = !!(run.isAlphaMoveEnabled());
+    result.mutationRateIsFixed = !run.isMuMoveEnabled();
+
+    result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
+    result.finalPopSize = run.getPopN0();
+    result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
+    result.popGrowthRate = run.getPopG();
+
+    return result;
   }
 
 
@@ -589,115 +600,6 @@ export class Pythia {
 
   getBaseTreeCount() : number {
     return this.treeHist.length;
-  }
-
-  getIsApobecEnabled() : boolean {
-    return !!(this.run?.isMpoxHackEnabled());
-  }
-
-  setIsApobecEnabled(itIs: boolean) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set apobec enabled');
-    }
-    this.run.setMpoxHackEnabled(itIs);
-  }
-
-  setMutationRateMovesEnabled(theyAre: boolean) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set mu move enabled');
-    }
-    this.run.setMuMoveEnabled(theyAre);
-  }
-
-  getCurrentMu() : number {
-    if (!this.run) {
-      throw new Error( 'no run from which to get mu');
-    }
-    return this.run.getMu();
-  }
-
-  setMutationRate(rate: number) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set mutation rate');
-    }
-    this.run.setMu(rate);
-  }
-
-  getdMutationRateMovesEnabled() : boolean {
-    if (!this.run) {
-      throw new Error( 'no run from which to get mu move enabled');
-    }
-    /* run.isMuMoveEnabled() returns a truthy integer 1, so convert that to an actual boolean */
-    return !!this.run.isMuMoveEnabled();
-  }
-
-  setFinalPopSizeMovesEnabled(theyAre: boolean) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set final pop size move enabled');
-    }
-    this.run.setFinalPopSizeMoveEnabled(theyAre);
-  }
-
-  getFinalPopSize() : number {
-    if (!this.run) {
-      throw new Error( 'no run from which to get final pop size');
-    }
-    return this.run.getPopN0();
-  }
-
-  setFinalPopSize(finalPopSize: number) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set final pop size');
-    }
-    this.run.setPopN0(finalPopSize);
-  }
-
-  getFinalPopSizeMovesEnabled() : boolean {
-    if (!this.run) {
-      throw new Error( 'no run from which to get final pop size move enabled');
-    }
-    /* run.isFinalPopSizeMoveEnabled() returns a truthy integer 1, so convert that to an actual boolean */
-    return !!this.run.isFinalPopSizeMoveEnabled();
-  }
-
-  setPopGrowthRateMovesEnabled(theyAre: boolean) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set pop growth rate move enabled');
-    }
-    this.run.setPopGrowthRateMoveEnabled(theyAre);
-  }
-
-  getPopGrowthRate() : number {
-    if (!this.run) {
-      throw new Error( 'no run from which to get pop growth rate');
-    }
-    return this.run.getPopG();
-  }
-
-  setPopGrowthRate(rate: number) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set pop growth rate');
-    }
-    this.run.setPopG(rate);
-  }
-
-  getPopGrowthRateMovesEnabled() : boolean {
-    if (!this.run) {
-      throw new Error( 'no run from which to get pop growth rate move enabled');
-    }
-    /* run.isPopGrowthRateMoveEnabled() returns a truthy integer 1, so convert that to an actual boolean */
-    return !!this.run.isPopGrowthRateMoveEnabled();
-  }
-
-  setSiteRateHeterogeneityEnabled(itIs: boolean) : void {
-    if (!this.run) {
-      throw new Error( 'no run on which to set alpha moves enabled');
-    }
-    this.run.setAlphaMoveEnabled(itIs);
-  }
-
-  getSiteRateHeterogeneityEnabled() : boolean {
-    return !!(this.run?.isAlphaMoveEnabled());
   }
 
 
@@ -973,6 +875,9 @@ export class Pythia {
     if (this.paramsHist.length !== this.treeHist.length) {
       throw new Error(`The run data is corrupted: different counts of params (${this.paramsHist.length}) and trees (${this.treeHist.length})`);
     }
+    if (!this.run || !this.runParams) {
+      throw new Error(`Saving before a run has been instantiated?`);
+    }
     const uint32Size = 4,
       treeBuffers = this.treeHist.map(baseTree=>baseTree.toFlatbuffer()),
       infoBuffer: ArrayBuffer = this.treeHist[0].infoToFlatbuffer(),
@@ -1073,7 +978,7 @@ export class Pythia {
     write32(coreCommit.length);
     writeBytes(coreCommit);
     write32(this.kneeIndex);
-    write32(this.stepsPerSample);
+    write32(this.runParams.stepsPerSample);
     write32(this.run && this.run.isAlphaMoveEnabled() ? 1 : 0);
     write32(this.run && this.run.isMpoxHackEnabled() ? 1 : 0);
     write32(this.run && this.run.isMuMoveEnabled() ? 1 : 0);
@@ -1199,15 +1104,18 @@ export class Pythia {
       console.warn(`Loading save file from unknown early version of Delphy core, save file version ${saveFormatVersion}`);
     }
 
-    const knee = read32(),
-      stepsPerSample = read32(),
-      siteRateHeterogeneityEnabled = read32() === 1,
-      apobecEnabled = read32() === 1,
-      isMuMoveEnabled = read32() === 1,
-      mutationRate = read32f(),
-      treeInfoSize = read32(),
-      treeBuffers:Uint8Array[] = [],
-      paramBuffers:Uint8Array[] = [];
+    const knee = read32();
+    const stepsPerSample = read32();
+    // The following settings below are stored separately in .dphy files, but now
+    // live in the general params buffers later.  Their values at this point in the
+    // file are now ignored.
+    /*const siteRateHeterogeneityEnabled = */  read32()  /* === 1*/;
+    /*const apobecEnabled = */  read32()  /* === 1*/;
+    /*const isMuMoveEnabled = */  read32()  /* === 1*/;
+    /*const mutationRate = */  read32f();
+    const treeInfoSize = read32();
+    const treeBuffers:Uint8Array[] = [];
+    const paramBuffers:Uint8Array[] = [];
     const treeInfo = readBuffer(treeInfoSize);
 
     let treeSize = read32();
@@ -1228,45 +1136,48 @@ export class Pythia {
     const treeEndLocation = read64();
     console.debug(`using save format version ${saveFormatVersion}, read ${pos} of ${actualSize} bytes. Trees end at position ${treeEndLocation}`);
 
-    // "firstTree" object gets taken over by this.run
-    const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
-    this.sourceTree = firstTree;
-    const count = firstTree.getSize();
-    let t = firstTree.getTimeOf(0);
-    for (let i = 0; i < count; i++) {
-      if (isTip(firstTree,i)) {
-        t = Math.max(t, firstTree.getMaxTimeOf(i));
-      }
+    // Create a tiny temporary run so that we can read off the run parameters
+    let runParams: RunParamConfig;
+    {
+      const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
+
+      const tmpRun = this.delphy.createRun(tmpTree);
+      tmpTree.delete();  // tmpRun takes over tmpTree's contents, leaving only a husk
+
+      tmpRun.setParamsFromFlatbuffer(paramBuffers[0]);
+
+      runParams = this.extractRunParamsFromRun(tmpRun);
+      runParams.stepsPerSample = stepsPerSample;
+
+      tmpRun.delete();
     }
-    this.maxDate = t;
-    this.run = this.delphy.createRun(firstTree);
-    console.log(`Setting parallelism to ${navigator.hardwareConcurrency}`);
-    this.run.setNumParts(navigator.hardwareConcurrency);
-    let config = {} as ConfigExport;
+
+    // Now instantiate the real run and record all the associated snapshots
+    const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
+
+    this.run = await this.instantiateRun(firstTree, runParams);
 
     for (let i = 0; i < treeCount; i++) {
       progressCallback(i, treeCount);
+
       const tree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[i], treeInfo);
       this.run.getTree().copyFrom(tree);
       tree.delete();
-      try {
-        this.run.setParamsFromFlatbuffer(paramBuffers[i]);
-      } catch (err) {
-        console.warn(`error reading parameters for tree ${i}:`, err);
-      }
+
+      this.run.setParamsFromFlatbuffer(paramBuffers[i]);
+
       this.sampleCurrentTree();
+
       await yieldToMain();
     }
     progressCallback(treeCount, treeCount);
-    this.run.setAlphaMoveEnabled(siteRateHeterogeneityEnabled);
-    this.run.setMpoxHackEnabled(apobecEnabled);
-    this.run.setMuMoveEnabled(isMuMoveEnabled);
-    if (!isMuMoveEnabled) {
-      this.run.setMu(mutationRate);
-    }
+
+    console.log(`Setting parallelism to ${navigator.hardwareConcurrency}`);
+    this.run.setNumParts(navigator.hardwareConcurrency);
+
+    let config = {} as ConfigExport;
 
     this.kneeIndex = knee;
-    this.stepsPerSample = stepsPerSample;
     console.log(`${treeCount} trees loaded, knee at ${knee}, elapsed time: ${Date.now() - startTime}ms`);
     this.delphy.deriveMccTreeAsync(this.treeHist.slice(this.kneeIndex))
       .then((mccTree:MccTree) => {
@@ -1278,7 +1189,7 @@ export class Pythia {
     try {
       config = JSON.parse(metadataString) as ConfigExport;
     } catch (err) {
-      console.warn(`could not parse config export: `, config);
+      console.warn(`could not parse config export: `, metadataString);
     }
     const prom = new Promise((resolve: configResolveType)=>resolve(config));
     return prom;
@@ -1289,9 +1200,9 @@ export class Pythia {
   getBeastOutputs(): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
     const run = this.delphy.createRun(this.treeHist[0].copy());
-    run.setParamsFromFlatbuffer(this.paramsHist[1]);  // Some options can influence output
+    run.setParamsFromFlatbuffer(this.paramsHist[0]);  // Some options can influence output
     const bout = run.createBeastyOutput();
-    for (let i = 1; i < treeCount; ++i) {  // Skip first tree (for now!  Really, we have to fix things so that changing the Advanced Options resamples the zeroth tree & params)
+    for (let i = 0; i < treeCount; ++i) {
       run.getTree().copyFrom(this.treeHist[i]);
       run.setParamsFromFlatbuffer(this.paramsHist[i]);
       bout.snapshot();
