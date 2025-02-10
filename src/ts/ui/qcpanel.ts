@@ -12,7 +12,13 @@ const listItemTemplates : {[key: string]: HTMLLIElement} = {};
 /*
 executed once upon completing the load of the data
 */
+
+let hasBeenSet = false;
+
 export const setQCPanel = (sharedState: SharedState)=>{
+  if (hasBeenSet) {
+    return true;
+  }
   const qc = sharedState.qc;
   const showMetadata = qc.hasMissingDates();
   const showSequencing = qc.hasSequencingIssues();
@@ -37,7 +43,7 @@ export const setQCPanel = (sharedState: SharedState)=>{
   if (showOther) {
     setQCDiv("#qc--other", qc.other, JSON.stringify);
   }
-
+  hasBeenSet = true;
 }
 
 
