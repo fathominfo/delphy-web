@@ -368,6 +368,8 @@ export class RunUI extends UIScreen {
     this.fixedFinalPopSizeInput.disabled = !params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateInput.disabled = !params.popGrowthRateIsFixed;
 
+    this.popModelExpDetail.classList.toggle("hidden", params.popModelIsSkygrid);
+    this.popModelSkygridDetail.classList.toggle("hidden", !params.popModelIsSkygrid);
     this.skygridFlatInterpolationInput.checked = !params.skygridIsLogLinear;
     this.skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
     this.skygridStartDateInput.value = toDateString(params.skygridStartDate);
@@ -385,7 +387,7 @@ export class RunUI extends UIScreen {
     // toggle canvases
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
     this.toggleHistCanvasVisibility(this.muStarCanvas, params.apobecEnabled);
-    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed);
+    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed && !params.popModelIsSkygrid);
 
     // disable fieldsets
     // this.mutationRateFieldset.disabled = params.apobecEnabled;

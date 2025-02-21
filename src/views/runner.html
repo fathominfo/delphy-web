@@ -162,10 +162,10 @@
           <fieldset class="population-model-fieldset">
             <legend><h3>Population model</h3></legend>
             <p>
-              <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth"></label>
-              <label>Skygrid<input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid" checked></label>
+              <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth"  checked></label>
+              <label>Skygrid<input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid"></label>
             </p>
-            <div id="popmodel-exponential" class="population-model-option hidden">
+            <div id="popmodel-exponential" class="population-model-option">
               <div class="input-container">
                 <input type="checkbox" id="fixed-final-pop-size-toggle" name="isFixedFinalPopSize" autocomplete="off">
                 <label for="fixed-final-pop-size-toggle">Fix effective population size at time of latest tip</label>
@@ -189,7 +189,7 @@
                 </div>
               </label>  
             </div>
-            <fieldset id="popmodel-skygrid" class="population-model-option">
+            <fieldset id="popmodel-skygrid" class="population-model-option hidden">
               <div class="input-container">
                 <label id="" class="">
                   <p>Model start date: <input type="date" id="popmodel-skygrid-k" value="2014-01-01" name="skygrid-K"/></p>
