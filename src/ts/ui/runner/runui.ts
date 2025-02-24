@@ -182,7 +182,7 @@ export class RunUI extends UIScreen {
     this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
     this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
     this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
-    this.gammaCanvas = new GammaHistCanvas("ln(N(t))", '');
+    this.gammaCanvas = new GammaHistCanvas("ln(N(t))");
     this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
       this.popGrowthCanvas, this.gammaCanvas];
     this.mutCountCanvas.isDiscrete = true;
@@ -526,21 +526,6 @@ export class RunUI extends UIScreen {
     this.treeScrubber.setData(last, kneeIndex, mccIndex);
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
-    const popHistGrowth = popModelHist.map(popModel => {
-      if (popModel instanceof ExpPopModel) {
-        return POP_GROWTH_FACTOR / popModel.g;
-      } else {
-        return 0.0;
-      }
-    });
-    const gammaHist = popModelHist.map(popModel => {
-      if (popModel instanceof SkygridPopModel) {
-        return popModel.gamma;
-      } else {
-        return [];
-      }
-    });
     const serieses = [
       logPosteriorHist,
       muud,
@@ -551,16 +536,8 @@ export class RunUI extends UIScreen {
 
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    if (this.getRunParams().apobecEnabled) {
-      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      serieses.push(muudStar);
-    }
-
     this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.gammaCanvas.setRangeData(gammaHist, kneeIndex);
     const essCandidates: number[] = [
       this.logPosteriorCanvas.ess,
       this.muCanvas.ess,
@@ -569,7 +546,27 @@ export class RunUI extends UIScreen {
       // this.popGrowthCanvas.ess
     ];
     if (this.getRunParams().apobecEnabled) {
+      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
+      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      serieses.push(muudStar);
       essCandidates.push(this.muStarCanvas.ess);
+    }
+    if (this.getRunParams().popModelIsSkygrid) {
+      const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
+      const date1 = this.getRunParams().skygridStartDate;
+      const lastDate = this.pythia.maxDate;
+      const dateRange = lastDate - date1;
+      const intervalCount = this.getRunParams().skygridNumIntervals;
+      const interval = dateRange / intervalCount;
+      const kDates = [date1];
+      for (let i = 0; i < intervalCount; i++) {
+        const d = date1 + i * interval;
+        kDates.push(d);
+      }
+      this.gammaCanvas.setRangeData(gammaHist, kDates, kneeIndex);
+    } else {
+      const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
+      this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     }
     this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
@@ -627,8 +624,11 @@ export class RunUI extends UIScreen {
       }
       this.TCanvas.draw();
       this.mutCountCanvas.draw();
-      this.popGrowthCanvas.draw();
-      this.gammaCanvas.draw();
+      if (this.getRunParams().popModelIsSkygrid) {
+        this.gammaCanvas.draw();
+      } else {
+        this.popGrowthCanvas.draw();
+      }
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       this.treeCountText.innerHTML = `${nfc(treeCount)}`;
       this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
