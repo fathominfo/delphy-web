@@ -1,4 +1,5 @@
 import {KernelDensityEstimate} from "../pythia/kde";
+import { numericSort } from "./common";
 
 
 
@@ -50,16 +51,9 @@ export class Distribution {
     this.median = 0;
 
     /* calculate the HPD */
-    const lenn = sorted.length,
-      intervalIdxInc = Math.floor(cred_mass * lenn),
-      nIntervals = lenn-intervalIdxInc,
-      lowers = sorted.slice(0,nIntervals),
-      uppers = sorted.slice(intervalIdxInc),
-      intervalWidths = uppers.map((u, index)=>u-lowers[index]),
-      minWidth = Math.min(...intervalWidths),
-      minIndex = intervalWidths.indexOf(minWidth);
-    this.hpdMin = sorted[minIndex]
-    this.hpdMax = sorted[minIndex + intervalIdxInc]
+    const [hpdMin, hpdMax] = calcHPD(sorted);
+    this.hpdMin = hpdMin;
+    this.hpdMax = hpdMax;
 
     if (sorted.length >= 3) {
       try {
@@ -148,4 +142,18 @@ export class Distribution {
 }
 
 
-const numericSort = (a:number,b:number)=>a-b;
+export const calcHPD = (arr: number[])=>{
+  const sorted = arr.slice(0).sort(numericSort);
+  /* calculate the HPD */
+  const lenn = sorted.length,
+    intervalIdxInc = Math.floor(cred_mass * lenn),
+    nIntervals = lenn-intervalIdxInc,
+    lowers = sorted.slice(0, nIntervals),
+    uppers = sorted.slice(intervalIdxInc),
+    intervalWidths = uppers.map((u, index)=>u-lowers[index]),
+    minWidth = Math.min(...intervalWidths),
+    minIndex = intervalWidths.indexOf(minWidth);
+  const hpdMin = sorted[minIndex];
+  const hpdMax = sorted[minIndex + intervalIdxInc];
+  return [hpdMin, hpdMax];
+}

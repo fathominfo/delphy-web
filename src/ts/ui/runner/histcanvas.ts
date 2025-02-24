@@ -1,29 +1,11 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
-import { safeLabel, resizeCanvas, UNSET } from '../common';
+import { safeLabel, UNSET } from '../common';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
+import { log10, TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
 import { kneeListenerType } from './runcommon';
 
-const maybeChartContainer = document.querySelector('#runner--panel--blocks');
-if (!maybeChartContainer) {
-  throw new Error("index.html doesn't have the container for the charts!");
-}
-
-export const chartContainer = <HTMLDivElement> maybeChartContainer;
-const maybeTemplate = chartContainer.querySelector('.block');
-if (!maybeTemplate) {
-  throw new Error("index.html doesn't have a template for the charts!");
-}
-const template = <HTMLDivElement> maybeTemplate;
-template.remove();
 
 
-
-const TRACE_MARGIN = 10;
-export const DIST_WIDTH = 35;
-
-const BG_COLOR = '#f5f5f5';
-const BORDER_COLOR = '#cbcbcb';
-const BORDER_WEIGHT = 1;
 const TRACE_WEIGHT = 1;
 const TRACE_COLOR = 'rgb(45, 126, 207)';
 const TRACE_COLOR_PRE_KNEE = 'rgb(150, 181, 212)';
@@ -32,33 +14,16 @@ const DOT_SIZE = 4;
 const KNEE_LINE_COLOR = 'rgb(104,104,104)';
 const MCC_DOT_COLOR = 'rgb(28, 189, 168)';
 const DIST_BAR_COLOR = '#aaaaaa';
-const TICK_LENGTH = 10;
 const MAX_STEP_SIZE = 3;
 
-const log10 = Math.log(10);
-
-
-const HALF_BORDER = BORDER_WEIGHT / 2;
 
 
 
-export class HistCanvas {
+export class HistCanvas extends TraceCanvas {
 
 
 
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  container: HTMLDivElement;
-  maxLabel: HTMLLIElement;
-  minLabel: HTMLLIElement;
-  avgLabel: HTMLLIElement;
-  firstStepLabel: HTMLLIElement;
-  midStepLabel: HTMLLIElement;
-  lastStepLabel: HTMLLIElement;
-  readout: HTMLParagraphElement;
   hideBurnIn: boolean;
-  isDiscrete: boolean;
-  className: string;
 
 
   data:number[];
@@ -66,86 +31,17 @@ export class HistCanvas {
   sampleIndex: number;
   sampleCount: number;
   ess: number;
-
-
-  displayMin: number;
-  displayMax: number;
-  dataMin: number;
-  dataMax: number;
-
-  label:string;
-  unit:string;
-  height: number;
-  width: number;
-  traceWidth: number;
-  distLeft: number;
-  chartHeight: number;
-  count: number;
   displayCount: number;
-  /*
-  distinguish between the knee index
-  that is used as the leftmost sample when we are
-  hiding the burn in period, vs. the knee index that
-  we highlight
-  */
-  savedKneeIndex: number;
-  currentKneeIndex: number;
-  settingKnee: boolean;
-  hovering: boolean;
 
   kneeListener: kneeListenerType;
 
-  isVisible: boolean;
-
-
 
   constructor(label:string, unit='', kneeListener: kneeListenerType) {
-    this.label = label;
-    this.unit = unit;
+    super(label, unit);
     this.kneeListener = kneeListener;
-    this.container = <HTMLDivElement>template.cloneNode(true);
-    this.className = label.toLowerCase().replace(/ /g, '-');
-    this.container.classList.add(this.className);
-    chartContainer.appendChild(this.container);
-    const maybeHeader = this.container.querySelector('h1');
-    if (maybeHeader) {
-      (<HTMLElement>maybeHeader).innerHTML = label;
-    }
-    const maybe_canvas = this.container.querySelector('canvas');
-    if (maybe_canvas === null) {
-      throw new Error("UI canvas not found");
-    }
-    if (!(maybe_canvas instanceof HTMLCanvasElement)) {
-      throw new Error("UI canvas is not a canvas");
-    }
-    this.canvas = maybe_canvas;
-    const maybe_ctx = this.canvas.getContext("2d");
-    if (maybe_ctx === null) {
-      throw new Error('This browser does not support 2-dimensional canvas rendering contexts.');
-    }
-    const maybeReadout = this.container.querySelector(".block-readout") as HTMLParagraphElement;
-    if (!maybeReadout) {
-      throw new Error(`This chart container does not have an element with the class ".block-readout".`);
-    }
-    this.ctx = maybe_ctx;
-    this.ctx.font = 'MDSystem, Roboto, sans-serif';
-    this.maxLabel = this.getLI('.max');
-    this.minLabel = this.getLI('.min');
-    this.avgLabel = this.getLI('.median');
-    this.firstStepLabel = this.getLI('.step-first');
-    this.midStepLabel = this.getLI('.step-mid');
-    this.lastStepLabel = this.getLI('.step-last');
-    this.readout = maybeReadout;
     this.data = [];
     this.ess = UNSET;
     this.sampleCount = UNSET;
-    this.displayMin = UNSET;
-    this.displayMax = UNSET;
-    this.dataMin = UNSET;
-    this.dataMax = UNSET;
-
-    this.isDiscrete = false;
-
     this.height = UNSET;
     this.width = UNSET;
     this.traceWidth = UNSET;
@@ -153,13 +49,8 @@ export class HistCanvas {
     this.chartHeight = UNSET;
     this.mccIndex = UNSET;
     this.sampleIndex = UNSET;
-    this.count = 0;
     this.displayCount = 0;
-    this.savedKneeIndex = UNSET;
-    this.currentKneeIndex = UNSET;
-    this.settingKnee = false;
     this.hideBurnIn = false;
-    this.hovering = false;
     this.isVisible = true;
     this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
     const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
@@ -172,33 +63,6 @@ export class HistCanvas {
       requestDraw();
     });
 
-  }
-
-  sizeCanvas() {
-    // hack to get the right height in the flex container:
-    // set width and height to zero, then recalculate
-    this.canvas.width = 0;
-    this.canvas.height = 0;
-
-    const {width, height} = resizeCanvas(this.canvas);
-    this.width = width;
-    this.height = height;
-    this.distLeft = this.width - DIST_WIDTH;
-    this.traceWidth = this.distLeft - TRACE_MARGIN - TICK_LENGTH;
-    this.chartHeight = this.height - TICK_LENGTH;
-  }
-
-  setVisible(showIt: boolean) {
-    this.isVisible = showIt;
-    this.container.classList.toggle("hidden", !showIt);
-  }
-
-  getLI(selector: string): HTMLLIElement {
-    const mabel = this.container.querySelector(selector);
-    if (!mabel) {
-      throw new Error(`This chart container does not have an element with the class "${selector}".`);
-    }
-    return <HTMLLIElement>mabel;
   }
 
   setState(isSettingKnee:boolean): void {
@@ -247,18 +111,8 @@ export class HistCanvas {
 
   setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     this.data = data;
-    this.mccIndex = mccIndex;
-    this.hideBurnIn = hideBurnIn;
-    this.currentKneeIndex = kneeIndex;
-    this.sampleIndex = sampleIndex;
-    this.count = data.length;
-    this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
-    this.sampleCount = data.length - kneeIndex;
+    this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
-
-    if (!this.settingKnee) {
-      this.savedKneeIndex = kneeIndex;
-    }
     const shown = hideBurnIn && this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     const safe = shown.filter(n=>!isNaN(n) && isFinite(n));
 
@@ -281,6 +135,14 @@ export class HistCanvas {
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
+  setMetadata(count: number, kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+    super.setKneeIndex(count, kneeIndex);
+    this.mccIndex = mccIndex;
+    this.hideBurnIn = hideBurnIn;
+    this.sampleIndex = sampleIndex;
+    this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
+  }
+
   draw() {
     let {data, mccIndex, sampleIndex} = this,
       kneeIndex = this.currentKneeIndex;
@@ -297,6 +159,8 @@ export class HistCanvas {
     this.drawLabels(data, kneeIndex);
   }
 
+
+
   drawSeries(data:number[], kneeIndex:number, mccIndex:number, sampleIndex: number) {
     // if (this.label === "Mutation Rate μ") {
     //   console.log( `   `, this.label, kneeIndex, ess)
@@ -307,14 +171,7 @@ export class HistCanvas {
     let chartHeight = this.chartHeight,
       top = 0;
 
-    /* draw background and borders for the charts */
-    ctx.fillStyle = BG_COLOR;
-    ctx.strokeStyle = BORDER_COLOR;
-    ctx.lineWidth = BORDER_WEIGHT;
-    ctx.fillRect(TICK_LENGTH, 0, traceWidth, chartHeight);
-
-    ctx.strokeRect(TICK_LENGTH + HALF_BORDER, HALF_BORDER, traceWidth-1, chartHeight-1);
-
+    this.drawField();
 
     /*
     as we get more and more data, the time series gets more compact,
