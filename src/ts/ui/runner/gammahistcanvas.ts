@@ -1,3 +1,4 @@
+import { toFullDateString } from "../../pythia/dates";
 import { numericSort, safeLabel } from "../common";
 import { calcHPD } from "../distribution";
 import { TRACE_COLOR } from "./runcommon";
@@ -11,10 +12,23 @@ export class GammaHistCanvas extends TraceCanvas {
 
   rangeData: number[][] = [];
   converted: number[][] = [];
+  dates: number[] = [];
+  minSpan: HTMLSpanElement;
+  maxSpan: HTMLSpanElement;
 
-  setRangeData(data:number[][], kneeIndex:number) {
+  constructor(label:string) {
+    super(label, '');
+    this.minSpan = document.createElement('span');
+    this.maxSpan = document.createElement('span');
+    this.readout.appendChild(this.maxSpan);
+    this.readout.appendChild(this.minSpan);
+    this.readout.classList.add('range');
+  }
+
+  setRangeData(data:number[][], dates: number[], kneeIndex:number) {
 
     this.rangeData = data;
+    this.dates = dates;
     this.setKneeIndex(data.length, kneeIndex);
     const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     /* pivot the data to make arrays for every knot */
@@ -105,9 +119,11 @@ export class GammaHistCanvas extends TraceCanvas {
 
 
   drawLabels() {
-    this.maxLabel.innerHTML = safeLabel(this.displayMax);
-    this.minLabel.innerHTML = safeLabel(this.displayMin);
-    this.avgLabel.innerHTML = '';
+    this.maxLabel.textContent = safeLabel(this.displayMax);
+    this.minLabel.textContent = safeLabel(this.displayMin);
+    this.avgLabel.textContent = '';
+    this.minSpan.textContent = toFullDateString(this.dates[0])
+    this.maxSpan.textContent = toFullDateString(this.dates[this.dates.length-1]);
   }
 
 }
