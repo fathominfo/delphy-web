@@ -1,5 +1,5 @@
 import {MccRef} from '../../pythia/mccref';
-import {PhyloTree, ExpPopModel} from '../../pythia/delphy_api';
+import {PhyloTree, ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
@@ -16,6 +16,8 @@ import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { RunParamConfig } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
+import { GammaHistCanvas } from './gammahistcanvas';
+import { TraceCanvas } from './tracecanvas';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -59,7 +61,8 @@ export class RunUI extends UIScreen {
   private TCanvas: HistCanvas;
   private mutCountCanvas: HistCanvas;
   private popGrowthCanvas: HistCanvas;
-  private histCanvases: HistCanvas[];
+  private gammaCanvas: GammaHistCanvas;
+  private histCanvases: TraceCanvas[];
 
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
@@ -179,7 +182,9 @@ export class RunUI extends UIScreen {
     this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
     this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
     this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas, this.popGrowthCanvas];
+    this.gammaCanvas = new GammaHistCanvas("ln(N(t))", '');
+    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
+      this.popGrowthCanvas, this.gammaCanvas];
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
     this.timelineIndices = [];
@@ -388,7 +393,7 @@ export class RunUI extends UIScreen {
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
     this.toggleHistCanvasVisibility(this.muStarCanvas, params.apobecEnabled);
     this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed && !params.popModelIsSkygrid);
-
+    this.toggleHistCanvasVisibility(this.gammaCanvas, params.popModelIsSkygrid)
     // disable fieldsets
     // this.mutationRateFieldset.disabled = params.apobecEnabled;
     // this.apobecFieldset.disabled = params.mutationRateIsFixed || params.siteRateHeterogeneityEnabled;
@@ -529,6 +534,13 @@ export class RunUI extends UIScreen {
         return 0.0;
       }
     });
+    const gammaHist = popModelHist.map(popModel => {
+      if (popModel instanceof SkygridPopModel) {
+        return popModel.gamma;
+      } else {
+        return [];
+      }
+    });
     const serieses = [
       logPosteriorHist,
       muud,
@@ -544,9 +556,11 @@ export class RunUI extends UIScreen {
       this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       serieses.push(muudStar);
     }
+
     this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    this.gammaCanvas.setRangeData(gammaHist, kneeIndex);
     const essCandidates: number[] = [
       this.logPosteriorCanvas.ess,
       this.muCanvas.ess,
@@ -614,6 +628,7 @@ export class RunUI extends UIScreen {
       this.TCanvas.draw();
       this.mutCountCanvas.draw();
       this.popGrowthCanvas.draw();
+      this.gammaCanvas.draw();
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       this.treeCountText.innerHTML = `${nfc(treeCount)}`;
       this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
@@ -671,7 +686,7 @@ export class RunUI extends UIScreen {
   }
 
 
-  private toggleHistCanvasVisibility(canvas: HistCanvas, showIt: boolean) : void {
+  private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
     canvas.setVisible(showIt);
 
     this.histCanvases.forEach(hc => {
