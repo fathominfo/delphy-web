@@ -563,7 +563,7 @@ export class RunUI extends UIScreen {
         const d = date1 + i * interval;
         kDates.push(d);
       }
-      this.gammaCanvas.setRangeData(gammaHist, kDates, kneeIndex);
+      this.gammaCanvas.setRangeData(gammaHist, kDates, this.getRunParams().skygridIsLogLinear, kneeIndex);
     } else {
       const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
       this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);

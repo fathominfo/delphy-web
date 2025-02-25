@@ -15,6 +15,7 @@ export class GammaHistCanvas extends TraceCanvas {
   dates: number[] = [];
   minSpan: HTMLSpanElement;
   maxSpan: HTMLSpanElement;
+  isLogLinear = false;
 
   constructor(label:string) {
     super(label, '');
@@ -25,10 +26,11 @@ export class GammaHistCanvas extends TraceCanvas {
     this.readout.classList.add('range');
   }
 
-  setRangeData(data:number[][], dates: number[], kneeIndex:number) {
+  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex:number):void {
 
     this.rangeData = data;
     this.dates = dates;
+    this.isLogLinear = isLogLinear;
     this.setKneeIndex(data.length, kneeIndex);
     const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     /* pivot the data to make arrays for every knot */
@@ -59,11 +61,8 @@ export class GammaHistCanvas extends TraceCanvas {
   }
 
 
-  draw() {
-    let {converted} = this;
-    if (this.savedKneeIndex > 0) {
-      converted = converted.slice(this.savedKneeIndex);
-    }
+  draw():void {
+    const {converted} = this;
     const {ctx, width, height} = this;
     ctx.clearRect(0, 0, width + 1, height + 1);
     this.drawField();
@@ -72,7 +71,7 @@ export class GammaHistCanvas extends TraceCanvas {
   }
 
 
-  drawRangeSeries(data:number[][]) {
+  drawRangeSeries(data:number[][]):void {
     if (data.length === 0) return;
     const {chartHeight, ctx, traceWidth} = this;
     const {displayMin, displayMax} = this;
@@ -84,45 +83,83 @@ export class GammaHistCanvas extends TraceCanvas {
     let hpd = data[i][0];
     let x = TICK_LENGTH;
     const firstY = chartHeight-(hpd-displayMin) * verticalScale;
-    ctx.beginPath();
     ctx.lineWidth = 1;
     ctx.fillStyle = HPD_COLOR;
 
+    if (this.isLogLinear) {
+      // draw the 95% HPD area
+      ctx.beginPath();
+      ctx.moveTo(x, firstY);
+      for (i = 1; i < kCount; i++) {
+        x = TICK_LENGTH + i * kWidth;
+        hpd = data[i][0];
+        ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
+      }
+      for (i = kCount - 1; i >= 0; i--) {
+        x = TICK_LENGTH + i * kWidth;
+        hpd = data[i][1];
+        ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
+      }
+      ctx.lineTo(TICK_LENGTH, firstY);
+      ctx.fill();
+      // draw the mean
+      ctx.beginPath();
+      ctx.strokeStyle = TRACE_COLOR;
+      const means = data.map(arr=>arr[2]);
+      let mean = means[0];
+      x = TICK_LENGTH;
+      ctx.moveTo(x, chartHeight-(mean-displayMin) * verticalScale);
+      for (i = 1; i < kCount; i++) {
+        x = TICK_LENGTH + i * kWidth;
+        mean = means[i];
+        ctx.lineTo(x, chartHeight-(mean-displayMin) * verticalScale);
+      }
+      ctx.stroke();
 
-    ctx.moveTo(x, firstY);
-    for (i = 1; i < kCount; i++) {
-      x = TICK_LENGTH + i * kWidth;
-      hpd = data[i][0];
-      ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
-    }
-    for (i = kCount - 1; i >= 0; i--) {
-      x = TICK_LENGTH + i * kWidth;
-      hpd = data[i][1];
-      ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
-    }
-    ctx.lineTo(TICK_LENGTH, firstY);
-    ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(x, firstY);
+      let y = firstY;
+      x = TICK_LENGTH;
+      for (i = 1; i < kCount; i++) {
+        hpd = data[i][0];
+        y = chartHeight-(hpd-displayMin) * verticalScale;
+        ctx.lineTo(x, y);
+        x = TICK_LENGTH + i * kWidth;
+        ctx.lineTo(x, y);
+      }
+      for (i = kCount - 1; i > 0; i--) {
+        x = TICK_LENGTH + i * kWidth;
+        hpd = data[i][1];
+        y = chartHeight-(hpd-displayMin) * verticalScale;
+        ctx.lineTo(x, y);
+        x = TICK_LENGTH + (i-1) * kWidth;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(TICK_LENGTH, firstY);
+      ctx.fill();
 
-    ctx.beginPath();
-    ctx.strokeStyle = TRACE_COLOR;
-    const means = data.map(arr=>arr[2]);
-    let mean = means[0];
-    x = TICK_LENGTH;
-    ctx.lineTo(x, chartHeight-(mean-displayMin) * verticalScale);
-    for (i = 1; i < kCount; i++) {
-      x = TICK_LENGTH + i * kWidth;
-      mean = means[i];
-      ctx.lineTo(x, chartHeight-(mean-displayMin) * verticalScale);
+      ctx.beginPath();
+      ctx.strokeStyle = TRACE_COLOR;
+      const means = data.map(arr=>arr[2]);
+      let mean = means[0];
+      x = TICK_LENGTH;
+      for (i = 1; i < kCount; i++) {
+        mean = means[i];
+        y = chartHeight-(mean-displayMin) * verticalScale;
+        ctx.moveTo(x, y);
+        x = TICK_LENGTH + i * kWidth;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
     }
-    ctx.stroke();
   }
 
-
-  drawLabels() {
+  drawLabels():void {
     this.maxLabel.textContent = safeLabel(this.displayMax);
     this.minLabel.textContent = safeLabel(this.displayMin);
     this.avgLabel.textContent = '';
-    console.log(this.dates)
     this.minSpan.textContent = toFullDateString(this.dates[0])
     this.maxSpan.textContent = toFullDateString(this.dates[this.dates.length-1]);
   }
