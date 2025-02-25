@@ -20,8 +20,8 @@ export class GammaHistCanvas extends TraceCanvas {
     super(label, '');
     this.minSpan = document.createElement('span');
     this.maxSpan = document.createElement('span');
-    this.readout.appendChild(this.maxSpan);
     this.readout.appendChild(this.minSpan);
+    this.readout.appendChild(this.maxSpan);
     this.readout.classList.add('range');
   }
 
@@ -122,6 +122,7 @@ export class GammaHistCanvas extends TraceCanvas {
     this.maxLabel.textContent = safeLabel(this.displayMax);
     this.minLabel.textContent = safeLabel(this.displayMin);
     this.avgLabel.textContent = '';
+    console.log(this.dates)
     this.minSpan.textContent = toFullDateString(this.dates[0])
     this.maxSpan.textContent = toFullDateString(this.dates[this.dates.length-1]);
   }
