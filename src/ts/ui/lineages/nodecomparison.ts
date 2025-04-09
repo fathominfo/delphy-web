@@ -287,7 +287,7 @@ export function setComparisons(nodeComparisonData: NodeComparisonData[], minDate
   nodeComparisonContainer.innerHTML = '';
   const comps: NodeComparison[] = nodeComparisonData.map(ncd=>{
     const nc = new NodeComparison(ncd, minDate, maxDate, goToMutations, nodeHighlightCallback, isApobecRun);
-    nc.setDateRange(zoomMinDate, zoomMaxDate);
+    // nc.setDateRange(zoomMinDate, zoomMaxDate);
     nc.requestDraw();
     return nc;
   });

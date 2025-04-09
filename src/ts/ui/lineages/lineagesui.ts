@@ -917,7 +917,7 @@ export class LineagesUI extends MccUI {
     zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
     this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
     this.nodeComparisons.forEach((nc: NodeComparison)=>{
-      nc.setDateRange(zoomMinDate, zoomMaxDate);
+      // nc.setDateRange(zoomMinDate, zoomMaxDate);
       nc.requestDraw();
     });
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
