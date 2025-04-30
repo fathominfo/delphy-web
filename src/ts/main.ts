@@ -10,7 +10,7 @@ import { Screens, NavigateFunctionType } from './ui/common';
 import { SharedState } from './sharedstate';
 import { ConfigExport } from './ui/mccconfig';
 import { initErrors, setStage } from './errors';
-import { STAGES } from './constants';
+import { TREES_ALREADY_RAN, STAGES } from './constants';
 import { setQCPanel } from './ui/qcpanel';
 
 
@@ -78,7 +78,7 @@ function onReady(p:Pythia):void {
     }
   })
 
-  const runCallback = ()=>{
+  const runCallback = (runState:number)=>{
     sharedState.setTipIds();
     if (!sharedState.qc.hasAnyIssues()) {
       toggleQCButton.classList.add("hidden");
@@ -86,7 +86,12 @@ function onReady(p:Pythia):void {
       setQCPanel(sharedState);
     }
     hideUpload();
-    activateView(runUI);
+    if (runState === TREES_ALREADY_RAN) {
+      activateView(lineagesUI);
+    } else {
+      activateView(runUI);
+    }
+
     /*
     rather than explicitly list the currently known properties for version info,
     and risk that going out of date,

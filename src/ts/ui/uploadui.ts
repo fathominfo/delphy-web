@@ -51,7 +51,7 @@ const activateProgressBar = (showit=true)=>{
   statusContainer.classList.toggle("progressing", showit);
 }
 
-let runCallback = ()=>console.debug('runCallback not assigned'),
+let runCallback = (n:number)=>console.debug(`runCallback not assigned ${n || ''}`),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
 
 
@@ -136,7 +136,7 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
+function bindUpload(p:Pythia, sstate:SharedState, callback : (ran:number)=>void, setConfig : (config: ConfigExport)=>void) {
   pythia = p;
   qc = sstate.qc;
   runCallback = callback;

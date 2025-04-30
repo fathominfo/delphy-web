@@ -53,7 +53,8 @@ export const STAGES = {
   "resetting" : 5
 };
 
-
+export const NEEDS_RUNNING = 1;
+export const TREES_ALREADY_RAN = 2;
 
 {
 
