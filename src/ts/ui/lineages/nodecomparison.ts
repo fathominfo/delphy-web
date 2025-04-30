@@ -282,12 +282,10 @@ export class NodeComparison {
 
 
 export function setComparisons(nodeComparisonData: NodeComparisonData[], minDate: number, maxDate: number,
-  goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback, isApobecRun: boolean,
-  zoomMinDate: number, zoomMaxDate: number): NodeComparison[] {
+  goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback, isApobecRun: boolean): NodeComparison[] {
   nodeComparisonContainer.innerHTML = '';
   const comps: NodeComparison[] = nodeComparisonData.map(ncd=>{
     const nc = new NodeComparison(ncd, minDate, maxDate, goToMutations, nodeHighlightCallback, isApobecRun);
-    // nc.setDateRange(zoomMinDate, zoomMaxDate);
     nc.requestDraw();
     return nc;
   });

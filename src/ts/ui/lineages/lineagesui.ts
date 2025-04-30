@@ -740,12 +740,8 @@ export class LineagesUI extends MccUI {
       });
       nodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "" });
 
-      let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
-      // const zoomDateRange = zoomMaxDate - zoomMinDate;
-      // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
-
       this.nodeComparisons = setComparisons(src, minDate, maxDate, this.goToMutations, this.nodeHighlightCallback,
-        this.isApobecEnabled, zoomMinDate, zoomMaxDate);
+        this.isApobecEnabled);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
       this.nodeRelationChart.setData(src, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       // const nodeColors = nodes.map(({color})=>color),
