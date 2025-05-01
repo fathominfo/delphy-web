@@ -15,7 +15,7 @@ type ChangeHandler = (event:Event)=>void;
 type returnless = ()=>void;
 
 
-const ZOOM_FACTOR = 2;
+const ZOOM_FACTOR = 1.5;
 
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 
@@ -228,27 +228,26 @@ export class MccConfig {
         }
       }
 
-      addClickListener(ZOOM_RESET_SELECTOR, ()=>this.resetZoom());
       addClickListener(ZOOM_IN_SELECTOR, ()=>this.zoomIn());
       addClickListener(ZOOM_OUT_SELECTOR, ()=>this.zoomOut());
     }
   }
 
-  resetZoom() : void {
-    this.verticalZoom = 1;
-    this.zoomCenterY = 0.5;
-    this.horizontalZoom = 1;
-    this.zoomCenterX = 0.5;
-    (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
-    (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = true;
-    this.zoomFnc();
-  }
+  // resetZoom() : void {
+  //   this.verticalZoom = 1;
+  //   this.zoomCenterY = 0.5;
+  //   this.horizontalZoom = 1;
+  //   this.zoomCenterX = 0.5;
+  //   (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
+  //   (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = true;
+  //   this.zoomFnc();
+  // }
 
   zoomIn() : void {
     this.verticalZoom *= ZOOM_FACTOR;
     this.horizontalZoom *= ZOOM_FACTOR;
     this.zoomFnc();
-    (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
+    // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
     (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = false;
   }
 
@@ -257,7 +256,7 @@ export class MccConfig {
     this.horizontalZoom = Math.max(1, this.verticalZoom/ZOOM_FACTOR);
     this.zoomFnc();
     if (this.verticalZoom === 1 && this.horizontalZoom === 1) {
-      (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
+      // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
       (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = true;
     }
   }
@@ -285,7 +284,7 @@ export class MccConfig {
     this.verticalZoom = zoomY;
     const halfZoomY = 0.5 / zoomY;
     this.zoomCenterY = Math.min(1-halfZoomY, Math.max(halfZoomY, zoomCenterY));
-    (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
+    // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
     this.zoomFnc();
   }
 

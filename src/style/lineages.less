@@ -44,13 +44,19 @@
   background: none;
   border: none;
   padding: 0;
-  text-decoration: underline;
   color: inherit;
   cursor: pointer;
 
-  margin-left: 1rem;
+  width: 20px;
+  height: 20px;
+  
+  margin: 8px 8px 8px 0;
   color: rgb(100, 100, 100);
-  .t05();
+  font-weight: 500;
+  font-size: 20px;
+  border: solid rgb(100, 100, 100) 1px;
+  border-radius: 1px;
+  background-color: rgba(255,255,255,0.9);
 
   &:hover {
     color: rgb(50, 50, 50);
@@ -66,13 +72,25 @@
 
 
 #lineages--mcc-canvas {
-  cursor: crosshair;
+  cursor: grab;
   &.noding {
     cursor: default;
     &.new-node {
       cursor: pointer;
     }
   }
+  &.dragging {
+    cursor: grabbing;
+  }
+}
+
+.tree-canvas--zoom-button-row {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  left: 0;
+  display: flex;
+  justify-content: end;
 }
 
 .tree-hint-container {

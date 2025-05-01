@@ -29,7 +29,7 @@ AC_SUGGESTION_TEMPLATE.remove();
 
 
 const CLICK_TIME = 300;
-const DRAG_DIST = 15;
+const DRAG_DIST = 8;
 const DRAG_DIST_2 = DRAG_DIST * DRAG_DIST;
 // const SCROLLBAR_W = 10;
 
@@ -152,6 +152,7 @@ export class LineagesUI extends MccUI {
           const d2 = dx * dx + dy * dy;
           if (d2 > DRAG_DIST_2) {
             this.mccTreeCanvas.setNoding(false, false);
+            this.mccTreeCanvas.toggleClass("dragging", true);
             dragged = true;
           }
         }
@@ -164,6 +165,7 @@ export class LineagesUI extends MccUI {
           dragging = false;
           canvas.removeEventListener('pointerup', canvasUpHandler);
           if (dragged) {
+            dragged = false;
             // const left = TREE_PADDING_LEFT,
             //   right = this.mccTreeCanvas.width - TREE_PADDING_RIGHT,
             //   top = TREE_TIMELINE_SPACING,
@@ -190,6 +192,7 @@ export class LineagesUI extends MccUI {
             }
           }
           canvas.releasePointerCapture((event as PointerEvent).pointerId);
+          this.mccTreeCanvas.toggleClass("dragging", false);
         }
       };
       this.canvasLeaveHandler = ()=>{

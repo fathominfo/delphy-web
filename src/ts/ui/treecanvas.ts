@@ -727,6 +727,12 @@ export class TreeCanvas {
     return this.canvas;
   }
 
+  toggleClass(className: string, onoff: boolean) : void {
+    if (this.canvas instanceof HTMLCanvasElement) {
+      this.canvas.classList.toggle(className, onoff);
+    }
+  }
+
 }
 
 

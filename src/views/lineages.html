@@ -1,13 +1,14 @@
   <div id="lineages" class="view">
     <section id="lineages--mcc">
       <div class="lineages--mcc--header">
-        <h1>MCC</h1>
-        <button class="mcc-zoom-button reset" disabled>Reset zoom</button>
-        <button class="mcc-zoom-button zoom-in">Zoom in</button>
-        <button class="mcc-zoom-button zoom-out" disabled>Zoom out</button>
+        <h1>MCC (Maximum Clade Credibility) tree</h1>
       </div>
       <div class="tree-canvas-container">
         <canvas id="lineages--mcc-canvas" class="tree-canvas"></canvas>
+        <div class="tree-canvas--zoom-button-row">
+          <button class="mcc-zoom-button zoom-out" disabled title="zoom out">-</button>
+          <button class="mcc-zoom-button zoom-in"  title="zoom in">+</button>
+        </div>
       </div>
       <div class="tree-hint-container">
         <div class="tree-hint hover">Hover to preview a node.</div>
@@ -20,7 +21,6 @@
         <div class="tree-hint preview-node2-descendant hidden">Previewing <span class="node node2">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
         <div class="tree-hint preview-node2-cousin hidden">Previewing <span class="node node2">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
         <div class="tree-hint max-selections hidden">Remove a selection to explore other nodes.</div>
-        <div class="tree-hint zoom hidden">Click and drag to zoom to a selection area.</div>
       </div>
       <div class="constrain-selection">
         <input type="checkbox" id="lineages--constrain-selection" />
