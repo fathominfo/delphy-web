@@ -305,9 +305,8 @@ export class NodeListDisplay {
   private node2Div: NodeItem;
   private dismissCallback: DismissCallback;
   private nodeHighlightCallback: NodeCallback;
-  private nodeZoomCallback: NodeCallback;
 
-  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: NodeCallback, nodeZoomCallback: NodeCallback) {
+  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: NodeCallback) {
     this.container = document.querySelector("#lineages--node-list") as HTMLElement;
 
     const getDiv = (selector: string)=>{
@@ -323,7 +322,6 @@ export class NodeListDisplay {
     this.node2Div = new NodeItem(getDiv('.lineages--node-detail.node2'));
     this.dismissCallback = dismissCallback;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    this.nodeZoomCallback = nodeZoomCallback;
 
     const bindDismiss = (div: HTMLDivElement, node: DisplayNode)=>{
       const dismiss = div.querySelector(".node-dismiss") as HTMLButtonElement;
@@ -336,19 +334,8 @@ export class NodeListDisplay {
       div.addEventListener('pointerenter', () => nodeHighlightCallback(node));
       div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET));
     }
-    const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
-      const icon = div.querySelector(".node-icon") as HTMLDivElement;
-      if (!icon) {
-        throw new Error('the div has no icon to click');
-      }
-      icon.addEventListener('click', ()=>this.nodeZoomCallback(node));
-    }
     bindDismiss(this.node1Div.div, DisplayNode.node1);
     bindDismiss(this.node2Div.div, DisplayNode.node2);
-    bindIcon(this.rootDiv.div, DisplayNode.root);
-    bindIcon(this.mrcaDiv.div, DisplayNode.mrca);
-    bindIcon(this.node1Div.div, DisplayNode.node1);
-    bindIcon(this.node2Div.div, DisplayNode.node2);
     bindDiv(this.rootDiv.div, DisplayNode.root);
     bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
     bindDiv(this.node1Div.div, DisplayNode.node1);

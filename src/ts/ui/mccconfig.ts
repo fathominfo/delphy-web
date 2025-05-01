@@ -15,6 +15,8 @@ type ChangeHandler = (event:Event)=>void;
 type returnless = ()=>void;
 
 
+const ZOOM_FACTOR = 2;
+
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 
 
@@ -28,7 +30,9 @@ const Y_EVEN_SELECTOR = `input[name=mcc-opt--y-spacing][value=${Y_EVEN_SPACING}]
   PRESENTATION_UMBRELLA_SELECTOR = `input[name=mcc-opt--nodes][value=${PRESENTATION_UMBRELLA}]`,
   CONFIDENCE_RANGE_SELECTOR = '.mcc-opt--confidence-range',
   CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout',
-  ZOOM_RESET_SELECTOR = '.mcc-zoom-button.reset';
+  ZOOM_RESET_SELECTOR = '.mcc-zoom-button.reset',
+  ZOOM_IN_SELECTOR = '.mcc-zoom-button.zoom-in',
+  ZOOM_OUT_SELECTOR = '.mcc-zoom-button.zoom-out';
 
 
 export class MccConfig {
@@ -54,6 +58,8 @@ export class MccConfig {
   zoomCenterY: number;
   horizontalZoom: number;
   zoomCenterX: number;
+  dragStartX: number;
+  dragStartY: number;
   zoomFnc: returnless;
 
   confidenceSlider!: BlockSlider;
@@ -75,9 +81,11 @@ export class MccConfig {
     this.presentation = Presentation.all;
     this.confidenceThreshold = CONFIDENCE_DEFAULT / 100;
     this.verticalZoom = 1;
-    this.zoomCenterY = 0.5;
     this.horizontalZoom = 1;
+    this.zoomCenterY = 0.5;
     this.zoomCenterX = 0.5;
+    this.dragStartX = 0;
+    this.dragStartY = 0;
 
     this.ySpacingCallback = event=>{
       const target = event.target as HTMLInputElement;
@@ -209,9 +217,6 @@ export class MccConfig {
       this.zoomFnc = ()=>{
         zoomFnc(this.verticalZoom, this.zoomCenterY, this.horizontalZoom, this.zoomCenterX);
       };
-      this.zoomResetCallback = ()=>{
-        this.resetZoom();
-      };
 
       const addClickListener = (selector: string, callback:returnless)=>{
         const ele = document.querySelector(selector) as HTMLInputElement;
@@ -222,7 +227,9 @@ export class MccConfig {
         }
       }
 
-      addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
+      addClickListener(ZOOM_RESET_SELECTOR, ()=>this.resetZoom());
+      addClickListener(ZOOM_IN_SELECTOR, ()=>this.zoomIn());
+      addClickListener(ZOOM_OUT_SELECTOR, ()=>this.zoomOut());
     }
   }
 
@@ -232,6 +239,40 @@ export class MccConfig {
     this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
     (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
+    (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = true;
+    this.zoomFnc();
+  }
+
+  zoomIn() : void {
+    this.verticalZoom *= ZOOM_FACTOR;
+    this.horizontalZoom *= ZOOM_FACTOR;
+    this.zoomFnc();
+    (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
+    (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = false;
+  }
+
+  zoomOut() : void {
+    this.verticalZoom = Math.max(1, this.verticalZoom/ZOOM_FACTOR);
+    this.horizontalZoom = Math.max(1, this.verticalZoom/ZOOM_FACTOR);
+    this.zoomFnc();
+    if (this.verticalZoom === 1 && this.horizontalZoom === 1) {
+      (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
+      (document.querySelector(ZOOM_OUT_SELECTOR) as HTMLButtonElement).disabled = true;
+    }
+  }
+
+  startDrag() : void {
+    this.dragStartX = this.zoomCenterX;
+    this.dragStartY = this.zoomCenterY;
+  }
+
+  /* dx and dy will be raw pixels moved */
+  setDrag(dx: number, dy: number) : void {
+    const dx2 = dx / this.horizontalZoom,
+      dy2 = dy / this.verticalZoom;
+    console.log(`${dx} -> ${dx2}`)
+    this.zoomCenterX = this.dragStartX + dx2;
+    this.zoomCenterY = this.dragStartY - dy2;
     this.zoomFnc();
   }
 

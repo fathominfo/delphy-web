@@ -3,11 +3,8 @@ import { Pythia } from '../../pythia/pythia';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { MccUI } from '../mccui';
 import { TreeCanvas } from '../treecanvas';
-import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
-  TREE_PADDING_BOTTOM,
-  TREE_PADDING_LEFT,
-  TREE_PADDING_RIGHT,
-  TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_TIMELINE_SPACING, UNSET,
+import { DataResolveType, DisplayNode, Screens,
+  TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, UNSET,
   getNodeColor, getNodeTypeName, getNodeClassName } from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodeRelationChart } from './noderelationchart';
@@ -112,43 +109,21 @@ export class LineagesUI extends MccUI {
 
   treeHints: HTMLElement[];
 
-  resetZoomButton: HTMLButtonElement;
-
-
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#lineages--mcc-canvas");
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
-    const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
     const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
     this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
-    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
+    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback);
     this.nodeComparisons = [];
     this.constrainHoverByCredibility = false;
     {
       let startTime = 0,
         startX = UNSET,
         startY = UNSET,
-        selectionX = UNSET,
-        selectionY = UNSET,
         dragging = false,
         dragged = false,
         canvas: HTMLCanvasElement | PdfCanvas;
-      const drawSelection = ()=>{
-        const ctx = this.highlightCtx,
-          treeCanvas = this.mccTreeCanvas;
-        ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
-        ctx.fillStyle = 'rgba(240,240,240,0.8)';
-        ctx.fillRect(0, 0, treeCanvas.width, treeCanvas.height);
-        ctx.clearRect(startX, startY, selectionX - startX, selectionY - startY);
-        this.drawHighlightNode(this.rootIndex, DisplayNode.root, ctx, treeCanvas);
-        this.drawHighlightNode(this.mrcaIndex, DisplayNode.mrca, ctx, treeCanvas);
-        this.drawHighlightNode(this.node1Index, DisplayNode.node1, ctx, treeCanvas);
-        this.drawHighlightNode(this.node2Index, DisplayNode.node2, ctx, treeCanvas);
-        ctx.fillStyle = "rgb(84,84,84)";
-        ctx.textBaseline = "top";
-        ctx.font = CHART_TEXT_FONT;
-        ctx.fillText("Zoom to selection", startX, Math.max(startY, selectionY) + 3);
-      }
       this.canvasDownHandler = (event: MouseEvent)=>{
         canvas = this.mccTreeCanvas.getCanvas();
         event.preventDefault();
@@ -163,6 +138,7 @@ export class LineagesUI extends MccUI {
         // this.sharedState.mccConfig.startDrag();
         canvas.addEventListener('pointerup', canvasUpHandler);
         canvas.setPointerCapture((event as PointerEvent).pointerId);
+        this.sharedState.mccConfig.startDrag();
       };
       this.canvasMoveHandler = (event: MouseEvent)=>{
         if (!dragging) {
@@ -171,17 +147,16 @@ export class LineagesUI extends MccUI {
         }
 
         const dx = event.offsetX - startX,
-          dy = event.offsetY - startY,
-          d2 = dx * dx + dy * dy;
-        if (d2 > DRAG_DIST_2) {
-          dragged = true;
+          dy = event.offsetY - startY;
+        if (!dragged) {
+          const d2 = dx * dx + dy * dy;
+          if (d2 > DRAG_DIST_2) {
+            this.mccTreeCanvas.setNoding(false, false);
+            dragged = true;
+          }
         }
         if (dragged) {
-          selectionX = event.offsetX;
-          selectionY = event.offsetY;
-          drawSelection();
-          this.setHint(TreeHint.Zoom);
-          this.mccTreeCanvas.setNoding(false, false);
+          this.sharedState.mccConfig.setDrag(dx, dy);
         }
       };
       const canvasUpHandler = (event: MouseEvent)=>{
@@ -189,25 +164,25 @@ export class LineagesUI extends MccUI {
           dragging = false;
           canvas.removeEventListener('pointerup', canvasUpHandler);
           if (dragged) {
-            const left = TREE_PADDING_LEFT,
-              right = this.mccTreeCanvas.width - TREE_PADDING_RIGHT,
-              top = TREE_TIMELINE_SPACING,
-              bottom = this.mccTreeCanvas.height - TREE_PADDING_BOTTOM,
-              height = bottom - top,
-              width = right - left;
-            startX = Math.min(right, Math.max(left, startX));
-            startY = Math.min(bottom, Math.max(top, startY));
-            selectionX = Math.min(right, Math.max(left, selectionX));
-            selectionY = Math.min(bottom, Math.max(top, selectionY));
-            const h = Math.abs(selectionY - startY),
-              w = Math.abs(selectionX - startX),
-              vZoom = height / h * this.mccTreeCanvas.verticalZoom,
-              hZoom = width / w * this.mccTreeCanvas.horizontalZoom,
-              cy = ((selectionY + startY) / 2 - TREE_TIMELINE_SPACING) / height,
-              cx = 1 - ((selectionX + startX) / 2 - TREE_PADDING_LEFT) / width,
-              zY = this.mccTreeCanvas.zoomCenterY + (cy - 0.5) / this.mccTreeCanvas.verticalZoom,
-              zX = this.mccTreeCanvas.zoomCenterX + (cx - 0.5) / this.mccTreeCanvas.horizontalZoom;
-            this.sharedState.mccConfig.setZoom(hZoom, vZoom, zX, zY);
+            // const left = TREE_PADDING_LEFT,
+            //   right = this.mccTreeCanvas.width - TREE_PADDING_RIGHT,
+            //   top = TREE_TIMELINE_SPACING,
+            //   bottom = this.mccTreeCanvas.height - TREE_PADDING_BOTTOM,
+            //   height = bottom - top,
+            //   width = right - left;
+            // startX = Math.min(right, Math.max(left, startX));
+            // startY = Math.min(bottom, Math.max(top, startY));
+            // selectionX = Math.min(right, Math.max(left, selectionX));
+            // selectionY = Math.min(bottom, Math.max(top, selectionY));
+            // const h = Math.abs(selectionY - startY),
+            //   w = Math.abs(selectionX - startX),
+            //   vZoom = height / h * this.mccTreeCanvas.verticalZoom,
+            //   hZoom = width / w * this.mccTreeCanvas.horizontalZoom,
+            //   cy = ((selectionY + startY) / 2 - TREE_TIMELINE_SPACING) / height,
+            //   cx = 1 - ((selectionX + startX) / 2 - TREE_PADDING_LEFT) / width,
+            //   zY = this.mccTreeCanvas.zoomCenterY + (cy - 0.5) / this.mccTreeCanvas.verticalZoom,
+            //   zX = this.mccTreeCanvas.zoomCenterX + (cx - 0.5) / this.mccTreeCanvas.horizontalZoom;
+            // this.sharedState.mccConfig.setZoom(hZoom, vZoom, zX, zY);
           } else if (Date.now() - startTime < CLICK_TIME) {
             const nodeIndex:number = this.mccTreeCanvas.getNodeAt(startX, startY);
             if (!this.constrainHoverByCredibility || this.mccTreeCanvas.creds[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
@@ -243,8 +218,6 @@ export class LineagesUI extends MccUI {
     this.selectable = true;
 
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
-
-    this.resetZoomButton = this.div.querySelector(".mcc-zoom-button.reset") as HTMLButtonElement;
 
     const lookupForm = document.querySelector(".id-lookup form") as HTMLFormElement;
     lookupForm.addEventListener("submit", e => e.preventDefault());
@@ -814,33 +787,34 @@ export class LineagesUI extends MccUI {
     this.setHint(TreeHint.Hover);
   }
 
-  handleNodeZoom(node: DisplayNode | typeof UNSET) : void {
-    let zoomNode = UNSET;
+  // handleNodeZoom(node: DisplayNode | typeof UNSET) : void {
+  //   console.log('handling Node Zoom');
+  //   let zoomNode = UNSET;
 
-    switch (node) {
-    case DisplayNode.mrca:
-      zoomNode = this.mrcaIndex;
-      break;
-    case DisplayNode.node1:
-      zoomNode = this.node1Index;
-      break;
-    case DisplayNode.node2:
-      zoomNode = this.node2Index;
-      break;
-    }
-    if (zoomNode === UNSET) {
-      this.mccTreeCanvas.resetZoom();
-      this.sharedState.mccConfig.resetZoom();
-    } else if (this.pythia) {
-      const tips = this.pythia.getMccNodeTips(zoomNode),
-        treeCanvas = this.mccTreeCanvas;
-      treeCanvas.zoomToTips(tips);
-      this.sharedState.mccConfig.setZoom(1, treeCanvas.verticalZoom, 0.5, treeCanvas.zoomCenterY);
-    }
-    super.requestTreeDraw();
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
-    this.nodeRelationChart.highlightNode(node);
-  }
+  //   switch (node) {
+  //   case DisplayNode.mrca:
+  //     zoomNode = this.mrcaIndex;
+  //     break;
+  //   case DisplayNode.node1:
+  //     zoomNode = this.node1Index;
+  //     break;
+  //   case DisplayNode.node2:
+  //     zoomNode = this.node2Index;
+  //     break;
+  //   }
+  //   if (zoomNode === UNSET) {
+  //     this.mccTreeCanvas.resetZoom();
+  //     this.sharedState.mccConfig.resetZoom();
+  //   } else if (this.pythia) {
+  //     const tips = this.pythia.getMccNodeTips(zoomNode),
+  //       treeCanvas = this.mccTreeCanvas;
+  //     treeCanvas.zoomToTips(tips);
+  //     this.sharedState.mccConfig.setZoom(1, treeCanvas.verticalZoom, 0.5, treeCanvas.zoomCenterY);
+  //   }
+  //   super.requestTreeDraw();
+  //   this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
+  //   this.nodeRelationChart.highlightNode(node);
+  // }
 
   handleNodeHighlight(node: DisplayNode | typeof UNSET) : void {
     if (node === this.highlightNode) {
