@@ -308,7 +308,6 @@ export class MccTreeCanvas extends TreeCanvas {
 
   setNoding(noding: boolean, isSelectable: boolean) {
     if (this.canvas instanceof PdfCanvas) return;
-    this.canvas.classList.toggle("noding", noding);
     this.canvas.classList.toggle("new-node", noding && isSelectable);
   }
 

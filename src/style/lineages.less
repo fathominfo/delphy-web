@@ -72,12 +72,12 @@
 
 
 #lineages--mcc-canvas {
-  cursor: grab;
-  &.noding {
-    cursor: default;
-    &.new-node {
-      cursor: pointer;
-    }
+  cursor: default;
+  &.zoomed {
+    cursor: grab;
+  }
+  &.new-node {
+    cursor: pointer;
   }
   &.dragging {
     cursor: grabbing;

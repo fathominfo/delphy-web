@@ -70,7 +70,7 @@ const TREE_HINT_CLASSES = [
 ]
 
 
-const PREVALENCE_PCT_DAYS = .20;
+// const PREVALENCE_PCT_DAYS = .20;
 
 
 export class LineagesUI extends MccUI {
@@ -885,10 +885,12 @@ export class LineagesUI extends MccUI {
   */
   requestTreeDraw(): void {
     super.requestTreeDraw();
-    let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange();  // eslint-disable-line prefer-const
-    const zoomDateRange = zoomMaxDate - zoomMinDate;
-    zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
-    this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
+    const isZoomed = this.sharedState.mccConfig.verticalZoom !== 1;
+    this.mccTreeCanvas.toggleClass("zoomed", isZoomed);
+    // let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange();  // eslint-disable-line prefer-const
+    // const zoomDateRange = zoomMaxDate - zoomMinDate;
+    // zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
+    // this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
     this.nodeComparisons.forEach((nc: NodeComparison)=>{
       // nc.setDateRange(zoomMinDate, zoomMaxDate);
       nc.requestDraw();
