@@ -56,6 +56,7 @@ export class MccConfig {
   metadataColors: {[field: string]: ColorDict};
   verticalZoom: number;
   zoomCenterY: number;
+  /* goes from 1 on the left to 0 on the right */
   horizontalZoom: number;
   zoomCenterX: number;
   dragStartX: number;
@@ -267,10 +268,10 @@ export class MccConfig {
   }
 
   /* dx and dy will be raw pixels moved */
-  setDrag(dx: number, dy: number) : void {
-    const dx2 = dx / this.horizontalZoom,
-      dy2 = dy / this.verticalZoom;
-    console.log(`${dx} -> ${dx2}`)
+  setDrag(dx: number, dy: number, width: number, height: number) : void {
+    const dx2 = dx / this.horizontalZoom / width,
+      dy2 = dy / this.verticalZoom / height;
+    // console.log(`${dx} -> ${dx2}`)
     this.zoomCenterX = this.dragStartX + dx2;
     this.zoomCenterY = this.dragStartY - dy2;
     this.zoomFnc();

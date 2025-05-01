@@ -156,7 +156,7 @@ export class LineagesUI extends MccUI {
           }
         }
         if (dragged) {
-          this.sharedState.mccConfig.setDrag(dx, dy);
+          this.sharedState.mccConfig.setDrag(dx, dy, this.mccTreeCanvas.width, this.mccTreeCanvas.height);
         }
       };
       const canvasUpHandler = (event: MouseEvent)=>{
