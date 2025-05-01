@@ -143,13 +143,13 @@ export class TimeDistributionCanvas {
       val = ds.distribution.getMinBand();
     const THRESHOLD = val;
     ctx.moveTo(x, xheight);
-    console.log(`drawDistribution minDate ${this.minDate}  ${drawWidth}`);
+    // console.log(`drawDistribution minDate ${this.minDate}  ${drawWidth}`);
     for (let i = 0; i < bandTimes.length; i++) {
       t = bandTimes[i];
       x = this.xFor(t, drawWidth);
       val = bands[i];
       const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
-      console.log(`     ${i}   t  ${t}   x ${x}   val ${val}`);
+      // console.log(`     ${i}   t  ${t}   x ${x}   val ${val}`);
       // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
       ctx.lineTo(x, y);
     }
