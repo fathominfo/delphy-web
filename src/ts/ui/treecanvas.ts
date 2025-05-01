@@ -223,6 +223,7 @@ export class TreeCanvas {
       : (i:number, ctx:CanvasRenderingContext2D | Context2d = this.ctx) => this.drawNodeBranch(i, ctx);
 
     const {height} = this,
+      bottom = height - this.paddingBottom,
       nodeCount = tree.getSize(),
       yPositions: number[] = Array(nodeCount),
       times: number[] = Array(nodeCount),
@@ -233,7 +234,7 @@ export class TreeCanvas {
         creds = new Array(nodeCount);
         creds.fill(0.8)
       }
-      let ypos = 0,
+      let ypos = bottom,
         minDate = Number.MAX_SAFE_INTEGER,
         maxDate = Number.MIN_SAFE_INTEGER,
         actualTipCount = 0;
@@ -275,7 +276,7 @@ export class TreeCanvas {
         if (kidCount === 0) {
           verticallySortedTips.push(index);
           yPositions[index] = ypos;
-          ypos += h;
+          ypos -= h;
           nodeChildren[index] = [];
         } else if (kidCount === 2) {
           const left = children[0],
@@ -397,7 +398,7 @@ export class TreeCanvas {
       maxOffset = zoomedHeight - height,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset);
-    return this.nodeYs[index] * this.verticalZoom - offset + this.timelineSpacing;
+    return this.nodeYs[index] * this.verticalZoom - offset;
   }
 
   getZoomedDateRange() : number[] {
