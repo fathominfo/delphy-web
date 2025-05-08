@@ -623,6 +623,8 @@ export class Delphy {
     run_set_hky_pi_G: (ctx: DelphyContextPtr, run: RunPtr, hky_pi_G: number) => void,
     run_get_hky_pi_T: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_hky_pi_T: (ctx: DelphyContextPtr, run: RunPtr, hky_pi_T: number) => void,
+    run_get_skygrid_tau: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_tau: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau: number) => void,
     run_get_pop_model: (ctx: DelphyContextPtr, run: RunPtr) => PopModelPtr,
     run_set_pop_model: (ctx: DelphyContextPtr, run: RunPtr, popModel: PopModelPtr) => void,
     run_get_log_G: (ctx: DelphyContextPtr, run: RunPtr) => number,
@@ -853,6 +855,8 @@ export class Delphy {
       run_set_hky_pi_G: Module['_delphy_run_set_hky_pi_G'],
       run_get_hky_pi_T: Module['_delphy_run_get_hky_pi_T'],
       run_set_hky_pi_T: Module['_delphy_run_set_hky_pi_T'],
+      run_get_skygrid_tau: Module['_delphy_run_get_skygrid_tau'],
+      run_set_skygrid_tau: Module['_delphy_run_set_skygrid_tau'],
       run_get_pop_model: Module['_delphy_run_get_pop_model'],
       run_set_pop_model: Module['_delphy_run_set_pop_model'],
       run_get_log_G: Module['_delphy_run_get_log_G'],
@@ -1435,6 +1439,14 @@ export class Run {
 
   setHkyPiT(hky_pi_T: number): void {
     Delphy.delphyCoreRaw.run_set_hky_pi_A(this.delphy.ctx, this.run, hky_pi_T);
+  }
+
+  getSkygridTau(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_tau(this.delphy.ctx, this.run);
+  }
+
+  setSkygridTau(skygrid_tau: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau(this.delphy.ctx, this.run, skygrid_tau);
   }
 
   getPopModel(): PopModel {
