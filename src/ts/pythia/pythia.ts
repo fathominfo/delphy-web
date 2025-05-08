@@ -1,6 +1,7 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
-  SequenceWarningCode, PopModel, ExpPopModel} from './delphy_api';
+  SequenceWarningCode, PopModel, ExpPopModel, SkygridPopModel,
+  SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
@@ -53,10 +54,17 @@ export type RunParamConfig = {
   apobecEnabled: boolean,
   siteRateHeterogeneityEnabled: boolean,
   mutationRateIsFixed: boolean,
+  popModelIsSkygrid: boolean,
+  // exponential population model params
   finalPopSizeIsFixed: boolean,
   finalPopSize: number,
   popGrowthRateIsFixed: boolean,
-  popGrowthRate: number
+  popGrowthRate: number,
+  // skygrid population model params
+  skygridStartDate: number,
+  skygridNumIntervals: number,
+  skygridGamma: number,
+  skygridIsLogLinear: boolean,
 };
 
 function calcMaxDateOfTree(tree: PhyloTree): number {
@@ -73,7 +81,10 @@ function calcMaxDateOfTree(tree: PhyloTree): number {
 function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
   const count = tree.getSize(),
     tipCount = (count + 1) / 2,
-    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
+    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10))),
+    rootDate = tree.getTimeOf(tree.getRootIndex()) || 0,
+    maxDate = calcMaxDateOfTree(tree),
+    dateRange = maxDate - rootDate;
 
   return {
     stepsPerSample: targetStepSize,
@@ -82,11 +93,19 @@ function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     siteRateHeterogeneityEnabled: false,
     mutationRateIsFixed: false,
 
+    popModelIsSkygrid: false,
+
     // Defaults for exponential pop model
     finalPopSizeIsFixed: false,
     finalPopSize: 1000.0, // days
     popGrowthRateIsFixed: false,
     popGrowthRate: 0.0,  // e-foldings / year
+
+    // Defaults for Skygrid pop model
+    skygridStartDate: maxDate - 2 * dateRange,
+    skygridNumIntervals: Math.round(tipCount / 15),
+    skygridGamma: Math.log(1000),
+    skygridIsLogLinear: true
   };
 }
 
@@ -560,13 +579,29 @@ export class Pythia {
       run.setMu(runParams.mutationRate);
     }
 
-    run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
-    if (runParams.finalPopSizeIsFixed) {
-      run.setPopN0(runParams.finalPopSize);
-    }
-    run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
-    if (runParams.popGrowthRateIsFixed) {
-      run.setPopG(runParams.popGrowthRate);
+    if (runParams.popModelIsSkygrid) {
+      // SkygridPopModel
+      const intervalDuration = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
+      const knotCount = runParams.skygridNumIntervals + 1;
+      const skygridGamma = runParams.skygridGamma;
+      const skyGridInterpolation = runParams.skygridIsLogLinear ? SkygridPopModelType.LogLinear : SkygridPopModelType.Staircase;
+      const knots: number[] = [];
+      const gamma: number[] = [];
+      let t = runParams.skygridStartDate;
+      for (let i = 0; i < knotCount; i++) {
+        knots.push(t);
+        gamma.push(skygridGamma);
+        t += intervalDuration;
+      }
+      run.setPopModel(new SkygridPopModel(skyGridInterpolation, knots, gamma));
+    } else {
+      // ExpPopModel
+      run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
+      run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
+      run.setPopModel(
+        new ExpPopModel(calcMaxDateOfTree(run.getTree()),
+          runParams.finalPopSize,
+          runParams.popGrowthRate));
     }
   }
 
@@ -578,10 +613,25 @@ export class Pythia {
     result.siteRateHeterogeneityEnabled = !!(run.isAlphaMoveEnabled());
     result.mutationRateIsFixed = !run.isMuMoveEnabled();
 
-    result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
-    result.finalPopSize = run.getPopN0();
-    result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
-    result.popGrowthRate = run.getPopG();
+    const popModel = run.getPopModel();
+
+    if (popModel instanceof ExpPopModel) {
+      result.popModelIsSkygrid = false;
+      result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
+      result.finalPopSize = popModel.n0;
+      result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
+      result.popGrowthRate = popModel.g;
+
+    } else if (popModel instanceof SkygridPopModel) {
+      result.popModelIsSkygrid = true;
+      result.skygridStartDate = popModel.x[0];
+      result.skygridNumIntervals = popModel.x.length - 1;
+      result.skygridGamma = popModel.gamma[0];
+      result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
+      
+    } else {
+      throw new Error("don't know what to do here");
+    }
 
     return result;
   }

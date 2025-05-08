@@ -1271,6 +1271,7 @@ export class SkygridPopModel extends PopModel {
     if (x.length !== gamma.length) {
       throw `x and gamma must have the same length, currently x has ${x.length} knots and gamma has ${gamma.length}`;
     }
+    this.type = type;
   }
 
   toPopModelPtr(ctx: DelphyContextPtr): PopModelPtr {
