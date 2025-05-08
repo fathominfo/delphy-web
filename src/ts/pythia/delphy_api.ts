@@ -366,7 +366,7 @@ export class Delphy {
     tStart: number, tEnd: number, numTCells: number): number[][] {
 
     const rawPopModel = popModel.toPopModelPtr(this.ctx);
-    
+
     const sizeofDouble = 8;
     const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * 4 * numTCells);
     const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, 4 * numTCells);

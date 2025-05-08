@@ -845,7 +845,7 @@ export class RunUI extends UIScreen {
     newParams.siteRateHeterogeneityEnabled = enabled;
     return newParams;
   }
-  
+
   private setPopmodel(runParams: RunParamConfig, isSkygrid:boolean) : RunParamConfig {
     const newParams = copyDict(runParams) as RunParamConfig;
     newParams.popModelIsSkygrid = isSkygrid;

@@ -128,7 +128,7 @@ export class Pythia {
   logPosteriorHist : number[] = [];
   logGHist : number[] = [];
   numMutationsHist : number[] = [];
-  popModelHist: PopModel[];
+  popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
   paramsHist: ArrayBuffer[] = [];
@@ -628,7 +628,7 @@ export class Pythia {
       result.skygridNumIntervals = popModel.x.length - 1;
       result.skygridGamma = popModel.gamma[0];
       result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
-      
+
     } else {
       throw new Error("don't know what to do here");
     }
