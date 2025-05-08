@@ -1,5 +1,5 @@
 import {MccRef} from '../../pythia/mccref';
-import {PhyloTree, ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
+import {PhyloTree, ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
@@ -553,17 +553,10 @@ export class RunUI extends UIScreen {
     }
     if (this.getRunParams().popModelIsSkygrid) {
       const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
-      const date1 = this.getRunParams().skygridStartDate;
-      const lastDate = this.pythia.maxDate;
-      const dateRange = lastDate - date1;
-      const intervalCount = this.getRunParams().skygridNumIntervals;
-      const interval = dateRange / intervalCount;
-      const kDates = [date1];
-      for (let i = 0; i < intervalCount; i++) {
-        const d = date1 + i * interval;
-        kDates.push(d);
-      }
-      this.gammaCanvas.setRangeData(gammaHist, kDates, this.getRunParams().skygridIsLogLinear, kneeIndex);
+      console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
+      const xHist = (popModelHist[0] as SkygridPopModel).x;
+      const isLogLinear = (popModelHist[0] as SkygridPopModel).type == SkygridPopModelType.LogLinear;
+      this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex);
     } else {
       const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
       this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
