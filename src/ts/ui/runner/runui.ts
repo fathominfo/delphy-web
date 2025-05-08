@@ -1,5 +1,5 @@
 import {MccRef} from '../../pythia/mccref';
-import {PhyloTree} from '../../pythia/delphy_api';
+import {PhyloTree, ExpPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
@@ -476,11 +476,18 @@ export class RunUI extends UIScreen {
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
       sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
-      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
+      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popModelHist, kneeIndex} = this.pythia;
     this.treeScrubber.setData(last, kneeIndex, mccIndex);
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-    const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
+    // FIXME-flexible-pop-models: do the right thing here depending on settings and pop model
+    const popHistGrowth = popModelHist.map(popModel => {
+      if (popModel instanceof ExpPopModel) {
+        return POP_GROWTH_FACTOR / popModel.g;
+      } else {
+        return 0.0;
+      }
+    });
     const serieses = [
       logPosteriorHist,
       muud,

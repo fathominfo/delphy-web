@@ -1,6 +1,6 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
-  SequenceWarningCode} from './delphy_api';
+  SequenceWarningCode, PopModel, ExpPopModel} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
@@ -109,9 +109,7 @@ export class Pythia {
   logPosteriorHist : number[] = [];
   logGHist : number[] = [];
   numMutationsHist : number[] = [];
-  popT0Hist: number[] = [];
-  popN0Hist: number[] = [];
-  popGHist: number[] = [];
+  popModelHist: PopModel[];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
   paramsHist: ArrayBuffer[] = [];
@@ -480,9 +478,7 @@ export class Pythia {
     this.logPosteriorHist = [];
     this.logGHist = [];
     this.numMutationsHist = [];
-    this.popT0Hist = [];
-    this.popN0Hist = [];
-    this.popGHist = [];
+    this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
     this.paramsHist = [];
@@ -505,9 +501,7 @@ export class Pythia {
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
       this.numMutationsHist.push(this.run.getNumMutations());
-      this.popT0Hist.push(this.run.getPopT0());
-      this.popN0Hist.push(this.run.getPopN0());
-      this.popGHist.push(this.run.getPopG());
+      this.popModelHist.push(this.run.getPopModel());
       this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);
@@ -749,13 +743,11 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           baseTreeIndices = nodeIndices.map(mccNodeIndex=>summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t)),
           deduped = baseTreeIndices.map((n, i)=>i === baseTreeIndices.lastIndexOf(n) ? n : UNSET),
           treeDist = this.delphy.popModelProbeAncestorsOnTree(
-            tree, popT0, popN0, popG, deduped, startDate - 1, maxDate, range);
+            tree, popModel, deduped, startDate - 1, maxDate, range);
         baseTreeIndices.forEach((nodeIndex, i)=>{
           const d = deduped[i];
           if (d !== nodeIndex) {
@@ -845,11 +837,9 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           treeDist = this.delphy.popModelProbeSiteStatesOnTree(
-            tree, popT0, popN0, popG, site, startDate - 1, maxDate, range);
+            tree, popModel, site, startDate - 1, maxDate, range);
         //   maxTValue = Math.max(...treeDist[RealSeqLetter_T]);
         // if (maxTValue === 0) {
         //   console.log("???", treeDist);
