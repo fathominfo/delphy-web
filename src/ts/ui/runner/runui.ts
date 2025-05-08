@@ -15,6 +15,7 @@ import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { RunParamConfig } from '../../pythia/pythia';
+import { parse_iso_date, toDateString } from '../../pythia/dates';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -94,7 +95,7 @@ export class RunUI extends UIScreen {
   mutationRateInput: HTMLInputElement;
   popModelExpInput: HTMLInputElement;
   popModelSkygridInput: HTMLInputElement;
-  popModelSkygridDetail: HTMLDivElement;
+  popModelSkygridDetail: HTMLFieldSetElement;
   popModelExpDetail: HTMLDivElement;
   skygridStartDateInput: HTMLInputElement;
   skygridIntervalCountInput: HTMLInputElement;
@@ -204,9 +205,8 @@ export class RunUI extends UIScreen {
     this.popModelSkygridInput = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
 
     this.popModelExpDetail = this.div.querySelector("#popmodel-exponential") as HTMLInputElement;
-    this.popModelSkygridDetail = this.div.querySelector("#popmodel-skygrid") as HTMLInputElement;
-
-    this.skygridStartDateInput = this.div.querySelector("popmodel-skygrid-k") as HTMLInputElement;
+    this.popModelSkygridDetail = this.div.querySelector("#popmodel-skygrid") as HTMLFieldSetElement;
+    this.skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
     this.skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
     this.skygridGammaInput = this.div.querySelector("#popmodel-skygrid-gamma") as HTMLInputElement;
     this.skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
@@ -367,6 +367,13 @@ export class RunUI extends UIScreen {
     this.mutationRateInput.disabled = !params.mutationRateIsFixed;
     this.fixedFinalPopSizeInput.disabled = !params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateInput.disabled = !params.popGrowthRateIsFixed;
+
+    this.skygridFlatInterpolationInput.checked = !params.skygridIsLogLinear;
+    this.skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
+    this.skygridStartDateInput.value = toDateString(params.skygridStartDate);
+    this.skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
+    this.skygridGammaInput.value = `${params.skygridGamma}`;
+
     // set field values
     const muFixed = (params.mutationRate * MU_FACTOR).toFixed(2);
     this.mutationRateInput.value = `${muFixed}`;
@@ -701,15 +708,28 @@ export class RunUI extends UIScreen {
       parseFloat(formData.overallMutationRate as string) : this.getRunParams().mutationRate;
     newParams = this.fixMutationRate(newParams, isFixedMutationRate, overallMutationRate);
 
-    const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
-    const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
-      parseFloat(formData.overallFinalPopSize as string) : this.getRunParams().finalPopSize;
-    newParams = this.fixFinalPopSize(newParams, isFixedFinalPopSize, overallFinalPopSize);
+    const isSkygrid = formData.popmodel === 'skygrid';
+    newParams = this.setPopmodel(newParams, isSkygrid);
+    if (isSkygrid) {
+      const skygridK = parse_iso_date(formData['skygrid-K'] as string);
+      const skygridM = parseInt(formData['skygrid-M'] as string);
+      const skygridGamma = parseFloat(formData['skygrid-gamma'] as string);
+      const skygridInterpolationIsLogLinear = formData['m-interpolation'] === 'loglin';
+      newParams.skygridStartDate = skygridK;
+      newParams.skygridNumIntervals = skygridM;
+      newParams.skygridGamma = skygridGamma;
+      newParams.skygridIsLogLinear = skygridInterpolationIsLogLinear;
+    } else {
+      const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
+      const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
+        parseFloat(formData.overallFinalPopSize as string) : this.getRunParams().finalPopSize;
+      newParams = this.fixFinalPopSize(newParams, isFixedFinalPopSize, overallFinalPopSize);
 
-    const isFixedPopGrowthRate = formData.isFixedPopGrowthRate === "on";
-    const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
-      parseFloat(formData.overallPopGrowthRate as string) : this.getRunParams().popGrowthRate;
-    newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
+      const isFixedPopGrowthRate = formData.isFixedPopGrowthRate === "on";
+      const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
+        parseFloat(formData.overallPopGrowthRate as string) : this.getRunParams().popGrowthRate;
+      newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
+    }
 
     const isApobec = formData.isApobec === "on";
     newParams = this.setApobec(newParams, isApobec);
@@ -755,6 +775,10 @@ export class RunUI extends UIScreen {
   private getWillRestart(): boolean {
     const runParams = this.getRunParams();
     if (this.siteHeterogeneityToggle.checked !== runParams.siteRateHeterogeneityEnabled) return true;
+    if (parseInt(this.skygridIntervalCountInput.value) !== runParams.skygridNumIntervals) return true;
+    if (parseFloat(this.skygridGammaInput.value) !== runParams.skygridGamma) return true;
+    if (parse_iso_date(this.skygridStartDateInput.value) !==runParams.skygridStartDate) return true;
+    if (this.skygridLogLinearInterpolationInput.checked !== runParams.skygridIsLogLinear) return true;
     if (this.fixedRateToggle.checked !== runParams.mutationRateIsFixed) return true;
     if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (runParams.mutationRate * MU_FACTOR).toFixed(2)) return true;
     if (parseFloat(this.fixedFinalPopSizeInput.value).toFixed(2) !== (runParams.finalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2)) return true;
@@ -804,13 +828,16 @@ export class RunUI extends UIScreen {
     newParams.siteRateHeterogeneityEnabled = enabled;
     return newParams;
   }
+  
+  private setPopmodel(runParams: RunParamConfig, isSkygrid:boolean) : RunParamConfig {
+    const newParams = copyDict(runParams) as RunParamConfig;
+    newParams.popModelIsSkygrid = isSkygrid;
+    return newParams;
+  }
 
 
   // private announceAutoKnee(candidateIndex: number, pct: number) : void {
   //   console.log(`setting the knee at ${candidateIndex} ${pct* 100}%`);
   // }
-
-
-
 
 }
