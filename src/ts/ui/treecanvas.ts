@@ -43,15 +43,15 @@ type DrawBranchFnc =  (i:number, ctx:CanvasRenderingContext2D | Context2d)=>void
       throw new Error('could not load a font');
     };
   const promises = Promise.all([
-    (new FontFace("MDSystem", "url('/assets/fonts/MDSystemStandard/MDSystem-Bold.woff2')", {weight: '700', style: 'normal'})).load().then(success, failure),
-    (new FontFace("MDSystem", "url('/assets/fonts/MDSystemStandard/MDSystem-Medium.woff2')", {weight: '500', style: 'normal'})).load().then(success, failure),
+    (new FontFace("MDSystem", "url('./assets/fonts/MDSystemStandard/MDSystem-Bold.woff2')", {weight: '700', style: 'normal'})).load().then(success, failure),
+    (new FontFace("MDSystem", "url('./assets/fonts/MDSystemStandard/MDSystem-Medium.woff2')", {weight: '500', style: 'normal'})).load().then(success, failure),
   ]).catch(()=>{}); // eslint-disable-line @typescript-eslint/no-empty-function
   promises.then(fonts => {
     if (!fonts) {
       console.debug("Could not load MD fonts, using Roboto fallbacks");
       const backupPromises = Promise.all([
-        (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-bold.ttf')", {weight: '700', style: 'normal'})).load(),
-        (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
+        (new FontFace("Roboto", "url('./assets/fonts/roboto/roboto-bold.ttf')", {weight: '700', style: 'normal'})).load(),
+        (new FontFace("Roboto", "url('./assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
       ]);
       backupPromises.then(fonts => {
         fonts.forEach(font => document.fonts.add(font));

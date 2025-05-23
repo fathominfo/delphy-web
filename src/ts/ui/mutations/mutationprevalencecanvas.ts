@@ -149,9 +149,9 @@ export class MutationPrevalenceCanvas {
         throw new Error('could not load a font');
       };
     const promises = Promise.all([
-      (new FontFace("MDSystem", "url('/assets/fonts/MDSystemStandard/MDSystem-Medium.woff2')", {weight: '500', style: 'normal'})).load().then(success, failure),
-      (new FontFace("MD IO", "url('/assets/fonts/MDIO/MDIO0.7-Regular.woff2')", {weight: '400', style: 'normal'})).load().then(success, failure),
-      (new FontFace("MD IO", "url('/assets/fonts/MDIO/MDIO0.7-Semibold.woff2')", {weight: '600', style: 'normal'})).load().then(success, failure),
+      (new FontFace("MDSystem", "url('./assets/fonts/MDSystemStandard/MDSystem-Medium.woff2')", {weight: '500', style: 'normal'})).load().then(success, failure),
+      (new FontFace("MD IO", "url('./assets/fonts/MDIO/MDIO0.7-Regular.woff2')", {weight: '400', style: 'normal'})).load().then(success, failure),
+      (new FontFace("MD IO", "url('./assets/fonts/MDIO/MDIO0.7-Semibold.woff2')", {weight: '600', style: 'normal'})).load().then(success, failure),
     ]).catch(()=>{}); // eslint-disable-line @typescript-eslint/no-empty-function
     promises.then(fonts => {
       if (fonts) {
@@ -159,9 +159,9 @@ export class MutationPrevalenceCanvas {
       } else {
         console.debug("Could not load MD fonts, using Roboto fallbacks");
         const backupPromises = Promise.all([
-          (new FontFace("Roboto", "url('/assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
-          (new FontFace("RobotoMono", "url('/assets/fonts/roboto_mono/roboto-mono-regular.woff2')", {weight: '400', style: 'normal'})).load(),
-          (new FontFace("RobotoMono", "url('/assets/fonts/roboto_mono/roboto-mono-semibold.woff2')", {weight: '600', style: 'normal'})).load(),
+          (new FontFace("Roboto", "url('./assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
+          (new FontFace("RobotoMono", "url('./assets/fonts/roboto_mono/roboto-mono-regular.woff2')", {weight: '400', style: 'normal'})).load(),
+          (new FontFace("RobotoMono", "url('./assets/fonts/roboto_mono/roboto-mono-semibold.woff2')", {weight: '600', style: 'normal'})).load(),
         ]);
         backupPromises.then(fonts => {
           fonts.forEach(font => document.fonts.add(font));
