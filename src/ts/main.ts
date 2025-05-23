@@ -122,7 +122,7 @@ initErrors();
 setReadyCallback(onReady);
 
 const loadListener = ()=>{
-  fetch("/assets/revision.json")
+  fetch("./assets/revision.json")
     .then(response=>{
       if (response.ok) {
         return response.json();
