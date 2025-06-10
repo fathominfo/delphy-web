@@ -236,7 +236,11 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   }
   const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
   const urlForm = uploadDiv.querySelector("#uploader--url-form") as HTMLFormElement;
-  // urlInput.addEventListener("change", ()=>loadNow(urlInput.value));
+  const urlFormSubmit = urlForm.querySelector("input[type='submit']") as HTMLInputElement;
+  urlInput.addEventListener("input", ()=>{
+    console.log(`input '${urlInput.value}'`)
+    urlFormSubmit.disabled = urlInput.value.length === 0;
+  });
   urlForm.addEventListener("submit", (event:SubmitEvent)=>{
     event.preventDefault();
     loadNow(urlInput.value);
@@ -283,6 +287,8 @@ const loadNow = (url:string)=>{
           console.log(`we connected, but got status code ${response.status}, type '${response.type}'`);
           throw new Error(response.statusText || `response.type = '${response.type}'`);
         }
+        throw new Error(`'${url}' does not allow the delphy server to load it directly. Try downloading it and loading it locally. `);
+
         return response.blob();
       })
       .then(blob => {
@@ -298,34 +304,25 @@ const loadNow = (url:string)=>{
         console.log(err);
         // console.log("gonna retry by proxy");
         // loadNow(url, true);
-        showProxyOption(url);
+        showURLFailureMessage(url);
 
       });
   }
 };
 
-const showProxyOption = (url:string)=>{
+const showURLFailureMessage = (url:string)=>{
   const urlDict = new URL(url);
   uploadDiv.classList.remove('loading');
   const popup = document.querySelector("#uploader--proxy-popup") as HTMLDivElement;
-  const fileLink = popup.querySelector(".uploader--remote-url") as HTMLAnchorElement;
-  const serverSpan = popup.querySelector(".uploader--remote-host") as HTMLSpanElement;
-  const yesProxyButton = popup.querySelector("#uploader--try-proxy") as HTMLButtonElement;
-  const noProxyButton = popup.querySelector("#uploader--no-proxy") as HTMLButtonElement;
-  const yesHandler = ()=>{
-    dismiss();
-    loadNow(url);
-  }
+  const dismissButton = popup.querySelector("#uploader--bad-url-msg-dismiss") as HTMLButtonElement;
+  const serverSpan = popup.querySelector("#remote-url-server") as HTMLSpanElement;
   const dismiss = ()=>{
     uploadDiv.classList.remove('direct-loading');
-    yesProxyButton.removeEventListener("click", yesHandler);
-    noProxyButton.removeEventListener("click", dismiss);
+    dismissButton.removeEventListener("click", dismiss);
     popup.classList.remove("active");
   }
-  fileLink.href = url;
-  serverSpan.textContent = urlDict.hostname;
-  yesProxyButton.addEventListener("click", yesHandler);
-  noProxyButton.addEventListener("click", dismiss);
+  serverSpan.textContent = `of ${urlDict.hostname}`;
+  dismissButton.addEventListener("click", dismiss);
   popup.classList.add("active");
 }
 

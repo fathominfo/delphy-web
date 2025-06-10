@@ -58,36 +58,33 @@
           <form id="uploader--url-form">
             <input type="text" id="uploader--url-input" 
               placeholder="Enter URL"/>
+            <p id="uploader--url-form-submit" >
+              <label> 
+                <span>Go</span>
+                <input type="submit" disabled/>
+              </label>
+            </p>
           </form>
         </div>
         
         <div id="uploader--proxy-popup">
           <p>
-            Delphy encountered a network error while trying to retrieve the requested 
-            file. A common source of this error is when a server 
-            <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" target="_">
-            isn't set up to share files with other websites</a>, and perhaps 
-            <span class="uploader--remote-host">that website</span> is like that? 
-            You can try requesting the file via a proxy server we have 
-            set up, which will request the file via a tunnel on delphy.fathom.info.
+            Delphy encountered a network error while trying to retrieve this link. 
+            The link may be incorrect, or the server may not be set up to share 
+            files with other websites.
           </p>
           <p>
-            Please note that, although the remote file will pass through the delphy server, 
-            the server does not read the contents of the file. 
+            If the link is correct, contact the server administrator <span id="remote-url-server"></span>
+            to update their CORS settings. You can read more about that 
+            <a href="https://github.com/fathominfo/delphy-web/wiki/Server-Settings-for-Hosting-Datasets" target="_">here</a>.
           </p>
           <p>
-            Alternatively, you can <a class="uploader--remote-url" download target="_">download the file</a> to your local machine, and 
-            open it in delphy directly. 
-          </p>
-          <p>
-            Try requesting the file via delphy.fathom.info? 
+            In the meantime, you can download the file to your local machine, and 
+            open it in Delphy directly.
           </p>
           <div class="uploader--button-row">
-            <label> Yes, please
-              <button id="uploader--try-proxy"></button>
-            </label>
-            <label> No, thanks.
-              <button id="uploader--no-proxy"></button>
+            <label id="uploader--bad-url-msg-dismiss"> OK
+              <button></button>
             </label>
           </div>
           <!-- <label>
