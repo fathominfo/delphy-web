@@ -287,8 +287,6 @@ const loadNow = (url:string)=>{
           console.log(`we connected, but got status code ${response.status}, type '${response.type}'`);
           throw new Error(response.statusText || `response.type = '${response.type}'`);
         }
-        throw new Error(`'${url}' does not allow the delphy server to load it directly. Try downloading it and loading it locally. `);
-
         return response.blob();
       })
       .then(blob => {
