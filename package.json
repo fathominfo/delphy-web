@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "autocompleter": "^8.0.4",
-    "jspdf": "^2.5.1",
+    "jspdf": "^3.0.1",
     "jszip": "^3.10.1",
     "path": "^0.12.7",
     "vite-plugin-checker": "^0.6.0",
