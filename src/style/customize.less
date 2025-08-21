@@ -39,6 +39,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  z-index: 1;
 
   .tree-export {
     width: 95%;
@@ -488,4 +489,20 @@
 
 #customize--tree-topology, #customize--tree-presentation {
   display: none;
+}
+
+
+#beast-version {
+  display: none;
+  position: absolute;
+  right: 16px;
+  bottom: 0;
+  transform: translate(100%, 0);
+  padding: inherit;
+  border: inherit;
+  background-color: inherit;
+
+  &.active {
+    display: block;
+  }
 }

@@ -179,54 +179,83 @@ export class CustomizeUI extends MccUI {
     //   console.log("monphyletic percent by node:",conf);
     });
 
+
+    const getBeastVersion = ()=>{
+      const versionDiv = this.div.querySelector("#beast-version") as HTMLDivElement;
+      const buttons: HTMLButtonElement[] = [];
+      versionDiv.querySelectorAll(".export-button").forEach(maybeButton=>{
+        const button = maybeButton as HTMLButtonElement;
+        buttons.push(button);
+      });
+      return new Promise((resolve)=>{
+        const clickHandler = (event:MouseEvent)=>{
+          const button = event.target as HTMLButtonElement;
+          const version = button.getAttribute("value");
+          buttons.forEach(button=>button.removeEventListener("click", clickHandler));
+          versionDiv.classList.remove("active");
+          resolve(version);
+        };
+        buttons.forEach(button=>button.addEventListener("click", clickHandler));
+        versionDiv.classList.add("active");
+      });
+    };
+
+
+
     (this.div.querySelector("#export-beast-input") as HTMLButtonElement).addEventListener('click', ()=>{
-      if (this.pythia) {
-        const outBuffer = this.pythia.exportBeastInput();
-        const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
-          a = document.createElement("a"),
-          url = URL.createObjectURL(file),
-          title = `beast-input-${getTimestampString()}.xml`;
-        a.href = url;
-        a.download = title;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(()=>a.remove(), 10000);
-      }
+      getBeastVersion().then(version=>{
+        if (this.pythia) {
+          console.log(`exporting beast ${version} input`);
+          const outBuffer = this.pythia.exportBeastInput();
+          const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
+            a = document.createElement("a"),
+            url = URL.createObjectURL(file),
+            title = `beast-input-${getTimestampString()}.xml`;
+          a.href = url;
+          a.download = title;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(()=>a.remove(), 10000);
+        }
+      });
     });
 
     (this.div.querySelector("#export-beast-output") as HTMLButtonElement).addEventListener('click', ()=>{
-      if (this.pythia) {
-        const {log, trees} = this.pythia.getBeastOutputs(),
-          timestamp = getTimestampString();
+      getBeastVersion().then(version=>{
+        if (this.pythia) {
+          console.log(`exporting beast ${version} output`);
+          const {log, trees} = this.pythia.getBeastOutputs(),
+            timestamp = getTimestampString();
 
-        const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
-          titleLog = `beast.log`;
+          const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
+            titleLog = `beast.log`;
 
-        const fileTrees = new Blob([trees], {type: "application/text;charset=utf-8"}),
-          titleTrees = `beast.trees`;
+          const fileTrees = new Blob([trees], {type: "application/text;charset=utf-8"}),
+            titleTrees = `beast.trees`;
 
-        let zip: JSZip;
-        try {
-          // @ts-expect-error: JSZip doesn't import the same way after transpilation
-          zip = new JSZip.default(); // eslint-disable-line new-cap
-        } catch (err) {
-          zip = new JSZip();
+          let zip: JSZip;
+          try {
+            // @ts-expect-error: JSZip doesn't import the same way after transpilation
+            zip = new JSZip.default(); // eslint-disable-line new-cap
+          } catch (err) {
+            zip = new JSZip();
+          }
+          zip.file(titleLog, fileLog);
+          zip.file(titleTrees, fileTrees);
+
+          zip.generateAsync({type:"blob"}) // 1) generate the zip file
+            .then((blob)=>{
+              const a = document.createElement("a"),
+                url = URL.createObjectURL(blob),
+                title = `delphy-${timestamp}_beast.zip`;
+              a.href = url;
+              a.download = title;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(()=>a.remove(), 10000);
+            });
         }
-        zip.file(titleLog, fileLog);
-        zip.file(titleTrees, fileTrees);
-
-        zip.generateAsync({type:"blob"}) // 1) generate the zip file
-          .then((blob)=>{
-            const a = document.createElement("a"),
-              url = URL.createObjectURL(blob),
-              title = `delphy-${timestamp}_beast.zip`;
-            a.href = url;
-            a.download = title;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(()=>a.remove(), 10000);
-          });
-      }
+      });
     });
 
 
