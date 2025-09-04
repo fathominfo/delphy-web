@@ -22,6 +22,10 @@ LEGEND_KEY_TEMP.remove();
 
 const MAX_VALS_TO_SHOW = 10;
 
+const BEAST_VERSION_SELECTOR = document.querySelector("#beast-version") as HTMLDivElement;
+BEAST_VERSION_SELECTOR.remove();
+
+
 /* the linter doesn't recognize that NodeListOf is a built in */
 /* global NodeListOf */
 
@@ -180,30 +184,36 @@ export class CustomizeUI extends MccUI {
     });
 
 
-    const getBeastVersion = ()=>{
-      const versionDiv = this.div.querySelector("#beast-version") as HTMLDivElement;
+    const getBeastVersion = (origin: HTMLButtonElement)=>{
       const buttons: HTMLButtonElement[] = [];
-      versionDiv.querySelectorAll(".export-button").forEach(maybeButton=>{
+      BEAST_VERSION_SELECTOR.querySelectorAll(".export-button").forEach(maybeButton=>{
         const button = maybeButton as HTMLButtonElement;
         buttons.push(button);
       });
+      const offsetParent = origin.offsetParent as HTMLElement;
+      const wrapper = origin.parentElement as HTMLElement;
+      const wrapperHeight = offsetParent.offsetHeight;
+      const top = origin.offsetTop;
+      const left = origin.offsetLeft;
+      BEAST_VERSION_SELECTOR.style.bottom = `${wrapperHeight - top}px`;
+      BEAST_VERSION_SELECTOR.style.left = `${left}px`;
+      wrapper.appendChild(BEAST_VERSION_SELECTOR);
       return new Promise((resolve)=>{
         const clickHandler = (event:MouseEvent)=>{
           const button = event.target as HTMLButtonElement;
           const version = button.getAttribute("value");
           buttons.forEach(button=>button.removeEventListener("click", clickHandler));
-          versionDiv.classList.remove("active");
+          BEAST_VERSION_SELECTOR.remove();
           resolve(version);
         };
         buttons.forEach(button=>button.addEventListener("click", clickHandler));
-        versionDiv.classList.add("active");
       });
     };
 
 
-
-    (this.div.querySelector("#export-beast-input") as HTMLButtonElement).addEventListener('click', ()=>{
-      getBeastVersion().then(version=>{
+    const beastInput = this.div.querySelector("#export-beast-input") as HTMLButtonElement;
+    beastInput.addEventListener('click', ()=>{
+      getBeastVersion(beastInput).then(version=>{
         if (this.pythia) {
           console.log(`exporting beast ${version} input`);
           const outBuffer = this.pythia.exportBeastInput();
@@ -220,8 +230,9 @@ export class CustomizeUI extends MccUI {
       });
     });
 
-    (this.div.querySelector("#export-beast-output") as HTMLButtonElement).addEventListener('click', ()=>{
-      getBeastVersion().then(version=>{
+    const beastOutput = this.div.querySelector("#export-beast-output") as HTMLButtonElement;
+    beastOutput.addEventListener('click', ()=>{
+      getBeastVersion(beastOutput).then(version=>{
         if (this.pythia) {
           console.log(`exporting beast ${version} output`);
           const {log, trees} = this.pythia.getBeastOutputs(),
