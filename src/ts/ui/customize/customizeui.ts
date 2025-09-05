@@ -198,10 +198,10 @@ export class CustomizeUI extends MccUI {
       BEAST_VERSION_SELECTOR.style.bottom = `${wrapperHeight - top}px`;
       BEAST_VERSION_SELECTOR.style.left = `${left}px`;
       wrapper.appendChild(BEAST_VERSION_SELECTOR);
-      return new Promise((resolve)=>{
+      return new Promise((resolve:(version:string)=>void)=>{
         const clickHandler = (event:MouseEvent)=>{
           const button = event.target as HTMLButtonElement;
-          const version = button.getAttribute("value");
+          const version:string = button.getAttribute("value") || '';
           buttons.forEach(button=>button.removeEventListener("click", clickHandler));
           BEAST_VERSION_SELECTOR.remove();
           resolve(version);
@@ -213,10 +213,10 @@ export class CustomizeUI extends MccUI {
 
     const beastInput = this.div.querySelector("#export-beast-input") as HTMLButtonElement;
     beastInput.addEventListener('click', ()=>{
-      getBeastVersion(beastInput).then(version=>{
+      getBeastVersion(beastInput).then((version:string)=>{
         if (this.pythia) {
           console.log(`exporting beast ${version} input`);
-          const outBuffer = this.pythia.exportBeastInput();
+          const outBuffer = this.pythia.exportBeastInput(version);
           const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
             a = document.createElement("a"),
             url = URL.createObjectURL(file),

@@ -1221,11 +1221,12 @@ export class Pythia {
   }
 
   // BEAST INPUT
-  exportBeastInput(): ArrayBuffer {
+  exportBeastInput(version:string): ArrayBuffer {
     if (this.run) {
-      return this.run.exportBeastInput();
+      return this.run.exportBeastInput(version);
     } else {
-      return new Uint8Array(0);
+      // return new Uint8Array(0);
+      return new ArrayBuffer(0);
     }
   }
 }

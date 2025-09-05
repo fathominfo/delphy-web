@@ -1441,7 +1441,8 @@ export class Run {
     return new BeastyOutput(this.delphy, this.run);
   }
 
-  exportBeastInput(): ArrayBuffer {
+  exportBeastInput(version:string): ArrayBuffer {
+    console.log(`TODO: pass the beast version string ('${version}') to the export function`)
     return this.delphy.exportStringHelper(() =>
       Delphy.delphyCoreRaw.run_export_beast_input(this.delphy.ctx, this.run));
   }
