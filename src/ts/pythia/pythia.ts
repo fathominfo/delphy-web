@@ -594,6 +594,24 @@ export class Pythia {
         t += intervalDuration;
       }
       run.setPopModel(new SkygridPopModel(skyGridInterpolation, knots, gamma));
+
+      // For now, hard-code value of skygrid tau to something sensible
+      //
+      // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like a
+      // 1D random walk with diffusion constant D.  Hence, on average, a starting
+      // log-population changes after a time T by a root-mean-square deviation of `sqrt(2
+      // D T)`.  We parametrize D such that after T = 30 days, the rms deviation is
+      // log(2), i.e., population changes by up to a factor of ~2 in 30 days with 68%
+      // probability:
+      //
+      //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
+      //
+      const T = 30.0;  // days
+      const D = Math.pow(Math.log(2.0), 2) / (2 * T);
+
+      const skygrid_tau = 1.0 / (2 * D * intervalDuration);
+      run.setSkygridTau(skygrid_tau);
+
     } else {
       // ExpPopModel
       run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);

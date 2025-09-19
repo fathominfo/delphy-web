@@ -1,7 +1,7 @@
 import { toFullDateString } from "../../pythia/dates";
-import { numericSort, safeLabel } from "../common";
+import { numericSort, safeLabel, UNSET } from "../common";
 import { calcHPD } from "../distribution";
-import { TRACE_COLOR } from "./runcommon";
+import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
 import { TraceCanvas, log10, TICK_LENGTH } from "./tracecanvas";
 
 
@@ -16,6 +16,7 @@ export class GammaHistCanvas extends TraceCanvas {
   minSpan: HTMLSpanElement;
   maxSpan: HTMLSpanElement;
   isLogLinear = false;
+  sampleIndex: number;
 
   constructor(label:string) {
     super(label, '');
@@ -24,14 +25,16 @@ export class GammaHistCanvas extends TraceCanvas {
     this.readout.appendChild(this.minSpan);
     this.readout.appendChild(this.maxSpan);
     this.readout.classList.add('range');
+    this.sampleIndex = UNSET;
   }
 
-  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex:number):void {
+  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
 
     this.rangeData = data;
     this.dates = dates;
     this.isLogLinear = isLogLinear;
     this.setKneeIndex(data.length, kneeIndex);
+    this.sampleIndex = sampleIndex;
     const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     /* pivot the data to make arrays for every knot */
     const byKnots:number[][] = shown[0].map(()=>new Array(shown.length));
@@ -102,6 +105,24 @@ export class GammaHistCanvas extends TraceCanvas {
       }
       ctx.lineTo(TICK_LENGTH, firstY);
       ctx.fill();
+
+      // draw the population curve for the current sample
+      const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
+      if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
+        const sampleData = this.rangeData[drawnSampleIndex];
+        console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
+
+        ctx.beginPath();
+        ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
+        x = TICK_LENGTH;
+        ctx.moveTo(x, chartHeight-(sampleData[0]-displayMin) * verticalScale);
+        for (i = 1; i < kCount; i++) {
+          x = TICK_LENGTH + i * kWidth;
+          ctx.lineTo(x, chartHeight-(sampleData[i]-displayMin) * verticalScale);
+        }
+        ctx.stroke();
+      }
+
       // draw the mean
       ctx.beginPath();
       ctx.strokeStyle = TRACE_COLOR;
@@ -117,6 +138,7 @@ export class GammaHistCanvas extends TraceCanvas {
       ctx.stroke();
 
     } else {
+      // draw the 95% HPD area
       ctx.beginPath();
       ctx.moveTo(x, firstY);
       let y = firstY;
@@ -139,6 +161,25 @@ export class GammaHistCanvas extends TraceCanvas {
       ctx.lineTo(TICK_LENGTH, firstY);
       ctx.fill();
 
+      // draw the population curve for the current sample
+      const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
+      if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
+        const sampleData = this.rangeData[drawnSampleIndex];
+        console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
+
+        ctx.beginPath();
+        ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
+        x = TICK_LENGTH;
+        for (i = 1; i < kCount; i++) {
+          y = chartHeight-(sampleData[i]-displayMin) * verticalScale
+          ctx.moveTo(x, y);
+          x = TICK_LENGTH + i * kWidth;
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      // draw the mean
       ctx.beginPath();
       ctx.strokeStyle = TRACE_COLOR;
       const means = data.map(arr=>arr[2]);
