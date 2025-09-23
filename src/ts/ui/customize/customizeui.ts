@@ -2,6 +2,7 @@ import { YSpacing, Topology, ColorOption, Presentation,
   Y_EVEN_SPACING, Y_GENETIC_DISTANCE, TOPOLOGY_MCC, TOPOLOGY_BEST_OF,
   COLOR_CONF, COLOR_METADATA, PRESENTATION_ALL, PRESENTATION_UMBRELLA,
   CONFIDENCE_DEFAULT, ColorDict, UNDEF, getTimestampString, MetadataColorOption } from '../common';
+import {noop} from '../../constants';
 import {MccUI} from '../mccui';
 import {SharedState} from '../../sharedstate';
 import { Metadata, ColumnSummary } from '../metadata';
@@ -24,6 +25,12 @@ const MAX_VALS_TO_SHOW = 10;
 
 const BEAST_VERSION_SELECTOR = document.querySelector("#beast-version") as HTMLDialogElement;
 BEAST_VERSION_SELECTOR.close();
+
+BEAST_VERSION_SELECTOR.addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) {
+    BEAST_VERSION_SELECTOR.close();
+  }
+});
 
 
 /* the linter doesn't recognize that NodeListOf is a built in */
@@ -230,7 +237,7 @@ export class CustomizeUI extends MccUI {
             setTimeout(()=>a.remove(), 10000);
           }
         })
-        .catch(()=>{});
+        .catch(noop);
     });
 
     const beastOutput = this.div.querySelector("#export-beast-output") as HTMLButtonElement;
@@ -271,7 +278,7 @@ export class CustomizeUI extends MccUI {
               });
           }
         })
-        .catch(()=>{});
+        .catch(noop);
     });
 
 

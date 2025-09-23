@@ -175,3 +175,6 @@ export type CoreVersionInfo = {
   build: number,
   commit: string
 };
+
+export const noop = ()=>{};
+
