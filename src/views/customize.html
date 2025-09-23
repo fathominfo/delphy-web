@@ -22,12 +22,30 @@
           <button type="button" class="export-button" id="export-dphy">Delphy run</button>
         </div>
       </div>
-      <div id="beast-version" class="">
-        <h3>BEAST version</h3>
-        <button type="button" class="export-button" id="export-beast-2.6" value="2.6">BEAST2 2.6.2</button>
-        <button type="button" class="export-button" id="export-beast-2.7" value="2.7">BEAST2 2.7.8</button>
-        <button type="button" class="export-button" id="export-beast-x" value="x">BEAST X 10.5.0</button>
-      </div>
+      <dialog id="beast-version">
+        <form method="dialog">
+          <h3><span id="beast-version-action"></span> BEAST version</h3>
+          <div class="options">
+            <label type="button" class="export-button">
+              <input type="radio" id="export-beast-2.6" name="version" value="2.6">
+              <span>BEAST2 2.6.2</span>
+              </label>
+            <label type="button" class="export-button">
+              <input type="radio" id="export-beast-2.7" name="version" value="2.7">
+              <span>BEAST2 2.7.8</span>
+            </label>
+            <label type="button" class="export-button">
+              <input type="radio" id="export-beast-x" name="version" value="x" checked />
+              <span>BEAST X 10.5.0</span>
+            </label>
+          </div>
+          <div class="closers">
+            <button type="button" class="cancel-button">Cancel</button>
+            <button type="submit">OK</button>
+          </div>
+          <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
+        </form>
+      </dialog>
     </div>
   </section>
   <section id="customize--right">

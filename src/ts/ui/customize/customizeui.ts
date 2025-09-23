@@ -22,8 +22,8 @@ LEGEND_KEY_TEMP.remove();
 
 const MAX_VALS_TO_SHOW = 10;
 
-const BEAST_VERSION_SELECTOR = document.querySelector("#beast-version") as HTMLDivElement;
-BEAST_VERSION_SELECTOR.remove();
+const BEAST_VERSION_SELECTOR = document.querySelector("#beast-version") as HTMLDialogElement;
+BEAST_VERSION_SELECTOR.close();
 
 
 /* the linter doesn't recognize that NodeListOf is a built in */
@@ -184,89 +184,94 @@ export class CustomizeUI extends MccUI {
     });
 
 
-    const getBeastVersion = (origin: HTMLButtonElement)=>{
-      const buttons: HTMLButtonElement[] = [];
-      BEAST_VERSION_SELECTOR.querySelectorAll(".export-button").forEach(maybeButton=>{
-        const button = maybeButton as HTMLButtonElement;
-        buttons.push(button);
-      });
-      const offsetParent = origin.offsetParent as HTMLElement;
-      const wrapper = origin.parentElement as HTMLElement;
-      const wrapperHeight = offsetParent.offsetHeight;
-      const top = origin.offsetTop;
-      const left = origin.offsetLeft;
-      BEAST_VERSION_SELECTOR.style.bottom = `${wrapperHeight - top}px`;
-      BEAST_VERSION_SELECTOR.style.left = `${left}px`;
-      wrapper.appendChild(BEAST_VERSION_SELECTOR);
-      return new Promise((resolve:(version:string)=>void)=>{
-        const clickHandler = (event:MouseEvent)=>{
-          const button = event.target as HTMLButtonElement;
-          const version:string = button.getAttribute("value") || '';
-          buttons.forEach(button=>button.removeEventListener("click", clickHandler));
-          BEAST_VERSION_SELECTOR.remove();
-          resolve(version);
+    const getBeastVersion = (actionLabel: string)=>{
+      (BEAST_VERSION_SELECTOR.querySelector("#beast-version-action") as HTMLSpanElement).textContent = actionLabel;
+      BEAST_VERSION_SELECTOR.showModal();
+      const form = BEAST_VERSION_SELECTOR.querySelector("form") as HTMLFormElement;
+      const dismissButton = form.querySelector("button.close-button") as HTMLButtonElement;
+      const cancelButton = form.querySelector("button.cancel-button") as HTMLButtonElement;
+      return new Promise((resolve:(version:string)=>void, reject:()=>void)=>{
+        const submitHandler = ()=>{
+          form.removeEventListener("submit", submitHandler);
+          dismissButton.removeEventListener("click", dismissHandler);
+          cancelButton.removeEventListener("click", dismissHandler);
+          resolve(form.version.value);
         };
-        buttons.forEach(button=>button.addEventListener("click", clickHandler));
+        const dismissHandler = ()=>{
+          form.removeEventListener("submit", submitHandler);
+          dismissButton.removeEventListener("click", dismissHandler);
+          cancelButton.removeEventListener("click", dismissHandler);
+          BEAST_VERSION_SELECTOR.close();
+          reject();
+        };
+        form.addEventListener("submit", submitHandler);
+        dismissButton.addEventListener("click", dismissHandler);
+        cancelButton.addEventListener("click", dismissHandler);
+
       });
     };
 
 
     const beastInput = this.div.querySelector("#export-beast-input") as HTMLButtonElement;
     beastInput.addEventListener('click', ()=>{
-      getBeastVersion(beastInput).then((version:string)=>{
-        if (this.pythia) {
-          console.log(`exporting beast ${version} input`);
-          const outBuffer = this.pythia.exportBeastInput(version);
-          const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
-            a = document.createElement("a"),
-            url = URL.createObjectURL(file),
-            title = `beast-input-${getTimestampString()}.xml`;
-          a.href = url;
-          a.download = title;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(()=>a.remove(), 10000);
-        }
-      });
+      getBeastVersion("Input")
+        .then((version:string)=>{
+          if (this.pythia) {
+            console.log(`exporting beast ${version} input`);
+            const outBuffer = this.pythia.exportBeastInput(version);
+            const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
+              a = document.createElement("a"),
+              url = URL.createObjectURL(file),
+              title = `beast-input-${getTimestampString()}.xml`;
+            a.href = url;
+            a.download = title;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(()=>a.remove(), 10000);
+          }
+        })
+        .catch(()=>{});
     });
 
     const beastOutput = this.div.querySelector("#export-beast-output") as HTMLButtonElement;
     beastOutput.addEventListener('click', ()=>{
-      getBeastVersion(beastOutput).then(version=>{
-        if (this.pythia) {
-          console.log(`exporting beast ${version} output`);
-          const {log, trees} = this.pythia.getBeastOutputs(),
-            timestamp = getTimestampString();
+      getBeastVersion("Output")
+        .then(version=>{
+          if (this.pythia) {
+            console.log(`exporting beast ${version} output`);
+            const {log, trees} = this.pythia.getBeastOutputs(),
+              timestamp = getTimestampString();
 
-          const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
-            titleLog = `beast.log`;
+            const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
+              titleLog = `beast.log`;
 
-          const fileTrees = new Blob([trees], {type: "application/text;charset=utf-8"}),
-            titleTrees = `beast.trees`;
+            const fileTrees = new Blob([trees], {type: "application/text;charset=utf-8"}),
+              titleTrees = `beast.trees`;
 
-          let zip: JSZip;
-          try {
+            let zip: JSZip;
+            try {
             // @ts-expect-error: JSZip doesn't import the same way after transpilation
-            zip = new JSZip.default(); // eslint-disable-line new-cap
-          } catch (err) {
-            zip = new JSZip();
-          }
-          zip.file(titleLog, fileLog);
-          zip.file(titleTrees, fileTrees);
+              zip = new JSZip.default(); // eslint-disable-line new-cap
+            } catch (err) {
+              zip = new JSZip();
+            }
+            zip.file(titleLog, fileLog);
+            zip.file(titleTrees, fileTrees);
 
-          zip.generateAsync({type:"blob"}) // 1) generate the zip file
-            .then((blob)=>{
-              const a = document.createElement("a"),
-                url = URL.createObjectURL(blob),
-                title = `delphy-${timestamp}_beast.zip`;
-              a.href = url;
-              a.download = title;
-              document.body.appendChild(a);
-              a.click();
-              setTimeout(()=>a.remove(), 10000);
-            });
-        }
-      });
+            zip.generateAsync({type:"blob"}) // 1) generate the zip file
+              .then((blob)=>{
+                const a = document.createElement("a"),
+                  url = URL.createObjectURL(blob),
+                  title = `delphy-${timestamp}_beast.zip`;
+                a.href = url;
+                a.download = title;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(()=>a.remove(), 10000);
+              });
+          }
+        })
+        .catch(()=>{});
     });
 
 
