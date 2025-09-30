@@ -12,6 +12,7 @@ import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
+import { randomGaussian } from '../util/randomsamplers';
 
 type returnless = ()=>void;
 
@@ -581,36 +582,84 @@ export class Pythia {
 
     if (runParams.popModelIsSkygrid) {
       // SkygridPopModel
-      const intervalDuration = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
-      const knotCount = runParams.skygridNumIntervals + 1;
-      const skygridGamma = runParams.skygridGamma;
+      const dt = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
+      const M = runParams.skygridNumIntervals + 1;
+      //const skygridGamma = runParams.skygridGamma;  // TODO: runParams.skygridGamma is redundant, remove from UI and elsewhere
       const skyGridInterpolation = runParams.skygridIsLogLinear ? SkygridPopModelType.LogLinear : SkygridPopModelType.Staircase;
-      const knots: number[] = [];
-      const gamma: number[] = [];
-      let t = runParams.skygridStartDate;
-      for (let i = 0; i < knotCount; i++) {
-        knots.push(t);
-        gamma.push(skygridGamma);
-        t += intervalDuration;
+
+      const x_k: number[] = [];
+      for (let k = 0; k <= M; ++k) {
+        x_k.push(runParams.skygridStartDate + k * dt);
       }
-      run.setPopModel(new SkygridPopModel(skyGridInterpolation, knots, gamma));
 
-      // For now, hard-code value of skygrid tau to something sensible
-      //
-      // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like a
-      // 1D random walk with diffusion constant D.  Hence, on average, a starting
-      // log-population changes after a time T by a root-mean-square deviation of `sqrt(2
-      // D T)`.  We parametrize D such that after T = 30 days, the rms deviation is
-      // log(2), i.e., population changes by up to a factor of ~2 in 30 days with 68%
-      // probability:
-      //
-      //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
-      //
-      const T = 30.0;  // days
-      const D = Math.pow(Math.log(2.0), 2) / (2 * T);
+      let skygrid_tau = 0.0;
+      const infer_tau = false;  // TODO: Configure via UI
+      if (infer_tau) {
+        // Infer a priori smoothness of log-population curve
+        const prior_alpha = 0.001;  // TODO: Configure via UI (should be > 0)
+        const prior_beta = 0.001;   // TODO: Configure via UI (should be > 0)
 
-      const skygrid_tau = 1.0 / (2 * D * intervalDuration);
+        run.setSkygridTauPriorAlpha(prior_alpha);
+        run.setSkygridTauPriorBeta(prior_beta);
+
+        skygrid_tau = prior_alpha / prior_beta;
+
+      } else {
+        const setSkygridTauDirectly = false; // TODO: Configure via UI
+        if (setSkygridTauDirectly) {
+          skygrid_tau = 0.001;  // unitless - TODO: Configure via UI (should be > 0)
+
+        } else {
+          const double_half_time = 30.0;  // days - TODO: Configure via UI (should be > 0)
+
+          // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
+          // a 1D random walk with diffusion constant D.  Hence, on average, a starting
+          // log-population changes after a time T by a root-mean-square deviation of
+          // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
+          // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
+          // the "double-half time" with 68% probability:
+          //
+          //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
+          //
+          const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
+          skygrid_tau = 1.0 / (2 * D * dt);
+        }
+      }
+
+      // At this point, skygrid_tau is set.  Sample a random trajectory with this
+      // precision, then reset its mean to "3 years" (the `skygrid_gammas_zero_mode_gibbs_move`
+      // Gibbs sample the mean value of gamma, so we don't need to get this right at all here)
+      const gamma_k: number[] = [];
+      gamma_k.push(0.0);
+      for (let k = 1; k <= M; ++k) {
+        gamma_k.push(gamma_k[k-1] + randomGaussian(0.0, Math.sqrt(1.0/skygrid_tau)));
+      }
+
+      const mean_gamma_k = gamma_k.reduce((a, b) => a + b, 0.0) / gamma_k.length;
+      for (let k = 0; k <= M; ++k) {
+        gamma_k[k] += (-mean_gamma_k) + Math.log(3.0 * 365.0);
+      }
+
+      // Configure run
+      run.setPopModel(new SkygridPopModel(skyGridInterpolation, x_k, gamma_k));
       run.setSkygridTau(skygrid_tau);
+      run.setSkygridTauMoveEnabled(infer_tau);  // Prior configured above when infer_tau == true
+
+      // Low-pop barrier
+      const lowPopBarrierDisabled = false;  // TODO: Configure via UI
+      if (lowPopBarrierDisabled) {
+        run.setSkygridLowGammaBarrierEnabled(false);
+      } else {
+        const low_pop_barrier_loc = 1.0;  // days - TODO: Configure via UI (should be > 0)
+        const low_gamma_barrier_loc = Math.log(low_pop_barrier_loc);
+
+        const low_pop_barrier_scale = 0.30;  // fraction (0,1) - TODO: Configure via UI
+        const low_gamma_barrier_scale = -Math.log(1 - low_pop_barrier_scale);  // Convert to scale in gamma
+
+        run.setSkygridLowGammaBarrierEnabled(true);
+        run.setSkygridLowGammaBarrierLoc(low_gamma_barrier_loc);
+        run.setSkygridLowGammaBarrierScale(low_gamma_barrier_scale);
+      }
 
     } else {
       // ExpPopModel
@@ -644,8 +693,33 @@ export class Pythia {
       result.popModelIsSkygrid = true;
       result.skygridStartDate = popModel.x[0];
       result.skygridNumIntervals = popModel.x.length - 1;
-      result.skygridGamma = popModel.gamma[0];
+      //result.skygridGamma = popModel.gamma[0];  TODO: REMOVE THIS
       result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
+
+      // TODO: Add the below; I'm unsure of whether RunParamConfig should store
+      // both skygridTau and skygridDoubleHalfTime, so I've written the relations
+      // between both.  We can pick one of these and use it throughout.
+      //
+      // result.skygridInferTau = run.isSkygridTauMoveEnabled();
+      //
+      // // Applicable when skygridInferTau == true
+      // result.skygridTauPriorAlpha = run.getSkygridTauPriorAlpha();
+      // result.skygridTauPriorBeta = run.getSkygridTauPriorBeta();
+      //
+      // // Applicable when skygridInferTau == false
+      // // See setParams for a longer explanation of the below
+      // const dt = popModel.x[1] - popModel.x[0];
+      // const D = 1.0 / (2 * run.skygridTau() * dt);
+      // result.skygridSetTauExplicitly = ???;
+      // result.skygridDoubleHalfTime = Math.pow(Math.log(2.0), 2) / (2 * D);
+      // const D = Math.pow(Math.log(2.0), 2) / (2 * result.skygridDoubleHalfTime);
+      // result.skygridTau = 1.0 / (2 * D * dt);
+      //
+      // result.skygridLowPopBarrierDisabled = !run.isSkygridLowGammaBarrierEnabled();
+      //
+      // // Applicable when skygridLowPopBarrierDisabled == false
+      // result.skygridLowPopBarrierLoc = Math.exp(run.getSkygridLowGammaBarrierLoc());
+      // result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
 
     } else {
       throw new Error("don't know what to do here");

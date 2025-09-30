@@ -625,6 +625,14 @@ export class Delphy {
     run_set_hky_pi_T: (ctx: DelphyContextPtr, run: RunPtr, hky_pi_T: number) => void,
     run_get_skygrid_tau: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_skygrid_tau: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau: number) => void,
+    run_get_skygrid_tau_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_tau_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau_prior_alpha: number) => void,
+    run_get_skygrid_tau_prior_beta: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_tau_prior_beta: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau_prior_beta: number) => void,
+    run_get_skygrid_low_gamma_barrier_loc: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_low_gamma_barrier_loc: (ctx: DelphyContextPtr, run: RunPtr, skygrid_low_gamma_barrier_loc: number) => void,
+    run_get_skygrid_low_gamma_barrier_scale: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_low_gamma_barrier_scale: (ctx: DelphyContextPtr, run: RunPtr, skygrid_low_gamma_barrier_scale: number) => void,
     run_get_pop_model: (ctx: DelphyContextPtr, run: RunPtr) => PopModelPtr,
     run_set_pop_model: (ctx: DelphyContextPtr, run: RunPtr, popModel: PopModelPtr) => void,
     run_get_log_G: (ctx: DelphyContextPtr, run: RunPtr) => number,
@@ -653,6 +661,10 @@ export class Delphy {
     run_set_final_pop_size_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
     run_is_pop_growth_rate_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
     run_set_pop_growth_rate_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_skygrid_tau_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_skygrid_tau_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_skygrid_low_gamma_barrier_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_skygrid_low_gamma_barrier_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
     run_get_params_to_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, fb: FbHolderPtr) => void,
     run_set_params_from_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, paramsFb: CharPtr) => void,
     run_export_beast_input: (ctx: DelphyContextPtr, run: RunPtr) => StringPtr,
@@ -857,6 +869,14 @@ export class Delphy {
       run_set_hky_pi_T: Module['_delphy_run_set_hky_pi_T'],
       run_get_skygrid_tau: Module['_delphy_run_get_skygrid_tau'],
       run_set_skygrid_tau: Module['_delphy_run_set_skygrid_tau'],
+      run_get_skygrid_tau_prior_alpha: Module['_delphy_run_get_skygrid_tau_prior_alpha'],
+      run_set_skygrid_tau_prior_alpha: Module['_delphy_run_set_skygrid_tau_prior_alpha'],
+      run_get_skygrid_tau_prior_beta: Module['_delphy_run_get_skygrid_tau_prior_beta'],
+      run_set_skygrid_tau_prior_beta: Module['_delphy_run_set_skygrid_tau_prior_beta'],
+      run_get_skygrid_low_gamma_barrier_loc: Module['_delphy_run_get_skygrid_low_gamma_barrier_loc'],
+      run_set_skygrid_low_gamma_barrier_loc: Module['_delphy_run_set_skygrid_low_gamma_barrier_loc'],
+      run_get_skygrid_low_gamma_barrier_scale: Module['_delphy_run_get_skygrid_low_gamma_barrier_scale'],
+      run_set_skygrid_low_gamma_barrier_scale: Module['_delphy_run_set_skygrid_low_gamma_barrier_scale'],
       run_get_pop_model: Module['_delphy_run_get_pop_model'],
       run_set_pop_model: Module['_delphy_run_set_pop_model'],
       run_get_log_G: Module['_delphy_run_get_log_G'],
@@ -885,6 +905,10 @@ export class Delphy {
       run_set_final_pop_size_move_enabled: Module['_delphy_run_set_final_pop_size_move_enabled'],
       run_is_pop_growth_rate_move_enabled: Module['_delphy_run_is_pop_growth_rate_move_enabled'],
       run_set_pop_growth_rate_move_enabled: Module['_delphy_run_set_pop_growth_rate_move_enabled'],
+      run_is_skygrid_tau_move_enabled: Module['_delphy_run_is_skygrid_tau_move_enabled'],
+      run_set_skygrid_tau_move_enabled: Module['_delphy_run_set_skygrid_tau_move_enabled'],
+      run_is_skygrid_low_gamma_barrier_enabled: Module['_delphy_run_is_skygrid_low_gamma_barrier_enabled'],
+      run_set_skygrid_low_gamma_barrier_enabled: Module['_delphy_run_set_skygrid_low_gamma_barrier_enabled'],
       run_get_params_to_flatbuffer: Module['_delphy_run_get_params_to_flatbuffer'],
       run_set_params_from_flatbuffer: Module['_delphy_run_set_params_from_flatbuffer'],
       run_export_beast_input: Module['_delphy_run_export_beast_input'],
@@ -1450,6 +1474,38 @@ export class Run {
     Delphy.delphyCoreRaw.run_set_skygrid_tau(this.delphy.ctx, this.run, skygrid_tau);
   }
 
+  getSkygridTauPriorAlpha(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_tau_prior_alpha(this.delphy.ctx, this.run);
+  }
+
+  setSkygridTauPriorAlpha(skygrid_tau_prior_alpha: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau_prior_alpha(this.delphy.ctx, this.run, skygrid_tau_prior_alpha);
+  }
+
+  getSkygridTauPriorBeta(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_tau_prior_beta(this.delphy.ctx, this.run);
+  }
+
+  setSkygridTauPriorBeta(skygrid_tau_prior_beta: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau_prior_beta(this.delphy.ctx, this.run, skygrid_tau_prior_beta);
+  }
+
+  getSkygridLowGammaBarrierLoc(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_low_gamma_barrier_loc(this.delphy.ctx, this.run);
+  }
+
+  setSkygridLowGammaBarrierLoc(skygrid_low_gamma_barrier_loc: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_loc(this.delphy.ctx, this.run, skygrid_low_gamma_barrier_loc);
+  }
+
+  getSkygridLowGammaBarrierScale(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_low_gamma_barrier_scale(this.delphy.ctx, this.run);
+  }
+
+  setSkygridLowGammaBarrierScale(skygrid_low_gamma_barrier_scale: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_scale(this.delphy.ctx, this.run, skygrid_low_gamma_barrier_scale);
+  }
+
   getPopModel(): PopModel {
     // rawPopModel is a view into the actual object owned by the Delphy core, not a copy
     const rawPopModel = Delphy.delphyCoreRaw.run_get_pop_model(this.delphy.ctx, this.run);
@@ -1564,6 +1620,22 @@ export class Run {
 
   setPopGrowthRateMoveEnabled(enabled: boolean): void {
     Delphy.delphyCoreRaw.run_set_pop_growth_rate_move_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
+  isSkygridTauMoveEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_skygrid_tau_move_enabled(this.delphy.ctx, this.run);
+  }
+
+  setSkygridTauMoveEnabled(enabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau_move_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
+  isSkygridLowGammaBarrierEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_skygrid_low_gamma_barrier_enabled(this.delphy.ctx, this.run);
+  }
+
+  setSkygridLowGammaBarrierEnabled(enabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_enabled(this.delphy.ctx, this.run, enabled);
   }
 
   getParamsToFlatbuffer(): ArrayBuffer {
