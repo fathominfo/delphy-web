@@ -152,70 +152,70 @@
   }
 }
 
-#uploader--demo-form {
-  .uploader--demo-option {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
+#uploader--demo-form .uploader--demo-option,  
+#uploader--url-form-submit
+{
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 
-    a {
-      font-size: 15px;
-      line-height: 18px;
-      text-decoration: none;
+  a {
+    font-size: 15px;
+    line-height: 18px;
+    text-decoration: none;
 
-      .box {
-        display: inline-block;
-        width: 2em;
-        height: 2em;
-        vertical-align: middle;
-      }
-
-      .glyph {
-        .masked(url("/assets/icons/exporter.svg"));
-        background-color: currentColor;
-      }
-
-      &:hover {
-        color: @del;
-      }
+    .box {
+      display: inline-block;
+      width: 2em;
+      height: 2em;
+      vertical-align: middle;
     }
 
-    label {
-      background-color: fade(@del, 10%);
-      color: lighten(@del, 10%);
-      border: 1px solid fade(@del, 10%);
-      padding: 3px 8px;
-      display: inline-block;
-      position: relative;
-      cursor: pointer;
-      border-radius: 5px;
-      margin: 5px;
-      font-size: 15px;
-      transition: all 0.15s;
-      
+    .glyph {
+      .masked(url("/assets/icons/exporter.svg"));
+      background-color: currentColor;
+    }
 
-      &:hover {
-        border-color: @del;
-      }
-
-      input {
-        opacity: 0;
-        width: 0;
-        position: absolute;
-      }
-      
-      &:has(input:checked) {
-        background-color: fade(@del, 30%);
-        color: white; 
-        border-color: @del;
-      }
-
-      &:has(input:focus-visible) {
-        outline: auto;
-      }
-    }  
+    &:hover {
+      color: @del;
+    }
   }
+
+  label {
+    background-color: fade(@del, 10%);
+    color: lighten(@del, 10%);
+    border: 1px solid fade(@del, 10%);
+    padding: 3px 8px;
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 5px;
+    font-size: 15px;
+    transition: all 0.15s;
+    
+
+    &:hover {
+      border-color: @del;
+    }
+
+    input {
+      opacity: 0;
+      width: 0;
+      position: absolute;
+    }
+    
+    &:has(input:checked) {
+      background-color: fade(@del, 30%);
+      color: white; 
+      border-color: @del;
+    }
+
+    &:has(input:focus-visible) {
+      outline: auto;
+    }
+  }  
 }
 
 #uploader--src-download {
@@ -457,6 +457,15 @@
   font-size: 15px;
 }
 
+#uploader--url-form-submit {
+  label {
+    margin: auto auto;
+    &:has(input:disabled) {
+      pointer-events: none;
+      opacity: 0.25;
+    }
+  }
+}
 
 // to control collapsing on the load screen
 #uploader--demo, 
@@ -470,7 +479,6 @@
   }
 
 }
-
 
 
 #uploader--proxy-popup {

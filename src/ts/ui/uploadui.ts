@@ -7,8 +7,6 @@ import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 
 const DEMO_FILES = './demofiles.json'
-const PROXY_PATH = 'https://delphy.fathom.info/proxy/';
-
 
 type DemoOption = {filename:string, pathogen:string};
 
@@ -238,7 +236,11 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   }
   const urlInput = uploadDiv.querySelector("#uploader--url-input") as HTMLInputElement;
   const urlForm = uploadDiv.querySelector("#uploader--url-form") as HTMLFormElement;
-  urlInput.addEventListener("change", ()=>loadNow(urlInput.value));
+  const urlFormSubmit = urlForm.querySelector("input[type='submit']") as HTMLInputElement;
+  urlInput.addEventListener("input", ()=>{
+    console.log(`input '${urlInput.value}'`)
+    urlFormSubmit.disabled = urlInput.value.length === 0;
+  });
   urlForm.addEventListener("submit", (event:SubmitEvent)=>{
     event.preventDefault();
     loadNow(urlInput.value);
@@ -261,28 +263,29 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
 
 
-const loadNow = (url:string, byProxy=false)=>{
+const loadNow = (url:string)=>{
   setStage(STAGES.loading);
   hideOthers(urlDiv);
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
-  const options:RequestInit = byProxy ? {} : {mode: 'no-cors'};
-  let urlOk = !byProxy;
-  if (byProxy && !url.startsWith(PROXY_PATH)) {
-    if (url.startsWith("https://")) {
-      url = `${ PROXY_PATH }${ url.substring(8)}`;
-      urlOk = true;
-    }
-  }
-  if (!urlOk) {
-    console.warn(`bad url for proxying, needs to start with https ${url}`)
-  } else {
+  const options:RequestInit = {
+    mode: "cors",
+    referrerPolicy : "unsafe-url"
+  };
+  {
     console.log(`fetching from ${url}`);
     fetch(url, options)
       .then(response => {
         if (!response.ok) {
-          console.log(`we connected, but got status code ${response.status}`);
-          throw new Error(response.statusText);
+          if (response.type === 'opaque') {
+            /*
+            we can see this error when trying to load by url,
+            but the remote headers don't allow cross origin access
+            */
+            throw new Error(`'${url}' does not allow the delphy server to load it directly. Try downloading it and loading it locally. `);
+          }
+          console.log(`we connected, but got status code ${response.status}, type '${response.type}'`);
+          throw new Error(response.statusText || `response.type = '${response.type}'`);
         }
         return response.blob();
       })
@@ -297,37 +300,27 @@ const loadNow = (url:string, byProxy=false)=>{
       })
       .catch((err:TypeError)=>{
         console.log(err);
-        if (!byProxy && !url.startsWith(PROXY_PATH)) {
-          // console.log("gonna retry by proxy");
-          // loadNow(url, true);
-          showProxyOption(url);
-        }
+        // console.log("gonna retry by proxy");
+        // loadNow(url, true);
+        showURLFailureMessage(url);
+
       });
   }
 };
 
-const showProxyOption = (url:string)=>{
+const showURLFailureMessage = (url:string)=>{
   const urlDict = new URL(url);
   uploadDiv.classList.remove('loading');
   const popup = document.querySelector("#uploader--proxy-popup") as HTMLDivElement;
-  const fileLink = popup.querySelector(".uploader--remote-url") as HTMLAnchorElement;
-  const serverSpan = popup.querySelector(".uploader--remote-host") as HTMLSpanElement;
-  const yesProxyButton = popup.querySelector("#uploader--try-proxy") as HTMLButtonElement;
-  const noProxyButton = popup.querySelector("#uploader--no-proxy") as HTMLButtonElement;
-  const yesHandler = ()=>{
-    dismiss();
-    loadNow(url, true);
-  }
+  const dismissButton = popup.querySelector("#uploader--bad-url-msg-dismiss") as HTMLButtonElement;
+  const serverSpan = popup.querySelector("#remote-url-server") as HTMLSpanElement;
   const dismiss = ()=>{
     uploadDiv.classList.remove('direct-loading');
-    yesProxyButton.removeEventListener("click", yesHandler);
-    noProxyButton.removeEventListener("click", dismiss);
+    dismissButton.removeEventListener("click", dismiss);
     popup.classList.remove("active");
   }
-  fileLink.href = url;
-  serverSpan.textContent = urlDict.hostname;
-  yesProxyButton.addEventListener("click", yesHandler);
-  noProxyButton.addEventListener("click", dismiss);
+  serverSpan.textContent = `of ${urlDict.hostname}`;
+  dismissButton.addEventListener("click", dismiss);
   popup.classList.add("active");
 }
 
