@@ -104,7 +104,7 @@
       </div>
       <div id="burn-in-wrapper" class="pre">
         <input type="checkbox" id="burn-in-toggle" disabled />
-        <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>  
+        <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
       </div>
       <div id="runner--panel--blocks" class="blocks">
         <div class="block">
@@ -187,13 +187,14 @@
                   <input type="number" id="overall-pop-growth-rate-input" value="0.00" step="0.01" name="overallPopGrowthRate" autocomplete="off" />
                   <p> e-foldings / year</p>
                 </div>
-              </label>  
+              </label>
             </div>
             <fieldset id="popmodel-skygrid" class="population-model-option hidden">
               <p class="disclaimer">Experimental, read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
               <div class="input-container">
                 <label id="" class="">
-                  <p>Model start date: <input type="date" id="popmodel-skygrid-k" value="2014-01-01" name="skygrid-K"/></p>
+                  <p>Model start date: <input type="date" id="popmodel-skygrid-k" value="2014-01-01"
+                    name="skygrid-K" placeholder="YYYY-MM-DD"/></p>
                 </label>
               </div>
               <div class="input-container">
@@ -201,18 +202,18 @@
                   <p>Split into <input type="number" id="popmodel-skygrid-m" value="100" name="skygrid-M"/> intervals</p>
                 </label>
               </div>
-              <div class="input-container">
+              <!-- <div class="input-container">
                 <label id="" class="">
                   <p>Initial gamma: <input type="number" id="popmodel-skygrid-gamma" value="6.0" step="any" name="skygrid-gamma"/></p>
                 </label>
-              </div>
+              </div> -->
               <div class="input-container">
-                <p>Interval interpolation: 
+                <p>Interval interpolation:
                   <label>Flat<input  id="popmodel-skygrid-interpolate-flat" type="radio" name="m-interpolation" value="flat"></label>
                   <label>Log-linear<input id="popmodel-skygrid-interpolate-loglinear" type="radio" name="m-interpolation" value="loglin" checked></label>
                 </p>
               </div>
-            </fieldset>    
+            </fieldset>
           </fieldset>
         </div>
         <div class="runner--advanced--section">

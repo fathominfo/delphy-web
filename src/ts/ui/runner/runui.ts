@@ -102,7 +102,7 @@ export class RunUI extends UIScreen {
   popModelExpDetail: HTMLDivElement;
   skygridStartDateInput: HTMLInputElement;
   skygridIntervalCountInput: HTMLInputElement;
-  skygridGammaInput: HTMLInputElement;
+  // skygridGammaInput: HTMLInputElement;
   skygridFlatInterpolationInput: HTMLInputElement;
   skygridLogLinearInterpolationInput: HTMLInputElement;
   fixedFinalPopSizeToggle: HTMLInputElement;
@@ -213,7 +213,7 @@ export class RunUI extends UIScreen {
     this.popModelSkygridDetail = this.div.querySelector("#popmodel-skygrid") as HTMLFieldSetElement;
     this.skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
     this.skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
-    this.skygridGammaInput = this.div.querySelector("#popmodel-skygrid-gamma") as HTMLInputElement;
+    // this.skygridGammaInput = this.div.querySelector("#popmodel-skygrid-gamma") as HTMLInputElement;
     this.skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
     this.skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
 
@@ -379,7 +379,7 @@ export class RunUI extends UIScreen {
     this.skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
     this.skygridStartDateInput.value = toDateString(params.skygridStartDate);
     this.skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
-    this.skygridGammaInput.value = `${params.skygridGamma}`;
+    // this.skygridGammaInput.value = `${params.skygridGamma}`;
 
     // set field values
     const muFixed = (params.mutationRate * MU_FACTOR).toFixed(2);
@@ -786,7 +786,7 @@ export class RunUI extends UIScreen {
     const runParams = this.getRunParams();
     if (this.siteHeterogeneityToggle.checked !== runParams.siteRateHeterogeneityEnabled) return true;
     if (parseInt(this.skygridIntervalCountInput.value) !== runParams.skygridNumIntervals) return true;
-    if (parseFloat(this.skygridGammaInput.value) !== runParams.skygridGamma) return true;
+    // if (parseFloat(this.skygridGammaInput.value) !== runParams.skygridGamma) return true;
     if (parse_iso_date(this.skygridStartDateInput.value) !==runParams.skygridStartDate) return true;
     if (this.skygridLogLinearInterpolationInput.checked !== runParams.skygridIsLogLinear) return true;
     if (this.fixedRateToggle.checked !== runParams.mutationRateIsFixed) return true;
