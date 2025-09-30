@@ -1,6 +1,7 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
-  SequenceWarningCode} from './delphy_api';
+  SequenceWarningCode, PopModel, ExpPopModel, SkygridPopModel,
+  SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
@@ -11,6 +12,7 @@ import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
+import { randomGaussian } from '../util/randomsamplers';
 
 type returnless = ()=>void;
 
@@ -53,10 +55,17 @@ export type RunParamConfig = {
   apobecEnabled: boolean,
   siteRateHeterogeneityEnabled: boolean,
   mutationRateIsFixed: boolean,
+  popModelIsSkygrid: boolean,
+  // exponential population model params
   finalPopSizeIsFixed: boolean,
   finalPopSize: number,
   popGrowthRateIsFixed: boolean,
-  popGrowthRate: number
+  popGrowthRate: number,
+  // skygrid population model params
+  skygridStartDate: number,
+  skygridNumIntervals: number,
+  skygridGamma: number,
+  skygridIsLogLinear: boolean,
 };
 
 function calcMaxDateOfTree(tree: PhyloTree): number {
@@ -73,7 +82,10 @@ function calcMaxDateOfTree(tree: PhyloTree): number {
 function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
   const count = tree.getSize(),
     tipCount = (count + 1) / 2,
-    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
+    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10))),
+    rootDate = tree.getTimeOf(tree.getRootIndex()) || 0,
+    maxDate = calcMaxDateOfTree(tree),
+    dateRange = maxDate - rootDate;
 
   return {
     stepsPerSample: targetStepSize,
@@ -82,11 +94,19 @@ function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     siteRateHeterogeneityEnabled: false,
     mutationRateIsFixed: false,
 
+    popModelIsSkygrid: false,
+
     // Defaults for exponential pop model
     finalPopSizeIsFixed: false,
     finalPopSize: 1000.0, // days
     popGrowthRateIsFixed: false,
     popGrowthRate: 0.0,  // e-foldings / year
+
+    // Defaults for Skygrid pop model
+    skygridStartDate: maxDate - 2 * dateRange,
+    skygridNumIntervals: Math.round(tipCount / 15),
+    skygridGamma: Math.log(1000),
+    skygridIsLogLinear: true
   };
 }
 
@@ -109,9 +129,7 @@ export class Pythia {
   logPosteriorHist : number[] = [];
   logGHist : number[] = [];
   numMutationsHist : number[] = [];
-  popT0Hist: number[] = [];
-  popN0Hist: number[] = [];
-  popGHist: number[] = [];
+  popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
   paramsHist: ArrayBuffer[] = [];
@@ -480,9 +498,7 @@ export class Pythia {
     this.logPosteriorHist = [];
     this.logGHist = [];
     this.numMutationsHist = [];
-    this.popT0Hist = [];
-    this.popN0Hist = [];
-    this.popGHist = [];
+    this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
     this.paramsHist = [];
@@ -505,9 +521,7 @@ export class Pythia {
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
       this.numMutationsHist.push(this.run.getNumMutations());
-      this.popT0Hist.push(this.run.getPopT0());
-      this.popN0Hist.push(this.run.getPopN0());
-      this.popGHist.push(this.run.getPopG());
+      this.popModelHist.push(this.run.getPopModel());
       this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);
@@ -566,13 +580,95 @@ export class Pythia {
       run.setMu(runParams.mutationRate);
     }
 
-    run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
-    if (runParams.finalPopSizeIsFixed) {
-      run.setPopN0(runParams.finalPopSize);
-    }
-    run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
-    if (runParams.popGrowthRateIsFixed) {
-      run.setPopG(runParams.popGrowthRate);
+    if (runParams.popModelIsSkygrid) {
+      // SkygridPopModel
+      const dt = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
+      const M = runParams.skygridNumIntervals + 1;
+      //const skygridGamma = runParams.skygridGamma;  // TODO: runParams.skygridGamma is redundant, remove from UI and elsewhere
+      const skyGridInterpolation = runParams.skygridIsLogLinear ? SkygridPopModelType.LogLinear : SkygridPopModelType.Staircase;
+
+      const x_k: number[] = [];
+      for (let k = 0; k <= M; ++k) {
+        x_k.push(runParams.skygridStartDate + k * dt);
+      }
+
+      let skygrid_tau = 0.0;
+      const infer_tau = false;  // TODO: Configure via UI
+      if (infer_tau) {
+        // Infer a priori smoothness of log-population curve
+        const prior_alpha = 0.001;  // TODO: Configure via UI (should be > 0)
+        const prior_beta = 0.001;   // TODO: Configure via UI (should be > 0)
+
+        run.setSkygridTauPriorAlpha(prior_alpha);
+        run.setSkygridTauPriorBeta(prior_beta);
+
+        skygrid_tau = prior_alpha / prior_beta;
+
+      } else {
+        const setSkygridTauDirectly = false; // TODO: Configure via UI
+        if (setSkygridTauDirectly) {
+          skygrid_tau = 0.001;  // unitless - TODO: Configure via UI (should be > 0)
+
+        } else {
+          const double_half_time = 30.0;  // days - TODO: Configure via UI (should be > 0)
+
+          // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
+          // a 1D random walk with diffusion constant D.  Hence, on average, a starting
+          // log-population changes after a time T by a root-mean-square deviation of
+          // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
+          // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
+          // the "double-half time" with 68% probability:
+          //
+          //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
+          //
+          const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
+          skygrid_tau = 1.0 / (2 * D * dt);
+        }
+      }
+
+      // At this point, skygrid_tau is set.  Sample a random trajectory with this
+      // precision, then reset its mean to "3 years" (the `skygrid_gammas_zero_mode_gibbs_move`
+      // Gibbs sample the mean value of gamma, so we don't need to get this right at all here)
+      const gamma_k: number[] = [];
+      gamma_k.push(0.0);
+      for (let k = 1; k <= M; ++k) {
+        gamma_k.push(gamma_k[k-1] + randomGaussian(0.0, Math.sqrt(1.0/skygrid_tau)));
+      }
+
+      const mean_gamma_k = gamma_k.reduce((a, b) => a + b, 0.0) / gamma_k.length;
+      for (let k = 0; k <= M; ++k) {
+        gamma_k[k] += (-mean_gamma_k) + Math.log(3.0 * 365.0);
+      }
+
+      // Configure run
+      run.setPopModel(new SkygridPopModel(skyGridInterpolation, x_k, gamma_k));
+      run.setSkygridTau(skygrid_tau);
+      run.setSkygridTauMoveEnabled(infer_tau);  // Prior configured above when infer_tau == true
+
+      // Low-pop barrier
+      const lowPopBarrierDisabled = false;  // TODO: Configure via UI
+      if (lowPopBarrierDisabled) {
+        run.setSkygridLowGammaBarrierEnabled(false);
+      } else {
+        const low_pop_barrier_loc = 1.0;  // days - TODO: Configure via UI (should be > 0)
+        const low_gamma_barrier_loc = Math.log(low_pop_barrier_loc);
+
+        const low_pop_barrier_scale = 0.30;  // fraction (0,1) - TODO: Configure via UI
+        const low_gamma_barrier_scale = -Math.log(1 - low_pop_barrier_scale);  // Convert to scale in gamma
+
+        run.setSkygridLowGammaBarrierEnabled(true);
+        run.setSkygridLowGammaBarrierLoc(low_gamma_barrier_loc);
+        run.setSkygridLowGammaBarrierScale(low_gamma_barrier_scale);
+      }
+
+    } else {
+      // ExpPopModel
+      run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
+      run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
+      run.setPopModel(
+        new ExpPopModel(calcMaxDateOfTree(run.getTree()),
+          runParams.finalPopSize,
+          runParams.popGrowthRate));
     }
   }
 
@@ -584,10 +680,50 @@ export class Pythia {
     result.siteRateHeterogeneityEnabled = !!(run.isAlphaMoveEnabled());
     result.mutationRateIsFixed = !run.isMuMoveEnabled();
 
-    result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
-    result.finalPopSize = run.getPopN0();
-    result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
-    result.popGrowthRate = run.getPopG();
+    const popModel = run.getPopModel();
+
+    if (popModel instanceof ExpPopModel) {
+      result.popModelIsSkygrid = false;
+      result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
+      result.finalPopSize = popModel.n0;
+      result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
+      result.popGrowthRate = popModel.g;
+
+    } else if (popModel instanceof SkygridPopModel) {
+      result.popModelIsSkygrid = true;
+      result.skygridStartDate = popModel.x[0];
+      result.skygridNumIntervals = popModel.x.length - 1;
+      //result.skygridGamma = popModel.gamma[0];  TODO: REMOVE THIS
+      result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
+
+      // TODO: Add the below; I'm unsure of whether RunParamConfig should store
+      // both skygridTau and skygridDoubleHalfTime, so I've written the relations
+      // between both.  We can pick one of these and use it throughout.
+      //
+      // result.skygridInferTau = run.isSkygridTauMoveEnabled();
+      //
+      // // Applicable when skygridInferTau == true
+      // result.skygridTauPriorAlpha = run.getSkygridTauPriorAlpha();
+      // result.skygridTauPriorBeta = run.getSkygridTauPriorBeta();
+      //
+      // // Applicable when skygridInferTau == false
+      // // See setParams for a longer explanation of the below
+      // const dt = popModel.x[1] - popModel.x[0];
+      // const D = 1.0 / (2 * run.skygridTau() * dt);
+      // result.skygridSetTauExplicitly = ???;
+      // result.skygridDoubleHalfTime = Math.pow(Math.log(2.0), 2) / (2 * D);
+      // const D = Math.pow(Math.log(2.0), 2) / (2 * result.skygridDoubleHalfTime);
+      // result.skygridTau = 1.0 / (2 * D * dt);
+      //
+      // result.skygridLowPopBarrierDisabled = !run.isSkygridLowGammaBarrierEnabled();
+      //
+      // // Applicable when skygridLowPopBarrierDisabled == false
+      // result.skygridLowPopBarrierLoc = Math.exp(run.getSkygridLowGammaBarrierLoc());
+      // result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
+
+    } else {
+      throw new Error("don't know what to do here");
+    }
 
     return result;
   }
@@ -749,13 +885,11 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           baseTreeIndices = nodeIndices.map(mccNodeIndex=>summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t)),
           deduped = baseTreeIndices.map((n, i)=>i === baseTreeIndices.lastIndexOf(n) ? n : UNSET),
           treeDist = this.delphy.popModelProbeAncestorsOnTree(
-            tree, popT0, popN0, popG, deduped, startDate - 1, maxDate, range);
+            tree, popModel, deduped, startDate - 1, maxDate, range);
         baseTreeIndices.forEach((nodeIndex, i)=>{
           const d = deduped[i];
           if (d !== nodeIndex) {
@@ -845,11 +979,9 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           treeDist = this.delphy.popModelProbeSiteStatesOnTree(
-            tree, popT0, popN0, popG, site, startDate - 1, maxDate, range);
+            tree, popModel, site, startDate - 1, maxDate, range);
         //   maxTValue = Math.max(...treeDist[RealSeqLetter_T]);
         // if (maxTValue === 0) {
         //   console.log("???", treeDist);

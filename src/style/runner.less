@@ -12,6 +12,11 @@
 // @THUMB_COLOR: rgb(45, 126, 207);
 @THUMB_COLOR: black;
 
+@RADIO_BUTTON_BORDER: #dfdfdf;
+@RADIO_BUTTON_SELECTED_FILL: #eff4fd;
+@RADIO_BUTTON_SELECTED_BORDER: #4b85b1;
+
+
 .displaying-view-1 {
   background-color: @runner;
 }
@@ -447,6 +452,23 @@ input.stopping + #run-input--label {
     margin-right: 5px;
   }
 
+  input[type="radio"] {
+    opacity: 0;
+    width: 0px;
+    margin: 0;
+  }
+
+  label:has(input[type="radio"]) {
+    border: solid 1.5px @RADIO_BUTTON_BORDER;
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+  label:has(input[type="radio"]:checked) {
+    border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
+    background-color: @RADIO_BUTTON_SELECTED_FILL;    
+  }
+
+
   .button-container {
     display: flex;
     gap: 10px;
@@ -505,6 +527,24 @@ input.stopping + #run-input--label {
     &:hover {
       background-color: #ffe8e8;
     }
+  }
+
+  .population-model-option {
+    &.hidden {
+      display: none !important;
+    }
+    &#popmodel-skygrid {
+      display: flex;
+      height: 140px;
+    }
+    &#popmodel-exponential {
+      display: block;
+    }
+  }
+
+  .disclaimer {
+    font-style: italic;
+    color: #888;
   }
 }
 
@@ -793,6 +833,16 @@ input.stopping + #run-input--label {
   padding: 0 45px 0 0;
   text-align: right;
   color: @highlight;
+
+  &.range {
+    display: flex;
+    width: 100%;
+    span:first-child {
+      flex-grow: 1;
+      text-align: left;
+      padding-left: 10px;
+    }
+  }
 }
 
 
