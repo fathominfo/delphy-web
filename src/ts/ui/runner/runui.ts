@@ -1,5 +1,5 @@
 import {MccRef} from '../../pythia/mccref';
-import {PhyloTree} from '../../pythia/delphy_api';
+import {PhyloTree, ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
@@ -15,6 +15,9 @@ import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { RunParamConfig } from '../../pythia/pythia';
+import { parse_iso_date, toDateString } from '../../pythia/dates';
+import { GammaHistCanvas } from './gammahistcanvas';
+import { TraceCanvas } from './tracecanvas';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -58,7 +61,8 @@ export class RunUI extends UIScreen {
   private TCanvas: HistCanvas;
   private mutCountCanvas: HistCanvas;
   private popGrowthCanvas: HistCanvas;
-  private histCanvases: HistCanvas[];
+  private gammaCanvas: GammaHistCanvas;
+  private histCanvases: TraceCanvas[];
 
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
@@ -88,19 +92,27 @@ export class RunUI extends UIScreen {
 
 
   advanced: HTMLElement;
-  // mutationRateFieldset: HTMLFieldSetElement;
   siteHeterogeneityToggle: HTMLInputElement;
   fixedRateToggle: HTMLInputElement;
   mutationRateLabel: HTMLLabelElement;
   mutationRateInput: HTMLInputElement;
-  // apobecFieldset: HTMLFieldSetElement;
-  apobecToggle: HTMLInputElement;
+  popModelExpInput: HTMLInputElement;
+  popModelSkygridInput: HTMLInputElement;
+  popModelSkygridDetail: HTMLFieldSetElement;
+  popModelExpDetail: HTMLDivElement;
+  skygridStartDateInput: HTMLInputElement;
+  skygridIntervalCountInput: HTMLInputElement;
+  // skygridGammaInput: HTMLInputElement;
+  skygridFlatInterpolationInput: HTMLInputElement;
+  skygridLogLinearInterpolationInput: HTMLInputElement;
   fixedFinalPopSizeToggle: HTMLInputElement;
   fixedFinalPopSizeLabel: HTMLLabelElement;
   fixedFinalPopSizeInput: HTMLInputElement;
   fixedPopGrowthRateToggle: HTMLInputElement;
   fixedPopGrowthRateLabel: HTMLLabelElement;
   fixedPopGrowthRateInput: HTMLInputElement;
+
+  apobecToggle: HTMLInputElement;
   submitAdvancedButton: HTMLButtonElement;
   restartWarning: HTMLElement;
 
@@ -170,7 +182,9 @@ export class RunUI extends UIScreen {
     this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
     this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
     this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas, this.popGrowthCanvas];
+    this.gammaCanvas = new GammaHistCanvas("ln(N(t))");
+    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
+      this.popGrowthCanvas, this.gammaCanvas];
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
     this.timelineIndices = [];
@@ -192,7 +206,18 @@ export class RunUI extends UIScreen {
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement,
     this.mutationRateLabel = this.div.querySelector("#overall-mutation-rate-label") as HTMLLabelElement,
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
-    // this.apobecFieldset = this.div.querySelector(".apobec-fieldset") as HTMLFieldSetElement,
+    this.popModelExpInput = this.div.querySelector("#popmodel-selector-expgrowth") as HTMLInputElement;
+    this.popModelSkygridInput = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
+
+    this.popModelExpDetail = this.div.querySelector("#popmodel-exponential") as HTMLInputElement;
+    this.popModelSkygridDetail = this.div.querySelector("#popmodel-skygrid") as HTMLFieldSetElement;
+    this.skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
+    this.skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
+    // this.skygridGammaInput = this.div.querySelector("#popmodel-skygrid-gamma") as HTMLInputElement;
+    this.skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
+    this.skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
+
+
     this.apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
     this.fixedFinalPopSizeToggle = this.div.querySelector("#fixed-final-pop-size-toggle") as HTMLInputElement,
     this.fixedFinalPopSizeLabel = this.div.querySelector("#overall-final-pop-size-label") as HTMLLabelElement,
@@ -237,7 +262,7 @@ export class RunUI extends UIScreen {
       }
 
     });
-
+    const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
     this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     openAdvancedButton.addEventListener("click", ()=>{
@@ -253,6 +278,19 @@ export class RunUI extends UIScreen {
     this.fixedRateToggle.addEventListener("change", () => {
       this.mutationRateInput.disabled = !this.fixedRateToggle.checked;
     });
+    const handlePopModelToggle = ()=>{
+      const which = advancedForm.popmodel.value;
+      if (which === 'exp-growth') {
+        this.popModelExpDetail.classList.remove("hidden");
+        this.popModelSkygridDetail.classList.add("hidden");
+      } else if (which === 'skygrid') {
+        this.popModelExpDetail.classList.add("hidden");
+        this.popModelSkygridDetail.classList.remove("hidden");
+      }
+    };
+    this.popModelExpInput.addEventListener("change", handlePopModelToggle);
+    this.popModelSkygridInput.addEventListener("change",handlePopModelToggle);
+
     this.fixedFinalPopSizeToggle.addEventListener("change", () => {
       this.fixedFinalPopSizeInput.disabled = !this.fixedFinalPopSizeToggle.checked;
     });
@@ -267,7 +305,6 @@ export class RunUI extends UIScreen {
     [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
       this.advanced.classList.add("hidden");
     }));
-    const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
     advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
     this.advanced.addEventListener("click", e => {
@@ -335,6 +372,15 @@ export class RunUI extends UIScreen {
     this.mutationRateInput.disabled = !params.mutationRateIsFixed;
     this.fixedFinalPopSizeInput.disabled = !params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateInput.disabled = !params.popGrowthRateIsFixed;
+
+    this.popModelExpDetail.classList.toggle("hidden", params.popModelIsSkygrid);
+    this.popModelSkygridDetail.classList.toggle("hidden", !params.popModelIsSkygrid);
+    this.skygridFlatInterpolationInput.checked = !params.skygridIsLogLinear;
+    this.skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
+    this.skygridStartDateInput.value = toDateString(params.skygridStartDate);
+    this.skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
+    // this.skygridGammaInput.value = `${params.skygridGamma}`;
+
     // set field values
     const muFixed = (params.mutationRate * MU_FACTOR).toFixed(2);
     this.mutationRateInput.value = `${muFixed}`;
@@ -346,8 +392,8 @@ export class RunUI extends UIScreen {
     // toggle canvases
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
     this.toggleHistCanvasVisibility(this.muStarCanvas, params.apobecEnabled);
-    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed);
-
+    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed && !params.popModelIsSkygrid);
+    this.toggleHistCanvasVisibility(this.gammaCanvas, params.popModelIsSkygrid)
     // disable fieldsets
     // this.mutationRateFieldset.disabled = params.apobecEnabled;
     // this.apobecFieldset.disabled = params.mutationRateIsFixed || params.siteRateHeterogeneityEnabled;
@@ -476,11 +522,10 @@ export class RunUI extends UIScreen {
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
       sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
-      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popGHist, kneeIndex} = this.pythia;
+      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popModelHist, kneeIndex} = this.pythia;
     this.treeScrubber.setData(last, kneeIndex, mccIndex);
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-    const popHistGrowth = popGHist.map(g=>POP_GROWTH_FACTOR/g);
     const serieses = [
       logPosteriorHist,
       muud,
@@ -491,14 +536,8 @@ export class RunUI extends UIScreen {
 
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    if (this.getRunParams().apobecEnabled) {
-      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      serieses.push(muudStar);
-    }
     this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     const essCandidates: number[] = [
       this.logPosteriorCanvas.ess,
       this.muCanvas.ess,
@@ -507,7 +546,20 @@ export class RunUI extends UIScreen {
       // this.popGrowthCanvas.ess
     ];
     if (this.getRunParams().apobecEnabled) {
+      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
+      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      serieses.push(muudStar);
       essCandidates.push(this.muStarCanvas.ess);
+    }
+    if (this.getRunParams().popModelIsSkygrid) {
+      const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
+      console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
+      const xHist = (popModelHist[0] as SkygridPopModel).x;
+      const isLogLinear = (popModelHist[0] as SkygridPopModel).type == SkygridPopModelType.LogLinear;
+      this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
+    } else {
+      const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
+      this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     }
     this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
@@ -565,7 +617,11 @@ export class RunUI extends UIScreen {
       }
       this.TCanvas.draw();
       this.mutCountCanvas.draw();
-      this.popGrowthCanvas.draw();
+      if (this.getRunParams().popModelIsSkygrid) {
+        this.gammaCanvas.draw();
+      } else {
+        this.popGrowthCanvas.draw();
+      }
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       this.treeCountText.innerHTML = `${nfc(treeCount)}`;
       this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
@@ -623,7 +679,7 @@ export class RunUI extends UIScreen {
   }
 
 
-  private toggleHistCanvasVisibility(canvas: HistCanvas, showIt: boolean) : void {
+  private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
     canvas.setVisible(showIt);
 
     this.histCanvases.forEach(hc => {
@@ -662,15 +718,28 @@ export class RunUI extends UIScreen {
       parseFloat(formData.overallMutationRate as string) : this.getRunParams().mutationRate;
     newParams = this.fixMutationRate(newParams, isFixedMutationRate, overallMutationRate);
 
-    const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
-    const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
-      parseFloat(formData.overallFinalPopSize as string) : this.getRunParams().finalPopSize;
-    newParams = this.fixFinalPopSize(newParams, isFixedFinalPopSize, overallFinalPopSize);
+    const isSkygrid = formData.popmodel === 'skygrid';
+    newParams = this.setPopmodel(newParams, isSkygrid);
+    if (isSkygrid) {
+      const skygridK = parse_iso_date(formData['skygrid-K'] as string);
+      const skygridM = parseInt(formData['skygrid-M'] as string);
+      const skygridGamma = parseFloat(formData['skygrid-gamma'] as string);
+      const skygridInterpolationIsLogLinear = formData['m-interpolation'] === 'loglin';
+      newParams.skygridStartDate = skygridK;
+      newParams.skygridNumIntervals = skygridM;
+      newParams.skygridGamma = skygridGamma;
+      newParams.skygridIsLogLinear = skygridInterpolationIsLogLinear;
+    } else {
+      const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
+      const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
+        parseFloat(formData.overallFinalPopSize as string) : this.getRunParams().finalPopSize;
+      newParams = this.fixFinalPopSize(newParams, isFixedFinalPopSize, overallFinalPopSize);
 
-    const isFixedPopGrowthRate = formData.isFixedPopGrowthRate === "on";
-    const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
-      parseFloat(formData.overallPopGrowthRate as string) : this.getRunParams().popGrowthRate;
-    newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
+      const isFixedPopGrowthRate = formData.isFixedPopGrowthRate === "on";
+      const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
+        parseFloat(formData.overallPopGrowthRate as string) : this.getRunParams().popGrowthRate;
+      newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
+    }
 
     const isApobec = formData.isApobec === "on";
     newParams = this.setApobec(newParams, isApobec);
@@ -716,6 +785,10 @@ export class RunUI extends UIScreen {
   private getWillRestart(): boolean {
     const runParams = this.getRunParams();
     if (this.siteHeterogeneityToggle.checked !== runParams.siteRateHeterogeneityEnabled) return true;
+    if (parseInt(this.skygridIntervalCountInput.value) !== runParams.skygridNumIntervals) return true;
+    // if (parseFloat(this.skygridGammaInput.value) !== runParams.skygridGamma) return true;
+    if (parse_iso_date(this.skygridStartDateInput.value) !==runParams.skygridStartDate) return true;
+    if (this.skygridLogLinearInterpolationInput.checked !== runParams.skygridIsLogLinear) return true;
     if (this.fixedRateToggle.checked !== runParams.mutationRateIsFixed) return true;
     if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (runParams.mutationRate * MU_FACTOR).toFixed(2)) return true;
     if (parseFloat(this.fixedFinalPopSizeInput.value).toFixed(2) !== (runParams.finalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2)) return true;
@@ -766,12 +839,15 @@ export class RunUI extends UIScreen {
     return newParams;
   }
 
+  private setPopmodel(runParams: RunParamConfig, isSkygrid:boolean) : RunParamConfig {
+    const newParams = copyDict(runParams) as RunParamConfig;
+    newParams.popModelIsSkygrid = isSkygrid;
+    return newParams;
+  }
+
 
   // private announceAutoKnee(candidateIndex: number, pct: number) : void {
   //   console.log(`setting the knee at ${candidateIndex} ${pct* 100}%`);
   // }
-
-
-
 
 }
