@@ -224,7 +224,6 @@ export class CustomizeUI extends MccUI {
       getBeastVersion("Input")
         .then((version:string)=>{
           if (this.pythia) {
-            console.log(`exporting beast ${version} input`);
             const outBuffer = this.pythia.exportBeastInput(version);
             const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
               a = document.createElement("a"),

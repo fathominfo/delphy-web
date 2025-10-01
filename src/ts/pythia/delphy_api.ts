@@ -667,7 +667,7 @@ export class Delphy {
     run_set_skygrid_low_gamma_barrier_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
     run_get_params_to_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, fb: FbHolderPtr) => void,
     run_set_params_from_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, paramsFb: CharPtr) => void,
-    run_export_beast_input: (ctx: DelphyContextPtr, run: RunPtr) => StringPtr,
+    run_export_beast_input: (ctx: DelphyContextPtr, run: RunPtr, rawVersion: CharPtr) => StringPtr,
 
     // Mcc_tree
     derive_mcc_tree_async:
@@ -1660,9 +1660,11 @@ export class Run {
   }
 
   exportBeastInput(version:string): ArrayBuffer {
-    console.log(`TODO: pass the beast version string ('${version}') to the export function`)
-    return this.delphy.exportStringHelper(() =>
-      Delphy.delphyCoreRaw.run_export_beast_input(this.delphy.ctx, this.run));
+    return withStackSave(() => {
+      const rawVersion = stringToUTF8OnStack(version);
+      return this.delphy.exportStringHelper(() =>
+        Delphy.delphyCoreRaw.run_export_beast_input(this.delphy.ctx, this.run, rawVersion));
+    });
   }
 }
 
