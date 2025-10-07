@@ -775,7 +775,7 @@ export class Delphy {
     string_size: (ctx: DelphyContextPtr, str: StringPtr) => number,
 
     // Beasty_output
-    create_beasty_output: (ctx: DelphyContextPtr, run: RunPtr) => BeastyOutputPtr,
+    create_beasty_output: (ctx: DelphyContextPtr, run: RunPtr, version: CharPtr) => BeastyOutputPtr,
     delete_beasty_output: (ctx: DelphyContextPtr, bout: BeastyOutputPtr) => void,
     beasty_output_snapshot: (ctx: DelphyContextPtr, bout: BeastyOutputPtr, run: RunPtr) => void,
     beasty_output_finalize: (ctx: DelphyContextPtr, bout: BeastyOutputPtr, run: RunPtr) => void,
@@ -1655,8 +1655,8 @@ export class Run {
     Delphy.delphyCoreRaw.free(paramsFbBytesWasm);
   }
 
-  createBeastyOutput(): BeastyOutput {
-    return new BeastyOutput(this.delphy, this.run);
+  createBeastyOutput(version:string): BeastyOutput {
+    return new BeastyOutput(this.delphy, this.run, version);
   }
 
   exportBeastInput(version:string): ArrayBuffer {
@@ -1671,8 +1671,11 @@ export class Run {
 export class BeastyOutput {
   private beastyOutput: BeastyOutputPtr;
 
-  constructor(private delphy: Delphy, private run: RunPtr) {
-    this.beastyOutput = Delphy.delphyCoreRaw.create_beasty_output(delphy.ctx, run);
+  constructor(private delphy: Delphy, private run: RunPtr, version: string) {
+    this.beastyOutput = withStackSave(() => {
+      const rawVersion = stringToUTF8OnStack(version);
+      return Delphy.delphyCoreRaw.create_beasty_output(delphy.ctx, run, rawVersion);
+    });
   }
 
   delete() {

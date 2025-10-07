@@ -244,8 +244,7 @@ export class CustomizeUI extends MccUI {
       getBeastVersion("Output")
         .then(version=>{
           if (this.pythia) {
-            console.log(`exporting beast ${version} output`);
-            const {log, trees} = this.pythia.getBeastOutputs(),
+            const {log, trees} = this.pythia.getBeastOutputs(version),
               timestamp = getTimestampString();
 
             const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
