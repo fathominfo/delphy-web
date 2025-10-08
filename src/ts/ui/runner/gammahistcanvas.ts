@@ -1,8 +1,8 @@
 import { toFullDateString } from "../../pythia/dates";
-import { numericSort, safeLabel, UNSET } from "../common";
+import { minimalDecimalLabel, numericSort, UNSET } from "../common";
 import { calcHPD } from "../distribution";
 import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
-import { TraceCanvas, log10, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR } from "./tracecanvas";
+import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, log10, HALF_BORDER } from "./tracecanvas";
 
 
 const HPD_COLOR = 'rgb(184, 208, 238)';
@@ -63,8 +63,8 @@ export class GammaHistCanvas extends TraceCanvas {
       */
       const dataMinYears = gammaToYears(this.dataMin);
       const dataMaxYears = gammaToYears(this.dataMax);
-      const minLog = Math.log(dataMinYears)/log10;
-      const maxLog = Math.log(dataMaxYears)/log10;
+      const minLog = Math.log10(dataMinYears);
+      const maxLog = Math.log10(dataMaxYears);
       const minMagnitude = Math.floor(minLog);
       const maxMagnitude = Math.ceil(maxLog);
       const displayMinYears = Math.exp(minMagnitude * log10);
@@ -183,43 +183,63 @@ export class GammaHistCanvas extends TraceCanvas {
   }
 
   drawLabels():void {
-    const {chartHeight, ctx,
+    let {chartHeight} = this;
+    const {ctx,
       avgLabel, midLabels, maxLabel, minLabel,
-      labelContainer, minSpan} = this;
-    const {displayMin, displayMax} = this;
-    const yearsMin = gammaToYears(displayMin);
-    const yearsMax = gammaToYears(displayMax);
-    const minMagnitude = Math.log(yearsMin)/log10;
-    const maxMagnitude = Math.log(yearsMax)/log10;
+      labelContainer, minSpan,
+      displayMin, displayMax} = this;
+    chartHeight -= HALF_BORDER * 2;
+    let yearsMin = gammaToYears(displayMin);
+    let yearsMax = gammaToYears(displayMax);
+    const minMagnitude = Math.round(Math.log10(yearsMin));
+    const maxMagnitude = Math.round(Math.log10(yearsMax));
+    yearsMin = defractionalize(yearsMin, minMagnitude);
+    yearsMax = defractionalize(yearsMax, maxMagnitude);
     const logRange = maxMagnitude - minMagnitude;
-    maxLabel.textContent = safeLabel(yearsMax);
-    minLabel.textContent = safeLabel(yearsMin);
+    maxLabel.textContent = minimalDecimalLabel(yearsMax);
+    minLabel.textContent = minimalDecimalLabel(yearsMin);
     /* clear the mid labels */
     midLabels.forEach(ele=>ele.remove());
     midLabels.length = 0;
     minSpan.textContent = toFullDateString(this.dates[0])
-    let step = Math.pow(10, minMagnitude);
-    let oom = minMagnitude;
+    // const step = Math.pow(10, minMagnitude);
     ctx.strokeStyle = BORDER_COLOR;
     ctx.lineWidth = BORDER_WEIGHT;
     ctx.beginPath();
-    for (let n = yearsMin; n <= yearsMax; n+= step) {
-      const nLog = Math.log(n)/log10;
-      const pct = (nLog - minMagnitude) / logRange;
-      const y = chartHeight - pct * chartHeight;
-      ctx.moveTo(0, y);
-      ctx.lineTo(TICK_LENGTH, y);
-      const noom = Math.floor(nLog);
-      if (noom > oom && n !== yearsMax){
-        const label = avgLabel.cloneNode(true) as HTMLLIElement;
-        label.style.top = `${y}px`;
-        label.textContent = safeLabel(n);
-        this.midLabels.push(label);
-        labelContainer.appendChild(label);
-        step *= 10;
-        oom = noom;
+    let mag = minMagnitude;
+    let tens = Math.pow(10, mag);
+    const labelsOK = chartHeight >= 40;
+    let tickLength = 0;
+    while (mag < maxMagnitude) {
+      for (let i = 1; i <10; i++) {
+        const n = i * tens;
+        const nLog = Math.log10(n);
+        const pct = (nLog - minMagnitude) / logRange;
+        const y = HALF_BORDER + chartHeight - pct * chartHeight;
+        if (i === 1) {
+          tickLength = TICK_LENGTH;
+          ctx.lineWidth = BORDER_WEIGHT;
+          if (labelsOK && mag !== minMagnitude && mag !== maxMagnitude) {
+            const label = avgLabel.cloneNode(true) as HTMLLIElement;
+            label.style.top = `${y}px`;
+            label.textContent = minimalDecimalLabel(n);
+            this.midLabels.push(label);
+            labelContainer.appendChild(label);
+          }
+        } else {
+          tickLength = TICK_LENGTH / 2;
+          ctx.lineWidth = BORDER_WEIGHT / 2;
+        }
+        ctx.moveTo(TICK_LENGTH, y);
+        ctx.lineTo(TICK_LENGTH - tickLength, y);
       }
+      mag++;
+      tens *= 10;
     }
+    /* the top tick */
+    ctx.moveTo(0, HALF_BORDER);
+    ctx.lineTo(TICK_LENGTH, HALF_BORDER);
+
     ctx.stroke();
   }
 
@@ -246,4 +266,11 @@ const gammaToYears = (n:number):number => {
 
 const yearsToGamma = (n:number):number => {
   return Math.log(n * 365);
+}
+
+const defractionalize = (n:number, mag:number):number => {
+  const tensy = Math.pow(10, mag);
+  let nn = Math.round(n/tensy) * tensy;
+  if (nn > 1) nn = Math.round(nn);
+  return nn;
 }
