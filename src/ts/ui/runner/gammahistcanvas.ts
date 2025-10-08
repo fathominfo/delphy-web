@@ -2,7 +2,7 @@ import { toFullDateString } from "../../pythia/dates";
 import { numericSort, safeLabel, UNSET } from "../common";
 import { calcHPD } from "../distribution";
 import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
-import { TraceCanvas, log10, TICK_LENGTH } from "./tracecanvas";
+import { TraceCanvas, log10, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR } from "./tracecanvas";
 
 
 const HPD_COLOR = 'rgb(184, 208, 238)';
@@ -17,6 +17,8 @@ export class GammaHistCanvas extends TraceCanvas {
   maxSpan: HTMLSpanElement;
   isLogLinear = false;
   sampleIndex: number;
+  midLabels: HTMLLIElement[];
+  labelContainer: HTMLUListElement;
 
   constructor(label:string) {
     super(label, '');
@@ -25,7 +27,12 @@ export class GammaHistCanvas extends TraceCanvas {
     this.readout.appendChild(this.minSpan);
     this.readout.appendChild(this.maxSpan);
     this.readout.classList.add('range');
+    this.midLabels = [];
     this.sampleIndex = UNSET;
+    this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
+    // use the avgLabel as a cloning template
+    this.avgLabel.textContent = '';
+    this.avgLabel.style.position = 'absolute';
   }
 
   setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
@@ -46,18 +53,24 @@ export class GammaHistCanvas extends TraceCanvas {
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
-    /* what scale is the range in? */
-    const range = this.dataMax - this.dataMin;
-
-    if (range === 0 || this.isDiscrete && range < 20) {
+    if (this.dataMax === this.dataMin) {
       this.displayMin = this.dataMin;
       this.displayMax = this.dataMax;
     } else {
-      const expRange = Math.floor(Math.log(range) / log10),
-        mag = Math.pow(10, expRange),
-        magPad = mag * 0.1;
-      this.displayMin = Math.floor((this.dataMin - magPad) / mag) * mag;
-      this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
+      /*
+      the data coming back from delphy is the gamma value,
+      but we want to convert that to years (where 1 year === 365 days)
+      */
+      const dataMinYears = gammaToYears(this.dataMin);
+      const dataMaxYears = gammaToYears(this.dataMax);
+      const minLog = Math.log(dataMinYears)/log10;
+      const maxLog = Math.log(dataMaxYears)/log10;
+      const minMagnitude = Math.floor(minLog);
+      const maxMagnitude = Math.ceil(maxLog);
+      const displayMinYears = Math.exp(minMagnitude * log10);
+      const displayMaxYears = Math.exp(maxMagnitude * log10);
+      this.displayMin = yearsToGamma(displayMinYears);
+      this.displayMax = yearsToGamma(displayMaxYears);
     }
 
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
@@ -92,6 +105,7 @@ export class GammaHistCanvas extends TraceCanvas {
 
     const drawingStaircase = !this.isLogLinear;
 
+    // console.log(this.dataMin, this.dataMax, this.displayMin, this.displayMax);
 
     // draw the 95% HPD area
     ctx.beginPath();
@@ -169,11 +183,44 @@ export class GammaHistCanvas extends TraceCanvas {
   }
 
   drawLabels():void {
-    this.maxLabel.textContent = safeLabel(this.displayMax);
-    this.minLabel.textContent = safeLabel(this.displayMin);
-    this.avgLabel.textContent = '';
-    this.minSpan.textContent = toFullDateString(this.dates[0])
-    this.maxSpan.textContent = toFullDateString(this.dates[this.dates.length-1]);
+    const {chartHeight, ctx,
+      avgLabel, midLabels, maxLabel, minLabel,
+      labelContainer, minSpan} = this;
+    const {displayMin, displayMax} = this;
+    const yearsMin = gammaToYears(displayMin);
+    const yearsMax = gammaToYears(displayMax);
+    const minMagnitude = Math.log(yearsMin)/log10;
+    const maxMagnitude = Math.log(yearsMax)/log10;
+    const logRange = maxMagnitude - minMagnitude;
+    maxLabel.textContent = safeLabel(yearsMax);
+    minLabel.textContent = safeLabel(yearsMin);
+    /* clear the mid labels */
+    midLabels.forEach(ele=>ele.remove());
+    midLabels.length = 0;
+    minSpan.textContent = toFullDateString(this.dates[0])
+    let step = Math.pow(10, minMagnitude);
+    let oom = minMagnitude;
+    ctx.strokeStyle = BORDER_COLOR;
+    ctx.lineWidth = BORDER_WEIGHT;
+    ctx.beginPath();
+    for (let n = yearsMin; n <= yearsMax; n+= step) {
+      const nLog = Math.log(n)/log10;
+      const pct = (nLog - minMagnitude) / logRange;
+      const y = chartHeight - pct * chartHeight;
+      ctx.moveTo(0, y);
+      ctx.lineTo(TICK_LENGTH, y);
+      const noom = Math.floor(nLog);
+      if (noom > oom && n !== yearsMax){
+        const label = avgLabel.cloneNode(true) as HTMLLIElement;
+        label.style.top = `${y}px`;
+        label.textContent = safeLabel(n);
+        this.midLabels.push(label);
+        labelContainer.appendChild(label);
+        step *= 10;
+        oom = noom;
+      }
+    }
+    ctx.stroke();
   }
 
 }
@@ -190,4 +237,13 @@ const hpdeify = (arr:number[]):number[]=>{
   const mean = sum / sorted.length;
   // console.log(hpdMin, hpdMax, mean)
   return [hpdMin, hpdMax, mean];
+}
+
+
+const gammaToYears = (n:number):number => {
+  return Math.exp(n)/365;
+}
+
+const yearsToGamma = (n:number):number => {
+  return Math.log(n * 365);
 }
