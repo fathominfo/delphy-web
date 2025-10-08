@@ -84,117 +84,88 @@ export class GammaHistCanvas extends TraceCanvas {
     const kWidth = traceWidth / (kCount - 1);
     let i = 0;
     let hpd = data[i][0];
-    let x = TICK_LENGTH;
     const firstY = chartHeight-(hpd-displayMin) * verticalScale;
+    let x = TICK_LENGTH;
+    let y = firstY;
     ctx.lineWidth = 1;
     ctx.fillStyle = HPD_COLOR;
 
-    if (this.isLogLinear) {
-      // draw the 95% HPD area
-      ctx.beginPath();
-      ctx.moveTo(x, firstY);
-      for (i = 1; i < kCount; i++) {
-        x = TICK_LENGTH + i * kWidth;
-        hpd = data[i][0];
-        ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
-      }
-      for (i = kCount - 1; i >= 0; i--) {
-        x = TICK_LENGTH + i * kWidth;
-        hpd = data[i][1];
-        ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
-      }
-      ctx.lineTo(TICK_LENGTH, firstY);
-      ctx.fill();
+    const drawingStaircase = !this.isLogLinear;
 
-      // draw the population curve for the current sample
-      const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
-      if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
-        const sampleData = this.rangeData[drawnSampleIndex];
-        console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
 
-        ctx.beginPath();
-        ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
-        x = TICK_LENGTH;
-        ctx.moveTo(x, chartHeight-(sampleData[0]-displayMin) * verticalScale);
-        for (i = 1; i < kCount; i++) {
-          x = TICK_LENGTH + i * kWidth;
-          ctx.lineTo(x, chartHeight-(sampleData[i]-displayMin) * verticalScale);
-        }
-        ctx.stroke();
-      }
-
-      // draw the mean
-      ctx.beginPath();
-      ctx.strokeStyle = TRACE_COLOR;
-      const means = data.map(arr=>arr[2]);
-      let mean = means[0];
-      x = TICK_LENGTH;
-      ctx.moveTo(x, chartHeight-(mean-displayMin) * verticalScale);
-      for (i = 1; i < kCount; i++) {
-        x = TICK_LENGTH + i * kWidth;
-        mean = means[i];
-        ctx.lineTo(x, chartHeight-(mean-displayMin) * verticalScale);
-      }
-      ctx.stroke();
-
-    } else {
-      // draw the 95% HPD area
-      ctx.beginPath();
-      ctx.moveTo(x, firstY);
-      let y = firstY;
-      x = TICK_LENGTH;
-      for (i = 1; i < kCount; i++) {
-        hpd = data[i][0];
-        y = chartHeight-(hpd-displayMin) * verticalScale;
-        ctx.lineTo(x, y);
-        x = TICK_LENGTH + i * kWidth;
+    // draw the 95% HPD area
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (i = 1; i < kCount; i++) {
+      hpd = data[i][0];
+      y = chartHeight-(hpd-displayMin) * verticalScale;
+      if (drawingStaircase) {
         ctx.lineTo(x, y);
       }
-      for (i = kCount - 1; i > 0; i--) {
-        x = TICK_LENGTH + i * kWidth;
-        hpd = data[i][1];
-        y = chartHeight-(hpd-displayMin) * verticalScale;
-        ctx.lineTo(x, y);
+      x = TICK_LENGTH + i * kWidth;
+      ctx.lineTo(x, y);
+    }
+    for (i = kCount - 1; i > 0; i--) {
+      x = TICK_LENGTH + i * kWidth;
+      hpd = data[i][1];
+      y = chartHeight-(hpd-displayMin) * verticalScale;
+      ctx.lineTo(x, y);
+      if (drawingStaircase) {
         x = TICK_LENGTH + (i-1) * kWidth;
         ctx.lineTo(x, y);
       }
-      ctx.lineTo(TICK_LENGTH, firstY);
-      ctx.fill();
-
-      // draw the population curve for the current sample
-      const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
-      if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
-        const sampleData = this.rangeData[drawnSampleIndex];
-        console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
-
-        ctx.beginPath();
-        ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
-        x = TICK_LENGTH;
-        for (i = 1; i < kCount; i++) {
-          y = chartHeight-(sampleData[i]-displayMin) * verticalScale
-          ctx.moveTo(x, y);
-          x = TICK_LENGTH + i * kWidth;
-          ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-
-      // draw the mean
-      ctx.beginPath();
-      ctx.strokeStyle = TRACE_COLOR;
-      const means = data.map(arr=>arr[2]);
-      let mean = means[0];
+    }
+    if (!drawingStaircase) {
       x = TICK_LENGTH;
+      hpd = data[0][1];
+      y = chartHeight-(hpd-displayMin) * verticalScale;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.lineTo(TICK_LENGTH, firstY);
+    ctx.fill();
+
+    // draw the population curve for the current sample
+    const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
+    if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
+      const sampleData = this.rangeData[drawnSampleIndex];
+      console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
+
+      ctx.beginPath();
+      ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
+      x = TICK_LENGTH;
+      y = chartHeight-(sampleData[0]-displayMin) * verticalScale;
+      if (!drawingStaircase)  ctx.moveTo(x, y);
       for (i = 1; i < kCount; i++) {
-        mean = means[i];
-        y = chartHeight-(mean-displayMin) * verticalScale;
-        ctx.moveTo(x, y);
+        y = chartHeight-(sampleData[i]-displayMin) * verticalScale;
+        if (drawingStaircase) {
+          ctx.moveTo(x, y);
+        }
         x = TICK_LENGTH + i * kWidth;
         ctx.lineTo(x, y);
       }
       ctx.stroke();
-
     }
+
+    // draw the mean
+    ctx.beginPath();
+    ctx.strokeStyle = TRACE_COLOR;
+    const means = data.map(arr=>arr[2]);
+    let mean = means[0];
+    x = TICK_LENGTH;
+    y = chartHeight-(mean-displayMin) * verticalScale;
+    ctx.moveTo(x, y);
+    for (i = 1; i < kCount; i++) {
+      mean = means[i];
+      y = chartHeight-(mean-displayMin) * verticalScale;
+      if (drawingStaircase) {
+        ctx.moveTo(x, y);
+      }
+      x = TICK_LENGTH + i * kWidth;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke
+
   }
 
   drawLabels():void {
