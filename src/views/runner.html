@@ -213,6 +213,67 @@
                   <label>Log-linear<input id="popmodel-skygrid-interpolate-loglinear" type="radio" name="m-interpolation" value="loglin" checked></label>
                 </p>
               </div>
+
+              <label class="advanced-skygrid-param">
+                <input id="advanced-skygrid-toggle" type="checkbox" checked>
+                <span>Advanced Skygrid Parameters</span>
+              </label>
+              <div id="advanced-skygrid-parameters">
+                <p class="advanced-skygrid-param">Population curve prior smoothness</p>
+                <p id="advanced-skygrid-timescale-options">
+                  <label id="advanced-skygrid-timescale-doubling">
+                    <span>Set timescale</span>
+                    <input type="radio" name="timescale" value="doubling" checked />
+                  </label>
+                  <label id="advanced-skygrid-timescale-tau">
+                    <span>Set tau</span>
+                    <input type="radio" name="timescale" value="tau" />
+                  </label>
+                  <label id="advanced-skygrid-timescale-infer">
+                    <span>Infer tau with Gamma-prior</span>
+                    <input type="radio" name="timescale" value="infer" />
+                  </label>
+                </p>
+                <div id="advanced-skygrid-timescale-inputs" class="doubling">
+                  <label class="doubling" id="advanced-skygrid-timescale-doubling-value">
+                    <span>Timescale for doubling/halving: </span><input type="number"  name="number-value" value="30" /> <span>days</span>
+                    <ul>
+                      <li>this implies a value of tau of <span class="implied-tau">9.75</span>; read more <a href="" target="_">here</a>.</li>
+                    </ul>
+                  </label>
+                  <label class="tau" id="advanced-skygrid-timescale-tau-value">
+                    <span>τ (tau): </span><input type="number" name="tau-value" value="9.75"/>
+                    <ul>
+                      <li>this implies a doubling/halving timescale of <span class="implied-tau">30</span> days; read more <a href="" target="_">here</a>.</li>
+                    </ul>
+                  </label>
+                  <label class="infer" id="advanced-skygrid-timescale-infer-values">
+                    <p><span>Alpha: </span> <input type="number" name="alpha"/></p>
+                    <p><span>Beta: </span> <input type="number" name="beta"/></p>
+                  </label>
+                </div>
+                <p class="advanced-skygrid-param">Protection against low populations (read more <a href="" target="_">here</a>)</p>
+                <div id="advanced-skygrid-timescale-options">
+                  <label>
+                    <span>Enabled (recommended)</span>
+                    <input type="radio" name="low-pop-protection" value="on" checked />
+                  </label>
+                  <label>
+                    <span>Disabled</span>
+                    <input type="radio" name="low-pop-protection" value="off"/>
+                  </label>
+                </div>
+                <ul id="advanced-skygrid-timescale-values">
+                  <li>Minimum effective population size: 1 day</li>
+                  <li>
+                    <label>
+                      Impose penalty of 1 nat when population drops below minimum by
+                      <input type="number" name="low-pop-nat-pct" value="30" min="0" max="100"/>%
+                    </llabel>
+                  </li>
+                </ul>
+              </div>
+
             </fieldset>
           </fieldset>
         </div>

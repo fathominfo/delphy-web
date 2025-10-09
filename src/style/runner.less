@@ -549,6 +549,95 @@ input.stopping + #run-input--label {
 }
 
 
+#popmodel-skygrid-m {
+  width: 4em;
+}
+
+#advanced-skygrid-parameters {
+  display: none;
+  background-color: white;
+  z-index: 10;
+  gap: 12px;
+}
+
+.runner--advanced--content:has(#advanced-skygrid-toggle:checked) {
+  overflow-y: scroll;
+
+  .population-model-option#popmodel-skygrid {
+    height: fit-content;
+  }
+
+
+  #advanced-skygrid-parameters {
+    display: grid;
+    height: fit-content;
+  }
+}
+
+#advanced-skygrid-timescale-options {
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+}
+
+
+ .advanced-skygrid-param {
+  font-weight: 600;
+ }
+
+#advanced-skygrid-timescale-inputs label {
+  display: none;
+  height: 4em;
+}
+
+
+#advanced-skygrid-parameters ul {
+  padding-left: 1em;
+  margin-top: 5px;
+}
+
+#advanced-skygrid-parameters:has(input[value="doubling"]:checked)
+     #advanced-skygrid-timescale-inputs label.doubling {
+  display: block;
+}
+
+#advanced-skygrid-parameters:has(input[value="tau"]:checked)
+     #advanced-skygrid-timescale-inputs label.tau {
+  display: block;
+}
+
+#advanced-skygrid-parameters:has(input[value="infer"]:checked)
+     #advanced-skygrid-timescale-inputs label.infer {
+  display: block;
+}
+
+#advanced-skygrid-timescale-doubling-value, #advanced-skygrid-timescale-tau-value {
+  input {
+    width: 4em;
+  }
+}
+
+#advanced-skygrid-timescale-infer-values {
+  span {
+    display: inline-block;
+    width: 4em;
+  }
+  input {
+    width: 6em;
+  }
+}
+
+#advanced-skygrid-parameters:has(input[name="low-pop-protection"][value="off"]:checked) {
+  #advanced-skygrid-timescale-values {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+#advanced-skygrid-timescale-values input {
+  width: 4em;
+}
+
 //——————————————————————————————————————————
 // runner / tree
 
