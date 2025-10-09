@@ -192,7 +192,7 @@ input.stopping + #run-input--label {
   gap: 2px;
   margin: 20px 0 20px 7px;
   font-weight: 500;
-  label, 
+  label,
   p {
     margin-left: 8px;
   }
@@ -404,7 +404,7 @@ input.stopping + #run-input--label {
 
     &:disabled {
       color: #666;
-      
+
       .disabled-text {
         display: block;
       }
@@ -465,7 +465,7 @@ input.stopping + #run-input--label {
   }
   label:has(input[type="radio"]:checked) {
     border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
-    background-color: @RADIO_BUTTON_SELECTED_FILL;    
+    background-color: @RADIO_BUTTON_SELECTED_FILL;
   }
 
 
@@ -506,7 +506,7 @@ input.stopping + #run-input--label {
       border: 1px solid #afafaf;
       color: #999;
       cursor: not-allowed;
-      
+
       &:hover {
         background-color: #EFEFEF;
         border: 1px solid #afafaf;
@@ -557,7 +557,7 @@ input.stopping + #run-input--label {
   canvas {
     height: 100%;
   }
-  
+
 }
 
 #runner--tree h1 {
@@ -870,7 +870,15 @@ input.stopping + #run-input--label {
       cursor: col-resize;
     }
   }
+
 }
+
+.block.effective-population-size-log-scale .block--chart {
+  canvas, canvas.kneed {
+    cursor: default;
+  }
+}
+
 
 .y-axis,
 .x-axis {

@@ -82,7 +82,7 @@ export class TraceCanvas {
     this.label = label;
     this.unit = unit;
     this.container = <HTMLDivElement>template.cloneNode(true);
-    this.className = label.toLowerCase().replace(/ /g, '-');
+    this.className = label.toLowerCase().replace(/ /g, '-').replace(/[()]/g, '');
     this.container.classList.add(this.className);
     chartContainer.appendChild(this.container);
     const maybeHeader = this.container.querySelector('h1');
