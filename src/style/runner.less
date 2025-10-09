@@ -338,6 +338,8 @@ input.stopping + #run-input--label {
     margin-top: 100px;
     width: 500px;
     height: max-content;
+    max-height: -webkit-fill-available;
+    overflow-y: auto;
     padding: 40px;
     background-color: #fff;
     display: flex;
@@ -560,8 +562,14 @@ input.stopping + #run-input--label {
   gap: 12px;
 }
 
+
+label:has(#advanced-skygrid-toggle:checked) {
+  font-weight: 600;
+}
+
+
+
 .runner--advanced--content:has(#advanced-skygrid-toggle:checked) {
-  overflow-y: scroll;
 
   .population-model-option#popmodel-skygrid {
     height: fit-content;
