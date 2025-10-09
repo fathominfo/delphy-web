@@ -147,7 +147,7 @@ export const minimalDecimalLabel = (x:number)=>{
   if (x === undefined || isNaN(x) || x === null) return '';
   let label = '';
   if (Math.abs(x) < 1) {
-    label = x.toFixed(2);
+    label = x.toLocaleString();
     label = label.replace(/0+$/, ''); // trim zeroes off the end
   } else {
     label = nfc(Math.round(x));

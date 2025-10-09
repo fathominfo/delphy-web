@@ -7,6 +7,7 @@ import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, log10, HALF_BORD
 
 const HPD_COLOR = 'rgb(184, 208, 238)';
 
+const LABEL_HEIGHT = 14;
 
 export class GammaHistCanvas extends TraceCanvas {
 
@@ -202,13 +203,15 @@ export class GammaHistCanvas extends TraceCanvas {
     midLabels.forEach(ele=>ele.remove());
     midLabels.length = 0;
     minSpan.textContent = toFullDateString(this.dates[0])
+    const magSpan = maxMagnitude - minMagnitude;
+    const labelHeight = LABEL_HEIGHT * magSpan;
+    const labelsOK = chartHeight >= labelHeight;
     // const step = Math.pow(10, minMagnitude);
     ctx.strokeStyle = BORDER_COLOR;
     ctx.lineWidth = BORDER_WEIGHT;
     ctx.beginPath();
     let mag = minMagnitude;
     let tens = Math.pow(10, mag);
-    const labelsOK = chartHeight >= 40;
     let tickLength = 0;
     while (mag < maxMagnitude) {
       for (let i = 1; i <10; i++) {
@@ -217,29 +220,43 @@ export class GammaHistCanvas extends TraceCanvas {
         const pct = (nLog - minMagnitude) / logRange;
         const y = HALF_BORDER + chartHeight - pct * chartHeight;
         if (i === 1) {
+          ctx.stroke();
+          ctx.beginPath();
           tickLength = TICK_LENGTH;
           ctx.lineWidth = BORDER_WEIGHT;
+          ctx.globalAlpha = 1;
           if (labelsOK && mag !== minMagnitude && mag !== maxMagnitude) {
             const label = avgLabel.cloneNode(true) as HTMLLIElement;
-            label.style.top = `${y}px`;
+            label.style.top = `${y-2}px`;
             label.textContent = minimalDecimalLabel(n);
             this.midLabels.push(label);
             labelContainer.appendChild(label);
           }
-        } else {
-          tickLength = TICK_LENGTH / 2;
-          ctx.lineWidth = BORDER_WEIGHT / 2;
+        } else if (labelsOK || i % 3 === 2) {
+          tickLength = TICK_LENGTH * (4 + i * i) / 104.0; // 10 * 10 + 4
+          // tickLength = TICK_LENGTH / 2;
         }
         ctx.moveTo(TICK_LENGTH, y);
         ctx.lineTo(TICK_LENGTH - tickLength, y);
+        if (i == 1) {
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.globalAlpha = 0.7;
+          if (!labelsOK) {
+            ctx.lineWidth = BORDER_WEIGHT / 2;
+          }
+        }
       }
       mag++;
       tens *= 10;
     }
     /* the top tick */
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.lineWidth = BORDER_WEIGHT;
+    ctx.globalAlpha = 1;
     ctx.moveTo(0, HALF_BORDER);
     ctx.lineTo(TICK_LENGTH, HALF_BORDER);
-
     ctx.stroke();
   }
 
