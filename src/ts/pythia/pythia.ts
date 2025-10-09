@@ -1329,11 +1329,11 @@ export class Pythia {
 
 
   // BEASTY OUTPUT
-  getBeastOutputs(): {log: ArrayBuffer, trees: ArrayBuffer} {
+  getBeastOutputs(version:string): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
     const run = this.delphy.createRun(this.treeHist[0].copy());
     run.setParamsFromFlatbuffer(this.paramsHist[0]);  // Some options can influence output
-    const bout = run.createBeastyOutput();
+    const bout = run.createBeastyOutput(version);
     for (let i = 0; i < treeCount; ++i) {
       run.getTree().copyFrom(this.treeHist[i]);
       run.setParamsFromFlatbuffer(this.paramsHist[i]);
@@ -1353,11 +1353,12 @@ export class Pythia {
   }
 
   // BEAST INPUT
-  exportBeastInput(): ArrayBuffer {
+  exportBeastInput(version:string): ArrayBuffer {
     if (this.run) {
-      return this.run.exportBeastInput();
+      return this.run.exportBeastInput(version);
     } else {
-      return new Uint8Array(0);
+      // return new Uint8Array(0);
+      return new ArrayBuffer(0);
     }
   }
 }

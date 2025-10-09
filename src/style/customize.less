@@ -39,6 +39,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  z-index: 1;
 
   .tree-export {
     width: 95%;
@@ -488,4 +489,79 @@
 
 #customize--tree-topology, #customize--tree-presentation {
   display: none;
+}
+
+
+#beast-version {
+  position: relative;
+  padding: inherit;
+  border: inherit;
+  background-color: rgba(252,252,252, 0.98);
+  padding: 2em 5em;
+  border-radius: 5px;
+
+  form .options {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 15px 0;
+
+    input, button {
+      .visually-hidden();
+    }
+
+    label {
+      border-radius: 3px;
+    }
+
+    label:has(:checked) {
+      border-color: black;
+    }
+  }
+
+  .closers {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  button[type="submit"] {
+    padding: 2px 6px;
+    text-decoration: none;
+    background-color: #4078F8;
+    color: #fff;
+    border: 1px solid #4078F8;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  .cancel-button {
+    cursor: pointer;
+    padding: 0;
+    border-radius: 3px;
+    background: none;
+    color: #000;
+    border: none;
+    text-decoration: underline;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+
+    .box {
+      width: 24px;
+      height: 24px;
+
+      .glyph {
+        .masked(url("/assets/icons/exit-lg.svg"));
+        background-color: #000;
+      }
+    }
+  }
 }

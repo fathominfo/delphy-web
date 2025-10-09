@@ -249,7 +249,7 @@ export class RunUI extends UIScreen {
     });
     exportButton.addEventListener("click", ()=>{
       if (this.pythia) {
-        const {log} = this.pythia.getBeastOutputs(),
+        const {log} = this.pythia.getBeastOutputs("X-10.5.0"),  // hard-code BEAST X export
           blob = new Blob([log], { type: 'text/csv;charset=utf-8;' }),
           url = URL.createObjectURL(blob),
           a = document.createElement("a"),
