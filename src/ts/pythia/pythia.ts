@@ -64,7 +64,6 @@ export type RunParamConfig = {
   // skygrid population model params
   skygridStartDate: number,
   skygridNumIntervals: number,
-  skygridGamma: number,
   skygridIsLogLinear: boolean,
 };
 
@@ -105,7 +104,6 @@ function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     // Defaults for Skygrid pop model
     skygridStartDate: maxDate - 2 * dateRange,
     skygridNumIntervals: Math.round(tipCount / 15),
-    skygridGamma: Math.log(1000),
     skygridIsLogLinear: true
   };
 }
@@ -584,7 +582,6 @@ export class Pythia {
       // SkygridPopModel
       const dt = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
       const M = runParams.skygridNumIntervals + 1;
-      //const skygridGamma = runParams.skygridGamma;  // TODO: runParams.skygridGamma is redundant, remove from UI and elsewhere
       const skyGridInterpolation = runParams.skygridIsLogLinear ? SkygridPopModelType.LogLinear : SkygridPopModelType.Staircase;
 
       const x_k: number[] = [];
@@ -693,7 +690,6 @@ export class Pythia {
       result.popModelIsSkygrid = true;
       result.skygridStartDate = popModel.x[0];
       result.skygridNumIntervals = popModel.x.length - 1;
-      //result.skygridGamma = popModel.gamma[0];  TODO: REMOVE THIS
       result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
 
       // TODO: Add the below; I'm unsure of whether RunParamConfig should store
