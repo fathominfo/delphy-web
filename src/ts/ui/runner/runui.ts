@@ -14,7 +14,7 @@ import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { RunParamConfig, tauConfigOption } from '../../pythia/pythia';
+import { makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
@@ -92,26 +92,17 @@ export class RunUI extends UIScreen {
 
 
   advanced: HTMLElement;
-  siteHeterogeneityToggle: HTMLInputElement;
+  advancedForm: HTMLFormElement;
+
   fixedRateToggle: HTMLInputElement;
-  mutationRateLabel: HTMLLabelElement;
   mutationRateInput: HTMLInputElement;
-  popModelExpInput: HTMLInputElement;
-  popModelSkygridInput: HTMLInputElement;
   popModelSkygridDetail: HTMLFieldSetElement;
   popModelExpDetail: HTMLDivElement;
-  skygridStartDateInput: HTMLInputElement;
-  skygridIntervalCountInput: HTMLInputElement;
-  skygridFlatInterpolationInput: HTMLInputElement;
-  skygridLogLinearInterpolationInput: HTMLInputElement;
   fixedFinalPopSizeToggle: HTMLInputElement;
-  fixedFinalPopSizeLabel: HTMLLabelElement;
   fixedFinalPopSizeInput: HTMLInputElement;
   fixedPopGrowthRateToggle: HTMLInputElement;
-  fixedPopGrowthRateLabel: HTMLLabelElement;
   fixedPopGrowthRateInput: HTMLInputElement;
 
-  apobecToggle: HTMLInputElement;
   submitAdvancedButton: HTMLButtonElement;
   restartWarning: HTMLElement;
 
@@ -200,28 +191,15 @@ export class RunUI extends UIScreen {
 
     const openAdvancedButton = this.div.querySelector("#advanced-toggle") as HTMLButtonElement;
     this.advanced = this.div.querySelector("#runner--advanced") as HTMLElement;
-    // this.mutationRateFieldset = this.div.querySelector(".mutation-rate-fieldset") as HTMLFieldSetElement,
-    this.siteHeterogeneityToggle = this.div.querySelector("#site-rate-heterogeneity-toggle") as HTMLInputElement,
-    this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement,
-    this.mutationRateLabel = this.div.querySelector("#overall-mutation-rate-label") as HTMLLabelElement,
-    this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
-    this.popModelExpInput = this.div.querySelector("#popmodel-selector-expgrowth") as HTMLInputElement;
-    this.popModelSkygridInput = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
+    this.advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
 
+    this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement;
+    this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
     this.popModelExpDetail = this.div.querySelector("#popmodel-exponential") as HTMLInputElement;
     this.popModelSkygridDetail = this.div.querySelector("#popmodel-skygrid") as HTMLFieldSetElement;
-    this.skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
-    this.skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
-    this.skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
-    this.skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
-
-
-    this.apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
-    this.fixedFinalPopSizeToggle = this.div.querySelector("#fixed-final-pop-size-toggle") as HTMLInputElement,
-    this.fixedFinalPopSizeLabel = this.div.querySelector("#overall-final-pop-size-label") as HTMLLabelElement,
+    this.fixedFinalPopSizeToggle = this.div.querySelector("#fixed-final-pop-size-toggle") as HTMLInputElement;
     this.fixedFinalPopSizeInput = this.div.querySelector("#overall-final-pop-size-input") as HTMLInputElement;
-    this.fixedPopGrowthRateToggle = this.div.querySelector("#fixed-pop-growth-rate-toggle") as HTMLInputElement,
-    this.fixedPopGrowthRateLabel = this.div.querySelector("#overall-pop-growth-rate-label") as HTMLLabelElement,
+    this.fixedPopGrowthRateToggle = this.div.querySelector("#fixed-pop-growth-rate-toggle") as HTMLInputElement;
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
 
     this.burninPrompt = new BurninPrompt();
@@ -260,7 +238,6 @@ export class RunUI extends UIScreen {
       }
 
     });
-    const advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
     this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     openAdvancedButton.addEventListener("click", ()=>{
@@ -270,24 +247,9 @@ export class RunUI extends UIScreen {
       this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
     });
 
-    // this.siteHeterogeneityToggle.addEventListener("change", () => {
-    //   this.apobecFieldset.disabled = this.siteHeterogeneityToggle.checked;
-    // });
     this.fixedRateToggle.addEventListener("change", () => {
       this.mutationRateInput.disabled = !this.fixedRateToggle.checked;
     });
-    const handlePopModelToggle = ()=>{
-      const which = advancedForm.popmodel.value;
-      if (which === 'exp-growth') {
-        this.popModelExpDetail.classList.remove("hidden");
-        this.popModelSkygridDetail.classList.add("hidden");
-      } else if (which === 'skygrid') {
-        this.popModelExpDetail.classList.add("hidden");
-        this.popModelSkygridDetail.classList.remove("hidden");
-      }
-    };
-    this.popModelExpInput.addEventListener("change", handlePopModelToggle);
-    this.popModelSkygridInput.addEventListener("change",handlePopModelToggle);
 
     this.fixedFinalPopSizeToggle.addEventListener("change", () => {
       this.fixedFinalPopSizeInput.disabled = !this.fixedFinalPopSizeToggle.checked;
@@ -295,16 +257,13 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateToggle.addEventListener("change", () => {
       this.fixedPopGrowthRateInput.disabled = !this.fixedPopGrowthRateToggle.checked;
     });
-    // this.apobecToggle.addEventListener("change", ()=>{
-    //   this.mutationRateFieldset.disabled = this.apobecToggle.checked;
-    // });
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
     const advancedCloseButton = this.div.querySelector(".close-button") as HTMLButtonElement;
     [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
       this.advanced.classList.add("hidden");
     }));
-    advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
-    advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
+    this.advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
+    this.advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
     this.advanced.addEventListener("click", e => {
       if (e.target === this.advanced) {
         e.preventDefault();
@@ -362,21 +321,67 @@ export class RunUI extends UIScreen {
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
 
     // update checks
-    this.siteHeterogeneityToggle.checked = params.siteRateHeterogeneityEnabled;
+    const siteHeterogeneityToggle = this.div.querySelector("#site-rate-heterogeneity-toggle") as HTMLInputElement;
+    const skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
+    const skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
+    const skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
+    const skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
+    const apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
+
+    const advancedSkygridToggle = this.div.querySelector("#advanced-skygrid-toggle") as HTMLInputElement;
+    const defaultParams = makeDefaultRunParamConfig(pythia.treeHist[0]);
+    let advancedOptionsAreDefaults = true;
+    if (defaultParams.skygridTauConfig !== params.skygridTauConfig) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridDoubleHalfTime !== params.skygridDoubleHalfTime) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridTau !== params.skygridTau) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridPriorAlpha !== params.skygridPriorAlpha) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridPriorBeta !== params.skygridPriorBeta) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridLowPopBarrierEnabled !== params.skygridLowPopBarrierEnabled) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridLowPopBarrierLocation !== params.skygridLowPopBarrierLocation) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridLowPopBarrierScale !== params.skygridLowPopBarrierScale) advancedOptionsAreDefaults = false;
+
+
+    siteHeterogeneityToggle.checked = params.siteRateHeterogeneityEnabled;
     this.fixedRateToggle.checked = params.mutationRateIsFixed;
-    this.apobecToggle.checked = params.apobecEnabled;
+    apobecToggle.checked = params.apobecEnabled;
     this.fixedFinalPopSizeToggle.checked = params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateToggle.checked = params.popGrowthRateIsFixed;
     this.mutationRateInput.disabled = !params.mutationRateIsFixed;
     this.fixedFinalPopSizeInput.disabled = !params.finalPopSizeIsFixed;
     this.fixedPopGrowthRateInput.disabled = !params.popGrowthRateIsFixed;
 
-    this.popModelExpDetail.classList.toggle("hidden", params.popModelIsSkygrid);
-    this.popModelSkygridDetail.classList.toggle("hidden", !params.popModelIsSkygrid);
-    this.skygridFlatInterpolationInput.checked = !params.skygridIsLogLinear;
-    this.skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
-    this.skygridStartDateInput.value = toDateString(params.skygridStartDate);
-    this.skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
+    skygridFlatInterpolationInput.checked = !params.skygridIsLogLinear;
+    skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
+    skygridStartDateInput.value = toDateString(params.skygridStartDate);
+    skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
+
+    advancedSkygridToggle.checked = !advancedOptionsAreDefaults;
+    const doublingOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="doubling"]`) as HTMLInputElement;
+    const tauOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="tau"]`) as HTMLInputElement;
+    const inferOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="infer"]`) as HTMLInputElement;
+    const doublingInput = this.div.querySelector(`#advanced-skygrid-timescale-doubling-value input`) as HTMLInputElement;
+    const tauInput = this.div.querySelector(`#advanced-skygrid-timescale-tau-value input`) as HTMLInputElement;
+    const alphaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="alpha-value"]`) as HTMLInputElement;
+    const betaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="beta-value"]`) as HTMLInputElement;
+    const minPopEnabledInput = this.div.querySelector(`#advanced-skygrid-barrier-options input[value="on"]`) as HTMLInputElement;
+    const minPopDisabledInput = this.div.querySelector(`#advanced-skygrid-barrier-options input[value="off"]`) as HTMLInputElement;
+    const minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
+    const minBarrierScaleInput  = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-scale"]`) as HTMLInputElement;
+
+    doublingOpt.checked = params.skygridTauConfig === tauConfigOption.DOUBLE_HALF_TIME;
+    tauOpt.checked = params.skygridTauConfig === tauConfigOption.TAU;
+    inferOpt.checked = params.skygridTauConfig === tauConfigOption.INFER;
+    doublingInput.value = `${params.skygridDoubleHalfTime}`;
+    tauInput.value = `${params.skygridTau}`;
+    alphaInput.value = `${params.skygridPriorAlpha}`;
+    betaInput.value = `${params.skygridPriorBeta}`;
+    minPopEnabledInput.checked = params.skygridLowPopBarrierEnabled;
+    minPopDisabledInput.checked = !params.skygridLowPopBarrierEnabled;
+    minBarrierLocationInput.value = `${params.skygridLowPopBarrierLocation}`;
+    minBarrierScaleInput.value = `${params.skygridLowPopBarrierScale}`;
+    this.setImpliedTau(params.skygridDoubleHalfTime, params.skygridStartDate, params.skygridNumIntervals);
+    this.setImpliedDays(params.skygridTau, params.skygridStartDate, params.skygridNumIntervals);
+    this.setPopBarrierLocationPlural(params.skygridLowPopBarrierLocation);
 
     // set field values
     const muFixed = (params.mutationRate * MU_FACTOR).toFixed(2);
@@ -407,6 +412,26 @@ export class RunUI extends UIScreen {
       }
     }
   }
+
+
+  setImpliedTau(doubleHalfTime: number, skygridStartDate: number,  skygridNumIntervals: number):void {
+    const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-tau") as HTMLSpanElement;
+    const tau = this.pythia?.convertSkygridDaysToTau(doubleHalfTime, skygridStartDate,  skygridNumIntervals);
+    span.textContent = `${tau}`
+  }
+
+  setImpliedDays(skygridTau: number, skygridStartDate: number,  skygridNumIntervals: number):void {
+    const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-days") as HTMLSpanElement;
+    const days = this.pythia?.convertSkygridTauToDays(skygridTau, skygridStartDate,  skygridNumIntervals);
+    span.textContent = `${days}`
+  }
+
+  setPopBarrierLocationPlural(skygridLowPopBarrierLocation: number):void {
+    const label = this.div.querySelector("#low-pop-barrier-location-label") as HTMLLabelElement;
+    label.classList.toggle("plural", skygridLowPopBarrierLocation !== 1);
+  }
+
+
 
   setCladeCred() : void {
     const confValue = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}`;
@@ -701,9 +726,13 @@ export class RunUI extends UIScreen {
 
   private submitAdvancedOptions(e: SubmitEvent): void {
     e.preventDefault();
+    const newParams = this.getAdvancedFormValues();
+    this.confirmRestart(newParams);
+  }
 
-    const form = e.target as HTMLFormElement;
-    const formData = Object.fromEntries(new FormData(form));
+
+  private getAdvancedFormValues() : RunParamConfig {
+    const formData = Object.fromEntries(new FormData(this.advancedForm));
 
     let newParams = copyDict(this.getRunParams()) as RunParamConfig;
 
@@ -760,8 +789,7 @@ export class RunUI extends UIScreen {
 
     const isApobec = formData.isApobec === "on";
     newParams = this.setApobec(newParams, isApobec);
-
-    this.confirmRestart(newParams);
+    return newParams;
   }
 
 
@@ -801,18 +829,38 @@ export class RunUI extends UIScreen {
 
   private getWillRestart(): boolean {
     const runParams = this.getRunParams();
-    if (this.siteHeterogeneityToggle.checked !== runParams.siteRateHeterogeneityEnabled) return true;
-    if (parseInt(this.skygridIntervalCountInput.value) !== runParams.skygridNumIntervals) return true;
-    if (parse_iso_date(this.skygridStartDateInput.value) !==runParams.skygridStartDate) return true;
-    if (this.skygridLogLinearInterpolationInput.checked !== runParams.skygridIsLogLinear) return true;
-    if (this.fixedRateToggle.checked !== runParams.mutationRateIsFixed) return true;
-    if (parseFloat(this.mutationRateInput.value).toFixed(2) !== (runParams.mutationRate * MU_FACTOR).toFixed(2)) return true;
-    if (parseFloat(this.fixedFinalPopSizeInput.value).toFixed(2) !== (runParams.finalPopSize * FINAL_POP_SIZE_FACTOR).toFixed(2)) return true;
-    if (parseFloat(this.fixedPopGrowthRateInput.value).toFixed(2) !== (runParams.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2)) return true;
-    if (this.apobecToggle.checked !== runParams.apobecEnabled) return true;
-    if (this.fixedFinalPopSizeToggle.checked !== runParams.finalPopSizeIsFixed) return true;
-    if (this.fixedPopGrowthRateToggle.checked !== runParams.popGrowthRateIsFixed) return true;
-    return false;
+    const formParams = this.getAdvancedFormValues();
+    let same = true;
+    if (runParams.siteRateHeterogeneityEnabled !== formParams.siteRateHeterogeneityEnabled) same = false;
+    if (runParams.skygridNumIntervals !== formParams.skygridNumIntervals) same = false;
+    if (runParams.skygridStartDate !== formParams.skygridStartDate) same = false;
+    if (runParams.skygridIsLogLinear !== formParams.skygridIsLogLinear) same = false;
+    if (runParams.mutationRateIsFixed !== formParams.mutationRateIsFixed) same = false;
+    if (runParams.mutationRate !== formParams.mutationRate) same = false;
+    if (runParams.finalPopSize !== formParams.finalPopSize) same = false;
+    if (runParams.popGrowthRate !== formParams.popGrowthRate) same = false;
+    if (runParams.apobecEnabled !== formParams.apobecEnabled) same = false;
+    if (runParams.finalPopSizeIsFixed !== formParams.finalPopSizeIsFixed) same = false;
+    if (runParams.popGrowthRateIsFixed !== formParams.popGrowthRateIsFixed) same = false;
+    if (runParams.skygridTauConfig !== formParams.skygridTauConfig) same = false;
+    if (runParams.skygridLowPopBarrierEnabled !== formParams.skygridLowPopBarrierEnabled) same = false;
+    switch (formParams.skygridTauConfig) {
+    case tauConfigOption.DOUBLE_HALF_TIME:
+      if (runParams.skygridDoubleHalfTime !== formParams.skygridDoubleHalfTime) same = false;
+      break;
+    case tauConfigOption.TAU:
+      if (runParams.skygridTau !== formParams.skygridTau) same = false;
+      break;
+    case tauConfigOption.INFER:
+      if (runParams.skygridPriorAlpha !== formParams.skygridPriorAlpha) same = false;
+      if (runParams.skygridPriorBeta !== formParams.skygridPriorBeta) same = false;
+      break;
+    }
+    if (formParams.skygridLowPopBarrierEnabled) {
+      if (runParams.skygridLowPopBarrierLocation !== formParams.skygridLowPopBarrierLocation) same = false;
+      if (runParams.skygridLowPopBarrierScale !== formParams.skygridLowPopBarrierScale) same = false;
+    }
+    return !same;
   }
 
   private setStepsPerRefresh(stepPower:number): void {

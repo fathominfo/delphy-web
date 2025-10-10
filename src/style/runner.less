@@ -532,23 +532,30 @@ input.stopping + #run-input--label {
   }
 
   .population-model-option {
-    &.hidden {
-      display: none !important;
-    }
-    &#popmodel-skygrid {
-      display: flex;
-      height: 140px;
-    }
-    &#popmodel-exponential {
+    display: none;
+  }
+
+  .population-model-fieldset:has(#popmodel-selector-expgrowth:checked) {
+    #popmodel-exponential {
       display: block;
     }
   }
+
+  .population-model-fieldset:has(#popmodel-selector-skygrid:checked) {
+    #popmodel-skygrid {
+      display: flex;
+      height: 140px;
+    }
+  }
+
+
 
   .disclaimer {
     font-style: italic;
     color: #888;
   }
 }
+
 
 
 #popmodel-skygrid-m {
@@ -572,7 +579,7 @@ label:has(#advanced-skygrid-toggle:checked) {
 .runner--advanced--content:has(#advanced-skygrid-toggle:checked) {
 
   .population-model-option#popmodel-skygrid {
-    height: fit-content;
+    height: fit-content !important;
   }
 
 
@@ -645,6 +652,14 @@ label:has(#advanced-skygrid-toggle:checked) {
 #advanced-skygrid-timescale-values input {
   width: 4em;
 }
+
+
+
+#low-pop-barrier-location-label {
+  .plural  { display: none;}
+  &.plural .plural {display: inline;}
+}
+
 
 //——————————————————————————————————————————
 // runner / tree

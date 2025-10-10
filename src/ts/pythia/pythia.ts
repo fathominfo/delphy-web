@@ -92,7 +92,7 @@ function calcMaxDateOfTree(tree: PhyloTree): number {
   return maxDate;
 }
 
-function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
+export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
   const count = tree.getSize(),
     tipCount = (count + 1) / 2,
     targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10))),

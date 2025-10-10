@@ -161,7 +161,7 @@
           </fieldset>
           <fieldset class="population-model-fieldset">
             <legend><h3>Population model</h3></legend>
-            <p>
+            <p id="#population-model-options">
               <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth"  checked></label>
               <label>Skygrid <span class="disclaimer">experimental</span><input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid"></label>
             </p>
@@ -189,7 +189,7 @@
                 </div>
               </label>
             </div>
-            <fieldset id="popmodel-skygrid" class="population-model-option hidden">
+            <fieldset id="popmodel-skygrid" class="population-model-option">
               <p class="disclaimer">Experimental! read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
               <div class="input-container">
                 <label id="" class="">
@@ -244,7 +244,7 @@
                   <label class="tau" id="advanced-skygrid-timescale-tau-value">
                     <span>τ (tau): </span><input type="number" name="tau-value" value="9.75" step="any" />
                     <ul>
-                      <li>this implies a doubling/halving timescale of <span class="implied-tau">30</span> days; read more <a href="" target="_">here</a>.</li>
+                      <li>this implies a doubling/halving timescale of <span class="implied-days">30</span> days; read more <a href="" target="_">here</a>.</li>
                     </ul>
                   </label>
                   <label class="infer" id="advanced-skygrid-timescale-infer-values">
@@ -253,7 +253,7 @@
                   </label>
                 </div>
                 <p class="advanced-skygrid-param">Protection against low populations (read more <a href="" target="_">here</a>)</p>
-                <div id="advanced-skygrid-timescale-options">
+                <div id="advanced-skygrid-barrier-options">
                   <label>
                     <span>Enabled (recommended)</span>
                     <input type="radio" name="low-pop-protection" value="on" checked />
@@ -263,9 +263,9 @@
                     <input type="radio" name="low-pop-protection" value="off"/>
                   </label>
                 </div>
-                <ul id="advanced-skygrid-timescale-values">
+                <ul id="advanced-skygrid-barrier-values">
                   <li>
-                    <label>
+                    <label id="low-pop-barrier-location-label">
                       Minimum effective population size:
                       <input type="number" name="low-pop-barrier-location" value="1" min="0" step="any" />
                       day<span class="plural">s</span>
