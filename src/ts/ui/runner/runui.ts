@@ -14,7 +14,7 @@ import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
+import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
@@ -102,6 +102,9 @@ export class RunUI extends UIScreen {
   fixedFinalPopSizeInput: HTMLInputElement;
   fixedPopGrowthRateToggle: HTMLInputElement;
   fixedPopGrowthRateInput: HTMLInputElement;
+  doublingInput: HTMLInputElement;
+  tauInput: HTMLInputElement;
+  minBarrierLocationInput: HTMLInputElement;
 
   submitAdvancedButton: HTMLButtonElement;
   restartWarning: HTMLElement;
@@ -201,6 +204,9 @@ export class RunUI extends UIScreen {
     this.fixedFinalPopSizeInput = this.div.querySelector("#overall-final-pop-size-input") as HTMLInputElement;
     this.fixedPopGrowthRateToggle = this.div.querySelector("#fixed-pop-growth-rate-toggle") as HTMLInputElement;
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
+    this.doublingInput = this.div.querySelector(`#advanced-skygrid-timescale-doubling-value input`) as HTMLInputElement;
+    this.tauInput = this.div.querySelector(`#advanced-skygrid-timescale-tau-value input`) as HTMLInputElement;
+    this.minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
 
     this.burninPrompt = new BurninPrompt();
     this.ess = UNSET;
@@ -257,6 +263,21 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateToggle.addEventListener("change", () => {
       this.fixedPopGrowthRateInput.disabled = !this.fixedPopGrowthRateToggle.checked;
     });
+    this.doublingInput.addEventListener("change", () => {
+      const params = this.getAdvancedFormValues();
+      this.setImpliedTau(params.skygridDoubleHalfTime, params.skygridStartDate, params.skygridNumIntervals);
+    });
+    this.tauInput.addEventListener("change", () => {
+      const params = this.getAdvancedFormValues();
+      this.setImpliedDays(params.skygridTau, params.skygridStartDate, params.skygridNumIntervals);
+    });
+    this.minBarrierLocationInput.addEventListener("change", () => {
+      const params = this.getAdvancedFormValues();
+      this.setPopBarrierLocationPlural(params.skygridLowPopBarrierLocation);
+    });
+
+
+
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
     const advancedCloseButton = this.div.querySelector(".close-button") as HTMLButtonElement;
     [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
@@ -359,25 +380,22 @@ export class RunUI extends UIScreen {
     const doublingOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="doubling"]`) as HTMLInputElement;
     const tauOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="tau"]`) as HTMLInputElement;
     const inferOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="infer"]`) as HTMLInputElement;
-    const doublingInput = this.div.querySelector(`#advanced-skygrid-timescale-doubling-value input`) as HTMLInputElement;
-    const tauInput = this.div.querySelector(`#advanced-skygrid-timescale-tau-value input`) as HTMLInputElement;
     const alphaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="alpha-value"]`) as HTMLInputElement;
     const betaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="beta-value"]`) as HTMLInputElement;
     const minPopEnabledInput = this.div.querySelector(`#advanced-skygrid-barrier-options input[value="on"]`) as HTMLInputElement;
     const minPopDisabledInput = this.div.querySelector(`#advanced-skygrid-barrier-options input[value="off"]`) as HTMLInputElement;
-    const minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
     const minBarrierScaleInput  = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-scale"]`) as HTMLInputElement;
 
     doublingOpt.checked = params.skygridTauConfig === tauConfigOption.DOUBLE_HALF_TIME;
     tauOpt.checked = params.skygridTauConfig === tauConfigOption.TAU;
     inferOpt.checked = params.skygridTauConfig === tauConfigOption.INFER;
-    doublingInput.value = `${params.skygridDoubleHalfTime}`;
-    tauInput.value = `${params.skygridTau}`;
+    this.doublingInput.value = `${params.skygridDoubleHalfTime}`;
+    this.tauInput.value = `${params.skygridTau}`;
     alphaInput.value = `${params.skygridPriorAlpha}`;
     betaInput.value = `${params.skygridPriorBeta}`;
     minPopEnabledInput.checked = params.skygridLowPopBarrierEnabled;
     minPopDisabledInput.checked = !params.skygridLowPopBarrierEnabled;
-    minBarrierLocationInput.value = `${params.skygridLowPopBarrierLocation}`;
+    this.minBarrierLocationInput.value = `${params.skygridLowPopBarrierLocation}`;
     minBarrierScaleInput.value = `${params.skygridLowPopBarrierScale}`;
     this.setImpliedTau(params.skygridDoubleHalfTime, params.skygridStartDate, params.skygridNumIntervals);
     this.setImpliedDays(params.skygridTau, params.skygridStartDate, params.skygridNumIntervals);
@@ -415,15 +433,19 @@ export class RunUI extends UIScreen {
 
 
   setImpliedTau(doubleHalfTime: number, skygridStartDate: number,  skygridNumIntervals: number):void {
-    const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-tau") as HTMLSpanElement;
-    const tau = this.pythia?.convertSkygridDaysToTau(doubleHalfTime, skygridStartDate,  skygridNumIntervals);
-    span.textContent = `${tau}`
+    if (this.pythia) {
+      const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-tau") as HTMLSpanElement;
+      const tau = convertSkygridDaysToTau(doubleHalfTime, skygridStartDate, this.pythia.maxDate, skygridNumIntervals);
+      span.textContent = `${tau.toFixed(2)}`
+    }
   }
 
   setImpliedDays(skygridTau: number, skygridStartDate: number,  skygridNumIntervals: number):void {
-    const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-days") as HTMLSpanElement;
-    const days = this.pythia?.convertSkygridTauToDays(skygridTau, skygridStartDate,  skygridNumIntervals);
-    span.textContent = `${days}`
+    if (this.pythia) {
+      const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-days") as HTMLSpanElement;
+      const days = convertSkygridTauToDays(skygridTau, skygridStartDate, this.pythia.maxDate, skygridNumIntervals);
+      span.textContent = `${days.toFixed(2)}`;
+    }
   }
 
   setPopBarrierLocationPlural(skygridLowPopBarrierLocation: number):void {

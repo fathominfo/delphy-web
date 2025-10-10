@@ -98,7 +98,13 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10))),
     rootDate = tree.getTimeOf(tree.getRootIndex()) || 0,
     maxDate = calcMaxDateOfTree(tree),
-    dateRange = maxDate - rootDate;
+    dateRange = maxDate - rootDate,
+    skygridStartDate = maxDate - 2 * dateRange,
+    skygridNumIntervals = Math.round(tipCount / 15),
+    defaultDays = 30;
+  let skygridTau = convertSkygridDaysToTau(defaultDays, skygridStartDate, maxDate, skygridNumIntervals);
+  console.log(defaultDays, skygridTau, convertSkygridTauToDays(skygridTau, skygridStartDate, maxDate, skygridNumIntervals));
+  skygridTau = Math.round(skygridTau * 100) / 100;
 
   return {
     stepsPerSample: targetStepSize,
@@ -116,12 +122,12 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     popGrowthRate: 0.0,  // e-foldings / year
 
     // Defaults for Skygrid pop model
-    skygridStartDate: maxDate - 2 * dateRange,
-    skygridNumIntervals: Math.round(tipCount / 15),
+    skygridStartDate: skygridStartDate,
+    skygridNumIntervals: skygridNumIntervals,
     skygridIsLogLinear: true,
     skygridTauConfig: tauConfigOption.DOUBLE_HALF_TIME,
     skygridDoubleHalfTime: 30.0, // > 0
-    skygridTau: 0.001, // > 0
+    skygridTau: skygridTau, // > 0
     skygridPriorAlpha: 0.001, // > 0
     skygridPriorBeta: 0.001,   // > 0
     skygridLowPopBarrierEnabled: true,
@@ -129,6 +135,7 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     skygridLowPopBarrierScale: 0.3     // fraction (0,1)
   };
 }
+
 
 export class Pythia {
 
@@ -629,7 +636,7 @@ export class Pythia {
           skygrid_tau = runParams.skygridTau;  // unitless - (should be > 0)
 
         } else {
-          skygrid_tau = this.convertSkygridDaysToTau(runParams.skygridDoubleHalfTime, runParams.skygridStartDate, runParams.skygridNumIntervals);
+          skygrid_tau = convertSkygridDaysToTau(runParams.skygridDoubleHalfTime, runParams.skygridStartDate, this.maxDate, runParams.skygridNumIntervals);
         }
       }
 
@@ -677,31 +684,6 @@ export class Pythia {
           runParams.popGrowthRate));
     }
   }
-
-  convertSkygridDaysToTau(double_half_time: number, skygridStartDate: number,  skygridNumIntervals: number): number {
-    const dt = (this.maxDate - skygridStartDate) / skygridNumIntervals;
-    // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
-    // a 1D random walk with diffusion constant D.  Hence, on average, a starting
-    // log-population changes after a time T by a root-mean-square deviation of
-    // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
-    // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
-    // the "double-half time" with 68% probability:
-    //
-    //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
-    //
-    const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
-    const skygridTau = 1.0 / (2 * D * dt);
-    return skygridTau;
-  }
-
-
-  convertSkygridTauToDays(skygridTau: number, skygridStartDate: number, skygridNumIntervals: number): number {
-    const dt = (this.maxDate - skygridStartDate) / skygridNumIntervals;
-    const D = 1.0 / 2.0 / skygridTau / dt;
-    const double_half_time = Math.pow(Math.log(2.0), 2) / D / 2;
-    return double_half_time;
-  }
-
 
 
   extractRunParamsFromRun(run: Run): RunParamConfig {
@@ -1393,6 +1375,37 @@ export class Pythia {
     }
   }
 }
+
+
+
+
+
+export function convertSkygridDaysToTau(double_half_time: number, skygridStartDate: number, maxDate:number,  skygridNumIntervals: number): number {
+  const dt = (maxDate - skygridStartDate) / skygridNumIntervals;
+  // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
+  // a 1D random walk with diffusion constant D.  Hence, on average, a starting
+  // log-population changes after a time T by a root-mean-square deviation of
+  // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
+  // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
+  // the "double-half time" with 68% probability:
+  //
+  //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
+  //
+  const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
+  const skygridTau = 1.0 / (2 * D * dt);
+  return skygridTau;
+}
+
+
+export function convertSkygridTauToDays(skygridTau: number, skygridStartDate: number, maxDate:number, skygridNumIntervals: number): number {
+  const dt = (maxDate - skygridStartDate) / skygridNumIntervals;
+  const D = 1.0 / 2.0 / skygridTau / dt;
+  const double_half_time = Math.pow(Math.log(2.0), 2) / D / 2;
+  return double_half_time;
+}
+
+
+
 
 
 
