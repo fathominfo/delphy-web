@@ -236,7 +236,7 @@
                 </p>
                 <div id="advanced-skygrid-timescale-inputs" class="doubling">
                   <label class="doubling" id="advanced-skygrid-timescale-doubling-value">
-                    <span>Timescale for doubling/halving: </span><input type="number"  name="number-value" value="30" /> <span>days</span>
+                    <span>Timescale for doubling/halving: </span><input type="number"  name="number-value" value="30" min="0"/> <span>days</span>
                     <ul>
                       <li>this implies a value of tau of <span class="implied-tau">9.75</span>; read more <a href="" target="_">here</a>.</li>
                     </ul>
@@ -248,8 +248,8 @@
                     </ul>
                   </label>
                   <label class="infer" id="advanced-skygrid-timescale-infer-values">
-                    <p><span>Alpha: </span> <input type="number" name="alpha"/></p>
-                    <p><span>Beta: </span> <input type="number" name="beta"/></p>
+                    <p><span>Alpha: </span> <input type="number" name="alpha" min="0" value="0.001"/></p>
+                    <p><span>Beta: </span> <input type="number" name="beta"  min="0" value="0.001"/></p>
                   </label>
                 </div>
                 <p class="advanced-skygrid-param">Protection against low populations (read more <a href="" target="_">here</a>)</p>
@@ -264,12 +264,17 @@
                   </label>
                 </div>
                 <ul id="advanced-skygrid-timescale-values">
-                  <li>Minimum effective population size: 1 day</li>
+                  <li>
+                    <label>
+                      Minimum effective population size:
+                      <input type="number" name="low-pop-barrier-location" value="1" min="0" />
+                      day<span class="plural">s</span>
+                    </label>
                   <li>
                     <label>
                       Impose penalty of 1 nat when population drops below minimum by
-                      <input type="number" name="low-pop-nat-pct" value="30" min="0" max="100"/>%
-                    </llabel>
+                      <input type="number" name="low-pop-barrier-scale" value="30" min="0" max="100"/>%
+                    </label>
                   </li>
                 </ul>
               </div>

@@ -552,7 +552,7 @@ export class RunUI extends UIScreen {
       const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
       console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
       const xHist = (popModelHist[0] as SkygridPopModel).x;
-      const isLogLinear = (popModelHist[0] as SkygridPopModel).type == SkygridPopModelType.LogLinear;
+      const isLogLinear = (popModelHist[0] as SkygridPopModel).type === SkygridPopModelType.LogLinear;
       this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
     } else {
       const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);

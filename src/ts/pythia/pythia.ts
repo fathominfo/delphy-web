@@ -48,6 +48,12 @@ enum sequenceFileFormat {
   MAPLE
 }
 
+enum tauConfigOption {
+  INFER,
+  TAU,
+  DOUBLE_HALF_TIME
+}
+
 // FIXME: Rename things like `mutationRate` to emphasize these are the *initial* values
 export type RunParamConfig = {
   stepsPerSample: number,
@@ -65,6 +71,14 @@ export type RunParamConfig = {
   skygridStartDate: number,
   skygridNumIntervals: number,
   skygridIsLogLinear: boolean,
+  skygridTauConfig: tauConfigOption,
+  skygridDoubleHalfTime: number,
+  skygridTau: number,
+  skygridPriorAlpha: number,
+  skygridPriorBeta: number,
+  skygridLowPopBarrierEnabled: boolean,
+  skygridLowPopBarrierLocation: number,
+  skygridLowPopBarrierScale: number
 };
 
 function calcMaxDateOfTree(tree: PhyloTree): number {
@@ -104,7 +118,15 @@ function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     // Defaults for Skygrid pop model
     skygridStartDate: maxDate - 2 * dateRange,
     skygridNumIntervals: Math.round(tipCount / 15),
-    skygridIsLogLinear: true
+    skygridIsLogLinear: true,
+    skygridTauConfig: tauConfigOption.DOUBLE_HALF_TIME,
+    skygridDoubleHalfTime: 30.0, // > 0
+    skygridTau: 0.001, // > 0
+    skygridPriorAlpha: 0.001, // > 0
+    skygridPriorBeta: 0.001,   // > 0
+    skygridLowPopBarrierEnabled: true,
+    skygridLowPopBarrierLocation: 1.0, // days, > 0
+    skygridLowPopBarrierScale: 0.3     // fraction (0,1)
   };
 }
 
@@ -590,11 +612,11 @@ export class Pythia {
       }
 
       let skygrid_tau = 0.0;
-      const infer_tau = false;  // TODO: Configure via UI
+      const infer_tau = runParams.skygridTauConfig === tauConfigOption.INFER;
       if (infer_tau) {
         // Infer a priori smoothness of log-population curve
-        const prior_alpha = 0.001;  // TODO: Configure via UI (should be > 0)
-        const prior_beta = 0.001;   // TODO: Configure via UI (should be > 0)
+        const prior_alpha = runParams.skygridPriorAlpha;  //  (should be > 0)
+        const prior_beta = runParams.skygridPriorAlpha;   //  (should be > 0)
 
         run.setSkygridTauPriorAlpha(prior_alpha);
         run.setSkygridTauPriorBeta(prior_beta);
@@ -602,24 +624,12 @@ export class Pythia {
         skygrid_tau = prior_alpha / prior_beta;
 
       } else {
-        const setSkygridTauDirectly = false; // TODO: Configure via UI
+        const setSkygridTauDirectly = runParams.skygridTauConfig === tauConfigOption.TAU;
         if (setSkygridTauDirectly) {
-          skygrid_tau = 0.001;  // unitless - TODO: Configure via UI (should be > 0)
+          skygrid_tau = runParams.skygridTau;  // unitless - (should be > 0)
 
         } else {
-          const double_half_time = 30.0;  // days - TODO: Configure via UI (should be > 0)
-
-          // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
-          // a 1D random walk with diffusion constant D.  Hence, on average, a starting
-          // log-population changes after a time T by a root-mean-square deviation of
-          // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
-          // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
-          // the "double-half time" with 68% probability:
-          //
-          //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
-          //
-          const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
-          skygrid_tau = 1.0 / (2 * D * dt);
+          skygrid_tau = this.convertSkygridDaysToTau(runParams.skygridDoubleHalfTime, runParams.skygridStartDate, runParams.skygridNumIntervals);
         }
       }
 
@@ -643,14 +653,13 @@ export class Pythia {
       run.setSkygridTauMoveEnabled(infer_tau);  // Prior configured above when infer_tau == true
 
       // Low-pop barrier
-      const lowPopBarrierDisabled = false;  // TODO: Configure via UI
-      if (lowPopBarrierDisabled) {
-        run.setSkygridLowGammaBarrierEnabled(false);
-      } else {
-        const low_pop_barrier_loc = 1.0;  // days - TODO: Configure via UI (should be > 0)
+      const lowPopBarrierEnabled = runParams.skygridLowPopBarrierEnabled;
+      run.setSkygridLowGammaBarrierEnabled(lowPopBarrierEnabled);
+      if (lowPopBarrierEnabled) {
+        const low_pop_barrier_loc = runParams.skygridLowPopBarrierLocation;  // days - (should be > 0)
         const low_gamma_barrier_loc = Math.log(low_pop_barrier_loc);
 
-        const low_pop_barrier_scale = 0.30;  // fraction (0,1) - TODO: Configure via UI
+        const low_pop_barrier_scale = runParams.skygridLowPopBarrierScale;  // fraction (0,1)
         const low_gamma_barrier_scale = -Math.log(1 - low_pop_barrier_scale);  // Convert to scale in gamma
 
         run.setSkygridLowGammaBarrierEnabled(true);
@@ -668,6 +677,32 @@ export class Pythia {
           runParams.popGrowthRate));
     }
   }
+
+  convertSkygridDaysToTau(double_half_time: number, skygridStartDate: number,  skygridNumIntervals: number): number {
+    const dt = (this.maxDate - skygridStartDate) / skygridNumIntervals;
+    // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
+    // a 1D random walk with diffusion constant D.  Hence, on average, a starting
+    // log-population changes after a time T by a root-mean-square deviation of
+    // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
+    // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
+    // the "double-half time" with 68% probability:
+    //
+    //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
+    //
+    const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
+    const skygridTau = 1.0 / (2 * D * dt);
+    return skygridTau;
+  }
+
+
+  convertSkygridTauToDays(skygridTau: number, skygridStartDate: number, skygridNumIntervals: number): number {
+    const dt = (this.maxDate - skygridStartDate) / skygridNumIntervals;
+    const D = 1.0 / 2.0 / skygridTau / dt;
+    const double_half_time = Math.pow(Math.log(2.0), 2) / D / 2;
+    return double_half_time;
+  }
+
+
 
   extractRunParamsFromRun(run: Run): RunParamConfig {
     const result = makeDefaultRunParamConfig(run.getTree());
