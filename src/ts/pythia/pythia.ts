@@ -48,7 +48,7 @@ enum sequenceFileFormat {
   MAPLE
 }
 
-enum tauConfigOption {
+export enum tauConfigOption {
   INFER,
   TAU,
   DOUBLE_HALF_TIME
@@ -72,13 +72,13 @@ export type RunParamConfig = {
   skygridNumIntervals: number,
   skygridIsLogLinear: boolean,
   skygridTauConfig: tauConfigOption,
-  skygridDoubleHalfTime: number,
-  skygridTau: number,
-  skygridPriorAlpha: number,
-  skygridPriorBeta: number,
+  skygridDoubleHalfTime: number,  // > 0
+  skygridTau: number,  // > 0
+  skygridPriorAlpha: number,  // > 0
+  skygridPriorBeta: number,  // > 0
   skygridLowPopBarrierEnabled: boolean,
-  skygridLowPopBarrierLocation: number,
-  skygridLowPopBarrierScale: number
+  skygridLowPopBarrierLocation: number,  // days, > 0
+  skygridLowPopBarrierScale: number  // fraction (0,1)
 };
 
 function calcMaxDateOfTree(tree: PhyloTree): number {

@@ -14,7 +14,7 @@ import { kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { RunParamConfig } from '../../pythia/pythia';
+import { RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
@@ -718,12 +718,34 @@ export class RunUI extends UIScreen {
     const isSkygrid = formData.popmodel === 'skygrid';
     newParams = this.setPopmodel(newParams, isSkygrid);
     if (isSkygrid) {
+      console.log(formData);
       const skygridK = parse_iso_date(formData['skygrid-K'] as string);
       const skygridM = parseInt(formData['skygrid-M'] as string);
       const skygridInterpolationIsLogLinear = formData['m-interpolation'] === 'loglin';
+      const timescale = formData['timescale'];
+      const tauConfig = timescale === 'tau' ? tauConfigOption.TAU
+        : timescale === 'infer' ? tauConfigOption.INFER
+          : tauConfigOption.DOUBLE_HALF_TIME; // default
+      const doubleHalfTime = parseFloat(formData['doubling-value'] as string);
+      const tau = parseFloat(formData['tau-value'] as string);
+      const priorAlpha = parseFloat(formData['alpha-value'] as string);
+      const priorBeta = parseFloat(formData['beta-value'] as string);
+      const lowPopBarrierEnabled = (formData['low-pop-protection'] as string) === 'on';
+      const lowPopBarrierLocation = parseFloat(formData['low-pop-barrier-location'] as string);
+      const lowPopBarrierScale = parseFloat(formData['low-pop-barrier-scale'] as string);
+
       newParams.skygridStartDate = skygridK;
       newParams.skygridNumIntervals = skygridM;
       newParams.skygridIsLogLinear = skygridInterpolationIsLogLinear;
+      newParams.skygridTauConfig = tauConfig;
+      newParams.skygridDoubleHalfTime = doubleHalfTime;
+      newParams.skygridTau = tau;
+      newParams.skygridPriorAlpha = priorAlpha;
+      newParams.skygridPriorBeta = priorBeta;
+      newParams.skygridLowPopBarrierEnabled = lowPopBarrierEnabled;
+      newParams.skygridLowPopBarrierLocation = lowPopBarrierLocation;
+      newParams.skygridLowPopBarrierScale = lowPopBarrierScale;
+
     } else {
       const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";
       const overallFinalPopSize = (formData.overallFinalPopSize !== undefined) ?
