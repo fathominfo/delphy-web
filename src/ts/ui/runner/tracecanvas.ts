@@ -172,7 +172,7 @@ export class TraceCanvas {
     }
   }
 
-  draw() {}
+  draw() {} // eslint-disable-line @typescript-eslint/no-empty-function
 
   drawField() {
     const {ctx, traceWidth, chartHeight} = this;

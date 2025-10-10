@@ -238,7 +238,7 @@ export class GammaHistCanvas extends TraceCanvas {
         }
         ctx.moveTo(TICK_LENGTH, y);
         ctx.lineTo(TICK_LENGTH - tickLength, y);
-        if (i == 1) {
+        if (i === 1) {
           ctx.stroke();
           ctx.beginPath();
           ctx.globalAlpha = 0.7;
