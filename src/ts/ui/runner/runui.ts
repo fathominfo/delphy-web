@@ -886,9 +886,6 @@ export class RunUI extends UIScreen {
     if (runParams.skygridStartDate !== formParams.skygridStartDate) same = false;
     if (runParams.skygridIsLogLinear !== formParams.skygridIsLogLinear) same = false;
     if (runParams.mutationRateIsFixed !== formParams.mutationRateIsFixed) same = false;
-    if (runParams.mutationRate !== formParams.mutationRate) same = false;
-    if (runParams.finalPopSize !== formParams.finalPopSize) same = false;
-    if (runParams.popGrowthRate !== formParams.popGrowthRate) same = false;
     if (runParams.apobecEnabled !== formParams.apobecEnabled) same = false;
     if (runParams.finalPopSizeIsFixed !== formParams.finalPopSizeIsFixed) same = false;
     if (runParams.popGrowthRateIsFixed !== formParams.popGrowthRateIsFixed) same = false;
@@ -905,6 +902,15 @@ export class RunUI extends UIScreen {
       if (runParams.skygridTauPriorAlpha !== formParams.skygridTauPriorAlpha) same = false;
       if (runParams.skygridTauPriorBeta !== formParams.skygridTauPriorBeta) same = false;
       break;
+    }
+    if (formParams.mutationRateIsFixed) {
+      if (runParams.mutationRate !== formParams.mutationRate) same = false;
+    }
+    if (formParams.finalPopSizeIsFixed) {
+      if (runParams.finalPopSize !== formParams.finalPopSize) same = false;
+    }
+    if (formParams.popGrowthRateIsFixed) {
+      if (runParams.popGrowthRate !== formParams.popGrowthRate) same = false;
     }
     if (formParams.skygridLowPopBarrierEnabled) {
       if (runParams.skygridLowPopBarrierLocation !== formParams.skygridLowPopBarrierLocation) same = false;

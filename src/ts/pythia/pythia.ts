@@ -724,7 +724,7 @@ export class Pythia {
       result.skygridTauPriorAlpha = run.getSkygridTauPriorAlpha();
       result.skygridTauPriorBeta = run.getSkygridTauPriorBeta();
 
-      result.skygridLowPopBarrierEnabled = run.isSkygridLowGammaBarrierEnabled();
+      result.skygridLowPopBarrierEnabled = !!run.isSkygridLowGammaBarrierEnabled();
       // Applicable when skygridLowPopBarrierEnabled == true
       result.skygridLowPopBarrierLocation = Math.exp(run.getSkygridLowGammaBarrierLoc());
       result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
