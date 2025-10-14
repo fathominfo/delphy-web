@@ -74,8 +74,8 @@ export type RunParamConfig = {
   skygridTauConfig: tauConfigOption,
   skygridDoubleHalfTime: number,  // > 0
   skygridTau: number,  // > 0
-  skygridPriorAlpha: number,  // > 0
-  skygridPriorBeta: number,  // > 0
+  skygridTauPriorAlpha: number,  // > 0
+  skygridTauPriorBeta: number,  // > 0
   skygridLowPopBarrierEnabled: boolean,
   skygridLowPopBarrierLocation: number,  // days, > 0
   skygridLowPopBarrierScale: number  // fraction (0,1)
@@ -128,8 +128,8 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     skygridTauConfig: tauConfigOption.DOUBLE_HALF_TIME,
     skygridDoubleHalfTime: 30.0, // > 0
     skygridTau: skygridTau, // > 0
-    skygridPriorAlpha: 0.001, // > 0
-    skygridPriorBeta: 0.001,   // > 0
+    skygridTauPriorAlpha: 0.001, // > 0
+    skygridTauPriorBeta: 0.001,   // > 0
     skygridLowPopBarrierEnabled: true,
     skygridLowPopBarrierLocation: 1.0, // days, > 0
     skygridLowPopBarrierScale: 0.3     // fraction (0,1)
@@ -622,8 +622,8 @@ export class Pythia {
       const infer_tau = runParams.skygridTauConfig === tauConfigOption.INFER;
       if (infer_tau) {
         // Infer a priori smoothness of log-population curve
-        const prior_alpha = runParams.skygridPriorAlpha;  //  (should be > 0)
-        const prior_beta = runParams.skygridPriorAlpha;   //  (should be > 0)
+        const prior_alpha = runParams.skygridTauPriorAlpha;  //  (should be > 0)
+        const prior_beta = runParams.skygridTauPriorBeta;   //  (should be > 0)
 
         run.setSkygridTauPriorAlpha(prior_alpha);
         run.setSkygridTauPriorBeta(prior_beta);
@@ -709,30 +709,25 @@ export class Pythia {
       result.skygridNumIntervals = popModel.x.length - 1;
       result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
 
-      // TODO: Add the below; I'm unsure of whether RunParamConfig should store
-      // both skygridTau and skygridDoubleHalfTime, so I've written the relations
-      // between both.  We can pick one of these and use it throughout.
-      //
-      // result.skygridInferTau = run.isSkygridTauMoveEnabled();
-      //
-      // // Applicable when skygridInferTau == true
-      // result.skygridTauPriorAlpha = run.getSkygridTauPriorAlpha();
-      // result.skygridTauPriorBeta = run.getSkygridTauPriorBeta();
-      //
-      // // Applicable when skygridInferTau == false
-      // // See setParams for a longer explanation of the below
-      // const dt = popModel.x[1] - popModel.x[0];
-      // const D = 1.0 / (2 * run.skygridTau() * dt);
-      // result.skygridSetTauExplicitly = ???;
-      // result.skygridDoubleHalfTime = Math.pow(Math.log(2.0), 2) / (2 * D);
-      // const D = Math.pow(Math.log(2.0), 2) / (2 * result.skygridDoubleHalfTime);
-      // result.skygridTau = 1.0 / (2 * D * dt);
-      //
-      // result.skygridLowPopBarrierDisabled = !run.isSkygridLowGammaBarrierEnabled();
-      //
-      // // Applicable when skygridLowPopBarrierDisabled == false
-      // result.skygridLowPopBarrierLoc = Math.exp(run.getSkygridLowGammaBarrierLoc());
-      // result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
+      // Applicable when skygridInferTau == false
+      result.skygridTau = run.getSkygridTau();
+      // See setParams for a longer explanation of the below
+      const dt = popModel.x[1] - popModel.x[0];
+      const D = 1.0 / (2 * result.skygridTau * dt);
+      result.skygridDoubleHalfTime = Math.pow(Math.log(2.0), 2) / (2 * D);
+
+      result.skygridTauConfig = run.isSkygridTauMoveEnabled() ? tauConfigOption.INFER
+        : tauConfigOption.DOUBLE_HALF_TIME;
+
+
+      // Applicable when skygridInferTau == true
+      result.skygridTauPriorAlpha = run.getSkygridTauPriorAlpha();
+      result.skygridTauPriorBeta = run.getSkygridTauPriorBeta();
+
+      result.skygridLowPopBarrierEnabled = run.isSkygridLowGammaBarrierEnabled();
+      // Applicable when skygridLowPopBarrierEnabled == true
+      result.skygridLowPopBarrierLocation = Math.exp(run.getSkygridLowGammaBarrierLoc());
+      result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
 
     } else {
       throw new Error("don't know what to do here");
@@ -740,7 +735,6 @@ export class Pythia {
 
     return result;
   }
-
 
   setKneeIndexByPct(percent:number):void {
     this.kneeIndex = Math.round(percent * this.stepsHist.length);

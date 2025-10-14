@@ -365,6 +365,8 @@ export class RunUI extends UIScreen {
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
 
     // update checks
+    const popModelExponential = this.div.querySelector("#popmodel-selector-expgrowth") as HTMLInputElement;
+    const popModelSkygrid = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
     const siteHeterogeneityToggle = this.div.querySelector("#site-rate-heterogeneity-toggle") as HTMLInputElement;
     const skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
     const skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
@@ -378,12 +380,14 @@ export class RunUI extends UIScreen {
     if (defaultParams.skygridTauConfig !== params.skygridTauConfig) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridDoubleHalfTime !== params.skygridDoubleHalfTime) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridTau !== params.skygridTau) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridPriorAlpha !== params.skygridPriorAlpha) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridPriorBeta !== params.skygridPriorBeta) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridTauPriorAlpha !== params.skygridTauPriorAlpha) advancedOptionsAreDefaults = false;
+    if (defaultParams.skygridTauPriorBeta !== params.skygridTauPriorBeta) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridLowPopBarrierEnabled !== params.skygridLowPopBarrierEnabled) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridLowPopBarrierLocation !== params.skygridLowPopBarrierLocation) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridLowPopBarrierScale !== params.skygridLowPopBarrierScale) advancedOptionsAreDefaults = false;
 
+    popModelExponential.checked = !params.popModelIsSkygrid;
+    popModelSkygrid.checked = params.popModelIsSkygrid;
 
     siteHeterogeneityToggle.checked = params.siteRateHeterogeneityEnabled;
     this.fixedRateToggle.checked = params.mutationRateIsFixed;
@@ -414,8 +418,8 @@ export class RunUI extends UIScreen {
     inferOpt.checked = params.skygridTauConfig === tauConfigOption.INFER;
     this.doublingInput.value = `${params.skygridDoubleHalfTime}`;
     this.tauInput.value = `${params.skygridTau}`;
-    alphaInput.value = `${params.skygridPriorAlpha}`;
-    betaInput.value = `${params.skygridPriorBeta}`;
+    alphaInput.value = `${params.skygridTauPriorAlpha}`;
+    betaInput.value = `${params.skygridTauPriorBeta}`;
     minPopEnabledInput.checked = params.skygridLowPopBarrierEnabled;
     minPopDisabledInput.checked = !params.skygridLowPopBarrierEnabled;
     this.minBarrierLocationInput.value = `${params.skygridLowPopBarrierLocation}`;
@@ -814,8 +818,8 @@ export class RunUI extends UIScreen {
       newParams.skygridTauConfig = tauConfig;
       newParams.skygridDoubleHalfTime = doubleHalfTime;
       newParams.skygridTau = tau;
-      newParams.skygridPriorAlpha = priorAlpha;
-      newParams.skygridPriorBeta = priorBeta;
+      newParams.skygridTauPriorAlpha = priorAlpha;
+      newParams.skygridTauPriorBeta = priorBeta;
       newParams.skygridLowPopBarrierEnabled = lowPopBarrierEnabled;
       newParams.skygridLowPopBarrierLocation = lowPopBarrierLocation;
       newParams.skygridLowPopBarrierScale = lowPopBarrierScale;
@@ -876,6 +880,7 @@ export class RunUI extends UIScreen {
     const runParams = this.getRunParams();
     const formParams = this.getAdvancedFormValues();
     let same = true;
+    if (runParams.popModelIsSkygrid !== formParams.popModelIsSkygrid) same = false;
     if (runParams.siteRateHeterogeneityEnabled !== formParams.siteRateHeterogeneityEnabled) same = false;
     if (runParams.skygridNumIntervals !== formParams.skygridNumIntervals) same = false;
     if (runParams.skygridStartDate !== formParams.skygridStartDate) same = false;
@@ -897,8 +902,8 @@ export class RunUI extends UIScreen {
       if (runParams.skygridTau !== formParams.skygridTau) same = false;
       break;
     case tauConfigOption.INFER:
-      if (runParams.skygridPriorAlpha !== formParams.skygridPriorAlpha) same = false;
-      if (runParams.skygridPriorBeta !== formParams.skygridPriorBeta) same = false;
+      if (runParams.skygridTauPriorAlpha !== formParams.skygridTauPriorAlpha) same = false;
+      if (runParams.skygridTauPriorBeta !== formParams.skygridTauPriorBeta) same = false;
       break;
     }
     if (formParams.skygridLowPopBarrierEnabled) {
