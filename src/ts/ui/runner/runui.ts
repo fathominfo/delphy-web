@@ -80,6 +80,15 @@ export class RunUI extends UIScreen {
   private burninPrompt: BurninPrompt;
   private ess: number;
 
+  /*
+  For the advanced Skygrid parameters form,
+  we have validations that live in javascript (sadly, native HTML
+  validations don't suffice). If the validation fails, we want to
+  reset the form to the old value. This dictionary is where we store
+  the old values.
+  */
+  private oldValues: { [id: string] : number; };
+
 
   is_running: boolean;
   private timerHandle:number;
@@ -207,6 +216,20 @@ export class RunUI extends UIScreen {
     this.doublingInput = this.div.querySelector(`#advanced-skygrid-timescale-doubling-value input`) as HTMLInputElement;
     this.tauInput = this.div.querySelector(`#advanced-skygrid-timescale-tau-value input`) as HTMLInputElement;
     this.minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
+
+    this.oldValues = {};
+
+    const alphaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="alpha-value"]`) as HTMLInputElement;
+    const betaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="beta-value"]`) as HTMLInputElement;
+    const minBarrierScaleInput  = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-scale"]`) as HTMLInputElement;
+
+
+    this.constrainInputRange('doublingInput', this.doublingInput, 0, null);
+    this.constrainInputRange('tauInput', this.tauInput, 0, null);
+    this.constrainInputRange('alphaInput', alphaInput, 0, null);
+    this.constrainInputRange('betaInput', betaInput, 0, null);
+    this.constrainInputRange('barrierLocationInput', this.minBarrierLocationInput, 0, null);
+    this.constrainInputRange('barrierScaleInput', minBarrierScaleInput, 0, 1);
 
     this.burninPrompt = new BurninPrompt();
     this.ess = UNSET;
@@ -932,8 +955,37 @@ export class RunUI extends UIScreen {
   }
 
 
+  /*
+  HTML numeric elements allow you to set a min and max value, but it's always inclusive.
+  This version is for exclusive ranges, such as > 0 and < 1
+  */
+  constrainInputRange(key: string, element: HTMLInputElement, minExclusive: number, maxExclusive: number|null): void {
+    element.addEventListener("focus", ()=>{
+      this.oldValues[key] = parseFloat(element.value);
+    });
+
+    element.addEventListener("change", (event)=>{
+      let isOk = true;
+      const asNum = parseFloat(element.value);
+      if (asNum <= minExclusive) {
+        alert(`value must be greater than ${minExclusive}`);
+        isOk = false;
+      }
+      if (maxExclusive !== null && asNum >= maxExclusive) {
+        alert(`value must be less than ${maxExclusive}`);
+        isOk = false;
+      }
+      if (!isOk) {
+        event.preventDefault();
+        element.value = `${this.oldValues[key]}`;
+      }
+      return isOk;
+    });
+  }
+
   // private announceAutoKnee(candidateIndex: number, pct: number) : void {
   //   console.log(`setting the knee at ${candidateIndex} ${pct* 100}%`);
   // }
 
 }
+
