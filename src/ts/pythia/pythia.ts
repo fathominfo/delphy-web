@@ -610,7 +610,7 @@ export class Pythia {
     if (runParams.popModelIsSkygrid) {
       // SkygridPopModel
       const dt = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
-      const M = runParams.skygridNumIntervals + 1;
+      const M = runParams.skygridNumIntervals;
       const skyGridInterpolation = runParams.skygridIsLogLinear ? SkygridPopModelType.LogLinear : SkygridPopModelType.Staircase;
 
       const x_k: number[] = [];
@@ -643,6 +643,9 @@ export class Pythia {
       // At this point, skygrid_tau is set.  Sample a random trajectory with this
       // precision, then reset its mean to "3 years" (the `skygrid_gammas_zero_mode_gibbs_move`
       // Gibbs sample the mean value of gamma, so we don't need to get this right at all here)
+      //
+      // N.B. the gamma_k and mean_gamma_k arrays will have M+1 entries to account for the number
+      // of knots, which is one more than the number of intervals. [mark 251015]
       const gamma_k: number[] = [];
       gamma_k.push(0.0);
       for (let k = 1; k <= M; ++k) {
