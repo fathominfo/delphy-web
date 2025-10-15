@@ -369,7 +369,11 @@ export class RunUI extends UIScreen {
     const popModelSkygrid = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
     const siteHeterogeneityToggle = this.div.querySelector("#site-rate-heterogeneity-toggle") as HTMLInputElement;
     const skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
-    const skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-m") as HTMLInputElement;
+    /*
+    the number of intervals is more intuitive, though the delphy core may use the number of edges instead.
+    That is called `M` and M = numIntervals + 1. [mark 251015]
+    */
+    const skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-num-intervals") as HTMLInputElement;
     const skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
     const skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
     const apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
@@ -798,7 +802,8 @@ export class RunUI extends UIScreen {
     if (isSkygrid) {
       console.log(formData);
       const skygridK = parse_iso_date(formData['skygrid-K'] as string);
-      const skygridM = parseInt(formData['skygrid-M'] as string);
+      const skygridNumIntervals = parseInt(formData['skygrid-num-intervals'] as string);
+      // const skygridM = skygridNumIntervals + 1;
       const skygridInterpolationIsLogLinear = formData['m-interpolation'] === 'loglin';
       const timescale = formData['timescale'];
       const tauConfig = timescale === 'tau' ? tauConfigOption.TAU
@@ -813,7 +818,7 @@ export class RunUI extends UIScreen {
       const lowPopBarrierScale = parseFloat(formData['low-pop-barrier-scale'] as string);
 
       newParams.skygridStartDate = skygridK;
-      newParams.skygridNumIntervals = skygridM;
+      newParams.skygridNumIntervals = skygridNumIntervals;
       newParams.skygridIsLogLinear = skygridInterpolationIsLogLinear;
       newParams.skygridTauConfig = tauConfig;
       newParams.skygridDoubleHalfTime = doubleHalfTime;

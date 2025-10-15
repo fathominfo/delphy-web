@@ -730,7 +730,11 @@ export class Pythia {
       result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
 
     } else {
-      throw new Error("don't know what to do here");
+      /*
+      if this happens, we have a serious disconnect between the front
+      and back ends. [mark 251015]
+      */
+      throw new Error("Unknow pop model specified");
     }
 
     return result;
