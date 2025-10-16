@@ -229,7 +229,7 @@ export class RunUI extends UIScreen {
     this.constrainInputRange('alphaInput', alphaInput, 0, null);
     this.constrainInputRange('betaInput', betaInput, 0, null);
     this.constrainInputRange('barrierLocationInput', this.minBarrierLocationInput, 0, null);
-    this.constrainInputRange('barrierScaleInput', minBarrierScaleInput, 0, 1);
+    this.constrainInputRange('barrierScaleInput', minBarrierScaleInput, 0, 100);
 
     this.burninPrompt = new BurninPrompt();
     this.ess = UNSET;
@@ -422,7 +422,7 @@ export class RunUI extends UIScreen {
     minPopEnabledInput.checked = params.skygridLowPopBarrierEnabled;
     minPopDisabledInput.checked = !params.skygridLowPopBarrierEnabled;
     this.minBarrierLocationInput.value = `${params.skygridLowPopBarrierLocation}`;
-    minBarrierScaleInput.value = `${params.skygridLowPopBarrierScale}`;
+    minBarrierScaleInput.value = `${params.skygridLowPopBarrierScale * 100}`;
     this.setImpliedTau(params.skygridDoubleHalfTime, params.skygridStartDate, params.skygridNumIntervals);
     this.setImpliedDays(params.skygridTau, params.skygridStartDate, params.skygridNumIntervals);
     this.setPopBarrierLocationPlural(params.skygridLowPopBarrierLocation);
@@ -821,7 +821,7 @@ export class RunUI extends UIScreen {
       newParams.skygridTauPriorBeta = priorBeta;
       newParams.skygridLowPopBarrierEnabled = lowPopBarrierEnabled;
       newParams.skygridLowPopBarrierLocation = lowPopBarrierLocation;
-      newParams.skygridLowPopBarrierScale = lowPopBarrierScale;
+      newParams.skygridLowPopBarrierScale = lowPopBarrierScale / 100;
 
     } else {
       const isFixedFinalPopSize = formData.isFixedFinalPopSize === "on";

@@ -669,6 +669,9 @@ export class Pythia {
         const low_pop_barrier_loc = runParams.skygridLowPopBarrierLocation;  // days - (should be > 0)
         const low_gamma_barrier_loc = Math.log(low_pop_barrier_loc);
 
+        if (runParams.skygridLowPopBarrierScale <= 0 || runParams.skygridLowPopBarrierScale >= 1) {
+          console.warn(`skygridLowPopBarrierScale out of bounds ${runParams.skygridLowPopBarrierScale}, should be 0 < n < 1`);
+        }
         const low_pop_barrier_scale = runParams.skygridLowPopBarrierScale;  // fraction (0,1)
         const low_gamma_barrier_scale = -Math.log(1 - low_pop_barrier_scale);  // Convert to scale in gamma
 
