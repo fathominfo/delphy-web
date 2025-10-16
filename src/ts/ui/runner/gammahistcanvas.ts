@@ -186,7 +186,7 @@ export class GammaHistCanvas extends TraceCanvas {
     let {chartHeight} = this;
     const {ctx,
       avgLabel, midLabels, maxLabel, minLabel,
-      labelContainer, minSpan,
+      labelContainer, minSpan, maxSpan,
       displayMin, displayMax} = this;
     chartHeight -= HALF_BORDER * 2;
     let yearsMin = gammaToYears(displayMin);
@@ -202,6 +202,7 @@ export class GammaHistCanvas extends TraceCanvas {
     midLabels.forEach(ele=>ele.remove());
     midLabels.length = 0;
     minSpan.textContent = toFullDateString(this.dates[0])
+    maxSpan.textContent = toFullDateString(this.dates[this.dates.length - 1]);
     const magSpan = maxMagnitude - minMagnitude;
     const labelHeight = LABEL_HEIGHT * magSpan;
     const labelsOK = chartHeight >= labelHeight;
