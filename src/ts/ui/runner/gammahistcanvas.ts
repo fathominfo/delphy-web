@@ -179,8 +179,7 @@ export class GammaHistCanvas extends TraceCanvas {
       x = TICK_LENGTH + i * kWidth;
       ctx.lineTo(x, y);
     }
-    ctx.stroke
-
+    ctx.stroke();
   }
 
   drawLabels():void {
