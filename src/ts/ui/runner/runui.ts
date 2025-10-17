@@ -22,6 +22,8 @@ import { TraceCanvas } from './tracecanvas';
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
+const EPSILON = 1e-7;
+
 type ESS_THRESHOLD = {threshold: number, className: string};
 
 const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
@@ -377,13 +379,43 @@ export class RunUI extends UIScreen {
     const defaultParams = makeDefaultRunParamConfig(pythia.treeHist[0]);
     let advancedOptionsAreDefaults = true;
     if (defaultParams.skygridTauConfig !== params.skygridTauConfig) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridDoubleHalfTime !== params.skygridDoubleHalfTime) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridTau !== params.skygridTau) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridTauPriorAlpha !== params.skygridTauPriorAlpha) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridTauPriorBeta !== params.skygridTauPriorBeta) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridLowPopBarrierEnabled !== params.skygridLowPopBarrierEnabled) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridLowPopBarrierLocation !== params.skygridLowPopBarrierLocation) advancedOptionsAreDefaults = false;
-    if (defaultParams.skygridLowPopBarrierScale !== params.skygridLowPopBarrierScale) advancedOptionsAreDefaults = false;
+
+
+    if (closeEnough(defaultParams.skygridDoubleHalfTime, params.skygridDoubleHalfTime)) {
+      params.skygridDoubleHalfTime = defaultParams.skygridDoubleHalfTime;
+    } else if (params.skygridTauConfig === tauConfigOption.DOUBLE_HALF_TIME) {
+      advancedOptionsAreDefaults = false;
+      params.skygridDoubleHalfTime = checkIfIsProllyInt(params.skygridDoubleHalfTime);
+    }
+    if (closeEnough(defaultParams.skygridTau, params.skygridTau)) {
+      params.skygridTau = defaultParams.skygridTau;
+    } else if (params.skygridTauConfig === tauConfigOption.TAU) {
+      advancedOptionsAreDefaults = false;
+    }
+    if (closeEnough(defaultParams.skygridTauPriorAlpha, params.skygridTauPriorAlpha)) {
+      params.skygridTauPriorAlpha = defaultParams.skygridTauPriorAlpha;
+    } else if (params.skygridTauConfig === tauConfigOption.INFER) {
+      advancedOptionsAreDefaults = false;
+    }
+    if (closeEnough(defaultParams.skygridTauPriorBeta, params.skygridTauPriorBeta)) {
+      params.skygridTauPriorBeta = defaultParams.skygridTauPriorBeta;
+    } else if (params.skygridTauConfig === tauConfigOption.INFER) {
+      advancedOptionsAreDefaults = false;
+    }
+    if (closeEnough(defaultParams.skygridLowPopBarrierLocation, params.skygridLowPopBarrierLocation)) {
+      params.skygridLowPopBarrierLocation = defaultParams.skygridLowPopBarrierLocation;
+    } else if (params.skygridLowPopBarrierEnabled) {
+      advancedOptionsAreDefaults = false;
+      params.skygridLowPopBarrierLocation = checkIfIsProllyInt(params.skygridLowPopBarrierLocation);
+    }
+    if (closeEnough(defaultParams.skygridLowPopBarrierScale, params.skygridLowPopBarrierScale)) {
+      params.skygridLowPopBarrierScale = defaultParams.skygridLowPopBarrierScale;
+    } else if (params.skygridLowPopBarrierEnabled) {
+      advancedOptionsAreDefaults = false;
+      const asPct = checkIfIsProllyInt(params.skygridLowPopBarrierScale * 100);
+      params.skygridLowPopBarrierScale = asPct / 100;
+    }
 
     popModelExponential.checked = !params.popModelIsSkygrid;
     popModelSkygrid.checked = params.popModelIsSkygrid;
@@ -892,28 +924,28 @@ export class RunUI extends UIScreen {
     if (runParams.skygridLowPopBarrierEnabled !== formParams.skygridLowPopBarrierEnabled) same = false;
     switch (formParams.skygridTauConfig) {
     case tauConfigOption.DOUBLE_HALF_TIME:
-      if (runParams.skygridDoubleHalfTime !== formParams.skygridDoubleHalfTime) same = false;
+      if (!closeEnough(runParams.skygridDoubleHalfTime, formParams.skygridDoubleHalfTime)) same = false;
       break;
     case tauConfigOption.TAU:
-      if (runParams.skygridTau !== formParams.skygridTau) same = false;
+      if (!closeEnough(runParams.skygridTau, formParams.skygridTau)) same = false;
       break;
     case tauConfigOption.INFER:
-      if (runParams.skygridTauPriorAlpha !== formParams.skygridTauPriorAlpha) same = false;
-      if (runParams.skygridTauPriorBeta !== formParams.skygridTauPriorBeta) same = false;
+      if (!closeEnough(runParams.skygridTauPriorAlpha, formParams.skygridTauPriorAlpha)) same = false;
+      if (!closeEnough(runParams.skygridTauPriorBeta, formParams.skygridTauPriorBeta)) same = false;
       break;
     }
     if (formParams.mutationRateIsFixed) {
-      if (runParams.mutationRate !== formParams.mutationRate) same = false;
+      if (!closeEnough(runParams.mutationRate, formParams.mutationRate)) same = false;
     }
     if (formParams.finalPopSizeIsFixed) {
-      if (runParams.finalPopSize !== formParams.finalPopSize) same = false;
+      if (!closeEnough(runParams.finalPopSize, formParams.finalPopSize)) same = false;
     }
     if (formParams.popGrowthRateIsFixed) {
-      if (runParams.popGrowthRate !== formParams.popGrowthRate) same = false;
+      if (!closeEnough(runParams.popGrowthRate, formParams.popGrowthRate)) same = false;
     }
     if (formParams.skygridLowPopBarrierEnabled) {
-      if (runParams.skygridLowPopBarrierLocation !== formParams.skygridLowPopBarrierLocation) same = false;
-      if (runParams.skygridLowPopBarrierScale !== formParams.skygridLowPopBarrierScale) same = false;
+      if (!closeEnough(runParams.skygridLowPopBarrierLocation, formParams.skygridLowPopBarrierLocation)) same = false;
+      if (!closeEnough(runParams.skygridLowPopBarrierScale,formParams.skygridLowPopBarrierScale)) same = false;
     }
     return !same;
   }
@@ -999,3 +1031,17 @@ export class RunUI extends UIScreen {
 
 }
 
+const closeEnough = (n1:number, n2:number): boolean =>{
+  const diffFactor = Math.abs((n1 - n2)/n1);
+  if (diffFactor < EPSILON) {
+    return true;
+  }
+  return false;
+}
+
+const checkIfIsProllyInt = (n1:number): number=>{
+  if (closeEnough(n1, Math.round(n1))) {
+    return Math.round(n1);
+  }
+  return n1;
+}
