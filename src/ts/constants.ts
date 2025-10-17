@@ -176,5 +176,5 @@ export type CoreVersionInfo = {
   commit: string
 };
 
-export const noop = ()=>{};
+export const noop = ()=>{};  // eslint-disable-line @typescript-eslint/no-empty-function
 

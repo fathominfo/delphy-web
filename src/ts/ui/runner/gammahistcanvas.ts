@@ -1,11 +1,17 @@
 import { toFullDateString } from "../../pythia/dates";
-import { numericSort, safeLabel, UNSET } from "../common";
+import { minimalDecimalLabel, numericSort, UNSET } from "../common";
 import { calcHPD } from "../distribution";
 import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
-import { TraceCanvas, log10, TICK_LENGTH } from "./tracecanvas";
+import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, log10, HALF_BORDER } from "./tracecanvas";
 
 
 const HPD_COLOR = 'rgb(184, 208, 238)';
+
+const LABEL_HEIGHT = 14;
+
+const MIN_HPD_INDEX = 0;
+const MAX_HPD_INDEX = 1;
+const MEDIAN_INDEX = 3;
 
 
 export class GammaHistCanvas extends TraceCanvas {
@@ -17,6 +23,8 @@ export class GammaHistCanvas extends TraceCanvas {
   maxSpan: HTMLSpanElement;
   isLogLinear = false;
   sampleIndex: number;
+  midLabels: HTMLLIElement[];
+  labelContainer: HTMLUListElement;
 
   constructor(label:string) {
     super(label, '');
@@ -25,7 +33,12 @@ export class GammaHistCanvas extends TraceCanvas {
     this.readout.appendChild(this.minSpan);
     this.readout.appendChild(this.maxSpan);
     this.readout.classList.add('range');
+    this.midLabels = [];
     this.sampleIndex = UNSET;
+    this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
+    // use the avgLabel as a cloning template
+    this.avgLabel.textContent = '';
+    this.avgLabel.style.position = 'absolute';
   }
 
   setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
@@ -46,18 +59,24 @@ export class GammaHistCanvas extends TraceCanvas {
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
-    /* what scale is the range in? */
-    const range = this.dataMax - this.dataMin;
-
-    if (range === 0 || this.isDiscrete && range < 20) {
+    if (this.dataMax === this.dataMin) {
       this.displayMin = this.dataMin;
       this.displayMax = this.dataMax;
     } else {
-      const expRange = Math.floor(Math.log(range) / log10),
-        mag = Math.pow(10, expRange),
-        magPad = mag * 0.1;
-      this.displayMin = Math.floor((this.dataMin - magPad) / mag) * mag;
-      this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
+      /*
+      the data coming back from delphy is the gamma value,
+      but we want to convert that to years (where 1 year === 365 days)
+      */
+      const dataMinYears = gammaToYears(this.dataMin);
+      const dataMaxYears = gammaToYears(this.dataMax);
+      const minLog = Math.log10(dataMinYears);
+      const maxLog = Math.log10(dataMaxYears);
+      const minMagnitude = Math.floor(minLog);
+      const maxMagnitude = Math.ceil(maxLog);
+      const displayMinYears = Math.exp(minMagnitude * log10);
+      const displayMaxYears = Math.exp(maxMagnitude * log10);
+      this.displayMin = yearsToGamma(displayMinYears);
+      this.displayMax = yearsToGamma(displayMaxYears);
     }
 
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
@@ -83,126 +102,166 @@ export class GammaHistCanvas extends TraceCanvas {
     const kCount = data.length;
     const kWidth = traceWidth / (kCount - 1);
     let i = 0;
-    let hpd = data[i][0];
-    let x = TICK_LENGTH;
+    let hpd = data[i][MIN_HPD_INDEX];
     const firstY = chartHeight-(hpd-displayMin) * verticalScale;
+    let x = TICK_LENGTH;
+    let y = firstY;
     ctx.lineWidth = 1;
     ctx.fillStyle = HPD_COLOR;
 
-    if (this.isLogLinear) {
-      // draw the 95% HPD area
-      ctx.beginPath();
-      ctx.moveTo(x, firstY);
-      for (i = 1; i < kCount; i++) {
-        x = TICK_LENGTH + i * kWidth;
-        hpd = data[i][0];
-        ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
-      }
-      for (i = kCount - 1; i >= 0; i--) {
-        x = TICK_LENGTH + i * kWidth;
-        hpd = data[i][1];
-        ctx.lineTo(x, chartHeight-(hpd-displayMin) * verticalScale);
-      }
-      ctx.lineTo(TICK_LENGTH, firstY);
-      ctx.fill();
+    const drawingStaircase = !this.isLogLinear;
 
-      // draw the population curve for the current sample
-      const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
-      if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
-        const sampleData = this.rangeData[drawnSampleIndex];
-        console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
+    // console.log(this.dataMin, this.dataMax, this.displayMin, this.displayMax);
 
-        ctx.beginPath();
-        ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
-        x = TICK_LENGTH;
-        ctx.moveTo(x, chartHeight-(sampleData[0]-displayMin) * verticalScale);
-        for (i = 1; i < kCount; i++) {
-          x = TICK_LENGTH + i * kWidth;
-          ctx.lineTo(x, chartHeight-(sampleData[i]-displayMin) * verticalScale);
-        }
-        ctx.stroke();
-      }
-
-      // draw the mean
-      ctx.beginPath();
-      ctx.strokeStyle = TRACE_COLOR;
-      const means = data.map(arr=>arr[2]);
-      let mean = means[0];
-      x = TICK_LENGTH;
-      ctx.moveTo(x, chartHeight-(mean-displayMin) * verticalScale);
-      for (i = 1; i < kCount; i++) {
-        x = TICK_LENGTH + i * kWidth;
-        mean = means[i];
-        ctx.lineTo(x, chartHeight-(mean-displayMin) * verticalScale);
-      }
-      ctx.stroke();
-
-    } else {
-      // draw the 95% HPD area
-      ctx.beginPath();
-      ctx.moveTo(x, firstY);
-      let y = firstY;
-      x = TICK_LENGTH;
-      for (i = 1; i < kCount; i++) {
-        hpd = data[i][0];
-        y = chartHeight-(hpd-displayMin) * verticalScale;
-        ctx.lineTo(x, y);
-        x = TICK_LENGTH + i * kWidth;
+    // draw the 95% HPD area
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (i = 1; i < kCount; i++) {
+      hpd = data[i][MIN_HPD_INDEX];
+      y = chartHeight-(hpd-displayMin) * verticalScale;
+      if (drawingStaircase) {
         ctx.lineTo(x, y);
       }
-      for (i = kCount - 1; i > 0; i--) {
-        x = TICK_LENGTH + i * kWidth;
-        hpd = data[i][1];
-        y = chartHeight-(hpd-displayMin) * verticalScale;
-        ctx.lineTo(x, y);
+      x = TICK_LENGTH + i * kWidth;
+      ctx.lineTo(x, y);
+    }
+    for (i = kCount - 1; i > 0; i--) {
+      x = TICK_LENGTH + i * kWidth;
+      hpd = data[i][MAX_HPD_INDEX];
+      y = chartHeight-(hpd-displayMin) * verticalScale;
+      ctx.lineTo(x, y);
+      if (drawingStaircase) {
         x = TICK_LENGTH + (i-1) * kWidth;
         ctx.lineTo(x, y);
       }
-      ctx.lineTo(TICK_LENGTH, firstY);
-      ctx.fill();
-
-      // draw the population curve for the current sample
-      const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
-      if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
-        const sampleData = this.rangeData[drawnSampleIndex];
-        console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
-
-        ctx.beginPath();
-        ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
-        x = TICK_LENGTH;
-        for (i = 1; i < kCount; i++) {
-          y = chartHeight-(sampleData[i]-displayMin) * verticalScale
-          ctx.moveTo(x, y);
-          x = TICK_LENGTH + i * kWidth;
-          ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-
-      // draw the mean
-      ctx.beginPath();
-      ctx.strokeStyle = TRACE_COLOR;
-      const means = data.map(arr=>arr[2]);
-      let mean = means[0];
+    }
+    if (!drawingStaircase) {
       x = TICK_LENGTH;
+      hpd = data[0][MAX_HPD_INDEX];
+      y = chartHeight-(hpd-displayMin) * verticalScale;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.lineTo(TICK_LENGTH, firstY);
+    ctx.fill();
+
+    // draw the population curve for the current sample
+    const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
+    if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
+      const sampleData = this.rangeData[drawnSampleIndex];
+      console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
+
+      ctx.beginPath();
+      ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
+      x = TICK_LENGTH;
+      y = chartHeight-(sampleData[0]-displayMin) * verticalScale;
+      if (!drawingStaircase)  ctx.moveTo(x, y);
       for (i = 1; i < kCount; i++) {
-        mean = means[i];
-        y = chartHeight-(mean-displayMin) * verticalScale;
-        ctx.moveTo(x, y);
+        y = chartHeight-(sampleData[i]-displayMin) * verticalScale;
+        if (drawingStaircase) {
+          ctx.moveTo(x, y);
+        }
         x = TICK_LENGTH + i * kWidth;
         ctx.lineTo(x, y);
       }
       ctx.stroke();
-
     }
+
+    // draw the median
+    ctx.beginPath();
+    ctx.strokeStyle = TRACE_COLOR;
+    let median = data[0][MEDIAN_INDEX];
+    x = TICK_LENGTH;
+    y = chartHeight-(median-displayMin) * verticalScale;
+    ctx.moveTo(x, y);
+    for (i = 1; i < kCount; i++) {
+      median = data[i][MEDIAN_INDEX];
+      y = chartHeight-(median-displayMin) * verticalScale;
+      if (drawingStaircase) {
+        ctx.moveTo(x, y);
+      }
+      x = TICK_LENGTH + i * kWidth;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
   }
 
   drawLabels():void {
-    this.maxLabel.textContent = safeLabel(this.displayMax);
-    this.minLabel.textContent = safeLabel(this.displayMin);
-    this.avgLabel.textContent = '';
-    this.minSpan.textContent = toFullDateString(this.dates[0])
-    this.maxSpan.textContent = toFullDateString(this.dates[this.dates.length-1]);
+    let {chartHeight} = this;
+    const {ctx,
+      avgLabel, midLabels, maxLabel, minLabel,
+      labelContainer, minSpan, maxSpan,
+      displayMin, displayMax} = this;
+    chartHeight -= HALF_BORDER * 2;
+    let yearsMin = gammaToYears(displayMin);
+    let yearsMax = gammaToYears(displayMax);
+    const minMagnitude = Math.round(Math.log10(yearsMin));
+    const maxMagnitude = Math.round(Math.log10(yearsMax));
+    yearsMin = defractionalize(yearsMin, minMagnitude);
+    yearsMax = defractionalize(yearsMax, maxMagnitude);
+    const logRange = maxMagnitude - minMagnitude;
+    maxLabel.textContent = minimalDecimalLabel(yearsMax);
+    minLabel.textContent = minimalDecimalLabel(yearsMin);
+    /* clear the mid labels */
+    midLabels.forEach(ele=>ele.remove());
+    midLabels.length = 0;
+    minSpan.textContent = toFullDateString(this.dates[0])
+    maxSpan.textContent = toFullDateString(this.dates[this.dates.length - 1]);
+    const magSpan = maxMagnitude - minMagnitude;
+    const labelHeight = LABEL_HEIGHT * magSpan;
+    const labelsOK = chartHeight >= labelHeight;
+    // const step = Math.pow(10, minMagnitude);
+    ctx.strokeStyle = BORDER_COLOR;
+    ctx.lineWidth = BORDER_WEIGHT;
+    ctx.beginPath();
+    let mag = minMagnitude;
+    let tens = Math.pow(10, mag);
+    let tickLength = 0;
+    while (mag < maxMagnitude) {
+      for (let i = 1; i <10; i++) {
+        const n = i * tens;
+        const nLog = Math.log10(n);
+        const pct = (nLog - minMagnitude) / logRange;
+        const y = HALF_BORDER + chartHeight - pct * chartHeight;
+        if (i === 1) {
+          ctx.stroke();
+          ctx.beginPath();
+          tickLength = TICK_LENGTH;
+          ctx.lineWidth = BORDER_WEIGHT;
+          ctx.globalAlpha = 1;
+          if (labelsOK && mag !== minMagnitude && mag !== maxMagnitude) {
+            const label = avgLabel.cloneNode(true) as HTMLLIElement;
+            label.style.top = `${y-2}px`;
+            label.textContent = minimalDecimalLabel(n);
+            this.midLabels.push(label);
+            labelContainer.appendChild(label);
+          }
+        } else if (labelsOK || i % 3 === 2) {
+          tickLength = TICK_LENGTH * (4 + i * i) / 104.0; // 10 * 10 + 4
+          // tickLength = TICK_LENGTH / 2;
+        }
+        ctx.moveTo(TICK_LENGTH, y);
+        ctx.lineTo(TICK_LENGTH - tickLength, y);
+        if (i === 1) {
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.globalAlpha = 0.7;
+          if (!labelsOK) {
+            ctx.lineWidth = BORDER_WEIGHT / 2;
+          }
+        }
+      }
+      mag++;
+      tens *= 10;
+    }
+    /* the top tick */
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.lineWidth = BORDER_WEIGHT;
+    ctx.globalAlpha = 1;
+    ctx.moveTo(0, HALF_BORDER);
+    ctx.lineTo(TICK_LENGTH, HALF_BORDER);
+    ctx.stroke();
   }
 
 }
@@ -217,6 +276,24 @@ const hpdeify = (arr:number[]):number[]=>{
   const [hpdMin, hpdMax] = calcHPD(sorted);
   const sum = sorted.reduce((tot, n)=>tot+n, 0);
   const mean = sum / sorted.length;
+  const midpoint = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 == 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
   // console.log(hpdMin, hpdMax, mean)
-  return [hpdMin, hpdMax, mean];
+  return [hpdMin, hpdMax, mean, median];
+}
+
+
+const gammaToYears = (n:number):number => {
+  return Math.exp(n)/365;
+}
+
+const yearsToGamma = (n:number):number => {
+  return Math.log(n * 365);
+}
+
+const defractionalize = (n:number, mag:number):number => {
+  const tensy = Math.pow(10, mag);
+  let nn = Math.round(n/tensy) * tensy;
+  if (nn > 1) nn = Math.round(nn);
+  return nn;
 }

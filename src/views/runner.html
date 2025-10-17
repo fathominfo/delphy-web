@@ -161,7 +161,7 @@
           </fieldset>
           <fieldset class="population-model-fieldset">
             <legend><h3>Population model</h3></legend>
-            <p>
+            <p id="#population-model-options">
               <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth"  checked></label>
               <label>Skygrid <span class="disclaimer">experimental</span><input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid"></label>
             </p>
@@ -189,7 +189,7 @@
                 </div>
               </label>
             </div>
-            <fieldset id="popmodel-skygrid" class="population-model-option hidden">
+            <fieldset id="popmodel-skygrid" class="population-model-option">
               <p class="disclaimer">Experimental! read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
               <div class="input-container">
                 <label id="" class="">
@@ -199,7 +199,7 @@
               </div>
               <div class="input-container">
                 <label id="" class="">
-                  <p>Split into <input type="number" id="popmodel-skygrid-m" value="100" name="skygrid-M"/> intervals</p>
+                  <p>Split into <input type="number" id="popmodel-skygrid-num-intervals" value="100" name="skygrid-M"/> intervals</p>
                 </label>
               </div>
               <div class="input-container">
@@ -208,6 +208,72 @@
                   <label>Log-linear<input id="popmodel-skygrid-interpolate-loglinear" type="radio" name="m-interpolation" value="loglin" checked></label>
                 </p>
               </div>
+
+              <label>
+                <input id="advanced-skygrid-toggle" type="checkbox">
+                <span>Advanced Skygrid Parameters</span>
+              </label>
+              <div id="advanced-skygrid-parameters">
+                <p class="advanced-skygrid-param">Population curve prior smoothness</p>
+                <p id="advanced-skygrid-timescale-options">
+                  <label id="advanced-skygrid-timescale-doubling">
+                    <span>Set timescale</span>
+                    <input type="radio" name="timescale" value="doubling" checked />
+                  </label>
+                  <label id="advanced-skygrid-timescale-tau">
+                    <span>Set tau</span>
+                    <input type="radio" name="timescale" value="tau" />
+                  </label>
+                  <label id="advanced-skygrid-timescale-infer">
+                    <span>Infer tau with Gamma-prior</span>
+                    <input type="radio" name="timescale" value="infer" />
+                  </label>
+                </p>
+                <div id="advanced-skygrid-timescale-inputs" class="doubling">
+                  <label class="doubling" id="advanced-skygrid-timescale-doubling-value">
+                    <span>Timescale for doubling/halving: </span><input type="number" name="doubling-value" value="30" min="0"  step="any" /> <span>days</span>
+                    <ul>
+                      <li>this implies a value of tau of <span class="implied-tau">9.75</span>; read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</li>
+                    </ul>
+                  </label>
+                  <label class="tau" id="advanced-skygrid-timescale-tau-value">
+                    <span>τ (tau): </span><input type="number" name="tau-value" value="9.75" step="any" min="0.0"/>
+                    <ul>
+                      <li>this implies a doubling/halving timescale of <span class="implied-days">30</span> days; read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</li>
+                    </ul>
+                  </label>
+                  <label class="infer" id="advanced-skygrid-timescale-infer-values">
+                    <p><span>Alpha: </span> <input type="number" name="alpha-value" min="0" value="0.001" step="any" /></p>
+                    <p><span>Beta: </span> <input type="number" name="beta-value"  min="0" value="0.001" step="any" /></p>
+                  </label>
+                </div>
+                <p class="advanced-skygrid-param">Protection against low populations (read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>)</p>
+                <div id="advanced-skygrid-barrier-options">
+                  <label>
+                    <span>Enabled (recommended)</span>
+                    <input type="radio" name="low-pop-protection" value="on" checked />
+                  </label>
+                  <label>
+                    <span>Disabled</span>
+                    <input type="radio" name="low-pop-protection" value="off"/>
+                  </label>
+                </div>
+                <ul id="advanced-skygrid-barrier-values">
+                  <li>
+                    <label id="low-pop-barrier-location-label">
+                      Minimum effective population size:
+                      <input type="number" name="low-pop-barrier-location" value="1" min="0" step="any" />
+                      day<span class="plural">s</span>
+                    </label>
+                  <li>
+                    <label>
+                      Impose penalty of 1 nat when population drops below minimum by
+                      <input type="number" name="low-pop-barrier-scale" value="30" min="0" max="100" step="any" />%
+                    </label>
+                  </li>
+                </ul>
+              </div>
+
             </fieldset>
           </fieldset>
         </div>
