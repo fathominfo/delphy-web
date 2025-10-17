@@ -9,6 +9,11 @@ const HPD_COLOR = 'rgb(184, 208, 238)';
 
 const LABEL_HEIGHT = 14;
 
+const MIN_HPD_INDEX = 0;
+const MAX_HPD_INDEX = 1;
+const MEDIAN_INDEX = 3;
+
+
 export class GammaHistCanvas extends TraceCanvas {
 
   rangeData: number[][] = [];
@@ -97,7 +102,7 @@ export class GammaHistCanvas extends TraceCanvas {
     const kCount = data.length;
     const kWidth = traceWidth / (kCount - 1);
     let i = 0;
-    let hpd = data[i][0];
+    let hpd = data[i][MIN_HPD_INDEX];
     const firstY = chartHeight-(hpd-displayMin) * verticalScale;
     let x = TICK_LENGTH;
     let y = firstY;
@@ -112,7 +117,7 @@ export class GammaHistCanvas extends TraceCanvas {
     ctx.beginPath();
     ctx.moveTo(x, y);
     for (i = 1; i < kCount; i++) {
-      hpd = data[i][0];
+      hpd = data[i][MIN_HPD_INDEX];
       y = chartHeight-(hpd-displayMin) * verticalScale;
       if (drawingStaircase) {
         ctx.lineTo(x, y);
@@ -122,7 +127,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     for (i = kCount - 1; i > 0; i--) {
       x = TICK_LENGTH + i * kWidth;
-      hpd = data[i][1];
+      hpd = data[i][MAX_HPD_INDEX];
       y = chartHeight-(hpd-displayMin) * verticalScale;
       ctx.lineTo(x, y);
       if (drawingStaircase) {
@@ -132,7 +137,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     if (!drawingStaircase) {
       x = TICK_LENGTH;
-      hpd = data[0][1];
+      hpd = data[0][MAX_HPD_INDEX];
       y = chartHeight-(hpd-displayMin) * verticalScale;
       ctx.lineTo(x, y);
     }
@@ -162,17 +167,16 @@ export class GammaHistCanvas extends TraceCanvas {
       ctx.stroke();
     }
 
-    // draw the mean
+    // draw the median
     ctx.beginPath();
     ctx.strokeStyle = TRACE_COLOR;
-    const means = data.map(arr=>arr[2]);
-    let mean = means[0];
+    let median = data[0][MEDIAN_INDEX];
     x = TICK_LENGTH;
-    y = chartHeight-(mean-displayMin) * verticalScale;
+    y = chartHeight-(median-displayMin) * verticalScale;
     ctx.moveTo(x, y);
     for (i = 1; i < kCount; i++) {
-      mean = means[i];
-      y = chartHeight-(mean-displayMin) * verticalScale;
+      median = data[i][MEDIAN_INDEX];
+      y = chartHeight-(median-displayMin) * verticalScale;
       if (drawingStaircase) {
         ctx.moveTo(x, y);
       }
@@ -272,8 +276,10 @@ const hpdeify = (arr:number[]):number[]=>{
   const [hpdMin, hpdMax] = calcHPD(sorted);
   const sum = sorted.reduce((tot, n)=>tot+n, 0);
   const mean = sum / sorted.length;
+  const midpoint = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 == 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
   // console.log(hpdMin, hpdMax, mean)
-  return [hpdMin, hpdMax, mean];
+  return [hpdMin, hpdMax, mean, median];
 }
 
 
