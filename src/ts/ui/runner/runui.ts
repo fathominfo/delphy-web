@@ -113,6 +113,8 @@ export class RunUI extends UIScreen {
   fixedFinalPopSizeInput: HTMLInputElement;
   fixedPopGrowthRateToggle: HTMLInputElement;
   fixedPopGrowthRateInput: HTMLInputElement;
+  skygridStartDateInput: HTMLInputElement;
+  skygridIntervalCountInput: HTMLInputElement;
   doublingInput: HTMLInputElement;
   tauInput: HTMLInputElement;
   minBarrierLocationInput: HTMLInputElement;
@@ -215,6 +217,8 @@ export class RunUI extends UIScreen {
     this.fixedFinalPopSizeInput = this.div.querySelector("#overall-final-pop-size-input") as HTMLInputElement;
     this.fixedPopGrowthRateToggle = this.div.querySelector("#fixed-pop-growth-rate-toggle") as HTMLInputElement;
     this.fixedPopGrowthRateInput = this.div.querySelector("#overall-pop-growth-rate-input") as HTMLInputElement;
+    this.skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
+    this.skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-num-intervals") as HTMLInputElement;
     this.doublingInput = this.div.querySelector(`#advanced-skygrid-timescale-doubling-value input`) as HTMLInputElement;
     this.tauInput = this.div.querySelector(`#advanced-skygrid-timescale-tau-value input`) as HTMLInputElement;
     this.minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
@@ -288,6 +292,12 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateToggle.addEventListener("change", () => {
       this.fixedPopGrowthRateInput.disabled = !this.fixedPopGrowthRateToggle.checked;
     });
+    [this.skygridStartDateInput, this.skygridIntervalCountInput]
+      .forEach(ele=>ele.addEventListener("change", () => {
+        const params = this.getAdvancedFormValues();
+        this.setImpliedTau(params.skygridDoubleHalfTime, params.skygridStartDate, params.skygridNumIntervals);
+        this.setImpliedDays(params.skygridTau, params.skygridStartDate, params.skygridNumIntervals);
+      }));
     this.doublingInput.addEventListener("change", () => {
       const params = this.getAdvancedFormValues();
       this.setImpliedTau(params.skygridDoubleHalfTime, params.skygridStartDate, params.skygridNumIntervals);
@@ -370,8 +380,6 @@ export class RunUI extends UIScreen {
     const popModelExponential = this.div.querySelector("#popmodel-selector-expgrowth") as HTMLInputElement;
     const popModelSkygrid = this.div.querySelector("#popmodel-selector-skygrid") as HTMLInputElement;
     const siteHeterogeneityToggle = this.div.querySelector("#site-rate-heterogeneity-toggle") as HTMLInputElement;
-    const skygridStartDateInput = this.div.querySelector("#popmodel-skygrid-k") as HTMLInputElement;
-    const skygridIntervalCountInput = this.div.querySelector("#popmodel-skygrid-num-intervals") as HTMLInputElement;
     const skygridFlatInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-flat") as HTMLInputElement;
     const skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
     const apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
@@ -431,8 +439,8 @@ export class RunUI extends UIScreen {
 
     skygridFlatInterpolationInput.checked = !params.skygridIsLogLinear;
     skygridLogLinearInterpolationInput.checked = params.skygridIsLogLinear;
-    skygridStartDateInput.value = toDateString(params.skygridStartDate);
-    skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
+    this.skygridStartDateInput.value = toDateString(params.skygridStartDate);
+    this.skygridIntervalCountInput.value = `${params.skygridNumIntervals}`;
 
     advancedSkygridToggle.checked = !advancedOptionsAreDefaults;
     const doublingOpt = this.div.querySelector(`#advanced-skygrid-timescale-options input[value="doubling"]`) as HTMLInputElement;
