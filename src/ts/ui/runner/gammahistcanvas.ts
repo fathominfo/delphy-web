@@ -277,7 +277,7 @@ const hpdeify = (arr:number[]):number[]=>{
   const sum = sorted.reduce((tot, n)=>tot+n, 0);
   const mean = sum / sorted.length;
   const midpoint = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 == 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
+  const median = sorted.length % 2 === 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
   // console.log(hpdMin, hpdMax, mean)
   return [hpdMin, hpdMax, mean, median];
 }
