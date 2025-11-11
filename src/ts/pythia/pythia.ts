@@ -1,6 +1,7 @@
 import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
-  SequenceWarningCode} from './delphy_api';
+  SequenceWarningCode, PopModel, ExpPopModel, SkygridPopModel,
+  SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
@@ -11,6 +12,7 @@ import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
+import { randomGaussian } from '../util/randomsamplers';
 
 type returnless = ()=>void;
 
@@ -46,6 +48,12 @@ enum sequenceFileFormat {
   MAPLE
 }
 
+export enum tauConfigOption {
+  INFER,
+  TAU,
+  DOUBLE_HALF_TIME
+}
+
 // FIXME: Rename things like `mutationRate` to emphasize these are the *initial* values
 export type RunParamConfig = {
   stepsPerSample: number,
@@ -53,10 +61,24 @@ export type RunParamConfig = {
   apobecEnabled: boolean,
   siteRateHeterogeneityEnabled: boolean,
   mutationRateIsFixed: boolean,
+  popModelIsSkygrid: boolean,
+  // exponential population model params
   finalPopSizeIsFixed: boolean,
   finalPopSize: number,
   popGrowthRateIsFixed: boolean,
-  popGrowthRate: number
+  popGrowthRate: number,
+  // skygrid population model params
+  skygridStartDate: number,
+  skygridNumIntervals: number,
+  skygridIsLogLinear: boolean,
+  skygridTauConfig: tauConfigOption,
+  skygridDoubleHalfTime: number,  // > 0
+  skygridTau: number,  // > 0
+  skygridTauPriorAlpha: number,  // > 0
+  skygridTauPriorBeta: number,  // > 0
+  skygridLowPopBarrierEnabled: boolean,
+  skygridLowPopBarrierLocation: number,  // days, > 0
+  skygridLowPopBarrierScale: number  // fraction (0,1)
 };
 
 function calcMaxDateOfTree(tree: PhyloTree): number {
@@ -70,10 +92,19 @@ function calcMaxDateOfTree(tree: PhyloTree): number {
   return maxDate;
 }
 
-function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
+export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
   const count = tree.getSize(),
     tipCount = (count + 1) / 2,
-    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10)));
+    targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10))),
+    rootDate = tree.getTimeOf(tree.getRootIndex()) || 0,
+    maxDate = calcMaxDateOfTree(tree),
+    dateRange = maxDate - rootDate,
+    skygridStartDate = maxDate - 2 * dateRange,
+    skygridNumIntervals = Math.round(tipCount / 15),
+    defaultDays = 30;
+  let skygridTau = convertSkygridDaysToTau(defaultDays, skygridStartDate, maxDate, skygridNumIntervals);
+  console.log(defaultDays, skygridTau, convertSkygridTauToDays(skygridTau, skygridStartDate, maxDate, skygridNumIntervals));
+  skygridTau = Math.round(skygridTau * 100) / 100;
 
   return {
     stepsPerSample: targetStepSize,
@@ -82,13 +113,29 @@ function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     siteRateHeterogeneityEnabled: false,
     mutationRateIsFixed: false,
 
+    popModelIsSkygrid: false,
+
     // Defaults for exponential pop model
     finalPopSizeIsFixed: false,
     finalPopSize: 1000.0, // days
     popGrowthRateIsFixed: false,
     popGrowthRate: 0.0,  // e-foldings / year
+
+    // Defaults for Skygrid pop model
+    skygridStartDate: skygridStartDate,
+    skygridNumIntervals: skygridNumIntervals,
+    skygridIsLogLinear: true,
+    skygridTauConfig: tauConfigOption.DOUBLE_HALF_TIME,
+    skygridDoubleHalfTime: 30.0, // > 0
+    skygridTau: skygridTau, // > 0
+    skygridTauPriorAlpha: 0.001, // > 0
+    skygridTauPriorBeta: 0.001,   // > 0
+    skygridLowPopBarrierEnabled: true,
+    skygridLowPopBarrierLocation: 1.0, // days, > 0
+    skygridLowPopBarrierScale: 0.3     // fraction (0,1)
   };
 }
+
 
 export class Pythia {
 
@@ -109,9 +156,7 @@ export class Pythia {
   logPosteriorHist : number[] = [];
   logGHist : number[] = [];
   numMutationsHist : number[] = [];
-  popT0Hist: number[] = [];
-  popN0Hist: number[] = [];
-  popGHist: number[] = [];
+  popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
   paramsHist: ArrayBuffer[] = [];
@@ -480,9 +525,7 @@ export class Pythia {
     this.logPosteriorHist = [];
     this.logGHist = [];
     this.numMutationsHist = [];
-    this.popT0Hist = [];
-    this.popN0Hist = [];
-    this.popGHist = [];
+    this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
     this.paramsHist = [];
@@ -505,9 +548,7 @@ export class Pythia {
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
       this.numMutationsHist.push(this.run.getNumMutations());
-      this.popT0Hist.push(this.run.getPopT0());
-      this.popN0Hist.push(this.run.getPopN0());
-      this.popGHist.push(this.run.getPopG());
+      this.popModelHist.push(this.run.getPopModel());
       this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);
@@ -566,15 +607,90 @@ export class Pythia {
       run.setMu(runParams.mutationRate);
     }
 
-    run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
-    if (runParams.finalPopSizeIsFixed) {
-      run.setPopN0(runParams.finalPopSize);
-    }
-    run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
-    if (runParams.popGrowthRateIsFixed) {
-      run.setPopG(runParams.popGrowthRate);
+    if (runParams.popModelIsSkygrid) {
+      // SkygridPopModel
+      const dt = (this.maxDate - runParams.skygridStartDate) / runParams.skygridNumIntervals;
+      const M = runParams.skygridNumIntervals;
+      const skyGridInterpolation = runParams.skygridIsLogLinear ? SkygridPopModelType.LogLinear : SkygridPopModelType.Staircase;
+
+      const x_k: number[] = [];
+      for (let k = 0; k <= M; ++k) {
+        x_k.push(runParams.skygridStartDate + k * dt);
+      }
+
+      let skygrid_tau = 0.0;
+      const infer_tau = runParams.skygridTauConfig === tauConfigOption.INFER;
+      if (infer_tau) {
+        // Infer a priori smoothness of log-population curve
+        const prior_alpha = runParams.skygridTauPriorAlpha;  //  (should be > 0)
+        const prior_beta = runParams.skygridTauPriorBeta;   //  (should be > 0)
+
+        run.setSkygridTauPriorAlpha(prior_alpha);
+        run.setSkygridTauPriorBeta(prior_beta);
+
+        skygrid_tau = prior_alpha / prior_beta;
+
+      } else {
+        const setSkygridTauDirectly = runParams.skygridTauConfig === tauConfigOption.TAU;
+        if (setSkygridTauDirectly) {
+          skygrid_tau = runParams.skygridTau;  // unitless - (should be > 0)
+
+        } else {
+          skygrid_tau = convertSkygridDaysToTau(runParams.skygridDoubleHalfTime, runParams.skygridStartDate, this.maxDate, runParams.skygridNumIntervals);
+        }
+      }
+
+      // At this point, skygrid_tau is set.  Sample a random trajectory with this
+      // precision, then reset its mean to "3 years" (the `skygrid_gammas_zero_mode_gibbs_move`
+      // Gibbs sample the mean value of gamma, so we don't need to get this right at all here)
+      //
+      // N.B. the gamma_k and mean_gamma_k arrays will have M+1 entries to account for the number
+      // of knots, which is one more than the number of intervals. [mark 251015]
+      const gamma_k: number[] = [];
+      gamma_k.push(0.0);
+      for (let k = 1; k <= M; ++k) {
+        gamma_k.push(gamma_k[k-1] + randomGaussian(0.0, Math.sqrt(1.0/skygrid_tau)));
+      }
+
+      const mean_gamma_k = gamma_k.reduce((a, b) => a + b, 0.0) / gamma_k.length;
+      for (let k = 0; k <= M; ++k) {
+        gamma_k[k] += (-mean_gamma_k) + Math.log(3.0 * 365.0);
+      }
+
+      // Configure run
+      run.setPopModel(new SkygridPopModel(skyGridInterpolation, x_k, gamma_k));
+      run.setSkygridTau(skygrid_tau);
+      run.setSkygridTauMoveEnabled(infer_tau);  // Prior configured above when infer_tau == true
+
+      // Low-pop barrier
+      const lowPopBarrierEnabled = runParams.skygridLowPopBarrierEnabled;
+      run.setSkygridLowGammaBarrierEnabled(lowPopBarrierEnabled);
+      if (lowPopBarrierEnabled) {
+        const low_pop_barrier_loc = runParams.skygridLowPopBarrierLocation;  // days - (should be > 0)
+        const low_gamma_barrier_loc = Math.log(low_pop_barrier_loc);
+
+        if (runParams.skygridLowPopBarrierScale <= 0 || runParams.skygridLowPopBarrierScale >= 1) {
+          console.warn(`skygridLowPopBarrierScale out of bounds ${runParams.skygridLowPopBarrierScale}, should be 0 < n < 1`);
+        }
+        const low_pop_barrier_scale = runParams.skygridLowPopBarrierScale;  // fraction (0,1)
+        const low_gamma_barrier_scale = -Math.log(1 - low_pop_barrier_scale);  // Convert to scale in gamma
+
+        run.setSkygridLowGammaBarrierEnabled(true);
+        run.setSkygridLowGammaBarrierLoc(low_gamma_barrier_loc);
+        run.setSkygridLowGammaBarrierScale(low_gamma_barrier_scale);
+      }
+
+    } else {
+      // ExpPopModel
+      run.setFinalPopSizeMoveEnabled(!runParams.finalPopSizeIsFixed);
+      run.setPopGrowthRateMoveEnabled(!runParams.popGrowthRateIsFixed);
+      run.setPopModel(
+        new ExpPopModel(calcMaxDateOfTree(run.getTree()),
+          runParams.finalPopSize,
+          runParams.popGrowthRate));
     }
   }
+
 
   extractRunParamsFromRun(run: Run): RunParamConfig {
     const result = makeDefaultRunParamConfig(run.getTree());
@@ -584,14 +700,51 @@ export class Pythia {
     result.siteRateHeterogeneityEnabled = !!(run.isAlphaMoveEnabled());
     result.mutationRateIsFixed = !run.isMuMoveEnabled();
 
-    result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
-    result.finalPopSize = run.getPopN0();
-    result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
-    result.popGrowthRate = run.getPopG();
+    const popModel = run.getPopModel();
+
+    if (popModel instanceof ExpPopModel) {
+      result.popModelIsSkygrid = false;
+      result.finalPopSizeIsFixed = !run.isFinalPopSizeMoveEnabled();
+      result.finalPopSize = popModel.n0;
+      result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
+      result.popGrowthRate = popModel.g;
+
+    } else if (popModel instanceof SkygridPopModel) {
+      result.popModelIsSkygrid = true;
+      result.skygridStartDate = popModel.x[0];
+      result.skygridNumIntervals = popModel.x.length - 1;
+      result.skygridIsLogLinear = popModel.type === SkygridPopModelType.LogLinear;
+
+      // Applicable when skygridInferTau == false
+      result.skygridTau = run.getSkygridTau();
+      // See setParams for a longer explanation of the below
+      const dt = popModel.x[1] - popModel.x[0];
+      const D = 1.0 / (2 * result.skygridTau * dt);
+      result.skygridDoubleHalfTime = Math.pow(Math.log(2.0), 2) / (2 * D);
+
+      result.skygridTauConfig = run.isSkygridTauMoveEnabled() ? tauConfigOption.INFER
+        : tauConfigOption.DOUBLE_HALF_TIME;
+
+
+      // Applicable when skygridInferTau == true
+      result.skygridTauPriorAlpha = run.getSkygridTauPriorAlpha();
+      result.skygridTauPriorBeta = run.getSkygridTauPriorBeta();
+
+      result.skygridLowPopBarrierEnabled = !!run.isSkygridLowGammaBarrierEnabled();
+      // Applicable when skygridLowPopBarrierEnabled == true
+      result.skygridLowPopBarrierLocation = Math.exp(run.getSkygridLowGammaBarrierLoc());
+      result.skygridLowPopBarrierScale = 1 - Math.exp(-run.getSkygridLowGammaBarrierScale());
+
+    } else {
+      /*
+      if this happens, we have a serious disconnect between the front
+      and back ends. [mark 251015]
+      */
+      throw new Error("Unknow pop model specified");
+    }
 
     return result;
   }
-
 
   setKneeIndexByPct(percent:number):void {
     this.kneeIndex = Math.round(percent * this.stepsHist.length);
@@ -749,13 +902,11 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           baseTreeIndices = nodeIndices.map(mccNodeIndex=>summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t)),
           deduped = baseTreeIndices.map((n, i)=>i === baseTreeIndices.lastIndexOf(n) ? n : UNSET),
           treeDist = this.delphy.popModelProbeAncestorsOnTree(
-            tree, popT0, popN0, popG, deduped, startDate - 1, maxDate, range);
+            tree, popModel, deduped, startDate - 1, maxDate, range);
         baseTreeIndices.forEach((nodeIndex, i)=>{
           const d = deduped[i];
           if (d !== nodeIndex) {
@@ -845,11 +996,9 @@ export class Pythia {
       for (let t = 0; t < treeCount; t++) {
         const tree = summaryTree.getBaseTree(t),
           baseTreeIndex = t + this.kneeIndex,
-          popT0 = this.popT0Hist[baseTreeIndex],
-          popN0 = this.popN0Hist[baseTreeIndex],
-          popG = this.popGHist[baseTreeIndex],
+          popModel = this.popModelHist[baseTreeIndex],
           treeDist = this.delphy.popModelProbeSiteStatesOnTree(
-            tree, popT0, popN0, popG, site, startDate - 1, maxDate, range);
+            tree, popModel, site, startDate - 1, maxDate, range);
         //   maxTValue = Math.max(...treeDist[RealSeqLetter_T]);
         // if (maxTValue === 0) {
         //   console.log("???", treeDist);
@@ -1197,11 +1346,11 @@ export class Pythia {
 
 
   // BEASTY OUTPUT
-  getBeastOutputs(): {log: ArrayBuffer, trees: ArrayBuffer} {
+  getBeastOutputs(version:string): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
     const run = this.delphy.createRun(this.treeHist[0].copy());
     run.setParamsFromFlatbuffer(this.paramsHist[0]);  // Some options can influence output
-    const bout = run.createBeastyOutput();
+    const bout = run.createBeastyOutput(version);
     for (let i = 0; i < treeCount; ++i) {
       run.getTree().copyFrom(this.treeHist[i]);
       run.setParamsFromFlatbuffer(this.paramsHist[i]);
@@ -1221,14 +1370,46 @@ export class Pythia {
   }
 
   // BEAST INPUT
-  exportBeastInput(): ArrayBuffer {
+  exportBeastInput(version:string): ArrayBuffer {
     if (this.run) {
-      return this.run.exportBeastInput();
+      return this.run.exportBeastInput(version);
     } else {
-      return new Uint8Array(0);
+      // return new Uint8Array(0);
+      return new ArrayBuffer(0);
     }
   }
 }
+
+
+
+
+
+export function convertSkygridDaysToTau(double_half_time: number, skygridStartDate: number, maxDate:number,  skygridNumIntervals: number): number {
+  const dt = (maxDate - skygridStartDate) / skygridNumIntervals;
+  // Setting tau = 1 / (2 D dt), the prior for the log-population curve looks like
+  // a 1D random walk with diffusion constant D.  Hence, on average, a starting
+  // log-population changes after a time T by a root-mean-square deviation of
+  // `sqrt(2 D T)`.  We parametrize D such that after T = double_half_time, the
+  // rms deviation is log(2), i.e., population changes by up to a factor of ~2 in
+  // the "double-half time" with 68% probability:
+  //
+  //   sqrt(2 D T) = log(2)  => D = log^2(2) / (2 T).
+  //
+  const D = Math.pow(Math.log(2.0), 2) / (2 * double_half_time);
+  const skygridTau = 1.0 / (2 * D * dt);
+  return skygridTau;
+}
+
+
+export function convertSkygridTauToDays(skygridTau: number, skygridStartDate: number, maxDate:number, skygridNumIntervals: number): number {
+  const dt = (maxDate - skygridStartDate) / skygridNumIntervals;
+  const D = 1.0 / 2.0 / skygridTau / dt;
+  const double_half_time = Math.pow(Math.log(2.0), 2) / D / 2;
+  return double_half_time;
+}
+
+
+
 
 
 

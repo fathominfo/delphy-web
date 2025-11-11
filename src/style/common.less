@@ -417,3 +417,26 @@ option {
     background: #d4d4d4; 
   }
 }
+
+
+
+/* Hide from visual appearances, but still
+expose to assistive technologies. Useful for
+building custom inputs on top of native inputs. */
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+  padding: 0 !important;
+
+  /* Optional improvement to add a focus outline
+  to the corresponding label for the input
+  (only when the browser deems it relevant) */
+  // &:focus-visible + label {
+  //   outline: auto;
+  // }
+}

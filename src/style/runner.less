@@ -12,6 +12,11 @@
 // @THUMB_COLOR: rgb(45, 126, 207);
 @THUMB_COLOR: black;
 
+@RADIO_BUTTON_BORDER: #dfdfdf;
+@RADIO_BUTTON_SELECTED_FILL: #eff4fd;
+@RADIO_BUTTON_SELECTED_BORDER: #4b85b1;
+
+
 .displaying-view-1 {
   background-color: @runner;
 }
@@ -187,7 +192,7 @@ input.stopping + #run-input--label {
   gap: 2px;
   margin: 20px 0 20px 7px;
   font-weight: 500;
-  label, 
+  label,
   p {
     margin-left: 8px;
   }
@@ -333,6 +338,9 @@ input.stopping + #run-input--label {
     margin-top: 100px;
     width: 500px;
     height: max-content;
+    max-height: 80vh;
+    max-height: -webkit-fill-available;
+    overflow-y: auto;
     padding: 40px;
     background-color: #fff;
     display: flex;
@@ -399,7 +407,7 @@ input.stopping + #run-input--label {
 
     &:disabled {
       color: #666;
-      
+
       .disabled-text {
         display: block;
       }
@@ -447,6 +455,23 @@ input.stopping + #run-input--label {
     margin-right: 5px;
   }
 
+  input[type="radio"] {
+    opacity: 0;
+    width: 0px;
+    margin: 0;
+  }
+
+  label:has(input[type="radio"]) {
+    border: solid 1.5px @RADIO_BUTTON_BORDER;
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+  label:has(input[type="radio"]:checked) {
+    border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
+    background-color: @RADIO_BUTTON_SELECTED_FILL;
+  }
+
+
   .button-container {
     display: flex;
     gap: 10px;
@@ -484,7 +509,7 @@ input.stopping + #run-input--label {
       border: 1px solid #afafaf;
       color: #999;
       cursor: not-allowed;
-      
+
       &:hover {
         background-color: #EFEFEF;
         border: 1px solid #afafaf;
@@ -506,6 +531,136 @@ input.stopping + #run-input--label {
       background-color: #ffe8e8;
     }
   }
+
+  .population-model-option {
+    display: none;
+  }
+
+  .population-model-fieldset:has(#popmodel-selector-expgrowth:checked) {
+    #popmodel-exponential {
+      display: block;
+    }
+  }
+
+  .population-model-fieldset:has(#popmodel-selector-skygrid:checked) {
+    #popmodel-skygrid {
+      display: flex;
+      height: 140px;
+    }
+  }
+
+
+
+  .disclaimer {
+    font-style: italic;
+    color: #888;
+  }
+}
+
+
+
+#popmodel-skygrid-m {
+  width: 4em;
+}
+
+#advanced-skygrid-parameters {
+  display: none;
+  background-color: white;
+  z-index: 10;
+  gap: 12px;
+}
+
+
+label:has(#advanced-skygrid-toggle:checked) {
+  font-weight: 600;
+}
+
+
+
+.runner--advanced--content:has(#advanced-skygrid-toggle:checked) {
+
+  .population-model-option#popmodel-skygrid {
+    height: fit-content !important;
+  }
+
+
+  #advanced-skygrid-parameters {
+    display: grid;
+    height: fit-content;
+  }
+}
+
+#advanced-skygrid-timescale-options {
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+}
+
+
+ .advanced-skygrid-param {
+  font-weight: 600;
+ }
+
+#advanced-skygrid-timescale-inputs label {
+  display: none;
+  height: 4em;
+}
+
+
+#advanced-skygrid-parameters ul {
+  padding-left: 1em;
+  margin-top: 5px;
+}
+
+#advanced-skygrid-parameters:has(input[value="doubling"]:checked)
+     #advanced-skygrid-timescale-inputs label.doubling {
+  display: block;
+}
+
+#advanced-skygrid-parameters:has(input[value="tau"]:checked)
+     #advanced-skygrid-timescale-inputs label.tau {
+  display: block;
+}
+
+#advanced-skygrid-parameters:has(input[value="infer"]:checked)
+     #advanced-skygrid-timescale-inputs label.infer {
+  display: block;
+}
+
+#advanced-skygrid-timescale-doubling-value input {
+  width: 4em;
+}
+
+#advanced-skygrid-timescale-tau-value input {
+  width: 7em;
+}
+
+#advanced-skygrid-timescale-infer-values {
+  span {
+    display: inline-block;
+    width: 4em;
+  }
+  input {
+    width: 6em;
+  }
+}
+
+#advanced-skygrid-parameters:has(input[name="low-pop-protection"][value="off"]:checked) {
+  #advanced-skygrid-timescale-values {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+#advanced-skygrid-timescale-values input {
+  width: 4em;
+}
+
+
+
+#low-pop-barrier-location-label {
+  .plural  { display: none;}
+  &.plural .plural {display: inline;}
 }
 
 
@@ -517,7 +672,7 @@ input.stopping + #run-input--label {
   canvas {
     height: 100%;
   }
-  
+
 }
 
 #runner--tree h1 {
@@ -793,6 +948,16 @@ input.stopping + #run-input--label {
   padding: 0 45px 0 0;
   text-align: right;
   color: @highlight;
+
+  &.range {
+    display: flex;
+    width: 100%;
+    span:first-child {
+      flex-grow: 1;
+      text-align: left;
+      padding-left: 10px;
+    }
+  }
 }
 
 
@@ -820,7 +985,15 @@ input.stopping + #run-input--label {
       cursor: col-resize;
     }
   }
+
 }
+
+.block.effective-population-size-log-scale .block--chart {
+  canvas, canvas.kneed {
+    cursor: default;
+  }
+}
+
 
 .y-axis,
 .x-axis {

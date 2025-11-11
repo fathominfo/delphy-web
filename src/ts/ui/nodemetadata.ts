@@ -46,8 +46,16 @@ export class NodeMetadata {
     for (let i = 0; i < nodeCount; i++) {
       nodeValues[i] = Array(columnCount);
       if (isTip(nameSource, i)) {
-        const tipName = nameSource.getNameOf(i).split('|')[0],
-          mdIndex = idColumn.indexOf(tipName);
+        let tipName = nameSource.getNameOf(i).split('|')[0];
+        /*
+        The parser can return the '>' from
+        the start of the fasta metadata line. This won't match
+        the id column from the metadata, so check for it. [mark 250630]
+        */
+        if (tipName[0] === '>') {
+          tipName = tipName.substring(1);
+        }
+        const mdIndex = idColumn.indexOf(tipName);
         this.tipMetadataRow[i] = mdIndex;
         const metadataRow = metadata.rows[mdIndex];
         if (metadataRow) {

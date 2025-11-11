@@ -185,6 +185,8 @@ export const RealSeqLetter_T = 3;
 export type RealSeqLetterPtr = number;
 export type MutationListIteratorPtr = number;
 
+export type PopModelPtr = number;
+
 export const kNoNode: NodeIndex = -1;
 
 export enum SequenceWarningCode {
@@ -335,19 +337,22 @@ export class Delphy {
   //    t_i = t_start + i * t_step,
   //    t_step = (t_end - t_start) / num_t_cells
   //
-  popModelRenderPopulationCurve(popT0: number, popN0: number, popG: number,
+  popModelRenderPopulationCurve(popModel: PopModel,
     tStart: number, tEnd: number, numTCells: number): number[] {
+
+    const rawPopModel = popModel.toPopModelPtr(this.ctx);
 
     const sizeofDouble = 8;
     const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numTCells);
     const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numTCells);
 
     Delphy.delphyCoreRaw.pop_model_render_population_curve(
-      this.ctx, popT0, popN0, popG, tStart, tEnd, numTCells, valuesWasm);
+      this.ctx, rawPopModel, tStart, tEnd, numTCells, valuesWasm);
 
     const result = Array.from(valuesWasmView);  // Copy out before release
 
     Delphy.delphyCoreRaw.free(valuesWasm);
+    Delphy.delphyCoreRaw.pop_model_delete(this.ctx, rawPopModel);
 
     return result;
   }
@@ -357,15 +362,17 @@ export class Delphy {
   //    t_i = t_start + i * t_step,
   //    t_step = (t_end - t_start) / num_t_cells
   //
-  popModelProbeSiteStatesOnTree(tree: PhyloTree, popT0: number, popN0: number, popG: number, site: number,
+  popModelProbeSiteStatesOnTree(tree: PhyloTree, popModel: PopModel, site: number,
     tStart: number, tEnd: number, numTCells: number): number[][] {
+
+    const rawPopModel = popModel.toPopModelPtr(this.ctx);
 
     const sizeofDouble = 8;
     const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * 4 * numTCells);
     const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, 4 * numTCells);
 
     Delphy.delphyCoreRaw.pop_model_probe_site_states_on_tree(
-      this.ctx, tree.phyloTreePtr_, popT0, popN0, popG, site, tStart, tEnd, numTCells, valuesWasm);
+      this.ctx, tree.phyloTreePtr_, rawPopModel, site, tStart, tEnd, numTCells, valuesWasm);
 
     // Copy out before release
     const result = [
@@ -376,6 +383,7 @@ export class Delphy {
     ];
 
     Delphy.delphyCoreRaw.free(valuesWasm);
+    Delphy.delphyCoreRaw.pop_model_delete(this.ctx, rawPopModel);
 
     return result;
   }
@@ -386,9 +394,11 @@ export class Delphy {
   //    t_step = (t_end - t_start) / num_t_cells
   //
   // If k == markedAncestorIndices.length, all ancestors of the probe were above any marked ancestors
-  popModelProbeAncestorsOnTree(tree: PhyloTree, popT0: number, popN0: number, popG: number,
+  popModelProbeAncestorsOnTree(tree: PhyloTree, popModel: PopModel,
     markedAncestorIndices: NodeIndex[], tStart: number, tEnd: number, numTCells: number): number[][] {
     return withStackSave(() => {
+      const rawPopModel = popModel.toPopModelPtr(this.ctx);
+
       const sizeofNodeIndex = 4;
       const numMarkedAncestors = markedAncestorIndices.length;
       const markedAncestorIndicesWasm = stackAlloc(sizeofNodeIndex * (numMarkedAncestors));
@@ -401,7 +411,7 @@ export class Delphy {
       const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, (numMarkedAncestors+1) * numTCells);
 
       Delphy.delphyCoreRaw.pop_model_probe_ancestors_on_tree(
-        this.ctx, tree.phyloTreePtr_, popT0, popN0, popG, markedAncestorIndicesWasm, numMarkedAncestors,
+        this.ctx, tree.phyloTreePtr_, rawPopModel, markedAncestorIndicesWasm, numMarkedAncestors,
         tStart, tEnd, numTCells, valuesWasm);
 
       // Copy out before release
@@ -410,6 +420,7 @@ export class Delphy {
         result.push(Array.prototype.slice.call(valuesWasmView, i * numTCells, (i+1) * numTCells));
       }
       Delphy.delphyCoreRaw.free(valuesWasm);
+      Delphy.delphyCoreRaw.pop_model_delete(this.ctx, rawPopModel);
       return result;
     });
   }
@@ -612,12 +623,18 @@ export class Delphy {
     run_set_hky_pi_G: (ctx: DelphyContextPtr, run: RunPtr, hky_pi_G: number) => void,
     run_get_hky_pi_T: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_hky_pi_T: (ctx: DelphyContextPtr, run: RunPtr, hky_pi_T: number) => void,
-    run_get_pop_t0: (ctx: DelphyContextPtr, run: RunPtr) => number,
-    run_set_pop_t0: (ctx: DelphyContextPtr, run: RunPtr, pop_t0: number) => number,
-    run_get_pop_n0: (ctx: DelphyContextPtr, run: RunPtr) => number,
-    run_set_pop_n0: (ctx: DelphyContextPtr, run: RunPtr, pop_n0: number) => number,
-    run_get_pop_g: (ctx: DelphyContextPtr, run: RunPtr) => number,
-    run_set_pop_g: (ctx: DelphyContextPtr, run: RunPtr, pop_g: number) => number,
+    run_get_skygrid_tau: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_tau: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau: number) => void,
+    run_get_skygrid_tau_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_tau_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau_prior_alpha: number) => void,
+    run_get_skygrid_tau_prior_beta: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_tau_prior_beta: (ctx: DelphyContextPtr, run: RunPtr, skygrid_tau_prior_beta: number) => void,
+    run_get_skygrid_low_gamma_barrier_loc: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_low_gamma_barrier_loc: (ctx: DelphyContextPtr, run: RunPtr, skygrid_low_gamma_barrier_loc: number) => void,
+    run_get_skygrid_low_gamma_barrier_scale: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_low_gamma_barrier_scale: (ctx: DelphyContextPtr, run: RunPtr, skygrid_low_gamma_barrier_scale: number) => void,
+    run_get_pop_model: (ctx: DelphyContextPtr, run: RunPtr) => PopModelPtr,
+    run_set_pop_model: (ctx: DelphyContextPtr, run: RunPtr, popModel: PopModelPtr) => void,
     run_get_log_G: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_get_log_posterior: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_get_log_coalescent_prior: (ctx: DelphyContextPtr, run: RunPtr) => number,
@@ -644,9 +661,13 @@ export class Delphy {
     run_set_final_pop_size_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
     run_is_pop_growth_rate_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
     run_set_pop_growth_rate_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_skygrid_tau_move_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_skygrid_tau_move_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
+    run_is_skygrid_low_gamma_barrier_enabled: (ctx: DelphyContextPtr, run: RunPtr) => boolean,
+    run_set_skygrid_low_gamma_barrier_enabled: (ctx: DelphyContextPtr, run: RunPtr, enabled: boolean) => void,
     run_get_params_to_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, fb: FbHolderPtr) => void,
     run_set_params_from_flatbuffer: (ctx: DelphyContextPtr, run: RunPtr, paramsFb: CharPtr) => void,
-    run_export_beast_input: (ctx: DelphyContextPtr, run: RunPtr) => StringPtr,
+    run_export_beast_input: (ctx: DelphyContextPtr, run: RunPtr, rawVersion: CharPtr) => StringPtr,
 
     // Mcc_tree
     derive_mcc_tree_async:
@@ -681,11 +702,39 @@ export class Delphy {
     mcc_tree_export: (ctx: DelphyContextPtr, tree: MccTreePtr, innerNodesDefinedAsMrcasOfTips: boolean) => StringPtr,
 
     // Population model
+    pop_model_get_class: (ctx: DelphyContextPtr, popModel: PopModelPtr) => InternalPopModelClass,
+    pop_model_delete: (ctx: DelphyContextPtr, popModel: PopModelPtr) => void,
+
+    exp_pop_model_new: (ctx: DelphyContextPtr, t0: number, n0: number, g: number) => PopModelPtr,
+    exp_pop_model_get_t0: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
+    exp_pop_model_get_n0: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
+    exp_pop_model_get_g: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
+
+    skygrid_pop_model_new:
+      (ctx: DelphyContextPtr,
+       numKnots: number,
+       inX: DoublePtr,
+       inGamma: DoublePtr,
+       type: SkygridPopModelType)
+        => PopModelPtr,
+    skygrid_pop_model_get_type: (ctx: DelphyContextPtr, skygridPopModel: PopModelPtr) => SkygridPopModelType,
+    skygrid_pop_model_get_num_knots: (ctx: DelphyContextPtr, skygridPopModel: PopModelPtr) => number,
+    skygrid_pop_model_get_x:
+      (ctx: DelphyContextPtr,
+       skygridPopModel: PopModelPtr,
+       numKnots: number,
+       outX: DoublePtr)
+       => void,
+    skygrid_pop_model_get_gamma:
+      (ctx: DelphyContextPtr,
+       skygridPopModel: PopModelPtr,
+       numKnots: number,
+       outX: DoublePtr)
+       => void,
+
     pop_model_render_population_curve:
       (ctx: DelphyContextPtr,
-       popT0: number,
-       popN0: number,
-       popG: number,
+       popModel: PopModelPtr,
        tStart: number,
        tEnd: number,
        numTCells: number,
@@ -694,9 +743,7 @@ export class Delphy {
     pop_model_probe_site_states_on_tree:
       (ctx: DelphyContextPtr,
        tree: PhyloTreePtr,
-       popT0: number,
-       popN0: number,
-       popG: number,
+       popModel: PopModelPtr,
        site: number,
        tStart: number,
        tEnd: number,
@@ -706,9 +753,7 @@ export class Delphy {
     pop_model_probe_ancestors_on_tree:
       (ctx: DelphyContextPtr,
        tree: PhyloTreePtr,
-       popT0: number,
-       popN0: number,
-       popG: number,
+       popModel: PopModelPtr,
        markerAncestorIndices: NodeIndexPtr,
        numMarkedAncestors: NodeIndex,
        tStart: number,
@@ -730,7 +775,7 @@ export class Delphy {
     string_size: (ctx: DelphyContextPtr, str: StringPtr) => number,
 
     // Beasty_output
-    create_beasty_output: (ctx: DelphyContextPtr, run: RunPtr) => BeastyOutputPtr,
+    create_beasty_output: (ctx: DelphyContextPtr, run: RunPtr, version: CharPtr) => BeastyOutputPtr,
     delete_beasty_output: (ctx: DelphyContextPtr, bout: BeastyOutputPtr) => void,
     beasty_output_snapshot: (ctx: DelphyContextPtr, bout: BeastyOutputPtr, run: RunPtr) => void,
     beasty_output_finalize: (ctx: DelphyContextPtr, bout: BeastyOutputPtr, run: RunPtr) => void,
@@ -822,12 +867,18 @@ export class Delphy {
       run_set_hky_pi_G: Module['_delphy_run_set_hky_pi_G'],
       run_get_hky_pi_T: Module['_delphy_run_get_hky_pi_T'],
       run_set_hky_pi_T: Module['_delphy_run_set_hky_pi_T'],
-      run_get_pop_t0: Module['_delphy_run_get_pop_t0'],
-      run_set_pop_t0: Module['_delphy_run_set_pop_t0'],
-      run_get_pop_n0: Module['_delphy_run_get_pop_n0'],
-      run_set_pop_n0: Module['_delphy_run_set_pop_n0'],
-      run_get_pop_g: Module['_delphy_run_get_pop_g'],
-      run_set_pop_g: Module['_delphy_run_set_pop_g'],
+      run_get_skygrid_tau: Module['_delphy_run_get_skygrid_tau'],
+      run_set_skygrid_tau: Module['_delphy_run_set_skygrid_tau'],
+      run_get_skygrid_tau_prior_alpha: Module['_delphy_run_get_skygrid_tau_prior_alpha'],
+      run_set_skygrid_tau_prior_alpha: Module['_delphy_run_set_skygrid_tau_prior_alpha'],
+      run_get_skygrid_tau_prior_beta: Module['_delphy_run_get_skygrid_tau_prior_beta'],
+      run_set_skygrid_tau_prior_beta: Module['_delphy_run_set_skygrid_tau_prior_beta'],
+      run_get_skygrid_low_gamma_barrier_loc: Module['_delphy_run_get_skygrid_low_gamma_barrier_loc'],
+      run_set_skygrid_low_gamma_barrier_loc: Module['_delphy_run_set_skygrid_low_gamma_barrier_loc'],
+      run_get_skygrid_low_gamma_barrier_scale: Module['_delphy_run_get_skygrid_low_gamma_barrier_scale'],
+      run_set_skygrid_low_gamma_barrier_scale: Module['_delphy_run_set_skygrid_low_gamma_barrier_scale'],
+      run_get_pop_model: Module['_delphy_run_get_pop_model'],
+      run_set_pop_model: Module['_delphy_run_set_pop_model'],
       run_get_log_G: Module['_delphy_run_get_log_G'],
       run_get_log_posterior: Module['_delphy_run_get_log_posterior'],
       run_get_log_coalescent_prior: Module['_delphy_run_get_log_coalescent_prior'],
@@ -854,6 +905,10 @@ export class Delphy {
       run_set_final_pop_size_move_enabled: Module['_delphy_run_set_final_pop_size_move_enabled'],
       run_is_pop_growth_rate_move_enabled: Module['_delphy_run_is_pop_growth_rate_move_enabled'],
       run_set_pop_growth_rate_move_enabled: Module['_delphy_run_set_pop_growth_rate_move_enabled'],
+      run_is_skygrid_tau_move_enabled: Module['_delphy_run_is_skygrid_tau_move_enabled'],
+      run_set_skygrid_tau_move_enabled: Module['_delphy_run_set_skygrid_tau_move_enabled'],
+      run_is_skygrid_low_gamma_barrier_enabled: Module['_delphy_run_is_skygrid_low_gamma_barrier_enabled'],
+      run_set_skygrid_low_gamma_barrier_enabled: Module['_delphy_run_set_skygrid_low_gamma_barrier_enabled'],
       run_get_params_to_flatbuffer: Module['_delphy_run_get_params_to_flatbuffer'],
       run_set_params_from_flatbuffer: Module['_delphy_run_set_params_from_flatbuffer'],
       run_export_beast_input: Module['_delphy_run_export_beast_input'],
@@ -877,6 +932,20 @@ export class Delphy {
       mcc_tree_export: Module['_delphy_mcc_tree_export'],
 
       // Population model
+      pop_model_get_class: Module['_delphy_pop_model_get_class'],
+      pop_model_delete: Module['_delphy_pop_model_delete'],
+
+      exp_pop_model_new: Module['_delphy_exp_pop_model_new'],
+      exp_pop_model_get_t0: Module['_delphy_exp_pop_model_get_t0'],
+      exp_pop_model_get_n0: Module['_delphy_exp_pop_model_get_n0'],
+      exp_pop_model_get_g: Module['_delphy_exp_pop_model_get_g'],
+
+      skygrid_pop_model_new: Module['_delphy_skygrid_pop_model_new'],
+      skygrid_pop_model_get_type: Module['_delphy_skygrid_pop_model_get_type'],
+      skygrid_pop_model_get_num_knots: Module['_delphy_skygrid_pop_model_get_num_knots'],
+      skygrid_pop_model_get_x: Module['_delphy_skygrid_pop_model_get_x'],
+      skygrid_pop_model_get_gamma: Module['_delphy_skygrid_pop_model_get_gamma'],
+
       pop_model_render_population_curve: Module['_delphy_pop_model_render_population_curve'],
       pop_model_probe_site_states_on_tree: Module['_delphy_pop_model_probe_site_states_on_tree'],
       pop_model_probe_ancestors_on_tree: Module['_delphy_pop_model_probe_ancestors_on_tree'],
@@ -1188,6 +1257,111 @@ export class MccTree implements SummaryTree {
   }
 }
 
+
+// Population models
+// -----------------
+
+export abstract class PopModel {
+  abstract toPopModelPtr(ctx: DelphyContextPtr): PopModelPtr;
+}
+
+// Do not use outside delphy_api.ts
+// Keep these constants aligned with delphy_pop_model_class in delphy_wasm.cpp
+enum InternalPopModelClass {
+  ExpPopModel = 1,
+  SkygridPopModel = 2,
+}
+
+export class ExpPopModel extends PopModel {
+  constructor(public t0: number, public n0: number, public g: number) {
+    super();
+  }
+
+  toPopModelPtr(ctx: DelphyContextPtr): PopModelPtr {
+    return Delphy.delphyCoreRaw.exp_pop_model_new(
+      ctx, this.t0, this.n0, this.g);
+  }
+}
+
+// Keep these constants aligned with Skygrid_pop_model::Type in pop_model.h
+export enum SkygridPopModelType {
+  Staircase = 1,
+  LogLinear = 2,
+}
+export class SkygridPopModel extends PopModel {
+
+  constructor(public type: SkygridPopModelType, public x: number[], public gamma: number[]) {
+    super();
+    if (x.length !== gamma.length) {
+      throw `x and gamma must have the same length, currently x has ${x.length} knots and gamma has ${gamma.length}`;
+    }
+    this.type = type;
+  }
+
+  toPopModelPtr(ctx: DelphyContextPtr): PopModelPtr {
+    const sizeofDouble = 8;
+
+    const numKnots = this.x.length;
+
+    const xWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numKnots);
+    const xWasmView = new Float64Array(Module.HEAPF64.buffer, xWasm, numKnots);
+    xWasmView.set(this.x);
+
+    const gammaWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numKnots);
+    const gammaWasmView = new Float64Array(Module.HEAPF64.buffer, gammaWasm, numKnots);
+    gammaWasmView.set(this.gamma);
+
+    const newRawPopModel = Delphy.delphyCoreRaw.skygrid_pop_model_new(
+      ctx, numKnots, xWasm, gammaWasm, this.type);
+
+    Delphy.delphyCoreRaw.free(xWasm);
+    Delphy.delphyCoreRaw.free(gammaWasm);
+
+    return newRawPopModel;
+  }
+}
+
+// Convert a Pop_model object from Delphy core into the JS analog (copying)
+function popModelPtrToPopModel(ctx: DelphyContextPtr, rawPopModel: PopModelPtr): PopModel {
+  const popModelClass = Delphy.delphyCoreRaw.pop_model_get_class(ctx, rawPopModel);
+  switch (popModelClass) {
+  case InternalPopModelClass.ExpPopModel: {
+    const t0 = Delphy.delphyCoreRaw.exp_pop_model_get_t0(ctx, rawPopModel);
+    const n0 = Delphy.delphyCoreRaw.exp_pop_model_get_n0(ctx, rawPopModel);
+    const g = Delphy.delphyCoreRaw.exp_pop_model_get_g(ctx, rawPopModel);
+
+    return new ExpPopModel(t0, n0, g);
+  }
+  case InternalPopModelClass.SkygridPopModel: {
+    const type = Delphy.delphyCoreRaw.skygrid_pop_model_get_type(ctx, rawPopModel);
+    const numKnots = Delphy.delphyCoreRaw.skygrid_pop_model_get_num_knots(ctx, rawPopModel);
+
+    const sizeofDouble = 8;
+
+    const xWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numKnots);
+    const xWasmView = new Float64Array(Module.HEAPF64.buffer, xWasm, numKnots);
+    Delphy.delphyCoreRaw.skygrid_pop_model_get_x(ctx, rawPopModel, numKnots, xWasm);
+    const x = Array.from(xWasmView);  // Copy out before release
+    Delphy.delphyCoreRaw.free(xWasm);
+
+    const gammaWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numKnots);
+    const gammaWasmView = new Float64Array(Module.HEAPF64.buffer, gammaWasm, numKnots);
+    Delphy.delphyCoreRaw.skygrid_pop_model_get_gamma(ctx, rawPopModel, numKnots, gammaWasm);
+    const gamma = Array.from(gammaWasmView);  // Copy out before release
+    Delphy.delphyCoreRaw.free(gammaWasm);
+
+    return new SkygridPopModel(type, x, gamma);
+  }
+  default: {
+    throw `Unknown popModelClass = ${popModelClass}`;
+  }
+  }
+}
+
+
+// Run
+// ---
+
 export class Run {
   private run: RunPtr;
 
@@ -1292,28 +1466,56 @@ export class Run {
     Delphy.delphyCoreRaw.run_set_hky_pi_A(this.delphy.ctx, this.run, hky_pi_T);
   }
 
-  getPopT0(): number {
-    return Delphy.delphyCoreRaw.run_get_pop_t0(this.delphy.ctx, this.run);
+  getSkygridTau(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_tau(this.delphy.ctx, this.run);
   }
 
-  setPopT0(pop_t0: number): void {
-    Delphy.delphyCoreRaw.run_set_pop_t0(this.delphy.ctx, this.run, pop_t0);
+  setSkygridTau(skygrid_tau: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau(this.delphy.ctx, this.run, skygrid_tau);
   }
 
-  getPopN0(): number {
-    return Delphy.delphyCoreRaw.run_get_pop_n0(this.delphy.ctx, this.run);
+  getSkygridTauPriorAlpha(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_tau_prior_alpha(this.delphy.ctx, this.run);
   }
 
-  setPopN0(pop_n0: number): void {
-    Delphy.delphyCoreRaw.run_set_pop_n0(this.delphy.ctx, this.run, pop_n0);
+  setSkygridTauPriorAlpha(skygrid_tau_prior_alpha: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau_prior_alpha(this.delphy.ctx, this.run, skygrid_tau_prior_alpha);
   }
 
-  getPopG(): number {
-    return Delphy.delphyCoreRaw.run_get_pop_g(this.delphy.ctx, this.run);
+  getSkygridTauPriorBeta(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_tau_prior_beta(this.delphy.ctx, this.run);
   }
 
-  setPopG(pop_g: number): void {
-    Delphy.delphyCoreRaw.run_set_pop_g(this.delphy.ctx, this.run, pop_g);
+  setSkygridTauPriorBeta(skygrid_tau_prior_beta: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau_prior_beta(this.delphy.ctx, this.run, skygrid_tau_prior_beta);
+  }
+
+  getSkygridLowGammaBarrierLoc(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_low_gamma_barrier_loc(this.delphy.ctx, this.run);
+  }
+
+  setSkygridLowGammaBarrierLoc(skygrid_low_gamma_barrier_loc: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_loc(this.delphy.ctx, this.run, skygrid_low_gamma_barrier_loc);
+  }
+
+  getSkygridLowGammaBarrierScale(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_low_gamma_barrier_scale(this.delphy.ctx, this.run);
+  }
+
+  setSkygridLowGammaBarrierScale(skygrid_low_gamma_barrier_scale: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_scale(this.delphy.ctx, this.run, skygrid_low_gamma_barrier_scale);
+  }
+
+  getPopModel(): PopModel {
+    // rawPopModel is a view into the actual object owned by the Delphy core, not a copy
+    const rawPopModel = Delphy.delphyCoreRaw.run_get_pop_model(this.delphy.ctx, this.run);
+    return popModelPtrToPopModel(this.delphy.ctx, rawPopModel);
+  }
+
+  setPopModel(newPopModel: PopModel): void {
+    // newRawPopModel is a new object whose ownership is transferred to the Delphy core at the end
+    const newRawPopModel = newPopModel.toPopModelPtr(this.delphy.ctx);
+    Delphy.delphyCoreRaw.run_set_pop_model(this.delphy.ctx, this.run, newRawPopModel);
   }
 
   getLogG(): number {
@@ -1420,6 +1622,22 @@ export class Run {
     Delphy.delphyCoreRaw.run_set_pop_growth_rate_move_enabled(this.delphy.ctx, this.run, enabled);
   }
 
+  isSkygridTauMoveEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_skygrid_tau_move_enabled(this.delphy.ctx, this.run);
+  }
+
+  setSkygridTauMoveEnabled(enabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_tau_move_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
+  isSkygridLowGammaBarrierEnabled(): boolean {
+    return Delphy.delphyCoreRaw.run_is_skygrid_low_gamma_barrier_enabled(this.delphy.ctx, this.run);
+  }
+
+  setSkygridLowGammaBarrierEnabled(enabled: boolean): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_enabled(this.delphy.ctx, this.run, enabled);
+  }
+
   getParamsToFlatbuffer(): ArrayBuffer {
     return this.delphy.extractFbHelper((fbHolderWasm: FbHolderPtr) =>
       Delphy.delphyCoreRaw.run_get_params_to_flatbuffer(this.delphy.ctx, this.run, fbHolderWasm));
@@ -1437,21 +1655,27 @@ export class Run {
     Delphy.delphyCoreRaw.free(paramsFbBytesWasm);
   }
 
-  createBeastyOutput(): BeastyOutput {
-    return new BeastyOutput(this.delphy, this.run);
+  createBeastyOutput(version:string): BeastyOutput {
+    return new BeastyOutput(this.delphy, this.run, version);
   }
 
-  exportBeastInput(): ArrayBuffer {
-    return this.delphy.exportStringHelper(() =>
-      Delphy.delphyCoreRaw.run_export_beast_input(this.delphy.ctx, this.run));
+  exportBeastInput(version:string): ArrayBuffer {
+    return withStackSave(() => {
+      const rawVersion = stringToUTF8OnStack(version);
+      return this.delphy.exportStringHelper(() =>
+        Delphy.delphyCoreRaw.run_export_beast_input(this.delphy.ctx, this.run, rawVersion));
+    });
   }
 }
 
 export class BeastyOutput {
   private beastyOutput: BeastyOutputPtr;
 
-  constructor(private delphy: Delphy, private run: RunPtr) {
-    this.beastyOutput = Delphy.delphyCoreRaw.create_beasty_output(delphy.ctx, run);
+  constructor(private delphy: Delphy, private run: RunPtr, version: string) {
+    this.beastyOutput = withStackSave(() => {
+      const rawVersion = stringToUTF8OnStack(version);
+      return Delphy.delphyCoreRaw.create_beasty_output(delphy.ctx, run, rawVersion);
+    });
   }
 
   delete() {
