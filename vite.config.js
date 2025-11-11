@@ -136,7 +136,7 @@ documentation for the configuration can be found at
 https://vitejs.dev/config/
 */
 export default defineConfig({
-  base: '/',
+  base: './',
   plugins: [
     eslint({fix: true, formatter: 'stylish'}),
     checker({typescript: true,}),
