@@ -8,7 +8,16 @@ import { RecordQuality } from '../recordquality';
 
 const DEMO_FILES = './demofiles.json'
 
-type DemoOption = {folder:string, pathogen:string, label: string};
+type DemoOption = {
+  folder:string,
+  pathogen:string,
+  label: string,
+  description : string,
+  paper : string,
+  data : string,
+  config :  string,
+  metadata_config : string
+};
 
 let pythia : Pythia;
 let qc: RecordQuality;
@@ -164,8 +173,10 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   fetch(DEMO_FILES)
     .then(r=>r.json())
     .then(optionList=>{
-      (optionList as Array<DemoOption>).forEach(({folder, label}, i)=>{
+      (optionList as Array<DemoOption>).forEach(({folder, label, description, data, paper, config, metadata_config}, i)=>{
+        console.log(folder, label, description, data, paper, config, metadata_config);
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
+        copy.title = description;
         const input = copy.querySelector("input") as HTMLInputElement;
         const span = copy.querySelector("span") as HTMLSpanElement;
         const zipFilename = `${folder}.zip`;
