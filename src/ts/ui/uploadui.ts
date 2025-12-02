@@ -8,7 +8,7 @@ import { RecordQuality } from '../recordquality';
 
 const DEMO_FILES = './demofiles.json'
 
-type DemoOption = {filename:string, pathogen:string};
+type DemoOption = {folder:string, pathogen:string, label: string};
 
 let pythia : Pythia;
 let qc: RecordQuality;
@@ -164,33 +164,34 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   fetch(DEMO_FILES)
     .then(r=>r.json())
     .then(optionList=>{
-      (optionList as Array<DemoOption>).forEach(({filename, pathogen}, i)=>{
+      (optionList as Array<DemoOption>).forEach(({folder, label}, i)=>{
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
         const input = copy.querySelector("input") as HTMLInputElement;
         const span = copy.querySelector("span") as HTMLSpanElement;
-        const extensionPosition = filename.lastIndexOf(".");
-        const zipFilename = `${filename.substring(0, extensionPosition)}.zip`;
+        const zipFilename = `${folder}.zip`;
+        const zipFilepath = `demo/${folder}/${zipFilename}`;
         const anchor = copy.querySelector("a") as HTMLAnchorElement;
-        input.value = filename;
+        input.value = folder;
         input.checked = i === 0;
-        span.textContent = pathogen;
-        anchor.href = zipFilename;
+        span.textContent = label;
+        anchor.href = zipFilepath;
         anchor.download = zipFilename;
         demoOptContainer?.appendChild(copy);
-        pathogenLabels[filename] = pathogen;
+        pathogenLabels[folder] = label;
         if (input.checked) {
-          pathLabel.textContent = pathogen;
+          pathLabel.textContent = label;
         }
       })
     });
   demoForm.addEventListener("change", ()=>{
-    const selection = demoForm.filename.value as string;
+    const selection = demoForm.folder.value as string;
     const labelText = pathogenLabels[selection];
     pathLabel.textContent = labelText;
   });
 
   runButton.addEventListener("click", ()=>{
-    const fileToLoad = demoForm.filename.value as string;
+    const folder = demoForm.folder.value as string;
+    const fileToLoad = `demo/${folder}/${folder}.maple`;
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
     hideOthers(demoDiv);

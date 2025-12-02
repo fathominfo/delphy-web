@@ -17,7 +17,7 @@
             h4l-6.7,19.7c-1.4,4-3.6,5.6-6.5,5.6C85.9,32,84.9,31.8,83.9,31.5z"/>
         </svg>
       </div>
- 
+
 
       <div class="uploader--tagline">Rapidly generate a summary tree and begin exploring your data.</div>
 
@@ -27,8 +27,8 @@
           <form id="uploader--demo-form">
             <p  class="uploader--demo-option">
               <label>
-                <input type="radio" name="filename" value="ma_sars_cov_2.maple" checked/>
-                <span>SARS-CoV-2</span>
+                <input type="radio" name="folder" value="filename.ext" checked/>
+                <span>Label</span>
               </label>
               <a href="ma_sars_cov_2.maple" target="_" >
                 <span class="box"><span class="glyph"></span></span>Download input data
@@ -36,7 +36,7 @@
             </p>
           </form>
         </div>
-      
+
         <div class="uploader--or">or</div>
 
 
@@ -46,8 +46,8 @@
           <br/><span class="file-types">.maple, .fasta, or .dphy</span>
           <p class="uploader--byline">All files stay on your system. Nothing is uploaded to the server.</p>
         </label>
-        
-      
+
+
 
         <div class="uploader--or">or</div>
 
@@ -56,30 +56,30 @@
             <br/><span class="file-types">.maple, .fasta, or .dphy</span>
           </p>
           <form id="uploader--url-form">
-            <input type="text" id="uploader--url-input" 
+            <input type="text" id="uploader--url-input"
               placeholder="Enter URL"/>
             <p id="uploader--url-form-submit" >
-              <label> 
+              <label>
                 <span>Go</span>
                 <input type="submit" disabled/>
               </label>
             </p>
           </form>
         </div>
-        
+
         <div id="uploader--proxy-popup">
           <p>
-            Delphy encountered a network error while trying to retrieve this link. 
-            The link may be incorrect, or the server may not be set up to share 
+            Delphy encountered a network error while trying to retrieve this link.
+            The link may be incorrect, or the server may not be set up to share
             files with other websites.
           </p>
           <p>
             If the link is correct, contact the server administrator <span id="remote-url-server"></span>
-            to update their CORS settings. You can read more about that 
+            to update their CORS settings. You can read more about that
             <a href="https://github.com/fathominfo/delphy-web/wiki/Server-Settings-for-Hosting-Datasets" target="_">here</a>.
           </p>
           <p>
-            In the meantime, you can download the file to your local machine, and 
+            In the meantime, you can download the file to your local machine, and
             open it in Delphy directly.
           </p>
           <div class="uploader--button-row">
@@ -88,7 +88,7 @@
             </label>
           </div>
           <!-- <label>
-            Save this preference? 
+            Save this preference?
             <input type="checkbox" id="uploader--save-try-proxy" />
           </label> -->
         </div>
