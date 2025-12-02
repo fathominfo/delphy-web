@@ -7,7 +7,7 @@
         "paper": "Dudas et al 2017 - https://dx.doi.org/10.7488/ds/1711",
         "data": "https://github.com/ebov/space-time",
         "config" : "Run with Skygrid.  Cutoff date = 22-Oct-2013.  24 intervals.",
-        "metadata_config" : "For metadata, use 'Geo' by default"
+        "metadata_col" : 1
     },
     {
         "folder" : "ebola-gire-2014",
@@ -17,7 +17,7 @@
         "paper" : "Gire et al 2014 - https://dx.doi.org/10.1126/science.1259657",
         "data" : "(SI of paper)",
         "config":  "",
-        "metadata_config" :  "use 'Country' by default"
+        "metadata_col" : 1
     },
     {
         "folder" : "h3n2-rambaut-2008",
@@ -27,7 +27,7 @@
         "paper": "Rambaut et al 2008, https://dx.doi.org/10.1038/nature06945",
         "data": "https://beast.community/workshop_influenza_phylodynamics  (BEAST X Skygrid tutorial)",
         "config" : "Run with Skygrid.  Cutoff date = 23-Dec-1997.  72 intervals.",
-        "metadata_config" : "NA"
+        "metadata_col" : -1
     },
     {
         "folder" : "h5n1-andersen-2025",
@@ -37,7 +37,7 @@
         "paper": "",
         "data": "https://github.com/andersen-lab/avian-influenza at frozen at commit e756a15",
         "config" : "Run with Skygrid.  Cutoff date = 3-Oct-2023.  22 intervals.",
-        "metadata_config" : "For metadata, use 'geo' by default"
+        "metadata_col" : 1
     },
     {
         "folder" : "mpox-otoole-2023",
@@ -47,7 +47,7 @@
         "paper": "O'Toole et al 2023, https://dx.doi.org/10.1126/science.adg8116",
         "data": "https://github.com/hmpxv/apobec3",
         "config" : "Run with 'Model APOBEC action'",
-        "metadata_config" : "For metadata, use 'geo' by default"
+        "metadata_col" : 1
     },
     {
         "folder" : "mpox-parker-2025",
@@ -57,7 +57,7 @@
         "paper": "Parker et al 2025, https://doi.org/10.1038/s41586-025-09128-2",
         "data": "https://github.com/andersen-lab/Mpox_West_Africa",
         "config" : "Run with 'Model APOBEC action'",
-        "metadata_config" : "For metadata, use 'Region' by default"
+        "metadata_col" : 1
     },
     {
         "folder" : "sars-cov-2-lemieux",
@@ -67,7 +67,7 @@
         "paper": "Lemieux et al 2021, https://doi.org/10.1126/science.abe3261",
         "data": "GenBank, accession IDs obtained from authors",
         "config" : "Run with all-default parameters",
-        "metadata_config" : "For metadata, use 'clade' by default"
+        "metadata_col" : 1
     },
     {
         "folder" : "zika-metsky-2017",
@@ -77,6 +77,6 @@
         "paper": "Metsky et al 2017, https://dx.doi.org/10.1038/nature22402",
         "data": "SI from the paper",
         "config" : "Run with all-default parameters",
-        "metadata_config" : "For metadata, use 'Geo' by default"
+        "metadata_col" : 1
     }
 ]

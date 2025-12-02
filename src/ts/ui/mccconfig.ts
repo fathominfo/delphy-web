@@ -400,16 +400,28 @@ export class MccConfig {
   }
 
 
+  // this.ySpacing = YSpacing.even;
+  //     this.topology = Topology.mcc;
+  //     this.colorOption = ColorOption.confidence;
+  //     this.presentation = Presentation.all;
+  //     this.confidenceThreshold = CONFIDENCE_DEFAULT / 100;
+  //     this.verticalZoom = 1;
+  //     this.zoomCenterY = 0.5;
+  //     this.horizontalZoom = 1;
+  //     this.zoomCenterX = 0.5;
+
+
+
   importConfig(config: ConfigExport): void {
-    this.confidenceThreshold = config.confidence / 100.0;
-    this.topology = config.topology === 0 ? Topology.mcc : Topology.bestof;
-    this.presentation = config.presentation === 0 ? Presentation.all : Presentation.umbrella;
-    this.ySpacing = config.spacing === 0 ? YSpacing.even : YSpacing.genetic;
+    this.confidenceThreshold = config.confidence ? config.confidence / 100.0 : CONFIDENCE_DEFAULT;
+    this.topology = !config.topology ? Topology.mcc : Topology.bestof;
+    this.presentation = !config.presentation ? Presentation.all : Presentation.umbrella;
+    this.ySpacing = !config.spacing ? YSpacing.even : YSpacing.genetic;
     if (config.metadataPresent === 1) {
-      this.colorOption = config.colorBy === 0 ? ColorOption.confidence : ColorOption.metadata;
+      this.colorOption = !config.colorBy ? ColorOption.confidence : ColorOption.metadata;
       this.metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
       this.metadataField = this.metadata.header[config.selectedMDField] || '';
-      this.metadataColors = config.metadataColors;
+      this.metadataColors = config.metadataColors || {};
     }
   }
 

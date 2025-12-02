@@ -16,7 +16,7 @@ type DemoOption = {
   paper : string,
   data : string,
   config :  string,
-  metadata_config : string
+  metadata_col : number
 };
 
 let pythia : Pythia;
@@ -169,12 +169,13 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
   const pathLabel = runButton.querySelector(".selection") as HTMLSpanElement;
   demoFileOptTemplate.remove();
-  const pathogenLabels: {[fname:string]:string} = {};
+  const folderData: {[fname:string]:DemoOption} = {};
   fetch(DEMO_FILES)
     .then(r=>r.json())
     .then(optionList=>{
-      (optionList as Array<DemoOption>).forEach(({folder, label, description, data, paper, config, metadata_config}, i)=>{
-        console.log(folder, label, description, data, paper, config, metadata_config);
+      (optionList as Array<DemoOption>).forEach((option, i)=>{
+        const {folder, label, description} = option;
+        console.log(option);
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
         copy.title = description;
         const input = copy.querySelector("input") as HTMLInputElement;
@@ -188,25 +189,45 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         anchor.href = zipFilepath;
         anchor.download = zipFilename;
         demoOptContainer?.appendChild(copy);
-        pathogenLabels[folder] = label;
+        folderData[folder] = option;
         if (input.checked) {
-          pathLabel.textContent = label;
+          pathLabel.textContent = option.label;
         }
       })
     });
   demoForm.addEventListener("change", ()=>{
     const selection = demoForm.folder.value as string;
-    const labelText = pathogenLabels[selection];
-    pathLabel.textContent = labelText;
+    const option = folderData[selection];
+    pathLabel.textContent = option.label;
   });
 
   runButton.addEventListener("click", ()=>{
     const folder = demoForm.folder.value as string;
-    const fileToLoad = `demo/${folder}/${folder}.maple`;
+    const fileToLoad = `./demo/${folder}/${folder}.maple`;
+    const fileData = folderData[folder];
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
     hideOthers(demoDiv);
     uploadDiv.classList.add('loading');
+    let fetchMetadata = ()=>{};
+    if (fileData.metadata_col >= 0) {
+      const mccConfig = {
+        metadataPresent : 1,
+        metadataFile : `${folder}.csv`,
+        selectedMDField : fileData.metadata_col
+      } as ConfigExport;
+      const metadataFilePath = `./demo/${folder}/${folder}_metadata.csv`;
+      fetchMetadata = ()=>{
+        fetch(metadataFilePath)
+          .then(r=>r.text())
+          .then(txt=>{
+            mccConfig.metadataText = txt;
+            mccConfig.metadataDelimiter = ',';
+            configCallback(mccConfig);
+          })
+      }
+    }
+
     fetch(fileToLoad)
       .then(r => r.arrayBuffer())
       .then(bytesJs => {
@@ -215,9 +236,15 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         uploadDiv.classList.add('parsing');
         qc.reset();
         if (fileToLoad.endsWith(".maple")) {
-          pythia.initRunFromMaple(bytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
+          pythia.initRunFromMaple(bytesJs, runCallback, errCallback,
+            stageCallback, parseProgressCallback, initTreeProgressCallback,
+            loadWarningCallback)
+            .then(fetchMetadata);
         } else {
-          pythia.initRunFromFasta(bytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
+          pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
+            stageCallback, parseProgressCallback, analysisProgressCallback,
+            initTreeProgressCallback, loadWarningCallback)
+            .then(fetchMetadata);
         }
       })
   });

@@ -212,7 +212,7 @@ export class Pythia {
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
-    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):Promise<void> { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading FASTA file...");
     this.fileFormat = sequenceFileFormat.FASTA;
     const treePromise = this.delphy.parseFastaIntoInitialTreeAsync(
@@ -223,7 +223,7 @@ export class Pythia {
       initTreeProgressCallback,
       warningCallback
     );
-    this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback);
+    return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback);
   }
 
   initRunFromMaple(mapleBytesJs:ArrayBuffer,
@@ -232,7 +232,7 @@ export class Pythia {
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
-    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):void { // eslint-disable-line @typescript-eslint/no-explicit-any
+    warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void):Promise<void> { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.log("Loading Maple file...");
     this.fileFormat = sequenceFileFormat.MAPLE;
     const treePromise = this.delphy.parseMapleIntoInitialTreeAsync(
@@ -242,25 +242,29 @@ export class Pythia {
       initTreeProgressCallback,
       warningCallback
     );
-    this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback);
+    return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback);
   }
 
-  initRunFromTreePromise(futureTree:Promise<PhyloTree>, runReadyCallback:()=>void, errCallback:(msg:string)=>void):void {
+  initRunFromTreePromise(futureTree:Promise<PhyloTree>, runReadyCallback:()=>void,
+    errCallback:(msg:string)=>void):Promise<void> {
     const startTime = Date.now();
     this.runReadyCallback = runReadyCallback;
-    futureTree
-      .then(phyloTree => {
-        console.log("Creating run", phyloTree);
-        console.log(`file parsed and initial tree generated in ${Date.now() - startTime}ms`);
-        return this.instantiateRun(phyloTree, makeDefaultRunParamConfig(phyloTree));
-      })
-      .then(() => {
-        this.runReadyCallback();
-      })
-      .catch(err => {
-        console.error(err);
-        errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
-      });
+    return new Promise(resolve=>{
+      futureTree
+        .then(phyloTree => {
+          console.log("Creating run", phyloTree);
+          console.log(`file parsed and initial tree generated in ${Date.now() - startTime}ms`);
+          return this.instantiateRun(phyloTree, makeDefaultRunParamConfig(phyloTree));
+        })
+        .then(() => {
+          this.runReadyCallback();
+          resolve();
+        })
+        .catch(err => {
+          console.error(err);
+          errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
+        });
+    });
   }
 
   async instantiateRun(initialTree: PhyloTree, runParams: RunParamConfig) : Promise<Run>{
