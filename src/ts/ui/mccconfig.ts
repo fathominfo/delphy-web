@@ -422,6 +422,7 @@ export class MccConfig {
       this.metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
       this.metadataField = this.metadata.header[config.selectedMDField] || '';
       this.metadataColors = config.metadataColors || {};
+      this.setColorSystem(this.colorOption);
     }
   }
 

@@ -214,7 +214,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
       const mccConfig = {
         metadataPresent : 1,
         metadataFile : `${folder}.csv`,
-        selectedMDField : fileData.metadata_col
+        selectedMDField : fileData.metadata_col,
+        colorBy : 1
       } as ConfigExport;
       const metadataFilePath = `./demo/${folder}/${folder}_metadata.csv`;
       fetchMetadata = ()=>{
