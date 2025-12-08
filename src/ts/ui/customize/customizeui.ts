@@ -1,7 +1,7 @@
 import { YSpacing, Topology, ColorOption, Presentation,
   Y_EVEN_SPACING, Y_GENETIC_DISTANCE, TOPOLOGY_MCC, TOPOLOGY_BEST_OF,
   COLOR_CONF, COLOR_METADATA, PRESENTATION_ALL, PRESENTATION_UMBRELLA,
-  CONFIDENCE_DEFAULT, ColorDict, UNDEF, getTimestampString, MetadataColorOption } from '../common';
+  CONFIDENCE_DEFAULT, ColorDict, getTimestampString, MetadataColorOption } from '../common';
 import {noop} from '../../constants';
 import {MccUI} from '../mccui';
 import {SharedState} from '../../sharedstate';
@@ -493,18 +493,9 @@ export class CustomizeUI extends MccUI {
       throw new Error("can't set a medata field when we have no metadata on the MccConfig.")
     }
     const container = this.div.querySelector("#metadata-legend") as HTMLElement,
-      fieldContainer = this.div.querySelector("#customize--color--metadata .color-system--details") as HTMLDivElement,
-      summ = mccConfig.getColumnSummary(field),
-      keys = summ?.sorted.map(([val, ]) => val),
-      colorAll: boolean = keys ? keys.length <= 10 : false,
-      colorList: string[] = this.colorChooser.getPalette(keys?.length || 0),
-      undefIndex = keys.indexOf(UNDEF),
-      undefColor = `#${this.colorChooser.getUndefColor()}`;
-    colorList[undefIndex] = this.colorChooser.getUndefColor();
-    let colors: ColorDict = mccConfig.metadataColors[field];
-    if (!colors) {
-      colors = {};
-    }
+      fieldContainer = this.div.querySelector("#customize--color--metadata .color-system--details") as HTMLDivElement;
+    const colorAll = mccConfig.setColorKeys(field);
+    const colors: ColorDict = mccConfig.metadataColors[field];
     container.innerHTML = "";
     fieldContainer.classList.toggle('many', !colorAll);
     const allComponents: colorComponent[] = [];
@@ -533,52 +524,38 @@ export class CustomizeUI extends MccUI {
       this.selectAllToggle.addEventListener("change", selectAllCallback);
       this.selectAllCallback = selectAllCallback;
     }
-
-    if (keys) {
-      keys.forEach((key, index) => {
-        const el = LEGEND_KEY_TEMP.cloneNode(true) as HTMLElement,
-          checkBox = el.querySelector('.color-active') as HTMLInputElement,
-          label = el.querySelector('.name') as HTMLLabelElement,
-          colorInput = el.querySelector('.color') as HTMLInputElement;
-        container.appendChild(el);
-        const id = `id_${key.toLowerCase().replace(" ", "")}`;
-        checkBox.id = id;
-        label.htmlFor = id;
-        label.innerText = key;
-        if (colors[key] ) {
-          const clr = colors[key].color;
-          colorList[index] = clr;
-          colorInput.value = clr;
-          checkBox.checked = colors[key].active;
-        } else {
-          const clr = key === UNDEF ? undefColor : colorList[index];
-          colors[key] = {color: clr, active: colorAll};
-          colorInput.value = colorAll ? clr : undefColor;
-          checkBox.checked = colorAll;
+    Object.entries(colors).forEach(([key, nodeColor]) => {
+      const el = LEGEND_KEY_TEMP.cloneNode(true) as HTMLElement,
+        checkBox = el.querySelector('.color-active') as HTMLInputElement,
+        label = el.querySelector('.name') as HTMLLabelElement,
+        colorInput = el.querySelector('.color') as HTMLInputElement;
+      container.appendChild(el);
+      const id = `id_${key.toLowerCase().replace(" ", "")}`;
+      checkBox.id = id;
+      label.htmlFor = id;
+      label.innerText = key;
+      colorInput.value = nodeColor.color;
+      checkBox.checked = colors[key].active;
+      checkBox.addEventListener('change', ()=>{
+        if (checkBox.checked) {
+          colors[key].active = true;
+          colorInput.value = colors[key].color;
+        } else if (colors[key]) {
+          colors[key].active = false;
         }
-        const nodeColor: MetadataColorOption = colors[key];
-        checkBox.addEventListener('change', ()=>{
-          if (checkBox.checked) {
-            colors[key].active = true;
-            colorInput.value = colors[key].color;
-          } else if (colors[key]) {
-            colors[key].active = false;
-          }
-          mccConfig.setMetadataField(field, colors);
-        });
-        colorInput.addEventListener('input', () => {
-          colorInput.select();
-          const value = colorInput.value;
-          // console.log(value);
-          colorList[index] = value;
-          colors[key] = {color: colorList[index], active: true};
-          mccConfig.setMetadataField(field, colors);
-        });
-
-        allComponents.push({checkBox, colorInput, nodeColor})
+        mccConfig.setMetadataField(field, colors);
       });
-    }
-    mccConfig.setMetadataField(field, colors);
+      colorInput.addEventListener('input', () => {
+        colorInput.select();
+        const value = colorInput.value;
+        // console.log(value);
+        // colorList[index] = value;
+        // colors[key] = {color: colorList[index], active: true};
+        mccConfig.setMetadataKeyColor(field, key, value);
+      });
+
+      allComponents.push({checkBox, colorInput, nodeColor})
+    });
   }
 
 

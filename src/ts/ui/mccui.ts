@@ -8,6 +8,7 @@ import {UIScreen} from './uiscreen';
 import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
 import { MccUmbrella } from '../pythia/mccumbrella';
+import { Metadata } from './metadata';
 
 
 export class MccUI extends UIScreen {
@@ -40,6 +41,7 @@ export class MccUI extends UIScreen {
 
     const canvas = this.mccTreeCanvas.getCanvas();
     canvas.parentNode?.appendChild(this.highlightCanvas);
+
     this.zoomHandler = (vZoom:number, vZoomScroll: number, hZoom: number, hZoomScroll: number)=>{
       // console.debug(zoom, zoomScroll);
       this.mccTreeCanvas.setZoom(vZoom, vZoomScroll, hZoom, hZoomScroll);
@@ -52,12 +54,19 @@ export class MccUI extends UIScreen {
   activate() {
     /* hold onto the current mcc while this tab is open */
     if (this.pythia) this.mccRef = this.pythia.getMcc();
-    this.sharedState.mccConfig.setListener(()=>this.handleConfigChange());
+    const mccConfig = this.sharedState.mccConfig;
+    mccConfig.setListener(()=>this.handleConfigChange());
     if (this.mccTreeCanvas) {
-      this.mccTreeCanvas.setConfig(this.sharedState.mccConfig);
+      this.mccTreeCanvas.setConfig(mccConfig);
     }
     super.activate();
-    this.updateData();
+    this.updateData().then(()=>{
+      if (mccConfig.metadataColorsDirty) {
+        mccConfig.setMetadata(mccConfig.metadata as Metadata, (this.mccRef as MccRef).getMcc());
+        mccConfig.setColorKeys(this.sharedState.mccConfig.metadataField as string);
+        mccConfig.setColorSystem(ColorOption.metadata);
+      }
+    });
   }
 
   deactivate(): void {

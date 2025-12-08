@@ -5,7 +5,7 @@ import { YSpacing, Topology, ColorOption, Presentation,
   ZoomFnc,
   UNSET} from './common';
 import { ColumnSummary, Metadata} from './metadata';
-import { UNDEF_COLOR } from './colorchooser';
+import { ColorChooser, UNDEF_COLOR } from './colorchooser';
 import { NodeMetadata, FieldTipCount } from './nodemetadata';
 import { SummaryTree } from '../pythia/delphy_api';
 import { BlockSlider } from '../util/blockslider';
@@ -57,6 +57,9 @@ export class MccConfig {
   zoomFnc: returnless;
 
   confidenceSlider!: BlockSlider;
+  colorChooser: ColorChooser;
+
+  metadataColorsDirty: boolean;
 
 
 
@@ -78,6 +81,8 @@ export class MccConfig {
     this.zoomCenterY = 0.5;
     this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
+    this.colorChooser = new ColorChooser();
+    this.metadataColorsDirty = false;
 
     this.ySpacingCallback = event=>{
       const target = event.target as HTMLInputElement;
@@ -263,17 +268,18 @@ export class MccConfig {
     }
   }
 
-  setColorSystem(color: ColorOption): void {
+  setColorSystem(option: ColorOption): void {
     // console.debug('setColorSystem', color);
-    if (color !== this.colorOption) {
-      if (color === ColorOption.confidence) {
-        this.colorOption = color;
-        this.updateCallback();
-      } else if (!this.metadataField || !this.metadataColors) {
-        console.debug("can't color by metadata until metadata field and colors are set.")
-      } else {
-        this.colorOption = color;
-        this.updateCallback();
+    let updatingColor = option !== this.colorOption || (option === ColorOption.metadata && this.metadataColorsDirty);
+    if (updatingColor && option === ColorOption.metadata && (!this.metadataField || !this.metadataColors)) {
+      updatingColor = false;
+      console.debug("can't color by metadata until metadata field and colors are set.")
+    }
+    if (updatingColor) {
+      this.colorOption = option;
+      this.updateCallback();
+      if (option === ColorOption.metadata) {
+        this.metadataColorsDirty = false;
       }
     }
   }
@@ -411,7 +417,6 @@ export class MccConfig {
   //     this.zoomCenterX = 0.5;
 
 
-
   importConfig(config: ConfigExport): void {
     this.confidenceThreshold = config.confidence ? config.confidence / 100.0 : CONFIDENCE_DEFAULT;
     this.topology = !config.topology ? Topology.mcc : Topology.bestof;
@@ -422,10 +427,61 @@ export class MccConfig {
       this.metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
       this.metadataField = this.metadata.header[config.selectedMDField] || '';
       this.metadataColors = config.metadataColors || {};
-      this.setColorSystem(this.colorOption);
+      this.metadataColorsDirty = true;
     }
   }
 
+
+
+  /*
+  set colors for keys in a metadata field
+  assuming that any key passed in will be active
+  */
+  setColorKeys(field: string) {
+    const summ = this.getColumnSummary(field),
+      keys = summ?.sorted.map(([val, ]) => val),
+      colorAll: boolean = keys ? keys.length <= 10 : false,
+      colorList: string[] = this.colorChooser.getPalette(keys?.length || 0),
+      undefIndex = keys.indexOf(UNDEF),
+      undefColor = `#${this.colorChooser.getUndefColor()}`;
+    colorList[undefIndex] = this.colorChooser.getUndefColor();
+    let colors: ColorDict = this.metadataColors[field];
+    if (!colors) {
+      colors = {};
+    }
+    keys.forEach((key, index) => {
+      if (colors[key] ) {
+        const clr = colors[key].color;
+        colorList[index] = clr;
+      } else {
+        const clr = key === UNDEF ? undefColor : colorList[index];
+        colors[key] = {color: clr, active: true};
+      }
+    });
+    this.setMetadataField(field, colors);
+    return colorAll;
+  }
+
+  setMetadataKeyColor(field: string, key: string, color: string): void {
+    if (this.metadataColors[field]?.[key]) {
+      this.metadataColors[field][key].color = color;
+      // const undefColor = `#${this.colorChooser.getUndefColor()}`;
+      // if (isActive && this.metadataColors[field][key].color == undefColor) {
+      //   this.metadataColors[field][key].color =
+      // }
+    }
+  }
+
+
+  setMetadataKeyActive(field: string, key: string, isActive=false): void {
+    if (this.metadataColors[field]?.[key]) {
+      this.metadataColors[field][key].active = isActive;
+      // const undefColor = `#${this.colorChooser.getUndefColor()}`;
+      // if (isActive && this.metadataColors[field][key].color == undefColor) {
+      //   this.metadataColors[field][key].color =
+      // }
+    }
+  }
 
 }
 
