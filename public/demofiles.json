@@ -1,7 +1,7 @@
 [
     {
         "folder" : "ebola-dudas-2017",
-        "pathogen" : "ebola",
+        "pathogen" : "Ebola",
         "label" : "Ebola (Dudas et al, 2017)",
         "description" : "1610 Ebola sequences (18,996 sites) covering the 2014-16 West Africa outbreak",
         "paper": "Dudas et al 2017",
@@ -16,7 +16,7 @@
     },
     {
         "folder" : "ebola-gire-2014",
-        "pathogen" : "ebola",
+        "pathogen" : "Ebola",
         "label" : "Ebola (Gire et al, 2014)",
         "description" : "81 sequences Ebola sequences (18,959 sites) covering the first few months of the 2014-16 West Africa outbreak",
         "paper" : "Gire et al 2014",
@@ -27,7 +27,7 @@
     },
     {
         "folder" : "h3n2-rambaut-2008",
-        "pathogen" : "h3n2",
+        "pathogen" : "H3N2",
         "label" : "H3N2 (Rambaut et al, 2008)",
         "description" : "165 H3N2 HA sequences (1698 sites) for 3 waves of influenza A in New York covering 2000-2003",
         "paper": "Rambaut et al 2008",
@@ -43,12 +43,12 @@
     },
     {
         "folder" : "h5n1-andersen-2025",
-        "pathogen" : "h5n1",
+        "pathogen" : "H5N1",
         "label" : "H5N1 (Andersen lab, 2025)",
         "description" : "3339 H5N1 genotype B3.13 sequences (all segments concatenated - 13,136 sites) covering the 2024-25 US _cattle_ outbreak (excludes sequences found in non-cattle hosts).",
         "paper": "",
         "data_link": "https://github.com/andersen-lab/avian-influenza",
-        "data_description" : "at frozen at commit e756a15",
+        "data_description" : "frozen at commit e756a15",
         "config" : {
             "popModelIsSkygrid" : true,
             "skygridNumIntervals" : 22,
@@ -58,7 +58,7 @@
     },
     {
         "folder" : "mpox-otoole-2023",
-        "pathogen" : "mpox",
+        "pathogen" : "MPOX",
         "label" : "MPOX (O'Toole et al, 2023)",
         "description" : "41 mpox sequences (197,209 sites) around the 2017-2020 Nigerian mpox outbreak that turned into the 2021-2022 worldwide mpox outbreak",
         "paper": "O'Toole et al 2023",
@@ -71,7 +71,7 @@
     },
     {
         "folder" : "mpox-parker-2025",
-        "pathogen" : "mpox",
+        "pathogen" : "MPOX",
         "label" : "MPOX (Parker et al, 2025)",
         "description" : "177 mpox sequences (197,209 sites), almost all from Nigeria, mostly preceding the 2021-2022 worlwide mpox outbreak",
         "paper": "Parker et al 2025",
@@ -84,7 +84,7 @@
     },
     {
         "folder" : "sars-cov-2-lemieux",
-        "pathogen" : "sars-cov-2",
+        "pathogen" : "SARS-CoV-2",
         "label" : "SARS-CoV-2 (Lemieux et al, 2021)",
         "description" : "757 SARS-CoV-2 sequences (29,903 sites) from Massachussetts in the first months of the SARS-CoV-2 pandemic (2020-)",
         "paper": "Lemieux et al 2021",
@@ -95,7 +95,7 @@
     },
     {
         "folder" : "zika-metsky-2017",
-        "pathogen" : "zika",
+        "pathogen" : "Zika",
         "label" : "Zika (Metsky et al, 2017)",
         "description" : "174 Zika virus sequences (10,807 sites) from the Americas spanning the 2015-16 Zika outbreak",
         "paper": "Metsky et al 2017",

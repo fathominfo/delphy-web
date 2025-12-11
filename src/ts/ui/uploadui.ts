@@ -15,6 +15,7 @@ type DemoOption = {
   label: string,
   description : string,
   paper : string,
+  paper_link: string | null,
   data_link : string | null,
   data_description : string | null,
   config : object | null,
@@ -176,18 +177,62 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     .then(r=>r.json())
     .then(optionList=>{
       (optionList as Array<DemoOption>).forEach((option, i)=>{
-        const {folder, label, description} = option;
+        const { folder, pathogen, paper, paper_link, description,
+          data_link, data_description } = option;
         console.log(option);
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
-        copy.title = description;
+        // copy.title = description;
         const input = copy.querySelector("input") as HTMLInputElement;
-        const span = copy.querySelector("span") as HTMLSpanElement;
+        const pathogenSpan = copy.querySelector(".pathogen-name") as HTMLSpanElement;
+        const paperSpan = copy.querySelector(".paper-name") as HTMLSpanElement;
+        const descriptionSpan = copy.querySelector(".description") as HTMLSpanElement;
+        const dataSpan = copy.querySelector(".data") as HTMLSpanElement;
         const zipFilename = `${folder}.zip`;
         const zipFilepath = `demo/${folder}/${zipFilename}`;
-        const anchor = copy.querySelector("a") as HTMLAnchorElement;
+        const anchor = copy.querySelector("a.download") as HTMLAnchorElement;
         input.value = folder;
         input.checked = i === 0;
-        span.textContent = label;
+        pathogenSpan.textContent = pathogen;
+        descriptionSpan.textContent = description;
+        {
+          if (!paper) {
+            paperSpan.remove();
+          } else {
+            if (paper_link) {
+              const ankh = document.createElement("a");
+              ankh.href = paper_link;
+              ankh.target = "_";
+              ankh.textContent = paper;
+              paperSpan.appendChild(ankh);
+            } else {
+              paperSpan.textContent = paper;
+            }
+          }
+
+        }
+
+
+
+        {
+          if (!data_link && !data_description) {
+            dataSpan.remove();
+          } else {
+            const dataAnchor = dataSpan.querySelector("a") as HTMLAnchorElement;
+            const dataDescriptionSpan = dataSpan.querySelector("span") as HTMLSpanElement;
+            if (data_link) {
+              dataAnchor.href = data_link;
+              dataAnchor.textContent = data_link;
+            } else {
+              dataAnchor.remove();
+            }
+            if (data_description) {
+              dataDescriptionSpan.textContent = data_description;
+            } else {
+              dataDescriptionSpan.remove();
+            }
+
+          }
+        }
         anchor.href = zipFilepath;
         anchor.download = zipFilename;
         demoOptContainer?.appendChild(copy);
