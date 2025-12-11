@@ -214,9 +214,10 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
       Object.entries(config).forEach(([prop, value])=>{
         prop = prop as string;
         if (asObject[prop] !== undefined) {
+          if (prop === "skygridStartDate") {
+            value = parse_iso_date(value as string);
+          }
           asObject[prop] = value;
-        } else if (prop === "skygridCutoffDate") {
-          asObject['skygridStartDate'] = parse_iso_date(value as string);
         }
       });
       runParams = asObject as RunParamConfig;
