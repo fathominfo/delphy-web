@@ -208,6 +208,20 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     const fileToLoad = `./demo/${folder}/${folder}.maple`;
     const fileData = folderData[folder];
     const config = fileData.config;
+    let runParams: RunParamConfig | null = null;
+    if (config !== null) {
+      const asObject: any = getEmptyRunParamConfig() as object; // eslint-disable-line @typescript-eslint/no-explicit-any
+      Object.entries(config).forEach(([prop, value])=>{
+        prop = prop as string;
+        if (asObject[prop] !== undefined) {
+          asObject[prop] = value;
+        } else if (prop === "skygridCutoffDate") {
+          asObject['skygridStartDate'] = parse_iso_date(value as string);
+        }
+      });
+      runParams = asObject as RunParamConfig;
+    }
+
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
     hideOthers(demoDiv);
@@ -228,21 +242,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
             mccConfig.metadataText = txt;
             mccConfig.metadataDelimiter = ',';
             configCallback(mccConfig);
-            if (config !== null) {
-              const asObject: any = getEmptyRunParamConfig() as object; // eslint-disable-line @typescript-eslint/no-explicit-any
-              Object.entries(config).forEach(([prop, value])=>{
-                prop = prop as string;
-                if (asObject[prop] !== undefined) {
-                  asObject[prop] = value;
-                } else if (prop === "skygridCutoffDate") {
-                  asObject['skygridStartDate'] = parse_iso_date(value as string);
-                }
-              });
-              const runParams = asObject as RunParamConfig;
-              console.log(runParams);
-            }
-
-          })
+          });
       }
     }
 
@@ -256,12 +256,12 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         if (fileToLoad.endsWith(".maple")) {
           pythia.initRunFromMaple(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, initTreeProgressCallback,
-            loadWarningCallback)
+            loadWarningCallback, runParams)
             .then(fetchMetadata);
         } else {
           pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, analysisProgressCallback,
-            initTreeProgressCallback, loadWarningCallback)
+            initTreeProgressCallback, loadWarningCallback, runParams)
             .then(fetchMetadata);
         }
       })
@@ -457,7 +457,11 @@ const checkFiles = (files: File[] | FileList)=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
-          if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
+          if (fastaBytesJs) {
+            pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
+              stageCallback, parseProgressCallback, analysisProgressCallback,
+              initTreeProgressCallback, loadWarningCallback, null);
+          }
         });
         reader.readAsArrayBuffer(file);
       } else if (extension === 'maple') {
@@ -467,7 +471,11 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.add('parsing');
           const mapleBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
-          if (mapleBytesJs) pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, initTreeProgressCallback, loadWarningCallback);
+          if (mapleBytesJs) {
+            pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
+              stageCallback, parseProgressCallback,
+              initTreeProgressCallback, loadWarningCallback, null);
+          }
         });
         reader.readAsArrayBuffer(file);
       } else {
@@ -483,7 +491,11 @@ const checkFiles = (files: File[] | FileList)=>{
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
               qc.reset();
-              if (fastaBytesJs) pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback, stageCallback, parseProgressCallback, analysisProgressCallback, initTreeProgressCallback, loadWarningCallback);
+              if (fastaBytesJs) {
+                pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
+                  stageCallback, parseProgressCallback, analysisProgressCallback,
+                  initTreeProgressCallback, loadWarningCallback, null);
+              }
             });
             reader.readAsArrayBuffer(file);
           } else {
