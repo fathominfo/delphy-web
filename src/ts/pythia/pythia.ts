@@ -93,7 +93,8 @@ function calcMaxDateOfTree(tree: PhyloTree): number {
 }
 
 export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
-  const count = tree.getSize(),
+  const config = getEmptyRunParamConfig(),
+    count = tree.getSize(),
     tipCount = (count + 1) / 2,
     targetStepSize = Math.pow(10, Math.ceil(Math.log(tipCount * 1000)/ Math.log(10))),
     rootDate = tree.getTimeOf(tree.getRootIndex()) || 0,
@@ -101,13 +102,20 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     dateRange = maxDate - rootDate,
     skygridStartDate = maxDate - 2 * dateRange,
     skygridNumIntervals = Math.round(tipCount / 15),
-    defaultDays = 30;
+    defaultDays = config.skygridDoubleHalfTime;
   let skygridTau = convertSkygridDaysToTau(defaultDays, skygridStartDate, maxDate, skygridNumIntervals);
   console.log(defaultDays, skygridTau, convertSkygridTauToDays(skygridTau, skygridStartDate, maxDate, skygridNumIntervals));
   skygridTau = Math.round(skygridTau * 100) / 100;
+  config.stepsPerSample = targetStepSize;
+  config.skygridStartDate = skygridStartDate,
+  config.skygridNumIntervals = skygridNumIntervals,
+  config.skygridTau = skygridTau;
+  return config;
+}
 
+export function getEmptyRunParamConfig(): RunParamConfig {
   return {
-    stepsPerSample: targetStepSize,
+    stepsPerSample: UNSET,
     mutationRate: 1e-3 / 365.0,  // 1e-3 mutations / site / year
     apobecEnabled: false,
     siteRateHeterogeneityEnabled: false,
@@ -122,12 +130,12 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     popGrowthRate: 0.0,  // e-foldings / year
 
     // Defaults for Skygrid pop model
-    skygridStartDate: skygridStartDate,
-    skygridNumIntervals: skygridNumIntervals,
+    skygridStartDate: UNSET,
+    skygridNumIntervals: UNSET,
     skygridIsLogLinear: true,
     skygridTauConfig: tauConfigOption.DOUBLE_HALF_TIME,
     skygridDoubleHalfTime: 30.0, // > 0
-    skygridTau: skygridTau, // > 0
+    skygridTau: UNSET, // > 0
     skygridTauPriorAlpha: 0.001, // > 0
     skygridTauPriorBeta: 0.001,   // > 0
     skygridLowPopBarrierEnabled: true,

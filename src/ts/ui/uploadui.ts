@@ -1,10 +1,11 @@
-import { STAGES } from '../constants';
+import { noop, STAGES } from '../constants';
 import { setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
-import {Pythia} from '../pythia/pythia';
+import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
+import { parse_iso_date } from '../pythia/dates';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -14,8 +15,9 @@ type DemoOption = {
   label: string,
   description : string,
   paper : string,
-  data : string,
-  config :  string,
+  data_link : string | null,
+  data_description : string | null,
+  config : object | null,
   metadata_col : number
 };
 
@@ -205,11 +207,12 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     const folder = demoForm.folder.value as string;
     const fileToLoad = `./demo/${folder}/${folder}.maple`;
     const fileData = folderData[folder];
+    const config = fileData.config;
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
     hideOthers(demoDiv);
     uploadDiv.classList.add('loading');
-    let fetchMetadata = ()=>{};
+    let fetchMetadata = noop;
     if (fileData.metadata_col >= 0) {
       const mccConfig = {
         metadataPresent : 1,
@@ -225,6 +228,20 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
             mccConfig.metadataText = txt;
             mccConfig.metadataDelimiter = ',';
             configCallback(mccConfig);
+            if (config !== null) {
+              const asObject: any = getEmptyRunParamConfig() as object; // eslint-disable-line @typescript-eslint/no-explicit-any
+              Object.entries(config).forEach(([prop, value])=>{
+                prop = prop as string;
+                if (asObject[prop] !== undefined) {
+                  asObject[prop] = value;
+                } else if (prop === "skygridCutoffDate") {
+                  asObject['skygridStartDate'] = parse_iso_date(value as string);
+                }
+              });
+              const runParams = asObject as RunParamConfig;
+              console.log(runParams);
+            }
+
           })
       }
     }
