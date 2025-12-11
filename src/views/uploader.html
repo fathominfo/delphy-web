@@ -25,18 +25,21 @@
         <div id="uploader--demo">
           <button id="uploader--demo-button"><span class="symbol">&#9654;</span>Run <span class="selection">SARS-CoV-2</span> demo</button>
           <form id="uploader--demo-form">
-            <p  class="uploader--demo-option">
-              <label>
-                <input type="radio" name="folder" value="filename.ext" checked/>
-                <span class="pathogen-name"></span>
-              </label>
-              <span class="paper-name"></span>
-              <span class="description"></span>
-              <span class="data">Source data: <a href="" target="_" ></a><span></span></span>
-              <a class="download" href="" target="_" >
-                <span class="box"><span class="glyph"></span></span>Download input data
-              </a>
-            </p>
+            <div id="uploader--demo-options">
+              <p  class="uploader--demo-option">
+                <label>
+                  <input type="radio" name="folder" value="filename.ext" checked/>
+                  <span class="pathogen-name"></span>
+                </label>
+                <span class="description"></span>
+                <a class="paper-name" target="_">paper</a>
+                <a class="data" href="" target="_" >data source</a>
+                <span class="data-note"></span>
+                <a class="download" href="" target="_" >
+                  <span class="box"><span class="glyph"></span></span>Download input data
+                </a>
+              </p>
+            </div>
           </form>
         </div>
 

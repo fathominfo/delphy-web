@@ -89,7 +89,7 @@
         "description" : "757 SARS-CoV-2 sequences (29,903 sites) from Massachussetts in the first months of the SARS-CoV-2 pandemic (2020-)",
         "paper": "Lemieux et al 2021",
         "paper_link": "https://doi.org/10.1126/science.abe3261",
-        "data_description": "GenBank, accession IDs obtained from authors",
+        "data_description": "data source: GenBank, accession IDs obtained from authors",
         "config" : null,
         "metadata_col" : 1
     },
@@ -100,7 +100,7 @@
         "description" : "174 Zika virus sequences (10,807 sites) from the Americas spanning the 2015-16 Zika outbreak",
         "paper": "Metsky et al 2017",
         "paper_link": "https://dx.doi.org/10.1038/nature22402",
-        "data_description": "SI from the paper",
+        "data_description": "data source: SI from the paper",
         "config" : null,
         "metadata_col" : 1
     }

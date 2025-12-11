@@ -177,61 +177,38 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     .then(r=>r.json())
     .then(optionList=>{
       (optionList as Array<DemoOption>).forEach((option, i)=>{
-        const { folder, pathogen, paper, paper_link, description,
+        const { folder, label, paper_link, description,
           data_link, data_description } = option;
         console.log(option);
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
         // copy.title = description;
         const input = copy.querySelector("input") as HTMLInputElement;
         const pathogenSpan = copy.querySelector(".pathogen-name") as HTMLSpanElement;
-        const paperSpan = copy.querySelector(".paper-name") as HTMLSpanElement;
+        const paperLink = copy.querySelector(".paper-name") as HTMLAnchorElement;
         const descriptionSpan = copy.querySelector(".description") as HTMLSpanElement;
-        const dataSpan = copy.querySelector(".data") as HTMLSpanElement;
+        const dataLink = copy.querySelector(".data") as HTMLAnchorElement;
+        const dataNoteSpan = copy.querySelector(".data-note") as HTMLSpanElement;
         const zipFilename = `${folder}.zip`;
         const zipFilepath = `demo/${folder}/${zipFilename}`;
         const anchor = copy.querySelector("a.download") as HTMLAnchorElement;
         input.value = folder;
         input.checked = i === 0;
-        pathogenSpan.textContent = pathogen;
+        pathogenSpan.textContent = label;
         descriptionSpan.textContent = description;
-        {
-          if (!paper) {
-            paperSpan.remove();
-          } else {
-            if (paper_link) {
-              const ankh = document.createElement("a");
-              ankh.href = paper_link;
-              ankh.target = "_";
-              ankh.textContent = paper;
-              paperSpan.appendChild(ankh);
-            } else {
-              paperSpan.textContent = paper;
-            }
-          }
-
+        if (!paper_link) {
+          paperLink.remove();
+        } else {
+          paperLink.href = paper_link;
         }
-
-
-
-        {
-          if (!data_link && !data_description) {
-            dataSpan.remove();
-          } else {
-            const dataAnchor = dataSpan.querySelector("a") as HTMLAnchorElement;
-            const dataDescriptionSpan = dataSpan.querySelector("span") as HTMLSpanElement;
-            if (data_link) {
-              dataAnchor.href = data_link;
-              dataAnchor.textContent = data_link;
-            } else {
-              dataAnchor.remove();
-            }
-            if (data_description) {
-              dataDescriptionSpan.textContent = data_description;
-            } else {
-              dataDescriptionSpan.remove();
-            }
-
-          }
+        if (!data_link) {
+          dataLink.remove();
+        } else {
+          dataLink.href = data_link;
+        }
+        if (!data_description) {
+          dataNoteSpan.remove();
+        } else {
+          dataNoteSpan.textContent = data_description;
         }
         anchor.href = zipFilepath;
         anchor.download = zipFilename;

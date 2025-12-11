@@ -13,7 +13,7 @@
 
   color: white;
   padding: 72px;
-  
+
   a, a:visited {
     color: @toggle-text;
   }
@@ -39,7 +39,7 @@
   }
 
 
-  &.loading #uploader--status-load, 
+  &.loading #uploader--status-load,
   &.parsing #uploader--status-parse,
   &.error #uploader--status-error {
     opacity: 0.5;
@@ -55,11 +55,11 @@
 
   &.direct-loading {
 
-    &.loading #uploader--status-load, 
+    &.loading #uploader--status-load,
     &.parsing #uploader--status-parse {
       opacity: 1.0;
     }
-  
+
     #uploader--demo-button,
     .uploader--or,
     .uploader--message {
@@ -78,7 +78,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  
+
   gap: 50px;
   left: 50%;
   transform: translate(-50%, 0);
@@ -117,7 +117,7 @@
 }
 
 #uploader--demo-button,
-.uploader--message, 
+.uploader--message,
 #uploader--url-message {
   width: 100%;
   .t25();
@@ -152,13 +152,26 @@
   }
 }
 
-#uploader--demo-form .uploader--demo-option,  
-#uploader--url-form-submit
+
+
+#uploader--demo-form {
+  width: 0;
+  overflow-x: visible;
+  margin: 0 auto;
+}
+
+#uploader--demo-options {
+  width: 100vh;
+  transform: translate(-50vh, 0);
+}
+
+.uploader--demo-option
 {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  float: left;
+  margin: 1em;
+  width: 16em;
+  height: 10em;
+
 
   a {
     font-size: 15px;
@@ -187,14 +200,15 @@
     color: lighten(@del, 10%);
     border: 1px solid fade(@del, 10%);
     padding: 3px 8px;
-    display: inline-block;
+    display: block;
+    width: fit-content;
     position: relative;
     cursor: pointer;
     border-radius: 5px;
-    margin: 5px;
-    font-size: 15px;
+    margin: 5px 0;
+    font-size: 18px;
     transition: all 0.15s;
-    
+
 
     &:hover {
       border-color: @del;
@@ -205,17 +219,40 @@
       width: 0;
       position: absolute;
     }
-    
+
     &:has(input:checked) {
       background-color: fade(@del, 30%);
-      color: white; 
+      color: white;
       border-color: @del;
     }
 
     &:has(input:focus-visible) {
       outline: auto;
     }
-  }  
+  }
+
+  .description {
+    display: block;
+    font-size: 15px;
+    line-height: 18px;
+  }
+
+
+  .paper-name {
+    margin-right: 1em;
+  }
+
+  .data-note {
+    font-size: 15px;
+    line-height: 18px;
+    opacity: 0.7;
+  }
+
+
+  .download {
+    display: block;
+  }
+
 }
 
 #uploader--src-download {
@@ -256,7 +293,7 @@
   height: 0;
   opacity: 0;
   clip: rect(0, 0, 0, 0);
-  
+
   &:focus + label {
     outline: auto;
   }
@@ -316,7 +353,7 @@
   display: flex;
   flex-direction: column;
   align-items: end;
-  gap: 10px; 
+  gap: 10px;
 }
 
 .uploader--info-toggle, #uploader--proxy-info-activate {
@@ -457,9 +494,8 @@
   font-size: 15px;
 }
 
-#uploader--url-form-submit {
+.uploader--demo-option, #uploader--url-form-submit {
   label {
-    margin: auto auto;
     &:has(input:disabled) {
       pointer-events: none;
       opacity: 0.25;
@@ -467,10 +503,57 @@
   }
 }
 
+#uploader--url-form-submit
+{
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+
+  label {
+    margin: auto auto;
+
+    background-color: fade(@del, 10%);
+    color: lighten(@del, 10%);
+    border: 1px solid fade(@del, 10%);
+    padding: 3px 8px;
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 5px;
+    font-size: 15px;
+    transition: all 0.15s;
+
+
+    &:hover {
+      border-color: @del;
+    }
+
+    input {
+      opacity: 0;
+      width: 0;
+      position: absolute;
+    }
+
+    &:has(input:checked) {
+      background-color: fade(@del, 30%);
+      color: white;
+      border-color: @del;
+    }
+
+    &:has(input:focus-visible) {
+      outline: auto;
+    }
+  }
+}
+
+
 // to control collapsing on the load screen
-#uploader--demo, 
-#uploader--file-input--label, 
-#uploader--url-message, 
+#uploader--demo,
+#uploader--file-input--label,
+#uploader--url-message,
 .uploader--or {
   transition: all 0.15s;
   &.collapsing {
@@ -512,7 +595,7 @@
   }
   button {
     position: absolute;
-    width: 0; 
+    width: 0;
     opacity: 0;
   }
 }
@@ -594,7 +677,7 @@
 }
 
 .uploader--status-message {
-  font-style: italic;  
+  font-style: italic;
 }
 
 
@@ -644,7 +727,7 @@
   font-size: 15px;
   font-weight: 400;
   line-height: 18px;
-  p { 
+  p {
     margin: 5px;
   }
 }
