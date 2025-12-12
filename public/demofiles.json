@@ -6,6 +6,7 @@
         "description" : "1610 Ebola sequences (18,996 sites) covering the 2014-16 West Africa outbreak",
         "paper": "Dudas et al 2017",
         "paper_link": "https://dx.doi.org/10.7488/ds/1711",
+        "author_info": "Dudas et al 2017",
         "data_link": "https://github.com/ebov/space-time",
         "config" : {
             "popModelIsSkygrid" : true,
@@ -21,6 +22,7 @@
         "description" : "81 sequences Ebola sequences (18,959 sites) covering the first few months of the 2014-16 West Africa outbreak",
         "paper" : "Gire et al 2014",
         "paper_link": "https://dx.doi.org/10.1126/science.1259657",
+        "author_info" : "Gire et al 2014",
         "data" : "(SI of paper)",
         "config":  null,
         "metadata_col" : 1
@@ -32,6 +34,7 @@
         "description" : "165 H3N2 HA sequences (1698 sites) for 3 waves of influenza A in New York covering 2000-2003",
         "paper": "Rambaut et al 2008",
         "paper_link": "https://dx.doi.org/10.1038/nature06945",
+        "author_info": "Rambaut et al 2008",
         "data_link": "https://beast.community/workshop_influenza_phylodynamics",
         "data_description" : "BEAST X Skygrid tutorial",
         "config" : {
@@ -45,9 +48,10 @@
         "folder" : "h5n1-andersen-2025",
         "pathogen" : "H5N1",
         "label" : "H5N1 (Andersen lab, 2025)",
-        "description" : "3339 H5N1 genotype B3.13 sequences (all segments concatenated - 13,136 sites) covering the 2024-25 US _cattle_ outbreak (excludes sequences found in non-cattle hosts).",
+        "description" : "3,339 H5N1 genotype B3.13 sequences (all segments concatenated - 13,136 sites) covering the 2024-25 US cattle outbreak (excludes sequences found in non-cattle hosts)",
         "paper": "",
         "data_link": "https://github.com/andersen-lab/avian-influenza",
+        "author_info": "Andersen lab, 2025",
         "data_description" : "frozen at commit e756a15",
         "config" : {
             "popModelIsSkygrid" : true,
@@ -63,6 +67,7 @@
         "description" : "41 mpox sequences (197,209 sites) around the 2017-2020 Nigerian mpox outbreak that turned into the 2021-2022 worldwide mpox outbreak",
         "paper": "O'Toole et al 2023",
         "paper_link": "https://dx.doi.org/10.1126/science.adg8116",
+        "author_info": "O'Toole et al 2023",
         "data_link": "https://github.com/hmpxv/apobec3",
         "config" : {
             "apobecEnabled" : true
@@ -76,6 +81,7 @@
         "description" : "177 mpox sequences (197,209 sites), almost all from Nigeria, mostly preceding the 2021-2022 worlwide mpox outbreak",
         "paper": "Parker et al 2025",
         "paper_link": "https://doi.org/10.1038/s41586-025-09128-2",
+        "author_info": "Parker et al 2025",
         "data_link": "https://github.com/andersen-lab/Mpox_West_Africa",
         "config" : {
             "apobecEnabled" : true
@@ -89,7 +95,8 @@
         "description" : "757 SARS-CoV-2 sequences (29,903 sites) from Massachussetts in the first months of the SARS-CoV-2 pandemic (2020-)",
         "paper": "Lemieux et al 2021",
         "paper_link": "https://doi.org/10.1126/science.abe3261",
-        "data_description": "data source: GenBank, accession IDs obtained from authors",
+        "author_info": "Lemieux et al 2021",
+        "data_description": "GenBank, accession IDs obtained from authors",
         "config" : null,
         "metadata_col" : 1
     },
@@ -100,7 +107,8 @@
         "description" : "174 Zika virus sequences (10,807 sites) from the Americas spanning the 2015-16 Zika outbreak",
         "paper": "Metsky et al 2017",
         "paper_link": "https://dx.doi.org/10.1038/nature22402",
-        "data_description": "data source: SI from the paper",
+        "author_info": "Metsky et al 2017",
+        "data_description": "SI from the paper",
         "config" : null,
         "metadata_col" : 1
     }

@@ -16,6 +16,7 @@ type DemoOption = {
   description : string,
   paper : string,
   paper_link: string | null,
+  author_info: string,
   data_link : string | null,
   data_description : string | null,
   config : object | null,
@@ -170,59 +171,62 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   const demoFileOptTemplate = demoForm.querySelector(".uploader--demo-option") as HTMLLabelElement;
   const demoOptContainer = demoFileOptTemplate.parentNode;
   const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
-  const pathLabel = runButton.querySelector(".selection") as HTMLSpanElement;
+  const runDetails = document.querySelector("#uploader--demo-selection div") as HTMLDivElement;
+  const pathLabel = runButton.querySelector(".selection-pathogen") as HTMLSpanElement;
+  const authorLabel = runButton.querySelector(".selection-paper") as HTMLSpanElement;
+  const paperLink = runDetails.querySelector(".paper-name") as HTMLAnchorElement;
+  const dataLink = runDetails.querySelector(".data") as HTMLAnchorElement;
+  const dataNoteSpan = runDetails.querySelector(".data-note") as HTMLSpanElement;
+  const downloadLink = runDetails.querySelector("a.download") as HTMLAnchorElement;
   demoFileOptTemplate.remove();
   const folderData: {[fname:string]:DemoOption} = {};
+
+  const setDemoSelection = (selection: string)=>{
+    const option = folderData[selection];
+    const zipFilename = `${option.folder}.zip`;
+    const zipFilepath = `demo/${option.folder}/${zipFilename}`;
+
+    pathLabel.textContent = option.pathogen;
+    authorLabel.textContent = option.author_info;
+    paperLink.textContent = option.paper_link;
+    paperLink.classList.toggle("hidden", !option.paper_link);
+    paperLink.href = option.paper_link || '';
+    dataLink.classList.toggle("hidden", !option.data_link);
+    dataLink.href = option.data_link || '';
+    dataLink.textContent = option.data_link || '';
+    dataNoteSpan.classList.toggle("hidden", !option.data_description);
+    dataNoteSpan.textContent = option.data_description;
+    downloadLink.href = zipFilepath;
+    downloadLink.download = zipFilename;
+  }
+
   fetch(DEMO_FILES)
     .then(r=>r.json())
     .then(optionList=>{
       (optionList as Array<DemoOption>).forEach((option, i)=>{
-        const { folder, label, paper_link, description,
-          data_link, data_description } = option;
+        const { folder, label, description } = option;
         console.log(option);
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
         // copy.title = description;
         const input = copy.querySelector("input") as HTMLInputElement;
-        const pathogenSpan = copy.querySelector(".pathogen-name") as HTMLSpanElement;
-        const paperLink = copy.querySelector(".paper-name") as HTMLAnchorElement;
+        const nameSpan = copy.querySelector(".demo-name") as HTMLSpanElement;
         const descriptionSpan = copy.querySelector(".description") as HTMLSpanElement;
-        const dataLink = copy.querySelector(".data") as HTMLAnchorElement;
-        const dataNoteSpan = copy.querySelector(".data-note") as HTMLSpanElement;
-        const zipFilename = `${folder}.zip`;
-        const zipFilepath = `demo/${folder}/${zipFilename}`;
-        const anchor = copy.querySelector("a.download") as HTMLAnchorElement;
         input.value = folder;
         input.checked = i === 0;
-        pathogenSpan.textContent = label;
+        nameSpan.textContent = label;
         descriptionSpan.textContent = description;
-        if (!paper_link) {
-          paperLink.remove();
-        } else {
-          paperLink.href = paper_link;
-        }
-        if (!data_link) {
-          dataLink.remove();
-        } else {
-          dataLink.href = data_link;
-        }
-        if (!data_description) {
-          dataNoteSpan.remove();
-        } else {
-          dataNoteSpan.textContent = data_description;
-        }
-        anchor.href = zipFilepath;
-        anchor.download = zipFilename;
         demoOptContainer?.appendChild(copy);
         folderData[folder] = option;
         if (input.checked) {
-          pathLabel.textContent = option.label;
+          setDemoSelection(folder);
         }
       })
     });
+
+
   demoForm.addEventListener("change", ()=>{
     const selection = demoForm.folder.value as string;
-    const option = folderData[selection];
-    pathLabel.textContent = option.label;
+    setDemoSelection(selection);
   });
 
   runButton.addEventListener("click", ()=>{

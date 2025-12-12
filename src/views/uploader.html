@@ -23,21 +23,34 @@
 
       <div class="uploader--entry-points">
         <div id="uploader--demo">
-          <button id="uploader--demo-button"><span class="symbol">&#9654;</span>Run <span class="selection">SARS-CoV-2</span> demo</button>
+          <div id="uploader--demo-selection">
+            <button id="uploader--demo-button">
+              <span class="symbol">&#9654;</span>
+              Run <span class="selection-pathogen">SARS-CoV-2</span> demo
+              </br>
+              <span class="selection-paper"></span>
+            </button>
+            <div id="uploader--demo-selection-details">
+              <p>paper: <a class="paper-name" target="_"></a></p>
+              <p>source data:
+                <a class="data" href="" target="_" >data source</a>
+                <span class="data-note"></span>
+              </p>
+
+              <a class="download" href="" target="_" >
+                <span class="box"><span class="glyph"></span></span>Download input data
+              </a>
+            </div>
+          </div>
           <form id="uploader--demo-form">
             <div id="uploader--demo-options">
               <p  class="uploader--demo-option">
                 <label>
                   <input type="radio" name="folder" value="filename.ext" checked/>
-                  <span class="pathogen-name"></span>
+                  <span class="demo-name"></span>
+                  <span class="description"></span>
                 </label>
-                <span class="description"></span>
-                <a class="paper-name" target="_">paper</a>
-                <a class="data" href="" target="_" >data source</a>
-                <span class="data-note"></span>
-                <a class="download" href="" target="_" >
-                  <span class="box"><span class="glyph"></span></span>Download input data
-                </a>
+
               </p>
             </div>
           </form>
@@ -45,73 +58,76 @@
 
         <div class="uploader--or">or</div>
 
-
-        <input type="file" id="uploader--file-input" name="uploader--file-input">
-        <label id="uploader--file-input--label" for="uploader--file-input" class="uploader--message">
-          Click here or drag a file to open
-          <br/><span class="file-types">.maple, .fasta, or .dphy</span>
-          <p class="uploader--byline">All files stay on your system. Nothing is uploaded to the server.</p>
-        </label>
-
-
-
-        <div class="uploader--or">or</div>
-
-        <div id="uploader--url-message">
-          <p>Load from a url
+        <section id="uploader--file-url">
+          <input type="file" id="uploader--file-input" name="uploader--file-input">
+          <label id="uploader--file-input--label" for="uploader--file-input" class="uploader--message">
+            Click here or drag a file to open
             <br/><span class="file-types">.maple, .fasta, or .dphy</span>
-          </p>
-          <form id="uploader--url-form">
-            <input type="text" id="uploader--url-input"
-              placeholder="Enter URL"/>
-            <p id="uploader--url-form-submit" >
-              <label>
-                <span>Go</span>
-                <input type="submit" disabled/>
-              </label>
+            <p class="uploader--byline">All files stay on your system. Nothing is uploaded to the server.</p>
+          </label>
+
+
+
+          <div class="uploader--or">or</div>
+
+          <div id="uploader--url-message">
+            <p>Load from a url
+              <br/><span class="file-types">.maple, .fasta, or .dphy</span>
             </p>
-          </form>
-        </div>
-
-        <div id="uploader--proxy-popup">
-          <p>
-            Delphy encountered a network error while trying to retrieve this link.
-            The link may be incorrect, or the server may not be set up to share
-            files with other websites.
-          </p>
-          <p>
-            If the link is correct, contact the server administrator <span id="remote-url-server"></span>
-            to update their CORS settings. You can read more about that
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Server-Settings-for-Hosting-Datasets" target="_">here</a>.
-          </p>
-          <p>
-            In the meantime, you can download the file to your local machine, and
-            open it in Delphy directly.
-          </p>
-          <div class="uploader--button-row">
-            <label id="uploader--bad-url-msg-dismiss"> OK
-              <button></button>
-            </label>
+            <form id="uploader--url-form">
+              <input type="text" id="uploader--url-input"
+                placeholder="Enter URL"/>
+              <p id="uploader--url-form-submit" >
+                <label>
+                  <span>Go</span>
+                  <input type="submit" disabled/>
+                </label>
+              </p>
+            </form>
           </div>
-          <!-- <label>
-            Save this preference?
-            <input type="checkbox" id="uploader--save-try-proxy" />
-          </label> -->
-        </div>
 
-        <div id="uploader--status">
-          <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
-          <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
-          <p id="uploader--status-parse" class="uploader--status-message">Parsing…</p>
-          <p id="uploader--status-error" class="uploader--status-message">Error!</p>
-          <div id="uploader--progress-container">
-            <div id="uploader--progress-label">0 / 0 trees loaded</div>
-            <div id="uploader--progress-frame">
-              <div id="uploader--progress"></div>
+          <div id="uploader--proxy-popup">
+            <p>
+              Delphy encountered a network error while trying to retrieve this link.
+              The link may be incorrect, or the server may not be set up to share
+              files with other websites.
+            </p>
+            <p>
+              If the link is correct, contact the server administrator <span id="remote-url-server"></span>
+              to update their CORS settings. You can read more about that
+              <a href="https://github.com/fathominfo/delphy-web/wiki/Server-Settings-for-Hosting-Datasets" target="_">here</a>.
+            </p>
+            <p>
+              In the meantime, you can download the file to your local machine, and
+              open it in Delphy directly.
+            </p>
+            <div class="uploader--button-row">
+              <label id="uploader--bad-url-msg-dismiss"> OK
+                <button></button>
+              </label>
             </div>
+            <!-- <label>
+              Save this preference?
+              <input type="checkbox" id="uploader--save-try-proxy" />
+            </label> -->
+          </div>
+        </section>
+
+      </div>
+
+      <div id="uploader--status">
+        <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
+        <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
+        <p id="uploader--status-parse" class="uploader--status-message">Parsing…</p>
+        <p id="uploader--status-error" class="uploader--status-message">Error!</p>
+        <div id="uploader--progress-container">
+          <div id="uploader--progress-label">0 / 0 trees loaded</div>
+          <div id="uploader--progress-frame">
+            <div id="uploader--progress"></div>
           </div>
         </div>
       </div>
+
     </div>
 
     <div class="uploader--info">
