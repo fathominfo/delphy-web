@@ -116,8 +116,19 @@
   gap: 72px;
   width: 100%;
   >* {
-    width: 46vh;
+    width: 46vw;
   }
+
+  h2 {
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 25px;
+    margin: 0;
+    text-align: center;
+    color: @del;
+    margin-bottom: 1em;
+  }
+
 }
 
 
@@ -189,12 +200,16 @@
 #uploader--demo-selection-details {
   display: flex;
   flex-direction: column;
-  padding: 0 10px;
+  padding: 15px 10px;
 
   p {
     font-size: 15px;
     line-height: 18px;
     margin: 3px 0px;
+  }
+
+  a {
+    overflow-wrap: break-word;
   }
 
   a.download {
@@ -314,6 +329,14 @@
   }
 
 
+  .data-note {
+    font-size: 15px;
+    line-height: 18px;
+    opacity: 0.7;
+    display: none;
+  }
+
+
   .download {
     display: block;
     display: none;
@@ -326,9 +349,11 @@
   display: flex;
   flex-direction: column;
   gap: 30px;
+  align-items: center;
   > * {
-    width: 45%;
+     max-width: 300px;
   }
+
 }
 
 #uploader--src-download {
