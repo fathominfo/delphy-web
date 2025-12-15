@@ -172,12 +172,13 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   const demoOptContainer = demoFileOptTemplate.parentNode;
   const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
   const runDetails = document.querySelector("#uploader--demo-selection div") as HTMLDivElement;
-  const pathLabel = runButton.querySelector(".selection-pathogen") as HTMLSpanElement;
-  const authorLabel = runButton.querySelector(".selection-paper") as HTMLSpanElement;
-  const paperLink = runDetails.querySelector(".paper-name") as HTMLAnchorElement;
-  const dataLink = runDetails.querySelector(".data") as HTMLAnchorElement;
-  const dataNoteSpan = runDetails.querySelector(".data-note") as HTMLSpanElement;
+  const pathLabel = runDetails.querySelector(".selection-pathogen") as HTMLSpanElement;
+  const authorLabel = runDetails.querySelector(".selection-paper-name") as HTMLSpanElement;
+  const paperLink = runDetails.querySelector(".selection-paper-link") as HTMLAnchorElement;
+  const dataLink = runDetails.querySelector(".selection-data-link") as HTMLAnchorElement;
+  const dataNoteSpan = runDetails.querySelector(".selection-data-note") as HTMLSpanElement;
   const downloadLink = runDetails.querySelector("a.download") as HTMLAnchorElement;
+  const descriptionEl = runDetails.querySelector(".selection-description") as HTMLParagraphElement;
   demoFileOptTemplate.remove();
   const folderData: {[fname:string]:DemoOption} = {};
 
@@ -189,7 +190,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     pathLabel.textContent = option.pathogen;
     authorLabel.textContent = option.author_info;
     paperLink.textContent = option.paper_link;
-    paperLink.classList.toggle("hidden", !option.paper_link);
+    // paperLink.classList.toggle("hidden", !option.paper_link);
     paperLink.href = option.paper_link || '';
     dataLink.classList.toggle("hidden", !option.data_link);
     dataLink.href = option.data_link || '';
@@ -198,6 +199,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     dataNoteSpan.textContent = option.data_description;
     downloadLink.href = zipFilepath;
     downloadLink.download = zipFilename;
+    descriptionEl.textContent = option.description;
   }
 
   fetch(DEMO_FILES)

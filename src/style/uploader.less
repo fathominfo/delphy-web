@@ -115,12 +115,15 @@
   flex-direction: row;
   gap: 72px;
   width: 100%;
+  >* {
+    width: 46vh;
+  }
 }
 
 
 #uploader--demo {
-  flex-grow: 1;
-  width: calc(90vh - 300px);
+  // flex-grow: 1;
+  // width: calc(90vh - 300px);
 }
 
 #uploader--demo-button,
@@ -140,7 +143,21 @@
 
 
 #uploader--demo-selection {
-  display: flex;
+  max-width: 250px;
+  margin-left: 20px;
+
+  .selection-paper-link {
+    display: block;
+    height: 3em;
+  }
+
+  .selection-data {
+    height: 5em;
+  }
+
+  .selection-description {
+    height: 7em;
+  }
 
 }
 
@@ -152,7 +169,7 @@
   border: 1px solid @demo;
   font-weight: 500;
   cursor: pointer;
-  max-width: 300px;
+  max-width: 150px;
   .symbol {
     color: @demo-symbol;
   }
@@ -177,7 +194,7 @@
   p {
     font-size: 15px;
     line-height: 18px;
-    margin: 3px 8px;
+    margin: 3px 0px;
   }
 
   a.download {
@@ -206,13 +223,18 @@
 }
 
 
+#uploader--demo-wrapper {
+  display: flex;
+  flex-direction: row;
+
+}
 
 #uploader--demo-form {
 }
 
 #uploader--demo-options {
-  column-width: 16em;
-  column-gap: 2em;
+  // column-width: 16em;
+  // column-gap: 2em;
 }
 
 .uploader--demo-option
@@ -221,8 +243,8 @@
   // margin: 1em;
   // width: 16em;
   // height: 6em;
-  margin: 0 0 2em;
-  display: inline-block; // prevents breaking the contents across columns
+  // margin: 0 0 2em;
+  // display: inline-block; // prevents breaking the contents across columns
 
   label {
     background-color: fade(@del, 10%);
@@ -235,9 +257,9 @@
     cursor: pointer;
     border-radius: 5px;
     // margin: 5px 0;
-    font-size: 18px;
+    font-size: 15px;
     transition: all 0.15s;
-    padding: 1em;
+    padding: 5px 10px ;
 
     .demo-name {
       margin-bottom: 10px;
@@ -266,7 +288,8 @@
   }
 
   .description {
-    display: block;
+    // display: block;
+    display: none;
     font-size: 15px;
     line-height: 18px;
     margin-top: 10px;
@@ -303,7 +326,9 @@
   display: flex;
   flex-direction: column;
   gap: 30px;
-  width: min-300px;
+  > * {
+    width: 45%;
+  }
 }
 
 #uploader--src-download {
@@ -312,7 +337,7 @@
 }
 
 .uploader--or {
-  display: none;
+  // display: none;
   font-variant: small-caps;
   text-align: center;
   color: @del;

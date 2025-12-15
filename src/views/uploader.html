@@ -24,6 +24,7 @@
       <div class="uploader--entry-points">
 
         <section id="uploader--file-url">
+          <h2>Open your own file</h2>
           <input type="file" id="uploader--file-input" name="uploader--file-input">
           <label id="uploader--file-input--label" for="uploader--file-input" class="uploader--message">
             Click here or drag a file to open
@@ -80,40 +81,48 @@
 
 
 
-        <div class="uploader--or">or</div>
+
 
         <div id="uploader--demo">
-          <div id="uploader--demo-selection">
-            <button id="uploader--demo-button">
-              <span class="symbol">&#9654;</span>
-              Run <span class="selection-pathogen">SARS-CoV-2</span> demo
-              </br>
-              <span class="selection-paper"></span>
-            </button>
-            <div id="uploader--demo-selection-details">
-              <p>paper: <a class="paper-name" target="_"></a></p>
-              <p>source data:
-                <a class="data" href="" target="_" >data source</a>
-                <span class="data-note"></span>
-              </p>
+          <h2>Run a demo</h2>
+          <div id="uploader--demo-wrapper">
+            <form id="uploader--demo-form">
+              <div id="uploader--demo-options">
+                <p  class="uploader--demo-option">
+                  <label>
+                    <input type="radio" name="folder" value="filename.ext" checked/>
+                    <span class="demo-name"></span>
+                    <span class="description"></span>
+                  </label>
 
-              <a class="download" href="" target="_" >
-                <span class="box"><span class="glyph"></span></span>Download input data
-              </a>
+                </p>
+              </div>
+            </form>
+            <div id="uploader--demo-selection">
+              <div id="uploader--demo-selection-details">
+                <p class="selection-pathogen"></p>
+                <p class="selection-paper">
+                  <span class="selection-paper-name"></span>
+                  <br/>
+                  <a class="selection-paper-link" target="_"></a>
+                </p>
+                <p class="selection-data">source data:
+                  <br/>
+                  <a class="selection-data-link" href="" target="_" >data source</a>
+                  <br/>
+                  <span class="selection-data-note"></span>
+                </p>
+                <a class="download" href="" target="_" >
+                  <span class="box"><span class="glyph"></span></span>Download input data
+                </a>
+                <p class="selection-description"></p>
+                <button id="uploader--demo-button">
+                  <span class="symbol">&#9654;</span>
+                  Run demo
+                </button>
+              </div>
             </div>
           </div>
-          <form id="uploader--demo-form">
-            <div id="uploader--demo-options">
-              <p  class="uploader--demo-option">
-                <label>
-                  <input type="radio" name="folder" value="filename.ext" checked/>
-                  <span class="demo-name"></span>
-                  <span class="description"></span>
-                </label>
-
-              </p>
-            </div>
-          </form>
         </div>
 
       </div>
