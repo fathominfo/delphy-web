@@ -172,8 +172,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   const demoOptContainer = demoFileOptTemplate.parentNode;
   const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
   const runDetails = document.querySelector("#uploader--demo-selection div") as HTMLDivElement;
-  const pathLabel = runDetails.querySelector(".selection-pathogen") as HTMLSpanElement;
-  const authorLabel = runDetails.querySelector(".selection-paper-name") as HTMLSpanElement;
+  // const pathLabel = runDetails.querySelector(".selection-pathogen") as HTMLSpanElement;
+  // const authorLabel = runDetails.querySelector(".selection-paper-name") as HTMLSpanElement;
   const paperLink = runDetails.querySelector(".selection-paper-link") as HTMLAnchorElement;
   const dataLink = runDetails.querySelector(".selection-data-link") as HTMLAnchorElement;
   const dataNoteSpan = runDetails.querySelector(".selection-data-note") as HTMLSpanElement;
@@ -187,8 +187,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     const zipFilename = `${option.folder}.zip`;
     const zipFilepath = `demo/${option.folder}/${zipFilename}`;
 
-    pathLabel.textContent = option.pathogen;
-    authorLabel.textContent = option.author_info;
+    // pathLabel.textContent = option.pathogen;
+    // authorLabel.textContent = option.author_info;
     paperLink.textContent = option.paper_link;
     // paperLink.classList.toggle("hidden", !option.paper_link);
     paperLink.href = option.paper_link || '';
@@ -206,17 +206,17 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     .then(r=>r.json())
     .then(optionList=>{
       (optionList as Array<DemoOption>).forEach((option, i)=>{
-        const { folder, label, description } = option;
+        const { folder, pathogen, author_info } = option;
         console.log(option);
         const copy = demoFileOptTemplate.cloneNode(true) as HTMLLabelElement;
         // copy.title = description;
         const input = copy.querySelector("input") as HTMLInputElement;
-        const nameSpan = copy.querySelector(".demo-name") as HTMLSpanElement;
-        const descriptionSpan = copy.querySelector(".description") as HTMLSpanElement;
+        const paperSpan = copy.querySelector(".author-info") as HTMLSpanElement;
+        const pathoSpan = copy.querySelector(".pathogen") as HTMLSpanElement;
         input.value = folder;
         input.checked = i === 0;
-        nameSpan.textContent = label;
-        descriptionSpan.textContent = description;
+        pathoSpan.textContent = pathogen;
+        paperSpan.textContent = author_info;
         demoOptContainer?.appendChild(copy);
         folderData[folder] = option;
         if (input.checked) {
