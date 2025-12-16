@@ -36,7 +36,7 @@
   }
 
   &.disabled {
-    .uploader--message, #uploader--demo-button {
+    #uploader--file-input--label, #uploader--demo-button {
       pointer-events: none;
       opacity: 0.4;
     }
@@ -57,7 +57,7 @@
   }
 
   &.dragging {
-    .uploader--message {
+    #uploader--file-input--label {
       background-color: fade(@del, 20%);
       color: lighten(@del, 20%);
       border: 1px dashed lighten(@del, 10%);
@@ -73,7 +73,7 @@
 
     #uploader--demo-button,
     .uploader--or,
-    .uploader--message {
+    #uploader--file-input--label {
       display: none;
     }
 
@@ -178,17 +178,74 @@
   #uploader--file-url-pathways {
     display: flex;
     flex-direction: row;
-    border-radius: 15px;
-
   }
 }
 
+
+#uploader--file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  clip: rect(0, 0, 0, 0);
+
+  &:focus + label {
+    outline: auto;
+  }
+}
+
+
+#uploader--file-input--label, #uploader--url-message {
+  width: 100%;
+  .t25();
+  .smoothly(all);
+  // display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  text-align: center;
+
+  color: lighten(@del, 10%);
+  border-width: 1px;
+  font-weight: 400;
+  padding: 25px 20px;
+  line-height: 30px;
+
+  &:hover {
+    color: lighten(@del, 10%);
+  }
+
+  .file-types {
+    color: @del;
+  }
+}
 
 #uploader--file-input--label {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
+  cursor: pointer;
+  background-color: fade(@del, 30%);
+  border-color: @del;
+  border-style: dashed;
+  border-radius : 12px 0 0 12px;
+
+  &:hover {
+    background-color: fade(@del, 15%);
+    border-color: lighten(@del, 10%);
+  }
+
 }
+
+.opening {
+  border-radius : 12px 12px 12px 12px !important;
+}
+
+.disabled {
+  pointer-events: none;
+  cursor: default;
+}
+
 
 #uploader--url-input {
   font-family: Roboto;
@@ -266,62 +323,6 @@
 
 
 
-
-#uploader--file-input {
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  clip: rect(0, 0, 0, 0);
-
-  &:focus + label {
-    outline: auto;
-  }
-}
-
-
-.uploader--message,
-#uploader--url-message {
-  width: 100%;
-  .t25();
-  .smoothly(all);
-  // display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 15px;
-  text-align: center;
-  // max-height: 6em;
-}
-
-
-.uploader--message, #uploader--url-message {
-  color: lighten(@del, 10%);
-  border-width: 1px;
-  font-weight: 400;
-  padding: 25px 20px;
-  line-height: 30px;
-
-  &:hover {
-    color: lighten(@del, 10%);
-  }
-
-  .file-types {
-    color: @del;
-  }
-}
-
-.uploader--message {
-  cursor: pointer;
-  background-color: fade(@del, 30%);
-  border-color: @del;
-  border-style: dashed;
-  border-radius : 12px 0 0 12px;
-
-  &:hover {
-    background-color: fade(@del, 15%);
-    border-color: lighten(@del, 10%);
-  }
-}
 
 #uploader--url-message {
   background-color: fade(@del, 5%);

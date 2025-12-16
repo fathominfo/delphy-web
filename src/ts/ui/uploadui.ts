@@ -314,6 +314,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
       if (fileInput.files) {
         setStage(STAGES.loading);
         hideOthers(fileLabel);
+        fileLabel.classList.add("opening");
+        fileLabel.classList.add("disabled");
         fileInput.blur();
         uploadDiv.classList.add('loading');
         checkFiles(fileInput.files);
@@ -352,6 +354,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 const loadNow = (url:string)=>{
   setStage(STAGES.loading);
   hideOthers(urlDiv);
+  urlDiv.classList.add("opening");
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
   const options:RequestInit = {
@@ -404,7 +407,7 @@ const showURLFailureMessage = (url:string)=>{
     uploadDiv.classList.remove('direct-loading');
     dismissButton.removeEventListener("click", dismiss);
     popup.classList.remove("active");
-    restoreOthers();
+    window.location.reload();
   }
   serverSpan.textContent = `of ${urlDict.hostname}`;
   dismissButton.addEventListener("click", dismiss);
@@ -545,34 +548,29 @@ const checkFiles = (files: File[] | FileList)=>{
 
 
 function hideOthers(originEle: HTMLElement) {
-  const collapsing = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
+  const collapsingVertically = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
+  const collapsingHorizontally = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
   requestAnimationFrame(()=>{
-    collapsing.forEach(ele=>{
+    collapsingVertically.forEach(ele=>{
       const ht = ele.offsetHeight;
       ele.style.height = `${ht}px`;
-      ele.classList.add("collapsing")
+      ele.classList.add('collapsing');
     });
-    requestAnimationFrame(()=>collapsing.forEach(ele=>{
-      ele.style.height = `0`;
-    }));
+    collapsingHorizontally.forEach(ele=>{
+      const width = ele.offsetWidth;
+      ele.style.height = `${width}px`;
+      ele.classList.add('collapsing');
+    });
+    requestAnimationFrame(()=>{
+      collapsingVertically.forEach(ele=>ele.style.height = `0`);
+      collapsingHorizontally.forEach(ele=>ele.style.width = `0`);
+      if (originEle === demoDiv) {
+        const openers = document.querySelector("#uploader--file-url-pathways") as HTMLDivElement;
+        openers.classList.add('hidden');
+      }
+    });
   });
 }
-
-
-function restoreOthers() {
-  const restoring = [demoDiv, fileLabel, urlDiv];
-  requestAnimationFrame(()=>{
-    restoring.forEach(ele=>{
-      const ht = ele.offsetHeight;
-      ele.style.height = `${ht}px`;
-      ele.classList.remove("collapsing")
-    });
-    requestAnimationFrame(()=>restoring.forEach(ele=>{
-      ele.style.height = '';
-    }));
-  });
-}
-
 
 
 export { bindUpload, hideUpload, loadNow };
