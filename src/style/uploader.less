@@ -18,12 +18,7 @@
   .t25();
 
   color: white;
-  // padding: 72px;
-  /*
-  boosting it so that the list of demo files doesn't go
-  over the privacy link [mark 251212]
-  */
-  padding: 96px;
+  padding: 72px;
 
   a, a:visited {
     color: @toggle-text;
@@ -114,6 +109,7 @@
   font-weight: 500;
   color: #fff;
   width: 300px;
+  margin-top: 60px;
 }
 
 
@@ -136,7 +132,7 @@
   font-weight: 400;
   line-height: 18px;
   p {
-    margin: 5px;
+    margin: 5px 0;
   }
 }
 
@@ -199,8 +195,10 @@
   width: 100%;
   .t25();
   .smoothly(all);
-  // display: flex;
-  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+
   align-items: center;
   padding: 15px;
   text-align: center;
@@ -218,12 +216,13 @@
   .file-types {
     color: @del;
   }
+
+  .uploader--entry-title {
+    color: white;
+  }
 }
 
 #uploader--file-input--label {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
   cursor: pointer;
   background-color: fade(@del, 30%);
   border-color: @del;
@@ -248,14 +247,19 @@
 
 
 #uploader--url-input {
-  font-family: Roboto;
+  font-family: 'MD System', Roboto, monospace;
   font-size: 15px;
   padding: 5px 10px;
   background-color: @del !important;
+  color: @toggle;
   width: 20em;
   margin: 10px 0px 20px;
   border-radius: 5px;
   border-width: 0px;
+
+  &::placeholder {
+    color: @toggle;
+  }
 
 }
 
@@ -263,6 +267,10 @@
 
 #uploader--url-message {
   position: relative;
+
+  p {
+    margin: 0;
+  }
 
   &.proxy-info {
     #uploader--proxy-info {display: block;}
@@ -535,6 +543,7 @@
     transition: all 0.15s;
     padding: 10px 15px;
     position: relative;
+    transition: color 0.15s;
 
     svg {
       inset: 0;
@@ -577,46 +586,9 @@
     }
   }
 
-  // .description {
-  //   // display: block;
-  //   display: none;
-  //   font-size: 15px;
-  //   line-height: 18px;
-  //   margin-top: 10px;
-  //   color: @del;
-  // }
-
-
-  // .paper-name {
-  //   margin-right: 1em;
-  //   display: none;
-  // }
-
-  // a.data {
-  //   display: none;
-  // }
-
-  // .data-note {
-  //   font-size: 15px;
-  //   line-height: 18px;
-  //   opacity: 0.7;
-  //   display: none;
-  // }
-
-
-  // .data-note {
-  //   font-size: 15px;
-  //   line-height: 18px;
-  //   opacity: 0.7;
-  //   display: none;
-  // }
-
-
-  // .download {
-  //   display: block;
-  //   display: none;
-  // }
-
+  &:hover label {
+    color: white;
+  }
 }
 
 
@@ -687,12 +659,13 @@
 
 
 .uploader--demo-detail-label {
-  text-transform: uppercase;
+  text-transform: lowercase;
   font-variant: small-caps;
   font-weight: 700;
-  font-size: 12px;
   color: @del;
+  display: inline-block;
   margin-bottom: 10px;
+  margin-right: 0.5em;
 }
 
 
@@ -762,8 +735,7 @@
 
 .uploader--info {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  bottom: 72px;
 
 
   display: flex;
@@ -918,6 +890,17 @@
 }
 
 
+@media (max-width: 1000px) {
+
+  .uploader--tagline {
+    width: 290px;
+    margin-right: 10px;
+    text-wrap: balance;
+  }
+
+
+}
+
 
 
 
@@ -938,6 +921,7 @@
   // }
 
 }
+
 
 @media (max-height: 1062px) {
   #uploader {

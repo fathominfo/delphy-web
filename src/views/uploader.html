@@ -43,13 +43,13 @@
         <div id="uploader--file-url-pathways">
           <input type="file" id="uploader--file-input" name="uploader--file-input">
           <label id="uploader--file-input--label" for="uploader--file-input">
-            Click here or drag a file to open
+            <span class="uploader--entry-title">Click here or drag a file to open</span>
             <br/><span class="file-types">.maple, .fasta, or .dphy</span>
             <p class="uploader--byline">All files stay on your system. <br/>Nothing is uploaded to the server.</p>
           </label>
 
           <div id="uploader--url-message">
-            <p>Load from a url
+            <p><span class="uploader--entry-title">Load from a url</span>
               <br/><span class="file-types">.maple, .fasta, or .dphy</span>
             </p>
             <form id="uploader--url-form">
@@ -116,13 +116,16 @@
           </form>
           <div id="uploader--demo-selection">
 
-            <p class="uploader--demo-detail-label">dataset</p>
+            <!-- <p class="uploader--demo-detail-label">dataset</p> -->
             <p class="selection-description"></p>
-            <p class="uploader--demo-detail-label">paper</p>
-            <p><a class="selection-paper-link" target="_"></a></p>
-            <p class="uploader--demo-detail-label">source data</p>
+            <p>
+              <span class="uploader--demo-detail-label">paper</span>
+              <a class="selection-paper-link" target="_"></a>
+            </p>
+
             <p class="uploader--demo-detail-data">
-              <a class="selection-data-link" href="" target="_" >data source</a>
+              <span class="uploader--demo-detail-label">source data</span>
+              <a class="selection-data-link" href="" target="_" ></a>
               <span class="selection-data-note"></span>
             </p>
 
