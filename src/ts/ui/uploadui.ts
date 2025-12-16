@@ -171,7 +171,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   const demoFileOptTemplate = demoForm.querySelector(".uploader--demo-option") as HTMLLabelElement;
   const demoOptContainer = demoFileOptTemplate.parentNode;
   const runButton = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
-  const runDetails = document.querySelector("#uploader--demo-selection div") as HTMLDivElement;
+  const runDetails = document.querySelector("#uploader--demo-selection") as HTMLDivElement;
   // const pathLabel = runDetails.querySelector(".selection-pathogen") as HTMLSpanElement;
   // const authorLabel = runDetails.querySelector(".selection-paper-name") as HTMLSpanElement;
   const paperLink = runDetails.querySelector(".selection-paper-link") as HTMLAnchorElement;
@@ -404,6 +404,7 @@ const showURLFailureMessage = (url:string)=>{
     uploadDiv.classList.remove('direct-loading');
     dismissButton.removeEventListener("click", dismiss);
     popup.classList.remove("active");
+    restoreOthers();
   }
   serverSpan.textContent = `of ${urlDict.hostname}`;
   dismissButton.addEventListener("click", dismiss);
@@ -545,7 +546,6 @@ const checkFiles = (files: File[] | FileList)=>{
 
 function hideOthers(originEle: HTMLElement) {
   const collapsing = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
-  uploadDiv.querySelectorAll(".uploader--or").forEach(ele=>collapsing.push(ele as HTMLDivElement));
   requestAnimationFrame(()=>{
     collapsing.forEach(ele=>{
       const ht = ele.offsetHeight;
@@ -557,5 +557,22 @@ function hideOthers(originEle: HTMLElement) {
     }));
   });
 }
+
+
+function restoreOthers() {
+  const restoring = [demoDiv, fileLabel, urlDiv];
+  requestAnimationFrame(()=>{
+    restoring.forEach(ele=>{
+      const ht = ele.offsetHeight;
+      ele.style.height = `${ht}px`;
+      ele.classList.remove("collapsing")
+    });
+    requestAnimationFrame(()=>restoring.forEach(ele=>{
+      ele.style.height = '';
+    }));
+  });
+}
+
+
 
 export { bindUpload, hideUpload, loadNow };
