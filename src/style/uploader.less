@@ -179,11 +179,40 @@
     display: flex;
     flex-direction: row;
     border-radius: 15px;
+
   }
 }
 
 
+#uploader--file-input--label {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
 
+#uploader--url-input {
+  font-family: Roboto;
+  font-size: 15px;
+  padding: 5px 10px;
+  background-color: @del !important;
+  width: 20em;
+  margin: 10px 0px 20px;
+  border-radius: 5px;
+  border-width: 0px;
+
+}
+
+
+
+#uploader--url-message {
+  position: relative;
+
+  &.proxy-info {
+    #uploader--proxy-info {display: block;}
+    .uploader--proxy-info-activate--open {display: none;}
+    .uploader--proxy-info-activate--close {display: unset;}
+  }
+}
 
 
 
@@ -193,6 +222,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: center;
+
   margin: 0;
 
   label {
@@ -201,7 +232,7 @@
     background-color: fade(@del, 10%);
     color: lighten(@del, 10%);
     border: 1px solid fade(@del, 10%);
-    padding: 3px 8px;
+    padding: 5px 25px;
     display: inline-block;
     position: relative;
     cursor: pointer;
@@ -281,7 +312,7 @@
 
 .uploader--message {
   cursor: pointer;
-  background-color: fade(@del, 10%);
+  background-color: fade(@del, 30%);
   border-color: @del;
   border-style: dashed;
   border-radius : 12px 0 0 12px;
@@ -368,23 +399,6 @@
       }
     }
   }
-}
-
-#uploader--url-message {
-  position: relative;
-
-  &.proxy-info {
-    #uploader--proxy-info {display: block;}
-    .uploader--proxy-info-activate--open {display: none;}
-    .uploader--proxy-info-activate--close {display: unset;}
-  }
-}
-
-#uploader--url-input {
-  width: 100%;
-  padding: 2px 5px;
-  margin: 10px 0px 20px;
-  font-size: 15px;
 }
 
 
@@ -619,20 +633,6 @@
   width: calc(100% - 410px);
   background-color: fade(@del, 20%);
 
-
-  .selection-paper-link {
-    display: block;
-
-  }
-
-  .selection-data {
-  }
-
-  .selection-description {
-  }
-
-
-
 }
 
 
@@ -702,6 +702,7 @@
   background-color: fade(@del, 20%);
   border-radius: 0 15px 15px 0;
   width: 205px;
+  padding: 30px 15px;
 }
 
 #uploader--demo-button {
@@ -710,20 +711,21 @@
   .smoothly(all);
   justify-content: center;
   align-items: center;
-  padding: 15px;
+  padding: 15px 20px;
   text-align: center;
+  background-color: @del;
 
 
 
   border-radius: 4px;
   appearance: none;
   margin-bottom: 30px;
-  background-color: @demo;
+  // background-color: @demo;
   color: @demo-text;
-  border: 1px solid @demo;
+  border: 1px solid @del;
   font-weight: 500;
   cursor: pointer;
-  max-width: 150px;
+  max-width: 180px;
   .symbol {
     color: @demo-symbol;
   }
