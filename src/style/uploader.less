@@ -6,6 +6,7 @@
 
 .displaying-import-view {
   background: linear-gradient(@uploader-a 0%, @uploader-b 40%, @uploader-b 60%, @uploader-a 100%);
+  overflow: auto;
   #uploader {
     display: flex;
     flex-direction: row;
@@ -16,7 +17,7 @@
 
 #uploader {
   .t25();
-
+  min-height: 815px;
   color: white;
   padding: 72px;
 
@@ -158,6 +159,9 @@
 
 .uploader--entry-points {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   h2 {
     font-weight: 700;
     font-size: 20px;
@@ -171,6 +175,7 @@
 
 #uploader--file-url {
   margin-bottom: 40px;
+  height: 265px;
   #uploader--file-url-pathways {
     display: flex;
     flex-direction: row;
@@ -493,18 +498,18 @@
 
 
 
+
+
 #uploader--demo {
-
+  height: calc(100% - 300px);
 }
-
-
 
 #uploader--demo-wrapper {
   display: flex;
   flex-direction: row;
   width: 100%;
-  max-height: 37vh;
-  overflow-y: hidden;
+  min-height: 330px;
+  height: calc(100% - 40px);
 }
 
 // ██████╗ ███████╗███╗   ███╗ ██████╗      ██████╗ ██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
