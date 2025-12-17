@@ -8,18 +8,26 @@
   background: linear-gradient(@uploader-a 0%, @uploader-b 40%, @uploader-b 60%, @uploader-a 100%);
   overflow: auto;
   #uploader {
-    display: flex;
-    flex-direction: row;
+    display: block;
+
   }
 }
 
-
-
 #uploader {
+  height: 100%;
+  width: 100%;
+}
+#uploader--content-div {
+  display: flex;
+  flex-direction: row;
+  max-width: 1600px;
+  margin: 0 auto;
+
   .t25();
   min-height: 815px;
   color: white;
   padding: 72px;
+  max-width: ;
 
   a, a:visited {
     color: @toggle-text;
@@ -528,9 +536,9 @@
 #uploader--demo-options {
   padding: 20px 25px 20px 0;
   display: block;
-  width: 205px;
+  width: 225px;
   height: 100%;
-  overflow: scroll;
+  overflow-y: scroll;
 }
 
 .uploader--demo-option
