@@ -5,14 +5,14 @@ Delphy Web is an HTML5 interface developed to run the "core" computational engin
 
 In contrast to existing Bayesian phylogenetic inference tools such as BEAST that require a nontrivial amount of technical set up and computing proficiency to begin a run, Delphy Web has been developed to remove many of the barriers to entry that prevent researchers in the field from being able to engage with such tools. Delphy Web’s design means that it can be used by anyone with internet access, and users can immediately begin uploading their data into the tool without having to install software onto their computer. While web-based tools often carry with them privacy concerns from individuals and institutions alike, data processed through Delphy Web remains within the browser at all times and is never sent to servers outside of the control of users and their institutions. This design provides users with a way to quickly view and explore the output of a Delphy run while still remaining compatible with most system and administrative requirements.
 
-The Delphy Web application that allows users to immediately and intuitively use Delphy is located at [https://delphy.fathom.info](https://delphy.fathom.info/). 
+The Delphy Web application that allows users to immediately and intuitively use Delphy is located at [https://delphy.fathom.info](https://delphy.fathom.info/).
 
 References
 ----------
 
 * [Whitepaper with overview of key ideas and accuracy+speed benchmarks](https://github.com/broadinstitute/delphy/blob/main/delphywp.pdf)
 
-* _TO COME_: Preprint with full details and benchmarking
+* [Preprint with full details and benchmarking](https://www.biorxiv.org/content/10.1101/2025.03.25.645253v1)
 
 System Requirements
 -------------------
