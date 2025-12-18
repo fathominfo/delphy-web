@@ -17,7 +17,10 @@
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  box-sizing: border-box;
+  // box-sizing: border-box;
+  --Inter: 'Inter', 'Helvetica', sans-serif;
+  --Inter-Tight: 'Inter Tight', 'Inter', 'Helvetica', sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1;
 }
 
 html, body {
@@ -28,11 +31,10 @@ html, body {
 }
 
 body {
-  .t15();
   display: flex;
   flex-direction: column;
   background-color: @base;
-  color: @text;
+  // color: @text;
   overflow: hidden;
 }
 
@@ -83,7 +85,7 @@ button,
 ////////////////////////////////////////////
 
 body {
-  font-family: MDSystem, Roboto, sans-serif;
+  // font-family: MDSystem, Roboto, sans-serif;
   // font-weight: 500;
   // font-size: 1rem;
 }
@@ -97,25 +99,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  .t20();
+
 }
 
 h2 {
-  .t15();
+
 }
 
 h3 {
-  .t10();
+
 }
 
 h4 {
-  .t05();
+
 }
 
 a {
-  color: #004f9e;
+  color: var(--intro-link-text-static);;
   &:visited {
-    color: #004f9e;
+    color: var(--intro-link-text-static);;
   }
 }
 
@@ -160,9 +162,7 @@ canvas {
   flex-direction: row;
   width: 100%;
   height: 100%;
-  // margin: @unit * 3 @unit * 4 @unit * 3 @unit * 3;
-  // padding: @unit * 3 @unit * 4 @unit * 3 @unit * 3;
-  padding: @navHeight + @unit * 3 @unit * 4 @unit * 3 @unit * 3;
+  padding: 62px 32px 24px 24px;
 
   &.active {
     display: flex;
