@@ -36,6 +36,7 @@ module.exports = {
     'no-unreachable': 'warn',
     '@typescript-eslint/no-empty-function' : 'warn',
     '@typescript-eslint/no-explicit-any' : 'warn',
+    '@typescript-eslint/no-unused-expressions' : 'warn',
     'prefer-const'  : 'warn',
     'prefer-spread' : 'warn',
     'prefer-rest-params' : 'warn',
@@ -46,8 +47,8 @@ module.exports = {
     {
       files: ['*.ts', '*.mts', '*.cts', '*.tsx'],
       rules: {
-        // typescript handles no-undef in other ways, 
-        // and using the default js on results in false positives for things like 
+        // typescript handles no-undef in other ways,
+        // and using the default js on results in false positives for things like
         // `NodeListOf`
         'no-undef': 'off',
       },
