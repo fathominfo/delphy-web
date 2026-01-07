@@ -1,7 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 import {PhyloTree, ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
-import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
 import { TreeScrubber, sampleListenerType } from './treescrubber';
@@ -53,7 +52,6 @@ export class RunUI extends UIScreen {
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
 
-  private treeCanvas: TreeCanvas;
   private mccTreeCanvas: MccTreeCanvas;
   private treeScrubber: TreeScrubber;
 
@@ -166,7 +164,6 @@ export class RunUI extends UIScreen {
     };
 
     this.mccRef = null;
-    this.treeCanvas = instantiateTreeCanvas("#ui");
     this.mccTreeCanvas = instantiateMccTreeCanvas("#ui_mcc");
     this.runControl = document.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
@@ -561,9 +558,6 @@ export class RunUI extends UIScreen {
     // this.TCanvas.sizeCanvas();
     // this.mutCountCanvas.sizeCanvas();
 
-    const {width, height} = this.mccTreeCanvas,
-      aspectRatio = width / height;
-    this.treeCanvas.setAspectRatio(aspectRatio);
     if (!this.is_running) {
       this.updateRunData();
     }
@@ -605,7 +599,6 @@ export class RunUI extends UIScreen {
       // console.debug(`RunUI set ${mccRef.getManager().id} ${mccRef.getRefNo()}`)
       this.baseTree = this.pythia.treeHist[last];
       this.stepCount = stepsHist[last] || 0;
-      this.treeCanvas.positionTreeNodes(tree);
       if (mccRef) {
         const oldRef = this.mccRef;
         this.mccRef = mccRef;
@@ -698,10 +691,9 @@ export class RunUI extends UIScreen {
 
   private draw():void {
     if (this.pythia) {
-      const {stepCount, minDate, ess}  = this;
+      const {stepCount, ess}  = this;
       const {maxDate} = this.pythia;
       // const mccRef = this.pythia.getMcc();
-      this.treeCanvas.draw(minDate.value, maxDate, this.timelineIndices);
       let treeCount = 0,
         mccCount = 0;
       if (this.mccRef) {
