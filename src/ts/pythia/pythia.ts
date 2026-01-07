@@ -104,11 +104,11 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
     skygridNumIntervals = Math.round(tipCount / 15),
     defaultDays = config.skygridDoubleHalfTime;
   let skygridTau = convertSkygridDaysToTau(defaultDays, skygridStartDate, maxDate, skygridNumIntervals);
-  console.log(defaultDays, skygridTau, convertSkygridTauToDays(skygridTau, skygridStartDate, maxDate, skygridNumIntervals));
+  // console.log(defaultDays, skygridTau, convertSkygridTauToDays(skygridTau, skygridStartDate, maxDate, skygridNumIntervals));
   skygridTau = Math.round(skygridTau * 100) / 100;
   config.stepsPerSample = targetStepSize;
-  config.skygridStartDate = skygridStartDate,
-  config.skygridNumIntervals = skygridNumIntervals,
+  config.skygridStartDate = skygridStartDate;
+  config.skygridNumIntervals = skygridNumIntervals;
   config.skygridTau = skygridTau;
   return config;
 }
