@@ -38,7 +38,7 @@ if (!maybeUploadDiv) {
 const uploadDiv = maybeUploadDiv as HTMLDivElement;
 const demoDiv = uploadDiv.querySelector("#uploader--demo") as HTMLInputElement;
 const fileLabel = uploadDiv.querySelector("#uploader--file-input--label") as HTMLLabelElement;
-const urlDiv = uploadDiv.querySelector("#uploader--url-message") as HTMLDivElement;
+const urlDiv = uploadDiv.querySelector("#uploader--url-form") as HTMLFormElement;
 
 /* show a progress bar when possible */
 const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
@@ -564,10 +564,10 @@ function hideOthers(originEle: HTMLElement) {
     requestAnimationFrame(()=>{
       collapsingVertically.forEach(ele=>ele.style.height = `0`);
       collapsingHorizontally.forEach(ele=>ele.style.width = `0`);
-      if (originEle === demoDiv) {
-        const openers = document.querySelector("#uploader--file-url-pathways") as HTMLDivElement;
-        openers.classList.add('hidden');
-      }
+      // if (originEle === demoDiv) {
+      //   const openers = document.querySelector("#uploader--file-url-pathways") as HTMLDivElement;
+      //   openers.classList.add('hidden');
+      // }
     });
   });
 }
