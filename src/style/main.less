@@ -159,18 +159,18 @@ canvas {
   flex-direction: column;
   gap: var(--view-margin-y);
   // gap: var(--view-gap);
-  font-size: calc(var(--unit) * 1.25);
-  line-height: calc(var(--unit) * 1.5);
-  color: var(--view-text);
-  background-color: transparent;
   min-width: var(--view-min-width);
   // max-width: var(--view-max-width);
   height: 100%;
 
   .main-content {
     margin : 0 var(--view-margin-x) var(--view-margin-y);
-    width: 100%;
-    height: 100%;
+    // width: 100%;
+    height: calc(100% - var(--view-margin-y) - 85px);
+    font-size: calc(var(--unit) * 1.25);
+    line-height: calc(var(--unit) * 1.5);
+    color: var(--view-text);
+    background-color: transparent;
   }
 
 
@@ -376,6 +376,20 @@ canvas {
   #tos {
     margin: 84px auto;
   }
+}
+
+
+.tree-container {
+  display: flex;
+  flex-direction: column;
+  justify-self: flex-start;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  background-color: var(--tree-fill);
+  border: var(--tree-stroke-weight) solid var(--tree-stroke);
+  border-radius: var(--corner);
+  overflow: hidden;
 }
 
 

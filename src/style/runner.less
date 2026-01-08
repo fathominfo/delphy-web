@@ -8,6 +8,11 @@
     display: block;
   }
 
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--view-gap);
+  }
 }
 
 
@@ -182,14 +187,16 @@
 
 #runner--bottom {
   display: flex;
-  height: 100%;
+  flex-direction: row;
+  gap: inherit;
+  height: calc(100% - 64px);
 }
 
 
-#runner--mcc,
-#runner--panel {
-  padding-top: 15px;
-}
+// #runner--mcc,
+// #runner--panel {
+//   padding-top: 15px;
+// }
 
 #runner--mcc {
   display: flex;
@@ -197,7 +204,14 @@
   flex-direction: column;
   min-width: 300px;
   position: relative;
+
+  .tree-container {
+    height: calc(100% - 30px);
+  }
 }
+
+
+
 
 #runner--panel {
   flex: 2;
@@ -1176,7 +1190,10 @@ label:has(#advanced-skygrid-toggle:checked) {
     font-size: 12px;
     margin: 5px 0;
   }
-  a {color: #555;}
+  a {
+    color: #555;
+    display: inline-block;
+  }
   &.unset.pre #ess-meter-stages{
     opacity: 0.3;
   }

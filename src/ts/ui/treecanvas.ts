@@ -233,8 +233,7 @@ export class TreeCanvas {
         creds = new Array(nodeCount);
         creds.fill(0.8)
       }
-      let ypos = 0,
-        minDate = Number.MAX_SAFE_INTEGER,
+      let minDate = Number.MAX_SAFE_INTEGER,
         maxDate = Number.MIN_SAFE_INTEGER,
         actualTipCount = 0;
       for (let i = 0; i < nodeCount; i++) {
@@ -263,7 +262,8 @@ export class TreeCanvas {
       depth first, and choosing the branch with the higher tip
       count at each node.
       */
-      const h = (height - this.timelineSpacing - this.paddingBottom)/actualTipCount;
+      let ypos = height - this.paddingBottom;
+      const h = (ypos - this.timelineSpacing)/actualTipCount;
       const tipCounts = getTipCounts(tree),
         rootIndex = tree.getRootIndex(),
         verticallySortedTips:number[] = [],
@@ -275,7 +275,7 @@ export class TreeCanvas {
         if (kidCount === 0) {
           verticallySortedTips.push(index);
           yPositions[index] = ypos;
-          ypos += h;
+          ypos -= h;
           nodeChildren[index] = [];
         } else if (kidCount === 2) {
           const left = children[0],
