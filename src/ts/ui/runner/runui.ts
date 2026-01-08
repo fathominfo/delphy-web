@@ -1,5 +1,5 @@
 import {MccRef} from '../../pythia/mccref';
-import {PhyloTree, ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -27,7 +27,8 @@ type ESS_THRESHOLD = {threshold: number, className: string};
 const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
   {threshold: 0, className: "converging"},
   {threshold: 10, className: "stable"},
-  {threshold: 100, className: "publish"}
+  {threshold: 100, className: "robust"},
+  {threshold: 200, className: "publish"}
 ];
 
 const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
@@ -711,14 +712,19 @@ export class RunUI extends UIScreen {
       const essIsUsable = ess > 0;
       let essClass  = "converging";
       this.essWrapper.classList.toggle("unset", !essIsUsable);
-      if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
-      else this.essReadout.textContent = "0";
+      this.essWrapper.classList.toggle("unset", !essIsUsable);
+      const integerPart = this.essReadout.querySelector(".before") as HTMLSpanElement;
+      const fractionPart = this.essReadout.querySelector(".after") as HTMLSpanElement;
+      const essString = (essIsUsable ? ess : 0).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
+      const tokens = essString.split('.');
+      integerPart.textContent = tokens[0];
+      fractionPart.textContent = `.${tokens[1]}`;
       ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
         if (ess >= et.threshold) {
           essClass = et.className;
         }
       });
-      this.essMeter.setAttribute("class", essClass);
+      this.essMeter.setAttribute("data-stage", essClass);
       if (treeCount > 1) {
         this.burnInWrapper.classList.remove("pre");
       }

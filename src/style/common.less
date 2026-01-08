@@ -1284,3 +1284,70 @@ building custom inputs on top of native inputs. */
   //   outline: auto;
   // }
 }
+
+
+.info {
+  width: auto;
+  min-width: var(--info-size);
+  max-width: var(--info-size);
+  height: auto;
+  min-height: var(--info-size);
+  max-height: var(--info-size);
+  border-radius: var(--info-corner);
+  background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-static));
+  -webkit-transition: background-color var(--transition) ease-in-out;
+  -moz-transition: background-color var(--transition) ease-in-out;
+  -ms-transition: background-color var(--transition) ease-in-out;
+  transition: background-color var(--transition) ease-in-out;
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip="inside"] .info {
+  position: absolute;
+  top: 0;
+  left: unset;
+  right: 0;
+  margin: var(--info-margin);
+}
+
+[data-tooltip="outside"] .info {
+  position: relative;
+  transform: translate(0, calc(var(--info-margin) * -1));
+}
+
+.info .icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%);
+}
+
+.info .icon path {
+  fill: var(--info-icon);
+  opacity: var(--info-icon-opacity-static);
+  -webkit-transition: all var(--transition) ease-in-out;
+  -moz-transition: all var(--transition) ease-in-out;
+  -ms-transition: all var(--transition) ease-in-out;
+  transition: all var(--transition) ease-in-out;
+}
+
+.info:hover,
+.info:active,
+.info:focus,
+[data-tooltip]:hover .info {
+  background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-on));
+}
+
+.info:hover .icon path,
+.info:active .icon path,
+.info:focus .icon path,
+[data-tooltip]:hover .info .icon path {
+  opacity: var(--info-icon-opacity-on);
+}
+
+
