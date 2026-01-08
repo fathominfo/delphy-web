@@ -3,7 +3,6 @@ import {PhyloTree, ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../.
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
-import { TreeScrubber, sampleListenerType } from './treescrubber';
 import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
@@ -53,7 +52,6 @@ export class RunUI extends UIScreen {
   private stepSelector: HTMLSelectElement;
 
   private mccTreeCanvas: MccTreeCanvas;
-  private treeScrubber: TreeScrubber;
 
   private logPosteriorCanvas: HistCanvas;
   private muCanvas: HistCanvas;
@@ -159,10 +157,6 @@ export class RunUI extends UIScreen {
       this.kneeHandler(pct);
     }
 
-    const sampleHandler: sampleListenerType = ()=>{
-      this.updateRunData();
-    };
-
     this.mccRef = null;
     this.mccTreeCanvas = instantiateMccTreeCanvas("#ui_mcc");
     this.runControl = document.querySelector("#run-input") as HTMLInputElement;
@@ -177,7 +171,7 @@ export class RunUI extends UIScreen {
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
-    this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
+
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
     this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
@@ -202,7 +196,7 @@ export class RunUI extends UIScreen {
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
 
-    const openAdvancedButton = this.div.querySelector("#advanced-toggle") as HTMLButtonElement;
+    const openAdvancedButton = this.div.querySelector("#show-advanced") as HTMLButtonElement;
     this.advanced = this.div.querySelector("#runner--advanced") as HTMLElement;
     this.advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
 
@@ -545,7 +539,7 @@ export class RunUI extends UIScreen {
 
   resize():void {
     this.mccTreeCanvas.sizeCanvas();
-    this.treeScrubber.sizeCanvas();
+
 
     this.histCanvases.forEach(hc => {
       if (hc.isVisible) {
@@ -585,11 +579,6 @@ export class RunUI extends UIScreen {
     if (!this.pythia) return;
     const stepsHist = this.pythia.stepsHist,
       last = stepsHist.length - 1;
-    if (this.treeScrubber.showLatestBaseTree) {
-      this.baseTree = this.pythia.treeHist[last];
-    } else {
-      this.baseTree = this.pythia.treeHist[this.treeScrubber.sampledIndex];
-    }
     if (this.baseTree) {
       // const run = this.pythia.run;
       const tree = this.baseTree;
@@ -624,9 +613,8 @@ export class RunUI extends UIScreen {
     this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
-      sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
+      sampleIndex = UNSET,
       {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popModelHist, kneeIndex} = this.pythia;
-    this.treeScrubber.setData(last, kneeIndex, mccIndex);
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
     const serieses = [
@@ -693,7 +681,6 @@ export class RunUI extends UIScreen {
     if (this.pythia) {
       const {stepCount, ess}  = this;
       const {maxDate} = this.pythia;
-      // const mccRef = this.pythia.getMcc();
       let treeCount = 0,
         mccCount = 0;
       if (this.mccRef) {
@@ -725,8 +712,8 @@ export class RunUI extends UIScreen {
         this.popGrowthCanvas.draw();
       }
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
-      this.treeCountText.innerHTML = `${nfc(treeCount)}`;
-      this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
+      // this.treeCountText.innerHTML = `${nfc(treeCount)}`;
+      // this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
       let stepCountPlural = 's';
       if (stepCount === 1) {
         stepCountPlural = '';
@@ -747,8 +734,8 @@ export class RunUI extends UIScreen {
       }
       this.stepCountPluralText.innerHTML = stepCountPlural;
 
-      const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
-      treeCountPluralText.classList.toggle("hidden", treeCount === 1);
+      // const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
+      // treeCountPluralText.classList.toggle("hidden", treeCount === 1);
     }
   }
 

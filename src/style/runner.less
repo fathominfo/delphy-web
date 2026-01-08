@@ -2,37 +2,7 @@
 // RUNNER
 ////////////////////////////////////////////
 
-// corresponds to /src/ts/ui/runner/runcommon
-@TRACE_COLOR: rgb(104,152,210);
-@TRACE_COLOR_PRE_KNEE: rgb(187, 204, 222);
-@TRACE_MARGIN: 10px;
-@DIST_WIDTH: 35px;
-
-
-// @THUMB_COLOR: rgb(45, 126, 207);
-@THUMB_COLOR: black;
-
-@RADIO_BUTTON_BORDER: #dfdfdf;
-@RADIO_BUTTON_SELECTED_FILL: #eff4fd;
-@RADIO_BUTTON_SELECTED_BORDER: #4b85b1;
-
-
-.displaying-view-1 {
-  background-color: @runner;
-}
-
-
 #runner {
-
-  padding-left: 20px;
-
-  section {
-    h2 {
-      color: @section-label;
-      // position: fixed;
-      // top: 0;
-    }
-  }
 
   &.reloading #reloading-scrim {
     display: block;
@@ -45,7 +15,7 @@
   display: none;
   width: 100%;
   height: 100%;
-  background-color: @uploader;
+  // background-color: @uploader;
   opacity: 0.5;
   position: absolute;
   z-index: 10;
@@ -69,25 +39,26 @@
 //——————————————————————————————————————————
 // sections
 
-#runner--left {
+// #runner--left {
+//   display: flex;
+//   flex: 1;
+//   flex-direction: column;
+// }
+
+#runner--top {
+
+}
+
+#runner--bottom {
   display: flex;
-  flex: 1;
-  flex-direction: column;
 }
 
-#runner--controls {
-  margin-right: @gap;
-  min-width: 300px;
-  // overflow: hidden;
-}
 
-#runner--tree,
 #runner--mcc,
 #runner--panel {
   padding-top: 15px;
 }
 
-#runner--tree,
 #runner--mcc {
   display: flex;
   flex: 2;
@@ -100,16 +71,16 @@
   flex: 2;
   display: flex;
   flex-direction: column;
-  min-width: 300px;
-  max-width: 320px;
-  margin-left: @gap * 3;
-  gap: 10px;
+  // min-width: 300px;
+  // max-width: 320px;
+  // margin-left: @gap * 3;
+  // gap: 10px;
 }
 
 
 #run-control {
   display: flex;
-  .t15();
+  // .t15();
   // display: flex;
   // flex-direction: column;
   gap: 15px;
@@ -175,108 +146,108 @@ input.stopping + #run-input--label {
 
 
 #run-steps {
-  display: inline-block;
-  color: @highlight;
-  font-size: 18px;
-  line-height: 21px;
-  min-width: 140px;
-  white-space: nowrap;
-  overflow: visible;
-  margin: 18px 0 0 10px;
+  // display: inline-block;
+  // // color: @highlight;
+  // font-size: 18px;
+  // line-height: 21px;
+  // min-width: 140px;
+  // white-space: nowrap;
+  // overflow: visible;
+  // margin: 18px 0 0 10px;
 }
 
 
-#step-control {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 20px 0 20px 7px;
-  font-weight: 500;
-  label,
-  p {
-    margin-left: 8px;
-  }
-  label {
-    font-weight: inherit;
-    margin-bottom: 5px;
-  }
-  p {
-    margin-top: unset;
-    margin-bottom: unset;
-  }
-}
+// #step-control {
+//   display: flex;
+//   flex-direction: column;
+//   gap: 2px;
+//   margin: 20px 0 20px 7px;
+//   font-weight: 500;
+//   label,
+//   p {
+//     margin-left: 8px;
+//   }
+//   label {
+//     font-weight: inherit;
+//     margin-bottom: 5px;
+//   }
+//   p {
+//     margin-top: unset;
+//     margin-bottom: unset;
+//   }
+// }
 
-#step-options {
-  height: 30px;
-  padding: 0 3px;
-  font-weight: 500;
-  font-size: inherit;
-  line-height: inherit;
-  font-variant-numeric: tabular-nums;
-}
+// #step-options {
+//   height: 30px;
+//   padding: 0 3px;
+//   font-weight: 500;
+//   font-size: inherit;
+//   line-height: inherit;
+//   font-variant-numeric: tabular-nums;
+// }
 
-#step-labels {
-  display: flex;
-  flex-direction: row;
-  list-style-type: none;
-  padding-inline-start: 0;
-  font-size: 11px;
-  li {
-    width: 26px;
-    text-align: left;
-  }
-  #step-padder {
-    width: 5px;
-  }
-}
+// #step-labels {
+//   display: flex;
+//   flex-direction: row;
+//   list-style-type: none;
+//   padding-inline-start: 0;
+//   font-size: 11px;
+//   li {
+//     width: 26px;
+//     text-align: left;
+//   }
+//   #step-padder {
+//     width: 5px;
+//   }
+// }
 
-#step-size {
-  width: 175px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 5px;
-}
+// #step-size {
+//   width: 175px;
+//   height: 5px;
+//   background: rgba(255, 255, 255, 0.6);
+//   border-radius: 5px;
+// }
 
-#step-buttons {
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
-  input {
-    display: none;
-  }
-  label {
-    .digit();
-    .t30();
-    text-align: left;
-    appearance: none;
-    outline: none;
-    border: none;
-    background: none;
-    margin: 0;
-    padding: 0;
-    color: @highlight-fade;
-    width: 100px;
-    white-space: nowrap;
-    overflow: visible;
-    cursor: pointer;
-    &:before {
-      content: "\2192";
-      display: none;
-      margin-right: 0.3rem;
-      opacity: 0;
-    }
-    &:hover {
-      color: @highlight-hover;
-    }
-  }
-  input:checked + label {
-    color: @highlight;
-    &:before {
-      opacity: 1;
-    }
-  }
+// #step-buttons {
+//   display: flex;
+//   flex-direction: column;
+//   margin-top: 10px;
+//   input {
+//     display: none;
+//   }
+//   label {
+//     .digit();
+//     .t30();
+//     text-align: left;
+//     appearance: none;
+//     outline: none;
+//     border: none;
+//     background: none;
+//     margin: 0;
+//     padding: 0;
+//     color: @highlight-fade;
+//     width: 100px;
+//     white-space: nowrap;
+//     overflow: visible;
+//     cursor: pointer;
+//     &:before {
+//       content: "\2192";
+//       display: none;
+//       margin-right: 0.3rem;
+//       opacity: 0;
+//     }
+//     &:hover {
+//       color: @highlight-hover;
+//     }
+//   }
+//   input:checked + label {
+//     color: @highlight;
+//     &:before {
+//       opacity: 1;
+//     }
+//   }
 
-}
+// }
 
 #runner--export-list {
   p {
@@ -462,13 +433,13 @@ input.stopping + #run-input--label {
   }
 
   label:has(input[type="radio"]) {
-    border: solid 1.5px @RADIO_BUTTON_BORDER;
+    // border: solid 1.5px @RADIO_BUTTON_BORDER;
     padding: 3px 8px;
     border-radius: 3px;
   }
   label:has(input[type="radio"]:checked) {
-    border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
-    background-color: @RADIO_BUTTON_SELECTED_FILL;
+    // border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
+    // background-color: @RADIO_BUTTON_SELECTED_FILL;
   }
 
 
@@ -664,21 +635,6 @@ label:has(#advanced-skygrid-toggle:checked) {
 }
 
 
-//——————————————————————————————————————————
-// runner / tree
-
-#runner--tree {
-  max-height: calc(100% - 200px);
-  canvas {
-    height: 100%;
-  }
-
-}
-
-#runner--tree h1 {
-  color: @highlight;
-}
-
 #ui {
   position: relative;
   // transform-origin: top center;
@@ -743,41 +699,42 @@ label:has(#advanced-skygrid-toggle:checked) {
   }
 }
 
-.tree-scrubber {
-  // margin-bottom: 25px;
-  margin-right: 32px;
-  // font-family: "MDSystemCondensed", RobotoCondensed, sans-serif;
-  // font-size: 11px;
-  .t05();
-  color: #555;
+// .tree-scrubber {
+//   display: none;
+//   // margin-bottom: 25px;
+//   margin-right: 32px;
+//   // font-family: "MDSystemCondensed", RobotoCondensed, sans-serif;
+//   // font-size: 11px;
+//   .t05();
+//   color: #555;
 
-  &.no-burn-in {
-    .burn-in-label {
-      font-weight: 400;
-      text-align: left;
-    }
+//   &.no-burn-in {
+//     .burn-in-label {
+//       font-weight: 400;
+//       text-align: left;
+//     }
 
-    .burn-in-indicator {
-      background: none;
+//     .burn-in-indicator {
+//       background: none;
 
-      &::before,
-      &::after {
-        background: none;
-      }
-    }
-  }
-}
+//       &::before,
+//       &::after {
+//         background: none;
+//       }
+//     }
+//   }
+// }
 
-.tree-scrubber--text {
-  font-weight: 400;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
+// .tree-scrubber--text {
+//   font-weight: 400;
+//   display: flex;
+//   justify-content: space-between;
+//   margin-bottom: 5px;
 
-  .digit {
-    font-weight: 700;
-  }
-}
+//   .digit {
+//     font-weight: 700;
+//   }
+// }
 
 .burn-in-label {
   color: #c0c0c0;
@@ -919,10 +876,10 @@ label:has(#advanced-skygrid-toggle:checked) {
   flex-direction: column;
   position: relative;
   & + .block {
-    margin-top: @gBlock;
+    // margin-top: @gBlock;
   }
   h2, h4 {
-    color: @block-label;
+    // color: @block-label;
     margin: unset;
   }
 }
@@ -932,7 +889,7 @@ label:has(#advanced-skygrid-toggle:checked) {
   width: 100%;
   position: relative;
   margin: 0;
-  margin-bottom: @gBlockLabel;
+  // margin-bottom: @gBlockLabel;
   h1 {
     padding-left: 10px;
     .legibleForms();
@@ -947,7 +904,7 @@ label:has(#advanced-skygrid-toggle:checked) {
   margin: -7px 0 0;
   padding: 0 45px 0 0;
   text-align: right;
-  color: @highlight;
+  // color: @highlight;
 
   &.range {
     display: flex;
@@ -997,12 +954,12 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 .y-axis,
 .x-axis {
-  .t05();
-  .digit();
+  // .t05();
+  // .digit();
   list-style: none;
   margin: unset;
   padding: unset;
-  color: @axis-label;
+  // color: @axis-label;
   li {
     flex: 1;
     display: flex;
@@ -1023,14 +980,14 @@ label:has(#advanced-skygrid-toggle:checked) {
   flex-direction: column;
   justify-content: flex-end;
   align-items: flex-end;
-  width: @wYAxis;
+  // width: @wYAxis;
   height: 100%;
   padding-bottom: 6px;
   li {
     min-height: 10px;
     position: relative;
     justify-content: flex-end;
-    padding: 0 @unit;
+    // padding: 0 @unit;
     transform: translateY(-2px);
   }
 }
@@ -1042,11 +999,11 @@ label:has(#advanced-skygrid-toggle:checked) {
   align-items: center;
   justify-content: space-between;
   width: 240px;
-  height: @hXAxis;
+  // height: @hXAxis;
   li {
     position: relative;
     justify-content: flex-start;
-    padding: @unit 0;
+    // padding: @unit 0;
     &.step-last {
       text-align: right;
       flex: 0;

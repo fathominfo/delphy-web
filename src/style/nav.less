@@ -1,96 +1,299 @@
 
+nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: var(--nav-width);
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--nav-fill);
+  color: var(--nav-text);
+  padding: 0;
+  -webkit-transition: all var(--intro-transition) ease-out;
+  -moz-transition: all var(--intro-transition) ease-out;
+  -ms-transition: all var(--intro-transition) ease-out;
+  transition: all var(--intro-transition) ease-out;
+}
+
+nav {
+  // background-color: var(--nav-button-fill-on);
+  color: var(--nav-button-text-on);
+  opacity: 1;
+}
+
+.nav--group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nav-gap);
+  width: 100%;
+  font-weight: 600;
+}
+
+nav button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-weight: 600;
+  white-space: nowrap;
+  -webkit-transition: all var(--transition) ease-in-out;
+  -moz-transition: all var(--transition) ease-in-out;
+  -ms-transition: all var(--transition) ease-in-out;
+  transition: all var(--transition) ease-in-out;
+}
+
+#nav--identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0;
+  height: var(--header-height);
+  padding: var(--nav-identity-padding);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+  overflow: unset;
+  box-sizing: border-box;
+  -webkit-transition: all var(--intro-transition) ease-out;
+  -moz-transition: all var(--intro-transition) ease-out;
+  -ms-transition: all var(--intro-transition) ease-out;
+  transition: all var(--intro-transition) ease-out;
+}
+
+#nav--logo {
+  margin-left: var(--logo-margin-x);
+  font-weight: 400;
+  font-size: calc(var(--unit) * 1.75);
+  line-height: calc(var(--unit) * 2);
+  color: var(--logo-text);
+  /* -webkit-transition: all var(--intro-transition) ease-out;
+  -moz-transition: all var(--intro-transition) ease-out;
+  -ms-transition: all var(--intro-transition) ease-out;
+  transition: all var(--intro-transition) ease-out; */
+  -webkit-transition: color var(--intro-transition) ease-out, font-size var(--intro-bumper-delay) ease-out;
+  -moz-transition: color var(--intro-transition) ease-out, font-size var(--intro-bumper-delay) ease-out;
+  -ms-transition: color var(--intro-transition) ease-out, font-size var(--intro-bumper-delay) ease-out;
+  transition: color var(--intro-transition) ease-out, font-size var(--intro-bumper-delay) ease-out;
+  cursor: default;
+}
+
+#nav--headline {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--unit) * 2);
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  font-weight: 500;
+  font-size: calc(var(--unit) * 2.5);
+  line-height: calc(var(--unit) * 3);
+  -webkit-transition: width var(--intro-transition) ease-out, height var(--intro-transition) ease-out, opacity var(--intro-transition) ease-out;
+  -moz-transition: width var(--intro-transition) ease-out, height var(--intro-transition) ease-out, opacity var(--intro-transition) ease-out;
+  -ms-transition: width var(--intro-transition) ease-out, height var(--intro-transition) ease-out, opacity var(--intro-transition) ease-out;
+  transition: width var(--intro-transition) ease-out, height var(--intro-transition) ease-out, opacity var(--intro-transition) ease-out;
+}
+
+#nav--tagline,
+#nav--more {
+  display: flex;
+  flex-direction: column;
+  margin: unset;
+  padding: unset;
+}
+
+#nav--tagline span {
+  white-space: nowrap;
+}
+
+#nav--more .link {
+  display: inline;
+  white-space: nowrap;
+  color: var(--intro-link-text-static);
+  text-decoration: none;
+  border-bottom: 2px solid var(--intro-link-stroke-static);
+}
+
+#nav--more .link:hover,
+#nav--more .link:active,
+#nav--more .link:focus {
+  color: var(--intro-link-text-on);
+  border-color: var(--intro-link-stroke-on);
+}
+
+#nav--tabs {
+  flex: 1;
+  height: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+  overflow: unset;
+  margin-top: var(--nav-tabs-margin-top);
+  /* -webkit-transition: all var(--intro-transition) ease-out;
+  -moz-transition: all var(--intro-transition) ease-out;
+  -ms-transition: all var(--intro-transition) ease-out;
+  transition: all var(--intro-transition) ease-out; */
+  -webkit-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+  -moz-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+  -ms-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+  transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+}
+
+.nav--tab {
+  align-items: flex-start;
+  height: var(--nav-tab-height);
+  padding: 0 var(--nav-tab-padding-x) calc(var(--unit) / 4);
+  margin-left: var(--nav-tab-margin-x);
+  font-size: calc(var(--unit) * 1.25);
+  line-height: calc(var(--unit) * 1.5);
+  background-color: var(--nav-button-fill-static);
+  color: var(--nav-button-text-static);
+  border-radius: var(--corner) 0 0 var(--corner);
+  -webkit-transition: all var(--transition) ease-in-out;
+  -moz-transition: all var(--transition) ease-in-out;
+  -ms-transition: all var(--transition) ease-in-out;
+  transition: all var(--transition) ease-in-out;
+}
+
+#nav--about {
+  width: 100%;
+  height: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+  overflow: unset;
+  margin-bottom: var(--nav-about-margin-bottom);
+  -webkit-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+  -moz-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+  -ms-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+  transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
+}
+
+#about--button {
+  align-items: center;
+  width: auto;
+  height: var(--nav-button-height);
+  padding: 0 var(--nav-button-padding-x);
+  margin: 0 var(--nav-button-margin-x);
+  font-size: var(--unit);
+  line-height: calc(var(--unit) * 1.25);
+  background-color: var(--nav-about-button-fill-static);
+  color: var(--nav-about-button-text-static);
+  border-radius: var(--corner);
+}
+
+#about--button:hover,
+#about--button:focus,
+#about--button:active {
+  background-color: var(--nav-about-button-fill-on);
+  color: var(--nav-about-button-text-on);
+}
+
+
+
+
+
 ////////////////////////////////////////////
 // NAV
 ////////////////////////////////////////////
 
-nav {
-  display: flex;
-  flex-direction: column;
-  // justify-content: flex-start;
-  align-items: center;
-  gap: 40px;
-  // position: absolute;
-  // z-index: 1000;
-  // width: 100%;
-  // height: @navHeight;
-  padding: 0 15px;
-  background-color: @soft-gray;
-  button {
-    font-weight: 700;
-    font-size: 16px;
-    line-height: 20px;
-    appearance: none;
-    border: 0;
-    border-radius: 0;
-    outline: 0;
-    background-color: @nav-button;
-    color: @nav-button-text;
-    padding: 0 15px;
-    height: @navHeight;
-    cursor: pointer;
-    .smoothly(all);
-    // & + button {
-    //   margin-left: @unit * 0.5;
-    // }
-    &:disabled {
-      cursor: not-allowed;
-      color: @nav-button-text-disabled;
-      pointer-events: none;
-    }
-    &.active {
-      background-color: @nav-button-on;
-      color: @nav-button-text-on;
-    }
-  }
-  &:after {
-    content: '';
-    position: absolute;
-    top: unset;
-    bottom: 0;
-    left: 0;
-    right: unset;
-    width: 100%;
-    height: 1px;
-    background-color: @nav-button-on;
-  }
-}
+// nav {
+//   display: flex;
+//   flex-direction: column;
+//   // justify-content: flex-start;
+//   align-items: center;
+//   gap: 40px;
+//   // position: absolute;
+//   // z-index: 1000;
+//   // width: 100%;
+//   // height: @navHeight;
+//   padding: 0 15px;
+//   background-color: @soft-gray;
+//   button {
+//     font-weight: 700;
+//     font-size: 16px;
+//     line-height: 20px;
+//     appearance: none;
+//     border: 0;
+//     border-radius: 0;
+//     outline: 0;
+//     background-color: @nav-button;
+//     color: @nav-button-text;
+//     padding: 0 15px;
+//     height: @navHeight;
+//     cursor: pointer;
+//     .smoothly(all);
+//     // & + button {
+//     //   margin-left: @unit * 0.5;
+//     // }
+//     &:disabled {
+//       cursor: not-allowed;
+//       color: @nav-button-text-disabled;
+//       pointer-events: none;
+//     }
+//     &.active {
+//       background-color: @nav-button-on;
+//       color: @nav-button-text-on;
+//     }
+//   }
+//   &:after {
+//     content: '';
+//     position: absolute;
+//     top: unset;
+//     bottom: 0;
+//     left: 0;
+//     right: unset;
+//     width: 100%;
+//     height: 1px;
+//     background-color: @nav-button-on;
+//   }
+// }
 
-.nav-group {
-  // display: flex;
-  // flex-direction: row;
-  align-items: center;
-  gap: 0;
-  margin: 0;
-}
 
-#nav--views {
-  justify-content: flex-start;
-}
 
-#nav--right {
-  margin-left: auto;
-}
 
-.displaying-view-1 #nav--view-1,
-.displaying-view-2 #nav--view-2,
-.displaying-view-3 #nav--view-3,
-.displaying-view-4 #nav--view-4,
-.displaying-view-5 #nav--view-5,
-.displaying-import-view #nav--import-view,
-.displaying-export-view #nav--export-view,
-nav button:not(:disabled):hover {
-  color: @nav-button-text-hover;
-  &.active {
-    color: @nav-button-text-on;
-  }
-}
+// .nav-group {
+//   // display: flex;
+//   // flex-direction: row;
+//   align-items: center;
+//   gap: 0;
+//   margin: 0;
+// }
 
-#nav--identity {
-  width: 63px;
-  height: 20px;
-  margin: 0;
-  padding: 0;
-  .logotype-del {fill: lighten(desaturate(@highlight, 15%), 18%)}
-  .logotype-phy {fill: @highlight}
-}
+// #nav--views {
+//   justify-content: flex-start;
+// }
+
+// #nav--right {
+//   margin-left: auto;
+// }
+
+// .displaying-view-1 #nav--view-1,
+// .displaying-view-2 #nav--view-2,
+// .displaying-view-3 #nav--view-3,
+// .displaying-view-4 #nav--view-4,
+// .displaying-view-5 #nav--view-5,
+// .displaying-import-view #nav--import-view,
+// .displaying-export-view #nav--export-view,
+// nav button:not(:disabled):hover {
+//   color: @nav-button-text-hover;
+//   &.active {
+//     color: @nav-button-text-on;
+//   }
+// }
+
+// #nav--identity {
+//   width: 63px;
+//   height: 20px;
+//   margin: 0;
+//   padding: 0;
+//   .logotype-del {fill: lighten(desaturate(@highlight, 15%), 18%)}
+//   .logotype-phy {fill: @highlight}
+// }
 

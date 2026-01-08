@@ -1,162 +1,162 @@
   <div id="uploader" class="view disabled">
 
-    <div id="uploader--content-div">
-      <section id="uploader--front-matter">
 
-        <div id="uploader--identity">
-          <h1 id="uploader--logo">Delphy</h1>
+    <section id="uploader--front-matter">
+
+      <div id="uploader--identity">
+        <h1 id="uploader--logo">Delphy</h1>
 
 
-        <div class="uploader--tagline">
-          Generate and explore
-          <br/>
-          phylogenetic trees with
-          <br/>
-          unprecedented speed.
+      <div class="uploader--tagline">
+        Generate and explore
+        <br/>
+        phylogenetic trees with
+        <br/>
+        unprecedented speed.
+      </div>
+
+
+
+      <div class="uploader--info">
+        {{> info }}
+        <button class="uploader--info-toggle">Loading data <div class="box"><div class="glyph"></div></div></button>
+        <p id="uploader--privacy"><a href="/privacy/" target="_">Privacy.</a> </p>
+        <div id="uploader--version-info">
+          <p class="version-info">Delphy core version <span class="core-version"></span></p>
+          <p class="ui-version-info">UI version <span class="ui-version"></span></p>
         </div>
 
+      </div>
 
 
-        <div class="uploader--info">
-          {{> info }}
-          <button class="uploader--info-toggle">Loading data <div class="box"><div class="glyph"></div></div></button>
-          <p id="uploader--privacy"><a href="/privacy/" target="_">Privacy.</a> </p>
-          <div id="uploader--version-info">
-            <p class="version-info">Delphy core version <span class="core-version"></span></p>
-            <p class="ui-version-info">UI version <span class="ui-version"></span></p>
+    </section>
+
+    <section id="uploader--entry-points" class="main-content">
+
+      <section id="uploader--file-url">
+        <div class="uploader--entry-point-header">
+          <h2>Run your own data</h2>
+          <p class="uploader--byline">All files stay securely on your system, never uploaded to a server.</p>
+        </div>
+
+        <input type="file" id="uploader--file-input" name="uploader--file-input">
+        <label id="uploader--file-input--label" for="uploader--file-input">
+
+          <span class="uploader--entry-title">Click here or drag a file to open</span>
+          <span class="file-types">(<span class="type">.maple</span>, <span class="type">.fasta</span> or <span class="type">.dphy</span>)</span>
+        </label>
+
+
+        <form id="uploader--url-form">
+          <input type="text" id="uploader--url-input"
+            placeholder="Load from a URL…"/>
+            <label id="uploader--url-form-submit" >
+              <span>Run</span>
+              <input type="submit" disabled/>
+            </label>
+
+        </form>
+
+
+        <div id="uploader--proxy-popup">
+          <p>
+            Delphy encountered a network error while trying to retrieve this link.
+            The link may be incorrect, or the server may not be set up to share
+            files with other websites.
+          </p>
+          <p>
+            If the link is correct, contact the server administrator <span id="remote-url-server"></span>
+            to update their CORS settings. You can read more about that
+            <a href="https://github.com/fathominfo/delphy-web/wiki/Server-Settings-for-Hosting-Datasets" target="_">here</a>.
+          </p>
+          <p>
+            In the meantime, you can download the file to your local machine, and
+            open it in Delphy directly.
+          </p>
+          <div class="uploader--button-row">
+            <label id="uploader--bad-url-msg-dismiss"> OK
+              <button></button>
+            </label>
           </div>
-
+          <!-- <label>
+            Save this preference?
+            <input type="checkbox" id="uploader--save-try-proxy" />
+          </label> -->
         </div>
-
 
       </section>
 
-      <section class="uploader--entry-points">
-
-        <section id="uploader--file-url">
-          <div class="uploader--entry-point-header">
-            <h2>Run your own data</h2>
-            <p class="uploader--byline">All files stay securely on your system, never uploaded to a server.</p>
-          </div>
-
-          <input type="file" id="uploader--file-input" name="uploader--file-input">
-          <label id="uploader--file-input--label" for="uploader--file-input">
-
-            <span class="uploader--entry-title">Click here or drag a file to open</span>
-            <span class="file-types">(<span class="type">.maple</span>, <span class="type">.fasta</span> or <span class="type">.dphy</span>)</span>
-          </label>
 
 
-          <form id="uploader--url-form">
-            <input type="text" id="uploader--url-input"
-              placeholder="Load from a URL…"/>
-              <label id="uploader--url-form-submit" >
-                <span>Run</span>
-                <input type="submit" disabled/>
-              </label>
 
+
+      <div id="uploader--demo">
+        <div class="uploader--entry-point-header">
+          <h2>Run a demo</h2>
+          <p class="uploader--byline">Reconstruct trees of viral outbreaks.</p>
+        </div>
+
+        <div id="uploader--demo-wrapper">
+          <form id="uploader--demo-form">
+            <div id="uploader--demo-options">
+              <p  class="uploader--demo-option">
+                <label>
+                  <svg width="174" height="68">
+                    <path class="uploader--demo-option-back" d="M10 0 L135 0 C140 0 140 0 145 8.5 L155 25.5 C160 34 160 34 155 42.5 L145 59.5 C 140 68 140 68 135 68 L10 68 C 0 68 0 68 0 58 L 0 10 C0 0 0 0 10 0" />
+                  </svg>
+                  <input type="radio" name="folder" value="filename.ext" checked/>
+                  <span class="pathogen"></span>
+                  <span class="author-info"></span>
+                </label>
+
+              </p>
+            </div>
           </form>
+          <div id="uploader--demo-selection">
 
+            <!-- <p class="uploader--demo-detail-label">dataset</p> -->
+            <p class="selection-description"></p>
+            <p>
+              <span class="uploader--demo-detail-label">paper</span>
+              <a class="selection-paper-link" target="_"></a>
+            </p>
 
-          <div id="uploader--proxy-popup">
-            <p>
-              Delphy encountered a network error while trying to retrieve this link.
-              The link may be incorrect, or the server may not be set up to share
-              files with other websites.
+            <p class="uploader--demo-detail-data">
+              <span class="uploader--demo-detail-label">source data</span>
+              <a class="selection-data-link" href="" target="_" ></a>
+              <span class="selection-data-note"></span>
             </p>
-            <p>
-              If the link is correct, contact the server administrator <span id="remote-url-server"></span>
-              to update their CORS settings. You can read more about that
-              <a href="https://github.com/fathominfo/delphy-web/wiki/Server-Settings-for-Hosting-Datasets" target="_">here</a>.
-            </p>
-            <p>
-              In the meantime, you can download the file to your local machine, and
-              open it in Delphy directly.
-            </p>
-            <div class="uploader--button-row">
-              <label id="uploader--bad-url-msg-dismiss"> OK
-                <button></button>
-              </label>
-            </div>
-            <!-- <label>
-              Save this preference?
-              <input type="checkbox" id="uploader--save-try-proxy" />
-            </label> -->
+
+            <a class="download" href="" target="_" >
+              <span class="box"><span class="glyph"></span></span>Download input data
+            </a>
+
           </div>
-
-        </section>
-
-
-
-
-
-        <div id="uploader--demo">
-          <div class="uploader--entry-point-header">
-            <h2>Run a demo</h2>
-            <p class="uploader--byline">Reconstruct trees of viral outbreaks.</p>
-          </div>
-
-          <div id="uploader--demo-wrapper">
-            <form id="uploader--demo-form">
-              <div id="uploader--demo-options">
-                <p  class="uploader--demo-option">
-                  <label>
-                    <svg width="174" height="68">
-                      <path class="uploader--demo-option-back" d="M10 0 L135 0 C140 0 140 0 145 8.5 L155 25.5 C160 34 160 34 155 42.5 L145 59.5 C 140 68 140 68 135 68 L10 68 C 0 68 0 68 0 58 L 0 10 C0 0 0 0 10 0" />
-                    </svg>
-                    <input type="radio" name="folder" value="filename.ext" checked/>
-                    <span class="pathogen"></span>
-                    <span class="author-info"></span>
-                  </label>
-
-                </p>
-              </div>
-            </form>
-            <div id="uploader--demo-selection">
-
-              <!-- <p class="uploader--demo-detail-label">dataset</p> -->
-              <p class="selection-description"></p>
-              <p>
-                <span class="uploader--demo-detail-label">paper</span>
-                <a class="selection-paper-link" target="_"></a>
-              </p>
-
-              <p class="uploader--demo-detail-data">
-                <span class="uploader--demo-detail-label">source data</span>
-                <a class="selection-data-link" href="" target="_" ></a>
-                <span class="selection-data-note"></span>
-              </p>
-
-              <a class="download" href="" target="_" >
-                <span class="box"><span class="glyph"></span></span>Download input data
-              </a>
-
-            </div>
-            <div id="uploader--demo-run">
-              <button id="uploader--demo-button">
-                <!-- <span class="symbol">&#9654;</span> -->
-                Run this demo
-              </button>
-            </div>
+          <div id="uploader--demo-run">
+            <button id="uploader--demo-button">
+              <!-- <span class="symbol">&#9654;</span> -->
+              Run this demo
+            </button>
           </div>
         </div>
+      </div>
 
 
-        <div id="uploader--status">
-          <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
-          <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
-          <p id="uploader--status-parse" class="uploader--status-message">Parsing…</p>
-          <p id="uploader--status-error" class="uploader--status-message">Error!</p>
-          <div id="uploader--progress-container">
-            <div id="uploader--progress-label">0 / 0 trees loaded</div>
-            <div id="uploader--progress-frame">
-              <div id="uploader--progress"></div>
-            </div>
+      <div id="uploader--status">
+        <p id="uploader--status-init" class="uploader--status-message">Initializing…</p>
+        <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
+        <p id="uploader--status-parse" class="uploader--status-message">Parsing…</p>
+        <p id="uploader--status-error" class="uploader--status-message">Error!</p>
+        <div id="uploader--progress-container">
+          <div id="uploader--progress-label">0 / 0 trees loaded</div>
+          <div id="uploader--progress-frame">
+            <div id="uploader--progress"></div>
           </div>
         </div>
+      </div>
 
 
-      </section>
+    </section>
 
-    </div>
+
   </div>

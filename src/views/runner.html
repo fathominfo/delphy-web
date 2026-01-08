@@ -2,18 +2,10 @@
     <div id="reloading-scrim">
       <div id="reloading-inner">Loading</div>
     </div>
-    <section id="runner--left">
-      <div id="runner--controls">
-        <div id="run-control" class="controls">
-          <input type="checkbox" id="run-input" />
-          <label for="run-input" id="run-input--label">
-            <svg id="run-input--running" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M10.62,20.31H14v-10H10.62Zm8.76-10H16v10h3.34Z"/></svg>
-            <svg id="run-input--paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M22,15,12,20V10Z"/></svg>
-            <svg id="run-input--stopping" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M15 7 A8 8 0 1 0 23 15"/></svg>
-          </label>
-          <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
-        </div>
-        <div id="step-control" class="controls">
+    <header>
+      <div class="header--basic">
+        {{> header_common }}
+        <div id="step-control" class="option">
           <label for="step-options">Sample <span class="digit">1</span> tree per</label>
           <select id="step-options">
             <option value="7" >10,000,000 steps</option>
@@ -26,276 +18,288 @@
             <option value="0" >1 step</option>
           </select>
         </div>
-      </div>
-      <div id="runner--advanced-container">
-        <button type="button" id="advanced-toggle"><div class="box"><div class="glyph"></div></div>Advanced options</button>
-      </div>
-      <!-- <div id="runner--tree">
-        <h1 class="tree-header">Sampled Tree</h1>
-        <canvas id="ui" class="tree-canvas"></canvas>
-      </div> -->
-      <div class="tree-scrubber">
-        <div class="tree-scrubber--text">
-          <div class="burn-in-label">No burn-in set.</div>
-          <div class="trees-label">Modeling from <span class="digit" id="run-mcc">0</span> / <span class="digit" id="run-trees">0</span> sampled tree<span class="plural">s</span>.</div>
-        </div>
-        <div class="burn-in-indicator no-burn-in"></div>
-        <div class="tree-scrubber--range-container">
-          <label for="tree-scrubber--range">Preview sampled tree</label>
-          <input type="range" class="tree-scrubber--range" id="tree-scrubber--range" min="0" step="1">
-        </div>
-        <div class="tree-scrubber--visualizer">
-          <canvas class="tree-scrubber--canvas"></canvas>
-          <div class="tree-scrubber--mcc-label hidden">
-            <div class="mcc">
-              MCC
-              <div class="previewing hidden">(previewing)</div>
+        <div id="option--show-advanced" class="option align-right" data-symbol="left">
+          <button id="show-advanced">
+            <div class="icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                <path d="m11.84,9.18l-.94-.39c.07-.25.12-.52.12-.79s-.05-.54-.12-.79l.94-.39c.19-.08.28-.3.2-.49s-.3-.28-.49-.2l-.95.39c-.27-.47-.65-.85-1.12-1.12l.39-.95c.08-.19-.01-.41-.2-.49-.19-.08-.41.01-.49.2l-.39.94c-.25-.07-.52-.12-.79-.12s-.54.05-.79.12l-.39-.94c-.08-.19-.3-.28-.49-.2-.19.08-.28.3-.2.49l.39.95c-.47.27-.85.65-1.12,1.12l-.95-.39c-.19-.08-.41.01-.49.2s.01.41.2.49l.94.39c-.07.25-.12.52-.12.79s.05.54.12.79l-.94.39c-.19.08-.28.3-.2.49.06.14.2.23.35.23.05,0,.1,0,.14-.03l.95-.39c.27.47.65.85,1.12,1.12l-.39.95c-.08.19.01.41.2.49.05.02.1.03.14.03.15,0,.29-.09.35-.23l.39-.94c.25.07.52.12.79.12s.54-.05.79-.12l.39.94c.06.14.2.23.35.23.05,0,.1,0,.14-.03.19-.08.28-.3.2-.49l-.39-.95c.47-.27.85-.65,1.12-1.12l.95.39s.1.03.14.03c.15,0,.29-.09.35-.23.08-.19-.01-.41-.2-.49Zm-3.84,1.07c-1.24,0-2.25-1.01-2.25-2.25s1.01-2.25,2.25-2.25,2.25,1.01,2.25,2.25-1.01,2.25-2.25,2.25Z" stroke-width="0"/>
+              </svg>
             </div>
-            <div class="mcc-indicator"></div>
-          </div>
-          <div class="tree-scrubber--preview-label previewing hidden">Previewing</div>
+            <div class="text">Advanced run options</div>
+          </button>
+          <div class="pointer"><div class="shape"><span>▲</span></div></div>
         </div>
       </div>
-    </section>
-    <section id="runner--mcc">
-      <h1 class="tree-header">Maximum Clade Credibility (MCC) Tree</h1>
-      <canvas id="ui_mcc" class="tree-canvas"></canvas>
-      <div id="ui_mcc--legend">
-        <!-- <div class="mcc-legend-swatch low-cred"></div>
-        <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
-        <div class="mcc-legend-swatch hi-cred"></div>
-        <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
-        <div class="mcc-opt-list confidence">
-          <label for="mcc-opt--confidence-range">Credibility threshold</label>
-          <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
-            Highlighting nodes in
-            <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
-            of base trees
-          </output>
 
-          <div class="mcc-opt--confidence-range block-slider">
-            <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
-            <div class="slider--track"></div>
-            <div class="slider--track-filled"></div>
-            <div class="slider--thumb"></div>
-          </div>
-        </div>
 
-      </div>
-    </section>
-    <section id="runner--panel">
-      <div id="ess-wrapper" class="pre">
-        <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span></h1>
-        <div id="ess-meter-stages" class="converging">
-          <div class="stage converging">
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Converging</div></a>
-            <p>Not enough statistically independent samples to be reliable.</p>
+      <div id="runner--advanced" class="hidden">
+        <form class="runner--advanced--content">
+          <div class="runner--advanced--header">
+            <h2 class="runner--advanced--title">Advanced options</h2>
+            <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
           </div>
-          <div class="stage stable">
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Stable</div></a>
-            <p>Ready for initial exploration. Running longer will refine results.</p>
-          </div>
-          <div class="stage publish">
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Robust</div></a>
-            <p>Running longer is unlikely to materially change any results.</p>
-          </div>
-        </div>
-        <p>Learn more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a></p>
-      </div>
-      <div id="burn-in-wrapper" class="pre">
-        <input type="checkbox" id="burn-in-toggle" disabled />
-        <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
-      </div>
-      <div id="runner--panel--blocks" class="blocks">
-        <div class="block">
-          <div class="block-header">
-            <h1></h1>
-          </div>
-          <div class="block--chart">
-            <ul class="y-axis">
-              <li class="max"></li><li class="median"></li><li class="min"></li>
-            </ul>
-            <div class="graphic">
-              <div class="chart">
-                <canvas></canvas>
+          <div class="runner--advanced--section">
+            <fieldset class="mutation-rate-fieldset">
+              <legend><h3>Mutation rate</h3></legend>
+              <div class="disabled-text">
+                <p>Delphy does not support setting the mutation rate while <span class="small-caps">APOBEC</span> context detection is enabled.</p>
               </div>
-              <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
-            </div>
-          </div>
-          <p class="block-readout"></p>
-        </div>
-      </div>
-      <div id="runner--export-list">
-        <button id="runner--export-csv">Export Traces to TSV</button>
-      </div>
-
-    </section>
-
-    <div id="runner--advanced" class="hidden">
-      <form class="runner--advanced--content">
-        <div class="runner--advanced--header">
-          <h2 class="runner--advanced--title">Advanced options</h2>
-          <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
-        </div>
-        <div class="runner--advanced--section">
-          <fieldset class="mutation-rate-fieldset">
-            <legend><h3>Mutation rate</h3></legend>
-            <div class="disabled-text">
-              <p>Delphy does not support setting the mutation rate while <span class="small-caps">APOBEC</span> context detection is enabled.</p>
-            </div>
-            <div class="input-container">
-              <input type="checkbox" id="site-rate-heterogeneity-toggle" name="isSiteHeterogeneity" autocomplete="off">
-              <label for="site-rate-heterogeneity-toggle">Enable site rate heterogeneity</label>
-            </div>
-            <div class="input-container">
-              <input type="checkbox" id="fixed-mutation-rate-toggle" name="isFixedMutationRate" autocomplete="off">
-              <label for="fixed-mutation-rate-toggle">Fix overall mutation rate</label>
-            </div>
-            <label id="overall-mutation-rate-label" class="related-inputs">
-              <p>Set initial mutation rate to</p>
-              <div class="inline-unit">
-                <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
-                <p">&times; 10<sup>&minus;5</sup> mutations / site / year</p>
-              </div>
-            </label>
-          </fieldset>
-          <fieldset class="population-model-fieldset">
-            <legend><h3>Population model</h3></legend>
-            <p id="#population-model-options">
-              <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth" checked ></label>
-              <label>Skygrid<input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid" ></label>
-            </p>
-            <div id="popmodel-exponential" class="population-model-option">
               <div class="input-container">
-                <input type="checkbox" id="fixed-final-pop-size-toggle" name="isFixedFinalPopSize" autocomplete="off">
-                <label for="fixed-final-pop-size-toggle">Fix effective population size at time of latest tip</label>
+                <input type="checkbox" id="site-rate-heterogeneity-toggle" name="isSiteHeterogeneity" autocomplete="off">
+                <label for="site-rate-heterogeneity-toggle">Enable site rate heterogeneity</label>
               </div>
-              <label id="overall-final-pop-size-label" class="related-inputs">
-                <p>Set initial value of N(t)*rho at t = time of latest tip to</p>
+              <div class="input-container">
+                <input type="checkbox" id="fixed-mutation-rate-toggle" name="isFixedMutationRate" autocomplete="off">
+                <label for="fixed-mutation-rate-toggle">Fix overall mutation rate</label>
+              </div>
+              <label id="overall-mutation-rate-label" class="related-inputs">
+                <p>Set initial mutation rate to</p>
                 <div class="inline-unit">
-                  <input type="number" id="overall-final-pop-size-input" value="3.00" step="0.01" min="0.00" name="overallFinalPopSize" autocomplete="off" />
-                  <p> years</p>
+                  <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
+                  <p">&times; 10<sup>&minus;5</sup> mutations / site / year</p>
                 </div>
               </label>
-              <div class="input-container">
-                <input type="checkbox" id="fixed-pop-growth-rate-toggle" name="isFixedPopGrowthRate" autocomplete="off">
-                <label for="fixed-pop-growth-rate-toggle">Fix effective population size growth rate</label>
-              </div>
-              <label id="overall-pop-growth-rate-label" class="related-inputs">
-                <p>Set initial effective population size growth rate to</p>
-                <div class="inline-unit">
-                  <input type="number" id="overall-pop-growth-rate-input" value="0.00" step="0.01" name="overallPopGrowthRate" autocomplete="off" />
-                  <p> e-foldings / year</p>
-                </div>
-              </label>
-            </div>
-            <fieldset id="popmodel-skygrid" class="population-model-option">
-              <p class="disclaimer">Read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
-              <div class="input-container">
-                <label id="" class="">
-                  <p>Model start date: <input type="date" id="popmodel-skygrid-k" value="2014-01-01"
-                    name="skygrid-K" placeholder="YYYY-MM-DD"/></p>
-                </label>
-              </div>
-              <div class="input-container">
-                <label id="" class="">
-                  <p>Split into <input type="number" id="popmodel-skygrid-num-intervals" value="100" name="skygrid-M"/> intervals</p>
-                </label>
-              </div>
-              <div class="input-container">
-                <p>Interval interpolation:
-                  <label>Flat<input  id="popmodel-skygrid-interpolate-flat" type="radio" name="m-interpolation" value="flat"></label>
-                  <label>Log-linear<input id="popmodel-skygrid-interpolate-loglinear" type="radio" name="m-interpolation" value="loglin" checked></label>
-                </p>
-              </div>
-
-              <label>
-                <input id="advanced-skygrid-toggle" type="checkbox">
-                <span>Advanced Skygrid Parameters</span>
-              </label>
-              <div id="advanced-skygrid-parameters">
-                <p class="advanced-skygrid-param">Population curve prior smoothness</p>
-                <p id="advanced-skygrid-timescale-options">
-                  <label id="advanced-skygrid-timescale-doubling">
-                    <span>Set timescale</span>
-                    <input type="radio" name="timescale" value="doubling" checked />
-                  </label>
-                  <label id="advanced-skygrid-timescale-tau">
-                    <span>Set tau</span>
-                    <input type="radio" name="timescale" value="tau" />
-                  </label>
-                  <label id="advanced-skygrid-timescale-infer">
-                    <span>Infer tau with Gamma-prior</span>
-                    <input type="radio" name="timescale" value="infer" />
-                  </label>
-                </p>
-                <div id="advanced-skygrid-timescale-inputs" class="doubling">
-                  <label class="doubling" id="advanced-skygrid-timescale-doubling-value">
-                    <span>Timescale for doubling/halving: </span><input type="number" name="doubling-value" value="30" min="0"  step="any" /> <span>days</span>
-                    <ul>
-                      <li>this implies a value of tau of <span class="implied-tau">9.75</span>; read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</li>
-                    </ul>
-                  </label>
-                  <label class="tau" id="advanced-skygrid-timescale-tau-value">
-                    <span>τ (tau): </span><input type="number" name="tau-value" value="9.75" step="any" min="0.0"/>
-                    <ul>
-                      <li>this implies a doubling/halving timescale of <span class="implied-days">30</span> days; read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</li>
-                    </ul>
-                  </label>
-                  <label class="infer" id="advanced-skygrid-timescale-infer-values">
-                    <p><span>Alpha: </span> <input type="number" name="alpha-value" min="0" value="0.001" step="any" /></p>
-                    <p><span>Beta: </span> <input type="number" name="beta-value"  min="0" value="0.001" step="any" /></p>
-                  </label>
-                </div>
-                <p class="advanced-skygrid-param">Protection against low populations (read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>)</p>
-                <div id="advanced-skygrid-barrier-options">
-                  <label>
-                    <span>Enabled (recommended)</span>
-                    <input type="radio" name="low-pop-protection" value="on" checked />
-                  </label>
-                  <label>
-                    <span>Disabled</span>
-                    <input type="radio" name="low-pop-protection" value="off"/>
-                  </label>
-                </div>
-                <ul id="advanced-skygrid-barrier-values">
-                  <li>
-                    <label id="low-pop-barrier-location-label">
-                      Minimum effective population size:
-                      <input type="number" name="low-pop-barrier-location" value="1" min="0" step="any" />
-                      day<span class="plural">s</span>
-                    </label>
-                  <li>
-                    <label>
-                      Impose penalty of 1 nat when population drops below minimum by
-                      <input type="number" name="low-pop-barrier-scale" value="30" min="0" max="100" step="any" />%
-                    </label>
-                  </li>
-                </ul>
-              </div>
-
             </fieldset>
-          </fieldset>
-        </div>
-        <div class="runner--advanced--section">
-          <fieldset class="apobec-fieldset">
-            <legend><h3><span class="small-caps">APOBEC</span> action</h3></legend>
-            <div class="disabled-text">
-              <p>Delphy does not support detecting <span class="small-caps">APOBEC</span> context with fixed mutation rates enabled.</p>
+            <fieldset class="population-model-fieldset">
+              <legend><h3>Population model</h3></legend>
+              <p id="#population-model-options">
+                <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth" checked ></label>
+                <label>Skygrid<input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid" ></label>
+              </p>
+              <div id="popmodel-exponential" class="population-model-option">
+                <div class="input-container">
+                  <input type="checkbox" id="fixed-final-pop-size-toggle" name="isFixedFinalPopSize" autocomplete="off">
+                  <label for="fixed-final-pop-size-toggle">Fix effective population size at time of latest tip</label>
+                </div>
+                <label id="overall-final-pop-size-label" class="related-inputs">
+                  <p>Set initial value of N(t)*rho at t = time of latest tip to</p>
+                  <div class="inline-unit">
+                    <input type="number" id="overall-final-pop-size-input" value="3.00" step="0.01" min="0.00" name="overallFinalPopSize" autocomplete="off" />
+                    <p> years</p>
+                  </div>
+                </label>
+                <div class="input-container">
+                  <input type="checkbox" id="fixed-pop-growth-rate-toggle" name="isFixedPopGrowthRate" autocomplete="off">
+                  <label for="fixed-pop-growth-rate-toggle">Fix effective population size growth rate</label>
+                </div>
+                <label id="overall-pop-growth-rate-label" class="related-inputs">
+                  <p>Set initial effective population size growth rate to</p>
+                  <div class="inline-unit">
+                    <input type="number" id="overall-pop-growth-rate-input" value="0.00" step="0.01" name="overallPopGrowthRate" autocomplete="off" />
+                    <p> e-foldings / year</p>
+                  </div>
+                </label>
+              </div>
+              <fieldset id="popmodel-skygrid" class="population-model-option">
+                <p class="disclaimer">Read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
+                <div class="input-container">
+                  <label id="" class="">
+                    <p>Model start date: <input type="date" id="popmodel-skygrid-k" value="2014-01-01"
+                      name="skygrid-K" placeholder="YYYY-MM-DD"/></p>
+                  </label>
+                </div>
+                <div class="input-container">
+                  <label id="" class="">
+                    <p>Split into <input type="number" id="popmodel-skygrid-num-intervals" value="100" name="skygrid-M"/> intervals</p>
+                  </label>
+                </div>
+                <div class="input-container">
+                  <p>Interval interpolation:
+                    <label>Flat<input  id="popmodel-skygrid-interpolate-flat" type="radio" name="m-interpolation" value="flat"></label>
+                    <label>Log-linear<input id="popmodel-skygrid-interpolate-loglinear" type="radio" name="m-interpolation" value="loglin" checked></label>
+                  </p>
+                </div>
+
+                <label>
+                  <input id="advanced-skygrid-toggle" type="checkbox">
+                  <span>Advanced Skygrid Parameters</span>
+                </label>
+                <div id="advanced-skygrid-parameters">
+                  <p class="advanced-skygrid-param">Population curve prior smoothness</p>
+                  <p id="advanced-skygrid-timescale-options">
+                    <label id="advanced-skygrid-timescale-doubling">
+                      <span>Set timescale</span>
+                      <input type="radio" name="timescale" value="doubling" checked />
+                    </label>
+                    <label id="advanced-skygrid-timescale-tau">
+                      <span>Set tau</span>
+                      <input type="radio" name="timescale" value="tau" />
+                    </label>
+                    <label id="advanced-skygrid-timescale-infer">
+                      <span>Infer tau with Gamma-prior</span>
+                      <input type="radio" name="timescale" value="infer" />
+                    </label>
+                  </p>
+                  <div id="advanced-skygrid-timescale-inputs" class="doubling">
+                    <label class="doubling" id="advanced-skygrid-timescale-doubling-value">
+                      <span>Timescale for doubling/halving: </span><input type="number" name="doubling-value" value="30" min="0"  step="any" /> <span>days</span>
+                      <ul>
+                        <li>this implies a value of tau of <span class="implied-tau">9.75</span>; read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</li>
+                      </ul>
+                    </label>
+                    <label class="tau" id="advanced-skygrid-timescale-tau-value">
+                      <span>τ (tau): </span><input type="number" name="tau-value" value="9.75" step="any" min="0.0"/>
+                      <ul>
+                        <li>this implies a doubling/halving timescale of <span class="implied-days">30</span> days; read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</li>
+                      </ul>
+                    </label>
+                    <label class="infer" id="advanced-skygrid-timescale-infer-values">
+                      <p><span>Alpha: </span> <input type="number" name="alpha-value" min="0" value="0.001" step="any" /></p>
+                      <p><span>Beta: </span> <input type="number" name="beta-value"  min="0" value="0.001" step="any" /></p>
+                    </label>
+                  </div>
+                  <p class="advanced-skygrid-param">Protection against low populations (read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>)</p>
+                  <div id="advanced-skygrid-barrier-options">
+                    <label>
+                      <span>Enabled (recommended)</span>
+                      <input type="radio" name="low-pop-protection" value="on" checked />
+                    </label>
+                    <label>
+                      <span>Disabled</span>
+                      <input type="radio" name="low-pop-protection" value="off"/>
+                    </label>
+                  </div>
+                  <ul id="advanced-skygrid-barrier-values">
+                    <li>
+                      <label id="low-pop-barrier-location-label">
+                        Minimum effective population size:
+                        <input type="number" name="low-pop-barrier-location" value="1" min="0" step="any" />
+                        day<span class="plural">s</span>
+                      </label>
+                    <li>
+                      <label>
+                        Impose penalty of 1 nat when population drops below minimum by
+                        <input type="number" name="low-pop-barrier-scale" value="30" min="0" max="100" step="any" />%
+                      </label>
+                    </li>
+                  </ul>
+                </div>
+
+              </fieldset>
+            </fieldset>
+          </div>
+          <div class="runner--advanced--section">
+            <fieldset class="apobec-fieldset">
+              <legend><h3><span class="small-caps">APOBEC</span> action</h3></legend>
+              <div class="disabled-text">
+                <p>Delphy does not support detecting <span class="small-caps">APOBEC</span> context with fixed mutation rates enabled.</p>
+              </div>
+              <div class="checkbox-container">
+                <input type="checkbox" id="apobec-toggle" name="isApobec" autocomplete="off">
+                <label for="apobec-toggle">Model <span class="small-caps">APOBEC</span> action (mpox)</label>
+              </div>
+            </fieldset>
+          </div>
+          <div class="runner--advanced--section">
+            <p class="warning-text hidden">Updating these settings will erase your current progress and restart the run.</p>
+            <div class="button-container">
+              <button type="button" class="advanced--cancel-button">Cancel</button>
+              <button type="submit" class="advanced--submit-button warning-button" disabled autocomplete="off">Restart with selected options</button>
             </div>
-            <div class="checkbox-container">
-              <input type="checkbox" id="apobec-toggle" name="isApobec" autocomplete="off">
-              <label for="apobec-toggle">Model <span class="small-caps">APOBEC</span> action (mpox)</label>
-            </div>
-          </fieldset>
+          </div>
+        </form>
+      </div>
+
+    </header>
+
+    <section class="main-content">
+
+      <div id="runner--top">
+        <div id="run-control" class="controls">
+          <input type="checkbox" id="run-input" />
+          <label for="run-input" id="run-input--label">
+            <svg id="run-input--running" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M10.62,20.31H14v-10H10.62Zm8.76-10H16v10h3.34Z"/></svg>
+            <svg id="run-input--paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M22,15,12,20V10Z"/></svg>
+            <svg id="run-input--stopping" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M15 7 A8 8 0 1 0 23 15"/></svg>
+          </label>
+          <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
         </div>
-        <div class="runner--advanced--section">
-          <p class="warning-text hidden">Updating these settings will erase your current progress and restart the run.</p>
-          <div class="button-container">
-            <button type="button" class="advanced--cancel-button">Cancel</button>
-            <button type="submit" class="advanced--submit-button warning-button" disabled autocomplete="off">Restart with selected options</button>
+
+        <div id="ess-wrapper" class="pre">
+          <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span></h1>
+          <div id="ess-meter-stages" class="converging">
+            <div class="stage converging">
+              <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Converging</div></a>
+              <p>Not enough statistically independent samples to be reliable.</p>
+            </div>
+            <div class="stage stable">
+              <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Stable</div></a>
+              <p>Ready for initial exploration. Running longer will refine results.</p>
+            </div>
+            <div class="stage publish">
+              <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Robust</div></a>
+              <p>Running longer is unlikely to materially change any results.</p>
+            </div>
+          </div>
+          <p>Learn more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a></p>
+        </div>
+
+      </div>
+
+      <div id="runner--bottom">
+
+        <div id="runner--mcc">
+          <h1 class="tree-header">Maximum Clade Credibility (MCC) Tree</h1>
+          <canvas id="ui_mcc" class="tree-canvas"></canvas>
+          <div id="ui_mcc--legend">
+            <!-- <div class="mcc-legend-swatch low-cred"></div>
+            <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
+            <div class="mcc-legend-swatch hi-cred"></div>
+            <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
+            <div class="mcc-opt-list confidence">
+              <label for="mcc-opt--confidence-range">Credibility threshold</label>
+              <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
+                Highlighting nodes in
+                <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
+                of base trees
+              </output>
+
+              <div class="mcc-opt--confidence-range block-slider">
+                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
+                <div class="slider--track"></div>
+                <div class="slider--track-filled"></div>
+                <div class="slider--thumb"></div>
+              </div>
+            </div>
+
           </div>
         </div>
-      </form>
-    </div>
+
+
+        <div id="runner--panel">
+
+          <div id="burn-in-wrapper" class="pre">
+            <input type="checkbox" id="burn-in-toggle" disabled />
+            <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
+          </div>
+          <div id="runner--panel--blocks" class="blocks">
+            <div class="block">
+              <div class="block-header">
+                <h1></h1>
+              </div>
+              <div class="block--chart">
+                <ul class="y-axis">
+                  <li class="max"></li><li class="median"></li><li class="min"></li>
+                </ul>
+                <div class="graphic">
+                  <div class="chart">
+                    <canvas></canvas>
+                  </div>
+                  <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
+                </div>
+              </div>
+              <p class="block-readout"></p>
+            </div>
+          </div>
+          <div id="runner--export-list">
+            <button id="runner--export-csv">Export Traces to TSV</button>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+
+
   </div>

@@ -2,6 +2,7 @@
 @import "./fonts.less";
 @import "./uploader.less";
 @import "./nav.less";
+@import "./header.less";
 @import "./runner.less";
 @import "./lineages.less";
 @import "./mutations.less";
@@ -22,6 +23,7 @@
   --Inter: 'Inter', 'Helvetica', sans-serif;
   --Inter-Tight: 'Inter Tight', 'Inter', 'Helvetica', sans-serif;
   font-feature-settings: 'liga' 1, 'calt' 1;
+  box-sizing: border-box;
 }
 
 html, body {
@@ -172,12 +174,21 @@ canvas {
 @gSection: @unit * 3;
 
 .view {
-  flex: 1;
   display: none;
-  flex-direction: row;
-  width: 100%;
-  height: 100%;
-  padding: 62px 32px 24px 24px;
+  flex-direction: column;
+  gap: calc(var(--view-gap));
+  font-size: calc(var(--unit) * 1.25);
+  line-height: calc(var(--unit) * 1.5);
+  color: var(--view-text);
+  background-color: transparent;
+  min-width: var(--view-min-width);
+  // max-width: var(--view-max-width);
+
+  .main-content {
+    margin : 0 var(--view-margin-x);
+    width: 100%;
+  }
+
 
   &.active {
     display: flex;
