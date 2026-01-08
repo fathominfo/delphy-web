@@ -205,17 +205,29 @@
     <section class="main-content">
 
       <div id="runner--top">
-        <div id="run-control" class="controls">
-          <input type="checkbox" id="run-input" />
-          <label for="run-input" id="run-input--label">
-            <svg id="run-input--running" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M10.62,20.31H14v-10H10.62Zm8.76-10H16v10h3.34Z"/></svg>
-            <svg id="run-input--paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M22,15,12,20V10Z"/></svg>
-            <svg id="run-input--stopping" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M15 7 A8 8 0 1 0 23 15"/></svg>
-          </label>
-          <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
+        <div id="run-control" class="controls menu-group">
+          <div class="toolbar">
+            <input type="checkbox" id="run-input" />
+            <label for="run-input" id="run-input--label" class="player">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+                <path id="run-input--running" d="m13.5,13h9c.28,0,.5.22.5.5v9c0,.28-.22.5-.5.5h-9c-.28,0-.5-.22-.5-.5v-9c0-.28.22-.5.5-.5Z" stroke="none" />
+                <path id="run-input--paused" d="m23.72,18.45l-9,4.5c-.33.17-.72-.08-.72-.45v-9c0-.37.39-.61.72-.45l9,4.5c.37.18.37.71,0,.89Z" stroke="none"/>
+                <path id="run-input--stopping" d="m18 9 a9 9 0 1 0 9 9"/>
+              </svg>
+
+
+              <!-- <button class="player">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+                  <path class="play" d="m23.72,18.45l-9,4.5c-.33.17-.72-.08-.72-.45v-9c0-.37.39-.61.72-.45l9,4.5c.37.18.37.71,0,.89Z" stroke-width="0"/>
+                  <path class="stop" d="m13.5,13h9c.28,0,.5.22.5.5v9c0,.28-.22.5-.5.5h-9c-.28,0-.5-.22-.5-.5v-9c0-.28.22-.5.5-.5Z" stroke-width="0"/>
+                </svg>
+              </button> -->
+            </label>
+            <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
+          </div>
         </div>
 
-        <div id="ess-wrapper" class="pre">
+        <div id="ess-wrapper" class="pre menu-group">
           <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span></h1>
           <div id="ess-meter-stages" class="converging">
             <div class="stage converging">

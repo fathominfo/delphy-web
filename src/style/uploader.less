@@ -4,14 +4,13 @@
 // uploader
 ////////////////////////////////////////////
 
-.displaying-import-view  #uploader {
-  display: block;
-  background-color: var(--intro-view-fill);
-
+.displaying-import-view {
+  #uploader { display: flex; }
+  main {background-color: var(--intro-view-fill);}
 }
 
 #uploader {
-  overflow: auto;
+  overflow: hidden;
   height: 100%;
   // width: 100%;
   color: var(--intro-nav-text);
@@ -188,6 +187,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 
   gap: calc(var(--view-gap));
   h2 {
