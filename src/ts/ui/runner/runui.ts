@@ -69,11 +69,9 @@ export class RunUI extends UIScreen {
   private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
   private hideBurnIn: boolean;
-  private minDate:SoftFloat;
   private mccMinDate:SoftFloat;
-  private timelineIndices:DateLabel[];
   private mccTimelineIndices:DateLabel[];
-  private baseTree: PhyloTree | null;
+
 
   private burninPrompt: BurninPrompt;
   private ess: number;
@@ -184,15 +182,12 @@ export class RunUI extends UIScreen {
       this.popGrowthCanvas, this.gammaCanvas];
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
-    this.timelineIndices = [];
     this.mccTimelineIndices = [];
-    this.minDate = new SoftFloat(0, 0.75, 0.3);
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
     this.is_running = false;
     this.timerHandle = 0;
     this.stepCount = -1;
     this.mccIndex = -1
-    this.baseTree = null;
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
 
@@ -579,37 +574,32 @@ export class RunUI extends UIScreen {
     if (!this.pythia) return;
     const stepsHist = this.pythia.stepsHist,
       last = stepsHist.length - 1;
-    if (this.baseTree) {
-      // const run = this.pythia.run;
-      const tree = this.baseTree;
-      const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
-      let earliestMCCDate = earliestBaseDate;
-      const mccRef = this.pythia.getMcc();
-      // console.debug(`RunUI set ${mccRef.getManager().id} ${mccRef.getRefNo()}`)
-      this.baseTree = this.pythia.treeHist[last];
-      this.stepCount = stepsHist[last] || 0;
-      if (mccRef) {
-        const oldRef = this.mccRef;
-        this.mccRef = mccRef;
-        this.mccIndex = this.pythia.getMccIndex();
-        // console.log(`this.mccIndex`, this.mccIndex)
-        const mccTree = mccRef.getMcc(),
-          nodeConfidence = mccRef.getNodeConfidence();
-        if (mccTree !== this.mccTreeCanvas.tree) {
-          this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
-          this.sharedState.resetSelections();
-        }
-        earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
-        if (oldRef) {
-          oldRef.release();
-        }
+
+    const mccRef = this.pythia.getMcc();
+    this.stepCount = stepsHist[last] || 0;
+    if (mccRef) {
+      const oldRef = this.mccRef;
+      this.mccRef = mccRef;
+      this.mccIndex = this.pythia.getMccIndex();
+      // console.log(`this.mccIndex`, this.mccIndex)
+      const mccTree = mccRef.getMcc(),
+        nodeConfidence = mccRef.getNodeConfidence();
+      if (mccTree !== this.mccTreeCanvas.tree) {
+        this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+        this.sharedState.resetSelections();
       }
-      this.minDate.setTarget(earliestBaseDate);
+      const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
       this.mccMinDate.setTarget(earliestMCCDate);
+      if (oldRef) {
+        oldRef.release();
+      }
     }
-    this.minDate.update();
+
+
+
+
     this.mccMinDate.update();
-    this.timelineIndices = getTimelineIndices(this.minDate.value, this.pythia.maxDate);
+
     this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
@@ -663,7 +653,7 @@ export class RunUI extends UIScreen {
       }
     }
     this.requestDraw();
-    if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
+    if (this.disableAnimation || this.mccMinDate.atTarget()) {
       if (this.drawHandle !== 0) {
         clearInterval(this.drawHandle);
         this.drawHandle = 0;
