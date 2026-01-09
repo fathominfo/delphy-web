@@ -1,232 +1,239 @@
 <div id="customize" class="view">
-  <section id="customize--mcc">
-    <h1>MCC</h1>
-    <div class="tree-canvas-container">
-      <canvas id="customize--mcc-canvas" class="tree-canvas"></canvas>
+  <header>
+    <div class="header--basic">
+      {{> header_common }}
     </div>
-    <div class="tree-export">
-      <h2>Export</h2>
-      <div class="export-category">
-        <h3>Tree</h3>
-        <div class="export-buttons">
-          <button type="button" class="export-button" id="export-png">PNG</button>
-          <button type="button" class="export-button" id="export-pdf">PDF</button>
-          <button type="button" class="export-button" id="export-nwk">Newick file</button>
-        </div>
+  </header>
+  <div class="main-content">
+    <section id="customize--mcc">
+      <h1>MCC</h1>
+      <div class="tree-canvas-container">
+        <canvas id="customize--mcc-canvas" class="tree-canvas"></canvas>
       </div>
-      <div class="export-category">
-        <h3>Run</h3>
-        <div class="export-buttons">
-          <button type="button" class="export-button" id="export-beast-input">BEAST input</button>
-          <button type="button" class="export-button" id="export-beast-output">BEAST output</button>
-          <button type="button" class="export-button" id="export-dphy">Delphy run</button>
+      <div class="tree-export">
+        <h2>Export</h2>
+        <div class="export-category">
+          <h3>Tree</h3>
+          <div class="export-buttons">
+            <button type="button" class="export-button" id="export-png">PNG</button>
+            <button type="button" class="export-button" id="export-pdf">PDF</button>
+            <button type="button" class="export-button" id="export-nwk">Newick file</button>
+          </div>
         </div>
-      </div>
-      <dialog id="beast-version">
-        <form method="dialog">
-          <h3><span id="beast-version-action"></span> BEAST version</h3>
-          <div class="options">
-            <label type="button" class="export-button">
-              <input type="radio" id="export-beast-2.6.2" name="version" value="2.6.2">
-              <span>BEAST2 2.6.2</span>
+        <div class="export-category">
+          <h3>Run</h3>
+          <div class="export-buttons">
+            <button type="button" class="export-button" id="export-beast-input">BEAST input</button>
+            <button type="button" class="export-button" id="export-beast-output">BEAST output</button>
+            <button type="button" class="export-button" id="export-dphy">Delphy run</button>
+          </div>
+        </div>
+        <dialog id="beast-version">
+          <form method="dialog">
+            <h3><span id="beast-version-action"></span> BEAST version</h3>
+            <div class="options">
+              <label type="button" class="export-button">
+                <input type="radio" id="export-beast-2.6.2" name="version" value="2.6.2">
+                <span>BEAST2 2.6.2</span>
+                </label>
+              <label type="button" class="export-button">
+                <input type="radio" id="export-beast-2.7.7" name="version" value="2.7.7">
+                <span>BEAST2 2.7.7</span>
               </label>
-            <label type="button" class="export-button">
-              <input type="radio" id="export-beast-2.7.7" name="version" value="2.7.7">
-              <span>BEAST2 2.7.7</span>
-            </label>
-            <label type="button" class="export-button">
-              <input type="radio" id="export-beast-x-10.5.0" name="version" value="X-10.5.0" checked />
-              <span>BEAST X 10.5.0</span>
-            </label>
-          </div>
-          <div class="closers">
-            <button type="button" class="cancel-button">Cancel</button>
-            <button type="submit">OK</button>
-          </div>
-          <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
-        </form>
-      </dialog>
-    </div>
-  </section>
-  <section id="customize--right">
-
-    <div id="customize--metadata" class="customize--column">
-      <h2>Metadata</h2>
-      <div id="metadata-file" class="no-metadata">
-        <input type="file" id="metadata-file-input" name="metadata-file-input" accept=".csv, .tsv">
-        <label for="metadata-file-input" id="metadata-file-label">
-          <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
-          <div class="uploader-text">
-            Click here or drag to load a metadata file (.csv, .tsv)
-            <br/>One column should be titled "ID", corresponding to the ids in the fasta file.
-          </div>
-        </label>
-        <div id="metadata-loading">
-          <div id="metadata-loading--inner">Loading…</div>
-        </div>
+              <label type="button" class="export-button">
+                <input type="radio" id="export-beast-x-10.5.0" name="version" value="X-10.5.0" checked />
+                <span>BEAST X 10.5.0</span>
+              </label>
+            </div>
+            <div class="closers">
+              <button type="button" class="cancel-button">Cancel</button>
+              <button type="submit">OK</button>
+            </div>
+            <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
+          </form>
+        </dialog>
       </div>
-      <div id="metadata-column-headings" class="hidden">
-        <h3>Column headings</h3>
-        <div class="column-heading">
-          <details>
-            <summary>
-              <div class="name"></div>
-              <div class="count"></div>
-            </summary>
-            <div class="values">
-              <div class="value">
+    </section>
+    <section id="customize--right">
+
+      <div id="customize--metadata" class="customize--column">
+        <h2>Metadata</h2>
+        <div id="metadata-file" class="no-metadata">
+          <input type="file" id="metadata-file-input" name="metadata-file-input" accept=".csv, .tsv">
+          <label for="metadata-file-input" id="metadata-file-label">
+            <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+            <div class="uploader-text">
+              Click here or drag to load a metadata file (.csv, .tsv)
+              <br/>One column should be titled "ID", corresponding to the ids in the fasta file.
+            </div>
+          </label>
+          <div id="metadata-loading">
+            <div id="metadata-loading--inner">Loading…</div>
+          </div>
+        </div>
+        <div id="metadata-column-headings" class="hidden">
+          <h3>Column headings</h3>
+          <div class="column-heading">
+            <details>
+              <summary>
                 <div class="name"></div>
                 <div class="count"></div>
+              </summary>
+              <div class="values">
+                <div class="value">
+                  <div class="name"></div>
+                  <div class="count"></div>
+                </div>
               </div>
-            </div>
-          </details>
+            </details>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div id="customize--color" class="customize--column">
-      <h2>Color system</h2>
-      <div id="customize--color--confidence">
-        <div class="paragraph-radio">
-          <input type="radio" name="color-system" id="color-system--confidence" value="confidence" checked>
-          <label for="color-system--confidence">
-            <h4>Credibility</h4>
-            <p>Each inner node is given a credibility score representing the percentage of base tree in which the clade is grouped together.</p>
-          </label>
-        </div>
-        <div class="color-system--details">
-          <h3>Threshold</h3>
-          <div>
-            <div class="input-container">
-              <label for="min-confidence-number">Highlight inner nodes appearing in
-              <input type="number" id="min-confidence-number" name="min-confidence-number" class="min-confidence" min="0" max="100" value="90">
-                <em>% of base trees</em> or more
-              </label>
-            </div>
-            <input type="range" id="min-confidence-slider" name="min-confidence-slider" class="min-confidence" min="0" max="100" value="90">
+      <div id="customize--color" class="customize--column">
+        <h2>Color system</h2>
+        <div id="customize--color--confidence">
+          <div class="paragraph-radio">
+            <input type="radio" name="color-system" id="color-system--confidence" value="confidence" checked>
+            <label for="color-system--confidence">
+              <h4>Credibility</h4>
+              <p>Each inner node is given a credibility score representing the percentage of base tree in which the clade is grouped together.</p>
+            </label>
           </div>
-          <div id="clade-details">
-            <h3>Clades</h3>
+          <div class="color-system--details">
+            <h3>Threshold</h3>
             <div>
-              <p>Highlight <em id="customize--num-selections"><span class="value">0</span> selections</em> from <a href="">Nodes</a></p>
-              <div id="customize--nodes-list">
+              <div class="input-container">
+                <label for="min-confidence-number">Highlight inner nodes appearing in
+                <input type="number" id="min-confidence-number" name="min-confidence-number" class="min-confidence" min="0" max="100" value="90">
+                  <em>% of base trees</em> or more
+                </label>
+              </div>
+              <input type="range" id="min-confidence-slider" name="min-confidence-slider" class="min-confidence" min="0" max="100" value="90">
+            </div>
+            <div id="clade-details">
+              <h3>Clades</h3>
+              <div>
+                <p>Highlight <em id="customize--num-selections"><span class="value">0</span> selections</em> from <a href="">Nodes</a></p>
+                <div id="customize--nodes-list">
+                  <div class="checkbox-container input-container">
+                    <input type="checkbox" id="customize--node-1" name="customize--node" class="customize--node" value="1" checked>
+                    <label for="customize--node-1">Root</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="annotation-details">
+              <h3>Annotations</h3>
+              <div>
                 <div class="checkbox-container input-container">
-                  <input type="checkbox" id="customize--node-1" name="customize--node" class="customize--node" value="1" checked>
-                  <label for="customize--node-1">Root</label>
+                  <input type="checkbox" id="annotate-dates" name="annotate" class="annotate" value="dates">
+                  <label for="annotate-dates">Annotate inner nodes with dates</label>
+                </div>
+                <div class="checkbox-container input-container">
+                  <input type="checkbox" id="annotate-confidence" name="annotate" class="annotate" value="confidence">
+                  <label for="annotate-confidence">Annotate inner nodes with credibility score</label>
                 </div>
               </div>
             </div>
           </div>
-          <div id="annotation-details">
-            <h3>Annotations</h3>
+        </div>
+        <div id="customize--color--metadata">
+          <div class="paragraph-radio">
+            <input type="radio" name="color-system" id="color-system--metadata" value="metadata" disabled>
+            <label for="color-system--metadata">
+              <h4>Metadata</h4>
+              <p>Column headings that are specified by a given metadata file.</p>
+            </label>
+          </div>
+          <div class="color-system--details">
             <div>
-              <div class="checkbox-container input-container">
-                <input type="checkbox" id="annotate-dates" name="annotate" class="annotate" value="dates">
-                <label for="annotate-dates">Annotate inner nodes with dates</label>
+              <div>
+                <label for="color-by">Color by</label>
+                <select name="color-by" id="color-by">
+                </select>
               </div>
-              <div class="checkbox-container input-container">
-                <input type="checkbox" id="annotate-confidence" name="annotate" class="annotate" value="confidence">
-                <label for="annotate-confidence">Annotate inner nodes with credibility score</label>
+              <div>
+                <label class="many-metadata" >
+                  <input type="checkbox" name="color-all" id="select-all-toggle"/>
+                  Select all
+                </label>
+              </div>
+              <!-- <div class="id-lookup">
+                <form class="many-metadata">
+                  <label for="id-lookup--input">Look up a sequence id</label>
+                  <div>
+                    <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
+                  </div>
+                  <div class="autocomplete-suggestion"></div>
+                </form>
+              </div> -->
+            </div>
+            <div id="metadata-legend">
+              <div class="legend-key">
+                <input type="color" class="color">
+                <input type="checkbox" class="color-active" />
+                <label class="name"></label>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div id="customize--color--metadata">
-        <div class="paragraph-radio">
-          <input type="radio" name="color-system" id="color-system--metadata" value="metadata" disabled>
-          <label for="color-system--metadata">
-            <h4>Metadata</h4>
-            <p>Column headings that are specified by a given metadata file.</p>
-          </label>
-        </div>
-        <div class="color-system--details">
-          <div>
-            <div>
-              <label for="color-by">Color by</label>
-              <select name="color-by" id="color-by">
-              </select>
-            </div>
-            <div>
-              <label class="many-metadata" >
-                <input type="checkbox" name="color-all" id="select-all-toggle"/>
-                Select all
-              </label>
-            </div>
-            <!-- <div class="id-lookup">
-              <form class="many-metadata">
-                <label for="id-lookup--input">Look up a sequence id</label>
-                <div>
-                  <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
-                </div>
-                <div class="autocomplete-suggestion"></div>
-              </form>
-            </div> -->
+
+      <div id="customize--tree" class="customize--column">
+        <div id="customize--tree-topology">
+          <h2>Topology</h2>
+          <div class="paragraph-radio">
+            <input type="radio" name="topology" id="topology--mcc" value="mcc" checked>
+            <label for="topology--mcc">
+              <h4>Maximum Clade Credibility (MCC) tree</h4>
+              <p>Picks the tree that has the highest product of all the clade credibilities (posterior probabilities) for all the clades in the tree, then annotates it with summary information for the full set of trees from the sample.</p>
+            </label>
           </div>
-          <div id="metadata-legend">
-            <div class="legend-key">
-              <input type="color" class="color">
-              <input type="checkbox" class="color-active" />
-              <label class="name"></label>
-            </div>
+          <div class="paragraph-radio">
+            <input type="radio" name="topology" id="topology--mcs" value="mcs">
+            <label for="topology--mcs">
+              <h4>High Frequency Split (HFS) tree <span class="exp-feature">Experimental</span></h4>
+              <p>Builds a tree node by node, starting at the root. Finds all the tips under that node, and queries the base trees for the most common split of those tips. Assigns those tips to its child nodes, and repeats until it reaches the tips. </p>
+            </label>
           </div>
         </div>
+        <div id="customize--tree-presentation">
+          <h2>Presentation</h2>
+          <div class="paragraph-radio">
+            <input type="radio" name="presentation" id="presentation--all" value="all" checked>
+            <label for="presentation--all">
+              <h4>Show all inner nodes</h4>
+              <p>Includes all inner nodes, including those produced as an arbitrary or low-information side-effect of the binary algorithm.</p>
+            </label>
+          </div>
+          <div class="paragraph-radio">
+            <input type="radio" name="presentation" id="presentation--mutations" value="mutations">
+            <label for="presentation--mutations">
+              <h4>Show only inner nodes with mutations <span class="exp-feature">Experimental</span></h4>
+              <p>Displays an “umbrella” tree resulting from the removal of all inner nodes that do not have a corresponding mutation.</p>
+            </label>
+          </div>
+        </div>
+        <div id="customize--tree-spacing">
+          <h2>Vertical spacing</h2>
+          <div class="paragraph-radio">
+            <input type="radio" name="spacing" id="spacing--even" value="even" checked>
+            <label for="spacing--even">
+              <h4>Even spacing</h4>
+              <p>Spaces all tips evenly.</p>
+            </label>
+          </div>
+          <div class="paragraph-radio">
+            <input type="radio" name="spacing" id="spacing--genetic" value="genetic">
+            <label for="spacing--genetic">
+              <h4>SNP distance <span class="exp-feature">Experimental</span></h4>
+              <p>Adds space between consecutive tips according to the number of differences in nucleotides between them.</p>
+            </label>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div id="customize--tree" class="customize--column">
-      <div id="customize--tree-topology">
-        <h2>Topology</h2>
-        <div class="paragraph-radio">
-          <input type="radio" name="topology" id="topology--mcc" value="mcc" checked>
-          <label for="topology--mcc">
-            <h4>Maximum Clade Credibility (MCC) tree</h4>
-            <p>Picks the tree that has the highest product of all the clade credibilities (posterior probabilities) for all the clades in the tree, then annotates it with summary information for the full set of trees from the sample.</p>
-          </label>
-        </div>
-        <div class="paragraph-radio">
-          <input type="radio" name="topology" id="topology--mcs" value="mcs">
-          <label for="topology--mcs">
-            <h4>High Frequency Split (HFS) tree <span class="exp-feature">Experimental</span></h4>
-            <p>Builds a tree node by node, starting at the root. Finds all the tips under that node, and queries the base trees for the most common split of those tips. Assigns those tips to its child nodes, and repeats until it reaches the tips. </p>
-          </label>
-        </div>
-      </div>
-      <div id="customize--tree-presentation">
-        <h2>Presentation</h2>
-        <div class="paragraph-radio">
-          <input type="radio" name="presentation" id="presentation--all" value="all" checked>
-          <label for="presentation--all">
-            <h4>Show all inner nodes</h4>
-            <p>Includes all inner nodes, including those produced as an arbitrary or low-information side-effect of the binary algorithm.</p>
-          </label>
-        </div>
-        <div class="paragraph-radio">
-          <input type="radio" name="presentation" id="presentation--mutations" value="mutations">
-          <label for="presentation--mutations">
-            <h4>Show only inner nodes with mutations <span class="exp-feature">Experimental</span></h4>
-            <p>Displays an “umbrella” tree resulting from the removal of all inner nodes that do not have a corresponding mutation.</p>
-          </label>
-        </div>
-      </div>
-      <div id="customize--tree-spacing">
-        <h2>Vertical spacing</h2>
-        <div class="paragraph-radio">
-          <input type="radio" name="spacing" id="spacing--even" value="even" checked>
-          <label for="spacing--even">
-            <h4>Even spacing</h4>
-            <p>Spaces all tips evenly.</p>
-          </label>
-        </div>
-        <div class="paragraph-radio">
-          <input type="radio" name="spacing" id="spacing--genetic" value="genetic">
-          <label for="spacing--genetic">
-            <h4>SNP distance <span class="exp-feature">Experimental</span></h4>
-            <p>Adds space between consecutive tips according to the number of differences in nucleotides between them.</p>
-          </label>
-        </div>
-      </div>
-    </div>
-
-  </section>
+    </section>
+  </div>
 </div>

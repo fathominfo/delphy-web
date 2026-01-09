@@ -1,249 +1,256 @@
   <div id="mutations" class="view">
-    <section id="mutations--mcc">
-      <h1>MCC</h1>
-      <div class="tree-canvas-container">
-        <canvas id="mutations--mcc-canvas" class="tree-canvas"></canvas>
+    <header>
+      <div class="header--basic">
+        {{> header_common }}
       </div>
-      {{> mcc_opts }}
-    </section>
-    <section id="mutations--sidebar">
-      <div class="sidebar--lookup">
-        <h1>Mutation lookup</h1>
-        <form class="mutation-lookup--form">
-          <div>
-            <label for="mutation-lookup--input">Look up a mutation (e.g. A23403G) or site (e.g. 23403)</label>
-            <input type="search"
-              class="mutation-lookup--input" name="mutation-lookup--input" id="mutation-lookup--input"
-              pattern="([A-Za-z][1-9][0-9]*[A-Za-z])|([1-9][0-9]*)"
-              spellcheck="false" autocomplete="off"
-              placeholder="Look up a mutation name or site number…">
-          </div>
-          <div>
-            <div class="autocomplete-suggestion">
-              <div class="mutation-name"><span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span></div>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="sidebar--moi">
-        <h1>Features of interest</h1>
-        <div class="mutations--sidebar-options">
-          <div class="mutations-filter options-category">
-            <form class="mutations-filter--form options-form">
-              <div class="filter-option--all">
-                <input type="radio" name="interest" class="radio-interest" id="interest--all" value="all" autocomplete="off">
-                <label for="interest--all">All</label>
-              </div>
-              <div class="filter-option--reversals">
-                <input type="radio" name="interest" class="radio-interest" id="interest--reversals" value="reversals" autocomplete="off">
-                <label for="interest--reversals">Reversals</label>
-              </div>
-              <div class="filter-option--tips">
-                <input type="radio" name="interest" class="radio-interest" id="interest--tips" value="many_tips" checked autocomplete="off">
-                <label for="interest--tips">Many tips</label>
-              </div>
-              <div class="filter-option--site">
-                <input type="radio" name="interest" class="radio-interest" id="interest--site" value="same_site" autocomplete="off">
-                <label for="interest--site">Same-site</label>
-              </div>
-              <div class="filter-option--introductions">
-                <input type="radio" name="interest" class="radio-interest" id="interest--introductions" value="multiple_introductions" autocomplete="off">
-                <label for="interest--introductions">Recurring</label>
-              </div>
-            </form>
-          </div>
-          <div class="filter-descriptions">
-            <p class="filter-description hidden" data-feature="all"><b>All</b>: no filters applied to mutations.</p>
-            <p class="filter-description hidden" data-feature="reversals"><b>Reversals</b>: mutations from the root sequence that are followed by another mutation that reverts the mutated allele back to the root allele.</p>
-            <p class="filter-description" data-feature="many_tips"><b>Many tips</b>: mutations where the median number of genomes affected in the base trees is 75% or more.</p>
-            <p class="filter-description hidden" data-feature="same_site"><b>Same-site</b>: mutations occuring at the same site on the genome that result in different alleles.</p>
-            <p class="filter-description hidden" data-feature="multiple_introductions"><b>Recurring</b>: instances of the same mutation appearing independently multiple times.</p>
-
-          </div>
+    </header>
+    <div class="main-content">
+      <section id="mutations--mcc">
+        <h1>MCC</h1>
+        <div class="tree-canvas-container">
+          <canvas id="mutations--mcc-canvas" class="tree-canvas"></canvas>
         </div>
-        <div class="moi-list">
-          <div class="moi-list--header">
-            <div></div>
-            <button type="button" class="header-button selected ascending" value="site">Mutation <div class="box"><div class="glyph"></div></div></button>
-            <button type="button" class="header-button" value="tips">Median tips <div class="box"><div class="glyph"></div></div></button>
-            <button type="button" class="header-button" value="trees">% trees <div class="box"><div class="glyph"></div></div></button>
-            <button type="button" class="header-button" value="apobec">APOBEC <div class="box"><div class="glyph"></div></div></button>
-            <button type="button" class="header-button" disabled>Features <div class="box"><div class="glyph"></div></div></button>
-          </div>
-          <div class="moi-list--body">
-            <div class="no-mutations">No mutations found. Try adjusting the filters below, or choose a different list.</div>
-            <button class="moi">
-              <div class="box"><div class="glyph"></div></div>
-              <div class="moi-name mutation-name"><span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span></div>
-              <div class="moi-tips">
-                <div class="moi-tips--outer">
-                  <div class="moi-tips--inner"></div>
-                </div>
-                <div class="moi-tips--label">0</div>
-              </div>
-              <div class="moi-trees"></div>
-              <div class="moi-apobec"></div>
-              <div class="moi-feature"></div>
-            </button>
-          </div>
-        </div>
-        <div class="parameters">
-          <div class="moi-list--parameter-container parameter-container--tips">
-            <div class="dismisser"><div class="box"><div class="glyph"></div></div></div>
-            <div class="parameter-header">
-              <p>Minimum percent of tips</p>
-              <button type="button" class="reset-button">Reset</button>
-            </div>
-            <div class="moi-list--parameter-histogram">
-              <canvas></canvas>
-              <input type="range" min="0" max="100" step="1" class="parameter-range parameter-range--tips">
-            </div>
-          </div>
-          <div class="moi-list--parameter-container parameter-container--trees">
-            <div class="dismisser"><div class="box"><div class="glyph"></div></div></div>
-            <div class="parameter-header">
-              <p>Minimum percent of base trees</p>
-              <button type="button" class="reset-button">Reset</button>
-            </div>
-            <div class="moi-list--parameter-histogram">
-              <canvas></canvas>
-              <input type="range" min="0" max="100" step="1" class="parameter-range parameter-range--trees">
-            </div>
-          </div>
-          <p class="parameter-info">Showing <span id="moi-list-mut-count"></span> mutation<span class="plural">s</span> appearing in at least 
-            <button id="moi-list-tips--button" class="parameter-button"><span id="moi-list-tips"></span>% of genomes</button> 
-            and present in at least 
-            <button id="moi-list-trees--button" class="parameter-button"><span id="moi-list-trees"></span>% of base trees</button>.
-          </p>
-        </div>
-      </div>
-    </section>
-    <section id="mutations--main">
-      <div id="mutations--trends">
-        <h1>Mutation prevalence over time <span class="hint--confidence-range hidden">Showing 95% confidence range</span></h1>
-        <div class="canvas-container">
-          <canvas id="mutations--trends--canvas"></canvas>
-        </div>
-      </div>
-      <div id="mutations--display">
-        <div class="mutations--display-top">
-          <div>
-            <h1>Selected mutations</h1>
-            <div class="mutations--display--col-name">Mutation time</div>
-          </div>
-          <div>
+        {{> mcc_opts }}
+      </section>
+      <section id="mutations--sidebar">
+        <div class="sidebar--lookup">
+          <h1>Mutation lookup</h1>
+          <form class="mutation-lookup--form">
             <div>
-              <button type="button" class="clear-all">Clear all</button>
+              <label for="mutation-lookup--input">Look up a mutation (e.g. A23403G) or site (e.g. 23403)</label>
+              <input type="search"
+                class="mutation-lookup--input" name="mutation-lookup--input" id="mutation-lookup--input"
+                pattern="([A-Za-z][1-9][0-9]*[A-Za-z])|([1-9][0-9]*)"
+                spellcheck="false" autocomplete="off"
+                placeholder="Look up a mutation name or site number…">
             </div>
-            <div class="display-options">
-              <form class="display-options-form">
-                <div>
-                  <input type="radio" name="display" class="display-radio" id="display-radio--list" value="list" checked autocomplete="off">
-                  <label for="display-radio--list">
-                    <div class="box"><div class="glyph"></div></div>
-                  </label>
+            <div>
+              <div class="autocomplete-suggestion">
+                <div class="mutation-name"><span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span></div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="sidebar--moi">
+          <h1>Features of interest</h1>
+          <div class="mutations--sidebar-options">
+            <div class="mutations-filter options-category">
+              <form class="mutations-filter--form options-form">
+                <div class="filter-option--all">
+                  <input type="radio" name="interest" class="radio-interest" id="interest--all" value="all" autocomplete="off">
+                  <label for="interest--all">All</label>
                 </div>
-                <div>
-                  <input type="radio" name="display" class="display-radio" id="display-radio--grid" value="grid" autocomplete="off">
-                  <label for="display-radio--grid">
-                    <div class="box"><div class="glyph"></div></div>
-                  </label>
+                <div class="filter-option--reversals">
+                  <input type="radio" name="interest" class="radio-interest" id="interest--reversals" value="reversals" autocomplete="off">
+                  <label for="interest--reversals">Reversals</label>
+                </div>
+                <div class="filter-option--tips">
+                  <input type="radio" name="interest" class="radio-interest" id="interest--tips" value="many_tips" checked autocomplete="off">
+                  <label for="interest--tips">Many tips</label>
+                </div>
+                <div class="filter-option--site">
+                  <input type="radio" name="interest" class="radio-interest" id="interest--site" value="same_site" autocomplete="off">
+                  <label for="interest--site">Same-site</label>
+                </div>
+                <div class="filter-option--introductions">
+                  <input type="radio" name="interest" class="radio-interest" id="interest--introductions" value="multiple_introductions" autocomplete="off">
+                  <label for="interest--introductions">Recurring</label>
                 </div>
               </form>
             </div>
+            <div class="filter-descriptions">
+              <p class="filter-description hidden" data-feature="all"><b>All</b>: no filters applied to mutations.</p>
+              <p class="filter-description hidden" data-feature="reversals"><b>Reversals</b>: mutations from the root sequence that are followed by another mutation that reverts the mutated allele back to the root allele.</p>
+              <p class="filter-description" data-feature="many_tips"><b>Many tips</b>: mutations where the median number of genomes affected in the base trees is 75% or more.</p>
+              <p class="filter-description hidden" data-feature="same_site"><b>Same-site</b>: mutations occuring at the same site on the genome that result in different alleles.</p>
+              <p class="filter-description hidden" data-feature="multiple_introductions"><b>Recurring</b>: instances of the same mutation appearing independently multiple times.</p>
+
+            </div>
+          </div>
+          <div class="moi-list">
+            <div class="moi-list--header">
+              <div></div>
+              <button type="button" class="header-button selected ascending" value="site">Mutation <div class="box"><div class="glyph"></div></div></button>
+              <button type="button" class="header-button" value="tips">Median tips <div class="box"><div class="glyph"></div></div></button>
+              <button type="button" class="header-button" value="trees">% trees <div class="box"><div class="glyph"></div></div></button>
+              <button type="button" class="header-button" value="apobec">APOBEC <div class="box"><div class="glyph"></div></div></button>
+              <button type="button" class="header-button" disabled>Features <div class="box"><div class="glyph"></div></div></button>
+            </div>
+            <div class="moi-list--body">
+              <div class="no-mutations">No mutations found. Try adjusting the filters below, or choose a different list.</div>
+              <button class="moi">
+                <div class="box"><div class="glyph"></div></div>
+                <div class="moi-name mutation-name"><span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span></div>
+                <div class="moi-tips">
+                  <div class="moi-tips--outer">
+                    <div class="moi-tips--inner"></div>
+                  </div>
+                  <div class="moi-tips--label">0</div>
+                </div>
+                <div class="moi-trees"></div>
+                <div class="moi-apobec"></div>
+                <div class="moi-feature"></div>
+              </button>
+            </div>
+          </div>
+          <div class="parameters">
+            <div class="moi-list--parameter-container parameter-container--tips">
+              <div class="dismisser"><div class="box"><div class="glyph"></div></div></div>
+              <div class="parameter-header">
+                <p>Minimum percent of tips</p>
+                <button type="button" class="reset-button">Reset</button>
+              </div>
+              <div class="moi-list--parameter-histogram">
+                <canvas></canvas>
+                <input type="range" min="0" max="100" step="1" class="parameter-range parameter-range--tips">
+              </div>
+            </div>
+            <div class="moi-list--parameter-container parameter-container--trees">
+              <div class="dismisser"><div class="box"><div class="glyph"></div></div></div>
+              <div class="parameter-header">
+                <p>Minimum percent of base trees</p>
+                <button type="button" class="reset-button">Reset</button>
+              </div>
+              <div class="moi-list--parameter-histogram">
+                <canvas></canvas>
+                <input type="range" min="0" max="100" step="1" class="parameter-range parameter-range--trees">
+              </div>
+            </div>
+            <p class="parameter-info">Showing <span id="moi-list-mut-count"></span> mutation<span class="plural">s</span> appearing in at least
+              <button id="moi-list-tips--button" class="parameter-button"><span id="moi-list-tips"></span>% of genomes</button>
+              and present in at least
+              <button id="moi-list-trees--button" class="parameter-button"><span id="moi-list-trees"></span>% of base trees</button>.
+            </p>
           </div>
         </div>
-        <span class="order-indicator"></span> <!-- span instead of div to avoid interfering with nth-of-type-->
-        <div id="mutation-rows" class="list">
-          <div class="mutation-row" tabindex="0" data-mutation="">
-            <div class="grip">
-              <button type="button" class="mutation-prev" aria-label="Move mutation up"><div class="box"><div class="glyph"></div></div></button>
-              <button type="button" class="mutation-next" aria-label="Move mutation down"><div class="box"><div class="glyph"></div></div></button>
+      </section>
+      <section id="mutations--main">
+        <div id="mutations--trends">
+          <h1>Mutation prevalence over time <span class="hint--confidence-range hidden">Showing 95% confidence range</span></h1>
+          <div class="canvas-container">
+            <canvas id="mutations--trends--canvas"></canvas>
+          </div>
+        </div>
+        <div id="mutations--display">
+          <div class="mutations--display-top">
+            <div>
+              <h1>Selected mutations</h1>
+              <div class="mutations--display--col-name">Mutation time</div>
             </div>
-            <div class="mutation-icons">
-              <button class="mutation-dismiss" aria-label="Dismiss mutation">
-                <div class="box"><div class="glyph"></div></div>
-              </button>
-              <button class="mutation-toggle on" aria-label="Toggle mutation visibility">
-                <div class="box"><div class="glyph"></div></div>
-              </button>
-              <button class="mutation-detail expand" aria-label="Toggle mutation detail">
-                <div class="box"><div class="glyph"></div></div>
-              </button>
-            </div>
-            <!-- <div class="hint hint-expand">Expand mutation…</div>
-            <div class="hint hint-collapse">Collapse mutation…</div> -->
-            <div class="mutation-info">
-              <div class="mutation-name">
-                <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
-                <span class="is-apobec">APOBEC</span>
+            <div>
+              <div>
+                <button type="button" class="clear-all">Clear all</button>
               </div>
-              <div class="mutation-stats">
-                <div class="stats--tip-count">
-                  <div class="small-label">Tip count</div>
-                  <div><strong>000</strong> genomes</div>
-                </div>
-                <div class="stats--confidence">
-                  <div class="small-label">Appears in</div>
-                  <div><strong>00%</strong> of trees</div>
-                </div>
-                <div class="stats--badges">
-                  <div class="stats--reversals stats-badge hidden">
-                    <div class="box" aria-label aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Reversals</div>
-                    <div class="small-label stats-conf"></div>
+              <div class="display-options">
+                <form class="display-options-form">
+                  <div>
+                    <input type="radio" name="display" class="display-radio" id="display-radio--list" value="list" checked autocomplete="off">
+                    <label for="display-radio--list">
+                      <div class="box"><div class="glyph"></div></div>
+                    </label>
                   </div>
-                  <div class="stats--same-site stats-badge hidden">
-                    <div class="box" aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Same-site mutations</div>
-                    <div class="small-label stats-conf"></div>
+                  <div>
+                    <input type="radio" name="display" class="display-radio" id="display-radio--grid" value="grid" autocomplete="off">
+                    <label for="display-radio--grid">
+                      <div class="box"><div class="glyph"></div></div>
+                    </label>
                   </div>
-                  <div class="stats--multi-intro stats-badge hidden">
-                    <div class="box" aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Multiple intros</div>
-                    <div class="small-label stats-conf"></div>
-                  </div>
-                  <div class="stats--root-variation stats-badge hidden">
-                    <div class="box" aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Root variation</div>
-                    <div class="small-label stats-conf"></div>
-                  </div>
-                </div>
+                </form>
               </div>
             </div>
-            <div class="mutation-right">
-              <div class="mutation-charts">
-                <div class="mutation-time-dist">
-                  <div class="small-label">Time distribution of mutation</div>
-                  <div class="canvas-container">
-                    <canvas></canvas>
-                    <div class="time-chart--readout">
-                      <div class="time-chart--date"></div>
-                      <div class="time-chart--series">
-                        <!-- <div class="dot"></div> -->
-                        <span class="value-label">##%</span>
-                        <span class="series-label"></span>
+          </div>
+          <span class="order-indicator"></span> <!-- span instead of div to avoid interfering with nth-of-type-->
+          <div id="mutation-rows" class="list">
+            <div class="mutation-row" tabindex="0" data-mutation="">
+              <div class="grip">
+                <button type="button" class="mutation-prev" aria-label="Move mutation up"><div class="box"><div class="glyph"></div></div></button>
+                <button type="button" class="mutation-next" aria-label="Move mutation down"><div class="box"><div class="glyph"></div></div></button>
+              </div>
+              <div class="mutation-icons">
+                <button class="mutation-dismiss" aria-label="Dismiss mutation">
+                  <div class="box"><div class="glyph"></div></div>
+                </button>
+                <button class="mutation-toggle on" aria-label="Toggle mutation visibility">
+                  <div class="box"><div class="glyph"></div></div>
+                </button>
+                <button class="mutation-detail expand" aria-label="Toggle mutation detail">
+                  <div class="box"><div class="glyph"></div></div>
+                </button>
+              </div>
+              <!-- <div class="hint hint-expand">Expand mutation…</div>
+              <div class="hint hint-collapse">Collapse mutation…</div> -->
+              <div class="mutation-info">
+                <div class="mutation-name">
+                  <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
+                  <span class="is-apobec">APOBEC</span>
+                </div>
+                <div class="mutation-stats">
+                  <div class="stats--tip-count">
+                    <div class="small-label">Tip count</div>
+                    <div><strong>000</strong> genomes</div>
+                  </div>
+                  <div class="stats--confidence">
+                    <div class="small-label">Appears in</div>
+                    <div><strong>00%</strong> of trees</div>
+                  </div>
+                  <div class="stats--badges">
+                    <div class="stats--reversals stats-badge hidden">
+                      <div class="box" aria-label aria-hidden="true"><div class="glyph"></div></div>
+                      <div class="small-label">Reversals</div>
+                      <div class="small-label stats-conf"></div>
+                    </div>
+                    <div class="stats--same-site stats-badge hidden">
+                      <div class="box" aria-hidden="true"><div class="glyph"></div></div>
+                      <div class="small-label">Same-site mutations</div>
+                      <div class="small-label stats-conf"></div>
+                    </div>
+                    <div class="stats--multi-intro stats-badge hidden">
+                      <div class="box" aria-hidden="true"><div class="glyph"></div></div>
+                      <div class="small-label">Multiple intros</div>
+                      <div class="small-label stats-conf"></div>
+                    </div>
+                    <div class="stats--root-variation stats-badge hidden">
+                      <div class="box" aria-hidden="true"><div class="glyph"></div></div>
+                      <div class="small-label">Root variation</div>
+                      <div class="small-label stats-conf"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mutation-right">
+                <div class="mutation-charts">
+                  <div class="mutation-time-dist">
+                    <div class="small-label">Time distribution of mutation</div>
+                    <div class="canvas-container">
+                      <canvas></canvas>
+                      <div class="time-chart--readout">
+                        <div class="time-chart--date"></div>
+                        <div class="time-chart--series">
+                          <!-- <div class="dot"></div> -->
+                          <span class="value-label">##%</span>
+                          <span class="series-label"></span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="mutation-nodes">
-                <div class="small-label">Distribution of representative nodes</div>
-                <div class="nodes-list">
-                  <button class="node-detail">
-                    <div class="node-icon"></div>
-                    <div class="node-info">
-                      <div class="node-title"><span class="node--prevalence">60%</span> of applicable trees</div>
-                      <div class="node-stats"><span class="node--tip-count">770 tips</span></div>
-                    </div>
-                  </button>
+                <div class="mutation-nodes">
+                  <div class="small-label">Distribution of representative nodes</div>
+                  <div class="nodes-list">
+                    <button class="node-detail">
+                      <div class="node-icon"></div>
+                      <div class="node-info">
+                        <div class="node-title"><span class="node--prevalence">60%</span> of applicable trees</div>
+                        <div class="node-stats"><span class="node--tip-count">770 tips</span></div>
+                      </div>
+                    </button>
+                  </div>
+                  <div class="hidden-nodes-count hidden"><strong class="count">0</strong> more node<span class="plural">s</span> hidden</div>
                 </div>
-                <div class="hidden-nodes-count hidden"><strong class="count">0</strong> more node<span class="plural">s</span> hidden</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>

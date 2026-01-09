@@ -50,6 +50,9 @@
   gap: 30px;
   overflow: hidden;
 
+  .main-content {
+    display: flex;
+  }
 
   &.apobec-disabled {
     .moi-apobec, .header-button[value="apobec"] {
@@ -287,7 +290,7 @@
   appearance: none;
   background: transparent;
   margin: 0;
-  
+
   position: absolute;
   bottom: 0;
   left: 4px;
@@ -464,7 +467,7 @@
   cursor: pointer;
   font-size: 14px;
   padding: 0.3em 0.5em;
-  
+
   &.selected {
     // opacity: 0.3;
     // cursor: default;
@@ -743,10 +746,10 @@
   display: grid;
   grid-template-columns: auto 100px 1fr;
   gap: 1em;
-  
+
   cursor: pointer;
   .noselect();
-  
+
   min-height: 7em;
   height: 7em;
   overflow-y: clip;
@@ -754,7 +757,7 @@
   background-color: #FAFAFA;
   border: 1px solid #E6E6E6;
   padding-left: 30px;
-  
+
   transition: 0.15s background-color, 0.15s ease-in-out height, 0.15s ease-in-out min-height;
 
   &.moving {
@@ -784,7 +787,7 @@
     flex-direction: column;
     justify-content: space-around;
     align-items: center;
-    
+
     background-color: @placeholder;
     cursor: default;
 
@@ -792,7 +795,7 @@
       width: 10px;
       height: 10px;
     }
-    
+
     .glyph {
       background-color: #fff;
     }
@@ -1143,7 +1146,7 @@
     &:hover {
       background-color: #eee;
     }
-  
+
     .node-icon {
       background-color: rgb(142, 142, 142);
       border-radius: 50%;
@@ -1159,7 +1162,7 @@
         font-weight: bolder;
       }
     }
-  
+
     .node-icon  { background-color: rgb(90, 105, 138); }
     .node-title  { color: rgb(90, 105, 138); }
     .node-stats  { color: rgb(151, 157, 177); }
@@ -1212,7 +1215,7 @@
 
     .mutation-info {
       gap: 1em;
-      
+
       > .mutation-name {
         font-size: 20px;
       }
@@ -1240,7 +1243,7 @@
         width: max-content;
         margin: 0;
         height: auto;
-        
+
         .box {
           display: none;
         }
@@ -1278,17 +1281,17 @@
       color: @root;
       .dot { background-color: @root; }
     }
-  
+
     .mrca {
       color: @mrca;
       .dot { background-color: @mrca; }
     }
-  
+
     .node1 {
       color: @node1;
       .dot { background-color: @node1; }
     }
-  
+
     .node2 {
       color: @node2;
       .dot { background-color: @node2; }
@@ -1313,7 +1316,7 @@
       .value-label {
         font-weight: 700;
       }
-  
+
       .value {
         font-weight: 700;
       }

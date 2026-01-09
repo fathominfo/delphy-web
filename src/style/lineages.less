@@ -26,6 +26,11 @@
 @placeholder: rgb(250,250,250);
 
 
+#lineages .main-content {
+  display: flex;
+}
+
+
 #lineages--mcc {
   width: 300px;
   height: 100%;
@@ -146,7 +151,7 @@
 
 .id-lookup {
   margin-top: -0.5em;
-  
+
   label {
     position: absolute;
     top: 0;
@@ -214,7 +219,7 @@
     display: flex;
   }
 
-  &.lowlight { 
+  &.lowlight {
     opacity: 0.3;
   }
 
@@ -247,7 +252,7 @@
       .node-source {
         display: none;
       }
-  
+
       .node-icon .glyph {
         .masked(url("/assets/icons/circle-open.svg"));
       }
@@ -377,7 +382,7 @@
 .mono-tooltip {
   display: block;
   position: absolute;
-  top: 3em; 
+  top: 3em;
   left: 7em;
   padding: 6px 12px;
   line-height: 20px;
@@ -445,9 +450,9 @@ details {
     border: 1px solid #f5f5f5;
     margin-top: 8px;
   }
-  
+
 }
-              
+
 
 .node-metadata {
   position: relative;
@@ -709,7 +714,7 @@ details {
     }
     }
 
-    &.mrca { 
+    &.mrca {
     color: @mrca;
     &::before {
       background-color: @mrca-bright;
@@ -747,7 +752,7 @@ details {
     font-weight: 500;
     line-height: 1.25em;
     margin-top: 6px;
-  
+
     .root-message {
       display: none;
     }
@@ -768,15 +773,15 @@ details {
   }
 
   &.single {
-    .lineages--node-comparison--descendant-node, 
-    .lineages--node-comparison--descendant-connector, 
+    .lineages--node-comparison--descendant-node,
+    .lineages--node-comparison--descendant-connector,
     .lineages--node-comparison--mutation-header,
     .lineages--node-overlap-item {
       display: none;
     }
   }
 
-   
+
 }
 
 .lineages--node-comparison--time-chart-container {
@@ -879,17 +884,17 @@ details {
       color: @root;
       .dot { background-color: @root; }
     }
-  
+
     .mrca {
       color: @mrca;
       .dot { background-color: @mrca; }
     }
-  
+
     .node1 {
       color: @node1;
       .dot { background-color: @node1; }
     }
-  
+
     .node2 {
       color: @node2;
       .dot { background-color: @node2; }
@@ -914,7 +919,7 @@ details {
       .value-label {
         font-weight: 700;
       }
-  
+
       .value {
         font-weight: 700;
       }
