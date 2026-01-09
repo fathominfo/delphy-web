@@ -6,10 +6,8 @@ if (!maybeChartContainer) {
 }
 
 export const chartContainer = <HTMLDivElement> maybeChartContainer;
-const groupContainer = chartContainer.querySelector('.module-group') as HTMLDivElement;
-groupContainer.remove();
 
-const maybeTemplate = groupContainer.querySelector('.module');
+const maybeTemplate = chartContainer.querySelector('.module');
 if (!maybeTemplate) {
   throw new Error("index.html doesn't have a template for the charts!");
 }
@@ -17,31 +15,17 @@ const template = <HTMLDivElement> maybeTemplate;
 template.remove();
 
 
-export const DIST_WIDTH = 35;
-export const TRACE_MARGIN = 10;
+export const DIST_WIDTH = 0;
+export const TRACE_MARGIN = 0;
 export const BG_COLOR = '#f5f5f5';
 export const BORDER_COLOR = '#cbcbcb';
-export const BORDER_WEIGHT = 1;
-export const TICK_LENGTH = 10;
+export const BORDER_WEIGHT = 0;
+export const TICK_LENGTH = 0;
 
 export const log10 = Math.log(10);
 
 
 export const HALF_BORDER = BORDER_WEIGHT / 2;
-
-let moduleCount = 0;
-let currentGroupContainer: HTMLDivElement | null = null;
-export function getModuleGroupContainer():HTMLDivElement {
-  if (moduleCount % 2 === 0) {
-    currentGroupContainer = groupContainer.cloneNode(true) as HTMLDivElement;
-    chartContainer.appendChild(currentGroupContainer);
-  }
-  moduleCount++;
-  return currentGroupContainer as HTMLDivElement;
-}
-
-
-
 
 
 
