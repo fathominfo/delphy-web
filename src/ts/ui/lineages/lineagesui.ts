@@ -20,6 +20,7 @@ import { isTip } from '../../util/treeutils';
 import autocomplete from 'autocompleter';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import { FieldTipCount, NodeMetadata } from '../nodemetadata';
+import { NodeComparisonChartData } from './nodecomparisonchartdata';
 
 
 type KeyEventHandler = (event: KeyboardEvent)=>void;
@@ -89,7 +90,8 @@ export class LineagesUI extends MccUI {
 
   nodeRelationChart: NodeRelationChart;
   nodeListDisplay: NodeListDisplay;
-  nodeComparisons: NodeComparison[];
+  nodeComparisonData: NodeComparisonChartData[];
+  nodeComparisonsCharts: NodeComparison[];
 
 
   highlightNode: DisplayNode | typeof UNSET;
@@ -122,7 +124,8 @@ export class LineagesUI extends MccUI {
     const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
     this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
-    this.nodeComparisons = [];
+    this.nodeComparisonData = []
+    this.nodeComparisonsCharts = [];
     this.constrainHoverByCredibility = false;
     {
       let startTime = 0,
@@ -336,7 +339,7 @@ export class LineagesUI extends MccUI {
 
   resize(): void {
     super.resize();
-    this.nodeComparisons.forEach(nc => nc.resize());
+    this.nodeComparisonsCharts.forEach(nc => nc.resize());
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
   }
@@ -507,7 +510,7 @@ export class LineagesUI extends MccUI {
     this.nodeListDisplay.highlightNode(displayNode);
     this.nodeRelationChart.highlightNode(displayNode);
     this.nodePrevalenceCanvas.highlightNode(displayNode);
-    this.nodeComparisons.forEach((nc: NodeComparison)=>{
+    this.nodeComparisonsCharts.forEach((nc: NodeComparison)=>{
       nc.highlightNode(displayNode);
     });
   }
@@ -602,7 +605,7 @@ export class LineagesUI extends MccUI {
     if (pythia) {
 
       const mccRef = pythia.getMcc(),
-        src: NodeComparisonData[] = [],
+        nodePairs: NodeComparisonData[] = [],
         minDate = pythia.getBaseTreeMinDate(),
         maxDate = pythia.maxDate,
         nodeConfidence = this.mccTreeCanvas.creds,
@@ -618,7 +621,7 @@ export class LineagesUI extends MccUI {
           node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree),
           node2Times: number[] = [],
           overlapCount = 0;
-        src.push({ nodePair, node1Times, node2Times, overlapCount});
+        nodePairs.push({ nodePair, node1Times, node2Times, overlapCount});
         this.setSelectable(true);
       } else {
         let nodePair: NodePair,
@@ -636,7 +639,7 @@ export class LineagesUI extends MccUI {
               nodePair = this.assembleNodePair(rootIndex, node2Index, NodePairType.rootToNode2, pythia);
               node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
               node2Times = pythia.getNodeTimeDistribution(node2Index, summaryTree);
-              src.push({nodePair, node1Times, node2Times, overlapCount });
+              nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
             } else {
               this.nodeListDisplay.clearNode2();
             }
@@ -647,7 +650,7 @@ export class LineagesUI extends MccUI {
             nodePair = this.assembleNodePair(rootIndex, node1Index, NodePairType.rootToNode1, pythia);
             node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
             node2Times = pythia.getNodeTimeDistribution(node1Index, summaryTree);
-            src.push({nodePair, node1Times, node2Times, overlapCount });
+            nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
             this.nodeListDisplay.clearNode2();
             this.setSelectable(true);
           } else {
@@ -682,13 +685,13 @@ export class LineagesUI extends MccUI {
             nodePair = this.assembleNodePair(indices[0][0], indices[0][1], pairs[0], pythia);
             node1Times = pythia.getNodeTimeDistribution(indices[0][0], summaryTree);
             node2Times = pythia.getNodeTimeDistribution(indices[0][1], summaryTree);
-            src.push({nodePair, node1Times, node2Times, overlapCount });
+            nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
 
 
             nodePair = this.assembleNodePair(indices[1][0], indices[1][1], pairs[1], pythia);
             node1Times = pythia.getNodeTimeDistribution(indices[1][0], summaryTree);
             node2Times = pythia.getNodeTimeDistribution(indices[1][1], summaryTree);
-            src.push({nodePair, node1Times, node2Times, overlapCount });
+            nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
             // this.disableSelections();
           }
           this.nodeListDisplay.clearMRCA();
@@ -699,14 +702,14 @@ export class LineagesUI extends MccUI {
           nodePair = this.assembleNodePair(rootIndex, mrcaIndex, NodePairType.rootToMrca, pythia);
           node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
           node2Times = pythia.getNodeTimeDistribution(mrcaIndex, summaryTree);
-          src.push({nodePair, node1Times, node2Times, overlapCount });
+          nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
           node1Times = node2Times;
           nodePair = this.assembleNodePair(mrcaIndex, node1Index, NodePairType.mrcaToNode1, pythia);
           node2Times = pythia.getNodeTimeDistribution(node1Index, summaryTree);
-          src.push({nodePair, node1Times, node2Times, overlapCount });
+          nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
           nodePair = this.assembleNodePair(mrcaIndex, node2Index, NodePairType.mrcaToNode2, pythia);
           node2Times = pythia.getNodeTimeDistribution(node2Index, summaryTree);
-          src.push({nodePair, node1Times, node2Times, overlapCount });
+          nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
           // this.disableSelections();
         }
       }
@@ -720,8 +723,8 @@ export class LineagesUI extends MccUI {
 
 
       /*
-      the list `nodes` has an indicator of whether the node in question is Root, MRCA, Selection A or B.
-      Because the `overlap` list was built from a list that does not have that information, and where unset
+      The list `nodes` has an indicator of whether the node in question is Root, MRCA, Selection A or B.
+      The `overlap` list was built from a list that does not have that information, and where unset
       nodes were removed. The `index1` and `index2` attributes of each item in the `overlap` list reference index
       positions of the nodes list. Combine them now in order to find which node pair `index1` and `index2` are referring to,
       then track the overlap on the NodeComparisonData item.
@@ -729,7 +732,7 @@ export class LineagesUI extends MccUI {
       overlap.forEach(oItem=>{
         const node1Type = nodes[oItem.index1].type,
           node2Type = nodes[oItem.index2].type;
-        src.forEach((ncd:NodeComparisonData)=>{
+        nodePairs.forEach((ncd:NodeComparisonData)=>{
           const pairType = ncd.nodePair.pairType,
             n1 = getAncestorType(pairType),
             n2 = getDescendantType(pairType);
@@ -743,13 +746,11 @@ export class LineagesUI extends MccUI {
       let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
       // const zoomDateRange = zoomMaxDate - zoomMinDate;
       // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
-
-      this.nodeComparisons = setComparisons(src, minDate, maxDate, this.goToMutations, this.nodeHighlightCallback,
-        this.isApobecEnabled, zoomMinDate, zoomMaxDate);
+      this.nodeComparisonData = nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, this.isApobecEnabled));
+      this.nodeComparisonsCharts = setComparisons(this.nodeComparisonData, this.goToMutations,
+        this.nodeHighlightCallback, zoomMinDate, zoomMaxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
-      this.nodeRelationChart.setData(src, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
-      // const nodeColors = nodes.map(({color})=>color),
-      //   nodeLabels = nodes.map(({label}) => label);
+      this.nodeRelationChart.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       // this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
@@ -813,7 +814,7 @@ export class LineagesUI extends MccUI {
     this.nodeListDisplay.highlightNode(UNSET);
     this.nodeRelationChart.highlightNode(UNSET);
     this.nodePrevalenceCanvas.highlightNode(UNSET);
-    this.nodeComparisons.forEach(nc => nc.highlightNode(UNSET))
+    this.nodeComparisonsCharts.forEach(nc => nc.highlightNode(UNSET))
 
     this.setHint(TreeHint.Hover);
   }
@@ -897,7 +898,7 @@ export class LineagesUI extends MccUI {
     this.nodeRelationChart.highlightNode(node);
     this.nodePrevalenceCanvas.highlightNode(node);
 
-    this.nodeComparisons.forEach((nc: NodeComparison)=>{
+    this.nodeComparisonsCharts.forEach((nc: NodeComparison)=>{
       nc.highlightNode(node);
     });
 
@@ -916,7 +917,7 @@ export class LineagesUI extends MccUI {
     const zoomDateRange = zoomMaxDate - zoomMinDate;
     zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
     this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
-    this.nodeComparisons.forEach((nc: NodeComparison)=>{
+    this.nodeComparisonsCharts.forEach((nc: NodeComparison)=>{
       nc.setDateRange(zoomMinDate, zoomMaxDate);
       nc.requestDraw();
     });

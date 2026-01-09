@@ -32,37 +32,8 @@
         </div>
         {{> mcc_opts }}
       </section>
-      <section id="lineages--right">
-        <section id="lineages--column-1">
-          <!-- <div class="sidebar--lookup">
-            <h1>Sequence lookup</h1>
-            <div class="id-lookup">
-              <form>
-                <label for="id-lookup--input">Look up a sequence id</label>
-                <div>
-                  <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
-                </div>
-                <div class="autocomplete-suggestion"></div>
-              </form>
-            </div>
-          </div> -->
-          <div class="lineages--header">
-            <h1>Tree selections</h1>
-            <div class="id-lookup">
-              <form>
-                <label for="id-lookup--input">Look up a sequence id</label>
-                <div>
-                  <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
-                </div>
-                <div class="autocomplete-suggestion"></div>
-              </form>
-            </div>
-          </div>
-          <div id="lineages--node-layout">
-            <div id="lineages--node-layout--chart">
-              <canvas id="lineages--node-layout--chart-canvas"></canvas>
-            </div>
-          </div>
+      <section id="lineages--right" class="charts--container dual">
+        <div id="lineages--overview" class="duo">
           <div id="lineages--node-list">
             <div class="lineages--node-detail root active">
               <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
@@ -118,6 +89,15 @@
               </div>
               <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
             </div>
+            <div class="id-lookup">
+              <form>
+                <label for="id-lookup--input">Look up a sequence id</label>
+                <div>
+                  <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
+                </div>
+                <div class="autocomplete-suggestion"></div>
+              </form>
+            </div>
           </div>
           <div id="lineages--prevalence">
             <h3>Mean lineage prevalence over time</h3>
@@ -152,49 +132,34 @@
               <div id="lineages--prevalence--end-date" class="lineages--prevalence--date-label">May 2020</div>
             </div>
           </div>
-        </section>
-        <section id="lineages--column-2">
-          <div class="lineages--node-comparison">
-            <h1>Time distributions of <span class="lineages--node-comparison--ancestor-node">node</span>
-              <span class="lineages--node-comparison--descendant-connector">and </span>
-              <span class="lineages--node-comparison--descendant-node">node</span>
-              <span class="lineages--node-overlap-item">
-                In <span class="lnoi-pct"></span>% of base trees,
-                <span class="root-message">
-                  the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span>
+
+        </div>
+        <div id="lineages--relationships" class="duo">
+          <div id="lineages--node-layout">
+            <div id="lineages--node-layout--chart">
+              <canvas id="lineages--node-layout--chart-canvas"></canvas>
+            </div>
+          </div>
+          <div id="lineages--node-comparison-container">
+            <div class="lineages--node-comparison">
+              <h1>Time distributions of <span class="lineages--node-comparison--ancestor-node">node</span>
+                <span class="lineages--node-comparison--descendant-connector">and </span>
+                <span class="lineages--node-comparison--descendant-node">node</span>
+                <span class="lineages--node-overlap-item">
+                  In <span class="lnoi-pct"></span>% of base trees,
+                  <span class="root-message">
+                    the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span>
+                  </span>
+                  <span class="non-root-message">
+                    the MRCA of the tips under
+                    <span class="lnoi-1"></span> and the MRCA of the tips under
+                    <span class="lnoi-2"></span> are the same inner node.
+                  </span>
                 </span>
-                <span class="non-root-message">
-                  the MRCA of the tips under
-                  <span class="lnoi-1"></span> and the MRCA of the tips under
-                  <span class="lnoi-2"></span> are the same inner node.
-                </span>
-              </span>
-            </h1>
-            <div class="lineages--node-comparison--time-chart-container">
-              <div class="lineages--node-comparison--time-chart">
-                <canvas></canvas>
-                <div class="time-chart--readout">
-                  <div class="time-chart--date"></div>
-                  <div class="time-chart--series">
-                    <span class="value-label">##%</span>
-                    <span class="series-label"></span>
-                  </div>
-                </div>
-              </div>
-              <p class="lineages--node-comparison--mutation-header">
-                <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in
-                <span class="lineages--node-comparison--mutation-threshold">50%</span> of base trees;
-              </p>
-              <div class="lineages--node-comparison--mutation">
-                <div class="lineages--node-comparison--mutation-labels">
-                  <a class="lineages--node-comparison--mutation-name mutation-name" href="">
-                    <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
-                  </a>
-                  <span class="lineages--node-comparison--mutation-is-apobec">APOBEC</span>
-                  <p class="lineages--node-comparison--mutation-prevalence"><span>99%</span> of base trees</p>
-                </div>
-                <div class="lineages--mutation-time-chart-container">
-                  <canvas class="lineages--mutation-time-chart"></canvas>
+              </h1>
+              <div class="lineages--node-comparison--time-chart-container">
+                <div class="lineages--node-comparison--time-chart">
+                  <canvas></canvas>
                   <div class="time-chart--readout">
                     <div class="time-chart--date"></div>
                     <div class="time-chart--series">
@@ -203,10 +168,35 @@
                     </div>
                   </div>
                 </div>
+                <p class="lineages--node-comparison--mutation-header">
+                  <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in
+                  <span class="lineages--node-comparison--mutation-threshold">50%</span> of base trees;
+                </p>
+                <div class="lineages--node-comparison--mutation">
+                  <div class="lineages--node-comparison--mutation-labels">
+                    <a class="lineages--node-comparison--mutation-name mutation-name" href="">
+                      <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
+                    </a>
+                    <span class="lineages--node-comparison--mutation-is-apobec">APOBEC</span>
+                    <p class="lineages--node-comparison--mutation-prevalence"><span>99%</span> of base trees</p>
+                  </div>
+                  <div class="lineages--mutation-time-chart-container">
+                    <canvas class="lineages--mutation-time-chart"></canvas>
+                    <div class="time-chart--readout">
+                      <div class="time-chart--date"></div>
+                      <div class="time-chart--series">
+                        <span class="value-label">##%</span>
+                        <span class="series-label"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
+
+        </div>
+        <div id="lineages--list"  class="duo"></div>
       </section>
     </div>
 

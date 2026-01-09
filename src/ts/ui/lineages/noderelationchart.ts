@@ -2,7 +2,7 @@ import { getMutationNameParts } from "../../constants";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { DisplayNode, resizeCanvas, getNodeColor, UNSET } from "../common";
 import { NodeCallback, NodeComparisonData } from "./lineagescommon";
-import { mutationPrevalenceThreshold } from "./nodecomparison";
+import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
 const stub = 20;
@@ -246,6 +246,7 @@ export class NodeRelationChart {
   private drawFadingEnd(x: number, y: number) {
     const {ctx} = this;
     const endLength = 30;
+    if (!Number.isFinite(x + y)) return;
     const gradient = ctx.createLinearGradient(x, y, x + endLength, y);
     gradient.addColorStop(0, "#e2e2e2");
     gradient.addColorStop(1, "#ffffff");
