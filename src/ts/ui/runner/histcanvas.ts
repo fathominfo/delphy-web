@@ -371,9 +371,9 @@ export class HistCanvas extends TraceCanvas {
         ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
         ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
         ctx.stroke();
-        this.maxLabel.innerHTML = ``;
-        this.minLabel.innerHTML = ``;
-        this.avgLabel.innerHTML = `${safeLabel(displayMax)}`;
+        // this.maxLabel.innerHTML = ``;
+        // this.minLabel.innerHTML = ``;
+        // this.avgLabel.innerHTML = `${safeLabel(displayMax)}`;
       } else {
 
         ctx.strokeStyle = BORDER_COLOR;
@@ -383,17 +383,17 @@ export class HistCanvas extends TraceCanvas {
         ctx.lineTo(TICK_LENGTH, BORDER_WEIGHT * 0.5);
 
         const midVal = (displayMin + displayMax) / 2;
-        this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
-        this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
+        // this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
+        // this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
         let skipMiddle = false;
         if (this.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
           skipMiddle = true;
         } else if (safeLabel(displayMax) === safeLabel(midVal)) skipMiddle = true;
         else if (safeLabel(displayMin) === safeLabel(midVal)) skipMiddle = true;
         if (skipMiddle) {
-          this.avgLabel.innerHTML = '';
+          // this.avgLabel.innerHTML = '';
         } else {
-          this.avgLabel.innerHTML = `${safeLabel(midVal)}`;
+          // this.avgLabel.innerHTML = `${safeLabel(midVal)}`;
           ctx.moveTo(0, chartHeight/2);
           ctx.lineTo(TICK_LENGTH, chartHeight/2);
         }
@@ -401,11 +401,11 @@ export class HistCanvas extends TraceCanvas {
         ctx.lineTo(TICK_LENGTH, chartHeight - BORDER_WEIGHT * 0.5);
         ctx.stroke();
       }
-      this.firstStepLabel.innerHTML = '';
-      this.midStepLabel.innerHTML = ``;
-      this.lastStepLabel.innerHTML = '';
+      // this.firstStepLabel.innerHTML = '';
+      // this.midStepLabel.innerHTML = ``;
+      // this.lastStepLabel.innerHTML = '';
     } else {
-      this.readout.innerHTML = `0 ${this.unit}`;
+      // this.readout.innerHTML = `0 ${this.unit}`;
     }
     this.canvas.classList.toggle('kneed', kneeIndex > 0);
     // ctx.fillStyle = 'black';

@@ -1,0 +1,256 @@
+.chart {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0;
+  background-color: transparent;
+
+  * {
+    box-sizing: content-box;
+  }
+
+  .feature, .support {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0;
+    width: 100%;
+  }
+
+
+
+  .feature {
+    z-index: 0;
+  }
+
+  .support {
+    z-index: 1;
+  }
+
+  .displays {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    padding: var(--chart-displays-timeline-inset-x);
+    background-color: var(--chart-stroke);
+    border-radius: var(--chart-outer-corner);
+    box-sizing: border-box;
+  }
+
+  .display {
+    position: relative;
+    /* overflow: hidden; */
+    overflow: visible;
+    .display canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .graph canvas {
+    background-color: var(--chart-graph-fill);
+  }
+
+  .histogram canvas {
+    background-color: var(--chart-histogram-fill);
+  }
+
+  .divider {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    right: 0;
+    width: var(--chart-divider-stroke-weight);
+    height: 100%;
+    pointer-events: none;
+    background-color: var(--chart-stroke);
+    transform: translateX(50%);
+  }
+
+  .position {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-color: transparent;
+    mix-blend-mode: multiply;
+  }
+
+  .p, .pos {
+    position: absolute;
+  }
+
+  .p {
+    background-color: var(--chart-position-axis-stroke);
+    .y {
+      top: calc(100% * var(--py));
+      left: 0;
+      width: 100%;
+      height: var(--chart-position-axis-stroke-weight);
+      transform: translateY(-50%);
+      opacity: 0.25;
+    }
+
+    .x {
+      top: 0;
+      left: calc(100% * var(--px));
+      width: var(--chart-position-axis-stroke-weight);
+      height: 100%;
+      transform: translateX(-50%);
+    }
+  }
+
+  .pos {
+    background-color: var(--chart-position-locus-fill);
+    top: calc(100% * var(--py));
+    left: calc(100% * var(--px));
+    width: var(--chart-position-locus-size);
+    height: var(--chart-position-locus-size);
+    border-radius: calc(var(--chart-position-locus-size) / 2);
+    transform: translate(-50%, -50%);
+  }
+
+  .axis {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    background-color: transparent;
+    box-sizing: border-box;
+
+    .values {
+      position: relative;
+      display: flex;
+      background-color: transparent;
+      width: 100%;
+      height: 100%;
+    }
+
+    .value {
+      position: relative;
+      display: flex;
+      gap: var(--chart-axis-gap);
+      overflow: visible;
+      opacity: 1;
+      -webkit-transition: opacity var(--axis-transition) ease-out;
+      -moz-transition: opacity var(--axis-transition) ease-out;
+      -ms-transition: opacity var(--axis-transition) ease-out;
+      transition: opacity var(--axis-transition) ease-out;
+
+      .label {
+        position: absolute;
+        font-weight: var(--chart-xaxis-hover-label-font-weight);
+        font-size: var(--chart-xaxis-hover-label-font-size);
+      }
+
+      &.off {
+        opacity: 0;
+      }
+
+      &.hover {
+        --height: calc(var(--unit));
+        position: absolute;
+        display: flex;
+        .text {
+          position: relative;
+          z-index: 0;
+        }
+      }
+    }
+
+    .tick {
+      background-color: var(--chart-tick-stroke);
+    }
+
+
+
+    &.x {
+      width: var(--chart-xaxis-width);
+      height: var(--chart-xaxis-height);
+      margin-left: var(--chart-yaxis-width);
+      margin-right: var(--chart-histogram-width);
+      padding: 0 0 0 var(--chart-stroke-weight);
+      .values {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .tick {
+        width: var(--chart-tick-stroke-weight);
+        height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+        margin-top: var(--chart-tick-offset);
+      }
+      .value {
+        flex-direction: column-reverse;
+        justify-content: center;
+        align-items: center;
+        width: 0;
+        height: auto;
+        .label {
+          top: 100%;
+        }
+        &.hover {
+          color: var(--chart-xaxis-hover-text);
+          left: calc(100% * var(--px));
+          font-weight: var(--chart-xaxis-hover-text-font-weight);
+          font-size: var(--chart-xaxis-hover-text-font-size);
+          .tick {
+            background-color: var(--chart-xaxis-hover-text);
+          }
+        }
+      }      
+    }
+
+    &.y {
+      z-index: 1;
+      width: var(--chart-yaxis-width);
+      height: var(--chart-yaxis-height);
+      padding: var(--chart-stroke-weight) 0;
+
+      .values {
+        flex-direction: column-reverse;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      
+      .tick {
+        width: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+        height: var(--chart-tick-stroke-weight);
+        margin-right: var(--chart-tick-offset);
+      }
+
+      .value {
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        width: auto;
+        height: 0;
+
+        &.hover {
+          top: calc(100% * var(--py));
+          font-weight: var(--chart-yaxis-hover-text-font-weight);
+          font-size: var(--chart-yaxis-hover-text-font-size);
+          letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+          color: var(--chart-yaxis-hover-text);
+        }
+        .tick {
+          background-color: var(--chart-yaxis-hover-text);
+        }
+      }      
+    }
+
+  }
+}

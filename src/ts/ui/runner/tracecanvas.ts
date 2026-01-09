@@ -1,12 +1,15 @@
 import { resizeCanvas, UNSET } from '../common';
 
-const maybeChartContainer = document.querySelector('#runner--panel--blocks');
+const maybeChartContainer = document.querySelector('#runner--panel--modules');
 if (!maybeChartContainer) {
   throw new Error("index.html doesn't have the container for the charts!");
 }
 
 export const chartContainer = <HTMLDivElement> maybeChartContainer;
-const maybeTemplate = chartContainer.querySelector('.block');
+const groupContainer = chartContainer.querySelector('.module-group') as HTMLDivElement;
+groupContainer.remove();
+
+const maybeTemplate = groupContainer.querySelector('.module');
 if (!maybeTemplate) {
   throw new Error("index.html doesn't have a template for the charts!");
 }
@@ -26,6 +29,21 @@ export const log10 = Math.log(10);
 
 export const HALF_BORDER = BORDER_WEIGHT / 2;
 
+let moduleCount = 0;
+let currentGroupContainer: HTMLDivElement | null = null;
+export function getModuleGroupContainer():HTMLDivElement {
+  if (moduleCount % 2 === 0) {
+    currentGroupContainer = groupContainer.cloneNode(true) as HTMLDivElement;
+    chartContainer.appendChild(currentGroupContainer);
+  }
+  moduleCount++;
+  return currentGroupContainer as HTMLDivElement;
+}
+
+
+
+
+
 
 
 export class TraceCanvas {
@@ -35,12 +53,12 @@ export class TraceCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   container: HTMLDivElement;
-  maxLabel: HTMLLIElement;
-  minLabel: HTMLLIElement;
-  avgLabel: HTMLLIElement;
-  firstStepLabel: HTMLLIElement;
-  midStepLabel: HTMLLIElement;
-  lastStepLabel: HTMLLIElement;
+  // maxLabel: HTMLLIElement;
+  // minLabel: HTMLLIElement;
+  // avgLabel: HTMLLIElement;
+  // firstStepLabel: HTMLLIElement;
+  // midStepLabel: HTMLLIElement;
+  // lastStepLabel: HTMLLIElement;
   readout: HTMLParagraphElement;
   isDiscrete: boolean;
   className: string;
@@ -84,36 +102,20 @@ export class TraceCanvas {
     this.container = <HTMLDivElement>template.cloneNode(true);
     this.className = label.toLowerCase().replace(/ /g, '-').replace(/[()]/g, '');
     this.container.classList.add(this.className);
+    // const moduleGroup = getModuleGroupContainer();
+    // moduleGroup.appendChild(this.container);
     chartContainer.appendChild(this.container);
-    const maybeHeader = this.container.querySelector('h1');
-    if (maybeHeader) {
-      (<HTMLElement>maybeHeader).innerHTML = label;
-    }
-    const maybe_canvas = this.container.querySelector('canvas');
-    if (maybe_canvas === null) {
-      throw new Error("UI canvas not found");
-    }
-    if (!(maybe_canvas instanceof HTMLCanvasElement)) {
-      throw new Error("UI canvas is not a canvas");
-    }
-    this.canvas = maybe_canvas;
-    const maybe_ctx = this.canvas.getContext("2d");
-    if (maybe_ctx === null) {
-      throw new Error('This browser does not support 2-dimensional canvas rendering contexts.');
-    }
-    const maybeReadout = this.container.querySelector(".block-readout") as HTMLParagraphElement;
-    if (!maybeReadout) {
-      throw new Error(`This chart container does not have an element with the class ".block-readout".`);
-    }
-    this.ctx = maybe_ctx;
-    this.ctx.font = 'MDSystem, Roboto, sans-serif';
-    this.maxLabel = this.getLI('.max');
-    this.minLabel = this.getLI('.min');
-    this.avgLabel = this.getLI('.median');
-    this.firstStepLabel = this.getLI('.step-first');
-    this.midStepLabel = this.getLI('.step-mid');
-    this.lastStepLabel = this.getLI('.step-last');
-    this.readout = maybeReadout;
+    const header = this.container.querySelector('h3.title') as HTMLHeadingElement;
+    header.textContent = label;
+    this.canvas = this.container.querySelector('canvas') as HTMLCanvasElement;
+    this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+    // this.maxLabel = this.getLI('.max');
+    // this.minLabel = this.getLI('.min');
+    // this.avgLabel = this.getLI('.median');
+    // this.firstStepLabel = this.getLI('.step-first');
+    // this.midStepLabel = this.getLI('.step-mid');
+    // this.lastStepLabel = this.getLI('.step-last');
+    this.readout = this.container.querySelector(".block-readout") as HTMLParagraphElement;
     this.sampleCount = UNSET;
     this.displayMin = UNSET;
     this.displayMax = UNSET;
@@ -183,11 +185,6 @@ export class TraceCanvas {
     ctx.fillRect(TICK_LENGTH, 0, traceWidth, chartHeight);
     ctx.strokeRect(TICK_LENGTH + HALF_BORDER, HALF_BORDER, traceWidth-1, chartHeight-1);
   }
-
-
-
-
-
 
 }
 

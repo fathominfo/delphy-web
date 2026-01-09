@@ -193,18 +193,14 @@
 }
 
 
-// #runner--mcc,
-// #runner--panel {
-//   padding-top: 15px;
-// }
-
 #runner--mcc {
   display: flex;
-  flex: 2;
+  flex: 0 var(--tree-container-width-basis);
   flex-direction: column;
-  min-width: 300px;
   position: relative;
-
+  width: var(--tree-container-min-width);
+  min-width: var(--tree-container-min-width);
+  max-width: var(--tree-container-max-width);
   .tree-container {
     height: calc(100% - 30px);
   }
@@ -213,8 +209,8 @@
 
 
 
-#runner--panel {
-  flex: 2;
+#run--indicators {
+  flex: 1;
   display: flex;
   flex-direction: column;
   // min-width: 300px;
@@ -1008,7 +1004,10 @@ label:has(#advanced-skygrid-toggle:checked) {
 .blocks {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--view-gap);
+
 
   > h1 {
     margin: 10px;
@@ -1311,6 +1310,17 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 }
 
+
+
+
+
+
+
+
+#run--indicators .module {
+  flex: 1;
+  max-width: var(--indicator-module-width);
+}
 
 
 @keyframes rotation {

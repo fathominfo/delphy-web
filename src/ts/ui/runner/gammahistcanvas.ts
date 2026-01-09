@@ -24,21 +24,21 @@ export class GammaHistCanvas extends TraceCanvas {
   isLogLinear = false;
   sampleIndex: number;
   midLabels: HTMLLIElement[];
-  labelContainer: HTMLUListElement;
+  // labelContainer: HTMLUListElement;
 
   constructor(label:string) {
     super(label, '');
     this.minSpan = document.createElement('span');
     this.maxSpan = document.createElement('span');
-    this.readout.appendChild(this.minSpan);
-    this.readout.appendChild(this.maxSpan);
-    this.readout.classList.add('range');
+    // this.readout.appendChild(this.minSpan);
+    // this.readout.appendChild(this.maxSpan);
+    // this.readout.classList.add('range');
     this.midLabels = [];
     this.sampleIndex = UNSET;
-    this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
+    // this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
     // use the avgLabel as a cloning template
-    this.avgLabel.textContent = '';
-    this.avgLabel.style.position = 'absolute';
+    // this.avgLabel.textContent = '';
+    // this.avgLabel.style.position = 'absolute';
   }
 
   setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
@@ -189,8 +189,11 @@ export class GammaHistCanvas extends TraceCanvas {
   drawLabels():void {
     let {chartHeight} = this;
     const {ctx,
-      avgLabel, midLabels, maxLabel, minLabel,
-      labelContainer, minSpan, maxSpan,
+      // avgLabel,
+      midLabels,
+      // maxLabel, minLabel,
+      // labelContainer,
+      minSpan, maxSpan,
       displayMin, displayMax} = this;
     chartHeight -= HALF_BORDER * 2;
     let yearsMin = gammaToYears(displayMin);
@@ -200,8 +203,8 @@ export class GammaHistCanvas extends TraceCanvas {
     yearsMin = defractionalize(yearsMin, minMagnitude);
     yearsMax = defractionalize(yearsMax, maxMagnitude);
     const logRange = maxMagnitude - minMagnitude;
-    maxLabel.textContent = minimalDecimalLabel(yearsMax);
-    minLabel.textContent = minimalDecimalLabel(yearsMin);
+    // maxLabel.textContent = minimalDecimalLabel(yearsMax);
+    // minLabel.textContent = minimalDecimalLabel(yearsMin);
     /* clear the mid labels */
     midLabels.forEach(ele=>ele.remove());
     midLabels.length = 0;
@@ -230,15 +233,14 @@ export class GammaHistCanvas extends TraceCanvas {
           ctx.lineWidth = BORDER_WEIGHT;
           ctx.globalAlpha = 1;
           if (labelsOK && mag !== minMagnitude && mag !== maxMagnitude) {
-            const label = avgLabel.cloneNode(true) as HTMLLIElement;
-            label.style.top = `${y-2}px`;
-            label.textContent = minimalDecimalLabel(n);
-            this.midLabels.push(label);
-            labelContainer.appendChild(label);
+            // const label = avgLabel.cloneNode(true) as HTMLLIElement;
+            // label.style.top = `${y-2}px`;
+            // label.textContent = minimalDecimalLabel(n);
+            // this.midLabels.push(label);
+            // labelContainer.appendChild(label);
           }
         } else if (labelsOK || i % 3 === 2) {
           tickLength = TICK_LENGTH * (4 + i * i) / 104.0; // 10 * 10 + 4
-          // tickLength = TICK_LENGTH / 2;
         }
         ctx.moveTo(TICK_LENGTH, y);
         ctx.lineTo(TICK_LENGTH - tickLength, y);

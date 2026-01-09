@@ -333,31 +333,65 @@
         </div>
 
 
-        <div id="runner--panel">
+        <div id="run--indicators">
 
+          <div id="runner--panel--modules" class="blocks">
+            <div class="module-group">
+              <div class="module" data-element="mutations">
+                <div class="header">
+                  <h3 class="title"></h3>
+                  <div class="readout">
+                    <div class="mean">
+                      <span class="value"><span class="abbrev">M</span><span class="text">668</span></span>
+                      <span class="units">mutations</span>
+                    </div>
+                    <div class="pointer"><div class="shape"><span>▲</span></div></div></div>
+                </div>
+                <div class="chart">
+                  <div class="feature">
+                    <div class="y axis"></div>
+                    <div class="displays">
+                      <div class="graph display">
+                        <canvas></canvas>
+                        <div class="position">
+                          <div class="x p"></div>
+                          <div class="y p"><div class="pos"></div></div>
+                        </div>
+                        <div class="divider"></div>
+                      </div>
+                      <div class="histogram display">
+                        <canvas></canvas>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="support">
+                    <div class="x axis"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- <div class="module">
+                <h3 class="block-header"></h3>
+                <div class="block--chart">
+                  <ul class="y-axis">
+                    <li class="max"></li><li class="median"></li><li class="min"></li>
+                  </ul>
+                  <div class="graphic">
+                    <div class="chart">
+                      <canvas></canvas>
+                    </div>
+                    <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
+                  </div>
+                </div>
+                <p class="block-readout"></p>
+              </div> -->
+            </div>
+          </div>
           <div id="burn-in-wrapper" class="pre">
             <input type="checkbox" id="burn-in-toggle" disabled />
             <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
           </div>
-          <div id="runner--panel--blocks" class="blocks">
-            <div class="block">
-              <div class="block-header">
-                <h1></h1>
-              </div>
-              <div class="block--chart">
-                <ul class="y-axis">
-                  <li class="max"></li><li class="median"></li><li class="min"></li>
-                </ul>
-                <div class="graphic">
-                  <div class="chart">
-                    <canvas></canvas>
-                  </div>
-                  <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
-                </div>
-              </div>
-              <p class="block-readout"></p>
-            </div>
-          </div>
+
           <div id="runner--export-list">
             <button id="runner--export-csv">Export Traces to TSV</button>
           </div>

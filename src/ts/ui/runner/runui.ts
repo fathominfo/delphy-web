@@ -173,11 +173,11 @@ export class RunUI extends UIScreen {
 
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
     this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
-    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
     this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
+    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
     this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
+    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
     this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
     this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
       this.popGrowthCanvas, this.gammaCanvas];
