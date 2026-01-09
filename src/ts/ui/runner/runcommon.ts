@@ -8,5 +8,5 @@ export const TRACE_COLOR_PRE_KNEE = 'rgb(150, 181, 212)';
 export const CURRENT_POP_CURVE_COLOR = 'rgb(150, 181, 212)';
 
 
-export type kneeListenerType = (pct:number)=>void;
+export type kneeHoverListenerType = (pct:number)=>void;
 export type requestDrawFnc = ()=>void;

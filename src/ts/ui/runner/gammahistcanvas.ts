@@ -1,8 +1,9 @@
 import { toFullDateString } from "../../pythia/dates";
 import { minimalDecimalLabel, numericSort, UNSET } from "../common";
 import { calcHPD } from "../distribution";
+import { GammaData, LogLabelType } from "./gammadata";
 import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
-import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, log10, HALF_BORDER } from "./tracecanvas";
+import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, HALF_BORDER } from "./tracecanvas";
 
 
 const HPD_COLOR = 'rgb(184, 208, 238)';
@@ -16,25 +17,20 @@ const MEDIAN_INDEX = 3;
 
 export class GammaHistCanvas extends TraceCanvas {
 
-  rangeData: number[][] = [];
-  converted: number[][] = [];
-  dates: number[] = [];
   minSpan: HTMLSpanElement;
   maxSpan: HTMLSpanElement;
-  isLogLinear = false;
-  sampleIndex: number;
   midLabels: HTMLLIElement[];
   // labelContainer: HTMLUListElement;
 
   constructor(label:string) {
     super(label, '');
+    this.traceData = new GammaData(label);
     this.minSpan = document.createElement('span');
     this.maxSpan = document.createElement('span');
     // this.readout.appendChild(this.minSpan);
     // this.readout.appendChild(this.maxSpan);
     // this.readout.classList.add('range');
     this.midLabels = [];
-    this.sampleIndex = UNSET;
     // this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
     // use the avgLabel as a cloning template
     // this.avgLabel.textContent = '';
@@ -42,49 +38,13 @@ export class GammaHistCanvas extends TraceCanvas {
   }
 
   setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
-
-    this.rangeData = data;
-    this.dates = dates;
-    this.isLogLinear = isLogLinear;
-    this.setKneeIndex(data.length, kneeIndex);
-    this.sampleIndex = sampleIndex;
-    const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
-    /* pivot the data to make arrays for every knot */
-    const byKnots:number[][] = shown[0].map(()=>new Array(shown.length));
-    shown.forEach((gamma, i)=>{
-      gamma.forEach((g, k)=>byKnots[k][i] = g);
-    });
-    this.converted = byKnots.map(hpdeify);
-    const safe = this.converted.flat().filter(n=>Number.isFinite(n));
-
-    this.dataMin = Math.min(...safe);
-    this.dataMax = Math.max(...safe);
-    if (this.dataMax === this.dataMin) {
-      this.displayMin = this.dataMin;
-      this.displayMax = this.dataMax;
-    } else {
-      /*
-      the data coming back from delphy is the gamma value,
-      but we want to convert that to years (where 1 year === 365 days)
-      */
-      const dataMinYears = gammaToYears(this.dataMin);
-      const dataMaxYears = gammaToYears(this.dataMax);
-      const minLog = Math.log10(dataMinYears);
-      const maxLog = Math.log10(dataMaxYears);
-      const minMagnitude = Math.floor(minLog);
-      const maxMagnitude = Math.ceil(maxLog);
-      const displayMinYears = Math.exp(minMagnitude * log10);
-      const displayMaxYears = Math.exp(maxMagnitude * log10);
-      this.displayMin = yearsToGamma(displayMinYears);
-      this.displayMax = yearsToGamma(displayMaxYears);
-    }
-
+    (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
 
   draw():void {
-    const {converted} = this;
+    const {converted} = this.traceData as GammaData;
     const {ctx, width, height} = this;
     ctx.clearRect(0, 0, width + 1, height + 1);
     this.drawField();
@@ -96,7 +56,7 @@ export class GammaHistCanvas extends TraceCanvas {
   drawRangeSeries(data:number[][]):void {
     if (data.length === 0) return;
     const {chartHeight, ctx, traceWidth} = this;
-    const {displayMin, displayMax} = this;
+    const {displayMin, displayMax} = this.traceData;
     const valRange = displayMax - displayMin;
     const verticalScale = chartHeight / (valRange || 1);
     const kCount = data.length;
@@ -109,7 +69,7 @@ export class GammaHistCanvas extends TraceCanvas {
     ctx.lineWidth = 1;
     ctx.fillStyle = HPD_COLOR;
 
-    const drawingStaircase = !this.isLogLinear;
+    const drawingStaircase = !(this.traceData as GammaData).isLogLinear;
 
     // console.log(this.dataMin, this.dataMax, this.displayMin, this.displayMax);
 
@@ -146,16 +106,19 @@ export class GammaHistCanvas extends TraceCanvas {
     ctx.fill();
 
     // draw the population curve for the current sample
-    const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
-    if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
-      const sampleData = this.rangeData[drawnSampleIndex];
+    const {rangeData, sampleIndex } = (this.traceData as GammaData);
+    const drawnSampleIndex = sampleIndex === UNSET ? rangeData.length - 1 : sampleIndex;
+    if (0 <= drawnSampleIndex && drawnSampleIndex < rangeData.length) {
+      const sampleData = rangeData[drawnSampleIndex];
       console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
 
       ctx.beginPath();
       ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
       x = TICK_LENGTH;
       y = chartHeight-(sampleData[0]-displayMin) * verticalScale;
-      if (!drawingStaircase)  ctx.moveTo(x, y);
+      if (!drawingStaircase) {
+        ctx.moveTo(x, y);
+      }
       for (i = 1; i < kCount; i++) {
         y = chartHeight-(sampleData[i]-displayMin) * verticalScale;
         if (drawingStaircase) {
@@ -193,69 +156,55 @@ export class GammaHistCanvas extends TraceCanvas {
       midLabels,
       // maxLabel, minLabel,
       // labelContainer,
-      minSpan, maxSpan,
-      displayMin, displayMax} = this;
+      minSpan, maxSpan} = this;
+    const {dates, yearsMin, yearsMax, logRange, minMagnitude, maxMagnitude} = this.traceData as GammaData;
     chartHeight -= HALF_BORDER * 2;
-    let yearsMin = gammaToYears(displayMin);
-    let yearsMax = gammaToYears(displayMax);
-    const minMagnitude = Math.round(Math.log10(yearsMin));
-    const maxMagnitude = Math.round(Math.log10(yearsMax));
-    yearsMin = defractionalize(yearsMin, minMagnitude);
-    yearsMax = defractionalize(yearsMax, maxMagnitude);
-    const logRange = maxMagnitude - minMagnitude;
     // maxLabel.textContent = minimalDecimalLabel(yearsMax);
     // minLabel.textContent = minimalDecimalLabel(yearsMin);
     /* clear the mid labels */
     midLabels.forEach(ele=>ele.remove());
     midLabels.length = 0;
-    minSpan.textContent = toFullDateString(this.dates[0])
-    maxSpan.textContent = toFullDateString(this.dates[this.dates.length - 1]);
-    const magSpan = maxMagnitude - minMagnitude;
-    const labelHeight = LABEL_HEIGHT * magSpan;
+    minSpan.textContent = toFullDateString(dates[0])
+    maxSpan.textContent = toFullDateString(dates[dates.length - 1]);
+    const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = chartHeight >= labelHeight;
     // const step = Math.pow(10, minMagnitude);
     ctx.strokeStyle = BORDER_COLOR;
     ctx.lineWidth = BORDER_WEIGHT;
     ctx.beginPath();
-    let mag = minMagnitude;
-    let tens = Math.pow(10, mag);
-    let tickLength = 0;
-    while (mag < maxMagnitude) {
-      for (let i = 1; i <10; i++) {
-        const n = i * tens;
-        const nLog = Math.log10(n);
-        const pct = (nLog - minMagnitude) / logRange;
+    const logLabels = (this.traceData as GammaData).logLabels;
+    logLabels.forEach((ll:LogLabelType)=>{
+      const {value, mag, ticks} = ll;
+      ticks.forEach(([pct, tickLength], i)=>{
         const y = HALF_BORDER + chartHeight - pct * chartHeight;
-        if (i === 1) {
+        if (i === 0) {
           ctx.stroke();
           ctx.beginPath();
-          tickLength = TICK_LENGTH;
           ctx.lineWidth = BORDER_WEIGHT;
           ctx.globalAlpha = 1;
           if (labelsOK && mag !== minMagnitude && mag !== maxMagnitude) {
             // const label = avgLabel.cloneNode(true) as HTMLLIElement;
             // label.style.top = `${y-2}px`;
-            // label.textContent = minimalDecimalLabel(n);
+            // label.textContent = minimalDecimalLabel(value);
             // this.midLabels.push(label);
             // labelContainer.appendChild(label);
           }
-        } else if (labelsOK || i % 3 === 2) {
-          tickLength = TICK_LENGTH * (4 + i * i) / 104.0; // 10 * 10 + 4
-        }
-        ctx.moveTo(TICK_LENGTH, y);
-        ctx.lineTo(TICK_LENGTH - tickLength, y);
-        if (i === 1) {
+          ctx.moveTo(TICK_LENGTH, y);
+          ctx.lineTo(TICK_LENGTH - tickLength, y);
           ctx.stroke();
           ctx.beginPath();
           ctx.globalAlpha = 0.7;
           if (!labelsOK) {
             ctx.lineWidth = BORDER_WEIGHT / 2;
           }
+        } else if (labelsOK || i % 3 === 1) {
+          ctx.moveTo(TICK_LENGTH, y);
+          ctx.lineTo(TICK_LENGTH - tickLength, y);
         }
-      }
-      mag++;
-      tens *= 10;
-    }
+
+
+      });
+    });
     /* the top tick */
     ctx.stroke();
     ctx.beginPath();
@@ -268,34 +217,3 @@ export class GammaHistCanvas extends TraceCanvas {
 
 }
 
-
-/*
-take an array of numbers, and return a 3 element array
-of the 95% hpd and the mean
-*/
-const hpdeify = (arr:number[]):number[]=>{
-  const sorted = arr.filter(n=>Number.isFinite(n)).sort(numericSort);
-  const [hpdMin, hpdMax] = calcHPD(sorted);
-  const sum = sorted.reduce((tot, n)=>tot+n, 0);
-  const mean = sum / sorted.length;
-  const midpoint = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 === 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
-  // console.log(hpdMin, hpdMax, mean)
-  return [hpdMin, hpdMax, mean, median];
-}
-
-
-const gammaToYears = (n:number):number => {
-  return Math.exp(n)/365;
-}
-
-const yearsToGamma = (n:number):number => {
-  return Math.log(n * 365);
-}
-
-const defractionalize = (n:number, mag:number):number => {
-  const tensy = Math.pow(10, mag);
-  let nn = Math.round(n/tensy) * tensy;
-  if (nn > 1) nn = Math.round(nn);
-  return nn;
-}

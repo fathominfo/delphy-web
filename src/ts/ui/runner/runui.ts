@@ -8,7 +8,7 @@ import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} fro
 import {SoftFloat} from '../../util/softfloat.js';
 import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
-import { kneeListenerType } from './runcommon';
+import { kneeHoverListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -16,6 +16,7 @@ import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamCo
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
+import { HistData } from './histdata';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -120,7 +121,7 @@ export class RunUI extends UIScreen {
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
 
-  kneeHandler : kneeListenerType;
+  kneeHandler : kneeHoverListenerType;
 
 
   constructor(sharedState: SharedState, divSelector: string) {
@@ -181,7 +182,7 @@ export class RunUI extends UIScreen {
     this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
     this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
       this.popGrowthCanvas, this.gammaCanvas];
-    this.mutCountCanvas.isDiscrete = true;
+    (this.mutCountCanvas.traceData as HistData).isDiscrete = true;
     this.hideBurnIn = false;
     this.mccTimelineIndices = [];
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
@@ -621,9 +622,9 @@ export class RunUI extends UIScreen {
     this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     const essCandidates: number[] = [
-      this.logPosteriorCanvas.ess,
-      this.muCanvas.ess,
-      this.TCanvas.ess,
+      (this.logPosteriorCanvas.traceData as HistData).ess,
+      (this.muCanvas.traceData as HistData).ess,
+      (this.TCanvas.traceData as HistData).ess,
       // this.mutCountCanvas.ess,
       // this.popGrowthCanvas.ess
     ];
@@ -631,7 +632,7 @@ export class RunUI extends UIScreen {
       const muudStar = muStarHist.map(n=>n*MU_FACTOR);
       this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       serieses.push(muudStar);
-      essCandidates.push(this.muStarCanvas.ess);
+      essCandidates.push((this.muStarCanvas.traceData as HistData).ess);
     }
     if (this.getRunParams().popModelIsSkygrid) {
       const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);

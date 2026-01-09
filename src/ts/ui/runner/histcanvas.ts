@@ -1,8 +1,8 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
-import { calcEffectiveSampleSize } from "./effectivesamplesize";
-import { log10, TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
-import { kneeListenerType } from './runcommon';
+import { TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
+import { kneeHoverListenerType } from './runcommon';
+import { HistData } from "./histdata";
 
 
 
@@ -24,32 +24,18 @@ export class HistCanvas extends TraceCanvas {
 
 
   hideBurnIn: boolean;
+  kneeListener: kneeHoverListenerType;
 
 
-  data:number[];
-  mccIndex: number;
-  sampleIndex: number;
-  sampleCount: number;
-  ess: number;
-  displayCount: number;
-
-  kneeListener: kneeListenerType;
-
-
-  constructor(label:string, unit='', kneeListener: kneeListenerType) {
+  constructor(label:string, unit='', kneeListener: kneeHoverListenerType) {
     super(label, unit);
+    this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
-    this.data = [];
-    this.ess = UNSET;
-    this.sampleCount = UNSET;
     this.height = UNSET;
     this.width = UNSET;
     this.traceWidth = UNSET;
     this.distLeft = UNSET;
     this.chartHeight = UNSET;
-    this.mccIndex = UNSET;
-    this.sampleIndex = UNSET;
-    this.displayCount = 0;
     this.hideBurnIn = false;
     this.isVisible = true;
     this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
@@ -66,7 +52,7 @@ export class HistCanvas extends TraceCanvas {
   }
 
   setState(isSettingKnee:boolean): void {
-    this.settingKnee = isSettingKnee;
+    this.traceData.settingKnee = isSettingKnee;
   }
 
 
@@ -77,10 +63,11 @@ export class HistCanvas extends TraceCanvas {
     // this.stateListeners.forEach(fnc=>fnc(true));
     const moveHandler = (event:PointerEvent)=>{
       const x = event.offsetX - TICK_LENGTH;
+      const count = this.traceData.count;
       let pct = x /  this.traceWidth;
       // console.log('knee', x, pct)
-      if (this.count * MAX_STEP_SIZE < this.traceWidth) {
-        pct = x / (this.count * MAX_STEP_SIZE);
+      if (count * MAX_STEP_SIZE < this.traceWidth) {
+        pct = x / (count * MAX_STEP_SIZE);
       }
       if (this.hideBurnIn) {
         /*
@@ -89,8 +76,8 @@ export class HistCanvas extends TraceCanvas {
 
         the visible trees are what percent of all the trees?
         */
-        const totalCount = this.savedKneeIndex + this.count,
-          totalIndex = this.savedKneeIndex + Math.round(pct * this.count);
+        const totalCount = this.traceData.savedKneeIndex + count,
+          totalIndex = this.traceData.savedKneeIndex + Math.round(pct * count);
         pct = totalIndex / totalCount;
       }
       if (pct <= 1) {
@@ -110,47 +97,23 @@ export class HistCanvas extends TraceCanvas {
 
 
   setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
-    this.data = data;
-    this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
-    const shown = hideBurnIn && this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
-    const safe = shown.filter(n=>!isNaN(n) && isFinite(n));
-
-    this.dataMin = Math.min(...safe);
-    this.dataMax = Math.max(...safe);
-    /* what scale is the range in? */
-    const range = this.dataMax - this.dataMin;
-
-    if (range === 0 || this.isDiscrete && range < 20) {
-      this.displayMin = this.dataMin;
-      this.displayMax = this.dataMax;
-    } else {
-      const expRange = Math.floor(Math.log(range) / log10),
-        mag = Math.pow(10, expRange),
-        magPad = mag * 0.1;
-      this.displayMin = Math.floor((this.dataMin - magPad) / mag) * mag;
-      this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
-    }
-
+    (this.traceData as HistData).setData(data, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
   setMetadata(count: number, kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     super.setKneeIndex(count, kneeIndex);
-    this.mccIndex = mccIndex;
-    this.hideBurnIn = hideBurnIn;
-    this.sampleIndex = sampleIndex;
-    this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
+    (this.traceData as HistData).setMetadata(count, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
   }
 
   draw() {
-    let {data, mccIndex, sampleIndex} = this,
-      kneeIndex = this.currentKneeIndex;
-    if (this.hideBurnIn && this.savedKneeIndex > 0) {
-      data = data.slice(this.savedKneeIndex);
-      kneeIndex -= this.savedKneeIndex;
-      mccIndex -= this.savedKneeIndex;
-      sampleIndex -= this.savedKneeIndex;
+    let {data, mccIndex, sampleIndex, hideBurnIn,
+      currentKneeIndex: kneeIndex, savedKneeIndex } = this.traceData as HistData;
+    if (hideBurnIn && savedKneeIndex > 0) {
+      data = data.slice(savedKneeIndex);
+      kneeIndex -= savedKneeIndex;
+      mccIndex -= savedKneeIndex;
+      sampleIndex -= savedKneeIndex;
     }
     const {ctx, width, height} = this;
     ctx.clearRect(0, 0, width + 1, height + 1);
@@ -166,7 +129,7 @@ export class HistCanvas extends TraceCanvas {
     //   console.log( `   `, this.label, kneeIndex, ess)
     // }
 
-    const {displayCount} = this;
+    const {displayCount} = this.traceData as HistData;
     const {ctx, traceWidth} = this;
     let chartHeight = this.chartHeight,
       top = 0;
@@ -186,10 +149,10 @@ export class HistCanvas extends TraceCanvas {
       ctx.lineTo(3, chartHeight * 0.5);
       ctx.stroke();
     } else if (data.length > 1) {
-      const {displayMin, displayMax} = this;
+      const {displayMin, displayMax, isDiscrete} = this.traceData;
       const valRange = displayMax - displayMin;
 
-      if (this.isDiscrete && valRange < 20) {
+      if (isDiscrete && valRange < 20) {
         const h = chartHeight / (valRange + 1);
         top = h * 0.5;
         chartHeight -= h;
@@ -198,7 +161,7 @@ export class HistCanvas extends TraceCanvas {
 
       const stepW = Math.min(MAX_STEP_SIZE, traceWidth / displayCount || 1);
       const burnInX = TICK_LENGTH + kneeIndex * stepW;
-      // this.drawEssIntervals(stepW, burnInX);
+
 
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
@@ -238,7 +201,7 @@ export class HistCanvas extends TraceCanvas {
           n = data[i];
           if (!isNaN(n) && isFinite(n)) {
             y = top + chartHeight -(n-displayMin) * verticalScale;
-            if (this.isDiscrete) {
+            if (this.traceData.isDiscrete) {
               ctx.lineTo(x, y);
             }
             x = TICK_LENGTH + i * stepW;
@@ -288,12 +251,12 @@ export class HistCanvas extends TraceCanvas {
     ctx.strokeRect(distLeft+HALF_BORDER, HALF_BORDER, DIST_WIDTH-1, chartHeight-1);
 
     if (data.length > 1) {
-      const {displayMin, displayMax} = this;
+      const {displayMin, displayMax, isDiscrete} = this.traceData as HistData;
       const valRange = displayMax - displayMin;
       let estimateData = kneeIndex > 0 ? data.slice(kneeIndex) : data.slice(0);
       estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
       if (estimateData.length >= 10) {
-        if (this.isDiscrete && valRange < 20) {
+        if (isDiscrete && valRange < 20) {
           this.drawDiscreteHistogram(estimateData, valRange, displayMin, chartHeight, distLeft, ctx);
         } else {
           this.drawKDE(estimateData, valRange, displayMin, chartHeight, distLeft, ctx);
@@ -347,7 +310,7 @@ export class HistCanvas extends TraceCanvas {
 
   drawLabels(data:number[], kneeIndex:number) {
     const count:number = data.length;
-    this.count = count;
+    this.traceData.count = count;
     const {ctx, traceWidth, chartHeight} = this;
 
 
@@ -362,8 +325,8 @@ export class HistCanvas extends TraceCanvas {
     */
     ctx.beginPath();
     if (data.length > 1) {
-      const {displayMin, displayMax} = this;
-      this.readout.innerHTML = `${safeLabel(data[data.length - 1])} ${this.unit}`;
+      const {displayMin, displayMax} = this.traceData;
+      // this.readout.innerHTML = `${safeLabel(data[data.length - 1])} ${this.traceData.unit}`;
 
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
@@ -386,7 +349,7 @@ export class HistCanvas extends TraceCanvas {
         // this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
         // this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
         let skipMiddle = false;
-        if (this.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
+        if (this.traceData.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
           skipMiddle = true;
         } else if (safeLabel(displayMax) === safeLabel(midVal)) skipMiddle = true;
         else if (safeLabel(displayMin) === safeLabel(midVal)) skipMiddle = true;
@@ -414,31 +377,7 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  drawEssIntervals(stepW: number, burnInX: number) {
-    const {sampleCount, ess, ctx, distLeft, chartHeight} = this;
-    const autoCorrelationTime = sampleCount / ess;
-    const essWidth = stepW * autoCorrelationTime;
-    const rightEdge = distLeft - TRACE_MARGIN;
-    /*
-    draw stripes of width essWidth from the start of the burn in
-    */
-    ctx.strokeStyle = '#ddd';
-    ctx.beginPath();
-    let essX = burnInX;
-    while (essX < rightEdge && essWidth >=1) {
-      ctx.moveTo(essX, 0);
-      ctx.lineTo(essX, chartHeight);
-      essX += essWidth;
-    }
-    ctx.stroke();
-  }
 
 
 }
-
-// export const addHistHeader = (text: string)=>{
-//   const sectionLabel = document.createElement("h1") as HTMLHeadingElement;
-//   sectionLabel.innerHTML = text;
-//   chartContainer.appendChild(sectionLabel);
-// }
 

@@ -1,4 +1,5 @@
 import { resizeCanvas, UNSET } from '../common';
+import { TraceData } from './tracedata';
 
 const maybeChartContainer = document.querySelector('#runner--panel--modules');
 if (!maybeChartContainer) {
@@ -22,8 +23,6 @@ export const BORDER_COLOR = '#cbcbcb';
 export const BORDER_WEIGHT = 0;
 export const TICK_LENGTH = 0;
 
-export const log10 = Math.log(10);
-
 
 export const HALF_BORDER = BORDER_WEIGHT / 2;
 
@@ -33,7 +32,7 @@ export const HALF_BORDER = BORDER_WEIGHT / 2;
 export class TraceCanvas {
 
 
-
+  traceData: TraceData;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   container: HTMLDivElement;
@@ -43,46 +42,23 @@ export class TraceCanvas {
   // firstStepLabel: HTMLLIElement;
   // midStepLabel: HTMLLIElement;
   // lastStepLabel: HTMLLIElement;
-  readout: HTMLParagraphElement;
-  isDiscrete: boolean;
+  // readout: HTMLParagraphElement;
   className: string;
 
 
-  sampleIndex: number;
-  sampleCount: number;
-
-
-  displayMin: number;
-  displayMax: number;
-  dataMin: number;
-  dataMax: number;
-
-  label:string;
-  unit:string;
   height: number;
   width: number;
   traceWidth: number;
   distLeft: number;
   chartHeight: number;
-  count: number;
   hovering: boolean;
 
   isVisible: boolean;
 
-  /*
-  distinguish between the knee index
-  that is used as the leftmost sample when we are
-  hiding the burn in period, vs. the knee index that
-  we highlight
-  */
-  savedKneeIndex: number;
-  currentKneeIndex: number;
-  settingKnee: boolean;
 
 
   constructor(label:string, unit='') {
-    this.label = label;
-    this.unit = unit;
+    this.traceData = new TraceData(label, unit);
     this.container = <HTMLDivElement>template.cloneNode(true);
     this.className = label.toLowerCase().replace(/ /g, '-').replace(/[()]/g, '');
     this.container.classList.add(this.className);
@@ -99,25 +75,13 @@ export class TraceCanvas {
     // this.firstStepLabel = this.getLI('.step-first');
     // this.midStepLabel = this.getLI('.step-mid');
     // this.lastStepLabel = this.getLI('.step-last');
-    this.readout = this.container.querySelector(".block-readout") as HTMLParagraphElement;
-    this.sampleCount = UNSET;
-    this.displayMin = UNSET;
-    this.displayMax = UNSET;
-    this.dataMin = UNSET;
-    this.dataMax = UNSET;
-
-    this.isDiscrete = false;
+    // this.readout = this.container.querySelector(".block-readout") as HTMLParagraphElement;
 
     this.height = UNSET;
     this.width = UNSET;
     this.traceWidth = UNSET;
     this.distLeft = UNSET;
     this.chartHeight = UNSET;
-    this.sampleIndex = UNSET;
-    this.count = 0;
-    this.savedKneeIndex = UNSET;
-    this.currentKneeIndex = UNSET;
-    this.settingKnee = false;
     this.hovering = false;
     this.isVisible = true;
   }
@@ -150,12 +114,7 @@ export class TraceCanvas {
   }
 
   setKneeIndex(count: number, kneeIndex:number) {
-    this.currentKneeIndex = kneeIndex;
-    this.count = count;
-    this.sampleCount = count - kneeIndex;
-    if (!this.settingKnee) {
-      this.savedKneeIndex = kneeIndex;
-    }
+    this.traceData.setKneeIndex(count, kneeIndex);
   }
 
   draw() {} // eslint-disable-line @typescript-eslint/no-empty-function

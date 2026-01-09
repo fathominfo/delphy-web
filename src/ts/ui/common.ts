@@ -416,3 +416,5 @@ export const getNtile = (arr: number[], ntile: number) =>{
 }
 
 export type ValueHandler = (value: number) => void;
+
+export const log10 = Math.log(10);
