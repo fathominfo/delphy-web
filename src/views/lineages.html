@@ -140,10 +140,35 @@
               <canvas id="lineages--node-layout--chart-canvas"></canvas>
             </div>
           </div>
+
+          <div id="lineages--node-timelines">
+            <div class="lineages--node-timeline">
+              <h1>Time distributions of <span class="lineages--node-timeline--ancestor-node">node</span>
+                <span class="lineages--node-timeline--descendant-connector">and </span>
+                <span class="lineages--node-timeline--descendant-node">node</span>
+              </h1>
+              <div class="lineages--time-chart-container">
+                <div class="lineages--time-chart">
+                  <canvas></canvas>
+                  <div class="time-chart--readout">
+                    <div class="time-chart--date"></div>
+                    <div class="time-chart--series">
+                      <span class="value-label">##%</span>
+                      <span class="series-label"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div id="lineages--list">
           <div id="lineages--node-comparison-container">
             <div class="lineages--node-comparison">
-              <h1>Time distributions of <span class="lineages--node-comparison--ancestor-node">node</span>
-                <span class="lineages--node-comparison--descendant-connector">and </span>
+              <h1><span class="lineages--node-comparison--ancestor-node">node</span>
+                <span class="lineages--node-comparison--descendant-connector">to</span>
                 <span class="lineages--node-comparison--descendant-node">node</span>
                 <span class="lineages--node-overlap-item">
                   In <span class="lnoi-pct"></span>% of base trees,
@@ -158,16 +183,7 @@
                 </span>
               </h1>
               <div class="lineages--node-comparison--time-chart-container">
-                <div class="lineages--node-comparison--time-chart">
-                  <canvas></canvas>
-                  <div class="time-chart--readout">
-                    <div class="time-chart--date"></div>
-                    <div class="time-chart--series">
-                      <span class="value-label">##%</span>
-                      <span class="series-label"></span>
-                    </div>
-                  </div>
-                </div>
+
                 <p class="lineages--node-comparison--mutation-header">
                   <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in
                   <span class="lineages--node-comparison--mutation-threshold">50%</span> of base trees;
@@ -194,9 +210,7 @@
               </div>
             </div>
           </div>
-
         </div>
-        <div id="lineages--list"  class="duo"></div>
       </section>
     </div>
 

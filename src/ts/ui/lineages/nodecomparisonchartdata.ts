@@ -36,6 +36,7 @@ export class NodeComparisonChartData {
   nodePair: NodePair;
   minDate: number;
   maxDate: number;
+  isApobecRun: boolean;
   mutationTimelineData:MutationTimelineData[];
   overlapCount: number;
   treeCount: number = UNSET;
@@ -50,6 +51,7 @@ export class NodeComparisonChartData {
     this.nodePair = nodeComparisonData.nodePair;
     this.minDate = minDate;
     this.maxDate = maxDate;
+    this.isApobecRun = isApobecRun;
     this.mutationTimelineData = [];
 
 

@@ -661,6 +661,128 @@ details {
 }
 
 
+.lineages--node-timeline {
+
+  + .lineages--node-timeline {
+    margin-top: 1em;
+  }
+
+  padding: 8px;
+  padding-top: 14px;
+  border: solid 1px @borderGrey;
+
+  h1 {
+    //color: rgb(142, 142, 142);
+    //font-weight: 700;
+    font-weight: bold; //normal;
+    margin-bottom: 0.5em;
+  }
+
+  .lineages--node-timeline--ancestor-node,
+  .lineages--node-timeline--descendant-node {
+    //font-weight: bolder;
+    color: @root;
+    position: relative;
+    padding-left: 1.2em;
+
+    &::before,
+    &::after {
+    content: "";
+    position: absolute;
+    top: 0.15em;
+    left: 0.15em;
+    height: 0.8em;
+    width: 0.8em;
+    display: flex;
+    border-radius: 50%;
+    }
+    &::before {
+    background-color: @root-bright;
+    }
+    &::after {
+    top: calc(0.15em + 2.5px);
+    left: calc(0.15em + 2.5px);
+    width: calc(0.8em - calc(2.5px * 2));
+    height: calc(0.8em - calc(2.5px * 2));
+    background-color: #fff;
+    }
+
+    &.root,
+    &.mrca {
+    &::after {
+      display: none;
+    }
+    }
+
+    &.mrca {
+    color: @mrca;
+    &::before {
+      background-color: @mrca-bright;
+    }
+    }
+    &.node1 {
+    color: @node1;
+    &::before {
+      background-color: @node1-bright;
+    }
+  }
+    &.node2 {
+    color: @node2;
+    &::before {
+      background-color: @node2-bright;
+    }
+  }
+  }
+
+  &.highlighting {
+    .lineages--node-timeline--ancestor-node,
+    .lineages--node-timeline--descendant-node {
+      opacity: 0.4;
+
+      &.highlight {
+        opacity: 1;
+      }
+    }
+  }
+
+  .lineages--node-overlap-item {
+    display: block;
+    font-size: 12px;
+    color: @midGrey;
+    font-weight: 500;
+    line-height: 1.25em;
+    margin-top: 6px;
+
+    .root-message {
+      display: none;
+    }
+
+
+    &.is-root {
+      display: block;
+      // font-size: 12px;
+      // color: @midGrey;
+      // font-weight: normal;
+      // line-height: 1.1em;
+      .non-root-message {display: none;}
+      .root-message {display: inline;}
+    }
+
+    .lnoi-1, .lnoi-2 {font-weight: 700;}
+
+  }
+
+  &.single {
+    .lineages--node-timeline--descendant-node,
+    .lineages--node-timeline--descendant-connector,
+    .lineages--node-timeline--mutation-header,
+    .lineages--node-overlap-item {
+      display: none;
+    }
+  }
+
+
+}
 
 .lineages--node-comparison {
   + .lineages--node-comparison {
@@ -784,13 +906,9 @@ details {
 
 }
 
-.lineages--node-comparison--time-chart-container {
-  // padding-left: 15px;
-  // border-left: solid 1px rgb(225,225,225);
-}
 
+.lineages--time-chart,
 .lineages--node-comparison--time-chart {
-  //background-color: rgb(250, 250, 250);
   height: 60px;
   padding-left: @chartLeftMargin;
 
