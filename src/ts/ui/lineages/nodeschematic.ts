@@ -1,3 +1,4 @@
+import { NUC_LOOKUP } from "../../constants";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNode, nfc, UNSET } from "../common";
@@ -6,6 +7,14 @@ import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
 const UNSET_CHAR = "-";
+const MATCH_CLASS = "matched";
+const NO_MATCH_CLASS = "unmatched";
+const MUTATION_LIMIT = 10;
+
+const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
+MUTATION_TEMPLATE?.remove();
+
+
 
 
 class Track {
@@ -16,19 +25,44 @@ class Track {
   signage: HTMLSpanElement;
   mutationCount: number = UNSET;
   label = "";
-  mutationLists: MutationDistribution[] = [];
+  mutationList: MutationDistribution[] = [];
+  mutationDivs: HTMLDivElement[] = [];
+
 
   constructor(line: HTMLElement | null) {
     this.line = line as HTMLDivElement;
     this.terminus = this.line.querySelector(".terminus.exit") as HTMLDivElement;
     this.signage = this.line.querySelector(".transit .signage .count") as HTMLSpanElement;
+    const stations = this.line.querySelector(".stations") as HTMLDivElement;
+    for (let i = 0; i < MUTATION_LIMIT; i++) {
+      const mutDiv = MUTATION_TEMPLATE.cloneNode(true) as HTMLDivElement;
+      this.mutationDivs.push(mutDiv);
+      stations.appendChild(mutDiv);
+      mutDiv.addEventListener("pointerenter", ()=>{
+        this.mutationDivs.forEach(md=>{
+          if (md === mutDiv) {
+            md.classList.add(MATCH_CLASS);
+            md.classList.remove(NO_MATCH_CLASS);
+          } else {
+            md.classList.remove(MATCH_CLASS);
+            md.classList.add(NO_MATCH_CLASS);
+          }
+        });
+      });
+      mutDiv.addEventListener("pointerleave", ()=>{
+        this.mutationDivs.forEach(md=>{
+          md.classList.remove(MATCH_CLASS);
+          md.classList.remove(NO_MATCH_CLASS);
+        });
+      });
+    }
   }
 
   set(startCode:string, endCode:string, mutations:MutationDistribution[]) {
     this.startCode = startCode;
     this.endCode = endCode;
     this.label = endCode === UNSET_CHAR ? '' : endCode.toUpperCase();
-    this.mutationLists = mutations;
+    this.mutationList = mutations;
     this.mutationCount = mutations.length;
   }
 
@@ -37,6 +71,22 @@ class Track {
     this.line.setAttribute("data-to", this.endCode);
     this.terminus.textContent = this.label;
     this.signage.textContent = nfc(this.mutationCount);
+    if (this.mutationCount > MUTATION_LIMIT) {
+      this.mutationDivs.forEach(div=>div.classList.add("hidden"));
+    } else {
+      for (let i = 0; i < MUTATION_LIMIT; i++) {
+        const mutDiv = this.mutationDivs[i];
+        const mut = this.mutationList[i]?.mutation;
+        if (mut) {
+          (mutDiv.querySelector(".transfer.from") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.from];
+          (mutDiv.querySelector(".train") as HTMLSpanElement).textContent = `${mut.site}`;
+          (mutDiv.querySelector(".transfer.to") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.to];
+          mutDiv.classList.remove("hidden");
+        } else {
+          mutDiv.classList.add("hidden");
+        }
+      }
+    }
   }
 
 }
