@@ -717,8 +717,11 @@ details {
     align-items: center;
     height: var(--subway-line-height);
     padding: var(--subway-line-padding-y) var(--subway-line-padding-x);
-    .unmatching.terminus {
-      color: rgb(from var(--node-text) r g b / var(--subway-line-unmatching-opacity));
+    &.unmatching{
+      .terminus {color: rgb(from var(--node-text) r g b / var(--subway-line-unmatching-opacity));}
+      .platform { background-color: var(--node-stroke-off); }
+      .station.active .platform {background-color: var(--node-stroke-off)}
+      .signage {opacity: var(--subway-line-unmatching-opacity)}
     }
   }
 
@@ -729,11 +732,6 @@ details {
     justify-content: center;
     align-items: center;
     max-width: 100%;
-    &.unmatching {
-      .platform { background-color: var(--node-stroke-off); }
-      .station.active .platform {background-color: var(--node-stroke-off)}
-      .signage {opacity: var(--subway-line-unmatching-opacity)}
-    }
   }
 
   .stations, .signage {
@@ -797,7 +795,7 @@ details {
     box-sizing: border-box;
     cursor: default;
 
-    &.matching, &:hover {
+    &.matching {
       .platform {
         opacity: 1;
         width: var(--subway-platform-width-on);
@@ -821,9 +819,9 @@ details {
       background-color: var(--node-stroke-on);
     }
 
-    &:hover {
-      .platform { background-color: var(--node-stroke-on); }
-    }
+    // &:hover {
+    //   .platform { background-color: var(--node-stroke-on); }
+    // }
   }
 
   .platform {

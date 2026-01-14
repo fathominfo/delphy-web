@@ -1,4 +1,4 @@
-import { NUC_LOOKUP } from "../../constants";
+import { getMutationName, NUC_LOOKUP } from "../../constants";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNode, nfc, UNSET } from "../common";
@@ -7,14 +7,14 @@ import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
 const UNSET_CHAR = "-";
-const MATCH_CLASS = "matched";
-const NO_MATCH_CLASS = "unmatched";
+const MATCH_CLASS = "matching";
+const NO_MATCH_CLASS = "unmatching";
 const MUTATION_LIMIT = 10;
 
 const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
 MUTATION_TEMPLATE?.remove();
 
-
+type MATCH_HANDLER_TYPE = (name: string)=>void;
 
 
 class Track {
@@ -29,7 +29,7 @@ class Track {
   mutationDivs: HTMLDivElement[] = [];
 
 
-  constructor(line: HTMLElement | null) {
+  constructor(line: HTMLElement | null, matchHandler: MATCH_HANDLER_TYPE) {
     this.line = line as HTMLDivElement;
     this.terminus = this.line.querySelector(".terminus.exit") as HTMLDivElement;
     this.signage = this.line.querySelector(".transit .signage .count") as HTMLSpanElement;
@@ -39,22 +39,13 @@ class Track {
       this.mutationDivs.push(mutDiv);
       stations.appendChild(mutDiv);
       mutDiv.addEventListener("pointerenter", ()=>{
-        this.mutationDivs.forEach(md=>{
-          if (md === mutDiv) {
-            md.classList.add(MATCH_CLASS);
-            md.classList.remove(NO_MATCH_CLASS);
-          } else {
-            md.classList.remove(MATCH_CLASS);
-            md.classList.add(NO_MATCH_CLASS);
-          }
-        });
+        const mut = this.mutationList[i]?.mutation;
+        if (mut) {
+          const name = getMutationName(mut);
+          matchHandler(name);
+        }
       });
-      mutDiv.addEventListener("pointerleave", ()=>{
-        this.mutationDivs.forEach(md=>{
-          md.classList.remove(MATCH_CLASS);
-          md.classList.remove(NO_MATCH_CLASS);
-        });
-      });
+      mutDiv.addEventListener("pointerleave", ()=>matchHandler(''));
     }
   }
 
@@ -67,6 +58,8 @@ class Track {
   }
 
   render() {
+    this.line.classList.remove(MATCH_CLASS);
+    this.line.classList.remove(NO_MATCH_CLASS);
     this.line.setAttribute("data-from", this.startCode);
     this.line.setAttribute("data-to", this.endCode);
     this.terminus.textContent = this.label;
@@ -82,11 +75,41 @@ class Track {
           (mutDiv.querySelector(".train") as HTMLSpanElement).textContent = `${mut.site}`;
           (mutDiv.querySelector(".transfer.to") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.to];
           mutDiv.classList.remove("hidden");
+          mutDiv.classList.remove(MATCH_CLASS);
+          mutDiv.classList.remove(NO_MATCH_CLASS);
         } else {
           mutDiv.classList.add("hidden");
         }
       }
     }
+  }
+
+  handleMutationMatch(mutationName:string) {
+    if (mutationName === '') {
+      this.line.classList.remove(MATCH_CLASS);
+      this.line.classList.remove(NO_MATCH_CLASS);
+    } else {
+      let anyMatches = false;
+      this.mutationList.forEach((mut:MutationDistribution, i)=>{
+        const name = getMutationName(mut.mutation);
+        if (name === mutationName) {
+          anyMatches = true;
+          this.mutationDivs[i].classList.add(MATCH_CLASS);
+          this.mutationDivs[i].classList.remove(NO_MATCH_CLASS);
+        } else {
+          this.mutationDivs[i].classList.remove(MATCH_CLASS);
+          this.mutationDivs[i].classList.add(NO_MATCH_CLASS);
+        }
+      });
+      if (anyMatches) {
+        this.line.classList.add(MATCH_CLASS);
+        this.line.classList.remove(NO_MATCH_CLASS);
+      } else {
+        this.line.classList.remove(MATCH_CLASS);
+        this.line.classList.add(NO_MATCH_CLASS);
+      }
+    }
+
   }
 
 }
@@ -117,16 +140,20 @@ export class NodeSchematic {
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.dataConfig = "root";
     this.div = document.querySelector("#subway") as HTMLDivElement;
-    this.centralLine = new Track(this.div.querySelector(".line.central"));
-    this.endLine = new Track(this.div.querySelector(".line.end"));
-    this.upperLine = new Track(this.div.querySelector(".line.upper"));
-    this.lowerLine = new Track(this.div.querySelector(".line.lower"));
+    const handleMut = (name:string)=>this.handleMutationMatch(name);
+    this.centralLine = new Track(this.div.querySelector(".line.central"), handleMut);
+    this.endLine = new Track(this.div.querySelector(".line.end"), handleMut);
+    this.upperLine = new Track(this.div.querySelector(".line.upper"), handleMut);
+    this.lowerLine = new Track(this.div.querySelector(".line.lower"), handleMut);
   }
 
 
-  setLabelValue(div: HTMLDivElement, code: string): void {
-    const label = code === UNSET_CHAR ? '' : code.toUpperCase();
-    (div.querySelector(".terminus.exit") as HTMLDivElement).textContent = label;
+  handleMutationMatch(mutationName:string) {
+    [ this.centralLine,
+      this.endLine,
+      this.upperLine,
+      this.lowerLine
+    ].forEach((line:Track)=>line.handleMutationMatch(mutationName));
   }
 
   draw() {
@@ -141,15 +168,11 @@ export class NodeSchematic {
     this.indexes = indexes;
     this.nodeAisUpper = node1IsUpper;
 
-
-
     const getMutationsFor = (nodeIndex: number)=>{
       const data = src.filter(ncd=>ncd.nodePair.index2 === nodeIndex)[0],
         muts = !data? []: data.nodePair.mutations.filter(md => md.getConfidence() >= mutationPrevalenceThreshold);
       return muts;
     }
-
-
     this.dataConfig = "root";
     let centerLabel = UNSET_CHAR;
     let endLabel = UNSET_CHAR;
