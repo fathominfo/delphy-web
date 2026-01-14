@@ -709,10 +709,10 @@ export class LineagesUI extends MccUI {
               descendant1Index = node1Index;
               pair2 = NodePairType.node1ToNode2;
               ancestor2 = DisplayNode.node1;
-              ancestor2Index = rootIndex;
+              ancestor2Index = node1Index;
               descendant2 = DisplayNode.node2;
               descendant2Index = node2Index;
-            } else {
+            } else if (mrca === node2Index) {
               pair1 = NodePairType.rootToNode2;
               descendant1 = DisplayNode.node2;
               descendant1Index = node2Index;
@@ -721,6 +721,8 @@ export class LineagesUI extends MccUI {
               ancestor2Index = node2Index;
               descendant2 = DisplayNode.node1;
               descendant2Index = node1Index;
+            } else {
+              console.warn("need to revisit how node pairs are made");
             }
 
             this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index, nodeMetadata, tipIds), node1Index);
