@@ -144,20 +144,11 @@
   justify-content: space-between;
 }
 
-#lineages--node-layout {
-  display: flex;
-  flex-direction: column;
-}
 
-#lineages--node-layout--chart {
-  height: 100%;
-  width: 100%;
 
-  canvas {
-    width: 100%;
-    height: 100%;
-  }
-}
+
+
+
 
 // .sidebar--lookup {
 //   font-size: 12px;
@@ -422,21 +413,13 @@ details {
 .node-details {
   display: none;
   margin-top: 4px;
-  .t05();
   summary {
     padding: 4px 6px;
     cursor: pointer;
     opacity: 0.7;
     &:hover{opacity: 1;}
-    .tNarrowCaps();
     font-weight: 700;
-    // border: 0.25px solid;
-    // padding: 8px;
   }
-
-  // h4 {
-  //   .tNarrowCaps();
-  // }
 
   p {
     font-weight: 500;
@@ -455,7 +438,7 @@ details {
   padding-top: 8px;
   color: @midGrey;
   h4 {
-    .tHeaderMed();
+
     &+ p{margin-top: 6px;}
   }
   .node-prevalence-canvas {
@@ -474,7 +457,7 @@ details {
   color: @midGrey;
   .metadata--heading {
     //color: #9b9b9b;
-    .tHeaderSm();
+
     margin: 8px 0;
     font-weight: 700;
   }
@@ -577,7 +560,7 @@ details {
 #lineages--prevalence {
   h3 {
     margin-bottom: 8px;
-    .tHeaderLg();
+
   }
 }
 
@@ -674,6 +657,371 @@ details {
   .customScroll();
   padding-right: 8px;
 }
+
+
+
+// ███████╗ ██████╗██╗  ██╗███████╗███╗   ███╗ █████╗ ████████╗██╗ ██████╗
+// ██╔════╝██╔════╝██║  ██║██╔════╝████╗ ████║██╔══██╗╚══██╔══╝██║██╔════╝
+// ███████╗██║     ███████║█████╗  ██╔████╔██║███████║   ██║   ██║██║
+// ╚════██║██║     ██╔══██║██╔══╝  ██║╚██╔╝██║██╔══██║   ██║   ██║██║
+// ███████║╚██████╗██║  ██║███████╗██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╗
+// ╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝
+
+
+
+#lineages--node-layout {
+
+}
+
+
+
+/* LINEAGES / Subway diagram */
+
+#subway {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  width: auto;
+  height: var(--subway-height);
+  overflow: visible;
+  margin-left: var(--subway-margin-left);
+  margin-right: var(--subway-margin-right);
+  transform: translateY(var(--subway-offset-y));
+
+  &[data-config="root"], &[data-config="a"], &[data-config="b"],
+  &[data-config="a2b"], &[data-config="b2a"] {
+    .upper, .lower {display: none;}
+  }
+
+  &[data-config="mrca"], &[data-config="ab"], &[data-config="ba"] {
+    .end {display: none;}
+  }
+
+
+  .lines {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-width: 50%;
+  }
+
+  .line {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: var(--subway-line-height);
+    padding: var(--subway-line-padding-y) var(--subway-line-padding-x);
+    .unmatching.terminus {
+      color: rgb(from var(--node-text) r g b / var(--subway-line-unmatching-opacity));
+    }
+  }
+
+  .transit {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+    &.unmatching {
+      .platform { background-color: var(--node-stroke-off); }
+      .station.active .platform {background-color: var(--node-stroke-off)}
+      .signage {opacity: var(--subway-line-unmatching-opacity)}
+    }
+  }
+
+  .stations, .signage {
+    height: var(--subway-row-height);
+  }
+
+  .track {
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    left: 0;
+    margin-top: var(--subway-track-offset-y);
+    border-top: var(--subway-track-stroke-weight) solid;
+    border-left: var(--subway-track-stroke-weight) solid;
+    border-radius: var(--subway-track-corner) 0 0 0;
+    height: var(--subway-track-height);
+    border-color: var(--node-stroke);
+    -webkit-transition: all var(--transition) ease-out;
+    -moz-transition: all var(--transition) ease-out;
+    -ms-transition: all var(--transition) ease-out;
+    transition: all var(--transition) ease-out;
+    pointer-events: none;
+    &.unmatching {
+      border-color: var(--node-stroke-off);
+    }
+  }
+
+  .line[data-track="center"] .track {
+    border-left: 0;
+    border-radius: 0;
+    height: 0;
+  }
+
+  .line[data-track="down"] .track {
+    transform: scaleY(-1) translateY(var(--subway-track-height));
+  }
+
+  .stations {
+    position: relative;
+    z-index: var(--subway-stations-zindex);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+    width: auto;
+    max-width: 100%;
+    margin: var(--subway-stations-margin-top) auto 0;
+  }
+
+  .station {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: var(--subway-station-width);
+    height: 100%;
+    overflow: visible;
+    box-sizing: border-box;
+    cursor: default;
+
+    &.matching &:hover {
+      .platform {
+        opacity: 1;
+        width: var(--subway-platform-width-on);
+        height: var(--subway-platform-height-on);
+        .passenger {
+          opacity: 1;
+        }
+      }
+    }
+
+    &.inactive .platform {
+      opacity: 1;
+      width: var(--subway-platform-width-present);
+      height: var(--subway-platform-height-present);
+    }
+
+    &.active .platform {
+      opacity: 1;
+      width: var(--subway-platform-width-matched);
+      height: var(--subway-platform-height-matched);
+      background-color: var(--node-stroke-on);
+    }
+
+    &:hover {
+      .platform { background-color: var(--node-stroke-on); }
+    }
+  }
+
+  .platform {
+    position: absolute;
+    width: var(--subway-platform-width-static);
+    height: var(--subway-platform-height-static);
+    pointer-events: none;
+    background-color: var(--node-stroke);
+    -webkit-transition: opacity var(--transition) ease-out;
+    -moz-transition: opacity var(--transition) ease-out;
+    -ms-transition: opacity var(--transition) ease-out;
+    transition: opacity var(--transition) ease-out;
+  }
+
+  .passenger {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: baseline;
+    gap: var(--subway-location-gap);
+    left: 50%;
+    bottom: 100%;
+    font-family: var(--Inter);
+    font-weight: 700;
+    font-size: calc(var(--unit) * 0.75);
+    transform: translate(-50%, var(--subway-location-offset-y));
+    color: var(--node-mutation-text);
+    opacity: 0;
+    .train {
+      font-variant-numeric: tabular-nums;
+      color: var(--node-position-text);
+    }
+  }
+
+
+  .signage {
+    font-family: var(--Inter);
+    font-weight: 600;
+    font-size: calc(var(--unit) * 0.875);
+    line-height: unset;
+    letter-spacing: 0.001rem;
+    cursor: default;
+    color: var(--node-text);
+    -webkit-transition: all var(--transition) ease-out;
+    -moz-transition: all var(--transition) ease-out;
+    -ms-transition: all var(--transition) ease-out;
+    transition: all var(--transition) ease-out;
+  }
+
+  .termini {
+    position: absolute;
+    z-index: var(--subway-termini-zindex);
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: var(--subway-termini-height);
+    transform: translate(-50%, -50%);
+    overflow: visible;
+  }
+
+  .terminus {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    height: var(--subway-terminus-height);
+    padding: var(--subway-terminus-padding-y) var(--subway-terminus-padding-x);
+    white-space: nowrap;
+    background-color: var(--view-fill);
+    font-weight: var(--lineage-label-font-weight);
+    font-size: var(--lineage-label-font-size);
+    letter-spacing: var(--lineage-label-letter-spacing);
+    line-height: unset;
+    cursor: default;
+    color: var(--node-text);
+    -webkit-transition: all var(--transition) ease-out;
+    -moz-transition: all var(--transition) ease-out;
+    -ms-transition: all var(--transition) ease-out;
+    transition: all var(--transition) ease-out;
+    &.enter, &.exit {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    &.enter {
+      left: 0;
+    }
+
+    &.exit {
+      left: 100%;
+    }
+  }
+
+
+  .line[data-from="-"] .terminus.enter:after,
+  .line[data-to="-"] .terminus.exit:after {
+    content: "";
+    position: relative;
+    width: var(--subway-unknown-terminus-size);
+    height: var(--subway-unknown-terminus-size);
+    border-radius: var(--subway-unknown-terminus-size);
+    background-color: var(--node-text);
+    vertical-align: baseline;
+
+    &.unmatching {
+      background-color: rgb(from var(--node-text) r g b / var(--subway-line-unmatching-opacity));
+    }
+  }
+
+
+  .line[data-from="root"] {
+    .track {border-color: var(--root-stroke)}
+    .platform {background-color: var(--root-stroke)}
+    .signage {color: var(--root-text)}
+    .terminus.enter {color: var(--root-text)}
+    .passenger {color: var(--root-mutation-text)}
+    .passenger .train {color: var(--root-position-text)}
+    .station {
+      &:hover, &.active {
+        .platform {background-color: var(--root-stroke-on)}
+      }
+    }
+    &.unmatching {
+      .track {border-color: var(--root-stroke-off)}
+      .terminus.enter {color: rgb(from var(--root-text) r g b / var(--subway-line-unmatching-opacity))}
+      .transit {
+        .platform {background-color: var(--root-stroke-off)}
+        .station.active .platform {background-color: var(--root-stroke-off)}
+      }
+    }
+  }
+
+  .line[data-to="mrca"] {
+    .terminus.exit    {
+      color: var(--mrca-text);
+      &.unmatching {
+        color: rgb(from var(--mrca-text) r g b / var(--subway-line-unmatching-opacity));
+      }
+    }
+  }
+
+  .line[data-to="a"] {
+    .track      {border-color: var(--a-stroke)}
+    .platform      {background-color: var(--a-stroke)}
+    .signage      {color: var(--a-text)}
+    .terminus.exit       {color: var(--a-text)}
+    .passenger      {color: var(--a-mutation-text)}
+    .passenger .train      {color: var(--a-position-text)}
+    .station {
+      &:hover, &.active {
+        .platform {background-color: var(--a-stroke-on)}
+      }
+    }
+    &.unmatching {
+      .track      {border-color: var(--a-stroke-off)}
+      .terminus.exit       {color: rgb(from var(--a-text) r g b / var(--subway-line-unmatching-opacity))}
+      .transit {
+        .platform      {background-color: var(--a-stroke-off)}
+        .station.active .platform      {background-color: var(--a-stroke-off)}
+      }
+    }
+  }
+
+  .line[data-to="b"] {
+    .track      {border-color: var(--b-stroke)}
+    .platform      {background-color: var(--b-stroke)}
+    .signage      {color: var(--b-text)}
+    .terminus.exit       {color: var(--b-text)}
+    .passenger      {color: var(--b-mutation-text)}
+    .passenger .train      {color: var(--b-position-text)}
+    .station{
+      &:hover, &.active {
+        .platform {background-color: var(--b-stroke-on)}
+      }
+    }
+    &.unmatching {
+      .track      {border-color: var(--b-stroke-off)}
+      .terminus.exit       {color: rgb(from var(--b-text) r g b / var(--subway-line-unmatching-opacity))}
+      .transit {
+        .platform      {background-color: var(--b-stroke-off)}
+        .station.active .platform      {background-color: var(--b-stroke-off)}
+      }
+    }
+  }
+}
+
+
+
+
+
+// ████████╗██╗███╗   ███╗███████╗██╗     ██╗███╗   ██╗███████╗███████╗
+// ╚══██╔══╝██║████╗ ████║██╔════╝██║     ██║████╗  ██║██╔════╝██╔════╝
+//    ██║   ██║██╔████╔██║█████╗  ██║     ██║██╔██╗ ██║█████╗  ███████╗
+//    ██║   ██║██║╚██╔╝██║██╔══╝  ██║     ██║██║╚██╗██║██╔══╝  ╚════██║
+//    ██║   ██║██║ ╚═╝ ██║███████╗███████╗██║██║ ╚████║███████╗███████║
+//    ╚═╝   ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
 
 
 #lineages--node-timelines {

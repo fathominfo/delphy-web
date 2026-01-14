@@ -4,7 +4,7 @@
         {{> header_common }}
       </div>
     </header>
-    <div class="main-content">
+    <div class="main-content visualizations--container">
       <section id="lineages--mcc">
         <div class="lineages--mcc--header">
           <h1>MCC</h1>
@@ -137,9 +137,83 @@
 
         </div>
         <div id="lineages--relationships" class="duo">
-          <div id="lineages--node-layout">
-            <div id="lineages--node-layout--chart">
-              <canvas id="lineages--node-layout--chart-canvas"></canvas>
+          <div id="lineages--node-layout"  class="block" data-duo="left" >
+
+            <div class="header">
+              <div class="title">
+                <h4>Node diagram</h4>
+              </div>
+            </div>
+
+            <div id="subway" data-config="root">
+              <div class="lines">
+                <div class="line central" data-from="root" data-to="-" data-track="center">
+                  <div class="track"></div>
+                  <div class="termini">
+                    <div class="terminus enter">Root</div>
+                    <div class="terminus exit">MRCA</div>
+                  </div>
+                  <div class="transit">
+                    <div class="stations">
+                      <!-- <div data-mutation="A23403G" class="station mt-?A23403G mt?-A23403G"><div class="platform"><div class="passenger"><span class="transfer from">A</span><span class="train">23403</span><span class="transfer to">G</span></div></div></div>
+                      <div data-mutation="C3037T" class="station mt-?C3037T mt?-C3037T"><div class="platform"><div class="passenger"><span class="transfer from">C</span><span class="train">3037</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="C14408T" class="station mt-?C14408T mt?-C14408T"><div class="platform"><div class="passenger"><span class="transfer from">C</span><span class="train">14408</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="G25563T" class="station mt-?G25563T mt?-G25563T"><div class="platform"><div class="passenger"><span class="transfer from">G</span><span class="train">25563</span><span class="transfer to">T</span></div></div></div> -->
+                    </div>
+                    <div class="signage">
+                      <span class="count">4</span>&nbsp;<span>mutations</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="lines">
+                <div class="line upper" data-from="mrca" data-to="a" data-track="up">
+                  <div class="track nl?-mrca nl?-a nl-?a"></div>
+                  <div class="termini">
+                    <div class="terminus exit nl?-mrca nl?-a nl-?a">A</div>
+                  </div>
+                  <div class="transit nl?-mrca nl?-a nl-?a">
+                    <div class="stations">
+                      <!-- <div data-mutation="C2416T" class="station mt-?C2416T mt?-C2416T"><div class="platform"><div class="passenger"><span class="transfer from">C</span><span class="train">2416</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="C24096A" class="station mt-?C24096A mt?-C24096A"><div class="platform"><div class="passenger"><span class="transfer from">C</span><span class="train">24096</span><span class="transfer to">A</span></div></div></div>
+                      <div data-mutation="A5725G" class="station mt-?A5725G mt?-A5725G"><div class="platform"><div class="passenger"><span class="transfer from">A</span><span class="train">5725</span><span class="transfer to">G</span></div></div></div>
+                      <div data-mutation="C16887T" class="station mt-?C16887T mt?-C16887T"><div class="platform"><div class="passenger"><span class="transfer from">C</span><span class="train">16887</span><span class="transfer to">T</span></div></div></div> -->
+                    </div>
+                    <div class="signage">
+                      <span class="count">4</span>&nbsp;<span>mutations</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="line end" data-from="-" data-to="-" data-track="center">
+                  <div class="track"></div>
+                  <div class="termini">
+                    <div class="terminus exit"></div>
+                  </div>
+                </div>
+                <div class="line lower" data-from="mrca" data-to="b" data-track="down">
+                  <div class="track"></div>
+                  <div class="termini">
+                    <div class="terminus exit">B</div>
+                  </div>
+                  <div class="transit">
+                    <div class="stations">
+                      <!-- <div data-mutation="C1059T" class="station mt-?C1059T mt?-C1059T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">1059</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="C11916T" class="station mt-?C11916T mt?-C11916T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">11916</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="C18998T" class="station mt-?C18998T mt?-C18998T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">18998</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="G29540A" class="station mt-?G29540A mt?-G29540A"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">29540</span><span class="transfer to">A</span></div></div></div>
+                      <div data-mutation="A20553G" class="station mt-?A20553G mt?-A20553G"><div class="platform"><div class="passenger"><span class="from">A</span><span class="train">20553</span><span class="transfer to">G</span></div></div></div>
+                      <div data-mutation="T9429C" class="station mt-?T9429C mt?-T9429C"><div class="platform"><div class="passenger"><span class="from">T</span><span class="train">9429</span><span class="transfer to">C</span></div></div></div>
+                      <div data-mutation="G21724C" class="station mt-?G21724C mt?-G21724C"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">21724</span><span class="transfer to">C</span></div></div></div>
+                      <div data-mutation="G19525T" class="station mt-?G19525T mt?-G19525T"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">19525</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="G11083T" class="station mt-?G11083T mt?-G11083T"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">11083</span><span class="transfer to">T</span></div></div></div>
+                      <div data-mutation="C21757T" class="station mt-?C21757T mt?-C21757T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">21757</span><span class="transfer to">T</span></div></div></div> -->
+                    </div>
+                    <div class="signage">
+                      <span class="count">10</span>&nbsp;<span>mutations</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

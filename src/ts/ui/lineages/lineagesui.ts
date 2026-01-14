@@ -10,7 +10,6 @@ import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
   TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_TIMELINE_SPACING, UNSET,
   getNodeColor, getNodeTypeName, getNodeClassName } from '../common';
 import { SharedState } from '../../sharedstate';
-import { NodeRelationChart } from './noderelationchart';
 import { NodePairType, NodePair, NodeComparisonData,
   NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType } from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
@@ -23,6 +22,7 @@ import { PdfCanvas } from '../../util/pdfcanvas';
 import { FieldTipCount, NodeMetadata } from '../nodemetadata';
 import { NodeComparisonChartData } from './nodecomparisonchartdata';
 import { DistributionSeries } from '../timedistributioncanvas';
+import { NodeSchematic } from './nodeschematic';
 
 
 type KeyEventHandler = (event: KeyboardEvent)=>void;
@@ -90,7 +90,8 @@ export class LineagesUI extends MccUI {
   maxVal = 0;
 
 
-  nodeRelationChart: NodeRelationChart;
+  // nodeRelationChart: NodeRelationChart;
+  nodeSchematic: NodeSchematic;
   nodeListDisplay: NodeListDisplay;
   nodeComparisonData: NodeComparisonChartData[];
   nodeTimelines: NodeTimelines;
@@ -125,7 +126,8 @@ export class LineagesUI extends MccUI {
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
     const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
-    this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
+    // this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
+    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
     this.nodeComparisonData = []
 
@@ -517,7 +519,8 @@ export class LineagesUI extends MccUI {
     }
 
     this.nodeListDisplay.highlightNode(displayNode);
-    this.nodeRelationChart.highlightNode(displayNode);
+    this.nodeSchematic.highlightNode(displayNode);
+    // this.nodeRelationChart.highlightNode(displayNode);
     this.nodePrevalenceCanvas.highlightNode(displayNode);
     this.nodeMutationCharts.forEach((nmc: NodePairMutations )=>{
       nmc.highlightNode(displayNode);
@@ -789,7 +792,8 @@ export class LineagesUI extends MccUI {
       this.nodeMutationCharts = setMutationLists(this.nodeComparisonData, this.goToMutations,
         this.nodeHighlightCallback, zoomMinDate, zoomMaxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
-      this.nodeRelationChart.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
+      // this.nodeRelationChart.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
+      this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
 
@@ -859,7 +863,8 @@ export class LineagesUI extends MccUI {
     this.setChartData(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
 
     this.nodeListDisplay.highlightNode(UNSET);
-    this.nodeRelationChart.highlightNode(UNSET);
+    // this.nodeRelationChart.highlightNode(UNSET);
+    this.nodeSchematic.highlightNode(UNSET);
     this.nodePrevalenceCanvas.highlightNode(UNSET);
     this.nodeMutationCharts.forEach(nc => nc.highlightNode(UNSET));
     this.nodeTimelines.highlightNode(UNSET);
@@ -892,7 +897,8 @@ export class LineagesUI extends MccUI {
     }
     super.requestTreeDraw();
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
-    this.nodeRelationChart.highlightNode(node);
+    // this.nodeRelationChart.highlightNode(node);
+    this.nodeSchematic.highlightNode(node);
   }
 
   handleNodeHighlight(node: DisplayNode | typeof UNSET) : void {
@@ -943,7 +949,8 @@ export class LineagesUI extends MccUI {
 
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index, subtreeIndex);
     this.nodeListDisplay.highlightNode(node);
-    this.nodeRelationChart.highlightNode(node);
+    // this.nodeRelationChart.highlightNode(node);
+    this.nodeSchematic.highlightNode(node);
     this.nodePrevalenceCanvas.highlightNode(node);
 
     this.nodeMutationCharts.forEach((nmc: NodePairMutations)=>{
@@ -1045,11 +1052,7 @@ export class LineagesUI extends MccUI {
 
 
   private requestDrawNodeRelationChart() {
-    requestAnimationFrame(() => this.drawNodeRelationChart());
-  }
-
-  private drawNodeRelationChart() {
-    this.nodeRelationChart.draw();
+    requestAnimationFrame(() => this.nodeSchematic.draw());
   }
 
   goToMutations: MutationFunctionType = (mutation?: Mutation) => {
