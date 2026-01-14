@@ -20,10 +20,10 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
   mutationNameSelector = '.lineages--node-comparison--mutation-name',
   mutationPrevalenceSelector = '.lineages--node-comparison--mutation-prevalence span',
   mutationContainerSelector = '.lineages--node-comparison--time-chart-container',
-  ancestorNodeNameSelector = '.lineages--node-comparison--ancestor-node',
-  descendantNodeNameSelector = '.lineages--node-comparison--descendant-node',
-  mutationCountSelector = '.lineages--node-comparison--mutation-count',
-  mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
+  ancestorNodeNameSelector = '.lineages--list-ancestor',
+  descendantNodeNameSelector = '.lineages--list-descendant',
+  // mutationCountSelector = '.lineages--node-comparison--mutation-count',
+  // mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
   nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
 
 
@@ -97,8 +97,8 @@ export class NodePairMutations {
   div: HTMLDivElement;
   node1Span: HTMLSpanElement;
   node2Span: HTMLSpanElement;
-  mutationCountSpan: HTMLSpanElement;
-  mutationThresholdSpan: HTMLSpanElement;
+  // mutationCountSpan: HTMLSpanElement;
+  // mutationThresholdSpan: HTMLSpanElement;
   mutationContainer: HTMLDivElement;
   goToMutations: MutationFunctionType;
   nodeHighlightCallback: NodeCallback;
@@ -111,17 +111,17 @@ export class NodePairMutations {
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
       node1Span = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
-      node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
-      mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
-      mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement,
-      overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement;
-    if (!mutationContainer || !node1Span || !node2Span || !mutationCountSpan || !mutationThresholdSpan) {
+      node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement;
+      // mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
+      // mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement;
+      // overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement;
+    if (!mutationContainer || !node1Span || !node2Span) {
       throw new Error("html is missing elements needed for node comparison");
     }
     this.node1Span = node1Span;
     this.node2Span = node2Span;
-    this.mutationCountSpan = mutationCountSpan;
-    this.mutationThresholdSpan = mutationThresholdSpan;
+    // this.mutationCountSpan = mutationCountSpan;
+    // this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
     this.goToMutations = goToMutations;
 
@@ -130,21 +130,21 @@ export class NodePairMutations {
       this.div.classList.add('single');
     }
     this.setLabel(this.data.ancestorType, this.data.descendantType);
-    const overlapCount = this.data.overlapCount;
-    if (overlapCount > 0) {
-      const treeCount = this.data.treeCount;
-      overlapSpan.classList.remove('hidden');
-      (overlapSpan.querySelector(".lnoi-pct") as HTMLSpanElement).innerText = getPercentLabel(overlapCount / treeCount);
-      overlapSpan.classList.toggle("is-root", this.data.ancestorType === DisplayNode.root);
-      overlapSpan.querySelectorAll(".lnoi-1").forEach(item=>{
-        (item as HTMLSpanElement).innerText = this.node1Span.innerText;
-      });
-      overlapSpan.querySelectorAll(".lnoi-2").forEach(item=>{
-        (item as HTMLSpanElement).innerText = this.node2Span.innerText;
-      });
-    } else {
-      overlapSpan.classList.add('hidden');
-    }
+    // const overlapCount = this.data.overlapCount;
+    // if (overlapCount > 0) {
+    //   const treeCount = this.data.treeCount;
+    //   overlapSpan.classList.remove('hidden');
+    //   (overlapSpan.querySelector(".lnoi-pct") as HTMLSpanElement).innerText = getPercentLabel(overlapCount / treeCount);
+    //   overlapSpan.classList.toggle("is-root", this.data.ancestorType === DisplayNode.root);
+    //   overlapSpan.querySelectorAll(".lnoi-1").forEach(item=>{
+    //     (item as HTMLSpanElement).innerText = this.node1Span.innerText;
+    //   });
+    //   overlapSpan.querySelectorAll(".lnoi-2").forEach(item=>{
+    //     (item as HTMLSpanElement).innerText = this.node2Span.innerText;
+    //   });
+    // } else {
+    //   overlapSpan.classList.add('hidden');
+    // }
 
 
     const seriesHoverHandler: HoverCallback = (n: number)=>{
@@ -184,12 +184,12 @@ export class NodePairMutations {
       mt.appendTo(this.mutationContainer);
       return mt;
     });
-    this.mutationCountSpan.innerText = `${mutationCount} mutation${mutationCount === 1 ? '' : 's'}`;
-    let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
-    if (mutationPrevalenceThreshold < 1.0) {
-      thresholdLabel += ' or more'
-    }
-    this.mutationThresholdSpan.innerText = thresholdLabel;
+    // this.mutationCountSpan.innerText = `${mutationCount} mutation${mutationCount === 1 ? '' : 's'}`;
+    // let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
+    // if (mutationPrevalenceThreshold < 1.0) {
+    //   thresholdLabel += ' or more'
+    // }
+    // this.mutationThresholdSpan.innerText = thresholdLabel;
   }
 
   requestDraw() : void {
