@@ -28,6 +28,19 @@
 
 #lineages .main-content {
   display: flex;
+
+  .chart {
+    .axis.x {
+      margin-left: var(--lineages-chart-yaxis-width);
+    }
+  }
+
+  .tree-canvas-container {
+    border: solid 1px red;
+  }
+  .mcc_highlight {
+    border: solid 1px yellow;
+  }
 }
 
 
@@ -71,6 +84,7 @@
 
 
 #lineages--mcc-canvas {
+  border: solid 1px blue;
   cursor: crosshair;
   &.noding {
     cursor: default;
@@ -406,6 +420,7 @@ details {
 }
 
 .node-details {
+  display: none;
   margin-top: 4px;
   .t05();
   summary {
@@ -661,77 +676,89 @@ details {
 }
 
 
-.lineages--node-timeline {
+#lineages--node-timelines {
 
-  + .lineages--node-timeline {
-    margin-top: 1em;
+
+  .chart {
+    .displays {
+      flex: 1;
+      padding-top: 0;
+      padding-bottom: 0;
+      background-color: transparent;
+      height: var(--lineages-emergence-timeline-height);
+    }
+
+
+    .axis.x {
+
+      .tag          {opacity: var(--lineages-tag-opacity)}
+      .tag.active   {opacity: var(--lineages-tag-active-opacity)}
+      .tag.inactive {opacity: var(--lineages-tag-inactive-opacity)}
+
+      /**/
+      .tag.unmatching          {opacity: var(--lineages-tag-semiactive-opacity)}
+      .tag.unmatching.active   {opacity: var(--lineages-tag-active-opacity)}
+      .tag.unmatching.inactive {opacity: var(--lineages-tag-inactive-opacity)}
+
+      .tag.matching            {opacity: var(--lineages-tag-opacity)}
+      .tag.matching.active     {opacity: var(--lineages-tag-active-opacity)}
+      .tag.matching.inactive   {opacity: var(--lineages-tag-semiactive-opacity)}
+    }
+
+    .axis.y {
+      width: var(--lineages-chart-yaxis-width);
+
+      .values {
+        align-items: flex-start;
+      }
+
+      .text {
+        z-index: 1;
+        background-color: var(--view-fill);
+        padding: 2px 4px 2px 0;
+      }
+      .tick {
+        display: none;
+      }
+    }
+
+
+    .display {
+      width: 100%;
+      border-radius: var(--chart-inner-corner);
+      background: var(--view-fill);
+
+      .timeline {
+        position: absolute;
+        height: 100%;
+        align-items: flex-end;
+      }
+    }
+
+    #lineages-nt-root-date-label {color: var(--root-timeline-text)}
+    #lineages-nt-mrca-date-label {color: var(--mrca-timeline-text)}
+    #lineages-nt-a-date-label    {color: var(--a-timeline-text)}
+    #lineages-nt-b-date-label    {color: var(--b-timeline-text)}
+    #lineages-nt-root-label      {color: var(--root-text)}
+    #lineages-nt-mrca-label      {color: var(--mrca-text)}
+    #lineages-nt-a-label         {color: var(--a-text)}
+    #lineages-nt-b-label         {color: var(--b-text)}
+
+    .timeline .label.active   {opacity: var(--lineages-timeline-active-label-opacity)}
+    .timeline .label.inactive {opacity: var(--lineages-timeline-inactive-label-opacity)}
+    .timeline .label.unmatching   {opacity: var(--lineages-timeline-semiactive-label-opacity)}
+
+
+
+
+
   }
-
-  padding: 8px;
-  padding-top: 14px;
-  border: solid 1px @borderGrey;
 
   h1 {
     //color: rgb(142, 142, 142);
     //font-weight: 700;
     font-weight: bold; //normal;
     margin-bottom: 0.5em;
-  }
-
-  .lineages--node-timeline--ancestor-node,
-  .lineages--node-timeline--descendant-node {
-    //font-weight: bolder;
-    color: @root;
-    position: relative;
-    padding-left: 1.2em;
-
-    &::before,
-    &::after {
-    content: "";
-    position: absolute;
-    top: 0.15em;
-    left: 0.15em;
-    height: 0.8em;
-    width: 0.8em;
-    display: flex;
-    border-radius: 50%;
-    }
-    &::before {
-    background-color: @root-bright;
-    }
-    &::after {
-    top: calc(0.15em + 2.5px);
-    left: calc(0.15em + 2.5px);
-    width: calc(0.8em - calc(2.5px * 2));
-    height: calc(0.8em - calc(2.5px * 2));
-    background-color: #fff;
-    }
-
-    &.root,
-    &.mrca {
-    &::after {
-      display: none;
-    }
-    }
-
-    &.mrca {
-    color: @mrca;
-    &::before {
-      background-color: @mrca-bright;
-    }
-    }
-    &.node1 {
-    color: @node1;
-    &::before {
-      background-color: @node1-bright;
-    }
-  }
-    &.node2 {
-    color: @node2;
-    &::before {
-      background-color: @node2-bright;
-    }
-  }
   }
 
   &.highlighting {
@@ -1060,4 +1087,11 @@ details {
     // transform: translate(@chartLeftMargin, 0);
     transform: translate(@chartLeftMargin, 100%);
   }
+}
+
+
+
+#lineages--list {
+  max-height: 300px;
+  overflow-y: scroll;
 }

@@ -59,13 +59,13 @@ export class NodeComparisonChartData {
     this.descendantType = getDescendantType(this.nodePair.pairType);
 
     this.overlapCount = nodeComparisonData.overlapCount;
-    this.treeCount = nodeComparisonData.node1Times.length;
+    this.treeCount = nodeComparisonData.upperNodeTimes.length;
 
     this.setMutations(isApobecRun);
 
     const createSeries = (dn: DisplayNode, i: number) => {
       const typeName = getNodeTypeName(dn);
-      const times = (i === 0) ? nodeComparisonData.node1Times : nodeComparisonData.node2Times;
+      const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
       const className = getNodeClassName(dn);
       const color = getNodeColorDark(dn);
       const ds = new DistributionSeries(typeName, times, className, color);

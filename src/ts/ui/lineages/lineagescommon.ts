@@ -1,5 +1,6 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode, UNSET } from '../common';
+import { DistributionSeries } from '../timedistributioncanvas';
 
 export enum NodePairType {
   rootToNode1 = 0,
@@ -17,7 +18,15 @@ export enum NodePairType {
 }
 
 
-export type NodeDisplay = { index: number, color: string, label: string, type: DisplayNode, className: string };
+export type NodeDisplay = {
+  index: number,
+  color: string,
+  label: string,
+  type: DisplayNode,
+  className: string,
+  times: number[],
+  series: DistributionSeries | null
+};
 
 export const getAncestorType = (npt: NodePairType): DisplayNode => {
   // incorrectly gives ancestor=node2 for node1ToNode2?
@@ -73,8 +82,8 @@ export class NodePair {
 
 export type NodeComparisonData = {
   nodePair : NodePair,
-  node1Times: number[],
-  node2Times: number[],
+  upperNodeTimes: number[],
+  lowerNodeTimes: number[],
   overlapCount: number
 }
 

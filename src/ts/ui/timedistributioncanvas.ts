@@ -42,7 +42,7 @@ const COL_2 = 28;
 const PADDING = 5;
 
 export class TimeDistributionCanvas {
-  series: [DistributionSeries, DistributionSeries?];
+  series: DistributionSeries[];
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   width: number;
@@ -62,7 +62,7 @@ export class TimeDistributionCanvas {
 
   readout: HTMLElement;
 
-  constructor(series: [DistributionSeries, DistributionSeries?], minDate: number, maxDate: number, canvas: HTMLCanvasElement, readout: HTMLElement) {
+  constructor(series: DistributionSeries[], minDate: number, maxDate: number, canvas: HTMLCanvasElement, readout: HTMLElement) {
     this.series = series;
     this.minDate = minDate;
     this.maxDate = maxDate;
@@ -126,6 +126,11 @@ export class TimeDistributionCanvas {
   setDateRange(zoomMinDate: number, zoomMaxDate: number) : void {
     this.startIndex = Math.floor(zoomMinDate - this.minDate);
     this.endIndex = Math.floor(zoomMaxDate - this.minDate);
+  }
+
+  setSeries(series: DistributionSeries[]) {
+    this.series = series;
+    this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
   }
 
   drawDistribution(ds: DistributionSeries) {
@@ -382,6 +387,7 @@ export class TimeDistributionCanvas {
       if (!ds) return;
       if (ds.distribution.name === undefined) return;
       if (!this.hoverDate || !this.hoverX) return;
+      if (!this.readout) return;
 
       const {distribution} = ds;
       const series = this.readout.querySelectorAll(".time-chart--series")[i] as HTMLElement;

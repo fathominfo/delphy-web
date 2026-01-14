@@ -199,10 +199,6 @@ export class NodePairMutations {
   }
 
 
-  setDateRange(zoomMinDate: number, zoomMaxDate: number): void {
-    this.mutationTimelines.forEach(mt=>mt.setDateRange(zoomMinDate, zoomMaxDate));
-  }
-
   highlightNode(node: DisplayNode | typeof UNSET) : void {
     this.div.classList.toggle("highlighting", node !== UNSET);
 
@@ -242,7 +238,6 @@ export function setMutationLists(nodeComparisonData: NodeComparisonChartData[],
   nodeComparisonContainer.innerHTML = '';
   const comps: NodePairMutations[] = nodeComparisonData.map(chartData=>{
     const nc = new NodePairMutations(chartData, goToMutations, nodeHighlightCallback);
-    nc.setDateRange(zoomMinDate, zoomMaxDate);
     nc.requestDraw();
     return nc;
   });

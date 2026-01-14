@@ -100,7 +100,9 @@
             </div>
           </div>
           <div id="lineages--prevalence">
-            <h3>Mean lineage prevalence over time</h3>
+            <div class="header">
+              <h4 class="title">Mean lineage prevalence over time</h4>
+            </div>
             <div class="lineages--prevalence--chart-container">
               <canvas id="lineages--prevalence--chart"></canvas>
               <div class="lineages--prevalence--readout hidden">
@@ -141,22 +143,73 @@
             </div>
           </div>
 
-          <div id="lineages--node-timelines">
-            <div class="lineages--node-timeline">
-              <h1>Time distributions of <span class="lineages--node-timeline--ancestor-node">node</span>
-                <span class="lineages--node-timeline--descendant-connector">and </span>
-                <span class="lineages--node-timeline--descendant-node">node</span>
-              </h1>
-              <div class="lineages--time-chart-container">
-                <div class="lineages--time-chart">
-                  <canvas></canvas>
-                  <div class="time-chart--readout">
-                    <div class="time-chart--date"></div>
-                    <div class="time-chart--series">
-                      <span class="value-label">##%</span>
-                      <span class="series-label"></span>
-                    </div>
+          <div id="lineages--node-timelines" class="block time-based" data-duo="right" data-element="lineage-emergence">
+            <div class="header">
+              <div class="title" data-tooltip="outside">
+                <h4>Lineage emergence date distributions</h4>
+                <button class="info">
+                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
+                    <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+
+            <div class="chart" >
+              <div class="feature">
+                <div class="y axis">
+                  <div class="values">
+                    <span class="value"><span class="text"><span class="val">0%</span> <span class="units">probability</span></span><span class="tick"></span></span>
+                    <span class="value"><span class="text"><span class="val">100%</span> <span class="units">probability</span></span><span class="tick"></span></span>
                   </div>
+                </div>
+                <div class="displays">
+                  <div class="display">
+                    <div class="timeline">
+                      <div class="label reference" style="--start-pct: 38.2500%;">
+                        <span class="cal"><span class="year">2020</span></span>
+                      </div>
+                      <div id="lineages-nt-root-date-label" class="label root" data-lineage="root" data-stamp="2019-12-01" style="--start-pct: 22.9268%">
+                        <span class="cal"><span class="day">1</span><span>&nbsp;</span><span class="month">Dec</span></span>
+                      </div>
+                      <div id="lineages-nt-mrca-date-label" class="label mrca nl?-a nl?-b" data-lineage="mrca" data-stamp="2020-02-05" style="--start-pct: 55.1220%">
+                        <span class="cal"><span class="day">5</span><span>&nbsp;</span><span class="month">Feb</span></span>
+                      </div>
+                      <div id="lineages-nt-a-date-label" class="label node-a" data-lineage="a" data-lineage-ext="tip" data-stamp="2020-04-01" style="--start-pct: 82.4390%">
+                        <span class="cal"><span class="day">1</span><span>&nbsp;</span><span class="month">Apr</span></span>
+                      </div>
+                      <div id="lineages-nt-b-date-label"  class="label node-b" data-lineage="b" data-lineage-ext="tip" data-stamp="2020-05-05" style="--start-pct: 99.0244%">
+                        <span class="cal"><span class="day">5</span><span>&nbsp;</span><span class="month">May</span></span>
+                      </div>
+                    </div>
+                    <canvas></canvas>
+                    <!-- Hovered dates -->
+                    <!-- port to canvas -->
+                    <!-- <div class="tracker-dates">
+                      <div class="tracker-date hover reference" style="left: 20.896%;">
+                        <div class="tracker"></div>
+                      </div>
+                    </div> -->
+                  </div>
+                  <!-- port to canvas -->
+                  <!-- <div class="guide date reference" style="--start-pct: 38.2500%;"></div>
+                  <div class="range" style="--start-pct: 82.4390%; --width-pct: 0">
+                    <div class="guide date start nl?-mrca nl?-a" ></div>
+                  </div>
+                  <div class="range" style="--start-pct: 99.0244%; --width-pct: 0">
+                    <div class="guide date start nl?-mrca nl?-b" ></div>
+                  </div>
+                  <div class="guide max"></div>
+                  <div class="guide min"></div> -->
+                </div>
+              </div>
+              <div class="support">
+                <div class="x axis">
+                  <div id="lineages-nt-root-label" class="tag root" data-lineage="root" data-stamp="2019-12-01" style="--pct: 22.9268%">Root</div>
+                  <div id="lineages-nt-mrca-label" class="tag mrca" data-lineage="mrca" data-stamp="2020-02-05" style="--pct: 55.1220%">MRCA</div>
+                  <div id="lineages-nt-a-label" class="tag node-a" data-lineage="a" data-lineage-ext="tip" data-stamp="2020-04-01" style="--pct: 82.4390%">A</div>
+                  <div id="lineages-nt-b-label" class="tag node-b" data-lineage="b" data-lineage-ext="tip" data-stamp="2020-05-05" style="--pct: 99.0244%">B</div>
                 </div>
               </div>
             </div>

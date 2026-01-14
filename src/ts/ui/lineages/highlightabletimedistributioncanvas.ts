@@ -12,7 +12,7 @@ export class HighlightableTimeDistributionCanvas extends TimeDistributionCanvas 
   hoverCallback: HoverCallback;
 
 
-  constructor(series: [DistributionSeries, DistributionSeries?], minDate: number, maxDate: number,
+  constructor(series: DistributionSeries[], minDate: number, maxDate: number,
     // canvas: HTMLCanvasElement, hoverCallback: HoverCallback) {
     canvas: HTMLCanvasElement, readout: HTMLElement, hoverCallback: HoverCallback) {
     // super(series, minDate, maxDate, canvas);

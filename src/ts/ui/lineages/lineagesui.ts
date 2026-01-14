@@ -14,7 +14,7 @@ import { NodeRelationChart } from './noderelationchart';
 import { NodePairType, NodePair, NodeComparisonData,
   NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType } from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
-import { NodeTimelines, setTimelines } from './nodetimelines';
+import { NodeTimelines } from './nodetimelines';
 import { MutationFunctionType, NodePairMutations, setMutationLists } from './nodepairmutations';
 import { NodePrevalenceCanvas } from './nodeprevalencecanvas';
 import { isTip } from '../../util/treeutils';
@@ -22,6 +22,7 @@ import autocomplete from 'autocompleter';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import { FieldTipCount, NodeMetadata } from '../nodemetadata';
 import { NodeComparisonChartData } from './nodecomparisonchartdata';
+import { DistributionSeries } from '../timedistributioncanvas';
 
 
 type KeyEventHandler = (event: KeyboardEvent)=>void;
@@ -92,7 +93,7 @@ export class LineagesUI extends MccUI {
   nodeRelationChart: NodeRelationChart;
   nodeListDisplay: NodeListDisplay;
   nodeComparisonData: NodeComparisonChartData[];
-  nodeTimelines: NodeTimelines[];
+  nodeTimelines: NodeTimelines;
   nodeMutationCharts: NodePairMutations[];
 
 
@@ -127,7 +128,7 @@ export class LineagesUI extends MccUI {
     this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
     this.nodeComparisonData = []
-    this.nodeTimelines = [];
+
     this.nodeMutationCharts = [];
     this.constrainHoverByCredibility = false;
     {
@@ -239,6 +240,8 @@ export class LineagesUI extends MccUI {
         }
       };
     }
+
+    this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeChildCount = [];
     this.prevMcc = null;
     this.highlightNode = UNSET;
@@ -315,6 +318,8 @@ export class LineagesUI extends MccUI {
 
   activate() {
     super.activate();
+    const {minDate, maxDate} = this.mccTreeCanvas;
+    this.nodeTimelines.setDateRange(minDate, maxDate);
     const canvas = this.mccTreeCanvas.getCanvas();
     if (canvas instanceof HTMLCanvasElement) {
       canvas.addEventListener('pointerdown', this.canvasDownHandler);
@@ -343,7 +348,7 @@ export class LineagesUI extends MccUI {
   resize(): void {
     super.resize();
     this.nodeMutationCharts.forEach(nc => nc.resize());
-    this.nodeTimelines.forEach(nt => nt.resize());
+    this.nodeTimelines.resize();
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
   }
@@ -517,9 +522,7 @@ export class LineagesUI extends MccUI {
     this.nodeMutationCharts.forEach((nmc: NodePairMutations )=>{
       nmc.highlightNode(displayNode);
     });
-    this.nodeTimelines.forEach((nt:NodeTimelines)=>{
-      nt.highlightNode(displayNode);
-    });
+    this.nodeTimelines.highlightNode(displayNode);
   }
 
 
@@ -619,21 +622,28 @@ export class LineagesUI extends MccUI {
         summaryTree = this.mccTreeCanvas.tree as SummaryTree,
         nodeMetadata = this.sharedState.mccConfig.nodeMetadata,
         tipIds = this.sharedState.getTipIds();
+      let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, node1Index, node2Index].map(getNodeDisplay);
+      nodes.forEach(node=>{
+        if (node.index >= 0) {
+          node.times = pythia.getNodeTimeDistribution(node.index, summaryTree);
+          node.series = new DistributionSeries(node.label, node.times, node.className, node.color);
+        }
+      });
       if (node1Index === UNSET && node2Index === UNSET) {
         /* we clear all but the root node */
         this.nodeListDisplay.clearNode1();
         this.nodeListDisplay.clearNode2();
         this.nodeListDisplay.clearMRCA();
         const nodePair = this.assembleNodePair(rootIndex, UNSET, NodePairType.rootOnly, pythia),
-          node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree),
-          node2Times: number[] = [],
+          upperNodeTimes = nodes[DisplayNode.root].times,
+          lowerNodeTimes: number[] = [],
           overlapCount = 0;
-        nodePairs.push({ nodePair, node1Times, node2Times, overlapCount});
+        nodePairs.push({ nodePair, upperNodeTimes, lowerNodeTimes, overlapCount});
         this.setSelectable(true);
       } else {
         let nodePair: NodePair,
-          node1Times: number[],
-          node2Times: number[];
+          upperNodeTimes: number[],
+          lowerNodeTimes: number[];
         const node1Locked = node1Index === this.node1Index,
           node2Locked = node2Index === this.node2Index,
           overlapCount = 0;
@@ -644,9 +654,9 @@ export class LineagesUI extends MccUI {
             if (node2Index !== UNSET) {
               this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index, nodeMetadata, tipIds), node2Index);
               nodePair = this.assembleNodePair(rootIndex, node2Index, NodePairType.rootToNode2, pythia);
-              node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
-              node2Times = pythia.getNodeTimeDistribution(node2Index, summaryTree);
-              nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
+              upperNodeTimes = nodes[DisplayNode.root].times;
+              lowerNodeTimes = nodes[DisplayNode.node2].times;
+              nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
             } else {
               this.nodeListDisplay.clearNode2();
             }
@@ -655,50 +665,73 @@ export class LineagesUI extends MccUI {
             /* we have node 1 without node 2 */
             this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index, nodeMetadata, tipIds), node1Index);
             nodePair = this.assembleNodePair(rootIndex, node1Index, NodePairType.rootToNode1, pythia);
-            node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
-            node2Times = pythia.getNodeTimeDistribution(node1Index, summaryTree);
-            nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
+            upperNodeTimes = nodes[DisplayNode.root].times;
+            lowerNodeTimes = nodes[DisplayNode.node1].times;
+            nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
             this.nodeListDisplay.clearNode2();
             this.setSelectable(true);
           } else {
             /*
               we have both node 1 and node 2, but no mrca.
               this could mean both are descended from root,
-              or one is descended from the other
+              or one is descended from the other.
+              We know we have two pairs, and in the first one
+              the ancestor node is root. So the questions are:
+                in the second pair, is the ancestor node root, node1, or node2?
+                  this
+
               */
             const mrca = this.getMRCA(node1Index, node2Index),
-              pairs: NodePairType[] = [],
-              indices:[number, number][] = [];
+              ancestor1: DisplayNode = DisplayNode.root,
+              ancestor1Index = rootIndex;
+            let ancestor2: DisplayNode = DisplayNode.root,
+              descendant1: DisplayNode = DisplayNode.root,
+              descendant2: DisplayNode = DisplayNode.root,
+              ancestor2Index = rootIndex,
+              descendant1Index = rootIndex,
+              descendant2Index = rootIndex,
+              pair1: NodePairType = NodePairType.rootToNode1,
+              pair2: NodePairType = NodePairType.rootToNode2;
+
             if (mrca === rootIndex) {
-              pairs[0] = NodePairType.rootToNode1;
-              indices[0] = [rootIndex, node1Index];
-              pairs[1] = NodePairType.rootToNode2;
-              indices[1] = [rootIndex, node2Index];
+              pair1 = NodePairType.rootToNode1;
+              descendant1 = DisplayNode.node1;
+              descendant1Index = node1Index;
+              pair2 = NodePairType.rootToNode2;
+              descendant2 = DisplayNode.node2;
+              descendant2Index = node2Index;
             } else if (mrca === node1Index) {
-              pairs[0] = NodePairType.rootToNode1;
-              indices[0] = [rootIndex, node1Index];
-              pairs[1] = NodePairType.node1ToNode2;
-              indices[1] = [node1Index, node2Index];
+              pair1 = NodePairType.rootToNode1;
+              descendant1 = DisplayNode.node1;
+              descendant1Index = node1Index;
+              pair2 = NodePairType.node1ToNode2;
+              ancestor2 = DisplayNode.node1;
+              ancestor2Index = rootIndex;
+              descendant2 = DisplayNode.node2;
+              descendant2Index = node2Index;
             } else {
-              pairs[0] = NodePairType.rootToNode2;
-              indices[0] = [rootIndex, node2Index];
-              pairs[1] = NodePairType.node2ToNode1;
-              indices[1] = [node2Index, node1Index];
+              pair1 = NodePairType.rootToNode2;
+              descendant1 = DisplayNode.node2;
+              descendant1Index = node2Index;
+              pair2 = NodePairType.node2ToNode1;
+              ancestor2 = DisplayNode.node2;
+              ancestor2Index = node2Index;
+              descendant2 = DisplayNode.node1;
+              descendant2Index = node1Index;
             }
 
             this.nodeListDisplay.setNode1(nodeConfidence[node1Index], this.nodeChildCount[node1Index], node1Locked, getNodeMetadata(node1Index, nodeMetadata, tipIds), node1Index);
             this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index, nodeMetadata, tipIds), node2Index);
 
-            nodePair = this.assembleNodePair(indices[0][0], indices[0][1], pairs[0], pythia);
-            node1Times = pythia.getNodeTimeDistribution(indices[0][0], summaryTree);
-            node2Times = pythia.getNodeTimeDistribution(indices[0][1], summaryTree);
-            nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
+            nodePair = this.assembleNodePair(ancestor1Index, descendant1Index, pair1, pythia);
+            upperNodeTimes = nodes[ancestor1].times;
+            lowerNodeTimes = nodes[descendant1].times;
+            nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
 
-
-            nodePair = this.assembleNodePair(indices[1][0], indices[1][1], pairs[1], pythia);
-            node1Times = pythia.getNodeTimeDistribution(indices[1][0], summaryTree);
-            node2Times = pythia.getNodeTimeDistribution(indices[1][1], summaryTree);
-            nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
+            nodePair = this.assembleNodePair(ancestor2Index, descendant2Index, pair2, pythia);
+            upperNodeTimes = nodes[ancestor2].times;
+            lowerNodeTimes = nodes[descendant2].times;
+            nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
             // this.disableSelections();
           }
           this.nodeListDisplay.clearMRCA();
@@ -707,22 +740,21 @@ export class LineagesUI extends MccUI {
           this.nodeListDisplay.setNode2(nodeConfidence[node2Index], this.nodeChildCount[node2Index], node2Locked, getNodeMetadata(node2Index, nodeMetadata, tipIds), node2Index);
           this.nodeListDisplay.setMRCA(nodeConfidence[mrcaIndex], this.nodeChildCount[mrcaIndex], false, getNodeMetadata(mrcaIndex, nodeMetadata, tipIds), mrcaIndex);
           nodePair = this.assembleNodePair(rootIndex, mrcaIndex, NodePairType.rootToMrca, pythia);
-          node1Times = pythia.getNodeTimeDistribution(rootIndex, summaryTree);
-          node2Times = pythia.getNodeTimeDistribution(mrcaIndex, summaryTree);
-          nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
-          node1Times = node2Times;
+          upperNodeTimes = nodes[DisplayNode.root].times;
+          lowerNodeTimes = nodes[DisplayNode.mrca].times;
+          nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
+          upperNodeTimes = lowerNodeTimes;
           nodePair = this.assembleNodePair(mrcaIndex, node1Index, NodePairType.mrcaToNode1, pythia);
-          node2Times = pythia.getNodeTimeDistribution(node1Index, summaryTree);
-          nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
+          lowerNodeTimes = nodes[DisplayNode.node1].times;
+          nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
           nodePair = this.assembleNodePair(mrcaIndex, node2Index, NodePairType.mrcaToNode2, pythia);
-          node2Times = pythia.getNodeTimeDistribution(node2Index, summaryTree);
-          nodePairs.push({nodePair, node1Times, node2Times, overlapCount });
+          lowerNodeTimes = nodes[DisplayNode.node2].times;
+          nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
           // this.disableSelections();
         }
       }
-      let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, node1Index, node2Index].map(getNodeDisplay);
-      nodes = nodes.filter(({index})=>index>=0);
 
+      nodes = nodes.filter(({index})=>index>=0);
       const nodeIndices = nodes.map(({index})=>index),
         nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),
         nodeDistributions = nodePrevalenceData.series,
@@ -748,23 +780,30 @@ export class LineagesUI extends MccUI {
           }
         });
       });
-      nodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "" });
 
       let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
       // const zoomDateRange = zoomMaxDate - zoomMinDate;
       // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
       this.nodeComparisonData = nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, this.isApobecEnabled));
-      this.nodeTimelines = setTimelines(this.nodeComparisonData, this.nodeHighlightCallback, zoomMinDate, zoomMaxDate);
+      this.nodeTimelines.setData(nodes);
       this.nodeMutationCharts = setMutationLists(this.nodeComparisonData, this.goToMutations,
         this.nodeHighlightCallback, zoomMinDate, zoomMaxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
       this.nodeRelationChart.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+
+      /*
+      add an empty node before the root to represent the uninfected population
+      in the prevalence chart
+      */
+      nodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
+
       // this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
       this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, minDate, maxDate);
       this.nodePrevalenceCanvas.requestDraw();
       this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
+
       mccRef.release();
     }
   }
@@ -823,7 +862,7 @@ export class LineagesUI extends MccUI {
     this.nodeRelationChart.highlightNode(UNSET);
     this.nodePrevalenceCanvas.highlightNode(UNSET);
     this.nodeMutationCharts.forEach(nc => nc.highlightNode(UNSET));
-    this.nodeTimelines.forEach(nc => nc.highlightNode(UNSET));
+    this.nodeTimelines.highlightNode(UNSET);
 
     this.setHint(TreeHint.Hover);
   }
@@ -910,9 +949,7 @@ export class LineagesUI extends MccUI {
     this.nodeMutationCharts.forEach((nmc: NodePairMutations)=>{
       nmc.highlightNode(node);
     });
-    this.nodeTimelines.forEach((nt: NodeTimelines)=>{
-      nt.highlightNode(node);
-    });
+    this.nodeTimelines.highlightNode(node);
   }
 
 
@@ -928,14 +965,6 @@ export class LineagesUI extends MccUI {
     const zoomDateRange = zoomMaxDate - zoomMinDate;
     zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
     this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
-    this.nodeMutationCharts.forEach((npm: NodePairMutations)=>{
-      npm.setDateRange(zoomMinDate, zoomMaxDate);
-      npm.requestDraw();
-    });
-    this.nodeTimelines.forEach((nt: NodeTimelines)=>{
-      nt.setDateRange(zoomMinDate, zoomMaxDate);
-      nt.requestDraw();
-    });
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
     this.nodePrevalenceCanvas.requestDraw();
 
@@ -1041,7 +1070,9 @@ const getNodeDisplay = (index: DisplayNode, dn: DisplayNode) => {
     color: getNodeColor(dn),
     label: getNodeTypeName(dn),
     type: dn,
-    className: getNodeClassName(dn)
+    className: getNodeClassName(dn),
+    times: [],
+    series: null
   };
 }
 

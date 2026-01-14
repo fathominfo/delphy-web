@@ -197,13 +197,6 @@ canvas {
         overflow: visible;
       }
 
-      h3.title, .title h3 {
-        font-weight: var(--title-font-weight);
-        font-size: var(--title-font-size);
-        line-height: var(--title-line-height);
-      }
-
-
       h3.title, .title h3,
       h4.title, .title h4,
       .toggles h3,
@@ -216,6 +209,22 @@ canvas {
         white-space: nowrap;
         text-overflow: ellipsis;
       }
+
+
+      h3.title, .title h3 {
+        font-weight: var(--title-font-weight);
+        font-size: var(--title-font-size);
+        line-height: var(--title-line-height);
+      }
+
+
+      h4.title, .title h4 {
+        font-weight: var(--element-title-font-weight);
+        font-size: var(--element-title-font-size);
+        line-height: var(--element-title-line-height);
+      }
+
+
     }
   }
 
@@ -526,6 +535,95 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: var(--tabular-numerals-tighter-spacing-1x);;
 }
 
+.axis-dates,
+.tracker-dates {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: calc(100% - var(--chart-displays-timeline-inset-x));
+}
+
+.axis-dates {
+  position: relative;
+  height: var(--axis-dates-height);
+}
+
+.tracker-dates {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: calc(var(--lineages-prevalence-chart-feature-height) + var(--axis-dates-height));
+  opacity: 0;
+  -webkit-transition: opacity var(--axis-transition) ease-out;
+  -moz-transition: opacity var(--axis-transition) ease-out;
+  -ms-transition: opacity var(--axis-transition) ease-out;
+  transition: opacity var(--axis-transition) ease-out;
+  pointer-events: none;
+}
+
+.tracker-dates.active {
+  opacity: 1;
+}
+
+
+
+.axis-date,
+.tracker-date {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: inherit;
+  align-items: baseline;
+  gap: 0;
+  top: 0;
+  width: min-content;
+  height: 100%;
+  font-weight: var(--date-text-font-weight);
+  font-size: 8px;
+  line-height: 6px;
+  color: var(--date-text);
+  overflow-x: visible;
+  pointer-events: none;
+}
+
+.axis-date, .tracker-date {
+  .line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--chart-tick-stroke-weight);
+    transform: translate(-50%, calc(var(--chart-stroke-weight) / -2));
+    background-color: var(--chart-stroke);
+  }
+}
+
+
+
+.tracker-date {
+  .line {
+    z-index: 1;
+    top: calc(100% + var(--chart-stroke-weight));
+    height: var(--axis-date-two-line-height);
+  }
+  .tracker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--chart-tick-stroke-weight);
+    height: 100%;
+    transform: translateX(-50%);
+    background-color: var(--chart-stroke);
+    mix-blend-mode: multiply;
+  }
+
+  &.reference .tracker {
+    opacity: var(--date-reference-line-opacity);
+  }
+}
+
+
 
 .module-group {
   display: flex;
@@ -645,5 +743,58 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 
+.chart {
+  .display {
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
 
 
+// .guide {
+//   position: absolute;
+//   mix-blend-mode: multiply;
+//   -webkit-transition: all var(--transition) ease-out;
+//   -moz-transition: all var(--transition) ease-out;
+//   -ms-transition: all var(--transition) ease-out;
+//   transition: all var(--transition) ease-out;
+
+//   &.min, &.max {
+//     left: 0;
+//     width: 100%;
+//     height: var(--guide-stroke-weight);
+//     border-radius: var(--guide-stroke-weight);
+//     background-color: var(--guide-stroke);
+//     opacity: var(--guide-opacity);
+//   }
+
+//   &.max {
+//     top: 0;
+//     bottom: unset;
+//   }
+
+//   &.min {
+//     top: unset;
+//     bottom: 0;
+//   }
+
+//   &.date {
+//     top: 0;
+//     width: var(--guide-date-stroke-weight);
+//     height: 100%;
+//     border-radius: var(--guide-date-stroke-weight);
+//     background-color: var(--guide-date-stroke);
+//     opacity: var(--guide-date-opacity);
+//     transform: translateX(-50%);
+//     &.reference {
+//       left: var(--start-pct);
+//     }
+//   }
+
+
+// }

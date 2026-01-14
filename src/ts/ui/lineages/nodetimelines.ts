@@ -1,74 +1,86 @@
-import { NodeCallback } from './lineagescommon';
-import { DisplayNode, getNodeTypeName, UNSET, getNodeClassName } from '../common';
+import { NodeCallback, NodeDisplay } from './lineagescommon';
+import { DisplayNode, UNSET } from '../common';
 import { HighlightableTimeDistributionCanvas, HoverCallback } from './highlightabletimedistributioncanvas';
-import { NodeComparisonChartData } from './nodecomparisonchartdata';
+import { DistributionSeries } from '../timedistributioncanvas';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
-const nodeComparisonTemplate = nodeComparisonContainer.querySelector(".lineages--node-timeline") as HTMLDivElement;
 
-nodeComparisonTemplate.remove();
+const rootSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-label") as HTMLSpanElement,
+  mrcaSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-label") as HTMLSpanElement,
+  nodeASpan = nodeComparisonContainer.querySelector("#lineages-nt-a-label") as HTMLSpanElement,
+  nodeBSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-label") as HTMLSpanElement,
+  rootDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-date-label") as HTMLSpanElement,
+  mrcaDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-date-label") as HTMLSpanElement,
+  nodeADateSpan = nodeComparisonContainer.querySelector("#lineages-nt-a-date-label") as HTMLSpanElement,
+  nodeBDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-date-label") as HTMLSpanElement,
+  canvas = nodeComparisonContainer.querySelector("canvas") as HTMLCanvasElement,
+  readout = nodeComparisonContainer.querySelector(".time-chart--readout") as HTMLElement;
 
-const ancestorNodeNameSelector = '.lineages--node-timeline--ancestor-node',
-  descendantNodeNameSelector = '.lineages--node-timeline--descendant-node',
-  nodeTimesCanvasSelector = '.lineages--time-chart canvas';
+
 
 
 export class NodeTimelines {
-  div: HTMLDivElement;
-  node1Span: HTMLSpanElement;
-  node2Span: HTMLSpanElement;
   nodeTimesCanvas: HighlightableTimeDistributionCanvas;
-  nodeHighlightCallback: NodeCallback;
-  data: NodeComparisonChartData;
+  data: NodeDisplay[] = [];
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
 
-  constructor(data : NodeComparisonChartData, nodeHighlightCallback: NodeCallback) {
-    this.data = data;
-    this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
-    this.nodeHighlightCallback = nodeHighlightCallback;
-    const node1Span = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
-      node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
-      canvas = this.div.querySelector(nodeTimesCanvasSelector) as HTMLCanvasElement,
-      readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
-    this.node1Span = node1Span;
-    this.node2Span = node2Span;
+  constructor(nodeHighlightCallback: NodeCallback) {
+    // const {series, minDate, maxDate} = this.data;
 
-
-
-    if (this.data.descendantType === UNSET) {
-      this.div.classList.add('single');
-    }
-    this.setLabel(this.data.ancestorType, this.data.descendantType);
-
-    const seriesHoverHandler: HoverCallback = (n: number)=>{
-      if (n === 0) {
-        nodeHighlightCallback(this.data.ancestorType);
-      } else if (n === 1) {
-        nodeHighlightCallback(this.data.descendantType);
-      } else {
-        nodeHighlightCallback(UNSET);
-      }
+    const seriesHoverHandler: HoverCallback = (n: DisplayNode)=>{
+      if (this.data === null) return;
+      console.log(`seriesHoverHandler -> ${n}`)
+      // if (n === 0) {
+      //   nodeHighlightCallback(this.data.ancestorType);
+      // } else if (n === 1) {
+      //   nodeHighlightCallback(this.data.descendantType);
+      // } else {
+      //   nodeHighlightCallback(UNSET);
+      // }
+      nodeHighlightCallback(UNSET);
     };
-    const {series, minDate, maxDate} = this.data;
-    // this.nodeTimesCanvas = new HighlightableTimeDistributionCanvas(series, minDate, maxDate, canvas, seriesHoverHandler);
-    this.nodeTimesCanvas = new HighlightableTimeDistributionCanvas(series, minDate, maxDate, canvas, readout, seriesHoverHandler);
 
-    node1Span.addEventListener("mouseenter", () => seriesHoverHandler(0));
-    node1Span.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
-    node2Span.addEventListener("mouseenter", () => seriesHoverHandler(1));
-    node2Span.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
 
-    nodeComparisonContainer.appendChild(this.div);
-    this.nodeTimesCanvas.resize();
+    this.nodeTimesCanvas = new HighlightableTimeDistributionCanvas([], this.minDate, this.maxDate, canvas, readout, seriesHoverHandler);
+
+    [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
+      rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
+      span.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET));
+    });
+    [ rootSpan, rootDateSpan].forEach(span=>{
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.root));
+    });
+    [ mrcaSpan, mrcaDateSpan].forEach(span=>{
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca));
+    });
+    [ nodeASpan, nodeADateSpan].forEach(span=>{
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.node1));
+    });
+    [ nodeBSpan, nodeBDateSpan].forEach(span=>{
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.node2));
+    });
   }
 
-  setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
-    /* set title for the ancestor node */
-    this.node1Span.innerText = getNodeTypeName(ancestorType);
-    this.node1Span.classList.add(getNodeClassName(ancestorType));
+  setDateRange(minDate:number, maxDate:number): void {
+    this.minDate = minDate;
+    this.maxDate = maxDate
+  }
 
-    /* set title for the descendant node */
-    this.node2Span.innerText = getNodeTypeName(descendantType);
-    this.node2Span.classList.add(getNodeClassName(descendantType));
+  setData(nodes: NodeDisplay[]) {
+    this.data = nodes;
+    const currentTypes = nodes.map((nd:NodeDisplay)=>nd.type);
+    rootSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.root));
+    rootDateSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.root));
+    mrcaSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.mrca));
+    mrcaDateSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.mrca));
+    nodeASpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.node1));
+    nodeADateSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.node1));
+    nodeBSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.node2));
+    nodeBDateSpan.classList.toggle("hidden", !currentTypes.includes(DisplayNode.node2));
+    const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
+    this.nodeTimesCanvas.setSeries(allSeries as DistributionSeries[]);
+    this.requestDraw();
   }
 
   requestDraw() : void {
@@ -78,38 +90,35 @@ export class NodeTimelines {
   }
 
 
-  setDateRange(zoomMinDate: number, zoomMaxDate: number): void {
-    this.nodeTimesCanvas.setDateRange(zoomMinDate, zoomMaxDate);
-  }
-
   highlightNode(node: DisplayNode | typeof UNSET) : void {
-    this.div.classList.toggle("highlighting", node !== UNSET);
+    if (!this.data) return;
+    nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
 
     if (node === UNSET) {
-      this.nodeTimesCanvas.resetHighlight();
-      this.node1Span.classList.remove("highlight");
-      this.node2Span.classList.remove("highlight");
+      // this.nodeTimesCanvas.resetHighlight();
+      nodeASpan.classList.remove("highlight");
+      nodeBSpan.classList.remove("highlight");
       return;
     }
 
-    if (node === this.data.ancestorType) {
-      this.nodeTimesCanvas.highlightAncestor();
-      this.node1Span.classList.add("highlight");
-      this.node2Span.classList.remove("highlight");
-      return;
-    }
+    // if (node === this.data.ancestorType) {
+    //   // this.nodeTimesCanvas.highlightAncestor();
+    //   nodeASpan.classList.add("highlight");
+    //   nodeBSpan.classList.remove("highlight");
+    //   return;
+    // }
 
-    if (node === this.data.descendantType) {
-      this.nodeTimesCanvas.highlightDescendant();
-      this.node1Span.classList.remove("highlight");
-      this.node2Span.classList.add("highlight");
-      return;
-    }
+    // if (node === this.data.descendantType) {
+    //   // this.nodeTimesCanvas.highlightDescendant();
+    //   nodeASpan.classList.remove("highlight");
+    //   nodeBSpan.classList.add("highlight");
+    //   return;
+    // }
 
     /* else, don't have this node */
-    this.nodeTimesCanvas.lowlight();
-    this.node1Span.classList.remove("highlight");
-    this.node2Span.classList.remove("highlight");
+    // this.nodeTimesCanvas.lowlight();
+    nodeASpan.classList.remove("highlight");
+    nodeBSpan.classList.remove("highlight");
   }
 
   resize() {
@@ -119,16 +128,4 @@ export class NodeTimelines {
 }
 
 
-export function setTimelines(nodeComparisonData: NodeComparisonChartData[],
-  nodeHighlightCallback: NodeCallback,
-  zoomMinDate: number, zoomMaxDate: number): NodeTimelines[] {
-  nodeComparisonContainer.innerHTML = '';
-  const comps: NodeTimelines[] = nodeComparisonData.map(chartData=>{
-    const nc = new NodeTimelines(chartData, nodeHighlightCallback);
-    nc.setDateRange(zoomMinDate, zoomMaxDate);
-    nc.requestDraw();
-    return nc;
-  });
-  return comps;
-}
 
