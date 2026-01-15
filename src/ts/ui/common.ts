@@ -77,22 +77,22 @@ export const enum DisplayNode {
 }
 export const nodeTypeNames = ["Root", "MRCA", "A", "B"];
 export const nodeColors = [
-  'rgb(120, 164, 167)',
-  'rgb(242, 88, 255)',//teal:'rgb(0, 197, 185)',//green:'rgb(121, 178, 0)',
-  'rgb(0, 117, 255)',//'rgb(255, 122, 0)',
-  'rgb(244, 98, 15)'//'rgb(0, 148, 255)'
+  'rgb(255, 194, 132)',
+  'rgb(194, 129, 253)',
+  'rgb(255, 0, 86)',
+  'rgb(0, 162, 219)'
 ];
 export const nodeColorsDark = [
-  'rgb(120, 164, 167)',
-  'rgb(227, 53, 255)',//green:'rgb(75, 150, 0)',
-  'rgb(0, 117, 255)',//'rgb(255, 122, 0)',
-  'rgb(244, 98, 15)'//'rgb(0, 148, 255)'
+  'rgb(235, 126, 68)',
+  'rgb(124, 65, 182)',
+  'rgb(173, 0, 34)',
+  'rgb(0, 98, 151)'
 ];
 export const nodeColorsStream = [
-  'rgb(178, 200, 203)',
-  'rgb(227, 53, 255)',
-  'rgb(0, 117, 255)',
-  'rgb(244, 98, 15)'
+  'rgb(235, 126, 68)',
+  'rgb(124, 65, 182)',
+  'rgb(173, 0, 34)',
+  'rgb(0, 98, 151)'
 ];
 export const nodeClassNames: string[] = ["root", "mrca", "node1", "node2"];
 

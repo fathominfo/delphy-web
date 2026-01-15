@@ -9,7 +9,7 @@ import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 const UNSET_CHAR = "-";
 const MATCH_CLASS = "matching";
 const NO_MATCH_CLASS = "unmatching";
-const MUTATION_LIMIT = 10;
+const MUTATION_LIMIT = 30;
 
 const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
 MUTATION_TEMPLATE?.remove();

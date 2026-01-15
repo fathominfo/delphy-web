@@ -317,10 +317,10 @@ export class NodeListDisplay {
       }
       return div;
     };
-    this.rootDiv = new NodeItem(getDiv('.lineages--node-detail.root'));
-    this.mrcaDiv = new NodeItem(getDiv('.lineages--node-detail.mrca'));
-    this.node1Div = new NodeItem(getDiv('.lineages--node-detail.node1'));
-    this.node2Div = new NodeItem(getDiv('.lineages--node-detail.node2'));
+    this.rootDiv = new NodeItem(getDiv('.lineages--node-item.root'));
+    this.mrcaDiv = new NodeItem(getDiv('.lineages--node-item.mrca'));
+    this.node1Div = new NodeItem(getDiv('.lineages--node-item.node1'));
+    this.node2Div = new NodeItem(getDiv('.lineages--node-item.node2'));
     this.dismissCallback = dismissCallback;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.nodeZoomCallback = nodeZoomCallback;
@@ -336,19 +336,19 @@ export class NodeListDisplay {
       div.addEventListener('pointerenter', () => nodeHighlightCallback(node));
       div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET));
     }
-    const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
-      const icon = div.querySelector(".node-icon") as HTMLDivElement;
-      if (!icon) {
-        throw new Error('the div has no icon to click');
-      }
-      icon.addEventListener('click', ()=>this.nodeZoomCallback(node));
-    }
+    // const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
+    //   const icon = div.querySelector(".node-icon") as HTMLDivElement;
+    //   if (!icon) {
+    //     throw new Error('the div has no icon to click');
+    //   }
+    //   icon.addEventListener('click', ()=>this.nodeZoomCallback(node));
+    // }
     bindDismiss(this.node1Div.div, DisplayNode.node1);
     bindDismiss(this.node2Div.div, DisplayNode.node2);
-    bindIcon(this.rootDiv.div, DisplayNode.root);
-    bindIcon(this.mrcaDiv.div, DisplayNode.mrca);
-    bindIcon(this.node1Div.div, DisplayNode.node1);
-    bindIcon(this.node2Div.div, DisplayNode.node2);
+    // bindIcon(this.rootDiv.div, DisplayNode.root);
+    // bindIcon(this.mrcaDiv.div, DisplayNode.mrca);
+    // bindIcon(this.node1Div.div, DisplayNode.node1);
+    // bindIcon(this.node2Div.div, DisplayNode.node2);
     bindDiv(this.rootDiv.div, DisplayNode.root);
     bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
     bindDiv(this.node1Div.div, DisplayNode.node1);

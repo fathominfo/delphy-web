@@ -34,60 +34,78 @@
       </section>
       <section id="lineages--right" class="charts--container dual">
         <div id="lineages--overview" class="duo">
-          <div id="lineages--node-list">
-            <div class="lineages--node-detail root active">
-              <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
-              <div class="node-info">
-                <div class="node-name">Root</div>
-                <div class="node-stats"><span class="node--tip-count">00 tips</span></div>
-                <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
-                {{> lineages_node_metadata }}
+          <div id="lineages--node-list" class="block left">
+            <div class="header">
+              <div class="title">
+                <h3>Nodes</h3>
               </div>
             </div>
-            <div class="lineages--node-detail mrca">
-              <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="lineages--node-item root active">
               <div class="node-info">
-                <div class="node-source">Automatically inferred</div>
-                <div class="node-name">MRCA of A and B</div>
-                <div class="node-stats"><span class="node--tip-count">00 tips</span>,
-                  <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
-                  <span class="mono-hover">monophyletic
-                  in <span class="node--confidence">00%</span> of base trees
+                <div class="node-icon"><div class="shape"></div></div>
+                <div class="node-description">
+                  <div class="node-name">Root</div>
+                  <div class="node-stats"><span class="node--tip-count">00 tips</span></div>
+                  <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+                  {{> lineages_node_metadata }}
                 </div>
-                <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
-                {{> lineages_node_metadata }}
               </div>
-              <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
             </div>
-            <div class="lineages--node-detail node1">
-              <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="lineages--node-item mrca">
               <div class="node-info">
-                <div class="node-source">Previewing</div>
-                <div class="node-name">Selection A</div>
-                <div class="node-stats"><span class="node--tip-count">00 tips</span>,
-                  <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
-                  <span class="mono-hover">monophyletic
-                  in <span class="node--confidence">00%</span> of base trees
+                <div class="node-icon"><div class="shape"></div></div>
+                <div class="node-description">
+                  <div class="node-name">MRCA of A and B <span class="node-source">(inferred)</span></div>
+                  <div class="node-stats"><span class="node--tip-count">00 tips</span>,
+                    <span class="mono-hover">monophyletic
+                    in <span class="node--confidence">00%</span> of base trees
+                  </div>
+                  <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+                  {{> lineages_node_metadata }}
                 </div>
-                <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
-                {{> lineages_node_metadata }}
               </div>
-              <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
             </div>
-            <div class="lineages--node-detail node2">
-              <div class="node-icon"><div class="box"><div class="glyph"></div></div></div>
+            <div class="lineages--node-item node1">
               <div class="node-info">
-                <div class="node-source">Previewing</div>
-                <div class="node-name">Selection B</div>
-                <div class="node-stats"><span class="node--tip-count">00 tips</span>,
-                  <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
-                  <span class="mono-hover">monophyletic
-                  in <span class="node--confidence">00%</span> of base trees
+                <div class="node-icon"><div class="shape"></div></div>
+                <div class="node-description">
+                  <div class="node-name">A</div>
+                  <div class="node-stats"><span class="node--tip-count">00 tips</span>,
+                    <span class="mono-hover">monophyletic
+                    in <span class="node--confidence">00%</span> of base trees
+                  </div>
+                  <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+                  {{> lineages_node_metadata }}
                 </div>
-                <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
-                {{> lineages_node_metadata }}
               </div>
-              <button type="button" class="node-dismiss" aria-label="Dismiss node"><div class="box"><div class="glyph"></div></div></button>
+              <button type="button" class="node-dismiss" aria-label="Dismiss node">
+                <div class="box">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+            <div class="lineages--node-item node2">
+              <div class="node-info">
+                <div class="node-icon"><div class="shape"></div></div>
+                <div class="node-description">
+                  <div class="node-name">B</div>
+                  <div class="node-stats"><span class="node--tip-count">00 tips</span>,
+                    <span class="mono-hover">monophyletic
+                    in <span class="node--confidence">00%</span> of base trees
+                  </div>
+                  <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+                  {{> lineages_node_metadata }}
+                </div>
+              </div>
+              <button type="button" class="node-dismiss" aria-label="Dismiss node">
+                <div class="box">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
+                  </svg>
+                </div>
+              </button>
             </div>
             <div class="id-lookup">
               <form>
@@ -99,9 +117,9 @@
               </form>
             </div>
           </div>
-          <div id="lineages--prevalence">
+          <div id="lineages--prevalence" class="block right">
             <div class="header">
-              <h4 class="title">Mean lineage prevalence over time</h4>
+              <h4 class="title">Lineage prevalence over time</h4>
             </div>
             <div class="lineages--prevalence--chart-container">
               <canvas id="lineages--prevalence--chart"></canvas>
@@ -115,17 +133,17 @@
                 <div class="prevalence--series mrca hidden">
                   <div class="dot"></div>
                   <span class="value-label">##%</span>
-                  <span class="series-label">MRCA of A and B</span>
+                  <span class="series-label">MRCA</span>
                 </div>
                 <div class="prevalence--series node1 hidden">
                   <div class="dot"></div>
                   <span class="value-label">##%</span>
-                  <span class="series-label">Selection A</span>
+                  <span class="series-label">A</span>
                 </div>
                 <div class="prevalence--series node2 hidden">
                   <div class="dot"></div>
                   <span class="value-label">##%</span>
-                  <span class="series-label">Selection B</span>
+                  <span class="series-label">B</span>
                 </div>
               </div>
             </div>
@@ -137,7 +155,7 @@
 
         </div>
         <div id="lineages--relationships" class="duo">
-          <div id="lineages--node-layout"  class="block" data-duo="left" >
+          <div id="lineages--node-layout"  class="block left" data-duo="left" >
 
             <div class="header">
               <div class="title">
@@ -223,7 +241,7 @@
             </div>
           </div>
 
-          <div id="lineages--node-timelines" class="block time-based" data-duo="right" data-element="lineage-emergence">
+          <div id="lineages--node-timelines" class="block right time-based" data-duo="right" data-element="lineage-emergence">
             <div class="header">
               <div class="title" data-tooltip="outside">
                 <h4>Lineage emergence date distributions</h4>
@@ -358,7 +376,7 @@
                   </span> -->
                 </div>
               </div>
-              <div class="lineages--mutation-timeline right">
+              <div class="lineages--mutation-timeline block right">
 
                 <!-- <p class="lineages--node-comparison--mutation-header">
                   <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in
