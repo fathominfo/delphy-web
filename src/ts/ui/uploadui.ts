@@ -352,7 +352,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     If the url is distributed in a mailing, it may have garbage like
     `utm_source=fathominfo&utm_medium=email&utm_campaign=2024-at-fathom`
     which could trigger an error and not look good. So ignore urls with
-    ampersands (is that too wide a net? ) [mark 260115]
+    ampersands (is that too wide a net?).
+    ref https://github.com/fathominfo/delphy-web/issues/52 [mark 260115]
     */
     if (!/&/.test(dataUrl)) {
       loadNow(dataUrl);
