@@ -13,7 +13,7 @@ const DEMO_FILES = './demofiles.json'
 /* hopefully good enough. Source:
 https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
 */
-const URL_REGEX = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig; // eslint-disable-line no-useless-escape
+// const URL_REGEX = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig; // eslint-disable-line no-useless-escape
 
 type DemoOption = {
   folder:string,
@@ -348,11 +348,16 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     if (!dataUrl.startsWith("http")) {
       dataUrl = `${loc.origin}${loc.pathname}${dataUrl}`;
     }
-    if (URL_REGEX.test(dataUrl)) {
+    /*
+    If the url is distributed in a mailing, it may have garbage like
+    `utm_source=fathominfo&utm_medium=email&utm_campaign=2024-at-fathom`
+    which could trigger an error and not look good. So ignore urls with
+    ampersands (is that too wide a net? ) [mark 260115]
+    */
+    if (!/&/.test(dataUrl)) {
       loadNow(dataUrl);
     } else {
-      button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
-      button.focus();
+      window.location.href = window.location.origin;
     }
   } else {
     button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
