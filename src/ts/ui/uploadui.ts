@@ -344,10 +344,10 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   button?.addEventListener("click", ()=>urlDiv?.classList.toggle("proxy-info"));
   const loc = window.location;
   if (loc.search.length > 1) {
-    const dataUrl = loc.search.substring(1);
-    // if (!dataUrl.startsWith("http")) {
-    //   dataUrl = `${loc.origin}${loc.pathname}${dataUrl}`;
-    // }
+    let dataUrl = loc.search.substring(1);
+    if (!dataUrl.startsWith("http")) {
+      dataUrl = `${loc.origin}${loc.pathname}${dataUrl}`;
+    }
     if (URL_REGEX.test(dataUrl)) {
       loadNow(dataUrl);
     } else {
