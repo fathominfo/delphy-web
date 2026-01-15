@@ -299,8 +299,8 @@
 
         <div id="lineages--list">
           <div id="list--titles" class="duo">
-            <div class="block" data-duo="left"></div>
-            <div class="block" data-duo="right">
+            <div class="block left"></div>
+            <div class="block right">
               <div class="header">
                 <div class="title" data-tooltip="outside">
                   <h4>Mutation emergence date distributions</h4>
@@ -314,49 +314,51 @@
             </div>
           </div>
 
-          <div id="lineages--node-comparison-container">
-            <div class="lineages--node-comparison duo">
-              <div class="header">
-                <div class="schematic" data-trail-alignment="down">
-                  <div class="division">
-                    <div class="segment" data-from="root" data-to="mrca" data-trail="center">
-                      <div class="trail"></div>
-                      <div class="point from"></div>
-                      <div class="point to"></div>
+          <div id="lineages--track-mutations-container">
+            <div class="lineages--track-mutations duo" data-from="root" data-to="mrca">
+              <div class="block left">
+                <div class="header">
+                  <div class="schematic" data-trail-alignment="center">
+                    <div class="division">
+                      <div class="segment" data-from="root" data-to="mrca" data-trail="center">
+                        <div class="trail"></div>
+                        <div class="point from"></div>
+                        <div class="point to"></div>
+                      </div>
+                    </div>
+                    <div class="division">
+                      <div class="segment" data-from="mrca" data-to="a" data-trail="up">
+                        <div class="trail"></div>
+                        <div class="point from"></div>
+                        <div class="point to"></div>
+                      </div>
+                      <div class="segment" data-from="mrca" data-to="b" data-trail="down">
+                        <div class="trail"></div>
+                        <div class="point from"></div>
+                        <div class="point to"></div>
+                      </div>
                     </div>
                   </div>
-                  <div class="division">
-                    <div class="segment" data-from="mrca" data-to="a" data-trail="up">
-                      <div class="trail"></div>
-                      <div class="point from"></div>
-                      <div class="point to"></div>
-                    </div>
-                    <div class="segment" data-from="mrca" data-to="b" data-trail="down">
-                      <div class="trail"></div>
-                      <div class="point from"></div>
-                      <div class="point to"></div>
-                    </div>
-                  </div>
-                </div>
-                <h4>
-                  <span class="lineages--list-ancestor"></span>
-                  to
-                  <span class="lineages--list-descendant"></span>
-                </h4>
+                  <h4>
+                    <span class="lineages--list-ancestor"></span>
+                    to
+                    <span class="lineages--list-descendant"></span>
+                  </h4>
 
-                <!-- <span class="lineages--node-overlap-item">
-                  In <span class="lnoi-pct"></span>% of base trees,
-                  <span class="root-message">
-                    the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span>
-                  </span>
-                  <span class="non-root-message">
-                    the MRCA of the tips under
-                    <span class="lnoi-1"></span> and the MRCA of the tips under
-                    <span class="lnoi-2"></span> are the same inner node.
-                  </span>
-                </span> -->
+                  <!-- <span class="lineages--node-overlap-item">
+                    In <span class="lnoi-pct"></span>% of base trees,
+                    <span class="root-message">
+                      the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span>
+                    </span>
+                    <span class="non-root-message">
+                      the MRCA of the tips under
+                      <span class="lnoi-1"></span> and the MRCA of the tips under
+                      <span class="lnoi-2"></span> are the same inner node.
+                    </span>
+                  </span> -->
+                </div>
               </div>
-              <div class="lineages--node-comparison--time-chart-container">
+              <div class="lineages--mutation-timeline right">
 
                 <!-- <p class="lineages--node-comparison--mutation-header">
                   <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in

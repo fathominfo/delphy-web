@@ -4,26 +4,26 @@
 
 
 
-@root: rgb(129, 139, 139);
-@mrca: rgb(227, 53, 251);//rgb(63, 125, 0);
-@node1: rgb(0, 117, 255);//rgb(244, 98, 15);
-@node2: rgb(244, 98, 15);//rgb(0, 117, 255);
+// @root: rgb(129, 139, 139);
+// @mrca: rgb(227, 53, 251);//rgb(63, 125, 0);
+// @node1: rgb(0, 117, 255);//rgb(244, 98, 15);
+// @node2: rgb(244, 98, 15);//rgb(0, 117, 255);
 
-@root-bright: rgb(120, 164, 167);
-@mrca-bright: rgb(242, 88, 255);//rgb(121, 178, 0);;
-@node1-bright: rgb(0, 117, 255);//rgb(255, 122, 0);
-@node2-bright: rgb(244, 98, 15);//rgb(0, 148, 255);
+// @root-bright: rgb(120, 164, 167);
+// @mrca-bright: rgb(242, 88, 255);//rgb(121, 178, 0);;
+// @node1-bright: rgb(0, 117, 255);//rgb(255, 122, 0);
+// @node2-bright: rgb(244, 98, 15);//rgb(0, 148, 255);
 
-@root-secondary: rgb(107, 123, 125);
-@mrca-secondary: rgb(229, 122, 239);//rgb(210, 77, 222);
-@node1-secondary: rgb(10, 112, 228);//rgb(238, 86, 0);
-@node2-secondary: rgb(222, 91, 15);//rgb(0, 65, 234);
-
-
-@chartLeftMargin: 120px;
+// @root-secondary: rgb(107, 123, 125);
+// @mrca-secondary: rgb(229, 122, 239);//rgb(210, 77, 222);
+// @node1-secondary: rgb(10, 112, 228);//rgb(238, 86, 0);
+// @node2-secondary: rgb(222, 91, 15);//rgb(0, 65, 234);
 
 
-@placeholder: rgb(250,250,250);
+// @chartLeftMargin: 120px;
+
+
+// @placeholder: rgb(250,250,250);
 
 
 #lineages .main-content {
@@ -95,7 +95,7 @@
 }
 
 .tree-hint-container {
-  .t05();
+  // .t05();
   margin-bottom: 1em;
   color: #777;
   min-height: calc(14px * 2);
@@ -104,10 +104,10 @@
 
   .node { font-weight: 700; }
 
-  .root { color: @root; }
-  .mrca { color: @mrca; }
-  .node1 { color: @node1; }
-  .node2 { color: @node2; }
+  // .root { color: @root; }
+  // .mrca { color: @mrca; }
+  // .node1 { color: @node1; }
+  // .node2 { color: @node2; }
 }
 
 .constrain-selection {
@@ -320,25 +320,25 @@
   .node-name {font-weight: 700;}
 
   &.root {
-    color: @root;
-    .node-icon .glyph { background-color: @root-bright; }
-    .node-source { background-color: @root-secondary; }
-    .node-name { color: @root; }
-    //.node-metadata { color: @root-secondary; }
-    ::marker { color: @root; }
-    .pair--key-value { color: @root; }
-    .current { color: @root; }
+    // color: @root;
+    // .node-icon .glyph { background-color: @root-bright; }
+    // .node-source { background-color: @root-secondary; }
+    // .node-name { color: @root; }
+    // //.node-metadata { color: @root-secondary; }
+    // ::marker { color: @root; }
+    // .pair--key-value { color: @root; }
+    // .current { color: @root; }
   }
 
   &.mrca {
-    color: @mrca;
-    .node-icon .glyph { background-color: @mrca-bright; }
-    .node-source { color: @mrca-secondary; }
-    .node-name { color: @mrca; }
-    //.node-metadata { color: @mrca-secondary; }
-    ::marker { color: @mrca; }
-    .pair--key-value { color: @mrca; }
-    .current { color: @mrca; }
+    // color: @mrca;
+    // .node-icon .glyph { background-color: @mrca-bright; }
+    // .node-source { color: @mrca-secondary; }
+    // .node-name { color: @mrca; }
+    // //.node-metadata { color: @mrca-secondary; }
+    // ::marker { color: @mrca; }
+    // .pair--key-value { color: @mrca; }
+    // .current { color: @mrca; }
   }
 
   &.root,
@@ -349,25 +349,25 @@
   }
 
   &.node1 {
-    color: @node1;
-    .node-icon .glyph { background-color: @node1-bright; }
-    .node-source { color: @node1-secondary; }
-    .node-name { color: @node1; }
-    //.node-metadata { color: @node1-secondary; }
-    ::marker { color: @node1; }
-    .pair--key-value { color: @node1; }
-    .current { color: @node1; }
+    // color: @node1;
+    // .node-icon .glyph { background-color: @node1-bright; }
+    // .node-source { color: @node1-secondary; }
+    // .node-name { color: @node1; }
+    // //.node-metadata { color: @node1-secondary; }
+    // ::marker { color: @node1; }
+    // .pair--key-value { color: @node1; }
+    // .current { color: @node1; }
   }
 
   &.node2 {
-    color: @node2;
-    .node-icon .glyph { background-color: @node2-bright; }
-    .node-source { color: @node2-secondary; }
-    .node-name { color: @node2; }
-    //.node-metadata { color: @node2-secondary; }
-    ::marker { color: @node2; }
-    .pair--key-value { color: @node2; }
-    .current { color: @node2; }
+    // color: @node2;
+    // .node-icon .glyph { background-color: @node2-bright; }
+    // .node-source { color: @node2-secondary; }
+    // .node-name { color: @node2; }
+    // //.node-metadata { color: @node2-secondary; }
+    // ::marker { color: @node2; }
+    // .pair--key-value { color: @node2; }
+    // .current { color: @node2; }
   }
 
   &.node1,
@@ -593,23 +593,23 @@ details {
   }
 
   .root {
-    color: @root;
-    .dot { background-color: @root; }
+    // color: @root;
+    // .dot { background-color: @root; }
   }
 
   .mrca {
-    color: @mrca;
-    .dot { background-color: @mrca; }
+    // color: @mrca;
+    // .dot { background-color: @mrca; }
   }
 
   .node1 {
-    color: @node1;
-    .dot { background-color: @node1; }
+    // color: @node1;
+    // .dot { background-color: @node1; }
   }
 
   .node2 {
-    color: @node2;
-    .dot { background-color: @node2; }
+    // color: @node2;
+    // .dot { background-color: @node2; }
   }
 
   .value-label {
@@ -1107,17 +1107,6 @@ details {
     margin-bottom: 0.5em;
   }
 
-  &.highlighting {
-    .lineages--node-timeline--ancestor-node,
-    .lineages--node-timeline--descendant-node {
-      opacity: 0.4;
-
-      &.highlight {
-        opacity: 1;
-      }
-    }
-  }
-
   .lineages--node-overlap-item {
     display: block;
     font-size: 12px;
@@ -1145,94 +1134,367 @@ details {
 
   }
 
-  &.single {
-    .lineages--node-timeline--descendant-node,
-    .lineages--node-timeline--descendant-connector,
-    .lineages--node-timeline--mutation-header,
-    .lineages--node-overlap-item {
-      display: none;
-    }
-  }
 
 
 }
 
-.lineages--node-comparison {
-  + .lineages--node-comparison {
-    margin-top: 1em;
-  }
-
-  padding: 8px;
-  padding-top: 14px;
-  border: solid 1px @borderGrey;
-
-  h1 {
-    font-weight: bold; //normal;
-    margin-bottom: 0.5em;
-  }
-
-
-  &.highlighting {
-    .lineages--node-comparison--ancestor-node,
-    .lineages--node-comparison--descendant-node {
-      opacity: 0.4;
-
-      &.highlight {
-        opacity: 1;
-      }
-    }
-  }
-
-  .lineages--node-overlap-item {
-    display: block;
-    font-size: 12px;
-    color: @midGrey;
-    font-weight: 500;
-    line-height: 1.25em;
-    margin-top: 6px;
-
-    .root-message {
-      display: none;
-    }
-
-
-    &.is-root {
-      display: block;
-      // font-size: 12px;
-      // color: @midGrey;
-      // font-weight: normal;
-      // line-height: 1.1em;
-      .non-root-message {display: none;}
-      .root-message {display: inline;}
-    }
-
-    .lnoi-1, .lnoi-2 {font-weight: 700;}
-
-  }
-
-  &.single {
-    .lineages--node-comparison--descendant-node,
-    .lineages--node-comparison--descendant-connector,
-    .lineages--node-comparison--mutation-header,
-    .lineages--node-overlap-item {
-      display: none;
-    }
-  }
-
-
-}
 
 
 .lineages--time-chart,
 .lineages--node-comparison--time-chart {
   height: 60px;
-  padding-left: @chartLeftMargin;
+  // padding-left: @chartLeftMargin;
 
   canvas {
     width: 100%;
     height: 100%;
   }
 }
+
+
+
+// ███╗   ███╗██╗   ██╗████████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
+// ████╗ ████║██║   ██║╚══██╔══╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+// ██╔████╔██║██║   ██║   ██║   ███████║   ██║   ██║██║   ██║██╔██╗ ██║███████╗
+// ██║╚██╔╝██║██║   ██║   ██║   ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║╚════██║
+// ██║ ╚═╝ ██║╚██████╔╝   ██║   ██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║███████║
+// ╚═╝     ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+
+
+
+#lineages--list {
+  /* temporary */
+  max-height: 300px;
+  overflow-y: scroll;
+  /* end temporary */
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--duo-list-gap);
+  width: 100%;
+  align-items: flex-end;
+
+
+  .left {
+    justify-content: space-between;
+    align-items: flex-end;
+    flex: unset;
+    width: var(--duo-left-width);
+  }
+
+  .right {
+    flex: 1;
+  }
+
+
+  [data-from="root"] {
+    color: var(--root-mutation-text);
+    .header .title h4 {color: var(--root-mutation-text);}
+    .mutation {color: var(--root-mutation-text);}
+    .mutation .site {color: var(--root-position-text);}
+    .range .guide.date.start {background-color: var(--root-timeline-stroke);}
+    .timeline .dummy .dist {fill: var(--root-timeline-fill);}
+    .timeline .dummy .pointer {stroke: var(--root-timeline-stroke);}
+  }
+
+  [data-to="a"] {
+    color: var(--a-mutation-text);
+    .header .title h4      {color: var(--a-mutation-text)}
+    .mutation      {color: var(--a-mutation-text)}
+    .mutation .site      {color: var(--a-position-text)}
+    .range .guide.date.end    {background-color: var(--a-timeline-stroke)}
+    .timeline .dummy .dist {fill: var(--a-timeline-fill)}
+    .timeline .dummy .pointer {stroke: var(--a-timeline-stroke)}
+  }
+
+  [data-to="b"] {
+    color: var(--b-mutation-text);
+  .header .title h4      {color: var(--b-mutation-text)}
+  .mutation      {color: var(--b-mutation-text)}
+  .mutation .site      {color: var(--b-position-text)}
+  .range .guide.date.end    {background-color: var(--b-timeline-stroke)}
+  .timeline .dummy .dist {fill: var(--b-timeline-fill)}
+  .timeline .dummy .pointer {stroke: var(--b-timeline-stroke)}
+  }
+
+  [data-from="mrca"] .range .guide.date.start {background-color: var(--mrca-timeline-stroke)}
+  [data-from="a"] .range .guide.date.start    {background-color: var(--a-timeline-stroke)}
+  [data-from="b"] .range .guide.date.start    {background-color: var(--b-timeline-stroke)}
+  [data-to="mrca"] .range .guide.date.end {background-color: var(--mrca-timeline-stroke)}
+
+  .mutation {
+    color: var(--node-mutation-text);
+    opacity: var(--lineages-mutation-opacity);
+    .site {
+      color: var(--node-position-text);
+    }
+
+    &.active   {opacity: var(--lineages-mutation-active-opacity)}
+    &.inactive {opacity: var(--lineages-mutation-inactive-opacity)}
+  }
+
+  .timeline {
+    .label          {opacity: var(--lineages-timeline-label-opacity)}
+    .guide          {opacity: var(--lineages-timeline-guide-opacity)}
+    .label[data-lineage="root"] {color: var(--root-timeline-text)}
+    .label[data-lineage="mrca"] {color: var(--mrca-timeline-text)}
+    .label[data-lineage="a"] {color: var(--a-timeline-text)}
+    .label[data-lineage="b"] {color: var(--b-timeline-text)}
+    &.active {
+      .label   {opacity: var(--lineages-timeline-active-label-opacity)}
+      .guide   {opacity: var(--lineages-timeline-active-guide-opacity)}
+    }
+    &.inactive {
+      .label {opacity: var(--lineages-timeline-inactive-label-opacity)}
+      .guide {opacity: var(--lineages-timeline-inactive-guide-opacity)}
+    }
+  }
+
+  .duo {
+    .unmatching {opacity: var(--lineages-list-unmatching-opacity)}
+
+    .matching {
+      .timeline .guide {opacity: var(--lineages-timeline-semiactive-guide-opacity)}
+
+      .unmatching {
+        .mutation, .timeline {
+          opacity: var(--lineages-list-semimatching-opacity);
+        }
+      }
+    }
+  }
+
+
+}
+
+#lineages--track-mutations-container {
+  width: 100%;
+}
+
+#list--titles {
+  padding: var(--duo-list-connector-height) 0;
+
+}
+
+
+.lineages--track-mutations {
+
+  // padding: 8px;
+  // padding-top: 14px;
+  // border: solid 1px @borderGrey;
+
+  // h1 {
+  //   font-weight: bold; //normal;
+  //   margin-bottom: 0.5em;
+  // }
+
+
+  // &.highlighting {
+  //   .lineages--node-comparison--ancestor-node,
+  //   .lineages--node-comparison--descendant-node {
+  //     opacity: 0.4;
+
+  //     &.highlight {
+  //       opacity: 1;
+  //     }
+  //   }
+  // }
+
+  // .lineages--node-overlap-item {
+  //   display: block;
+  //   font-size: 12px;
+  //   color: @midGrey;
+  //   font-weight: 500;
+  //   line-height: 1.25em;
+  //   margin-top: 6px;
+
+  //   .root-message {
+  //     display: none;
+  //   }
+
+
+  //   &.is-root {
+  //     display: block;
+  //     // font-size: 12px;
+  //     // color: @midGrey;
+  //     // font-weight: normal;
+  //     // line-height: 1.1em;
+  //     .non-root-message {display: none;}
+  //     .root-message {display: inline;}
+  //   }
+
+  //   .lnoi-1, .lnoi-2 {font-weight: 700;}
+
+  // }
+
+  // &.single {
+  //   .lineages--node-comparison--descendant-node,
+  //   .lineages--node-comparison--descendant-connector,
+  //   .lineages--node-comparison--mutation-header,
+  //   .lineages--node-overlap-item {
+  //     display: none;
+  //   }
+  // }
+
+
+}
+
+
+
+.lineages--track-mutations {
+  .header {
+    .schematic {
+      min-width: var(--duo-list-duo-left-header-schematic-width);
+      max-width: var(--duo-list-duo-left-header-schematic-width);
+      height: var(--duo-list-duo-left-header-schematic-height);
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+      overflow: visible;
+
+      .division {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        height: 100%;
+        overflow: visible;
+      }
+
+
+      .segment {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 50%;
+        overflow: visible;
+        opacity: var(--schematic-segment-unmatching-opacity);
+      }
+
+      .trail {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .segment[data-trail="center"] .trail {
+        height: 0;
+        border-top: var(--schematic-stroke-weight-static) solid;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .segment[data-trail="up"] .trail {
+        border-top: var(--schematic-stroke-weight-static) solid;
+        border-left: var(--schematic-stroke-weight-static) solid;
+        border-right: none;
+        border-bottom: none;
+        border-radius: var(--schematic-corner) 0 0 0;
+      }
+
+      .segment[data-trail="down"] .trail {
+        border-top: none;
+        border-left: var(--schematic-stroke-weight-static) solid;
+        border-right: none;
+        border-bottom: var(--schematic-stroke-weight-static) solid;
+        border-radius: 0 0 0 var(--schematic-corner);
+      }
+
+      .point {
+        position: absolute;
+        width: var(--schematic-point-size-static);
+        height: var(--schematic-point-size-static);
+        border-radius: var(--schematic-point-size-static);
+        box-sizing: border-box;
+        transform: translate(-50%, -50%);
+        &.from {left: 0}
+        &.to {left: 100%}
+      }
+
+      .segment[data-trail="up"] {
+        .point.from {top: 100%}
+        .point.to {top: 0}
+      }
+      .segment[data-trail="center"] {
+        .point.from {top: 50%}
+        .point.to {top: 50%}
+      }
+      .segment[data-trail="down"]   {
+        .point.from {top: 0}
+        .point.to {top: 100%}
+      }
+
+      .segment[data-from="root"] {
+        .trail {border-color: var(--root-stroke);}
+        .point {background-color: var(--root-stroke)}
+      }
+      .segment[data-to="a"] {
+        .trail      {border-color: var(--a-stroke)}
+        .point      {background-color: var(--a-stroke)}
+      }
+      .segment[data-to="b"] {
+        .trail      {border-color: var(--b-stroke)}
+        .point      {background-color: var(--b-stroke)}
+      }
+    }
+  }
+
+  &[data-from="root"] .schematic .segment[data-from="root"] .point.to {
+    background-color: var(--root-fill);
+    border-color: var(--root-stroke);
+  }
+
+  &[data-to="mrca"] .schematic .segment[data-to="mrca"] {
+    .point.to {
+      width: var(--schematic-point-size-on);
+      height: var(--schematic-point-size-on);
+      border-radius: var(--schematic-point-size-on);
+      background-color: var(--root-stroke);
+      border: none;
+    }
+  }
+  &[data-to="a"] .schematic .segment[data-to="a"] {
+    .point.to {
+      background-color: var(--a-fill);
+      border-color: var(--a-stroke);
+    }
+  }
+  &[data-to="b"] .schematic .segment[data-to="b"] {
+    .point.to {
+      background-color: var(--b-fill);
+      border-color: var(--b-stroke);
+    }
+  }
+
+  &[data-to="mrca"] .schematic .segment[data-to="mrca"],
+  &[data-to="a"] .schematic .segment[data-to="a"],
+  &[data-to="b"] .schematic .segment[data-to="b"] {
+    opacity: 1;
+    z-index: 1;
+    .point.to {
+      width: var(--schematic-point-size-on-destination);
+      height: var(--schematic-point-size-on-destination);
+      border: var(--schematic-stroke-weight-static) solid;
+      border-radius: var(--schematic-point-size-on-destination);
+    }
+  }
+
+}
+
 
 
 .lineages--node-comparison--mutation-header {
@@ -1260,7 +1522,7 @@ details {
 }
 
 .lineages--node-comparison--mutation-labels {
-  width: @chartLeftMargin;
+  // width: @chartLeftMargin;
   font-size: smaller;
 }
 .lineages--node-comparison--mutation-name {
@@ -1281,7 +1543,7 @@ details {
 
 .lineages--node-comparison--mutation-prevalence {
   margin: 0;
-  width: @chartLeftMargin;
+  // width: @chartLeftMargin;
   font-size: smaller;
   span {font-weight: bolder;}
   color: rgb(161, 161, 161);
@@ -1315,23 +1577,23 @@ details {
     box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
 
     .root {
-      color: @root;
-      .dot { background-color: @root; }
+      // color: @root;
+      // .dot { background-color: @root; }
     }
 
     .mrca {
-      color: @mrca;
-      .dot { background-color: @mrca; }
+      // color: @mrca;
+      // .dot { background-color: @mrca; }
     }
 
     .node1 {
-      color: @node1;
-      .dot { background-color: @node1; }
+      // color: @node1;
+      // .dot { background-color: @node1; }
     }
 
     .node2 {
-      color: @node2;
-      .dot { background-color: @node2; }
+      // color: @node2;
+      // .dot { background-color: @node2; }
     }
 
     .mutation {
@@ -1374,13 +1636,9 @@ details {
 .lineages--node-comparison--time-chart {
   .time-chart--readout {
     // transform: translate(@chartLeftMargin, 0);
-    transform: translate(@chartLeftMargin, 100%);
+    // transform: translate(@chartLeftMargin, 100%);
   }
 }
 
 
 
-#lineages--list {
-  max-height: 300px;
-  overflow-y: scroll;
-}

@@ -1,12 +1,12 @@
 import { NodeCallback } from './lineagescommon';
-import { DisplayNode, getPercentLabel, getNodeTypeName, getNodeColorDark, UNSET, getNodeClassName } from '../common';
+import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
 import { TimeDistributionCanvas } from '../timedistributioncanvas';
 import { Mutation } from '../../pythia/delphy_api';
 import { HoverCallback } from './highlightabletimedistributioncanvas';
 import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 
 
-const nodeComparisonTemplate = document.querySelector(".lineages--node-comparison") as HTMLDivElement;
+const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
 const nodeComparisonContainer = nodeComparisonTemplate?.parentNode as HTMLDivElement;
 const mutationTemplate = nodeComparisonTemplate?.querySelector(".lineages--node-comparison--mutation") as HTMLDivElement;
 if (!nodeComparisonTemplate || !nodeComparisonContainer || !mutationTemplate) {
@@ -19,9 +19,10 @@ nodeComparisonTemplate.remove();
 const mutationCanvasSelector = '.lineages--mutation-time-chart',
   mutationNameSelector = '.lineages--node-comparison--mutation-name',
   mutationPrevalenceSelector = '.lineages--node-comparison--mutation-prevalence span',
-  mutationContainerSelector = '.lineages--node-comparison--time-chart-container',
+  mutationContainerSelector = '.lineages--mutation-timeline',
   ancestorNodeNameSelector = '.lineages--list-ancestor',
   descendantNodeNameSelector = '.lineages--list-descendant',
+  schematicSelector = ".schematic",
   // mutationCountSelector = '.lineages--node-comparison--mutation-count',
   // mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
   nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
@@ -99,6 +100,7 @@ export class NodePairMutations {
   node2Span: HTMLSpanElement;
   // mutationCountSpan: HTMLSpanElement;
   // mutationThresholdSpan: HTMLSpanElement;
+  schematic: HTMLDivElement;
   mutationContainer: HTMLDivElement;
   goToMutations: MutationFunctionType;
   nodeHighlightCallback: NodeCallback;
@@ -111,19 +113,34 @@ export class NodePairMutations {
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
       node1Span = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
-      node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement;
+      node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
+      schematic = this.div.querySelector(schematicSelector) as HTMLDivElement;
       // mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
       // mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement;
       // overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement;
-    if (!mutationContainer || !node1Span || !node2Span) {
-      throw new Error("html is missing elements needed for node comparison");
+    if (!mutationContainer || !node1Span || !node2Span || !schematic) {
+      throw new Error("html is missing elements needed for mutation list");
     }
     this.node1Span = node1Span;
     this.node2Span = node2Span;
+    this.schematic = schematic;
     // this.mutationCountSpan = mutationCountSpan;
     // this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
     this.goToMutations = goToMutations;
+
+    const fromType = getNodeTypeName(this.data.ancestorType).toLowerCase();
+    let toType = getNodeTypeName(this.data.descendantType);
+    if (toType) toType = toType.toLowerCase();
+    this.div.setAttribute("data-from", fromType);
+    this.div.setAttribute("data-to", toType);
+
+    let trailAlignment = "center";
+    if (this.data.ancestorType === DisplayNode.mrca) {
+      trailAlignment = this.data.descendantType === DisplayNode.node1 ? "up" : "down";
+    }
+    this.schematic.setAttribute("data-trail-alignment", trailAlignment);
+
 
 
     if (this.data.descendantType === UNSET) {

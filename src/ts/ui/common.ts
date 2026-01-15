@@ -75,7 +75,7 @@ export const enum DisplayNode {
   node2 = 3,
   UNSET = -1
 }
-export const nodeTypeNames = ["Root", "MRCA of A and B", "Selection A", "Selection B"];
+export const nodeTypeNames = ["Root", "MRCA", "A", "B"];
 export const nodeColors = [
   'rgb(120, 164, 167)',
   'rgb(242, 88, 255)',//teal:'rgb(0, 197, 185)',//green:'rgb(121, 178, 0)',
