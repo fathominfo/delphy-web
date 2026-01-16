@@ -71,8 +71,8 @@ export const UNSTYLED_CANVAS_WIDTH = 100;
 export const enum DisplayNode {
   root = 0,
   mrca = 1,
-  node1 = 2,
-  node2 = 3,
+  nodeA = 2,
+  nodeB = 3,
   UNSET = -1
 }
 export const nodeTypeNames = ["Root", "MRCA", "A", "B"];
@@ -94,7 +94,7 @@ export const nodeColorsStream = [
   'rgb(173, 0, 34)',
   'rgb(0, 98, 151)'
 ];
-export const nodeClassNames: string[] = ["root", "mrca", "node1", "node2"];
+export const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 
 
 export const getNodeTypeName = (dn: DisplayNode)=>nodeTypeNames[dn];

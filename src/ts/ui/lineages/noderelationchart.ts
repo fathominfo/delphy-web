@@ -20,8 +20,8 @@ const rad = 5;
 const NODE_FILLS: string[] = [];
 NODE_FILLS[DisplayNode.root] = getNodeColor(DisplayNode.root);
 NODE_FILLS[DisplayNode.mrca] = getNodeColor(DisplayNode.mrca);
-NODE_FILLS[DisplayNode.node1] = "#ffffff";
-NODE_FILLS[DisplayNode.node2] = "#ffffff";
+NODE_FILLS[DisplayNode.nodeA] = "#ffffff";
+NODE_FILLS[DisplayNode.nodeB] = "#ffffff";
 
 
 
@@ -79,11 +79,11 @@ export class NodeRelationChart {
         if (this.checkHasNode(DisplayNode.mrca)) {
           testNode(DisplayNode.mrca, 1);
         }
-        if (this.checkHasNode(DisplayNode.node1)) {
-          testNode(DisplayNode.node1, 2);
+        if (this.checkHasNode(DisplayNode.nodeA)) {
+          testNode(DisplayNode.nodeA, 2);
         }
-        if (this.checkHasNode(DisplayNode.node2)) {
-          testNode(DisplayNode.node2, 3);
+        if (this.checkHasNode(DisplayNode.nodeB)) {
+          testNode(DisplayNode.nodeB, 3);
         }
         return closest;
       }
@@ -149,8 +149,8 @@ export class NodeRelationChart {
 
     this.drawNode(DisplayNode.root);
     this.drawNode(DisplayNode.mrca);
-    this.drawNode(DisplayNode.node1);
-    this.drawNode(DisplayNode.node2);
+    this.drawNode(DisplayNode.nodeA);
+    this.drawNode(DisplayNode.nodeB);
 
   }
 
@@ -160,9 +160,9 @@ export class NodeRelationChart {
       return this.indexes[0] !== UNSET;
     case DisplayNode.mrca:
       return this.indexes[1] !== UNSET;
-    case DisplayNode.node1:
+    case DisplayNode.nodeA:
       return this.indexes[2] !== UNSET;
-    case DisplayNode.node2:
+    case DisplayNode.nodeB:
       return this.indexes[3] !== UNSET;
     case DisplayNode.UNSET:
       return false
@@ -282,7 +282,7 @@ export class NodeRelationChart {
     }
   }
 
-  setData(src: NodeComparisonData[], indexes: [number, number, number, number], node1IsUpper: boolean) {
+  setData(src: NodeComparisonData[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
     // console.debug(src.map(ncd=>ncd.nodePair.pairType));
     this.src = src;
     this.indexes = indexes;
@@ -301,71 +301,71 @@ export class NodeRelationChart {
 
     this.mutationLists[DisplayNode.root] = [];
     this.mutationLists[DisplayNode.mrca] = getMutationsFor(indexes[DisplayNode.mrca]);
-    this.mutationLists[DisplayNode.node1] = getMutationsFor(indexes[DisplayNode.node1]);
-    this.mutationLists[DisplayNode.node2] = getMutationsFor(indexes[DisplayNode.node2]);
+    this.mutationLists[DisplayNode.nodeA] = getMutationsFor(indexes[DisplayNode.nodeA]);
+    this.mutationLists[DisplayNode.nodeB] = getMutationsFor(indexes[DisplayNode.nodeB]);
     if (indexes[DisplayNode.mrca] !== UNSET) {
-      nodePos[DisplayNode.node1][0] = gen1X + branchWidth;
-      nodePos[DisplayNode.node2][0] = gen1X + branchWidth;
-      if (node1IsUpper) {
-        nodePos[DisplayNode.node1][1] = gen1Y - branchHeight;
-        nodePos[DisplayNode.node2][1] = gen1Y + branchHeight;
+      nodePos[DisplayNode.nodeA][0] = gen1X + branchWidth;
+      nodePos[DisplayNode.nodeB][0] = gen1X + branchWidth;
+      if (nodeAIsUpper) {
+        nodePos[DisplayNode.nodeA][1] = gen1Y - branchHeight;
+        nodePos[DisplayNode.nodeB][1] = gen1Y + branchHeight;
       } else {
-        nodePos[DisplayNode.node1][1] = gen1Y + branchHeight;
-        nodePos[DisplayNode.node2][1] = gen1Y - branchHeight;
+        nodePos[DisplayNode.nodeA][1] = gen1Y + branchHeight;
+        nodePos[DisplayNode.nodeB][1] = gen1Y - branchHeight;
       }
-    } else if (indexes[DisplayNode.node1] !== UNSET) {
-      if (indexes[DisplayNode.node2] === UNSET) {
-        /* if there is no node2, then this goes where the MRCA would go */
-        nodePos[DisplayNode.node1][0] = gen1X;
-        nodePos[DisplayNode.node1][1] = gen1Y;
+    } else if (indexes[DisplayNode.nodeA] !== UNSET) {
+      if (indexes[DisplayNode.nodeB] === UNSET) {
+        /* if there is no nodeB, then this goes where the MRCA would go */
+        nodePos[DisplayNode.nodeA][0] = gen1X;
+        nodePos[DisplayNode.nodeA][1] = gen1Y;
       } else {
         /*
         are nodes 1 and 2 both descended from root,
         or is one the parent of the other?
         */
         const root = indexes[DisplayNode.root],
-          node1 = indexes[DisplayNode.node1],
-          node2 = indexes[DisplayNode.node2];
-        let node1Parent: number = UNSET,
-          node2Parent: number = UNSET;
+          nodeA = indexes[DisplayNode.nodeA],
+          nodeB = indexes[DisplayNode.nodeB];
+        let nodeAParent: number = UNSET,
+          nodeBParent: number = UNSET;
         src.forEach((ncd: NodeComparisonData)=>{
           const pair = ncd.nodePair;
-          if (pair.index2 === node1) node1Parent = pair.index1;
-          else if (pair.index2 === node2) node2Parent = pair.index1;
+          if (pair.index2 === nodeA) nodeAParent = pair.index1;
+          else if (pair.index2 === nodeB) nodeBParent = pair.index1;
         });
-        if (node1Parent === root) {
-          if (node2Parent === root) {
-            nodePos[DisplayNode.node1][0] = gen1X;
-            nodePos[DisplayNode.node2][0] = gen1X;
-            if (node1IsUpper)  {
-              nodePos[DisplayNode.node1][1] = rootY - branchHeight;
-              nodePos[DisplayNode.node2][1] = gen1Y;
+        if (nodeAParent === root) {
+          if (nodeBParent === root) {
+            nodePos[DisplayNode.nodeA][0] = gen1X;
+            nodePos[DisplayNode.nodeB][0] = gen1X;
+            if (nodeAIsUpper)  {
+              nodePos[DisplayNode.nodeA][1] = rootY - branchHeight;
+              nodePos[DisplayNode.nodeB][1] = gen1Y;
             } else {
-              nodePos[DisplayNode.node1][1] = gen1Y;
-              nodePos[DisplayNode.node2][1] = rootY - branchHeight;
+              nodePos[DisplayNode.nodeA][1] = gen1Y;
+              nodePos[DisplayNode.nodeB][1] = rootY - branchHeight;
             }
-          } else if (node2Parent === node1) {
-            nodePos[DisplayNode.node1][0] = gen1X;
-            nodePos[DisplayNode.node1][1] = gen1Y;
-            nodePos[DisplayNode.node2][0] = gen1X + branchWidth;
-            nodePos[DisplayNode.node2][1] = gen1Y + branchHeight;
+          } else if (nodeBParent === nodeA) {
+            nodePos[DisplayNode.nodeA][0] = gen1X;
+            nodePos[DisplayNode.nodeA][1] = gen1Y;
+            nodePos[DisplayNode.nodeB][0] = gen1X + branchWidth;
+            nodePos[DisplayNode.nodeB][1] = gen1Y + branchHeight;
           } else {
-            nodePos[DisplayNode.node1][0] = gen1X;
-            nodePos[DisplayNode.node1][1] = gen1Y;
-            console.warn('the developer has unwarranted assumptions about node relations', node2Parent, indexes);
+            nodePos[DisplayNode.nodeA][0] = gen1X;
+            nodePos[DisplayNode.nodeA][1] = gen1Y;
+            console.warn('the developer has unwarranted assumptions about node relations', nodeBParent, indexes);
           }
-        } else if (node1Parent === node2 && node2Parent === root) {
-          nodePos[DisplayNode.node2][0] = gen1X;
-          nodePos[DisplayNode.node2][1] = gen1Y;
-          nodePos[DisplayNode.node1][0] = gen1X + branchWidth;
-          nodePos[DisplayNode.node1][1] = gen1Y + branchHeight;
+        } else if (nodeAParent === nodeB && nodeBParent === root) {
+          nodePos[DisplayNode.nodeB][0] = gen1X;
+          nodePos[DisplayNode.nodeB][1] = gen1Y;
+          nodePos[DisplayNode.nodeA][0] = gen1X + branchWidth;
+          nodePos[DisplayNode.nodeA][1] = gen1Y + branchHeight;
         } else {
-          console.warn('the developer has unwarranted assumptions about node relations', node1Parent, node2Parent, indexes);
+          console.warn('the developer has unwarranted assumptions about node relations', nodeAParent, nodeBParent, indexes);
         }
       }
-    } else if (indexes[DisplayNode.node2] !== UNSET) {
-      nodePos[DisplayNode.node2][0] = gen1X;
-      nodePos[DisplayNode.node2][1] = gen1Y;
+    } else if (indexes[DisplayNode.nodeB] !== UNSET) {
+      nodePos[DisplayNode.nodeB][0] = gen1X;
+      nodePos[DisplayNode.nodeB][1] = gen1Y;
     }
     this.draw();
   }

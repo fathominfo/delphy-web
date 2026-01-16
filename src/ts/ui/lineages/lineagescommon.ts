@@ -4,13 +4,13 @@ import { DisplayNode, UNSET } from '../common';
 import { DistributionSeries } from '../timedistributioncanvas';
 
 export enum NodePairType {
-  rootToNode1 = 0,
-  mrcaToNode1 = 1,
-  node2ToNode1 = 2,
+  rootToNodeA = 0,
+  mrcaToNodeA = 1,
+  nodeBToNodeA = 2,
 
-  rootToNode2 = 3,
-  mrcaToNode2 = 4,
-  node1ToNode2 = 5,
+  rootToNodeB = 3,
+  mrcaToNodeB = 4,
+  nodeAToNodeB = 5,
 
   rootToMrca = 6,
 
@@ -40,35 +40,35 @@ export type NodeDisplay = {
 };
 
 export const getAncestorType = (npt: NodePairType): DisplayNode => {
-  // incorrectly gives ancestor=node2 for node1ToNode2?
+  // incorrectly gives ancestor=nodeB for nodeAToNodeB?
 
   // const mod = npt % 3;
   // const nodeType: DisplayNode = mod === 0 ? DisplayNode.root
   //   : mod === 1 ? DisplayNode.mrca
-  //     : npt < NodePairType.rootToNode2 ? DisplayNode.node1 : DisplayNode.node2;
+  //     : npt < NodePairType.rootToNodeB ? DisplayNode.nodeA : DisplayNode.nodeB;
 
   switch (npt) {
   case NodePairType.rootToMrca:
-  case NodePairType.rootToNode1:
-  case NodePairType.rootToNode2:
+  case NodePairType.rootToNodeA:
+  case NodePairType.rootToNodeB:
   case NodePairType.rootOnly:
     return DisplayNode.root;
-  case NodePairType.mrcaToNode1:
-  case NodePairType.mrcaToNode2:
+  case NodePairType.mrcaToNodeA:
+  case NodePairType.mrcaToNodeB:
     return DisplayNode.mrca;
-  case NodePairType.node1ToNode2:
-    return DisplayNode.node1;
-  case NodePairType.node2ToNode1:
-    return DisplayNode.node2;
+  case NodePairType.nodeAToNodeB:
+    return DisplayNode.nodeA;
+  case NodePairType.nodeBToNodeA:
+    return DisplayNode.nodeB;
   default:
-    return DisplayNode.node2;
+    return DisplayNode.nodeB;
   }
 
   // return nodeType;
 }
 
 
-const descendantTypes:DisplayNode[] = [DisplayNode.node1, DisplayNode.node2, DisplayNode.mrca]
+const descendantTypes:DisplayNode[] = [DisplayNode.nodeA, DisplayNode.nodeB, DisplayNode.mrca]
 
 export const getDescendantType = (npt: NodePairType)=>{
   if (npt === NodePairType.rootOnly) return UNSET;

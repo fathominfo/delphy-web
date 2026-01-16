@@ -17,12 +17,12 @@
           <div class="tree-hint hover">Hover to preview a node.</div>
           <div class="tree-hint hover-root hidden">Previewing <span class="node root">Root</span>.</div>
           <div class="tree-hint hover-mrca hidden">Previewing <span class="node mrca">MRCA of A and B</span>.</div>
-          <div class="tree-hint hover-node1 hidden">Previewing <span class="node node1">Selection A</span>.</div>
-          <div class="tree-hint hover-node2-descendant hidden">Previewing <span class="node node2">Selection B</span>, a descendant of A.</div>
-          <div class="tree-hint hover-node2-cousin hidden">Previewing <span class="node node2">Selection B</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
-          <div class="tree-hint preview-node1 hidden">Previewing <span class="node node1">Selection A</span> <span class="click-hint">(click to confirm selection)</span>.</div>
-          <div class="tree-hint preview-node2-descendant hidden">Previewing <span class="node node2">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
-          <div class="tree-hint preview-node2-cousin hidden">Previewing <span class="node node2">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+          <div class="tree-hint hover-nodeA hidden">Previewing <span class="node nodeA">Selection A</span>.</div>
+          <div class="tree-hint hover-nodeB-descendant hidden">Previewing <span class="node nodeB">Selection B</span>, a descendant of A.</div>
+          <div class="tree-hint hover-nodeB-cousin hidden">Previewing <span class="node nodeB">Selection B</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+          <div class="tree-hint preview-nodeA hidden">Previewing <span class="node nodeA">Selection A</span> <span class="click-hint">(click to confirm selection)</span>.</div>
+          <div class="tree-hint preview-nodeB-descendant hidden">Previewing <span class="node nodeB">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
+          <div class="tree-hint preview-nodeB-cousin hidden">Previewing <span class="node nodeB">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
           <div class="tree-hint max-selections hidden">Remove a selection to explore other nodes.</div>
           <div class="tree-hint zoom hidden">Click and drag to zoom to a selection area.</div>
         </div>
@@ -65,7 +65,7 @@
                 </div>
               </div>
             </div>
-            <div class="lineages--node-item node1">
+            <div class="lineages--node-item nodeA">
               <div class="node-info">
                 <div class="node-icon"><div class="shape"></div></div>
                 <div class="node-description">
@@ -86,7 +86,7 @@
                 </div>
               </button>
             </div>
-            <div class="lineages--node-item node2">
+            <div class="lineages--node-item nodeB">
               <div class="node-info">
                 <div class="node-icon"><div class="shape"></div></div>
                 <div class="node-description">
@@ -135,12 +135,12 @@
                   <span class="value-label">##%</span>
                   <span class="series-label">MRCA</span>
                 </div>
-                <div class="prevalence--series node1 hidden">
+                <div class="prevalence--series nodeA hidden">
                   <div class="dot"></div>
                   <span class="value-label">##%</span>
                   <span class="series-label">A</span>
                 </div>
-                <div class="prevalence--series node2 hidden">
+                <div class="prevalence--series nodeB hidden">
                   <div class="dot"></div>
                   <span class="value-label">##%</span>
                   <span class="series-label">B</span>

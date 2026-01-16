@@ -88,10 +88,6 @@
 
   .node { font-weight: 700; }
 
-  // .root { color: @root; }
-  // .mrca { color: @mrca; }
-  // .node1 { color: @node1; }
-  // .node2 { color: @node2; }
 }
 
 .constrain-selection {
@@ -400,26 +396,6 @@ details {
     color: #777;
   }
 
-  .root {
-    // color: @root;
-    // .dot { background-color: @root; }
-  }
-
-  .mrca {
-    // color: @mrca;
-    // .dot { background-color: @mrca; }
-  }
-
-  .node1 {
-    // color: @node1;
-    // .dot { background-color: @node1; }
-  }
-
-  .node2 {
-    // color: @node2;
-    // .dot { background-color: @node2; }
-  }
-
   .value-label {
     display: inline-block;
     width: 4ch;
@@ -643,7 +619,7 @@ details {
    }
 
 
-  &.node1 {
+  &.nodeA {
     .node-name {color: var(--selection-a-text-static);}
   	.node-icon .shape {
       border-color: var(--selection-a-stroke-static);
@@ -651,7 +627,7 @@ details {
     }
    }
 
-  &.node2 {
+  &.nodeB {
     .node-name {color: var(--selection-b-text-static);}
   	.node-icon .shape {
       border-color: var(--selection-b-stroke-static);
@@ -1044,6 +1020,7 @@ details {
       position: relative;
 
       .tag {
+        position: absolute;
         top: 0;
         opacity: var(--lineages-tag-opacity);
         width: 50px;
@@ -1102,15 +1079,14 @@ details {
         position: absolute;
         height: 100%;
         align-items: flex-end;
+        .label {
+          position: absolute;
+          &.active     {opacity: var(--lineages-timeline-active-label-opacity);}
+          &.inactive   {opacity: var(--lineages-timeline-inactive-label-opacity);}
+          &.unmatching {opacity: var(--lineages-timeline-semiactive-label-opacity);}
+        }
       }
     }
-
-    .axis.x .tag, .timeline .label {
-      position: absolute;
-      left: var(--pct);
-    }
-
-
 
     #lineages-nt-root-date-label {color: var(--root-timeline-text)}
     #lineages-nt-mrca-date-label {color: var(--mrca-timeline-text)}
@@ -1120,14 +1096,6 @@ details {
     #lineages-nt-mrca-label      {color: var(--mrca-text)}
     #lineages-nt-a-label         {color: var(--a-text)}
     #lineages-nt-b-label         {color: var(--b-text)}
-
-    .timeline .label.active   {opacity: var(--lineages-timeline-active-label-opacity)}
-    .timeline .label.inactive {opacity: var(--lineages-timeline-inactive-label-opacity)}
-    .timeline .label.unmatching   {opacity: var(--lineages-timeline-semiactive-label-opacity)}
-
-
-
-
 
   }
 
@@ -1606,26 +1574,6 @@ details {
     transform: translate(0, 100%);
     z-index: 10;
     box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-
-    .root {
-      // color: @root;
-      // .dot { background-color: @root; }
-    }
-
-    .mrca {
-      // color: @mrca;
-      // .dot { background-color: @mrca; }
-    }
-
-    .node1 {
-      // color: @node1;
-      // .dot { background-color: @node1; }
-    }
-
-    .node2 {
-      // color: @node2;
-      // .dot { background-color: @node2; }
-    }
 
     .mutation {
       color: #777;

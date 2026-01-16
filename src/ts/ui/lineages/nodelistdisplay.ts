@@ -301,8 +301,8 @@ export class NodeListDisplay {
   private container: HTMLElement;
   private rootDiv: NodeItem;
   private mrcaDiv: NodeItem;
-  private node1Div: NodeItem;
-  private node2Div: NodeItem;
+  private nodeADiv: NodeItem;
+  private nodeBDiv: NodeItem;
   private dismissCallback: DismissCallback;
   private nodeHighlightCallback: NodeCallback;
   private nodeZoomCallback: NodeCallback;
@@ -319,8 +319,8 @@ export class NodeListDisplay {
     };
     this.rootDiv = new NodeItem(getDiv('.lineages--node-item.root'));
     this.mrcaDiv = new NodeItem(getDiv('.lineages--node-item.mrca'));
-    this.node1Div = new NodeItem(getDiv('.lineages--node-item.node1'));
-    this.node2Div = new NodeItem(getDiv('.lineages--node-item.node2'));
+    this.nodeADiv = new NodeItem(getDiv('.lineages--node-item.nodeA'));
+    this.nodeBDiv = new NodeItem(getDiv('.lineages--node-item.nodeB'));
     this.dismissCallback = dismissCallback;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.nodeZoomCallback = nodeZoomCallback;
@@ -343,16 +343,16 @@ export class NodeListDisplay {
     //   }
     //   icon.addEventListener('click', ()=>this.nodeZoomCallback(node));
     // }
-    bindDismiss(this.node1Div.div, DisplayNode.node1);
-    bindDismiss(this.node2Div.div, DisplayNode.node2);
+    bindDismiss(this.nodeADiv.div, DisplayNode.nodeA);
+    bindDismiss(this.nodeBDiv.div, DisplayNode.nodeB);
     // bindIcon(this.rootDiv.div, DisplayNode.root);
     // bindIcon(this.mrcaDiv.div, DisplayNode.mrca);
-    // bindIcon(this.node1Div.div, DisplayNode.node1);
-    // bindIcon(this.node2Div.div, DisplayNode.node2);
+    // bindIcon(this.nodeADiv.div, DisplayNode.nodeA);
+    // bindIcon(this.nodeBDiv.div, DisplayNode.nodeB);
     bindDiv(this.rootDiv.div, DisplayNode.root);
     bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
-    bindDiv(this.node1Div.div, DisplayNode.node1);
-    bindDiv(this.node2Div.div, DisplayNode.node2);
+    bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
+    bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
     (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>this.nodeHighlightCallback(UNSET));
 
   }
@@ -364,8 +364,8 @@ export class NodeListDisplay {
       switch( nodes[i].type) {
       case DisplayNode.root: this.rootDiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
       case DisplayNode.mrca: this.mrcaDiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
-      case DisplayNode.node1: this.node1Div.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
-      case DisplayNode.node2: this.node2Div.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
+      case DisplayNode.nodeA: this.nodeADiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
+      case DisplayNode.nodeB: this.nodeBDiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
       }
     }
   }
@@ -379,13 +379,13 @@ export class NodeListDisplay {
     this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
-  setNode1(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
-    this.node1Div.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
+  setNodeA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+    this.nodeADiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
     this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
-  setNode2(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
-    this.node2Div.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
+  setNodeB(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+    this.nodeBDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
     this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
@@ -393,30 +393,30 @@ export class NodeListDisplay {
     this.mrcaDiv.clear();
   }
 
-  clearNode1(): void {
-    this.node1Div.clear();
+  clearNodeA(): void {
+    this.nodeADiv.clear();
   }
 
-  clearNode2(): void {
-    this.node2Div.clear();
+  clearNodeB(): void {
+    this.nodeBDiv.clear();
   }
 
   highlightNode(node: DisplayNode | typeof UNSET) : void {
     if (node === UNSET) {
       this.rootDiv.restore();
       this.mrcaDiv.restore();
-      this.node1Div.restore();
-      this.node2Div.restore();
+      this.nodeADiv.restore();
+      this.nodeBDiv.restore();
     } else {
       this.rootDiv.pushback();
       this.mrcaDiv.pushback();
-      this.node1Div.pushback();
-      this.node2Div.pushback();
+      this.nodeADiv.pushback();
+      this.nodeBDiv.pushback();
       switch (node) {
       case DisplayNode.root: this.rootDiv.restore(); break;
       case DisplayNode.mrca: this.mrcaDiv.restore(); break;
-      case DisplayNode.node1: this.node1Div.restore(); break;
-      case DisplayNode.node2: this.node2Div.restore(); break;
+      case DisplayNode.nodeA: this.nodeADiv.restore(); break;
+      case DisplayNode.nodeB: this.nodeBDiv.restore(); break;
       }
 
     }
@@ -426,8 +426,8 @@ export class NodeListDisplay {
     requestAnimationFrame(()=>{
       this.rootDiv.draw();
       this.mrcaDiv.draw();
-      this.node1Div.draw();
-      this.node2Div.draw();
+      this.nodeADiv.draw();
+      this.nodeBDiv.draw();
     });
   }
 

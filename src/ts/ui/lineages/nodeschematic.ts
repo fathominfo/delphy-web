@@ -162,11 +162,11 @@ export class NodeSchematic {
 
   }
 
-  setData(src: NodeComparisonData[], indexes: [number, number, number, number], node1IsUpper: boolean) {
+  setData(src: NodeComparisonData[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
     // console.debug(src.map(ncd=>ncd.nodePair.pairType));
     this.src = src;
     this.indexes = indexes;
-    this.nodeAisUpper = node1IsUpper;
+    this.nodeAisUpper = nodeAIsUpper;
 
     const getMutationsFor = (nodeIndex: number)=>{
       const data = src.filter(ncd=>ncd.nodePair.index2 === nodeIndex)[0],
@@ -188,77 +188,77 @@ export class NodeSchematic {
       this.dataConfig = "mrca";
       centerLabel = "mrca";
       centralMutations = getMutationsFor(indexes[DisplayNode.mrca]);
-      if (node1IsUpper) {
+      if (nodeAIsUpper) {
         upperLabel = "a";
         lowerLabel = "b";
-        upperMutations = getMutationsFor(indexes[DisplayNode.node1]);
-        lowerMutations = getMutationsFor(indexes[DisplayNode.node2]);
+        upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
+        lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
       } else {
         upperLabel = "b";
         lowerLabel = "a";
-        upperMutations = getMutationsFor(indexes[DisplayNode.node1]);
-        lowerMutations = getMutationsFor(indexes[DisplayNode.node2]);
+        upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
+        lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
       }
 
 
-    } else if (indexes[DisplayNode.node1] !== UNSET) {
-      if (indexes[DisplayNode.node2] === UNSET) {
+    } else if (indexes[DisplayNode.nodeA] !== UNSET) {
+      if (indexes[DisplayNode.nodeB] === UNSET) {
         this.dataConfig = "a";
         centerLabel = "a";
-        centralMutations = getMutationsFor(indexes[DisplayNode.node1]);
+        centralMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
       } else {
         /*
         are nodes 1 and 2 both descended from root,
         or is one the parent of the other?
         */
         const root = indexes[DisplayNode.root],
-          node1 = indexes[DisplayNode.node1],
-          node2 = indexes[DisplayNode.node2];
-        let node1Parent: number = UNSET,
-          node2Parent: number = UNSET;
+          nodeA = indexes[DisplayNode.nodeA],
+          nodeB = indexes[DisplayNode.nodeB];
+        let nodeAParent: number = UNSET,
+          nodeBParent: number = UNSET;
         src.forEach((ncd: NodeComparisonData)=>{
           const pair = ncd.nodePair;
-          if (pair.index2 === node1) node1Parent = pair.index1;
-          else if (pair.index2 === node2) node2Parent = pair.index1;
+          if (pair.index2 === nodeA) nodeAParent = pair.index1;
+          else if (pair.index2 === nodeB) nodeBParent = pair.index1;
         });
-        if (node1Parent === root) {
-          if (node2Parent === root) {
-            if (node1IsUpper)  {
+        if (nodeAParent === root) {
+          if (nodeBParent === root) {
+            if (nodeAIsUpper)  {
               this.dataConfig = "ab";
               upperLabel = "a";
               lowerLabel = "b";
-              upperMutations = getMutationsFor(indexes[DisplayNode.node1]);
-              lowerMutations = getMutationsFor(indexes[DisplayNode.node2]);
+              upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
+              lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
             } else {
               this.dataConfig = "ba";
               upperLabel = "b";
               lowerLabel = "a";
-              upperMutations = getMutationsFor(indexes[DisplayNode.node2]);
-              lowerMutations = getMutationsFor(indexes[DisplayNode.node1]);
+              upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
+              lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
             }
-          } else if (node2Parent === node1) {
+          } else if (nodeBParent === nodeA) {
             this.dataConfig = "a2b";
             centerLabel = "a";
             endLabel = "b";
-            centralMutations = getMutationsFor(indexes[DisplayNode.node1]);
-            endMutations = getMutationsFor(indexes[DisplayNode.node2]);
+            centralMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
+            endMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
           } else {
-            console.warn('the developer has unwarranted assumptions about node relations', node2Parent, indexes);
+            console.warn('the developer has unwarranted assumptions about node relations', nodeBParent, indexes);
           }
-        } else if (node1Parent === node2 && node2Parent === root) {
+        } else if (nodeAParent === nodeB && nodeBParent === root) {
           this.dataConfig = "b2a";
           centerLabel = "b";
           endLabel = "a";
-          centralMutations = getMutationsFor(indexes[DisplayNode.node2]);
-          endMutations = getMutationsFor(indexes[DisplayNode.node1]);
+          centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
+          endMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
         } else {
-          console.warn('the developer has unwarranted assumptions about node relations', node1Parent, node2Parent, indexes);
+          console.warn('the developer has unwarranted assumptions about node relations', nodeAParent, nodeBParent, indexes);
         }
       }
-    } else if (indexes[DisplayNode.node2] !== UNSET) {
+    } else if (indexes[DisplayNode.nodeB] !== UNSET) {
       this.dataConfig = "b";
       centerLabel = "B";
-      centralMutations = getMutationsFor(indexes[DisplayNode.node2]);
+      centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
     }
 
     this.centralLine.set( "root", centerLabel, centralMutations);

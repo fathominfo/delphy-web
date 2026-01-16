@@ -96,8 +96,8 @@ class MutationTimeline {
 
 export class NodePairMutations {
   div: HTMLDivElement;
-  node1Span: HTMLSpanElement;
-  node2Span: HTMLSpanElement;
+  nodeASpan: HTMLSpanElement;
+  nodeBSpan: HTMLSpanElement;
   // mutationCountSpan: HTMLSpanElement;
   // mutationThresholdSpan: HTMLSpanElement;
   schematic: HTMLDivElement;
@@ -117,17 +117,17 @@ export class NodePairMutations {
     this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
-      node1Span = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
-      node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
+      nodeASpan = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
+      nodeBSpan = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
       schematic = this.div.querySelector(schematicSelector) as HTMLDivElement;
       // mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
       // mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement;
       // overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement;
-    if (!mutationContainer || !node1Span || !node2Span || !schematic) {
+    if (!mutationContainer || !nodeASpan || !nodeBSpan || !schematic) {
       throw new Error("html is missing elements needed for mutation list");
     }
-    this.node1Span = node1Span;
-    this.node2Span = node2Span;
+    this.nodeASpan = nodeASpan;
+    this.nodeBSpan = nodeBSpan;
     this.schematic = schematic;
     // this.mutationCountSpan = mutationCountSpan;
     // this.mutationThresholdSpan = mutationThresholdSpan;
@@ -142,7 +142,7 @@ export class NodePairMutations {
 
     let trailAlignment = "center";
     if (this.data.ancestorType === DisplayNode.mrca) {
-      trailAlignment = this.data.descendantType === DisplayNode.node1 ? "up" : "down";
+      trailAlignment = this.data.descendantType === DisplayNode.nodeA ? "up" : "down";
     }
     this.schematic.setAttribute("data-trail-alignment", trailAlignment);
 
@@ -159,10 +159,10 @@ export class NodePairMutations {
     //   (overlapSpan.querySelector(".lnoi-pct") as HTMLSpanElement).innerText = getPercentLabel(overlapCount / treeCount);
     //   overlapSpan.classList.toggle("is-root", this.data.ancestorType === DisplayNode.root);
     //   overlapSpan.querySelectorAll(".lnoi-1").forEach(item=>{
-    //     (item as HTMLSpanElement).innerText = this.node1Span.innerText;
+    //     (item as HTMLSpanElement).innerText = this.nodeASpan.innerText;
     //   });
     //   overlapSpan.querySelectorAll(".lnoi-2").forEach(item=>{
-    //     (item as HTMLSpanElement).innerText = this.node2Span.innerText;
+    //     (item as HTMLSpanElement).innerText = this.nodeBSpan.innerText;
     //   });
     // } else {
     //   overlapSpan.classList.add('hidden');
@@ -180,10 +180,10 @@ export class NodePairMutations {
     };
 
 
-    node1Span.addEventListener("mouseenter", () => seriesHoverHandler(0));
-    node1Span.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
-    node2Span.addEventListener("mouseenter", () => seriesHoverHandler(1));
-    node2Span.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
+    nodeASpan.addEventListener("mouseenter", () => seriesHoverHandler(0));
+    nodeASpan.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
+    nodeBSpan.addEventListener("mouseenter", () => seriesHoverHandler(1));
+    nodeBSpan.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
 
     nodeComparisonContainer.appendChild(this.div);
     this.setMutations();
@@ -191,12 +191,12 @@ export class NodePairMutations {
 
   setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
     /* set title for the ancestor node */
-    this.node1Span.innerText = getNodeTypeName(ancestorType);
-    this.node1Span.classList.add(getNodeClassName(ancestorType));
+    this.nodeASpan.innerText = getNodeTypeName(ancestorType);
+    this.nodeASpan.classList.add(getNodeClassName(ancestorType));
 
     /* set title for the descendant node */
-    this.node2Span.innerText = getNodeTypeName(descendantType);
-    this.node2Span.classList.add(getNodeClassName(descendantType));
+    this.nodeBSpan.innerText = getNodeTypeName(descendantType);
+    this.nodeBSpan.classList.add(getNodeClassName(descendantType));
   }
 
   setMutations():void {
@@ -225,26 +225,26 @@ export class NodePairMutations {
     this.div.classList.toggle("highlighting", node !== UNSET);
 
     if (node === UNSET) {
-      this.node1Span.classList.remove("highlight");
-      this.node2Span.classList.remove("highlight");
+      this.nodeASpan.classList.remove("highlight");
+      this.nodeBSpan.classList.remove("highlight");
       return;
     }
 
     if (node === this.data.ancestorType) {
-      this.node1Span.classList.add("highlight");
-      this.node2Span.classList.remove("highlight");
+      this.nodeASpan.classList.add("highlight");
+      this.nodeBSpan.classList.remove("highlight");
       return;
     }
 
     if (node === this.data.descendantType) {
-      this.node1Span.classList.remove("highlight");
-      this.node2Span.classList.add("highlight");
+      this.nodeASpan.classList.remove("highlight");
+      this.nodeBSpan.classList.add("highlight");
       return;
     }
 
     /* else, don't have this node */
-    this.node1Span.classList.remove("highlight");
-    this.node2Span.classList.remove("highlight");
+    this.nodeASpan.classList.remove("highlight");
+    this.nodeBSpan.classList.remove("highlight");
   }
 
   resize() {

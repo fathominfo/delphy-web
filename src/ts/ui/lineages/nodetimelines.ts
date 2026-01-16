@@ -48,10 +48,10 @@ export class NodeTimelines {
       span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca));
     });
     [ nodeASpan, nodeADateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.node1));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeA));
     });
     [ nodeBSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.node2));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeB));
     });
   }
 
@@ -67,7 +67,7 @@ export class NodeTimelines {
     this.data = nodes;
     const currentTypes:NodeDisplay[] = [];
     nodes.forEach((nd:NodeDisplay)=>currentTypes[nd.type] = nd);
-    [DisplayNode.root, DisplayNode.mrca, DisplayNode.node1, DisplayNode.node2].forEach(dn=>{
+    [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(dn=>{
       let nameSpan: HTMLSpanElement | null = null,
         dateSpan: HTMLSpanElement | null = null;
       switch (dn) {
@@ -79,11 +79,11 @@ export class NodeTimelines {
         nameSpan = mrcaSpan;
         dateSpan = mrcaDateSpan;
         break;
-      case DisplayNode.node1:
+      case DisplayNode.nodeA:
         nameSpan = nodeASpan;
         dateSpan = nodeADateSpan;
         break;
-      case DisplayNode.node2:
+      case DisplayNode.nodeB:
         nameSpan = nodeBSpan;
         dateSpan = nodeBDateSpan;
         break;
@@ -149,11 +149,11 @@ export class NodeTimelines {
       mrcaSpan.classList.remove("highlight");
       mrcaDateSpan.classList.remove("highlight");
       break;
-    case DisplayNode.node1:
+    case DisplayNode.nodeA:
       nodeASpan.classList.remove("highlight");
       nodeADateSpan.classList.remove("highlight");
       break;
-    case DisplayNode.node2:
+    case DisplayNode.nodeB:
       nodeBSpan.classList.remove("highlight");
       nodeBDateSpan.classList.remove("highlight");
       break;

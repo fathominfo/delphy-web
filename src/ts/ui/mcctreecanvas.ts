@@ -183,12 +183,12 @@ export class MccTreeCanvas extends TreeCanvas {
     totalTipMutations[0] = GENETIC_DISTANCE_MIN_DIST;
     for (let i = 1; i < tipCount; i++) {
       totalTipMutations[i] = 0;
-      const mccNode1Index = verticalTips[i-1].index,
-        mccNode2Index = verticalTips[i].index;
+      const mccNodeAIndex = verticalTips[i-1].index,
+        mccNodeBIndex = verticalTips[i].index;
       n1Muts.length = 0;
       n2Muts.length = 0;
-      let n1 = mccNode1Index,
-        n2 = mccNode2Index,
+      let n1 = mccNodeAIndex,
+        n2 = mccNodeBIndex,
         t1 = tree.getTimeOf(n1),
         t2 = tree.getTimeOf(n2);
       tree.forEachMutationOf(n1, addN1Mut);
