@@ -63,7 +63,7 @@ const TREE_HINT_CLASSES = [
 
   "hover-root",
   "hover-mrca",
-  "hover-nodeA",
+  "hover-node-a",
   "hover-nodeB-descendant",
   "hover-nodeB-cousin",
 

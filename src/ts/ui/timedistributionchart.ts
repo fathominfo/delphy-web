@@ -7,7 +7,7 @@ import { DistributionSeries, SeriesHoverCallback } from './timedistributioncanva
 const SERIES_GROUP_TEMPLATE = document.querySelector(".series.group") as SVGGElement;
 SERIES_GROUP_TEMPLATE.remove();
 
-class SVGSeriesGroup {
+export class SVGSeriesGroup {
   g: SVGGElement;
   path: SVGPathElement;
   line: SVGLineElement;
@@ -42,12 +42,14 @@ export class TimeDistributionChart {
   startIndex: number = UNSET;
   endIndex: number = UNSET;
   hoverCallback: SeriesHoverCallback;
+  groupType: typeof SVGSeriesGroup;
 
   // readout: HTMLElement;
 
   constructor(series: DistributionSeries[], minDate: number, maxDate: number,
-    svg: SVGElement, hoverCallback: SeriesHoverCallback = noop) {
+    svg: SVGElement, hoverCallback: SeriesHoverCallback = noop, groupType = SVGSeriesGroup) {
     this.series = [];
+    this.groupType = groupType;
     this.setDateRange(minDate, maxDate);
     this.svg = svg;
     this.paths = [];
@@ -98,7 +100,7 @@ export class TimeDistributionChart {
     this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
     this.svg.innerHTML = '';
     this.series.forEach(()=>{
-      const group = new SVGSeriesGroup(this.svg);
+      const group = new this.groupType(this.svg);
       this.paths.push(group);
     });
 

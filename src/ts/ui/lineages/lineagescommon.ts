@@ -1,7 +1,8 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNode, UNSET } from '../common';
+import { DisplayNode, getNodeClassName, UNSET } from '../common';
 import { DistributionSeries } from '../timedistributioncanvas';
+import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
 export enum NodePairType {
   rootToNodeA = 0,
@@ -25,6 +26,30 @@ export class NodeDistributionSeries extends DistributionSeries {
   constructor(type: DisplayNode, times: number[], className: string, color?: string) {
     super(times, className, color);
     this.nodeType = type;
+  }
+}
+
+export class NodeSVGSeriesGroup extends SVGSeriesGroup {
+
+  setNodeClass(className: string, toggle=true) {
+    this.g.classList.toggle(className, toggle);
+  }
+}
+
+
+export class NodeTimeDistributionChart extends TimeDistributionChart {
+
+  setSeries(series: NodeDistributionSeries[]) {
+    super.setSeries(series);
+    this.paths.forEach((group: SVGSeriesGroup, i)=>{
+      const nodeGroup = (group as NodeSVGSeriesGroup);
+      const series = this.series[i] as NodeDistributionSeries;
+      const className = getNodeClassName(series.nodeType);
+      nodeGroup.setNodeClass(className);
+      nodeGroup.setNodeClass("tip", series.distribution.range === 0);
+    });
+
+
   }
 }
 

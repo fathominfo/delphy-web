@@ -1134,10 +1134,44 @@ details {
   }
 
 
+  .series-group-container {
 
+    * { transition: all var(--transition) ease-out; }
+
+    .series.group.tip {
+      path {display: none;}
+      line {opacity: var(--guide-range-date-opacity);}
+    }
+
+
+    path {
+      opacity: var(--lineages-emergence-dist-opacity);
+      stroke: none;
+    }
+
+    line {
+      opacity: var(--lineages-timeline-pointer-opacity);
+      fill: none;
+    }
+
+    .root {
+      path { fill: var(--root-timeline-fill); }
+      line { stroke: var(--root-timeline-stroke); }
+    }
+    .mrca {
+      path { fill: var(--mrca-timeline-fill); }
+      line { stroke: var(--mrca-timeline-stroke); }
+    }
+    .nodeA {
+      path { fill: var(--a-timeline-fill); }
+      line { stroke: var(--a-timeline-stroke); }
+    }
+    .nodeB {
+      path { fill: var(--b-timeline-fill); }
+      line { stroke: var(--b-timeline-stroke); }
+    }
+  }
 }
-
-
 
 .lineages--time-chart,
 .lineages--node-comparison--time-chart {
@@ -1149,6 +1183,8 @@ details {
     height: 100%;
   }
 }
+
+
 
 
 

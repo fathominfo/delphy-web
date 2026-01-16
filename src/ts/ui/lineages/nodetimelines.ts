@@ -1,8 +1,8 @@
-import { NodeCallback, NodeDisplay, NodeDistributionSeries } from './lineagescommon';
+import { NodeCallback, NodeDisplay, NodeDistributionSeries, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
 import { DisplayNode, UNSET } from '../common';
-import { DistributionSeries, SeriesHoverCallback, TimeDistributionCanvas } from '../timedistributioncanvas';
+import { DistributionSeries, SeriesHoverCallback } from '../timedistributioncanvas';
 import { toFullDateString } from '../../pythia/dates';
-import { TimeDistributionChart } from '../timedistributionchart';
+import {  } from '../timedistributionchart';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 
@@ -14,14 +14,13 @@ const rootSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-label"
   mrcaDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-date-label") as HTMLSpanElement,
   nodeADateSpan = nodeComparisonContainer.querySelector("#lineages-nt-a-date-label") as HTMLSpanElement,
   nodeBDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-date-label") as HTMLSpanElement,
-  canvas = nodeComparisonContainer.querySelector("canvas") as HTMLCanvasElement,
   svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement;
 
 
 
 
 export class NodeTimelines {
-  nodeTimesCanvas: TimeDistributionChart;
+  nodeTimesCanvas: NodeTimeDistributionChart;
   data: NodeDisplay[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
@@ -37,7 +36,7 @@ export class NodeTimelines {
       nodeHighlightCallback(nodeType);
     };
 
-    this.nodeTimesCanvas = new TimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler);
+    this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
 
     [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
       rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
@@ -128,6 +127,9 @@ export class NodeTimelines {
     if (!this.data) return;
     if (node === this.highlighedtNode) return;
     nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
+
+
+
     rootSpan.classList.remove("highlight");
     rootDateSpan.classList.remove("highlight");
     mrcaSpan.classList.remove("highlight");
