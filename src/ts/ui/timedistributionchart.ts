@@ -25,7 +25,7 @@ export class SVGSeriesGroup {
 
 export class TimeDistributionChart {
   svg: SVGElement;
-  paths: SVGSeriesGroup[];
+  svgGroups: SVGSeriesGroup[];
   series: DistributionSeries[];
   width: number = UNSET;
   drawWidth: number = UNSET;
@@ -52,7 +52,7 @@ export class TimeDistributionChart {
     this.groupType = groupType;
     this.setDateRange(minDate, maxDate);
     this.svg = svg;
-    this.paths = [];
+    this.svgGroups = [];
     this.hoverCallback = hoverCallback;
     this.width = 0;
     this.drawWidth = 0;
@@ -96,12 +96,12 @@ export class TimeDistributionChart {
 
   setSeries(series: DistributionSeries[]) {
     this.series = series;
-    this.paths.length = 0;
+    this.svgGroups.length = 0;
     this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
     this.svg.innerHTML = '';
     this.series.forEach(()=>{
       const group = new this.groupType(this.svg);
-      this.paths.push(group);
+      this.svgGroups.push(group);
     });
 
   }
@@ -169,7 +169,7 @@ export class TimeDistributionChart {
     this.series.forEach((ds, i)=>{
       if (!ds) return;
       const distribution = ds.distribution;
-      const svg = this.paths[i];
+      const svg = this.svgGroups[i];
       if (distribution.range > 0) {
         this.drawDistribution(ds, svg);
       } else {

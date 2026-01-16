@@ -128,6 +128,7 @@ export class NodeTimelines {
     if (node === this.highlighedtNode) return;
     nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
 
+    this.nodeTimesCanvas.setMatching(node);
 
 
     rootSpan.classList.remove("highlight");

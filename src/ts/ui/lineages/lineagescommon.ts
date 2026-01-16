@@ -41,15 +41,35 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 
   setSeries(series: NodeDistributionSeries[]) {
     super.setSeries(series);
-    this.paths.forEach((group: SVGSeriesGroup, i)=>{
+    this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
       const series = this.series[i] as NodeDistributionSeries;
       const className = getNodeClassName(series.nodeType);
       nodeGroup.setNodeClass(className);
       nodeGroup.setNodeClass("tip", series.distribution.range === 0);
     });
+  }
 
-
+  setMatching(node:DisplayNode) {
+    if (node === UNSET) {
+      this.svgGroups.forEach((group: SVGSeriesGroup)=>{
+        const nodeGroup = (group as NodeSVGSeriesGroup);
+        nodeGroup.setNodeClass("matching", false);
+        nodeGroup.setNodeClass("unmatching", false);
+      });
+    } else {
+      this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
+        const nodeGroup = (group as NodeSVGSeriesGroup);
+        const series = this.series[i] as NodeDistributionSeries;
+        if (series.nodeType === node) {
+          nodeGroup.setNodeClass("matching");
+          nodeGroup.setNodeClass("unmatching", false);
+        } else {
+          nodeGroup.setNodeClass("matching", false);
+          nodeGroup.setNodeClass("unmatching");
+        }
+      });
+    }
   }
 }
 
