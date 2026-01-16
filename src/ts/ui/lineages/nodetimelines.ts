@@ -2,6 +2,7 @@ import { NodeCallback, NodeDisplay, NodeDistributionSeries } from './lineagescom
 import { DisplayNode, UNSET } from '../common';
 import { DistributionSeries, SeriesHoverCallback, TimeDistributionCanvas } from '../timedistributioncanvas';
 import { toFullDateString } from '../../pythia/dates';
+import { TimeDistributionChart } from '../timedistributionchart';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 
@@ -13,13 +14,14 @@ const rootSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-label"
   mrcaDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-date-label") as HTMLSpanElement,
   nodeADateSpan = nodeComparisonContainer.querySelector("#lineages-nt-a-date-label") as HTMLSpanElement,
   nodeBDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-date-label") as HTMLSpanElement,
-  canvas = nodeComparisonContainer.querySelector("canvas") as HTMLCanvasElement;
+  canvas = nodeComparisonContainer.querySelector("canvas") as HTMLCanvasElement,
+  svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement;
 
 
 
 
 export class NodeTimelines {
-  nodeTimesCanvas: TimeDistributionCanvas;
+  nodeTimesCanvas: TimeDistributionChart;
   data: NodeDisplay[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
@@ -35,7 +37,7 @@ export class NodeTimelines {
       nodeHighlightCallback(nodeType);
     };
 
-    this.nodeTimesCanvas = new TimeDistributionCanvas([], this.minDate, this.maxDate, canvas, seriesHoverHandler);
+    this.nodeTimesCanvas = new TimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler);
 
     [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
       rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
@@ -109,11 +111,6 @@ export class NodeTimelines {
         }
       }
     });
-
-
-
-
-
 
     const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
     this.nodeTimesCanvas.setSeries(allSeries as NodeDistributionSeries[]);

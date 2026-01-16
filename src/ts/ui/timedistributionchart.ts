@@ -1,0 +1,264 @@
+import {toDateString} from '../pythia/dates';
+import { UNSET } from './common';
+import { noop } from '../constants';
+import { DistributionSeries, SeriesHoverCallback } from './timedistributioncanvas';
+
+
+const SERIES_GROUP_TEMPLATE = document.querySelector(".series.group") as SVGGElement;
+SERIES_GROUP_TEMPLATE.remove();
+
+class SVGSeriesGroup {
+  g: SVGGElement;
+  path: SVGPathElement;
+  line: SVGLineElement;
+
+  constructor(container:SVGElement) {
+    this.g = SERIES_GROUP_TEMPLATE.cloneNode(true) as SVGGElement;
+    this.path = this.g.querySelector("path") as SVGPathElement;
+    this.line = this.g.querySelector("line") as SVGLineElement;
+    container.appendChild(this.g);
+  }
+
+
+}
+
+
+export class TimeDistributionChart {
+  svg: SVGElement;
+  paths: SVGSeriesGroup[];
+  series: DistributionSeries[];
+  width: number = UNSET;
+  drawWidth: number = UNSET;
+  height: number = UNSET;
+  xheight: number = UNSET;
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
+  isHighlighting: boolean;
+  hoverSeriesIndex: number;
+  hoverX: number | null = null;
+  hoverDate: number | null = null;
+  allSeriesBandMax: number = UNSET;
+  textOnRight = false;
+  startIndex: number = UNSET;
+  endIndex: number = UNSET;
+  hoverCallback: SeriesHoverCallback;
+
+  // readout: HTMLElement;
+
+  constructor(series: DistributionSeries[], minDate: number, maxDate: number,
+    svg: SVGElement, hoverCallback: SeriesHoverCallback = noop) {
+    this.series = [];
+    this.setDateRange(minDate, maxDate);
+    this.svg = svg;
+    this.paths = [];
+    this.hoverCallback = hoverCallback;
+    this.width = 0;
+    this.drawWidth = 0;
+    this.height = 0;
+    this.xheight = 0;
+    this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
+
+    this.svg.addEventListener("mouseover", e=>this.handleMouseover(e));
+    this.svg.addEventListener("mousemove", e=>this.handleMousemove(e));
+    this.svg.addEventListener("mouseout", ()=>this.handleMouseout());
+    this.svg.addEventListener('contextmenu', (event)=>this.handleRightClick(event));
+
+
+    this.isHighlighting = false;
+    this.hoverSeriesIndex = UNSET;
+    this.hoverX = null;
+    this.hoverDate = null;
+    const maxMedian = Math.max(...(series.map(ds=>ds?.distribution?.median || minDate)));
+    this.textOnRight = (maxMedian - minDate) / (maxDate - minDate) < 0.4;
+    this.resize();
+  }
+
+  resize():void {
+    const parent = this.svg.parentElement as HTMLDivElement;
+    const {offsetWidth, offsetHeight} = parent;
+    this.width = offsetWidth;
+    this.height = offsetHeight;
+    this.drawWidth = this.width
+    this.xheight = offsetHeight;
+    this.svg.setAttribute("width", `${offsetWidth}`);
+    this.svg.setAttribute("height", `${offsetHeight}`);
+    this.svg.setAttribute("viewBox", `0 0 ${offsetWidth} ${offsetHeight}`);
+  }
+
+  setDateRange(minDate: number, maxDate: number) : void {
+    this.minDate = minDate;
+    this.maxDate = maxDate;
+    this.startIndex = 0;
+    this.endIndex = Math.floor(maxDate - minDate + 1);
+  }
+
+  setSeries(series: DistributionSeries[]) {
+    this.series = series;
+    this.paths.length = 0;
+    this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
+    this.svg.innerHTML = '';
+    this.series.forEach(()=>{
+      const group = new SVGSeriesGroup(this.svg);
+      this.paths.push(group);
+    });
+
+  }
+
+  drawDistribution(ds: DistributionSeries, svg: SVGSeriesGroup) {
+    const {drawWidth, xheight, allSeriesBandMax} = this;
+    const {distribution} = ds;
+    const {bands, bandwidth, bandTimes, kde} = distribution;
+    let t = bandTimes[0],
+      x = this.xFor(t, drawWidth),
+      y = xheight,
+      val = distribution.getMinBand(),
+      p = '';
+    const THRESHOLD = val;
+    p = `M${x} ${y} L`;
+    for (let i = 0; i < bandTimes.length; i++) {
+      t = bandTimes[i];
+      x = this.xFor(t, drawWidth);
+      val = bands[i];
+      y = (1 - val / allSeriesBandMax) * xheight;
+      p+= ` ${x} ${y}`;
+    }
+    if (kde){
+      while (val > THRESHOLD) {
+        t += bandwidth;
+        x = this.xFor(t, drawWidth);
+        val = kde.value_at(t);
+        y = (1 - val / allSeriesBandMax) * xheight;
+        p+= ` ${x} ${y}`;
+      }
+    }
+    p += ` ${x} ${xheight}`;
+    svg.path.setAttribute("d", p);
+    /* set the median */
+    const median = distribution.median;
+    const medianValue = distribution.getValueAt(median);
+    x = this.xFor(median, drawWidth);
+    y = (1 - medianValue / allSeriesBandMax) * xheight;
+    svg.line.setAttribute("x1", `${x}`);
+    svg.line.setAttribute("y1", `${xheight}`);
+    svg.line.setAttribute("x2", `${x}`);
+    svg.line.setAttribute("y2", `${y}`);
+  }
+
+
+  drawCertainty(ds: DistributionSeries, svg: SVGSeriesGroup) {
+    const {drawWidth, xheight} = this;
+    const {distribution} = ds;
+    const {median} = distribution;
+    const x = this.xFor(median, drawWidth);
+    svg.line.setAttribute("x1", `${x}`);
+    svg.line.setAttribute("y1", `${0}`);
+    svg.line.setAttribute("x2", `${x}`);
+    svg.line.setAttribute("y2", `${xheight}`);
+    svg.path.setAttribute("d", "");
+  }
+
+
+  requestDraw(): void {
+    requestAnimationFrame(()=>this.draw());
+  }
+
+  private draw():void {
+
+    this.series.forEach((ds, i)=>{
+      if (!ds) return;
+      const distribution = ds.distribution;
+      const svg = this.paths[i];
+      if (distribution.range > 0) {
+        this.drawDistribution(ds, svg);
+      } else {
+        this.drawCertainty(ds, svg);
+      }
+
+    });
+  }
+
+
+  /* probably can get a better centralized x function? */
+  xFor(t: number, width:number): number {
+    const index = t - this.minDate,
+      // rescaled = (t - this.minDate) / (this.maxDate - this.minDate);
+      rescaled = (index - this.startIndex) / (this.endIndex - this.startIndex);
+    return 0.5 + rescaled * width;
+  }
+
+  xForInverse(x: number): number {
+    const rescaled = x / this.drawWidth,
+      firstDate = this.minDate + this.startIndex,
+      lastDate = this.minDate + this.endIndex;
+    return rescaled * (lastDate - firstDate) + firstDate;
+    // return rescaled * (this.maxDate - this.minDate) + this.minDate;
+  }
+
+  handleMouseover(e: MouseEvent) {
+    this.handleMousemove(e);
+  }
+
+  handleMousemove(e: MouseEvent) {
+    const hoverX = e.offsetX;
+    const hoverDate = this.xForInverse(hoverX) as number;
+    if (!hoverDate) return;
+    let hovered: DistributionSeries | null = null;
+    let maxValAtX = 0;
+    this.series.forEach((ds:DistributionSeries) => {
+      if (!ds) return;
+      const val = ds.distribution.getValueAt(hoverDate);
+      if (val > maxValAtX) {
+        maxValAtX = Math.max(val, maxValAtX);
+        hovered = ds;
+      }
+    });
+    this.hoverCallback(hovered);
+  }
+
+  handleMouseout() {
+    // this.isHighlighting = false;
+    // this.hoverSeriesIndex = UNSET;
+    // this.hoverX = null;
+    // this.hoverDate = null;
+    this.hoverCallback(null);
+  }
+
+
+  handleRightClick = (event:Event) => {
+    event.preventDefault();
+    const dist: DistributionSeries | undefined = this.series.length === 2 ? this.series[1] : this.series[0];
+    if (dist) {
+      const { distribution } = dist;
+      const times = distribution.times;
+      const dates = times.map(t=>toDateString(t));
+      dates.sort();
+      const txt = dates.join('\n'),
+        file = new Blob([txt], {type: "text;charset=utf-8"}),
+        a = document.createElement("a"),
+        url = URL.createObjectURL(file),
+        // title = `delphy-${name.toLowerCase().replace(/ /g, '_')}-times.txt`;
+        title = `delphy--times.txt`;
+      a.href = url;
+      a.download = title;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>a.remove(), 10000);
+    }
+    return false;
+  };
+
+
+}
+
+
+
+
+
+
+// export function getMultiTimeDistributionCanvas(names: string[], times:number[][], template: HTMLCanvasElement):TimeDistributionCanvas {
+//   if (names.length !== times.length) {
+//     throw new Error('to create a time distribution canvas, we need a name for every time series and vice versa');
+//   }
+//   let canvas:HTMLCanvasElement = <HTMLCanvasElement> template.cloneNode(true);
+//   let distributions = [];
+// }
