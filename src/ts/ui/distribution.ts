@@ -7,7 +7,6 @@ const cred_mass = .95
 
 export class Distribution {
 
-  name: string;
   times: number[];
   kde: KernelDensityEstimate | null;
   min: number;
@@ -28,8 +27,7 @@ export class Distribution {
   timeOfMax: number;
   distributed: boolean;
 
-  constructor(name: string, times: number[]) {
-    this.name = name;
+  constructor(times: number[]) {
     this.times = times;
     this.bandTimes = [];
     this.bands = [];

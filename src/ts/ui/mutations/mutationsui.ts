@@ -236,7 +236,7 @@ export class MutationsUI extends MccUI {
     this.prevalence.launchDraw();
     this.rows.forEach(row => {
       row.timeCanvas.resize();
-      row.timeCanvas.draw();
+      row.timeCanvas.requestDraw();
     });
     this.tipPercentSetter.resize();
     this.treePercentSetter.resize();
@@ -729,7 +729,7 @@ export class MutationsUI extends MccUI {
     if (this.displayOption === "list") {
       this.rows.forEach(row => {
         row.timeCanvas.resize();
-        row.timeCanvas.draw();
+        row.timeCanvas.requestDraw();
       });
     } else {
       this.rows.forEach(row => {

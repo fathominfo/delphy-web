@@ -157,9 +157,10 @@ export class MutationRow {
     if (!canvas) {
       throw new Error("mutation row has nowhere for the time distribution to go");
     }
-    const series: DistributionSeries = new DistributionSeries(moi.name, mutationData.times, "mutation");
+    const series: DistributionSeries = new DistributionSeries(mutationData.times, "mutation");
     const readout = this.rowDiv.querySelector(".time-chart--readout") as HTMLElement;
-    this.timeCanvas = new TimeDistributionCanvas([series], mutationData.minDate, mutationData.maxDate, canvas, readout);
+    // this.timeCanvas = new TimeDistributionCanvas([series], mutationData.minDate, mutationData.maxDate, canvas, readout);
+    this.timeCanvas = new TimeDistributionCanvas([series], mutationData.minDate, mutationData.maxDate, canvas);
 
     if (moi.features) {
       this.listFeatures();
@@ -175,7 +176,7 @@ export class MutationRow {
       this.rowDiv.classList.add(colorClass);
     }
 
-    this.timeCanvas.draw();
+    this.timeCanvas.requestDraw();
   }
 
   listFeatures() {
@@ -276,7 +277,7 @@ export class MutationRow {
     });
 
     this.timeCanvas.resize();
-    this.timeCanvas.draw();
+    this.timeCanvas.requestDraw();
 
     if (this.isActive) {
       this.updateHoverRow(this, this.isExpanded);
@@ -287,7 +288,7 @@ export class MutationRow {
     this.isExpanded = false;
     this.rowDiv.classList.remove("expanded");
     this.timeCanvas.resize();
-    this.timeCanvas.draw();
+    this.timeCanvas.requestDraw();
   }
 
   handleKeydown = (e: KeyboardEvent) => {

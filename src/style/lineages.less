@@ -1041,19 +1041,38 @@ details {
 
 
     .axis.x {
+      position: relative;
 
-      .tag          {opacity: var(--lineages-tag-opacity)}
-      .tag.active   {opacity: var(--lineages-tag-active-opacity)}
-      .tag.inactive {opacity: var(--lineages-tag-inactive-opacity)}
+      .tag {
+        top: 0;
+        opacity: var(--lineages-tag-opacity);
+        width: 50px;
+        margin-left: -30px;
+        text-align: center;
 
-      /**/
-      .tag.unmatching          {opacity: var(--lineages-tag-semiactive-opacity)}
-      .tag.unmatching.active   {opacity: var(--lineages-tag-active-opacity)}
-      .tag.unmatching.inactive {opacity: var(--lineages-tag-inactive-opacity)}
 
-      .tag.matching            {opacity: var(--lineages-tag-opacity)}
-      .tag.matching.active     {opacity: var(--lineages-tag-active-opacity)}
-      .tag.matching.inactive   {opacity: var(--lineages-tag-semiactive-opacity)}
+        &.matching {
+          // opacity: var(--lineages-tag-opacity);
+          &.active     {opacity: var(--lineages-tag-active-opacity);}
+          &.inactive   {opacity: var(--lineages-tag-semiactive-opacity);}
+        }
+
+        &.unmatching {
+          opacity: var(--lineages-tag-semiactive-opacity);
+          &.active   {opacity: var(--lineages-tag-active-opacity);}
+          &.inactive {opacity: var(--lineages-tag-inactive-opacity);}
+        }
+
+        &.active {
+          opacity: var(--lineages-tag-active-opacity);
+        }
+
+        &.inactive {
+          opacity: var(--lineages-tag-inactive-opacity);
+        }
+
+
+      }
     }
 
     .axis.y {
@@ -1085,6 +1104,13 @@ details {
         align-items: flex-end;
       }
     }
+
+    .axis.x .tag, .timeline .label {
+      position: absolute;
+      left: var(--pct);
+    }
+
+
 
     #lineages-nt-root-date-label {color: var(--root-timeline-text)}
     #lineages-nt-mrca-date-label {color: var(--mrca-timeline-text)}

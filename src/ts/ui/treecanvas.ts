@@ -409,6 +409,11 @@ export class TreeCanvas {
     return [minDate, maxDate];
   }
 
+
+  getDateRange() : number[] {
+    return [this.minDate, this.maxDate];
+  }
+
   // xFor(t: number): number {
   //   return this.width - TREE_PADDING_RIGHT - 0.5 - (this.maxDate - t) / (this.maxDate - this.minDate) * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT);
   // }

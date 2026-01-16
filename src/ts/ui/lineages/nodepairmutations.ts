@@ -1,8 +1,7 @@
-import { NodeCallback } from './lineagescommon';
+import { NodeCallback, HoverCallback, OpenMutationPageFncType } from './lineagescommon';
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
 import { TimeDistributionCanvas } from '../timedistributioncanvas';
 import { Mutation } from '../../pythia/delphy_api';
-import { HoverCallback } from './highlightabletimedistributioncanvas';
 import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 
 
@@ -28,7 +27,7 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
   nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
 
 
-export type MutationFunctionType = (mutation?: Mutation) => void;
+
 
 
 class MutationTimeline {
@@ -36,10 +35,10 @@ class MutationTimeline {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   timeCanvas: TimeDistributionCanvas;
-  goToMutations: MutationFunctionType;
+  goToMutations: OpenMutationPageFncType;
   data: MutationTimelineData;
 
-  constructor(data: MutationTimelineData, minDate: number, maxDate: number, goToMutations: MutationFunctionType) {
+  constructor(data: MutationTimelineData, minDate: number, maxDate: number, goToMutations: OpenMutationPageFncType) {
     this.data = data;
     const {mutation} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
@@ -67,8 +66,9 @@ class MutationTimeline {
     });
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
-    const readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
-    this.timeCanvas = new TimeDistributionCanvas([series], minDate, maxDate, canvas, readout);
+    // const readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
+    // this.timeCanvas = new TimeDistributionCanvas([series], minDate, maxDate, canvas, readout);
+    this.timeCanvas = new TimeDistributionCanvas([series], minDate, maxDate, canvas);
   }
 
   appendTo(div:HTMLDivElement):void {
@@ -82,7 +82,7 @@ class MutationTimeline {
 
   draw(): void {
     this.timeCanvas.resize();
-    this.timeCanvas.draw();
+    this.timeCanvas.requestDraw();
   }
 
   resize() {
@@ -102,13 +102,18 @@ export class NodePairMutations {
   // mutationThresholdSpan: HTMLSpanElement;
   schematic: HTMLDivElement;
   mutationContainer: HTMLDivElement;
-  goToMutations: MutationFunctionType;
+  goToMutations: OpenMutationPageFncType;
   nodeHighlightCallback: NodeCallback;
   mutationTimelines: MutationTimeline[] = [];
   data: NodeComparisonChartData;
+  ancestorType: DisplayNode;
+  descendantType: DisplayNode;
 
-  constructor(data : NodeComparisonChartData, goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback) {
+
+  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback) {
     this.data = data;
+    this.ancestorType = data.ancestorType;
+    this.descendantType = data.descendantType;
     this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
@@ -250,7 +255,7 @@ export class NodePairMutations {
 
 
 export function setMutationLists(nodeComparisonData: NodeComparisonChartData[],
-  goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback,
+  goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback,
   zoomMinDate: number, zoomMaxDate: number): NodePairMutations[] {
   nodeComparisonContainer.innerHTML = '';
   const comps: NodePairMutations[] = nodeComparisonData.map(chartData=>{

@@ -25,7 +25,7 @@ export class MutationTimelineData {
     this.nameParts = getMutationNameParts(mutation.mutation);
     this.name = getMutationName(mutation.mutation);
     this.className = "mutation";
-    this.series = new DistributionSeries(this.name, mutation.times, this.className);
+    this.series = new DistributionSeries(mutation.times, this.className);
     this.isApobecRun = isApobecRun;
   }
 
@@ -68,7 +68,7 @@ export class NodeComparisonChartData {
       const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
       const className = getNodeClassName(dn);
       const color = getNodeColorDark(dn);
-      const ds = new DistributionSeries(typeName, times, className, color);
+      const ds = new DistributionSeries(times, className, color);
       return ds;
     }
     if (this.descendantType === UNSET) {

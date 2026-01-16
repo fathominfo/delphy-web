@@ -11,17 +11,18 @@ import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
   getNodeColor, getNodeTypeName, getNodeClassName } from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodePairType, NodePair, NodeComparisonData,
-  NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType } from './lineagescommon';
+  NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType,
+  NodeDistributionSeries,
+  OpenMutationPageFncType} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
-import { MutationFunctionType, NodePairMutations, setMutationLists } from './nodepairmutations';
+import { NodePairMutations, setMutationLists } from './nodepairmutations';
 import { NodePrevalenceCanvas } from './nodeprevalencecanvas';
 import { isTip } from '../../util/treeutils';
 import autocomplete from 'autocompleter';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import { FieldTipCount, NodeMetadata } from '../nodemetadata';
 import { NodeComparisonChartData } from './nodecomparisonchartdata';
-import { DistributionSeries } from '../timedistributioncanvas';
 import { NodeSchematic } from './nodeschematic';
 
 
@@ -74,10 +75,6 @@ const TREE_HINT_CLASSES = [
 
   "zoom"
 ]
-
-
-const PREVALENCE_PCT_DAYS = .20;
-
 
 export class LineagesUI extends MccUI {
   node1Index = UNSET;
@@ -322,6 +319,7 @@ export class LineagesUI extends MccUI {
     super.activate();
     const {minDate, maxDate} = this.mccTreeCanvas;
     this.nodeTimelines.setDateRange(minDate, maxDate);
+
     const canvas = this.mccTreeCanvas.getCanvas();
     if (canvas instanceof HTMLCanvasElement) {
       canvas.addEventListener('pointerdown', this.canvasDownHandler);
@@ -629,7 +627,7 @@ export class LineagesUI extends MccUI {
       nodes.forEach(node=>{
         if (node.index >= 0) {
           node.times = pythia.getNodeTimeDistribution(node.index, summaryTree);
-          node.series = new DistributionSeries(node.label, node.times, node.className, node.color);
+          node.series = new NodeDistributionSeries(node.type, node.times, node.className, node.color);
         }
       });
       if (node1Index === UNSET && node2Index === UNSET) {
@@ -786,29 +784,33 @@ export class LineagesUI extends MccUI {
         });
       });
 
-      let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
+
+      // let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getDateRange(); // eslint-disable-line prefer-const
+      // console.log('dates', minDate, maxDate, zoomMinDate, zoomMaxDate);
       // const zoomDateRange = zoomMaxDate - zoomMinDate;
       // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
       this.nodeComparisonData = nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, this.isApobecEnabled));
       this.nodeTimelines.setData(nodes);
+      this.nodePrevalenceCanvas.setDateRange(minDate, maxDate);
+      this.nodeTimelines.setDateRange(minDate, maxDate);
       this.nodeMutationCharts = setMutationLists(this.nodeComparisonData, this.goToMutations,
-        this.nodeHighlightCallback, zoomMinDate, zoomMaxDate);
+        this.nodeHighlightCallback, minDate, maxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
       // this.nodeRelationChart.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       /* we want the default distribution to come first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+      this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
 
       /*
       add an empty node before the root to represent the uninfected population
       in the prevalence chart
       */
-      nodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
+      const prevalenceNodes = nodes.slice(0);
+      prevalenceNodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
 
-      // this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, zoomMinDate, zoomMaxDate);
-      this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate, minDate, maxDate);
+      this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
       this.nodePrevalenceCanvas.requestDraw();
-      this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
 
       mccRef.release();
     }
@@ -904,15 +906,19 @@ export class LineagesUI extends MccUI {
   }
 
   handleNodeHighlight(node: DisplayNode | typeof UNSET) : void {
+    console.log(`handleNodeHighlight(${node})`);
     if (node === this.highlightNode) {
       // no need to check again
       return;
     }
+    this.highlightNode = node;
 
+    /*
+    for the tree, push back most of the tree,
+    and draw the highlighted subtree on the highlight canvas
+    */
     this.mccTreeCanvas.setFade(node !== UNSET);
     super.requestTreeDraw();
-
-    this.highlightNode = node;
     let subtreeIndex = UNSET;
     switch(node) {
     case DisplayNode.root: {
@@ -948,17 +954,16 @@ export class LineagesUI extends MccUI {
     }
       break;
     }
-
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index, subtreeIndex);
-    this.nodeListDisplay.highlightNode(node);
-    // this.nodeRelationChart.highlightNode(node);
-    this.nodeSchematic.highlightNode(node);
-    this.nodePrevalenceCanvas.highlightNode(node);
 
+    /* highlight node in other components */
+    this.nodeListDisplay.highlightNode(node);
+    this.nodePrevalenceCanvas.highlightNode(node);
+    this.nodeSchematic.highlightNode(node);
+    this.nodeTimelines.highlightNode(node);
     this.nodeMutationCharts.forEach((nmc: NodePairMutations)=>{
       nmc.highlightNode(node);
     });
-    this.nodeTimelines.highlightNode(node);
   }
 
 
@@ -970,13 +975,7 @@ export class LineagesUI extends MccUI {
   */
   requestTreeDraw(): void {
     super.requestTreeDraw();
-    let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange();  // eslint-disable-line prefer-const
-    const zoomDateRange = zoomMaxDate - zoomMinDate;
-    zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
-    this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
-    this.nodePrevalenceCanvas.requestDraw();
-
   }
 
 
@@ -1057,7 +1056,7 @@ export class LineagesUI extends MccUI {
     requestAnimationFrame(() => this.nodeSchematic.draw());
   }
 
-  goToMutations: MutationFunctionType = (mutation?: Mutation) => {
+  goToMutations: OpenMutationPageFncType = (mutation?: Mutation) => {
     if (mutation) {
       this.sharedState.addMutation(mutation);
       this.sharedState.goTo(Screens.mutations);

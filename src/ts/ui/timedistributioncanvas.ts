@@ -1,6 +1,7 @@
 import {Distribution} from './distribution';
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
-import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
+import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, DisplayNode, UNSET, constrain, getPercentLabel, measureText, nodeTypeNames, resizeCanvas} from './common';
+import { noop } from '../constants';
 
 const margin = {
   top: 5,
@@ -9,30 +10,25 @@ const margin = {
   left: 0
 };
 
-// const HOVER_ALLOWANCE = 5;
 
-// const BG_COLOR = 'rgba(245, 245, 245, ';
-// const SERIES_COLOR = 'rgba(116, 116, 116, ';
+export type SeriesHoverCallback = (series: DistributionSeries | null)=>void;
+
 const SERIES_COLOR = 'rgba(80, 80, 80, ';
 const LINE_COLOR = 'rgba(156, 156, 156, ';
 
-let READOUT_SERIES_TEMPLATE: HTMLElement;
+// let READOUT_SERIES_TEMPLATE: HTMLElement;
 
 export class DistributionSeries {
   distribution: Distribution;
   color: string;
-  name: string;
-  className: string;
 
-  constructor(name: string, times:number[], className: string, color?: string) {
-    this.distribution = new Distribution(name, times);
-    this.name = name;
+  constructor(times:number[], className: string, color?: string) {
+    this.distribution = new Distribution(times);
     if (color) {
       this.color = color;
     } else {
       this.color = `${SERIES_COLOR} 1)`;
     }
-    this.className = className;
   }
 
 
@@ -45,30 +41,30 @@ export class TimeDistributionCanvas {
   series: DistributionSeries[];
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  width: number;
-  drawWidth: number;
-  height: number;
-  xheight: number;
-  minDate: number;
-  maxDate: number;
+  width: number = UNSET;
+  drawWidth: number = UNSET;
+  height: number = UNSET;
+  xheight: number = UNSET;
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
   isHighlighting: boolean;
   hoverSeriesIndex: number;
-  hoverX: number | null;
-  hoverDate: number | null;
-  allSeriesBandMax: number;
-  textOnRight: boolean;
-  startIndex: number;
-  endIndex: number;
+  hoverX: number | null = null;
+  hoverDate: number | null = null;
+  allSeriesBandMax: number = UNSET;
+  textOnRight = false;
+  startIndex: number = UNSET;
+  endIndex: number = UNSET;
+  hoverCallback: SeriesHoverCallback;
 
-  readout: HTMLElement;
+  // readout: HTMLElement;
 
-  constructor(series: DistributionSeries[], minDate: number, maxDate: number, canvas: HTMLCanvasElement, readout: HTMLElement) {
+  constructor(series: DistributionSeries[], minDate: number, maxDate: number,
+    canvas: HTMLCanvasElement, hoverCallback: SeriesHoverCallback = noop) {
     this.series = series;
-    this.minDate = minDate;
-    this.maxDate = maxDate;
-    this.startIndex = 0;
-    this.endIndex = Math.floor(maxDate - minDate + 1);
+    this.setDateRange(minDate, maxDate);
     this.canvas = canvas;
+    this.hoverCallback = hoverCallback;
     const maybeCtx = canvas.getContext('2d') as CanvasRenderingContext2D;
     if (!maybeCtx) {
       throw new Error('cannot create js drawing context');
@@ -85,24 +81,24 @@ export class TimeDistributionCanvas {
     this.canvas.addEventListener("mouseout", ()=>this.handleMouseout());
     this.canvas.addEventListener('contextmenu', (event)=>this.handleRightClick(event));
 
-    this.readout = readout;
-    if (readout) {
-      READOUT_SERIES_TEMPLATE = readout.querySelector(".time-chart--series") as HTMLElement;
-      if (READOUT_SERIES_TEMPLATE) {
-        READOUT_SERIES_TEMPLATE.remove();
-      }
+    // this.readout = readout;
+    // if (readout) {
+    //   READOUT_SERIES_TEMPLATE = readout.querySelector(".time-chart--series") as HTMLElement;
+    //   if (READOUT_SERIES_TEMPLATE) {
+    //     READOUT_SERIES_TEMPLATE.remove();
+    //   }
 
-      series.forEach(ds => {
-        if (!ds) return;
+    //   series.forEach(ds => {
+    //     if (!ds) return;
 
-        const seriesDiv = READOUT_SERIES_TEMPLATE.cloneNode(true) as HTMLElement;
-        seriesDiv.classList.add(ds.className);
-        if (series.length > 1) {
-          (seriesDiv.querySelector(".series-label") as HTMLElement).innerText = ds.name;
-        }
-        readout.appendChild(seriesDiv);
-      });
-    }
+    //     const seriesDiv = READOUT_SERIES_TEMPLATE.cloneNode(true) as HTMLElement;
+    //     // seriesDiv.classList.add(ds.className);
+    //     if (series.length > 1) {
+    //       // (seriesDiv.querySelector(".series-label") as HTMLElement).innerText = ds.name;
+    //     }
+    //     readout.appendChild(seriesDiv);
+    //   });
+    // }
 
     this.isHighlighting = false;
     this.hoverSeriesIndex = UNSET;
@@ -123,9 +119,11 @@ export class TimeDistributionCanvas {
     this.ctx.font = CHART_TEXT_FONT;
   }
 
-  setDateRange(zoomMinDate: number, zoomMaxDate: number) : void {
-    this.startIndex = Math.floor(zoomMinDate - this.minDate);
-    this.endIndex = Math.floor(zoomMaxDate - this.minDate);
+  setDateRange(minDate: number, maxDate: number) : void {
+    this.minDate = minDate;
+    this.maxDate = maxDate;
+    this.startIndex = 0;
+    this.endIndex = Math.floor(maxDate - minDate + 1);
   }
 
   setSeries(series: DistributionSeries[]) {
@@ -146,6 +144,8 @@ export class TimeDistributionCanvas {
     let t = bandTimes[0],
       x = this.xFor(t, drawWidth),
       val = ds.distribution.getMinBand();
+    const xs: number[] = [];
+    const ts: number[] = [];
     const THRESHOLD = val;
     ctx.moveTo(x, xheight);
     for (let i = 0; i < bandTimes.length; i++) {
@@ -155,6 +155,8 @@ export class TimeDistributionCanvas {
       const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
       // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
       ctx.lineTo(x, y);
+      xs.push(x - 0);
+      ts.push(t - 0);
     }
     if (kde){
       while (val > THRESHOLD) {
@@ -199,12 +201,12 @@ export class TimeDistributionCanvas {
 
 
   setAlpha(ds: DistributionSeries) : void  {
-    let alpha = 0.2;
+    let alpha = 0.5;
     if (this.isHighlighting) {
-      alpha = 0.1;
+      alpha = 0.35;
       const index = this.series.indexOf(ds);
       if (this.hoverSeriesIndex === index) {
-        alpha = 0.4;
+        alpha = 0.7;
       }
     }
     this.ctx.globalAlpha = alpha;
@@ -263,22 +265,22 @@ export class TimeDistributionCanvas {
       textX = constrain(textX, textWidth / 2, width - textWidth / 2);
 
       ctx.globalAlpha = 0.7;
-      if (this.hoverSeriesIndex === index || isCertain) {
-        ctx.fillText(dateLabel, textX, topY);
-      } else {
-        ctx.fillText(dateLabel, textX, middleY);
-      }
+      // if (this.hoverSeriesIndex === index || isCertain) {
+      //   ctx.fillText(dateLabel, textX, topY);
+      // } else {
+      //   ctx.fillText(dateLabel, textX, middleY);
+      // }
       /* values that are certain do not need min and max drawn */
       if (isCertain) return;
-      if (this.hoverSeriesIndex === index) {
-        ctx.textBaseline = "middle";
+      // if (this.hoverSeriesIndex === index) {
+      //   ctx.textBaseline = "middle";
 
-        ctx.textAlign = "right";
-        ctx.fillText(minDateStr, minX, middleY);
+      //   ctx.textAlign = "right";
+      //   ctx.fillText(minDateStr, minX, middleY);
 
-        ctx.textAlign = "left";
-        ctx.fillText(maxDateStr, maxX, middleY);
-      }
+      //   ctx.textAlign = "left";
+      //   ctx.fillText(maxDateStr, maxX, middleY);
+      // }
 
       middleY += textMetrics.height;
       topY += textMetrics.height;
@@ -349,18 +351,18 @@ export class TimeDistributionCanvas {
     ctx.textBaseline = "alphabetic";
     const label = "95% HPD";
     const textX = this.textOnRight ? this.drawWidth / 2 : 0;
-    ctx.fillText(label, textX, LINE_HEIGHT);
+    // ctx.fillText(label, textX, LINE_HEIGHT);
 
-    ctx.font = CHART_TEXT_FONT;
-    ctx.fillText(`${minDateStr} – ${maxDateStr}`, textX+COL_2, LINE_HEIGHT);
+    // ctx.font = CHART_TEXT_FONT;
+    // ctx.fillText(`${minDateStr} – ${maxDateStr}`, textX+COL_2, LINE_HEIGHT);
   }
 
   labelHover() {
     if (!this.hoverDate || !this.hoverX) {
-      this.readout?.classList.add("hidden");
+      // this.readout?.classList.add("hidden");
       return;
     }
-    this.readout?.classList.remove("hidden");
+    // this.readout?.classList.remove("hidden");
 
     const {ctx, xheight, allSeriesBandMax} = this;
 
@@ -378,21 +380,21 @@ export class TimeDistributionCanvas {
 
     // date
     const dateLabel = toFullDateString(this.hoverDate);
-    if (this.readout) {
-      (this.readout.querySelector(".time-chart--date") as HTMLElement).innerText = dateLabel;
-      this.readout.style.left = `${this.hoverX}px`;
-    }
+    // if (this.readout) {
+    //   (this.readout.querySelector(".time-chart--date") as HTMLElement).innerText = dateLabel;
+    //   this.readout.style.left = `${this.hoverX}px`;
+    // }
 
     this.series.forEach((ds, i) => {
       if (!ds) return;
-      if (ds.distribution.name === undefined) return;
+      // if (ds.distribution.name === undefined) return;
       if (!this.hoverDate || !this.hoverX) return;
-      if (!this.readout) return;
+      // if (!this.readout) return;
 
       const {distribution} = ds;
-      const series = this.readout.querySelectorAll(".time-chart--series")[i] as HTMLElement;
+      // const series = this.readout.querySelectorAll(".time-chart--series")[i] as HTMLElement;
       if (distribution.total === 0) {
-        (series.querySelector(".value-label") as HTMLElement).innerText = "";
+        // (series.querySelector(".value-label") as HTMLElement).innerText = "";
         // (series.querySelector(".dot") as HTMLElement).classList.add("hidden");
         return;
       }
@@ -400,7 +402,7 @@ export class TimeDistributionCanvas {
       // get true y value
       const pct = distribution.getCumulativeProbability(Math.floor(this.hoverDate));
       if (pct === 0 || pct >= 1) {
-        (series.querySelector(".value-label") as HTMLElement).innerText = "";
+        // (series.querySelector(".value-label") as HTMLElement).innerText = "";
         // (series.querySelector(".dot") as HTMLElement).classList.add("hidden");
         return;
       }
@@ -419,12 +421,16 @@ export class TimeDistributionCanvas {
 
       // value label
       const pctLabel = `${getPercentLabel(pct)}%`;
-      (series.querySelector(".value-label") as HTMLElement).innerText = pctLabel;
+      // (series.querySelector(".value-label") as HTMLElement).innerText = pctLabel;
     });
   }
 
 
-  draw():void {
+  requestDraw(): void {
+    requestAnimationFrame(()=>this.draw());
+  }
+
+  private draw():void {
     const {ctx, width, height, series} = this;
 
     ctx.clearRect(0, 0, width, height);
@@ -480,46 +486,28 @@ export class TimeDistributionCanvas {
   }
 
   handleMousemove(e: MouseEvent) {
-    this.isHighlighting = true;
-
-    this.hoverX = e.offsetX;
-    this.hoverDate = this.xForInverse(this.hoverX) as number;
-
-    this.hoverSeriesIndex = UNSET;
-    if (this.series[1]) {
-      let maxValAtX = 0;
-      this.series.forEach((ds, i) => {
-        if (!ds) return;
-        if (!this.hoverDate) return;
-        // let x1 = this.xFor(ds.distribution.min, this.drawWidth),
-        //   x2 = this.xFor(ds.distribution.max, this.drawWidth);
-        // if (ds.distribution.range === 0) {
-        //   x1 -= HOVER_ALLOWANCE;
-        //   x2 += HOVER_ALLOWANCE;
-        // }
-        // if (e.offsetX >= x1 && e.offsetX <= x2) {
-        //   this.hoverSeries = ds;
-        // }
-
-        const val = ds.distribution.getValueAt(this.hoverDate);
-        if (val > maxValAtX) {
-          maxValAtX = Math.max(val, maxValAtX);
-          this.hoverSeriesIndex = i;
-        }
-      });
-    } else {
-      this.hoverSeriesIndex = 0;
-    }
-
-    this.draw();
+    const hoverX = e.offsetX;
+    const hoverDate = this.xForInverse(hoverX) as number;
+    if (!hoverDate) return;
+    let hovered: DistributionSeries | null = null;
+    let maxValAtX = 0;
+    this.series.forEach((ds, i) => {
+      if (!ds) return;
+      const val = ds.distribution.getValueAt(hoverDate);
+      if (val > maxValAtX) {
+        maxValAtX = Math.max(val, maxValAtX);
+        hovered = ds;
+      }
+    });
+    this.hoverCallback(hovered);
   }
 
   handleMouseout() {
-    this.isHighlighting = false;
-    this.hoverSeriesIndex = UNSET;
-    this.hoverX = null;
-    this.hoverDate = null;
-    this.draw();
+    // this.isHighlighting = false;
+    // this.hoverSeriesIndex = UNSET;
+    // this.hoverX = null;
+    // this.hoverDate = null;
+    this.hoverCallback(null);
   }
 
 
@@ -527,7 +515,7 @@ export class TimeDistributionCanvas {
     event.preventDefault();
     const dist: DistributionSeries | undefined = this.series.length === 2 ? this.series[1] : this.series[0];
     if (dist) {
-      const { name, distribution } = dist;
+      const { distribution } = dist;
       const times = distribution.times;
       const dates = times.map(t=>toDateString(t));
       dates.sort();
@@ -535,7 +523,8 @@ export class TimeDistributionCanvas {
         file = new Blob([txt], {type: "text;charset=utf-8"}),
         a = document.createElement("a"),
         url = URL.createObjectURL(file),
-        title = `delphy-${name.toLowerCase().replace(/ /g, '_')}-times.txt`;
+        // title = `delphy-${name.toLowerCase().replace(/ /g, '_')}-times.txt`;
+        title = `delphy--times.txt`;
       a.href = url;
       a.download = title;
       document.body.appendChild(a);

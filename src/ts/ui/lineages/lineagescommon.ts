@@ -1,3 +1,4 @@
+import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode, UNSET } from '../common';
 import { DistributionSeries } from '../timedistributioncanvas';
@@ -18,6 +19,16 @@ export enum NodePairType {
 }
 
 
+export class NodeDistributionSeries extends DistributionSeries {
+  nodeType: DisplayNode;
+
+  constructor(type: DisplayNode, times: number[], className: string, color?: string) {
+    super(times, className, color);
+    this.nodeType = type;
+  }
+}
+
+
 export type NodeDisplay = {
   index: number,
   color: string,
@@ -25,7 +36,7 @@ export type NodeDisplay = {
   type: DisplayNode,
   className: string,
   times: number[],
-  series: DistributionSeries | null
+  series: NodeDistributionSeries | null
 };
 
 export const getAncestorType = (npt: NodePairType): DisplayNode => {
@@ -90,3 +101,6 @@ export type NodeComparisonData = {
 
 export type NodeCallback = (node:DisplayNode | typeof UNSET)=>void;
 export type DismissCallback = (node:DisplayNode)=>void;
+export type HoverCallback = (node: DisplayNode)=>void;
+export type OpenMutationPageFncType = (mutation?: Mutation) => void;
+

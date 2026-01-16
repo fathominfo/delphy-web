@@ -45,37 +45,25 @@ export class NodePrevalenceCanvas extends BaseTreeMeanCanvas {
     this.readoutSeries = [];
   }
 
-  setData(nodeDist: BaseTreeSeriesType, nodes: NodeDisplay[], minDate: number, maxDate: number,
-    zoomMinDate: number, zoomMaxDate: number) {
+  setData(nodeDist: BaseTreeSeriesType, nodes: NodeDisplay[], minDate: number, maxDate: number) {
     const nodeColors = nodes.map(node => node.color);
     const nodeColorsWithOpa = nodeColors.map(rgb=>`rgba(${ rgb.substring(4, rgb.length - 1)},`);
     const nodeLabels = nodes.map(node => node.label);
     const nodeClassNames = nodes.map(node => node.className);
     super.set(nodeDist, nodeColorsWithOpa, nodeLabels, nodeClassNames, minDate, maxDate);
     this.nodes = nodes;
-    /*
-    TO DO:
-    sometimes possible to get  zoomMinDate that is less than the this.minDate. How?
-    [mark 231102]
-    */
-    this.setDateRange(zoomMinDate, zoomMaxDate);
+    this.setDateRange(minDate, maxDate);
     this.calculate();
-
     this.readout.querySelectorAll(".prevalence--series").forEach(series => series.classList.add("hidden"));
     this.readoutSeries = nodeClassNames.filter(className => className !== "").map(className => {
       return this.readout.querySelector(`.prevalence--series.${className}`) as HTMLElement;
     });
   }
 
-  setDateRange(zoomMinDate: number, zoomMaxDate: number) : void {
-    /*
-    TO DO:
-    sometimes possible to get  zoomMinDate that is less than the this.minDate. How?
-    [mark 231102]
-    */
-    super.setDateRange(zoomMinDate, zoomMaxDate);
-    this.startDateDiv.innerHTML = toFullDateString(zoomMinDate);
-    this.endDateDiv.innerHTML = toFullDateString(zoomMaxDate);
+  setDateRange(minDate: number, maxDate: number) : void {
+    super.setDateRange(minDate, maxDate);
+    this.startDateDiv.innerHTML = toFullDateString(minDate);
+    this.endDateDiv.innerHTML = toFullDateString(maxDate);
   }
 
   protected draw(): void {
