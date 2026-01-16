@@ -1079,6 +1079,8 @@ details {
         position: absolute;
         height: 100%;
         align-items: flex-end;
+        pointer-events: none; // let events pass through to the SVG chart
+
         .label {
           position: absolute;
           &.active     {opacity: var(--lineages-timeline-active-label-opacity);}
