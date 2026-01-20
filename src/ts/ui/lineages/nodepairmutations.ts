@@ -1,8 +1,7 @@
-import { NodeCallback, HoverCallback, OpenMutationPageFncType } from './lineagescommon';
+import { NodeCallback, HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistributionSeries, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
-import { TimeDistributionCanvas } from '../timedistributioncanvas';
-import { Mutation } from '../../pythia/delphy_api';
-import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
+// import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
+import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -15,16 +14,13 @@ if (!nodeComparisonTemplate || !nodeComparisonContainer || !mutationTemplate) {
 mutationTemplate.remove();
 nodeComparisonTemplate.remove();
 
-const mutationCanvasSelector = '.lineages--mutation-time-chart',
+const mutationChartSelector = '.series-group-container',
   mutationNameSelector = '.lineages--node-comparison--mutation-name',
   mutationPrevalenceSelector = '.lineages--node-comparison--mutation-prevalence span',
   mutationContainerSelector = '.lineages--mutation-timeline',
   ancestorNodeNameSelector = '.lineages--list-ancestor',
   descendantNodeNameSelector = '.lineages--list-descendant',
-  schematicSelector = ".schematic",
-  // mutationCountSelector = '.lineages--node-comparison--mutation-count',
-  // mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
-  nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
+  schematicSelector = ".schematic";
 
 
 
@@ -32,9 +28,7 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
 
 class MutationTimeline {
   div: HTMLDivElement;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  timeCanvas: TimeDistributionCanvas;
+  timeChart: NodeTimeDistributionChart;
   goToMutations: OpenMutationPageFncType;
   data: MutationTimelineData;
 
@@ -43,16 +37,12 @@ class MutationTimeline {
     const {mutation} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
     this.div.classList.toggle('is-apobec', data.mutation.isApobecCtx && data.isApobecRun);
-    const canvas = this.div.querySelector(mutationCanvasSelector) as HTMLCanvasElement,
-      ctx = canvas?.getContext('2d'),
+    const svg = this.div.querySelector(mutationChartSelector) as SVGElement,
       nameLabel = this.div.querySelector(mutationNameSelector) as HTMLParagraphElement,
       prevalenceLabel = this.div.querySelector(mutationPrevalenceSelector) as HTMLSpanElement;
-    if (!canvas || !ctx || !nameLabel || !prevalenceLabel) {
+    if (!nameLabel || !prevalenceLabel) {
       throw new Error('could not find elements for mutation data for node comparison');
     }
-    this.canvas = canvas;
-    this.ctx = ctx;
-
 
     const {nameParts, series} = this.data;
 
@@ -68,25 +58,27 @@ class MutationTimeline {
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     // const readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
     // this.timeCanvas = new TimeDistributionCanvas([series], minDate, maxDate, canvas, readout);
-    this.timeCanvas = new TimeDistributionCanvas([series], minDate, maxDate, canvas);
+    this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, undefined, NodeSVGSeriesGroup);
+    this.timeChart.setSeries([series] as NodeDistributionSeries[]);
   }
 
   appendTo(div:HTMLDivElement):void {
     div.appendChild(this.div);
   }
 
-  setDateRange(zoomMinDate: number, zoomMaxDate: number): void {
-    this.timeCanvas.setDateRange(zoomMinDate, zoomMaxDate);
+  setDateRange(minDate: number, maxDate: number): void {
+    this.timeChart.setDateRange(minDate, maxDate);
   }
 
 
   draw(): void {
-    this.timeCanvas.resize();
-    this.timeCanvas.requestDraw();
+    this.resize();
+    this.timeChart.requestDraw();
+
   }
 
   resize() {
-    this.timeCanvas.resize();
+    this.timeChart.resize();
   }
 }
 
@@ -94,7 +86,7 @@ class MutationTimeline {
 
 
 
-export class NodePairMutations {
+export class NodePairMutationList {
   div: HTMLDivElement;
   nodeASpan: HTMLSpanElement;
   nodeBSpan: HTMLSpanElement;
@@ -222,47 +214,96 @@ export class NodePairMutations {
 
 
   highlightNode(node: DisplayNode | typeof UNSET) : void {
-    this.div.classList.toggle("highlighting", node !== UNSET);
-
+    const classList = this.div.classList;
     if (node === UNSET) {
-      this.nodeASpan.classList.remove("highlight");
-      this.nodeBSpan.classList.remove("highlight");
-      return;
+      classList.remove(MATCH_CLASS);
+      classList.remove(NO_MATCH_CLASS);
+    } else if (node === this.data.ancestorType || node === this.data.descendantType) {
+      classList.add(MATCH_CLASS);
+      classList.remove(NO_MATCH_CLASS);
+    } else {
+      classList.remove(MATCH_CLASS);
+      classList.add(NO_MATCH_CLASS);
     }
-
-    if (node === this.data.ancestorType) {
-      this.nodeASpan.classList.add("highlight");
-      this.nodeBSpan.classList.remove("highlight");
-      return;
-    }
-
-    if (node === this.data.descendantType) {
-      this.nodeASpan.classList.remove("highlight");
-      this.nodeBSpan.classList.add("highlight");
-      return;
-    }
-
-    /* else, don't have this node */
-    this.nodeASpan.classList.remove("highlight");
-    this.nodeBSpan.classList.remove("highlight");
   }
 
   resize() {
     this.mutationTimelines.forEach(mt => mt.resize());
   }
 
+
 }
 
 
-export function setMutationLists(nodeComparisonData: NodeComparisonChartData[],
-  goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback,
-  zoomMinDate: number, zoomMaxDate: number): NodePairMutations[] {
-  nodeComparisonContainer.innerHTML = '';
-  const comps: NodePairMutations[] = nodeComparisonData.map(chartData=>{
-    const nc = new NodePairMutations(chartData, goToMutations, nodeHighlightCallback);
-    nc.requestDraw();
-    return nc;
-  });
-  return comps;
-}
 
+
+
+
+export class NodeMutations {
+
+  goToMutations: OpenMutationPageFncType;
+  nodeHighlightCallback: NodeCallback;
+  charts: NodePairMutationList[];
+
+  constructor(goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback) {
+    this.goToMutations = goToMutations;
+    this.nodeHighlightCallback = nodeHighlightCallback;
+    this.charts = [];
+  }
+
+
+  resize() {
+    this.charts.forEach(nc => nc.resize());
+  }
+
+
+  setData(nodeComparisonData: NodeComparisonChartData[]): NodePairMutationList[] {
+    nodeComparisonContainer.innerHTML = '';
+    const sorted = nodeComparisonData.sort((a, b)=>{
+    /* node A goes at the start of the list */
+      if (a.descendantType === DisplayNode.nodeA) {
+        return -1;
+      }
+      if (b.descendantType === DisplayNode.nodeA) {
+        return 1;
+      }
+      /* node B comes next */
+      if (a.descendantType === DisplayNode.nodeB) {
+        return -1;
+      }
+      if (b.descendantType === DisplayNode.nodeB) {
+        return 1;
+      }
+      /* then the MRCA */
+      if (a.descendantType === DisplayNode.mrca) {
+        return -1;
+      }
+      if (b.descendantType === DisplayNode.mrca) {
+        return 1;
+      }
+      /*
+    if we have gotten this far, then the only path
+    is the one where root is the ancestor and there
+    is no descendant.
+    */
+      return 0;
+    });
+    this.charts.length = 0;
+    sorted.filter(pair=>pair.mutationCount > 0).forEach(chartData=>{
+      const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
+      nc.requestDraw();
+      this.charts.push(nc);
+    });
+    return this.charts;
+  }
+
+  highlightNode(node: DisplayNode) {
+    console.log(`highlight ${node} `);
+    this.charts.forEach(chart=>{
+      chart.highlightNode(node);
+      chart.highlightNode(node);
+    });
+
+  }
+
+}

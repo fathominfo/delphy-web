@@ -25,6 +25,15 @@
   // .mcc_highlight {
   //   border: solid 1px yellow;
   // }
+
+
+  .mutation-name {
+    opacity: var(--lineages-mutation-opacity);
+  }
+
+  #lineages--list .timeline .guide {
+    opacity: var(--lineages-timeline-guide-opacity);
+  }
 }
 
 
@@ -1138,48 +1147,60 @@ details {
 
   .series-group-container {
 
-    * { transition: all var(--transition) ease-out; }
-
     .series.group.tip {
       path {display: none;}
       line {opacity: var(--guide-range-date-opacity);}
     }
 
-    .series.group.matching {
-      path {
-        opacity: var(--lineages-timeline-active-dist-opacity);
-      }
-    }
-
-
-    path {
-      opacity: var(--lineages-emergence-dist-opacity);
-      stroke: none;
-    }
-
-    line {
-      opacity: var(--lineages-timeline-pointer-opacity);
-      fill: none;
-    }
-
-    .root {
-      path { fill: var(--root-timeline-fill); }
-      line { stroke: var(--root-timeline-stroke); }
-    }
-    .mrca {
-      path { fill: var(--mrca-timeline-fill); }
-      line { stroke: var(--mrca-timeline-stroke); }
-    }
-    .nodeA {
-      path { fill: var(--a-timeline-fill); }
-      line { stroke: var(--a-timeline-stroke); }
-    }
-    .nodeB {
-      path { fill: var(--b-timeline-fill); }
-      line { stroke: var(--b-timeline-stroke); }
-    }
   }
 }
+
+
+
+.series-group-container {
+
+  * { transition: all var(--transition) ease-out; }
+
+  .series.group.matching {
+    path {
+      opacity: var(--lineages-timeline-active-dist-opacity);
+    }
+  }
+
+
+  path {
+    opacity: var(--lineages-emergence-dist-opacity);
+    stroke: none;
+  }
+
+  line {
+    opacity: var(--lineages-timeline-pointer-opacity);
+    fill: none;
+  }
+
+  .root {
+    path { fill: var(--root-timeline-fill); }
+    line { stroke: var(--root-timeline-stroke); }
+  }
+  .mrca {
+    path { fill: var(--mrca-timeline-fill); }
+    line { stroke: var(--mrca-timeline-stroke); }
+  }
+  .nodeA {
+    path { fill: var(--a-timeline-fill); }
+    line { stroke: var(--a-timeline-stroke); }
+  }
+  .nodeB {
+    path { fill: var(--b-timeline-fill); }
+    line { stroke: var(--b-timeline-stroke); }
+  }
+}
+
+
+
+
+
+
 
 .lineages--time-chart,
 .lineages--node-comparison--time-chart {
@@ -1323,26 +1344,8 @@ details {
 
 .lineages--track-mutations {
 
-  // padding: 8px;
-  // padding-top: 14px;
-  // border: solid 1px @borderGrey;
+  transition: all 0.15s;
 
-  // h1 {
-  //   font-weight: bold; //normal;
-  //   margin-bottom: 0.5em;
-  // }
-
-
-  // &.highlighting {
-  //   .lineages--node-comparison--ancestor-node,
-  //   .lineages--node-comparison--descendant-node {
-  //     opacity: 0.4;
-
-  //     &.highlight {
-  //       opacity: 1;
-  //     }
-  //   }
-  // }
 
   // .lineages--node-overlap-item {
   //   display: block;
@@ -1381,11 +1384,6 @@ details {
   // }
 
 
-}
-
-
-
-.lineages--track-mutations {
   .header {
     .schematic {
       min-width: var(--duo-list-duo-left-header-schematic-width);
@@ -1496,6 +1494,8 @@ details {
     }
   }
 
+
+
   &[data-from="root"] .schematic .segment[data-from="root"] .point.to {
     background-color: var(--root-fill);
     border-color: var(--root-stroke);
@@ -1536,13 +1536,18 @@ details {
     }
   }
 
+  &.unmatching {
+    opacity: var(--lineages-list-unmatching-opacity);
+  }
+
 }
 
-
+.lineages--mutation-timeline {
+  gap: unset;
+}
 
 .lineages--node-comparison--mutation-header {
-  font-size: 12px;
-  color: rgb(114, 114, 114);
+
 }
 
 .lineages--node-comparison--mutation-count {
@@ -1551,9 +1556,8 @@ details {
 
 .lineages--node-comparison--mutation {
   display: flex;
-  height: 40px;
-  //background-color: rgb(250, 250, 250);
-  padding: 0.2em 0.5em;
+  height: var(--duo-list-row-height);
+  gap: var(--block-gap);
 
   + .lineages--node-comparison--mutation {
     margin-top: 0.5em;
@@ -1585,8 +1589,8 @@ details {
 
 
 .lineages--node-comparison--mutation-prevalence {
+  display: none;
   margin: 0;
-  // width: @chartLeftMargin;
   font-size: smaller;
   span {font-weight: bolder;}
   color: rgb(161, 161, 161);
@@ -1607,6 +1611,7 @@ details {
   position: relative;
 
   .time-chart--readout {
+    display: none;
     position: absolute;
     bottom: 0;
     background-color: #fff;
@@ -1663,5 +1668,33 @@ details {
   }
 }
 
+
+  /*
+  color the mrca nodes by the root, since it is not inferred
+  */
+
+  .lineages--track-mutations[data-to="mrca"] {
+    path { fill: var(--root-timeline-fill); }
+    line { stroke: var(--root-timeline-stroke); }
+    .lineages--node-comparison--mutation-name {
+      color: var(--root-mutation-text);
+    }
+  }
+
+  .lineages--track-mutations[data-to="a"] {
+    path { fill: var(--a-timeline-fill); }
+    line { stroke: var(--a-timeline-stroke); }
+    .lineages--node-comparison--mutation-name {
+      color: var(--a-mutation-text);
+    }
+  }
+
+  .lineages--track-mutations[data-to="b"] {
+    path { fill: var(--b-timeline-fill); }
+    line { stroke: var(--b-timeline-stroke); }
+    .lineages--node-comparison--mutation-name {
+      color: var(--b-mutation-text);
+    }
+  }
 
 

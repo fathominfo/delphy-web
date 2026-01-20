@@ -149,3 +149,5 @@ export type DismissCallback = (node:DisplayNode)=>void;
 export type HoverCallback = (node: DisplayNode)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 
+export const MATCH_CLASS = "matching";
+export const NO_MATCH_CLASS = "unmatching";

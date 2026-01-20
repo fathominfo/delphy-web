@@ -2,13 +2,11 @@ import { getMutationName, NUC_LOOKUP } from "../../constants";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNode, nfc, UNSET } from "../common";
-import { NodeCallback, NodeComparisonData } from "./lineagescommon";
+import { MATCH_CLASS, NO_MATCH_CLASS, NodeCallback, NodeComparisonData } from "./lineagescommon";
 import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
 const UNSET_CHAR = "-";
-const MATCH_CLASS = "matching";
-const NO_MATCH_CLASS = "unmatching";
 const MUTATION_LIMIT = 30;
 
 const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
