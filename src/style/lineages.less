@@ -1611,52 +1611,21 @@ details {
   position: relative;
 
   .time-chart--readout {
-    display: none;
     position: absolute;
+    z-index: 1;
+    top: unset;
     bottom: 0;
-    background-color: #fff;
-    padding: 5px 10px;
-    pointer-events: none;
-    font-size: 11px;
-    color: #777;
-    line-height: 1.2;
-    transform: translate(0, 100%);
-    z-index: 10;
-    box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+    left: var(--start-pct);
+    width: auto;
+    height: auto;
+    font-family: var(--Inter);
+    font-weight: 600;
+    font-size: calc(var(--unit) * 0.75);
+    letter-spacing: 0.00625rem;
+    padding: 0 0 0 3px;
 
-    .mutation {
-      color: #777;
-      .dot { background-color: #777; }
-    }
-
-    .value-label {
-      display: inline-block;
-      width: 4ch;
-    }
-
-    .series-label {
-      font-weight: 700;
-    }
-
-    .highlighted {
-      .series-label,
-      .value-label {
-        font-weight: 700;
-      }
-
-      .value {
-        font-weight: 700;
-      }
-    }
-
-    .dot {
-      position: absolute;
-      left: 0;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
+    .time-chart--series {
+      display: none;
     }
   }
 }

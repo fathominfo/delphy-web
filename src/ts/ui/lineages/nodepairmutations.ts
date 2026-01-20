@@ -2,6 +2,7 @@ import { NodeCallback, HoverCallback, OpenMutationPageFncType, NodeTimeDistribut
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
+import { toFullDateString } from '../../pythia/dates';
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -31,12 +32,17 @@ class MutationTimeline {
   timeChart: NodeTimeDistributionChart;
   goToMutations: OpenMutationPageFncType;
   data: MutationTimelineData;
+  readout: HTMLDivElement;
+  dateReadout: HTMLDivElement;
+  median: number;
 
   constructor(data: MutationTimelineData, minDate: number, maxDate: number, goToMutations: OpenMutationPageFncType) {
     this.data = data;
     const {mutation} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
     this.div.classList.toggle('is-apobec', data.mutation.isApobecCtx && data.isApobecRun);
+    this.readout = this.div.querySelector(".time-chart--readout") as HTMLDivElement;
+    this.dateReadout = this.readout.querySelector(".time-chart--date") as HTMLDivElement;
     const svg = this.div.querySelector(mutationChartSelector) as SVGElement,
       nameLabel = this.div.querySelector(mutationNameSelector) as HTMLParagraphElement,
       prevalenceLabel = this.div.querySelector(mutationPrevalenceSelector) as HTMLSpanElement;
@@ -56,10 +62,12 @@ class MutationTimeline {
     });
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
-    // const readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
-    // this.timeCanvas = new TimeDistributionCanvas([series], minDate, maxDate, canvas, readout);
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, undefined, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series] as NodeDistributionSeries[]);
+    this.median = data.series.distribution.median;
+    const dateLabel = toFullDateString(this.median);
+    this.dateReadout.textContent = dateLabel;
+
   }
 
   appendTo(div:HTMLDivElement):void {
@@ -74,7 +82,8 @@ class MutationTimeline {
   draw(): void {
     this.resize();
     this.timeChart.requestDraw();
-
+    const x = this.timeChart.xFor(this.median, this.timeChart.width);
+    this.readout.style.left = `${x}px`;
   }
 
   resize() {
