@@ -1,5 +1,6 @@
 import { BaseTreeSeriesType } from '../../constants';
-import { DisplayNode, UNSET, getNiceDateInterval, getNodeClassName, getNodeTypeName, getPercentLabel } from '../common';
+import { DisplayNode, UNSET, getNiceDateInterval, getNodeClassName, getNodeTypeName, getPercentLabel, numericSort } from '../common';
+import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { NodeCallback, NodeDisplay } from './lineagescommon';
 
 const TARGET = 200;
@@ -7,7 +8,7 @@ const TOO_MANY = TARGET * 2;
 
 const STROKE_WIDTH = 2;
 
-export class SVGPrevalenceGroup {
+export class SVGPrevalenceMeanGroup {
   node: DisplayNode;
   g: SVGGElement;
   shape: SVGPathElement;
@@ -30,17 +31,17 @@ export class SVGPrevalenceGroup {
 
 
 
-
 export class NodePrevalenceChart {
   hoverDateIndex: number = UNSET;
   highlightSeriesIndex: number = UNSET;
   nodeHighlightCallback: NodeCallback;
   nodes: NodeDisplay[];
   svg: SVGElement;
-  svgGroups: SVGPrevalenceGroup[];
+  svgMeanGroups: SVGPrevalenceMeanGroup[];
   dateAxis: HTMLDivElement;
   referenceDateTemplate: HTMLDivElement;
   dateTemplate: HTMLDivElement;
+  showingMean = true;
 
   dist: BaseTreeSeriesType = []; // number[][][], tree, series, date
   treeCount: number = UNSET;
@@ -54,21 +55,32 @@ export class NodePrevalenceChart {
   maxDate: number = UNSET;
 
   averages: number[][] = []; // series, date
-  averageYPositions: number[][] = []; // pct of height
+  averageYPositions: number[][] = []; // pct of height for stacked chart
+  medianAndHPD: number[][][] = [];
+
 
 
   constructor(nodeHighlightCallback: NodeCallback) {
     const container = document.querySelector("#lineages--prevalence") as HTMLDivElement;
     this.svg = container.querySelector("#lineages--prevalence--chart") as SVGElement;
-    this.svgGroups = [];
+    this.svgMeanGroups = [];
     [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(nodeType=>{
-      this.svgGroups[nodeType] = new SVGPrevalenceGroup(nodeType, this.svg);
+      this.svgMeanGroups[nodeType] = new SVGPrevalenceMeanGroup(nodeType, this.svg);
     });
     this.dateAxis = container.querySelector(".axis-dates") as HTMLDivElement;
     this.referenceDateTemplate = this.dateAxis.querySelector(".axis-date.reference") as HTMLDivElement;
     this.referenceDateTemplate.remove();
     this.dateTemplate = container.querySelector(".axis-date.marker") as HTMLDivElement;
     this.dateTemplate.remove();
+
+    const meanVsDistForm = container.querySelector("#prevalence-display-opt") as HTMLFormElement;
+    meanVsDistForm.addEventListener("change", ()=>{
+      const formData = new FormData(meanVsDistForm);
+      const option = formData.get("prevalence-display");
+      this.showingMean = option === "mean";
+      this.requestDraw();
+    });
+
 
     this.nodes = [];
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -113,9 +125,12 @@ export class NodePrevalenceChart {
 
 
 
-  /**
-  we want to collapse our incoming data from [tree][series][day]
-  to [series][day] = average for all trees
+  /*
+  For means:
+    we want to collapse our incoming data from [tree][series][day]
+    to [series][day] = average for all trees
+  For distributions:
+    we want [series][day][ 2.5 hpd, 97.5 hpd, median ]
   */
   calculate() : void {
 
@@ -124,26 +139,31 @@ export class NodePrevalenceChart {
     const drawnCount = this.binCount;
 
     const averages: number[][] = new Array(seriesCount);
-    let d, tot, dd, t, v;
+    const distributions: number[][][] = new Array(seriesCount);
+    let d: number;
+    let tot: number;
+    let t: number;
+    let v: number;
+    const acrossTrees: number[] = new Array(treeCount);
 
     for (let s = 0; s < seriesCount; s++) {
       // for each tree, daily values for this series
       averages[s] = Array(drawnCount);
+      distributions[s] = Array(drawnCount);
       for (d = 0; d < drawnCount; d++) {
         tot = 0;
         for (t = 0; t < treeCount; t++) {
           v = dist[t][s][d];
-          if (isNaN(v)) {
-            console.log(s, d, dd, t, v);
-          }
           tot += v;
-        }
-        if (isNaN(tot)) {
-          console.log(s, d, tot, drawnCount, treeCount)
+          acrossTrees[t] = v;
         }
         averages[s][d] = tot / treeCount;
+        distributions[s][d] = calcHPD(acrossTrees);
       }
     }
+    /*
+    calculate the stacked positions of the means
+    */
     this.averageYPositions = averages.map(()=>Array(drawnCount));
     for (let d = 0; d < drawnCount; d++) {
       let y = 0;
@@ -153,6 +173,7 @@ export class NodePrevalenceChart {
       }
     }
     this.averages = averages;
+    this.medianAndHPD = distributions;
   }
 
 
@@ -213,12 +234,12 @@ export class NodePrevalenceChart {
   highlightNode(node: DisplayNode) : void {
     requestAnimationFrame(()=>{
       if (node === UNSET) {
-        this.svgGroups.forEach((group)=>{
+        this.svgMeanGroups.forEach((group)=>{
           group.toggleClass("matching", false);
           group.toggleClass("unmatching", false);
         });
       } else {
-        this.svgGroups.forEach((group, nodeType)=>{
+        this.svgMeanGroups.forEach((group, nodeType)=>{
           group.toggleClass("matching", node === nodeType);
           group.toggleClass("unmatching", node !== nodeType);
         });
@@ -226,7 +247,44 @@ export class NodePrevalenceChart {
     });
   }
 
-  getFillCoords(index: number): string {
+
+  xForInverse(x: number): number {
+    const rescaled = x / this.width;
+    return rescaled * (this.maxDate - this.minDate) + this.minDate;
+  }
+
+  requestDraw(): void {
+    requestAnimationFrame(()=>this.drawChart());
+  }
+
+  drawChart() : void {
+    if (this.showingMean) {
+      this.drawMeansChart();
+    } else {
+      this.drawMedianAndHPD();
+    }
+  }
+
+
+  drawMeansChart() : void {
+    const { nodes, svgMeanGroups: svgGroups } = this;
+    const dataMapping: number[] = [];
+    nodes.forEach((nd, i)=>dataMapping[nd.type] = i);
+    svgGroups.forEach((group, nodeType)=>{
+      if (dataMapping[nodeType] === undefined) {
+        group.toggleClass("hidden", true);
+      } else {
+        const dataIndex = dataMapping[nodeType];
+        group.toggleClass("hidden", false);
+        const fillCoords = this.getMeanAreaCoords(dataIndex);
+        const strokeCoords = this.getMeanTopCoords(dataIndex);
+        group.shape.setAttribute("d", fillCoords);
+        group.trend.setAttribute("d", strokeCoords);
+      }
+    });
+  }
+
+  getMeanAreaCoords(index: number): string {
     const { width, height, averageYPositions } = this;
     const prevIndex = index - 1;
 
@@ -245,12 +303,6 @@ export class NodePrevalenceChart {
       for (let d = 1; d < L; d++) {
         const x = d / (L-1) * width,
           y = ys[d] * height + STROKE_WIDTH / 2;
-        if (isNaN(x) || isNaN(y)) {
-          console.log(x, y, ys[d], d);
-          const x1 = d / (L-1) * width,
-            y1 = ys[d] * height + STROKE_WIDTH / 2;
-
-        }
         path += ` ${x} ${y}`;
       }
     }
@@ -268,7 +320,7 @@ export class NodePrevalenceChart {
   }
 
 
-  getStrokeCoords(index: number): string {
+  getMeanTopCoords(index: number): string {
     const { width, height, averageYPositions } = this;
     const prevIndex = index - 1;
 
@@ -294,17 +346,8 @@ export class NodePrevalenceChart {
   }
 
 
-  xForInverse(x: number): number {
-    const rescaled = x / this.width;
-    return rescaled * (this.maxDate - this.minDate) + this.minDate;
-  }
-
-  requestDraw(): void {
-    requestAnimationFrame(()=>this.drawChart());
-  }
-
-  protected drawChart() : void {
-    const { nodes, averageYPositions, svgGroups } = this;
+  drawMedianAndHPD() : void {
+    const { nodes, svgMeanGroups: svgGroups } = this;
     const dataMapping: number[] = [];
     nodes.forEach((nd, i)=>dataMapping[nd.type] = i);
     svgGroups.forEach((group, nodeType)=>{
@@ -313,13 +356,78 @@ export class NodePrevalenceChart {
       } else {
         const dataIndex = dataMapping[nodeType];
         group.toggleClass("hidden", false);
-        const fillCoords = this.getFillCoords(dataIndex);
-        const strokeCoords = this.getStrokeCoords(dataIndex);
+        const fillCoords = this.getHPDAreaCoords(dataIndex);
+        const strokeCoords = this.getMedianCoords(dataIndex);
         group.shape.setAttribute("d", fillCoords);
         group.trend.setAttribute("d", strokeCoords);
       }
     });
   }
+
+
+  getHPDAreaCoords(index: number): string {
+    const { width, height, medianAndHPD } = this;
+    const hpdData = medianAndHPD[index];
+    const L: number = hpdData.length;
+    let path = '';
+    let i: number;
+    let hpd: number;
+    let x: number;
+    let y: number;
+    let first = true;
+    let firstY = UNSET;
+    /* trace the min hpd */
+    for (i = 0; i < L; i++) {
+      hpd = hpdData[i][HPD_MIN_INDEX];
+      x = i / (L-1) * width;
+      y = (1 - hpd) * height + STROKE_WIDTH / 2;
+      if (first) {
+        path = `M${x} ${y} L`;
+        firstY = y;
+      } else {
+        path += ` ${x} ${y}`;
+      }
+      first = false;
+    }
+    while (i > 0) {
+      i--;
+      hpd = hpdData[i][HPD_MAX_INDEX];
+      x = i / (L-1) * width;
+      y = (1 - hpd) * height + STROKE_WIDTH / 2;
+      path += ` ${x} ${y}`;
+    }
+    /* trace the max hpd back */
+    path += ` 0 ${firstY}`;
+    return path;
+  }
+
+
+  getMedianCoords(index: number): string {
+    const { width, height, medianAndHPD } = this;
+    const hpdData = medianAndHPD[index];
+    const L: number = hpdData.length;
+    let path = '';
+    let i: number;
+    let median: number;
+    let x: number;
+    let y: number;
+    let first = true;
+    /* trace the min hpd */
+    for (i = 0; i < L; i++) {
+      median = hpdData[i][MEDIAN_INDEX];
+      x = i / (L-1) * width;
+      y = (1 - median) * height + STROKE_WIDTH / 2;
+      if (first) {
+        path = `M${x} ${y} L`;
+      } else {
+        path += ` ${x} ${y}`;
+      }
+      first = false;
+    }
+    return path;
+  }
+
+
 
 
   setAxisDates() {

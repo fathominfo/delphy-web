@@ -119,11 +119,9 @@ of the 95% hpd and the mean
 */
 const hpdeify = (arr:number[]):number[]=>{
   const sorted = arr.filter(n=>Number.isFinite(n)).sort(numericSort);
-  const [hpdMin, hpdMax] = calcHPD(sorted);
+  const [hpdMin, hpdMax, median] = calcHPD(sorted);
   const sum = sorted.reduce((tot, n)=>tot+n, 0);
   const mean = sum / sorted.length;
-  const midpoint = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 === 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
   // console.log(hpdMin, hpdMax, mean)
   return [hpdMin, hpdMax, mean, median];
 }

@@ -1,6 +1,5 @@
 import { toFullDateString } from "../../pythia/dates";
-import { minimalDecimalLabel, numericSort, UNSET } from "../common";
-import { calcHPD } from "../distribution";
+import { UNSET } from "../common";
 import { GammaData, LogLabelType } from "./gammadata";
 import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
 import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, HALF_BORDER } from "./tracecanvas";

@@ -118,8 +118,26 @@
             </div>
           </div>
           <div id="lineages--prevalence" class="block right">
+
             <div class="header">
-              <h4 class="title">Lineage prevalence over time</h4>
+              <div class="title" data-tooltip="outside">
+                <h4>Lineage prevalence over time</h4>
+                <button class="info">
+                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
+                    <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
+                  </svg>
+                </button>
+              </div>
+              <form id="prevalence-display-opt" class="mode toggles">
+                <label data-destination-mode="mean" class="toggle off">
+                  <h4>Mean</h4>
+                  <input type="radio" name="prevalence-display" value="mean" checked />
+                </label>
+                <label data-destination-mode="mcc" class="toggle">
+                  <h4>In MCC tree</h4>
+                  <input type="radio" name="prevalence-display" value="distribution" />
+                </label>
+              </form>
             </div>
             <div class="chart">
               <div class="feature">
@@ -133,7 +151,7 @@
                   </div>
                 </div>
                 <div id="lineages--prevalence--chart-container">
-                  <svg id="lineages--prevalence--chart" data-mode="mcc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
+                  <svg id="lineages--prevalence--chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
                     <g class="group root">
                       <path class="shape" d=""></path>
                       <path class="trend" d=""></path>
@@ -154,36 +172,30 @@
                 </div>
               </div>
               <div id="lineages--prevalence--date-labels" class="support">
-
-
-
                 <div class="x axis">
                   <div class="axis-dates">
                     <div class="axis-date reference" style="left: 0%;">
                       <div class="line"></div>
                       <div class="text">
                         <span class="cal">
-                          <span class="month">Oct</span>
+                          <span class="month"></span>
                         </span>
-                        <span class="year">2019</span>
+                        <span class="year"></span>
                       </div>
                     </div>
                     <div class="axis-date marker" style="left: 25%;">
                       <div class="line"></div>
                       <div class="text">
                         <span class="cal">
-                          <span class="month">Nov</span>
+                          <span class="month"></span>
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
-
-
               </div>
             </div>
           </div>
-
         </div>
         <div id="lineages--relationships" class="duo">
           <div id="lineages--node-layout"  class="block left" data-duo="left" >
@@ -296,6 +308,8 @@
                 <div class="displays">
                   <div class="display">
                     <div class="timeline">
+                      <div class="guide min"></div>
+                      <div class="guide max"></div>
                       <div class="label reference" style="--start-pct: 38.2500%;">
                         <span class="cal"><span class="year">2020</span></span>
                       </div>

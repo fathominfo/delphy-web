@@ -224,7 +224,61 @@ canvas {
         line-height: var(--element-title-line-height);
       }
 
+      .toggles {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 4px;
+        height: auto;
 
+        h4 {
+          font-size: var(--element-title-font-size);
+          line-height: var(--element-title-line-height);
+          font-weight: var(--element-title-sub-font-weight);
+          display: inline-block;
+          width: auto;
+          max-width: 100%;
+          color: var(--title-text);
+          overflow: visible;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        &.mode {
+          flex: 1;
+          padding-left: calc(var(--view-header-gap) * 0.375);
+        }
+      }
+
+      .toggle {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: baseline;
+        padding: 1px 5px 2px;
+        border-radius: 1px;
+        background-color: var(--view-fill);
+        opacity: 0.25;
+        cursor: pointer;
+        overflow: visible;
+        -webkit-transition: all var(--transition) ease-out;
+        -moz-transition: all var(--transition) ease-out;
+        -ms-transition: all var(--transition) ease-out;
+        transition: all var(--transition) ease-out;
+        -webkit-user-select: none;
+        user-select: none;
+
+        input {
+          width: 0;
+          position: absolute;
+          opacity: 0;
+        }
+
+        &:has(input:checked) {
+          background-color: var(--header-fill);
+          opacity: 1;
+        }
+      }
     }
   }
 
