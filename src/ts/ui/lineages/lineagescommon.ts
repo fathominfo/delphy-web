@@ -20,6 +20,17 @@ export enum NodePairType {
 }
 
 
+
+
+
+
+/*
+
+Extensions to the classes that make up a TimeDistributionChart
+
+*/
+
+
 export class NodeDistributionSeries extends DistributionSeries {
   nodeType: DisplayNode;
 
@@ -72,6 +83,13 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     }
   }
 }
+
+
+
+
+
+
+
 
 
 export type NodeDisplay = {

@@ -1,0 +1,292 @@
+import { BaseTreeSeriesType } from '../../constants';
+import { toFullDateString } from '../../pythia/dates';
+import { DisplayNode, UNSET, getNodeClassName, getNodeTypeName, getPercentLabel } from '../common';
+import { NodeCallback, NodeDisplay } from './lineagescommon';
+
+const TARGET = 200;
+const TOO_MANY = TARGET * 2;
+
+const STROKE_WIDTH = 2;
+
+export class SVGPrevalenceGroup {
+  node: DisplayNode;
+  g: SVGGElement;
+  shape: SVGPathElement;
+  trend: SVGLineElement;
+
+  constructor(node:DisplayNode, container:SVGElement) {
+    this.node = node;
+    const nodeName = getNodeClassName(node);
+    this.g = container.querySelector(`.group.${nodeName}`) as SVGGElement;
+    this.shape = this.g.querySelector(".shape") as SVGPathElement;
+    this.trend = this.g.querySelector(".trend") as SVGLineElement;
+  }
+
+  hide() { this.g.classList.add("hidden"); }
+  show() { this.g.classList.remove("hidden"); }
+
+
+}
+
+
+
+
+
+
+export class NodePrevalenceChart {
+  hoverDateIndex: number = UNSET;
+  highlightSeriesIndex: number = UNSET;
+  nodeHighlightCallback: NodeCallback;
+  nodes: NodeDisplay[];
+  svg: SVGElement;
+  svgGroups: SVGPrevalenceGroup[];
+
+  dist: BaseTreeSeriesType = []; // number[][][], tree, series, date
+  treeCount: number = UNSET;
+  seriesCount: number = UNSET;
+  binCount: number = UNSET;
+
+
+  width: number = UNSET;
+  height: number = UNSET;
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
+
+  averages: number[][] = []; // series, date
+  averageYPositions: number[][] = []; // pct of height
+
+
+  constructor(nodeHighlightCallback: NodeCallback) {
+
+    this.svg = document.querySelector("#lineages--prevalence--chart") as SVGElement;
+    this.svgGroups = [];
+    [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(nodeType=>{
+      this.svgGroups[nodeType] = new SVGPrevalenceGroup(nodeType, this.svg);
+    });
+
+    this.nodes = [];
+    this.nodeHighlightCallback = nodeHighlightCallback;
+    this.svg.addEventListener('pointermove', e=>this.handleMousemove(e));
+    this.svg.addEventListener('pointerout', ()=>this.handleMouseout());
+  }
+
+
+
+  resize():void {
+    const parent = this.svg.parentElement as HTMLDivElement;
+    const {offsetWidth, offsetHeight} = parent;
+    this.width = offsetWidth;
+    this.height = offsetHeight - STROKE_WIDTH;
+    this.svg.setAttribute("width", `${offsetWidth}`);
+    this.svg.setAttribute("height", `${offsetHeight}`);
+    this.svg.setAttribute("viewBox", `0 0 ${offsetWidth} ${offsetHeight}`);
+  }
+
+
+  setData(nodeDist: BaseTreeSeriesType, nodes: NodeDisplay[], minDate: number, maxDate: number) {
+    this.dist = nodeDist; // tree, series, day
+    this.treeCount = nodeDist.length;
+    this.seriesCount = nodeDist[0].length;
+    this.binCount = nodeDist[0][0].length;
+    if (Number.isFinite(minDate) && Number.isFinite(maxDate)) {
+      this.minDate = minDate;
+      this.maxDate = maxDate;
+    }
+    this.averageYPositions.length = 0;
+    this.nodes = nodes;
+    this.calculate();
+  }
+
+
+
+  /**
+  we want to collapse our incoming data from [tree][series][day]
+  to [series][day] = average for all trees
+  */
+  calculate() : void {
+
+    const startIndex = 0;
+    const endIndex = Math.floor(this.maxDate - this.minDate + 1);
+
+    const rawDrawnCount = endIndex - startIndex;
+    const rebinning = rawDrawnCount >= TOO_MANY;
+    const drawnCount = rebinning ? TARGET : rawDrawnCount;
+
+    const averages: number[][] = new Array(this.seriesCount);
+    for (let s = 0; s < this.seriesCount; s++) {
+      // for each tree, daily values for this series
+      averages[s] = Array(drawnCount);
+      for (let d = 0; d < drawnCount; d++) {
+        let tot = 0;
+        let dd = rebinning ? Math.round(d / (drawnCount-1) * (rawDrawnCount-1)) : d;
+        dd += startIndex;
+        for (let t = 0; t < this.treeCount; t++) {
+          tot += this.dist[t][s][dd];
+        }
+        averages[s][d] = tot / this.treeCount;
+      }
+    }
+    this.averageYPositions = averages.map(()=>Array(drawnCount));
+    for (let d = 0; d < drawnCount; d++) {
+      let y = 0;
+      for (let s = 0; s < this.seriesCount; s++) {
+        y += averages[s][d];
+        this.averageYPositions[s][d] = y;
+      }
+    }
+    this.averages = averages;
+  }
+
+
+
+
+  handleMousemove = (e: MouseEvent) => {
+    e.preventDefault();
+    const hoverX = e.offsetX,
+      hoverY = e.offsetY / this.height,
+      dateCount = Math.floor(this.maxDate - this.minDate + 1),
+      dateIndex = Math.floor(hoverX / this.width * dateCount);
+    let seriesIndex = UNSET;
+    let toRequest = false;
+
+    if (dateIndex >= 0 && dateIndex <= this.binCount) {
+      for (let i = 0; i < this.seriesCount; i++) {
+        const upperY = i === 0 ? 0 : this.averageYPositions[i - 1][this.hoverDateIndex],
+          lowerY = this.averageYPositions[i][this.hoverDateIndex];
+        if (hoverY >= upperY && hoverY < lowerY) {
+          seriesIndex = i;
+        }
+      }
+    }
+
+    if (dateIndex !== this.hoverDateIndex) {
+      this.hoverDateIndex = dateIndex;
+      toRequest = true;
+    }
+
+    if (seriesIndex !== this.highlightSeriesIndex) {
+      this.highlightSeriesIndex = seriesIndex;
+
+
+
+      const displayNodes = this.nodes.map(nd => nd.type);
+      const displayNode = displayNodes[seriesIndex];
+      this.nodeHighlightCallback(displayNode);
+
+      toRequest = true;
+    }
+
+    if (toRequest) {
+      this.requestDraw();
+    }
+
+  }
+
+  handleMouseout = () => {
+    if (this.hoverDateIndex !== UNSET) {
+      this.hoverDateIndex = UNSET;
+      this.highlightSeriesIndex = UNSET;
+      this.requestDraw();
+    }
+    this.nodeHighlightCallback(UNSET);
+  }
+
+
+  highlightNode(node: DisplayNode | typeof UNSET) : void {
+    const displayNodes = this.nodes.map(nd => nd.type);
+    const index = displayNodes.indexOf(node);
+    if (index !== this.highlightSeriesIndex) {
+      this.highlightSeriesIndex = index;
+      this.requestDraw();
+    }
+  }
+
+  getFillCoords(index: number): string {
+    const { width, height, averageYPositions } = this;
+    const prevIndex = index - 1;
+
+    // set color
+    /* trace the top */
+    let startY = 0,
+      ys: number[];
+    let path = '';
+    const L: number = averageYPositions[index].length;
+    if (prevIndex < 0) {
+      path = `M0 0 L ${width} 0`;
+    } else {
+      ys = averageYPositions[prevIndex];
+      startY = ys[0] * height + STROKE_WIDTH / 2;
+      path = `M0 ${startY}`;
+      for (let d = 1; d < L; d++) {
+        const x = d / (L-1) * width,
+          y = ys[d] * height + STROKE_WIDTH / 2;
+        path += ` ${x} ${y}`;
+      }
+    }
+
+    /* trace the bottom */
+    ys = averageYPositions[index];
+    for (let d = L - 1; d >= 0; d--) {
+      const x = d / (L-1) * width,
+        y = ys[d] * height + STROKE_WIDTH;
+      path += ` ${x} ${y}`;
+    }
+    // console.log(ctx.fillStyle, ys);
+    path += ` 0 ${startY}`;
+    return path;
+  }
+
+
+  getStrokeCoords(index: number): string {
+    const { width, height, averageYPositions } = this;
+    const prevIndex = index - 1;
+
+    // set color
+    /* trace the top */
+    let startY = 0,
+      ys: number[];
+    let path = '';
+    const L: number = averageYPositions[index].length;
+    if (prevIndex < 0) {
+      path = `M0 0 L ${width} 0`;
+    } else {
+      ys = averageYPositions[prevIndex];
+      startY = ys[0] * height + STROKE_WIDTH / 2;
+      path = `M0 ${startY}`;
+      for (let d = 1; d < L; d++) {
+        const x = d / (L-1) * width,
+          y = ys[d] * height + STROKE_WIDTH / 2;
+        path += ` ${x} ${y}`;
+      }
+    }
+    return path;
+  }
+
+
+  xForInverse(x: number): number {
+    const rescaled = x / this.width;
+    return rescaled * (this.maxDate - this.minDate) + this.minDate;
+  }
+
+  requestDraw(): void {
+    requestAnimationFrame(()=>this.drawChart());
+  }
+
+  protected drawChart() : void {
+    const { nodes, averageYPositions, svgGroups } = this;
+    const dataMapping: number[] = [];
+    nodes.forEach((nd, i)=>dataMapping[nd.type] = i);
+    svgGroups.forEach((group, nodeType)=>{
+      if (dataMapping[nodeType] === undefined) {
+        group.hide();
+      } else {
+        const dataIndex = dataMapping[nodeType];
+        group.show();
+        const fillCoords = this.getFillCoords(dataIndex);
+        const strokeCoords = this.getStrokeCoords(dataIndex);
+        group.shape.setAttribute("d", fillCoords);
+        group.trend.setAttribute("d", strokeCoords);
+      }
+    });
+  }
+}

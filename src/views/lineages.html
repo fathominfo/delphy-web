@@ -121,35 +121,64 @@
             <div class="header">
               <h4 class="title">Lineage prevalence over time</h4>
             </div>
-            <div class="lineages--prevalence--chart-container">
-              <canvas id="lineages--prevalence--chart"></canvas>
-              <div class="lineages--prevalence--readout hidden">
-                <div class="prevalence--date"></div>
-                <div class="prevalence--series root">
-                  <div class="dot"></div>
-                  <span class="value-label">##%</span>
-                  <span class="series-label">Root</span>
+            <div class="lineages--prevalence--chart-container chart">
+              <div class="feature">
+                <div class="y axis">
+                  <div class="values" data-count="5" data-unit-before="" data-unit-after="">
+                    <span class="value" data-count="1"><span class="text"><span class="val">0%</span></span><span class="tick"></span></span>
+                    <span class="value" data-count="2"><span class="text"><span class="val">25%</span></span><span class="tick"></span></span>
+                    <span class="value" data-count="3"><span class="text"><span class="val">50%</span></span><span class="tick"></span></span>
+                    <span class="value" data-count="4"><span class="text"><span class="val">75%</span></span><span class="tick"></span></span>
+                    <span class="value" data-count="5"><span class="text"><span class="val">100%</span></span><span class="tick"></span></span>
+                  </div>
                 </div>
-                <div class="prevalence--series mrca hidden">
-                  <div class="dot"></div>
-                  <span class="value-label">##%</span>
-                  <span class="series-label">MRCA</span>
-                </div>
-                <div class="prevalence--series nodeA hidden">
-                  <div class="dot"></div>
-                  <span class="value-label">##%</span>
-                  <span class="series-label">A</span>
-                </div>
-                <div class="prevalence--series nodeB hidden">
-                  <div class="dot"></div>
-                  <span class="value-label">##%</span>
-                  <span class="series-label">B</span>
-                </div>
+                <svg id="lineages--prevalence--chart" data-mode="mcc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
+                  <g class="group root">
+                    <path class="shape" d=""></path>
+                    <path class="trend" d=""></path>
+                  </g>
+                  <g class="group mrca">
+                    <path class="shape" d=""></path>
+                    <path class="trend" d=""></path>
+                  </g>
+                  <g class="group nodeA">
+                    <path class="shape" d=""></path>
+                    <path class="trend" d=""></path>
+                  </g>
+                  <g class="group nodeB">
+                    <path class="shape" d=""></path>
+                    <path class="trend" d=""></path>
+                  </g>
+                </svg>
               </div>
-            </div>
-            <div id="lineages--prevalence--date-labels">
-              <div id="lineages--prevalence--start-date" class="lineages--prevalence--date-label">December 2019</div>
-              <div id="lineages--prevalence--end-date" class="lineages--prevalence--date-label">May 2020</div>
+              <div id="lineages--prevalence--date-labels" class="support">
+
+
+
+                <div class="x axis">
+                  <div class="axis-dates">
+                    <div class="axis-date reference" data-stamp="2019-10-15" style="left: 0%;">
+                      <div class="line"></div>
+                      <div class="text">
+                        <span class="cal">
+                          <span class="month">Oct</span>
+                        </span>
+                        <span class="year">2019</span>
+                      </div>
+                    </div>
+                    <div class="axis-date marker">
+                      <div class="line"></div>
+                      <div class="text">
+                        <span class="cal">
+                          <span class="month">Nov</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+
+              </div>
             </div>
           </div>
 

@@ -18,8 +18,6 @@ export class SVGSeriesGroup {
     this.line = this.g.querySelector("line") as SVGLineElement;
     container.appendChild(this.g);
   }
-
-
 }
 
 

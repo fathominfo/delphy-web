@@ -17,7 +17,7 @@ import { NodePairType, NodePair, NodeComparisonData,
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';
-import { NodePrevalenceCanvas } from './nodeprevalencecanvas';
+import { NodePrevalenceChart } from './nodeprevalencechart';
 import { isTip } from '../../util/treeutils';
 import autocomplete from 'autocompleter';
 import { PdfCanvas } from '../../util/pdfcanvas';
@@ -106,7 +106,7 @@ export class LineagesUI extends MccUI {
 
   prevMcc: SummaryTree | null;
 
-  nodePrevalenceCanvas: NodePrevalenceCanvas;
+  nodePrevalenceCanvas: NodePrevalenceChart;
 
   currentHover: number;
   selectable: boolean;
@@ -246,7 +246,7 @@ export class LineagesUI extends MccUI {
     this.highlightNode = UNSET;
     this.nodeHighlightCallback = nodeHighlightCallback;
 
-    this.nodePrevalenceCanvas = new NodePrevalenceCanvas([[[]]], [], UNSET, UNSET, nodeHighlightCallback);
+    this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.currentHover = UNSET;
     this.selectable = true;
 
@@ -787,7 +787,6 @@ export class LineagesUI extends MccUI {
       // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
       this.nodeComparisonData = nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, this.isApobecEnabled));
       this.nodeTimelines.setData(nodes);
-      this.nodePrevalenceCanvas.setDateRange(minDate, maxDate);
       this.nodeTimelines.setDateRange(minDate, maxDate);
       this.nodeMutationCharts.setData(this.nodeComparisonData);
       const nodeAIsUpper = this.mccTreeCanvas.getZoomY(nodeAIndex) < this.mccTreeCanvas.getZoomY(nodeBIndex);
