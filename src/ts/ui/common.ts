@@ -1,3 +1,4 @@
+import { addDays, addMonths, addWeeks, addYears, DateTokenIndex, MONTHS_SHORT, toDate, toDateTokens } from '../pythia/dates';
 import { SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
@@ -418,3 +419,182 @@ export const getNtile = (arr: number[], ntile: number) =>{
 export type ValueHandler = (value: number) => void;
 
 export const log10 = Math.log(10);
+
+
+
+
+/**
+  * nicenum: find a "nice" number approximately equal to x.
+  * Round the number if round is true, take ceiling if round is false
+  */
+export const nicenum = (x: number, round = false )=>{
+  const expv = Math.floor(Math.log10(x));  // exponent of x
+  // f is the fractional part of x
+  const f = x / Math.pow(10, expv);    // between 1 and 10
+  let nf;        /* nice, rounded fraction */
+  if (round) {
+    if (f < 1.5) nf = 1;
+    else if (f < 3) nf = 2;
+    else if (f < 7) nf = 5;
+    else nf = 10;
+  } else {
+    if (f <= 1) nf = 1;
+    else if (f <= 2) nf = 2;
+    else if (f <= 5) nf = 5;
+    else nf = 10;
+  }
+  return nf * Math.pow(10, expv);
+}
+
+
+export const niceWeeks = (x: number)=>{
+  const expv = Math.floor(Math.log10(x));  // exponent of x
+  // f is the fractional part of x
+  const f = x / Math.pow(10, expv);    // between 1 and 10
+  let nf;        /* nice, rounded fraction */
+  if (f <= 1) nf = 1;
+  else if (f <= 2) nf = 2;
+  else nf = 4;
+  return nf * Math.pow(10, expv);
+}
+
+
+export enum DateScale {
+  day = 1,
+  week = 2,
+  month = 3,
+  year = 4
+}
+
+
+
+export type DateAxisEntry = {
+  label: string,
+  subLabel: string,
+  tokens: [number, number, number],
+  date: number,
+  percent: number
+};
+
+
+// number of weeks per tick before we switch from days to weeks
+const WEEK_THRESHOLD = 0.5;
+// number of months per tick before we switch from weeks to months
+const MONTH_THRESHOLD = 0.5;
+// number of years per tick before we switch from months to years
+const YEAR_THRESHOLD = 0.5;
+/*
+this may need to become dynamic if we allow for charts of different
+widths, but for now it's a constart [mark 260121] */
+const TARGET_NUM_TICKS = 6;
+
+
+const YEAR_INDEX = 0;
+
+export function getNiceDateInterval(min: number, max: number): DateAxisEntry[] {
+  const range = max - min;
+  const daysPerTick = range / TARGET_NUM_TICKS;
+  let scaleFunction = addDays;
+  let scale = DateScale.day;
+  let scaleCount = 1; // number of `scale` per tick, e.g. _2_ weeks, _5_ years
+  let needsAligning = false;
+  const weeksPerTick = daysPerTick / 7; // days per week
+  if (weeksPerTick < WEEK_THRESHOLD) {
+    scaleCount = Math.max(1, Math.floor(daysPerTick));
+  } else {
+    const monthsPerTick = daysPerTick / 30; // days per month
+    if (monthsPerTick < MONTH_THRESHOLD) {
+      scaleFunction = addWeeks;
+      scale = DateScale.week;
+      if (weeksPerTick < 2) {
+        scaleCount = 1;
+      } else if (weeksPerTick < 3) {
+        scaleCount = 2;
+      } else {
+        scaleCount = 4;
+      }
+    } else {
+      const yearsPerTick = daysPerTick / 365;
+      if (yearsPerTick < YEAR_THRESHOLD) {
+        scaleFunction = addMonths;
+        scale = DateScale.month;
+        if (monthsPerTick < 2) {
+          scaleCount = 1;
+        }
+        else if (monthsPerTick < 4.5) {
+          scaleCount = 3;
+          needsAligning = true;
+        } else {
+          scaleCount = 6;
+          needsAligning = true;
+        }
+      } else {
+        scaleFunction = addYears;
+        scale = DateScale.year;
+        scaleCount = Math.min(1, nicenum(yearsPerTick));
+      }
+    }
+  }
+
+  const entries: DateAxisEntry[] = [];
+  let date = min;
+  const d = toDate(date);
+  let tokens = toDateTokens(date);
+  let percent = 0;
+  const label = ''; // placeholder
+  const subLabel = ''; // placeholder
+  entries.push({ label, subLabel, tokens, date, percent });
+  let initialScaleCount = scaleCount;
+  if (needsAligning) {
+    const month = tokens[DateTokenIndex.month];
+    const alignedMonth = Math.ceil(month / scaleCount) * scaleCount;
+    initialScaleCount = alignedMonth - month;
+  }
+  date = scaleFunction(d, initialScaleCount);
+  while (date <= max) {
+    tokens = toDateTokens(date);
+    percent = (date - min) / range;
+    entries.push({ label, subLabel, tokens, date, percent });
+    date = scaleFunction(d, scaleCount);
+  }
+  switch (scale)  {
+  case DateScale.year:
+    entries.forEach(ent=>ent.label = `${ent.tokens[DateTokenIndex.year]}`);
+    break;
+  case DateScale.month:
+    {
+      let prevYear = UNSET;
+      entries.forEach(ent=>{
+        const month = ent.tokens[DateTokenIndex.month];
+        const year = ent.tokens[DateTokenIndex.year];
+        ent.label = MONTHS_SHORT[month];
+        if (year !== prevYear) {
+          ent.subLabel = `${year}`;
+          prevYear = year;
+        }
+      });
+    }
+    break;
+  default:
+  {
+    let prevYear = UNSET;
+    const prevMonth = UNSET;
+    entries.forEach(ent=>{
+      const day = ent.tokens[DateTokenIndex.day];
+      const month = ent.tokens[DateTokenIndex.month];
+      const year = ent.tokens[DateTokenIndex.year];
+      if (month !== prevMonth) {
+        ent.label = `${MONTHS_SHORT[month]} ${day}`;
+      } else {
+        ent.label = `${day}`;
+      }
+      if (year !== prevYear) {
+        ent.subLabel = `${year}`;
+        prevYear = year;
+      }
+    });
+  }
+  }
+
+  return entries;
+}

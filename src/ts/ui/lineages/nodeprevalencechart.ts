@@ -1,6 +1,5 @@
 import { BaseTreeSeriesType } from '../../constants';
-import { toFullDateString } from '../../pythia/dates';
-import { DisplayNode, UNSET, getNodeClassName, getNodeTypeName, getPercentLabel } from '../common';
+import { DisplayNode, UNSET, getNiceDateInterval, getNodeClassName, getNodeTypeName, getPercentLabel } from '../common';
 import { NodeCallback, NodeDisplay } from './lineagescommon';
 
 const TARGET = 200;
@@ -25,8 +24,6 @@ export class SVGPrevalenceGroup {
   toggleClass(className: string, on=true) {
     this.g.classList.toggle(className, on);
   }
-
-
 }
 
 
@@ -41,6 +38,9 @@ export class NodePrevalenceChart {
   nodes: NodeDisplay[];
   svg: SVGElement;
   svgGroups: SVGPrevalenceGroup[];
+  dateAxis: HTMLDivElement;
+  referenceDateTemplate: HTMLDivElement;
+  dateTemplate: HTMLDivElement;
 
   dist: BaseTreeSeriesType = []; // number[][][], tree, series, date
   treeCount: number = UNSET;
@@ -58,12 +58,17 @@ export class NodePrevalenceChart {
 
 
   constructor(nodeHighlightCallback: NodeCallback) {
-
-    this.svg = document.querySelector("#lineages--prevalence--chart") as SVGElement;
+    const container = document.querySelector("#lineages--prevalence") as HTMLDivElement;
+    this.svg = container.querySelector("#lineages--prevalence--chart") as SVGElement;
     this.svgGroups = [];
     [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(nodeType=>{
       this.svgGroups[nodeType] = new SVGPrevalenceGroup(nodeType, this.svg);
     });
+    this.dateAxis = container.querySelector(".axis-dates") as HTMLDivElement;
+    this.referenceDateTemplate = this.dateAxis.querySelector(".axis-date.reference") as HTMLDivElement;
+    this.referenceDateTemplate.remove();
+    this.dateTemplate = container.querySelector(".axis-date.marker") as HTMLDivElement;
+    this.dateTemplate.remove();
 
     this.nodes = [];
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -89,9 +94,17 @@ export class NodePrevalenceChart {
     this.treeCount = nodeDist.length;
     this.seriesCount = nodeDist[0].length;
     this.binCount = nodeDist[0][0].length;
+
+    if (this.binCount > TOO_MANY) {
+      console.debug(`Surprise! tree node pop model data spans more than ${TOO_MANY}: ${this.binCount}`);
+    }
     if (Number.isFinite(minDate) && Number.isFinite(maxDate)) {
-      this.minDate = minDate;
-      this.maxDate = maxDate;
+      if (minDate !== this.minDate || maxDate !== this.maxDate) {
+        this.minDate = minDate;
+        this.maxDate = maxDate;
+        requestAnimationFrame(()=>this.setAxisDates());
+
+      }
     }
     this.averageYPositions.length = 0;
     this.nodes = nodes;
@@ -106,25 +119,29 @@ export class NodePrevalenceChart {
   */
   calculate() : void {
 
-    const startIndex = 0;
-    const endIndex = Math.floor(this.maxDate - this.minDate + 1);
+    const { dist, seriesCount, treeCount } = this;
 
-    const rawDrawnCount = endIndex - startIndex;
-    const rebinning = rawDrawnCount >= TOO_MANY;
-    const drawnCount = rebinning ? TARGET : rawDrawnCount;
+    const drawnCount = this.binCount;
 
-    const averages: number[][] = new Array(this.seriesCount);
-    for (let s = 0; s < this.seriesCount; s++) {
+    const averages: number[][] = new Array(seriesCount);
+    let d, tot, dd, t, v;
+
+    for (let s = 0; s < seriesCount; s++) {
       // for each tree, daily values for this series
       averages[s] = Array(drawnCount);
-      for (let d = 0; d < drawnCount; d++) {
-        let tot = 0;
-        let dd = rebinning ? Math.round(d / (drawnCount-1) * (rawDrawnCount-1)) : d;
-        dd += startIndex;
-        for (let t = 0; t < this.treeCount; t++) {
-          tot += this.dist[t][s][dd];
+      for (d = 0; d < drawnCount; d++) {
+        tot = 0;
+        for (t = 0; t < treeCount; t++) {
+          v = dist[t][s][d];
+          if (isNaN(v)) {
+            console.log(s, d, dd, t, v);
+          }
+          tot += v;
         }
-        averages[s][d] = tot / this.treeCount;
+        if (isNaN(tot)) {
+          console.log(s, d, tot, drawnCount, treeCount)
+        }
+        averages[s][d] = tot / treeCount;
       }
     }
     this.averageYPositions = averages.map(()=>Array(drawnCount));
@@ -228,6 +245,12 @@ export class NodePrevalenceChart {
       for (let d = 1; d < L; d++) {
         const x = d / (L-1) * width,
           y = ys[d] * height + STROKE_WIDTH / 2;
+        if (isNaN(x) || isNaN(y)) {
+          console.log(x, y, ys[d], d);
+          const x1 = d / (L-1) * width,
+            y1 = ys[d] * height + STROKE_WIDTH / 2;
+
+        }
         path += ` ${x} ${y}`;
       }
     }
@@ -297,4 +320,23 @@ export class NodePrevalenceChart {
       }
     });
   }
+
+
+  setAxisDates() {
+    const labels = getNiceDateInterval(this.minDate, this.maxDate);
+    this.dateAxis.innerHTML = '';
+    labels.forEach(labelData=>{
+      let div: HTMLDivElement;
+      if (labelData.subLabel !== '') {
+        div = this.referenceDateTemplate.cloneNode(true) as HTMLDivElement;
+        (div.querySelector(".year") as HTMLSpanElement).textContent = labelData.subLabel;
+      } else {
+        div = this.dateTemplate.cloneNode(true) as HTMLDivElement;
+      }
+      (div.querySelector(".cal .month") as HTMLSpanElement).textContent = labelData.label;
+      div.style.left = `${100 * labelData.percent}%`;
+      this.dateAxis.appendChild(div);
+    })
+  }
+
 }

@@ -791,7 +791,7 @@ export class LineagesUI extends MccUI {
       this.nodeMutationCharts.setData(this.nodeComparisonData);
       const nodeAIsUpper = this.mccTreeCanvas.getZoomY(nodeAIndex) < this.mccTreeCanvas.getZoomY(nodeBIndex);
       this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex], nodeAIsUpper);
-      /* we want the default distribution to come first */
+      /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
 

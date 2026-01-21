@@ -121,7 +121,7 @@
             <div class="header">
               <h4 class="title">Lineage prevalence over time</h4>
             </div>
-            <div class="lineages--prevalence--chart-container chart">
+            <div class="chart">
               <div class="feature">
                 <div class="y axis">
                   <div class="values" data-count="5" data-unit-before="" data-unit-after="">
@@ -132,24 +132,26 @@
                     <span class="value" data-count="5"><span class="text"><span class="val">100%</span></span><span class="tick"></span></span>
                   </div>
                 </div>
-                <svg id="lineages--prevalence--chart" data-mode="mcc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
-                  <g class="group root">
-                    <path class="shape" d=""></path>
-                    <path class="trend" d=""></path>
-                  </g>
-                  <g class="group mrca">
-                    <path class="shape" d=""></path>
-                    <path class="trend" d=""></path>
-                  </g>
-                  <g class="group nodeA">
-                    <path class="shape" d=""></path>
-                    <path class="trend" d=""></path>
-                  </g>
-                  <g class="group nodeB">
-                    <path class="shape" d=""></path>
-                    <path class="trend" d=""></path>
-                  </g>
-                </svg>
+                <div id="lineages--prevalence--chart-container">
+                  <svg id="lineages--prevalence--chart" data-mode="mcc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
+                    <g class="group root">
+                      <path class="shape" d=""></path>
+                      <path class="trend" d=""></path>
+                    </g>
+                    <g class="group mrca">
+                      <path class="shape" d=""></path>
+                      <path class="trend" d=""></path>
+                    </g>
+                    <g class="group nodeA">
+                      <path class="shape" d=""></path>
+                      <path class="trend" d=""></path>
+                    </g>
+                    <g class="group nodeB">
+                      <path class="shape" d=""></path>
+                      <path class="trend" d=""></path>
+                    </g>
+                  </svg>
+                </div>
               </div>
               <div id="lineages--prevalence--date-labels" class="support">
 
@@ -157,7 +159,7 @@
 
                 <div class="x axis">
                   <div class="axis-dates">
-                    <div class="axis-date reference" data-stamp="2019-10-15" style="left: 0%;">
+                    <div class="axis-date reference" style="left: 0%;">
                       <div class="line"></div>
                       <div class="text">
                         <span class="cal">
@@ -166,7 +168,7 @@
                         <span class="year">2019</span>
                       </div>
                     </div>
-                    <div class="axis-date marker">
+                    <div class="axis-date marker" style="left: 25%;">
                       <div class="line"></div>
                       <div class="text">
                         <span class="cal">

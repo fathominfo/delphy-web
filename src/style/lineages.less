@@ -595,36 +595,54 @@ details {
 #lineages--prevalence {
   h3 {
     margin-bottom: 8px;
-
   }
+
+  .chart {
+    height: var(--lineages-prevalence-chart-height);
+    width: 100%;
+
+    .feature {
+      height: var(--lineages-prevalence-chart-feature-height);
+      z-index: var(--lineages-prevalence-chart-feature-zindex);
+    }
+
+    .axis.y {
+      width: var(--lineages-chart-yaxis-width);
+      height: 100%;
+      z-index: 1;
+      padding: var(--chart-stroke-weight) 0;
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      background-color: transparent;
+      box-sizing: border-box;
+    }
+  }
+
 }
 
-.lineages--prevalence--chart-container.chart {
-  height: var(--lineages-prevalence-chart-height);
-  width: 100%;
 
-  .feature {
-    height: var(--lineages-prevalence-chart-feature-height);
-    z-index: var(--lineages-prevalence-chart-feature-zindex);
-  }
-
-  .axis.y {
-    width: var(--lineages-chart-yaxis-width);
-    height: 100%;
-    z-index: 1;
-    padding: var(--chart-stroke-weight) 0;
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: flex-start;
-    background-color: transparent;
-    box-sizing: border-box;
-  }
+#lineages--prevalence--chart-container {
+  height: 100%;
+  flex: 1;
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  padding: var(--chart-displays-timeline-inset-x);
+  background-color: var(--chart-stroke);
+  border-radius: var(--chart-outer-corner);
+  box-sizing: border-box;
 }
 
 #lineages--prevalence--chart {
   width: 100%;
+  border-radius: var(--chart-inner-corner);
+  background: var(--view-fill);
+  height: 100%;
 
   .shape {
     opacity: var(--lineages-prevalence-shape-opacity);

@@ -1548,8 +1548,30 @@ building custom inputs on top of native inputs. */
 }
 
 
+.axis-date {
+  .line {
+    height: var(--axis-date-one-line-height);
+  }
+  &.reference .line {
+    width: var(--chart-stroke-weight);
+    height: var(--axis-date-two-line-height);
+  }
+}
 
-.axis-date .text, .tracker-date .text {
+.axis-date, .tracker-date {
+
+  .line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--chart-tick-stroke-weight);
+    transform: translate(-50%, calc(var(--chart-stroke-weight) / -2));
+    background-color: var(--chart-stroke);
+
+
+  }
+
+  .text {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -1559,5 +1581,22 @@ building custom inputs on top of native inputs. */
     padding: 0 var(--axis-date-text-inset-x);
 
     font-weight: 500;
-    gap: 0.05rem;
+  }
+
+  .cal, .year {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .cal {
+    align-items: flex-start;
+    padding-top: var(--axis-date-cal-inset-y);
+  }
+}
+
+
+.axis-date .cal {
+  font-weight: 500;
+  gap: 0.05rem;
 }

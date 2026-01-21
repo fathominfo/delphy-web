@@ -38,20 +38,29 @@ export function parse_iso_date(date_str: string): number {
   const [yyyy, off_by_one_mm, dd] = date_str.split(/-/).map(parseFloat);
   const mm = off_by_one_mm - 1;
   const dt = new Date(Date.UTC(yyyy, mm, dd, 0, 0, 0, 0));
-  const ms_since_epoch = dt.getTime() - EPOCH_MILLIS;
-  // console.log(Math.ceil(ms_since_epoch / (1000 * 60 * 60 * 24)))
-  return Math.round(ms_since_epoch / MILLIS_PER_DAY);
+  return toDateNumber(dt);
 }
 
 const pad = (n:number)=>(n<10 ? '0' : '') + n;
 
+export function toDate(dayCount:number) : Date {
+  return new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
+}
+
+export function toDateNumber(d: Date): number {
+  const ms_since_epoch = d.getTime() - EPOCH_MILLIS;
+  return Math.round(ms_since_epoch / MILLIS_PER_DAY);
+}
+
+
+
 export function toDateString(dayCount:number) : string {
-  const d = new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
+  const d = toDate(dayCount);
   return `${ d.getUTCFullYear() }-${pad(d.getUTCMonth() + 1)}-${ pad(d.getUTCDate()) }`;
 }
 
 export function toFullDateString(dayCount: number): string {
-  const d = new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
+  const d = toDate(dayCount);
   try {
     const monthStr = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(d);
     return `${d.getUTCDate()} ${monthStr} ${d.getUTCFullYear()}`;
@@ -61,9 +70,55 @@ export function toFullDateString(dayCount: number): string {
   return '';
 }
 
+export enum DateTokenIndex {
+  year = 0,
+  month = 1,
+  day = 2
+}
+
 export function toDateTokens(dayCount:number) : [number, number, number] {
-  const d = new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
+  const d = toDate(dayCount);
   return [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()];
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addDays(d:Date, numDays = 1) : number {
+  d.setDate(d.getDate() + numDays);
+  return toDateNumber(d);
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addWeeks(d:Date, numWeeks = 1) : number {
+  d.setDate(d.getDate() + numWeeks * 7);
+  return toDateNumber(d);
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addMonths(d:Date, numMonths = 1) : number {
+  d.setMonth(d.getMonth() + numMonths);
+  return toDateNumber(d);
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addYears(d:Date, numYears = 1) : number {
+  d.setFullYear(d.getFullYear() + numYears);
+  return toDateNumber(d);
 }
 
 export const MONTHS_SHORT = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
