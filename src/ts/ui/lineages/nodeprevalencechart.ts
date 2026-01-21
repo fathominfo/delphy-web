@@ -22,8 +22,9 @@ export class SVGPrevalenceGroup {
     this.trend = this.g.querySelector(".trend") as SVGLineElement;
   }
 
-  hide() { this.g.classList.add("hidden"); }
-  show() { this.g.classList.remove("hidden"); }
+  toggleClass(className: string, on=true) {
+    this.g.classList.toggle(className, on);
+  }
 
 
 }
@@ -192,13 +193,20 @@ export class NodePrevalenceChart {
   }
 
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
-    const displayNodes = this.nodes.map(nd => nd.type);
-    const index = displayNodes.indexOf(node);
-    if (index !== this.highlightSeriesIndex) {
-      this.highlightSeriesIndex = index;
-      this.requestDraw();
-    }
+  highlightNode(node: DisplayNode) : void {
+    requestAnimationFrame(()=>{
+      if (node === UNSET) {
+        this.svgGroups.forEach((group)=>{
+          group.toggleClass("matching", false);
+          group.toggleClass("unmatching", false);
+        });
+      } else {
+        this.svgGroups.forEach((group, nodeType)=>{
+          group.toggleClass("matching", node === nodeType);
+          group.toggleClass("unmatching", node !== nodeType);
+        });
+      }
+    });
   }
 
   getFillCoords(index: number): string {
@@ -278,10 +286,10 @@ export class NodePrevalenceChart {
     nodes.forEach((nd, i)=>dataMapping[nd.type] = i);
     svgGroups.forEach((group, nodeType)=>{
       if (dataMapping[nodeType] === undefined) {
-        group.hide();
+        group.toggleClass("hidden", true);
       } else {
         const dataIndex = dataMapping[nodeType];
-        group.show();
+        group.toggleClass("hidden", false);
         const fillCoords = this.getFillCoords(dataIndex);
         const strokeCoords = this.getStrokeCoords(dataIndex);
         group.shape.setAttribute("d", fillCoords);
