@@ -214,7 +214,7 @@ export class MccTreeCanvas extends TreeCanvas {
     }
 
     /* adjust distance based on genetic distance */
-    const yRange = this.height - this.timelineSpacing - this.paddingBottom,
+    const yRange = this.height - this.paddingTop - this.paddingBottom,
       tipDiffDist = totalTipMutations.map(mutCount=>mutCount / totalMutations * yRange);
     /*
     set positions of the tips, accumulating references to the inner nodes as we go

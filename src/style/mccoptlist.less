@@ -1,4 +1,4 @@
-@button-curvature: 4px;
+
 
 
 .mcc-options-panel {
@@ -11,6 +11,7 @@
   border: 1px solid #e3e3e3;
   background-color: #fcfcfc;
   padding: 10px;
+  display: none;
 }
 
 
@@ -59,11 +60,11 @@
     margin-right: -1px;
 
     &:first-of-type {
-      border-radius: @button-curvature 0 0 @button-curvature;
+      // border-radius: @button-curvature 0 0 @button-curvature;
     }
 
     &:last-of-type {
-      border-radius: 0 @button-curvature @button-curvature 0;
+      // border-radius: 0 @button-curvature @button-curvature 0;
     }
 
     &:hover {
@@ -90,7 +91,7 @@
   background: transparent;
   margin: 0;
   width: 100%;
-  
+
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
   }

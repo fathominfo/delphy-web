@@ -105,12 +105,12 @@ export const getNodeColorStream= (dn:DisplayNode)=>nodeColorsStream[dn];
 export const getNodeClassName = (dn: DisplayNode)=>nodeClassNames[dn];
 
 
-export const TREE_TIMELINE_SPACING = 110 - 60,
-  TREE_PADDING_BOTTOM = 50,
-  TREE_PADDING_LEFT = 30,
-  TREE_PADDING_RIGHT = 40,
-  TREE_TEXT_TOP = 15,
-  TREE_TEXT_LINE_SPACING = 15,
+export const TREE_PADDING_TOP = 10,
+  TREE_PADDING_BOTTOM = 10,
+  TREE_PADDING_LEFT = 10,
+  TREE_PADDING_RIGHT = 10,
+  TREE_TEXT_TOP = 0,
+  TREE_TEXT_LINE_SPACING = 0,
   TREE_TEXT_FONT = '500 12px MDSystem, Roboto, sans-serif',
   TREE_TEXT_FONT_2 = '700 12px MDSystem, Roboto, sans-serif',
   CHART_TEXT_SIZE = 12,

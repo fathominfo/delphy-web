@@ -4,7 +4,7 @@ import {DateLabel} from './datelabel';
 import {
   UNSTYLED_CANVAS_WIDTH,
   BRANCH_WEIGHT, BRANCH_WEIGHT_MIN, BRANCH_WEIGHT_MAX,
-  TREE_TIMELINE_SPACING,
+  TREE_PADDING_TOP,
   TREE_PADDING_BOTTOM, TREE_PADDING_LEFT, TREE_PADDING_RIGHT,
   TREE_TEXT_TOP, TREE_TEXT_LINE_SPACING,
   TREE_TEXT_FONT, TREE_TEXT_FONT_2,
@@ -85,7 +85,7 @@ export class TreeCanvas {
   maxDate: number;
   tree: Tree | null;
   creds: number[];
-  timelineSpacing : number;
+  paddingTop : number;
   paddingBottom: number;
   /* we don't want this to be less than 1, but typescript can't enforce that for us */
   verticalZoom: number;
@@ -118,7 +118,7 @@ export class TreeCanvas {
     this.sizeCanvas();
     this.branchColor = BRANCH_COLOR;
     this.tipColor = TIP_COLOR;
-    this.timelineSpacing = TREE_TIMELINE_SPACING;
+    this.paddingTop = TREE_PADDING_TOP;
     this.paddingBottom = TREE_PADDING_BOTTOM;
     this.verticalZoom = 1;
     this.zoomCenterY = 0.5;
@@ -139,6 +139,7 @@ export class TreeCanvas {
         const {width, height} = resizeCanvas(canvas);
         this.width = width;
         this.height = height;
+        console.log(`sizing canvas height to ${this.height}`)
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'top';
         this.ctx.font = TREE_TEXT_FONT;
@@ -263,7 +264,7 @@ export class TreeCanvas {
       count at each node.
       */
       let ypos = height - this.paddingBottom;
-      const h = (ypos - this.timelineSpacing)/actualTipCount;
+      const h = (ypos - this.paddingTop)/actualTipCount;
       const tipCounts = getTipCounts(tree),
         rootIndex = tree.getRootIndex(),
         verticallySortedTips:number[] = [],
@@ -386,7 +387,7 @@ export class TreeCanvas {
   }
 
   getZoomY(index: number) : number {
-    const height = this.height - this.paddingBottom - this.timelineSpacing,
+    const height = this.height - this.paddingBottom - this.paddingTop,
       zoomedHeight = this.verticalZoom * height,
       unzoomedCenter = height * 0.5,
       zoomCenter = this.zoomCenterY * zoomedHeight,
@@ -397,7 +398,7 @@ export class TreeCanvas {
       maxOffset = zoomedHeight - height,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset);
-    return this.nodeYs[index] * this.verticalZoom - offset + this.timelineSpacing;
+    return this.nodeYs[index] * this.verticalZoom - offset;
   }
 
   getZoomedDateRange() : number[] {
@@ -441,8 +442,7 @@ export class TreeCanvas {
   draw(earliest:number, latest:number, dates:DateLabel[], pdf: PdfCanvas | null = null) {
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
-    const drawBranch = this.drawBranch;
-    const {ctx, width, height, nodeYs} = this,
+    const {ctx, width, height, nodeYs, drawBranch} = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
@@ -475,7 +475,7 @@ export class TreeCanvas {
 
   drawTimelineLines(dates:DateLabel[]):void {
     this.ctx.fillStyle = 'rgba(255,255,255,0.97)';
-    this.ctx.fillRect(0, 0, this.width, this.timelineSpacing);
+    this.ctx.fillRect(0, 0, this.width, this.paddingTop);
     this.ctx.strokeStyle = TREE_DATELINE_COLOR_2;
     const y1 = TREE_TEXT_TOP,
       bottom = this.height - this.paddingBottom;
@@ -485,14 +485,14 @@ export class TreeCanvas {
     dates.forEach((dl:DateLabel)=>{
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
-        let y = lineTop;
+        const y = lineTop;
         this.ctx.beginPath();
-        while (y < bottom) {
-          this.ctx.moveTo(x, y);
-          y += DASH_LENGTH;
-          this.ctx.lineTo(x, y);
-          y += DASH_SPACING;
-        }
+        // while (y < bottom) {
+        //   this.ctx.moveTo(x, y);
+        //   y += DASH_LENGTH;
+        //   this.ctx.lineTo(x, y);
+        //   y += DASH_SPACING;
+        // }
         this.ctx.stroke();
         if (first) {
           first = false;
@@ -504,10 +504,8 @@ export class TreeCanvas {
 
 
   drawTimelineLabels(dates:DateLabel[], pdf: PdfCanvas | null = null):void {
-    this.ctx.fillStyle = TREE_TEXT_COLOR_2;
-    if (pdf===null) {
-      this.ctx.font = TREE_TEXT_FONT_2;
-    } else {
+    if (pdf !== null) {
+      this.ctx.fillStyle = TREE_TEXT_COLOR_2;
       const fontTokens = TREE_TEXT_FONT_2.split(' ');
       pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '700' ? PDF_700_WT : PDF_500_WT);
       pdf.setFontSize(parseInt(fontTokens[1]));
@@ -520,14 +518,12 @@ export class TreeCanvas {
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
         if (dl.index === this.maxDate || dl.index < this.maxDate - 30) {
-          this.ctx.fillText(dl.label1, x, y1);
-          this.ctx.fillText(dl.label2, x, y2);
+          // this.ctx.fillText(dl.label1, x, y1);
+          // this.ctx.fillText(dl.label2, x, y2);
         }
         if (first) {
           first = false;
-          if (pdf===null) {
-            this.ctx.font = TREE_TEXT_FONT;
-          } else {
+          if (pdf !== null) {
             const fontTokens = TREE_TEXT_FONT.split(' ');
             pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '500' ? PDF_500_WT : PDF_700_WT);
             pdf.setFontSize(parseInt(fontTokens[1]));
@@ -690,7 +686,7 @@ export class TreeCanvas {
   }
 
   zoomToTips(tips: number[]) : void {
-    const height = this.height - this.paddingBottom - this.timelineSpacing;
+    const height = this.height - this.paddingBottom - this.paddingTop;
     let index = tips[0],
       y1 = this.nodeYs[index],
       y2 = y1;

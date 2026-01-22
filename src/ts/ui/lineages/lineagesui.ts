@@ -7,7 +7,7 @@ import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
   TREE_PADDING_BOTTOM,
   TREE_PADDING_LEFT,
   TREE_PADDING_RIGHT,
-  TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_TIMELINE_SPACING, UNSET,
+  TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_PADDING_TOP, UNSET,
   getNodeColor, getNodeTypeName, getNodeClassName } from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodePairType, NodePair, NodeComparisonData,
@@ -197,7 +197,7 @@ export class LineagesUI extends MccUI {
           if (dragged) {
             const left = TREE_PADDING_LEFT,
               right = this.mccTreeCanvas.width - TREE_PADDING_RIGHT,
-              top = TREE_TIMELINE_SPACING,
+              top = TREE_PADDING_TOP,
               bottom = this.mccTreeCanvas.height - TREE_PADDING_BOTTOM,
               height = bottom - top,
               width = right - left;
@@ -209,7 +209,7 @@ export class LineagesUI extends MccUI {
               w = Math.abs(selectionX - startX),
               vZoom = height / h * this.mccTreeCanvas.verticalZoom,
               hZoom = width / w * this.mccTreeCanvas.horizontalZoom,
-              cy = ((selectionY + startY) / 2 - TREE_TIMELINE_SPACING) / height,
+              cy = ((selectionY + startY) / 2 - TREE_PADDING_TOP) / height,
               cx = 1 - ((selectionX + startX) / 2 - TREE_PADDING_LEFT) / width,
               zY = this.mccTreeCanvas.zoomCenterY + (cy - 0.5) / this.mccTreeCanvas.verticalZoom,
               zX = this.mccTreeCanvas.zoomCenterX + (cx - 0.5) / this.mccTreeCanvas.horizontalZoom;

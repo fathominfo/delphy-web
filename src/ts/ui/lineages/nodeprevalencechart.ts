@@ -78,6 +78,7 @@ export class NodePrevalenceChart {
       const formData = new FormData(meanVsDistForm);
       const option = formData.get("prevalence-display");
       this.showingMean = option === "mean";
+      this.svg.classList.toggle("median", !this.showingMean);
       this.requestDraw();
     });
 
@@ -409,20 +410,24 @@ export class NodePrevalenceChart {
     let path = '';
     let i: number;
     let median: number;
+    let nextMedian: number;
     let x: number;
     let y: number;
     let first = true;
     /* trace the min hpd */
     for (i = 0; i < L; i++) {
       median = hpdData[i][MEDIAN_INDEX];
-      x = i / (L-1) * width;
-      y = (1 - median) * height + STROKE_WIDTH / 2;
-      if (first) {
-        path = `M${x} ${y} L`;
-      } else {
-        path += ` ${x} ${y}`;
+      nextMedian = hpdData[i+1]?.[MEDIAN_INDEX];
+      if (median !== 0 || nextMedian !== 0) {
+        x = i / (L-1) * width;
+        y = (1 - median) * height + STROKE_WIDTH / 2;
+        if (first) {
+          path = `M${x} ${y} L`;
+          first = false;
+        } else {
+          path += ` ${x} ${y}`;
+        }
       }
-      first = false;
     }
     return path;
   }
