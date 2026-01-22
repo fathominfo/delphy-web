@@ -407,7 +407,8 @@ export class TreeCanvas {
         //
       } else {
         if (entry.isNewYear || i === lastIndex) {
-          (div.querySelector(".cal .month") as HTMLSpanElement).textContent = `${entry.monthLabel} ${entry.dateLabel}`;
+          (div.querySelector(".cal .month") as HTMLSpanElement).textContent = entry.monthLabel;
+          (div.querySelector(".cal .day") as HTMLSpanElement).textContent = entry.dateLabel;
           (div.querySelector(".year") as HTMLSpanElement).textContent = entry.yearLabel;
           div.classList.add("reference")
         }

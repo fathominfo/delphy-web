@@ -385,6 +385,14 @@ canvas {
         color: var(--date-text);
         opacity: 1;
         transition: opacity var(--axis-transition) ease-out;
+
+        .cal {
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          align-items: baseline;
+          white-space: nowrap;
+        }
       }
 
 
@@ -426,7 +434,7 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: var(--controls-position-gap);
-  margin: var(--tree-inset);
+
 
   &.anchor-center {
     top: 50%;
@@ -440,6 +448,10 @@ canvas {
     .control {
       justify-content: flex-start;
       margin-right: auto;
+
+      &:hover .label {
+        padding-right: var(--control-padding);
+      }
     }
   }
 }
@@ -456,6 +468,15 @@ canvas {
       border-radius: 0;
       &:first-child {
         border-radius: var(--corner) var(--corner) 0 0;
+        &:hover {
+          border-radius: var(--corner) var(--corner) var(--corner) 0;
+        }
+      }
+      &:last-child {
+        border-radius: 0 0 var(--corner) var(--corner);
+        &:hover {
+          border-radius: 0 var(--corner) var(--corner) var(--corner);
+        }
       }
     }
   }
@@ -482,6 +503,13 @@ canvas {
   .icon {
     width: var(--control-size);
     height: var(--control-size);
+    path {
+      fill: var(--control-icon-static);
+      stroke: var(--control-icon-static);
+      stroke-width: 0.25;
+      stroke-linecap: round;
+      transition: all var(--transition) ease-in-out;
+    }
   }
 
   .label {
@@ -495,6 +523,17 @@ canvas {
     padding: 0;
     white-space: nowrap;
     transition: all var(--transition) ease-in-out;
+  }
+
+  &:hover {
+    border-color: var(--control-stroke-on);
+    background-color: var(--control-fill-on);
+    z-index: 1;
+
+    .label {
+      color: var(--control-text-on);
+      width: min-content;
+    }
   }
 }
 
