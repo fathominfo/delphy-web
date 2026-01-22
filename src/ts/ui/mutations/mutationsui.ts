@@ -5,7 +5,7 @@ import {MutationOfInterest, MutationOfInterestSet, FeatureOfInterest} from '../.
 import {MutationRow, NodeFunctionType, clearMutationRows} from './mutationrow';
 import {SharedState} from '../../sharedstate';
 import { getMutationName, getMutationNameParts, mutationEquals, siteIndexToLabel } from '../../constants';
-import { TreeCanvas } from '../treecanvas';
+import { MccTreeCanvas } from '../mcctreecanvas';
 import { MccTree } from '../../pythia/delphy_api';
 import { DataResolveType, getPercentLabel, MUTATION_COLOR, Screens, UNSET } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
@@ -581,7 +581,7 @@ export class MutationsUI extends MccUI {
     }
   }
 
-  private drawHighlightNode(index: number, color: string, ctx: CanvasRenderingContext2D, treeCanvas: TreeCanvas, mcc: MccTree): void {
+  private drawHighlightNode(index: number, color: string, ctx: CanvasRenderingContext2D, treeCanvas: MccTreeCanvas, mcc: MccTree): void {
     if (index >= 0) {
       const x = treeCanvas.getZoomX(mcc.getTimeOf(index)),
         y = treeCanvas.getZoomY(index),

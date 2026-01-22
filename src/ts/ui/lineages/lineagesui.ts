@@ -2,7 +2,6 @@ import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { Pythia } from '../../pythia/pythia';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { MccUI } from '../mccui';
-import { TreeCanvas } from '../treecanvas';
 import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
   TREE_PADDING_BOTTOM,
   TREE_PADDING_LEFT,
@@ -24,6 +23,8 @@ import { PdfCanvas } from '../../util/pdfcanvas';
 import { FieldTipCount, NodeMetadata } from '../nodemetadata';
 import { NodeComparisonChartData } from './nodecomparisonchartdata';
 import { NodeSchematic } from './nodeschematic';
+import { MccTreeCanvas } from '../mcctreecanvas';
+import { toFullDateString } from '../../pythia/dates';
 
 
 type KeyEventHandler = (event: KeyboardEvent)=>void;
@@ -119,7 +120,7 @@ export class LineagesUI extends MccUI {
 
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector, "#lineages--mcc-canvas");
+    super(sharedState, divSelector, "#lineages .tree-canvas");
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
     const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
@@ -513,6 +514,19 @@ export class LineagesUI extends MccUI {
       this.requestDrawNodeRelationChart();
       this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
     }
+
+    if (nodeIndex !== UNSET && this.pythia ) {
+      const mccRef = this.pythia.getMcc(),
+        summaryTree = this.mccTreeCanvas.tree as SummaryTree;
+      const mccIndex = this.pythia.getMccIndex() - this.pythia.kneeIndex;
+      const nodeDates = this.pythia.getNodeTimeDistribution(nodeIndex, summaryTree);
+      const date = nodeDates[mccIndex];
+      console.log(nodeIndex, date, toFullDateString(date));
+      mccRef.release();
+
+    }
+
+
 
     this.nodeListDisplay.highlightNode(displayNode);
     this.nodeSchematic.highlightNode(displayNode);
@@ -1000,7 +1014,7 @@ export class LineagesUI extends MccUI {
     // this.drawScrollBar();
   }
 
-  private drawHighlightNode(index: number, displayNode: DisplayNode, ctx: CanvasRenderingContext2D, treeCanvas: TreeCanvas): void {
+  private drawHighlightNode(index: number, displayNode: DisplayNode, ctx: CanvasRenderingContext2D, treeCanvas: MccTreeCanvas): void {
     if (index === UNSET) return;
 
     const mcc = treeCanvas.tree as SummaryTree,
@@ -1035,7 +1049,7 @@ export class LineagesUI extends MccUI {
     ctx.setLineDash([]);
   }
 
-  drawSubtree(index: number, ctx: CanvasRenderingContext2D, treeCanvas: TreeCanvas, color: string) : void {
+  drawSubtree(index: number, ctx: CanvasRenderingContext2D, treeCanvas: MccTreeCanvas, color: string) : void {
     ctx.fillStyle = color;
     ctx.lineWidth  = 0.75;
     ctx.strokeStyle = ctx.fillStyle;

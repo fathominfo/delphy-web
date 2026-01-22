@@ -29,6 +29,19 @@
   // }
 
 
+  .tree-canvas {
+    // border: solid 1px blue;
+    // cursor: crosshair;
+    &.noding {
+      cursor: default;
+      &.new-node {
+        cursor: pointer;
+      }
+    }
+  }
+
+
+
   .mutation-name {
     opacity: var(--lineages-mutation-opacity);
   }
@@ -72,18 +85,6 @@
   }
 }
 
-
-
-#lineages--mcc-canvas {
-  // border: solid 1px blue;
-  cursor: crosshair;
-  &.noding {
-    cursor: default;
-    &.new-node {
-      cursor: pointer;
-    }
-  }
-}
 
 .tree-hint-container {
 

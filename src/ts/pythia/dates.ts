@@ -87,7 +87,7 @@ if you need to preserve its value, make a copy before
 passing it into this function. [mark 260121]
 */
 export function addDays(d:Date, numDays = 1) : number {
-  d.setDate(d.getDate() + numDays);
+  d.setUTCDate(d.getUTCDate() + numDays);
   return toDateNumber(d);
 }
 
@@ -97,7 +97,7 @@ if you need to preserve its value, make a copy before
 passing it into this function. [mark 260121]
 */
 export function addWeeks(d:Date, numWeeks = 1) : number {
-  d.setDate(d.getDate() + numWeeks * 7);
+  d.setUTCDate(d.getUTCDate() + numWeeks * 7);
   return toDateNumber(d);
 }
 
@@ -107,7 +107,7 @@ if you need to preserve its value, make a copy before
 passing it into this function. [mark 260121]
 */
 export function addMonths(d:Date, numMonths = 1) : number {
-  d.setMonth(d.getMonth() + numMonths);
+  d.setUTCMonth(d.getUTCMonth() + numMonths);
   return toDateNumber(d);
 }
 
@@ -117,7 +117,7 @@ if you need to preserve its value, make a copy before
 passing it into this function. [mark 260121]
 */
 export function addYears(d:Date, numYears = 1) : number {
-  d.setFullYear(d.getFullYear() + numYears);
+  d.setUTCFullYear(d.getUTCFullYear() + numYears);
   return toDateNumber(d);
 }
 

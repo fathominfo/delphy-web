@@ -158,7 +158,7 @@ export class RunUI extends UIScreen {
     }
 
     this.mccRef = null;
-    this.mccTreeCanvas = instantiateMccTreeCanvas("#ui_mcc");
+    this.mccTreeCanvas = instantiateMccTreeCanvas("#runner--mcc .tree-canvas");
     this.runControl = document.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;

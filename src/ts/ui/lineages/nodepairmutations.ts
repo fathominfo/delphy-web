@@ -307,7 +307,7 @@ export class NodeMutations {
   }
 
   highlightNode(node: DisplayNode) {
-    console.log(`highlight ${node} `);
+    // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
       chart.highlightNode(node);
       chart.highlightNode(node);

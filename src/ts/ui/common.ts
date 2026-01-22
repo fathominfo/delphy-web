@@ -1,4 +1,4 @@
-import { addDays, addMonths, addWeeks, addYears, DateTokenIndex, MONTHS_SHORT, toDate, toDateTokens } from '../pythia/dates';
+import { addDays, addMonths, addWeeks, addYears, DateTokenIndex, MONTHS_SHORT, toDate, toDateNumber, toDateString, toDateTokens } from '../pythia/dates';
 import { SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
@@ -447,17 +447,8 @@ export const nicenum = (x: number, round = false )=>{
 }
 
 
-export const niceWeeks = (x: number)=>{
-  const expv = Math.floor(Math.log10(x));  // exponent of x
-  // f is the fractional part of x
-  const f = x / Math.pow(10, expv);    // between 1 and 10
-  let nf;        /* nice, rounded fraction */
-  if (f <= 1) nf = 1;
-  else if (f <= 2) nf = 2;
-  else nf = 4;
-  return nf * Math.pow(10, expv);
-}
-
+export const DATE_TEMPLATE = document.querySelector("#templates .date") as HTMLDivElement;
+DATE_TEMPLATE.remove();
 
 export enum DateScale {
   day = 1,
@@ -469,11 +460,14 @@ export enum DateScale {
 
 
 export type DateAxisEntry = {
-  label: string,
-  subLabel: string,
+  yearLabel: string,
+  monthLabel: string,
+  dateLabel: string,
   tokens: [number, number, number],
   date: number,
-  percent: number
+  percent: number,
+  isNewMonth: boolean,
+  isNewYear: boolean
 };
 
 
@@ -488,16 +482,21 @@ this may need to become dynamic if we allow for charts of different
 widths, but for now it's a constart [mark 260121] */
 const TARGET_NUM_TICKS = 6;
 
+export type DateIntervalData = {
+  scale: DateScale,
+  entries: DateAxisEntry[]
+};
 
-const YEAR_INDEX = 0;
 
-export function getNiceDateInterval(min: number, max: number): DateAxisEntry[] {
+export function getNiceDateInterval(min: number, max: number): DateIntervalData {
+  console.log(`getNiceDateInterval(${toDateString(min)}, ${toDateString(max)})`)
   const range = max - min;
   const daysPerTick = range / TARGET_NUM_TICKS;
   let scaleFunction = addDays;
   let scale = DateScale.day;
   let scaleCount = 1; // number of `scale` per tick, e.g. _2_ weeks, _5_ years
-  let needsAligning = false;
+  let monthsNeedAligning = false;
+  let daysNeedAligning = false;
   const weeksPerTick = daysPerTick / 7; // days per week
   if (weeksPerTick < WEEK_THRESHOLD) {
     scaleCount = Math.max(1, Math.floor(daysPerTick));
@@ -514,6 +513,7 @@ export function getNiceDateInterval(min: number, max: number): DateAxisEntry[] {
         scaleCount = 4;
       }
     } else {
+      daysNeedAligning = true;
       const yearsPerTick = daysPerTick / 365;
       if (yearsPerTick < YEAR_THRESHOLD) {
         scaleFunction = addMonths;
@@ -523,10 +523,10 @@ export function getNiceDateInterval(min: number, max: number): DateAxisEntry[] {
         }
         else if (monthsPerTick < 4.5) {
           scaleCount = 3;
-          needsAligning = true;
+          monthsNeedAligning = true;
         } else {
           scaleCount = 6;
-          needsAligning = true;
+          monthsNeedAligning = true;
         }
       } else {
         scaleFunction = addYears;
@@ -541,60 +541,129 @@ export function getNiceDateInterval(min: number, max: number): DateAxisEntry[] {
   const d = toDate(date);
   let tokens = toDateTokens(date);
   let percent = 0;
-  const label = ''; // placeholder
-  const subLabel = ''; // placeholder
-  entries.push({ label, subLabel, tokens, date, percent });
+  let yearLabel = getYearLabel(tokens);
+  let monthLabel = getMonthLabel(tokens);
+  let dateLabel = getDateLabel(tokens);
+  let isNewYear = true;
+  let isNewMonth = true;
+  let prevYear = tokens[DateTokenIndex.year];
+  let prevMonth = tokens[DateTokenIndex.month];
+
+
+
+  entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth});
   let initialScaleCount = scaleCount;
-  if (needsAligning) {
+  if (monthsNeedAligning) {
     const month = tokens[DateTokenIndex.month];
     const alignedMonth = Math.ceil(month / scaleCount) * scaleCount;
     initialScaleCount = alignedMonth - month;
   }
   date = scaleFunction(d, initialScaleCount);
-  while (date <= max) {
-    tokens = toDateTokens(date);
-    percent = (date - min) / range;
-    entries.push({ label, subLabel, tokens, date, percent });
-    date = scaleFunction(d, scaleCount);
-  }
-  switch (scale)  {
-  case DateScale.year:
-    entries.forEach(ent=>ent.label = `${ent.tokens[DateTokenIndex.year]}`);
-    break;
-  case DateScale.month:
-    {
-      let prevYear = UNSET;
-      entries.forEach(ent=>{
-        const month = ent.tokens[DateTokenIndex.month];
-        const year = ent.tokens[DateTokenIndex.year];
-        ent.label = MONTHS_SHORT[month];
-        if (year !== prevYear) {
-          ent.subLabel = `${year}`;
-          prevYear = year;
-        }
-      });
-    }
-    break;
-  default:
-  {
-    let prevYear = UNSET;
-    const prevMonth = UNSET;
-    entries.forEach(ent=>{
-      const day = ent.tokens[DateTokenIndex.day];
-      const month = ent.tokens[DateTokenIndex.month];
-      const year = ent.tokens[DateTokenIndex.year];
-      if (month !== prevMonth) {
-        ent.label = `${MONTHS_SHORT[month]} ${day}`;
-      } else {
-        ent.label = `${day}`;
-      }
-      if (year !== prevYear) {
-        ent.subLabel = `${year}`;
-        prevYear = year;
-      }
-    });
-  }
+  if (daysNeedAligning) {
+    // set to the first of the month
+    // d = toDate(date);
+    d.setUTCDate(1);
+    date = toDateNumber(d);
   }
 
-  return entries;
+  let year: number, month: number;
+  while (date <= max) {
+    tokens = toDateTokens(date);
+    year = tokens[DateTokenIndex.year];
+    month = tokens[DateTokenIndex.month];
+    yearLabel = getYearLabel(tokens);
+    monthLabel = getMonthLabel(tokens);
+    dateLabel = getDateLabel(tokens);
+    isNewYear = year !== prevYear;
+    isNewMonth = month !== prevMonth;
+    prevYear = year;
+    prevMonth = month;
+    percent = (date - min) / range;
+    entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth });
+    date = scaleFunction(d, scaleCount);
+  }
+  /* add the last date */
+  date = max;
+  tokens = toDateTokens(date);
+  year = tokens[DateTokenIndex.year];
+  month = tokens[DateTokenIndex.month];
+  yearLabel = getYearLabel(tokens);
+  monthLabel = getMonthLabel(tokens);
+  dateLabel = getDateLabel(tokens);
+  isNewYear = year !== prevYear;
+  isNewMonth = month !== prevMonth;
+  percent = 1.0;
+  entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth });
+
+  // switch (scale)  {
+  // case DateScale.year:
+  //   entries.forEach(ent=>ent.label = `${ent.tokens[DateTokenIndex.year]}`);
+  //   break;
+  // case DateScale.month:
+  //   {
+  //     let prevYear = UNSET;
+  //     entries.forEach(ent=>{
+  //       const month = ent.tokens[DateTokenIndex.month];
+  //       const year = ent.tokens[DateTokenIndex.year];
+  //       ent.label = MONTHS_SHORT[month];
+  //       if (year !== prevYear) {
+  //         ent.subLabel = `${year}`;
+  //         prevYear = year;
+  //       }
+  //     });
+  //   }
+  //   break;
+  // default:
+  // {
+  //   let prevYear = UNSET;
+  //   const prevMonth = UNSET;
+  //   const lastIndex = entries.length - 1;
+
+  //   entries.forEach((ent, i)=>{
+  //     const isMaxDate = i === lastIndex;
+  //     const day = ent.tokens[DateTokenIndex.day];
+  //     const month = ent.tokens[DateTokenIndex.month];
+  //     const year = ent.tokens[DateTokenIndex.year];
+  //     if (isMaxDate) {
+  //       ent.label = `${MONTHS_SHORT[month]} ${day}`;
+  //       ent.subLabel = `${year}`;
+  //     } else {
+  //       if (month === prevMonth) {
+  //         ent.label = `${day}`;
+  //       } else if () {
+  //         ent.label = `${MONTHS_SHORT[month]} ${day}`;
+
+  //       }
+  //       if (year !== prevYear || isMaxDate) {
+  //         ent.subLabel = `${year}`;
+  //         prevYear = year;
+  //       }
+  //     }
+  //   });
+  // }
+  // }
+
+  return {scale,  entries};
 }
+
+
+export const getYearLabel = (tokens: [number, number, number]): string => {
+  const year = tokens[DateTokenIndex.year];
+  return `${year}`;
+}
+
+export const getMonthLabel = (tokens: [number, number, number]): string => {
+  const month = tokens[DateTokenIndex.month];
+  return MONTHS_SHORT[month];
+}
+
+export const getMonthDateLabel = (tokens: [number, number, number]): string => {
+  const month = getMonthLabel(tokens)
+  return `${month} ${tokens[DateTokenIndex.day]}`;
+}
+
+export const getDateLabel = (tokens: [number, number, number]): string => {
+  const date = tokens[DateTokenIndex.day];
+  return `${date}`;
+}
+

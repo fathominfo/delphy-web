@@ -303,30 +303,26 @@
       <div id="runner--bottom">
 
         <div id="runner--mcc">
-          <h1 class="tree-header">Maximum Clade Credibility (MCC) Tree</h1>
-          <div class="tree-container">
-            <div class="tree-canvas-container feature">
-              <canvas id="ui_mcc" class="tree-canvas"></canvas>
-            </div>
-            <div id="ui_mcc--legend">
-              <!-- <div class="mcc-legend-swatch low-cred">
-              <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
-              <div class="mcc-legend-swatch hi-cred"></div>
-              <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
-              <div class="mcc-opt-list confidence">
-                <label for="mcc-opt--confidence-range">Credibility threshold</label>
-                <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
-                  Highlighting nodes in
-                  <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
-                  of base trees
-                </output>
+          {{>mcc_tree}}
 
-                <div class="mcc-opt--confidence-range block-slider">
-                  <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
-                  <div class="slider--track"></div>
-                  <div class="slider--track-filled"></div>
-                  <div class="slider--thumb"></div>
-                </div>
+          <div class="mcc-legend">
+            <!-- <div class="mcc-legend-swatch low-cred">
+            <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
+            <div class="mcc-legend-swatch hi-cred"></div>
+            <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
+            <div class="mcc-opt-list confidence">
+              <label for="mcc-opt--confidence-range">Credibility threshold</label>
+              <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
+                Highlighting nodes in
+                <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
+                of base trees
+              </output>
+
+              <div class="mcc-opt--confidence-range block-slider">
+                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
+                <div class="slider--track"></div>
+                <div class="slider--track-filled"></div>
+                <div class="slider--thumb"></div>
               </div>
             </div>
           </div>

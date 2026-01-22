@@ -1,5 +1,5 @@
 import { BaseTreeSeriesType } from '../../constants';
-import { DisplayNode, UNSET, getNiceDateInterval, getNodeClassName, getNodeTypeName, getPercentLabel, numericSort } from '../common';
+import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName } from '../common';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { NodeCallback, NodeDisplay } from './lineagescommon';
 
@@ -436,17 +436,30 @@ export class NodePrevalenceChart {
 
 
   setAxisDates() {
-    const labels = getNiceDateInterval(this.minDate, this.maxDate);
+    const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
     this.dateAxis.innerHTML = '';
-    labels.forEach(labelData=>{
+    entries.forEach(labelData=>{
       let div: HTMLDivElement;
-      if (labelData.subLabel !== '') {
-        div = this.referenceDateTemplate.cloneNode(true) as HTMLDivElement;
-        (div.querySelector(".year") as HTMLSpanElement).textContent = labelData.subLabel;
-      } else {
+      let label = '';
+      if (scale === DateScale.year) {
+        label = labelData.yearLabel;
         div = this.dateTemplate.cloneNode(true) as HTMLDivElement;
+      }  else {
+        if (labelData.isNewYear) {
+          div = this.referenceDateTemplate.cloneNode(true) as HTMLDivElement;
+          (div.querySelector(".year") as HTMLSpanElement).textContent = labelData.yearLabel;
+        } else {
+          div = this.dateTemplate.cloneNode(true) as HTMLDivElement;
+        }
+        if (scale === DateScale.month) {
+          label = labelData.monthLabel;
+        } else if (labelData.isNewMonth) {
+          label = `${labelData.monthLabel} ${labelData.dateLabel}`;
+        } else {
+          label = labelData.dateLabel;
+        }
       }
-      (div.querySelector(".cal .month") as HTMLSpanElement).textContent = labelData.label;
+      (div.querySelector(".cal .month") as HTMLSpanElement).textContent = label;
       div.style.left = `${100 * labelData.percent}%`;
       this.dateAxis.appendChild(div);
     })

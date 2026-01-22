@@ -12,10 +12,14 @@ import {
   TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2,
   DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
   resizeCanvas,
-  UNSET} from './common';
+  UNSET,
+  getNiceDateInterval,
+  DateScale,
+  DATE_TEMPLATE} from './common';
 import {getTipCounts} from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
 import { Context2d } from "jspdf";
+
 // import { MostCommonSplitTree } from '../pythia/mostcommonsplittree';
 
 // import '/assets/fonts/MDSystemStandard/MDSystem-Bold.woff2?url';
@@ -69,6 +73,7 @@ export class TreeCanvas {
 
   canvas: HTMLCanvasElement | PdfCanvas;
   ctx: CanvasRenderingContext2D | Context2d;
+  dateAxis: HTMLDivElement;
   height: number;
   width: number;
   branchColor: string;
@@ -102,6 +107,7 @@ export class TreeCanvas {
   constructor(canvas: HTMLCanvasElement | PdfCanvas, ctx: CanvasRenderingContext2D | Context2d) {
     this.canvas = canvas;
     this.ctx = ctx;
+    this.dateAxis = canvas.parentNode?.querySelector(".dates") as HTMLDivElement;
     this.tree = null;
     this.nodeYs = [];
     this.nodeTimes = [];
@@ -382,9 +388,38 @@ export class TreeCanvas {
       //   }
       // }
 
+
+      requestAnimationFrame(()=>this.setAxisDates());
     }
     return yPositions.map(y=>[y]);
   }
+
+
+  setAxisDates() {
+    if (!this.dateAxis) return;
+    const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
+    const lastIndex = entries.length - 1;
+    this.dateAxis.innerHTML = '';
+    entries.forEach((entry, i)=>{
+      console.log(entry)
+      const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
+      if (scale == DateScale.year) {
+        //
+      } else {
+        if (entry.isNewYear || i === lastIndex) {
+          (div.querySelector(".cal .month") as HTMLSpanElement).textContent = `${entry.monthLabel} ${entry.dateLabel}`;
+          (div.querySelector(".year") as HTMLSpanElement).textContent = entry.yearLabel;
+          div.classList.add("reference")
+        }
+      }
+      const x = this.getZoomX(entry.date);
+      div.style.left = `${x}px`;
+      this.dateAxis.appendChild(div);
+    })
+  }
+
+
+
 
   getZoomY(index: number) : number {
     const height = this.height - this.paddingBottom - this.paddingTop,
@@ -468,44 +503,43 @@ export class TreeCanvas {
     // }
 
     ctx.globalAlpha = 1;
-    this.drawTimelineLines(dates);
-    this.drawTimelineLabels(dates, pdf);
-
+    // this.drawTimelineLines(dates, ctx);
+    // this.drawTimelineLabels(dates, pdf, ctx);
   }
 
-  drawTimelineLines(dates:DateLabel[]):void {
-    this.ctx.fillStyle = 'rgba(255,255,255,0.97)';
-    this.ctx.fillRect(0, 0, this.width, this.paddingTop);
-    this.ctx.strokeStyle = TREE_DATELINE_COLOR_2;
+  drawTimelineLines(dates:DateLabel[], ctx: CanvasRenderingContext2D | Context2d):void {
+    ctx.fillStyle = 'rgba(255,255,255,0.97)';
+    ctx.fillRect(0, 0, this.width, this.paddingTop);
+    ctx.strokeStyle = TREE_DATELINE_COLOR_2;
     const y1 = TREE_TEXT_TOP,
       bottom = this.height - this.paddingBottom;
     let first = true;
-    this.ctx.lineWidth = DASH_WEIGHT;
+    ctx.lineWidth = DASH_WEIGHT;
     const lineTop = y1 + TREE_TEXT_LINE_SPACING * 2 + DASH_LENGTH - 1;
     dates.forEach((dl:DateLabel)=>{
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
         const y = lineTop;
-        this.ctx.beginPath();
+        ctx.beginPath();
         // while (y < bottom) {
-        //   this.ctx.moveTo(x, y);
+        //   ctx.moveTo(x, y);
         //   y += DASH_LENGTH;
-        //   this.ctx.lineTo(x, y);
+        //   ctx.lineTo(x, y);
         //   y += DASH_SPACING;
         // }
-        this.ctx.stroke();
+        ctx.stroke();
         if (first) {
           first = false;
-          this.ctx.strokeStyle = TREE_DATELINE_COLOR;
+          ctx.strokeStyle = TREE_DATELINE_COLOR;
         }
       }
     });
   }
 
 
-  drawTimelineLabels(dates:DateLabel[], pdf: PdfCanvas | null = null):void {
+  drawTimelineLabels(dates:DateLabel[], pdf: PdfCanvas | null = null, ctx: CanvasRenderingContext2D | Context2d):void {
     if (pdf !== null) {
-      this.ctx.fillStyle = TREE_TEXT_COLOR_2;
+      ctx.fillStyle = TREE_TEXT_COLOR_2;
       const fontTokens = TREE_TEXT_FONT_2.split(' ');
       pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '700' ? PDF_700_WT : PDF_500_WT);
       pdf.setFontSize(parseInt(fontTokens[1]));
@@ -513,13 +547,13 @@ export class TreeCanvas {
     const y1 = TREE_TEXT_TOP,
       y2 = y1 + TREE_TEXT_LINE_SPACING;
     let first = true;
-    this.ctx.lineWidth = DASH_WEIGHT;
+    ctx.lineWidth = DASH_WEIGHT;
     dates.forEach((dl:DateLabel)=>{
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
         if (dl.index === this.maxDate || dl.index < this.maxDate - 30) {
-          // this.ctx.fillText(dl.label1, x, y1);
-          // this.ctx.fillText(dl.label2, x, y2);
+          // ctx.fillText(dl.label1, x, y1);
+          // ctx.fillText(dl.label2, x, y2);
         }
         if (first) {
           first = false;
@@ -528,7 +562,7 @@ export class TreeCanvas {
             pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '500' ? PDF_500_WT : PDF_700_WT);
             pdf.setFontSize(parseInt(fontTokens[1]));
           }
-          this.ctx.fillStyle = TREE_TEXT_COLOR;
+          ctx.fillStyle = TREE_TEXT_COLOR;
         }
       }
     });
@@ -536,8 +570,9 @@ export class TreeCanvas {
   }
 
 
-  drawTimelineLabelsPDF(dates:DateLabel[], earliest:number = this.minDate, latest:number = this.maxDate, withBackground=true):void {
-    this.ctx.fillStyle = TREE_TEXT_COLOR_2;
+  drawTimelineLabelsPDF(dates:DateLabel[], earliest:number = this.minDate, latest:number = this.maxDate,
+    withBackground=true, ctx: CanvasRenderingContext2D):void {
+    ctx.fillStyle = TREE_TEXT_COLOR_2;
     if (withBackground) {
       /*
       here, withBackground is a proxy for are we drawing to a js canvas
@@ -546,24 +581,24 @@ export class TreeCanvas {
         > jsPdfCtx.font = '700 12px MDSystem';
       doesn’t work
       */
-      this.ctx.font = TREE_TEXT_FONT_2;
+      ctx.font = TREE_TEXT_FONT_2;
     }
     const y1 = TREE_TEXT_TOP,
       y2 = y1 + TREE_TEXT_LINE_SPACING;
     let first = true;
-    this.ctx.lineWidth = DASH_WEIGHT;
+    ctx.lineWidth = DASH_WEIGHT;
     dates.forEach((dl:DateLabel)=>{
       if (dl.index > earliest) {
         const x = this.getZoomX(dl.index);
         if (dl.index === latest || dl.index < latest - 30) {
-          this.ctx.fillText(dl.label1, x, y1);
-          this.ctx.fillText(dl.label2, x, y2);
+          ctx.fillText(dl.label1, x, y1);
+          ctx.fillText(dl.label2, x, y2);
         }
         if (first) {
           first = false;
           if (withBackground) {
-            this.ctx.font = TREE_TEXT_FONT;
-            this.ctx.fillStyle = TREE_TEXT_COLOR;
+            ctx.font = TREE_TEXT_FONT;
+            ctx.fillStyle = TREE_TEXT_COLOR;
           }
         }
       }
