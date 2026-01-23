@@ -171,7 +171,6 @@ export class MccTreeCanvas {
         const {width, height} = resizeCanvas(canvas);
         this.width = width;
         this.height = height;
-        console.log(`sizing canvas height to ${this.height}`)
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'top';
         this.ctx.font = TREE_TEXT_FONT;
@@ -423,7 +422,7 @@ export class MccTreeCanvas {
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
     entries.forEach((entry, i)=>{
-      console.log(entry)
+      // console.log(entry)
       const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
       if (scale == DateScale.year) {
         //
@@ -719,8 +718,6 @@ export class MccTreeCanvas {
       const LOW_CONFIDENCE_COLOR = getCSSValue("--tree-branch-c-stroke");
       const HI_CONFIDENCE_WEIGHT = getCSSValue("--tree-branch-a-stroke-weight");
       const LOW_CONFIDENCE_WEIGHT = getCSSValue("--tree-branch-c-stroke-weight");
-
-      console.log(HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR, HI_CONFIDENCE_WEIGHT, LOW_CONFIDENCE_WEIGHT);
 
       for (let index = 0; index < size; index++) {
         let confidence = this.creds[index];

@@ -482,7 +482,7 @@ export type DateIntervalData = {
 
 
 export function getNiceDateInterval(min: number, max: number): DateIntervalData {
-  console.log(`getNiceDateInterval(${toDateString(min)}, ${toDateString(max)})`)
+  // console.log(`getNiceDateInterval(${toDateString(min)}, ${toDateString(max)})`)
   const range = max - min;
   const daysPerTick = range / TARGET_NUM_TICKS;
   let scaleFunction = addDays;
