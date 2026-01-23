@@ -123,9 +123,10 @@ export class NodeTimelines {
   }
 
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
+  highlightNode(node: DisplayNode, dateIndex: number) : void {
     if (!this.data) return;
     if (node === this.highlighedtNode) return;
+    console.log(`nodePrevalenceChart.highlightNode does not handle dates yet ${dateIndex}`);
     nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
 
     this.nodeTimesCanvas.setMatching(node);

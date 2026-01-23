@@ -1,4 +1,5 @@
 import { getMutationName, NUC_LOOKUP } from "../../constants";
+import { Mutation } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNode, nfc, UNSET } from "../common";
@@ -271,7 +272,8 @@ export class NodeSchematic {
   }
 
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
+  highlightNode(node: DisplayNode, mutation: Mutation|null) : void {
+    console.log(`nodePairMutations.highlightNode does not handle mutations yet`, mutation);
     if (node !== this.highlightedNode) {
       this.highlightedNode = node;
       this.draw();

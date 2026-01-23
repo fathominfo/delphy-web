@@ -3,6 +3,7 @@ import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName 
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
+import { Mutation } from '../../pythia/delphy_api';
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -296,8 +297,9 @@ export class NodeMutations {
     return this.charts;
   }
 
-  highlightNode(node: DisplayNode) {
+  highlightNode(node: DisplayNode, dateIndex: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
+    console.log(`nodePairMutations.highlightNode does not handle date or mutations yet ${dateIndex}`, mutation);
     this.charts.forEach(chart=>{
       chart.highlightNode(node);
       chart.highlightNode(node);

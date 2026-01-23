@@ -748,6 +748,9 @@ export class MccTreeCanvas {
     this.colorsUnSet = false;
   }
 
+  setHoverDate(dateIndex:number) {
+    console.log('mccTreeCanvas.setHoverDate not yet implemented', dateIndex);
+  }
 
   setNodeColor(index:number, ctx:CanvasRenderingContext2D):void {
     (ctx || this.ctx).fillStyle = this.nodeColors[index];

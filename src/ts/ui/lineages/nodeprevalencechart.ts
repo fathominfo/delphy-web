@@ -227,7 +227,8 @@ export class NodePrevalenceChart {
   }
 
 
-  highlightNode(node: DisplayNode) : void {
+  highlightNode(node: DisplayNode, dateIndex:number) : void {
+    console.log(`nodePrevalenceChart.highlightNode does not handle dates yet ${dateIndex}`);
     requestAnimationFrame(()=>{
       if (node === UNSET) {
         this.svgMeanGroups.forEach((group)=>{
