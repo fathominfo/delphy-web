@@ -33,7 +33,7 @@ export class SVGPrevalenceMeanGroup {
 
 export class NodePrevalenceChart {
   hoverDateIndex: number = UNSET;
-  highlightSeriesIndex: number = UNSET;
+  highlightDisplayNode: DisplayNode = UNSET;
   nodeHighlightCallback: NodeCallback;
   nodes: NodeDisplay[];
   svg: SVGElement;
@@ -182,50 +182,39 @@ export class NodePrevalenceChart {
 
   handleMousemove = (e: MouseEvent) => {
     e.preventDefault();
+    const actualTarget = e.target as SVGPathElement; // either .shape or .trend
+    const group = actualTarget.parentNode as SVGGElement;
+    let displayNode: DisplayNode = DisplayNode.UNSET;
+    if (group.classList.contains("root")) {
+      displayNode = DisplayNode.root;
+    } else if (group.classList.contains("mrca")) {
+      displayNode = DisplayNode.mrca;
+    } else if (group.classList.contains("nodeA")) {
+      displayNode = DisplayNode.nodeA;
+    } else if (group.classList.contains("nodeB")) {
+      displayNode = DisplayNode.nodeB;
+    }
+
     const hoverX = e.offsetX,
-      hoverY = e.offsetY / this.height,
       dateCount = Math.floor(this.maxDate - this.minDate + 1),
       dateIndex = Math.floor(hoverX / this.width * dateCount);
-    let seriesIndex = UNSET;
-    let toRequest = false;
-
-    if (dateIndex >= 0 && dateIndex <= this.binCount) {
-      for (let i = 0; i < this.seriesCount; i++) {
-        const upperY = i === 0 ? 0 : this.averageYPositions[i - 1][this.hoverDateIndex],
-          lowerY = this.averageYPositions[i][this.hoverDateIndex];
-        if (hoverY >= upperY && hoverY < lowerY) {
-          seriesIndex = i;
-        }
-      }
-    }
 
     if (dateIndex !== this.hoverDateIndex) {
       this.hoverDateIndex = dateIndex;
-      toRequest = true;
     }
 
-    if (seriesIndex !== this.highlightSeriesIndex) {
-      this.highlightSeriesIndex = seriesIndex;
-
-
-
-      const displayNodes = this.nodes.map(nd => nd.type);
-      const displayNode = displayNodes[seriesIndex];
+    if (displayNode !== this.highlightDisplayNode) {
+      this.highlightDisplayNode = displayNode;
       this.nodeHighlightCallback(displayNode);
-
-      toRequest = true;
     }
 
-    if (toRequest) {
-      this.requestDraw();
-    }
 
   }
 
   handleMouseout = () => {
     if (this.hoverDateIndex !== UNSET) {
       this.hoverDateIndex = UNSET;
-      this.highlightSeriesIndex = UNSET;
+      this.highlightDisplayNode = UNSET;
       this.requestDraw();
     }
     this.nodeHighlightCallback(UNSET);

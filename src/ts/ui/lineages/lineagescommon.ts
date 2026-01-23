@@ -162,7 +162,7 @@ export type NodeComparisonData = {
 }
 
 
-export type NodeCallback = (node:DisplayNode | typeof UNSET)=>void;
+export type NodeCallback = (node:DisplayNode)=>void;
 export type DismissCallback = (node:DisplayNode)=>void;
 export type HoverCallback = (node: DisplayNode)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
