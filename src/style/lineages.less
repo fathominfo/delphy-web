@@ -796,7 +796,14 @@ details {
   margin-right: var(--subway-margin-right);
   transform: translateY(var(--subway-offset-y));
 
-  &[data-config="root"], &[data-config="a"], &[data-config="b"],
+  &[data-config="root"], &[data-config="a"], &[data-config="b"] {
+    .upper, .lower {display: none;}
+    .line2 {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
   &[data-config="a2b"], &[data-config="b2a"] {
     .upper, .lower {display: none;}
   }
@@ -1783,6 +1790,9 @@ details {
     line { stroke: var(--mrca-timeline-stroke); }
     .lineages--node-comparison--mutation-name {
       color: var(--mrca-mutation-text);
+      .site {
+        color : var(--mrca-position-text);
+      }
     }
   }
 
@@ -1791,6 +1801,9 @@ details {
     line { stroke: var(--a-timeline-stroke); }
     .lineages--node-comparison--mutation-name {
       color: var(--a-mutation-text);
+      .site {
+        color : var(--a-position-text);
+      }
     }
   }
 
@@ -1799,6 +1812,9 @@ details {
     line { stroke: var(--b-timeline-stroke); }
     .lineages--node-comparison--mutation-name {
       color: var(--b-mutation-text);
+      .site {
+        color : var(--b-position-text);
+      }
     }
   }
 
