@@ -1,6 +1,6 @@
 import {Distribution} from './distribution';
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
-import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, DisplayNode, UNSET, constrain, getPercentLabel, measureText, nodeTypeNames, resizeCanvas} from './common';
+import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
 import { noop } from '../constants';
 
 const margin = {
@@ -20,15 +20,10 @@ const LINE_COLOR = 'rgba(156, 156, 156, ';
 
 export class DistributionSeries {
   distribution: Distribution;
-  color: string;
 
-  constructor(times:number[], className: string, color?: string) {
+
+  constructor(times:number[]) {
     this.distribution = new Distribution(times);
-    if (color) {
-      this.color = color;
-    } else {
-      this.color = `${SERIES_COLOR} 1)`;
-    }
   }
 
 
@@ -134,7 +129,8 @@ export class TimeDistributionCanvas {
   drawDistribution(ds: DistributionSeries) {
     const {ctx, drawWidth, xheight, allSeriesBandMax} = this;
     // const {ctx, width, xheight} = this;
-    const {distribution, color} = ds;
+    const {distribution} = ds;
+    const color = '#ccc';
     const {bands, bandwidth, bandTimes, kde} = distribution;
     // const {bands, bandTimes, bandMax, bandwidth, kde} = distribution;
     ctx.fillStyle = color;
@@ -175,7 +171,8 @@ export class TimeDistributionCanvas {
 
   drawCertainty(ds: DistributionSeries) {
     const {ctx, drawWidth, xheight} = this;
-    const {distribution, color} = ds;
+    const {distribution} = ds;
+    const color = "#ccc";
     const {median} = distribution;
     const ogWidth = ctx.lineWidth;
     const dateLabel = toFullDateString(distribution.median);
@@ -214,8 +211,8 @@ export class TimeDistributionCanvas {
 
   labelMedian(ds: DistributionSeries) {
     const {ctx, width, drawWidth, xheight} = this;
-    const {distribution, color} = ds;
-
+    const {distribution} = ds;
+    const color = "#ccc";
     const index = this.series.indexOf(ds);
     const isCertain = ds.distribution.total === 0;
     const x = this.xFor(distribution.median, drawWidth);
@@ -333,7 +330,8 @@ export class TimeDistributionCanvas {
 
   labelExtents(ds: DistributionSeries) {
     const {ctx} = this;
-    const {distribution, color} = ds;
+    const {distribution} = ds;
+    const color = "#ccc";
 
     ctx.fillStyle = color;
 
@@ -414,7 +412,8 @@ export class TimeDistributionCanvas {
       // dot.classList.remove("hidden");
       // dot.style.top = `${y}px`;
       const DOT_RADIUS = 3;
-      ctx.fillStyle = ds.color;
+      const color = "#ccc";
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(this.hoverX, y, DOT_RADIUS, 0, Math.PI * 2);
       ctx.fill();

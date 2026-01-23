@@ -128,7 +128,7 @@ export class MccUI extends UIScreen {
         if (mccConfig) {
           mccConfig.updateInnerNodeMetadata(summary);
         }
-        this.mccTreeCanvas.positionTreeNodes(summary, nodeConfidence, pythia.getMccIndex());
+        this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence, pythia.getMccIndex());
         requestAnimationFrame(()=>document.body.classList.remove("summarizing"));
         this.requestTreeDraw();
         resolve(summary);

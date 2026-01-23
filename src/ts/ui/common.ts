@@ -77,31 +77,24 @@ export const enum DisplayNode {
   UNSET = -1
 }
 export const nodeTypeNames = ["Root", "MRCA", "A", "B"];
-export const nodeColors = [
-  'rgb(255, 194, 132)',
-  'rgb(194, 129, 253)',
-  'rgb(255, 0, 86)',
-  'rgb(0, 162, 219)'
-];
-export const nodeColorsDark = [
-  'rgb(235, 126, 68)',
-  'rgb(124, 65, 182)',
-  'rgb(173, 0, 34)',
-  'rgb(0, 98, 151)'
-];
-export const nodeColorsStream = [
-  'rgb(235, 126, 68)',
-  'rgb(124, 65, 182)',
-  'rgb(173, 0, 34)',
-  'rgb(0, 98, 151)'
-];
 export const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 
 
 export const getNodeTypeName = (dn: DisplayNode)=>nodeTypeNames[dn];
-export const getNodeColor = (dn:DisplayNode)=>nodeColors[dn];
-export const getNodeColorDark = (dn:DisplayNode)=>nodeColorsDark[dn];
-export const getNodeColorStream= (dn:DisplayNode)=>nodeColorsStream[dn];
+export const getNodeStroke = (dn:DisplayNode)=>{
+  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-stroke`;
+  return getCSSValue(strokeProp);
+};
+export const getNodeFill = (dn:DisplayNode)=>{
+  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-fill`;
+  return getCSSValue(strokeProp);
+};
+export const getNodeTint = (dn:DisplayNode)=>{
+  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-tint`;
+  return getCSSValue(strokeProp);
+};
+// export const getNodeColorDark = (dn:DisplayNode)=>nodeColorsDark[dn];
+// export const getNodeColorStream = (dn:DisplayNode)=>nodeColorsStream[dn];
 export const getNodeClassName = (dn: DisplayNode)=>nodeClassNames[dn];
 
 
@@ -667,3 +660,12 @@ export const getDateLabel = (tokens: [number, number, number]): string => {
   return `${date}`;
 }
 
+
+
+/* access css variables to get declared colors */
+const root = document.querySelector(":root") as HTMLBodyElement,
+  rootStyle = window.getComputedStyle(root) as CSSStyleDeclaration;
+
+export const getCSSValue = (property: string) : string =>{
+  return rootStyle.getPropertyValue(property);
+}

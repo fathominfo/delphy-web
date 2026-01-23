@@ -34,8 +34,8 @@ Extensions to the classes that make up a TimeDistributionChart
 export class NodeDistributionSeries extends DistributionSeries {
   nodeType: DisplayNode;
 
-  constructor(type: DisplayNode, times: number[], className: string, color?: string) {
-    super(times, className, color);
+  constructor(type: DisplayNode, times: number[]) {
+    super(times);
     this.nodeType = type;
   }
 }

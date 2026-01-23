@@ -1,7 +1,7 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { NodePair, NodeComparisonData, getAncestorType, getDescendantType, NodeCallback } from './lineagescommon';
+import { NodePair, NodeComparisonData, getAncestorType, getDescendantType } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getPercentLabel, getNodeTypeName, getNodeColorDark, UNSET, getNodeClassName } from '../common';
+import { DisplayNode, getPercentLabel, UNSET } from '../common';
 import { DistributionSeries } from '../timedistributioncanvas';
 
 
@@ -25,7 +25,7 @@ export class MutationTimelineData {
     this.nameParts = getMutationNameParts(mutation.mutation);
     this.name = getMutationName(mutation.mutation);
     this.className = "mutation";
-    this.series = new DistributionSeries(mutation.times, this.className);
+    this.series = new DistributionSeries(mutation.times);
     this.isApobecRun = isApobecRun;
   }
 
@@ -64,11 +64,8 @@ export class NodeComparisonChartData {
     this.setMutations(isApobecRun);
 
     const createSeries = (dn: DisplayNode, i: number) => {
-      const typeName = getNodeTypeName(dn);
       const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
-      const className = getNodeClassName(dn);
-      const color = getNodeColorDark(dn);
-      const ds = new DistributionSeries(times, className, color);
+      const ds = new DistributionSeries(times);
       return ds;
     }
     if (this.descendantType === UNSET) {

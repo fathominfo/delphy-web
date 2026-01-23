@@ -1,6 +1,6 @@
 import { getMutationNameParts } from "../../constants";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
-import { DisplayNode, resizeCanvas, getNodeColor, UNSET } from "../common";
+import { DisplayNode, resizeCanvas, getNodeStroke, UNSET } from "../common";
 import { NodeCallback, NodeComparisonData } from "./lineagescommon";
 import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
@@ -18,8 +18,8 @@ type XYCoord = [number, number];
 const rad = 5;
 
 const NODE_FILLS: string[] = [];
-NODE_FILLS[DisplayNode.root] = getNodeColor(DisplayNode.root);
-NODE_FILLS[DisplayNode.mrca] = getNodeColor(DisplayNode.mrca);
+NODE_FILLS[DisplayNode.root] = getNodeStroke(DisplayNode.root);
+NODE_FILLS[DisplayNode.mrca] = getNodeStroke(DisplayNode.mrca);
 NODE_FILLS[DisplayNode.nodeA] = "#ffffff";
 NODE_FILLS[DisplayNode.nodeB] = "#ffffff";
 
@@ -263,7 +263,7 @@ export class NodeRelationChart {
         [x, y] = this.nodePos[nodeType],
         mutations = this.mutationLists[nodeType];
       ctx.fillStyle = NODE_FILLS[nodeType];
-      ctx.strokeStyle = getNodeColor(nodeType);
+      ctx.strokeStyle = getNodeStroke(nodeType);
       if (this.highlightedNode === UNSET || nodeType === this.highlightedNode) {
         ctx.globalAlpha = 1;
       } else {

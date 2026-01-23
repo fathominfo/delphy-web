@@ -32,3 +32,5 @@ release/*
 public/assets/revision.json
 public/assets/fonts/MD*
 # *.zip
+
+notes

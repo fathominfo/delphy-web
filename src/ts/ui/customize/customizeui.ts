@@ -120,7 +120,7 @@ export class CustomizeUI extends MccUI {
         imgTreeCanvas.setConfig(mccConfig);
         mccConfig.updateInnerNodeMetadata(tree);
       }
-      imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getMccIndex());
+      imgTreeCanvas.setTreeNodes(tree, conf, this.pythia?.getMccIndex());
       // const mcccc = this.mccTreeCanvas.canvas;
       // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
       imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices);
@@ -160,7 +160,7 @@ export class CustomizeUI extends MccUI {
           imgTreeCanvas.setConfig(mccConfig);
           mccConfig.updateInnerNodeMetadata(tree);
         }
-        imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getMccIndex());
+        imgTreeCanvas.setTreeNodes(tree, conf, this.pythia?.getMccIndex());
         // const mcccc = this.mccTreeCanvas.canvas;
         // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
         imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices, canvas);

@@ -9,6 +9,15 @@
   font-feature-settings: 'liga' 1, 'calt' 1;
 }
 
+
+
+/* to be available to js, css vars using `calc` need to be declared as properties */
+@property --tree-branch-c-stroke-weight {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0.65px
+}
+
 :root {
 
   --scalar: 4 / 3;
@@ -124,7 +133,7 @@
   --date-line-inset: calc(var(--control-size) / 2);
   --date-line-height: calc(100% - var(--date-line-inset));
   --date-marker-line-height: calc(var(--unit) / 2);
-  --tree-branch-a-stroke-weight: 0.3%;
+  --tree-branch-a-stroke-weight: 1px;
   --tree-branch-b-stroke-weight: var(--tree-branch-a-stroke-weight);
   --tree-branch-c-stroke-weight: calc(var(--tree-branch-a-stroke-weight) * (2 / 3));
   --tree-branch-d-stroke-weight: calc(var(--tree-branch-a-stroke-weight) * (1 / 2));
@@ -745,6 +754,7 @@
   --lineages-svg-tree-element-unmatching-opacity: 0.15;
   --lineages-svg-tree-sibling-unmatching-opacity: 0.3;
   --lineages-svg-tree-sibling-matching-opacity: 1;
+  --lineages-tree-descent-stroke-weight: 2;
   --lineages-prevalence-group-unmatching-opacity: 0.3;
   --lineages-emergence-group-unmatching-opacity: 0.3;
   --lineages-list-unmatching-opacity: 0.5;
@@ -784,6 +794,10 @@
   --tabular-numerals-tighter-spacing-4x: -0.05000rem;
 
 }
+
+
+
+
 
 /* SKELETON */
 

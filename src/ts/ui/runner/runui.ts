@@ -587,7 +587,7 @@ export class RunUI extends UIScreen {
       const mccTree = mccRef.getMcc(),
         nodeConfidence = mccRef.getNodeConfidence();
       if (mccTree !== this.mccTreeCanvas.tree) {
-        this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+        this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
         this.sharedState.resetSelections();
       }
       const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
