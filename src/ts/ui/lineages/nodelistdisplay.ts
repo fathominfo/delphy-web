@@ -334,8 +334,8 @@ export class NodeListDisplay {
       dismiss.addEventListener('click', ()=>this.dismissCallback(node));
     }
     const bindDiv = (div: HTMLDivElement, node: DisplayNode) => {
-      div.addEventListener('pointerenter', () => nodeHighlightCallback(node));
-      div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET));
+      div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
+      div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
     }
     // const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
     //   const icon = div.querySelector(".node-icon") as HTMLDivElement;
@@ -354,7 +354,7 @@ export class NodeListDisplay {
     bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
     bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
     bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
-    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>this.nodeHighlightCallback(UNSET));
+    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>this.nodeHighlightCallback(UNSET, UNSET, null));
 
   }
 

@@ -105,7 +105,9 @@ export class LineagesUI extends MccUI {
   nodeMutationCharts: NodeMutations;
 
 
-  highlightNode: DisplayNode | typeof UNSET;
+  highlightNode: DisplayNode;
+  highlightDate: number;
+  highlightMutation: Mutation | null;
 
   canvasDownHandler: (event:MouseEvent)=>void; // eslint-disable-line no-unused-vars
   canvasMoveHandler: (event:MouseEvent)=>void; // eslint-disable-line no-unused-vars
@@ -132,7 +134,7 @@ export class LineagesUI extends MccUI {
     super(sharedState, divSelector, "#lineages .tree-canvas");
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
-    const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
+    const nodeHighlightCallback: NodeCallback = (node, dateIndex, mutation)=>this.handleNodeHighlight(node, dateIndex, mutation);
     // this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
@@ -254,6 +256,8 @@ export class LineagesUI extends MccUI {
     this.nodeChildCount = [];
     this.prevMcc = null;
     this.highlightNode = UNSET;
+    this.highlightDate = UNSET;
+    this.highlightMutation = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
 
     this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
@@ -493,7 +497,7 @@ export class LineagesUI extends MccUI {
       }
       default: break;
       }
-      this.handleNodeHighlight(displayNode);
+      this.handleNodeHighlight(displayNode, UNSET, null);
       this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
     } else if (nodeAIndex !== UNSET && nodeBIndex !== UNSET ) {
       /* if both the settable nodes are locked, then skip */
@@ -624,7 +628,7 @@ export class LineagesUI extends MccUI {
   }
 
   exitCallback():void {
-    this.handleNodeHighlight(UNSET);
+    this.handleNodeHighlight(UNSET, UNSET, null);
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
     this.setChartData(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
   }
@@ -921,7 +925,7 @@ export class LineagesUI extends MccUI {
     this.nodeSchematic.highlightNode(node);
   }
 
-  handleNodeHighlight(node: DisplayNode | typeof UNSET) : void {
+  handleNodeHighlight(node: DisplayNode, dateIndex: number = UNSET, mutation: Mutation|null) : void {
     // console.log(`handleNodeHighlight(${node})`);
     if (node === this.highlightNode) {
       // no need to check again

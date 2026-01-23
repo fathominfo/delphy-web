@@ -472,7 +472,7 @@ const MONTH_THRESHOLD = 0.5;
 const YEAR_THRESHOLD = 0.5;
 /*
 this may need to become dynamic if we allow for charts of different
-widths, but for now it's a constart [mark 260121] */
+widths, but for now it's a constant [mark 260121] */
 const TARGET_NUM_TICKS = 6;
 
 export type DateIntervalData = {

@@ -92,14 +92,14 @@ export class NodeRelationChart {
         const closest = findClosest(e);
         if (closest !== prev) {
           prev = closest;
-          nodeHighlightCallback(closest);
+          nodeHighlightCallback(closest, UNSET, null);
         }
       });
 
       this.canvas.addEventListener('pointerleave', ()=>{
         if (prev !== UNSET) {
           prev = UNSET;
-          nodeHighlightCallback(UNSET);
+          nodeHighlightCallback(UNSET, UNSET, null);
         }
       })
 

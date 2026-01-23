@@ -199,13 +199,19 @@ export class NodePrevalenceChart {
       dateCount = Math.floor(this.maxDate - this.minDate + 1),
       dateIndex = Math.floor(hoverX / this.width * dateCount);
 
+    let requesting = false;
     if (dateIndex !== this.hoverDateIndex) {
       this.hoverDateIndex = dateIndex;
+      requesting = true;
     }
 
     if (displayNode !== this.highlightDisplayNode) {
       this.highlightDisplayNode = displayNode;
-      this.nodeHighlightCallback(displayNode);
+      requesting = true;
+    }
+
+    if (requesting) {
+      this.nodeHighlightCallback(displayNode, dateIndex, null);
     }
 
 
@@ -217,7 +223,7 @@ export class NodePrevalenceChart {
       this.highlightDisplayNode = UNSET;
       this.requestDraw();
     }
-    this.nodeHighlightCallback(UNSET);
+    this.nodeHighlightCallback(UNSET, UNSET, null);
   }
 
 

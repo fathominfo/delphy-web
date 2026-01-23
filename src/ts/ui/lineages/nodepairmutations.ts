@@ -118,17 +118,17 @@ export class NodePairMutationList {
     this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
-      nodeASpan = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
-      nodeBSpan = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
+      ancestorSpan = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
+      descendantSpan = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
       schematic = this.div.querySelector(schematicSelector) as HTMLDivElement;
       // mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
       // mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement;
       // overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement;
-    if (!mutationContainer || !nodeASpan || !nodeBSpan || !schematic) {
+    if (!mutationContainer || !ancestorSpan || !descendantSpan || !schematic) {
       throw new Error("html is missing elements needed for mutation list");
     }
-    this.nodeASpan = nodeASpan;
-    this.nodeBSpan = nodeBSpan;
+    this.nodeASpan = ancestorSpan;
+    this.nodeBSpan = descendantSpan;
     this.schematic = schematic;
     // this.mutationCountSpan = mutationCountSpan;
     // this.mutationThresholdSpan = mutationThresholdSpan;
@@ -170,21 +170,11 @@ export class NodePairMutationList {
     // }
 
 
-    const seriesHoverHandler: HoverCallback = (n: number)=>{
-      if (n === 0) {
-        nodeHighlightCallback(this.data.ancestorType);
-      } else if (n === 1) {
-        nodeHighlightCallback(this.data.descendantType);
-      } else {
-        nodeHighlightCallback(UNSET);
-      }
-    };
 
-
-    nodeASpan.addEventListener("mouseenter", () => seriesHoverHandler(0));
-    nodeASpan.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
-    nodeBSpan.addEventListener("mouseenter", () => seriesHoverHandler(1));
-    nodeBSpan.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
+    // ancestorSpan.addEventListener("mouseenter", () => nodeHighlightCallback(this.data.ancestorType, UNSET, null));
+    // ancestorSpan.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
+    // descendantSpan.addEventListener("mouseenter", () => nodeHighlightCallback(this.data.descendantType, UNSET, null));
+    // descendantSpan.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
 
     nodeComparisonContainer.appendChild(this.div);
     this.setMutations();

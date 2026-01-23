@@ -33,26 +33,26 @@ export class NodeTimelines {
       if (series) {
         nodeType = (series as NodeDistributionSeries).nodeType;
       }
-      nodeHighlightCallback(nodeType);
+      nodeHighlightCallback(nodeType, UNSET, null);
     };
 
     this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
 
     [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
       rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET));
+      span.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
     });
     [ rootSpan, rootDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.root));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.root, UNSET, null));
     });
     [ mrcaSpan, mrcaDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca, UNSET, null));
     });
     [ nodeASpan, nodeADateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeA));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeA, UNSET, null));
     });
     [ nodeBSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeB));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeB, UNSET, null));
     });
   }
 
