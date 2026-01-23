@@ -1062,6 +1062,26 @@ details {
   }
 
   .line[data-to="mrca"] {
+    .track      {border-color: var(--mrca-stroke)}
+    .platform      {background-color: var(--mrca-stroke)}
+    .signage      {color: var(--mrca-text)}
+    .terminus.exit       {color: var(--mrca-text)}
+    .passenger      {color: var(--mrca-mutation-text)}
+    .passenger .train      {color: var(--mrca-position-text)}
+    .station {
+      &:hover, &.active {
+        .platform {background-color: var(--mrca-stroke-on)}
+      }
+    }
+    &.unmatching {
+      .track      {border-color: var(--mrca-stroke-off)}
+      .terminus.exit       {color: rgb(from var(--mrca-text) r g b / var(--subway-line-unmatching-opacity))}
+      .transit {
+        .platform      {background-color: var(--mrca-stroke-off)}
+        .station.active .platform      {background-color: var(--mrca-stroke-off)}
+      }
+    }
+
     .terminus.exit    {
       color: var(--mrca-text);
       &.unmatching {
@@ -1368,14 +1388,14 @@ details {
   }
 
 
-  [data-from="root"] {
-    color: var(--root-mutation-text);
-    .header .title h4 {color: var(--root-mutation-text);}
-    .mutation {color: var(--root-mutation-text);}
-    .mutation .site {color: var(--root-position-text);}
-    .range .guide.date.start {background-color: var(--root-timeline-stroke);}
-    .timeline .dummy .dist {fill: var(--root-timeline-fill);}
-    .timeline .dummy .pointer {stroke: var(--root-timeline-stroke);}
+  [data-to="mrca"] {
+    color: var(--mrca-mutation-text);
+    .header .title h4 {color: var(--mrca-mutation-text);}
+    .mutation {color: var(--mrca-mutation-text);}
+    .mutation .site {color: var(--mrca-position-text);}
+    .range .guide.date.start {background-color: var(--mrca-timeline-stroke);}
+    .timeline .dummy .dist {fill: var(--mrca-timeline-fill);}
+    .timeline .dummy .pointer {stroke: var(--mrca-timeline-stroke);}
   }
 
   [data-to="a"] {
@@ -1595,8 +1615,8 @@ details {
         .point.to {top: 100%}
       }
 
-      .segment[data-from="root"] {
-        .trail {border-color: var(--root-stroke);}
+      .segment[data-to="mrca"] {
+        .trail {border-color: var(--mrca-stroke);}
         .point {background-color: var(--root-stroke)}
       }
       .segment[data-to="a"] {
@@ -1612,9 +1632,9 @@ details {
 
 
 
-  &[data-from="root"] .schematic .segment[data-from="root"] .point.to {
-    background-color: var(--root-fill);
-    border-color: var(--root-stroke);
+  &[data-to="mrca"] .schematic .segment[data-to="mrca"] .point.to {
+    background-color: var(--mrca-fill);
+    border-color: var(--mrca-stroke);
   }
 
   &[data-to="mrca"] .schematic .segment[data-to="mrca"] {
@@ -1622,7 +1642,7 @@ details {
       width: var(--schematic-point-size-on);
       height: var(--schematic-point-size-on);
       border-radius: var(--schematic-point-size-on);
-      background-color: var(--root-stroke);
+      background-color: var(--mrca-stroke);
       border: none;
     }
   }
@@ -1759,10 +1779,10 @@ details {
   */
 
   .lineages--track-mutations[data-to="mrca"] {
-    path { fill: var(--root-timeline-fill); }
-    line { stroke: var(--root-timeline-stroke); }
+    path { fill: var(--mrca-timeline-fill); }
+    line { stroke: var(--mrca-timeline-stroke); }
     .lineages--node-comparison--mutation-name {
-      color: var(--root-mutation-text);
+      color: var(--mrca-mutation-text);
     }
   }
 

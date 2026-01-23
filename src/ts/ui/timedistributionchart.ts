@@ -98,7 +98,7 @@ export class TimeDistributionChart {
     this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
     this.svg.innerHTML = '';
     this.series.forEach(()=>{
-      const group = new this.groupType(this.svg);
+      const group = new this.groupType(this.svg); // eslint-disable-line new-cap
       this.svgGroups.push(group);
     });
 
