@@ -1,6 +1,7 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode, getNodeClassName, UNSET } from '../common';
+import { Distribution } from '../distribution';
 import { DistributionSeries } from '../timedistributioncanvas';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
@@ -31,7 +32,7 @@ Extensions to the classes that make up a TimeDistributionChart
 */
 
 
-export class NodeDistributionSeries extends DistributionSeries {
+export class NodeDistribution extends Distribution {
   nodeType: DisplayNode;
 
   constructor(type: DisplayNode, times: number[]) {
@@ -50,14 +51,14 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
 export class NodeTimeDistributionChart extends TimeDistributionChart {
 
-  setSeries(series: NodeDistributionSeries[]) {
+  setSeries(series: NodeDistribution[]) {
     super.setSeries(series);
     this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
-      const series = this.series[i] as NodeDistributionSeries;
+      const series = this.series[i] as NodeDistribution;
       const className = getNodeClassName(series.nodeType);
       nodeGroup.setNodeClass(className);
-      nodeGroup.setNodeClass("tip", series.distribution.range === 0);
+      nodeGroup.setNodeClass("tip", series.range === 0);
     });
   }
 
@@ -71,7 +72,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     } else {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
-        const series = this.series[i] as NodeDistributionSeries;
+        const series = this.series[i] as NodeDistribution;
         if (series.nodeType === node) {
           nodeGroup.setNodeClass("matching");
           nodeGroup.setNodeClass("unmatching", false);
@@ -99,7 +100,7 @@ export type NodeDisplay = {
   type: DisplayNode,
   className: string,
   times: number[],
-  series: NodeDistributionSeries | null
+  series: NodeDistribution | null
 };
 
 export const getAncestorType = (npt: NodePairType): DisplayNode => {

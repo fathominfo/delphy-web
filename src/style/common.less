@@ -1457,68 +1457,85 @@ building custom inputs on top of native inputs. */
     gap: inherit;
 }
 
+
+
+
+
+
 .timeline {
   width: 100%;
   justify-content: center;
   cursor: default;
+
+  .display {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cal {
+    position: absolute;
+    top: unset;
+    bottom: 0;
+    left: 0;
+    transform: translateX(calc(var(--unit) * 0.5));
+  }
+
+  .label {
+    position: absolute;
+    z-index: 1;
+    top: unset;
+    bottom: 0;
+    left: var(--start-pct);
+    width: auto;
+    height: auto;
+    font-family: var(--Inter);
+    font-weight: 600;
+    font-size: calc(var(--unit) * 0.75);
+    letter-spacing: 0.00625rem;
+    padding: 0;
+    transition: all var(--transition) ease-out;
+
+    &.reference {
+      position: absolute;
+      top: 0;
+      bottom: unset;
+      height: 100%;
+
+      .line {
+        position: relative;
+        top: 0;
+        width: var(--guide-date-stroke-weight);
+        height: 100%;
+        border-radius: var(--guide-date-stroke-weight);
+        background-color: var(--guide-date-stroke);
+        opacity: var(--guide-date-opacity);
+        transform: translateX(-50%);
+      }
+
+      .cal {
+        top: 0;
+        bottom: unset;
+        padding-top: calc(var(--guide-date-stroke-weight) * 2);
+        color: var(--node-position-text);
+      }
+    }
+
+  }
+
 }
 
-.timeline .display {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.timeline canvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
 
 .chart .timeline {
   position: absolute;
   height: 100%;
   align-items: flex-end;
-}
-
-.timeline .label {
-  position: absolute;
-  z-index: 1;
-  top: unset;
-  bottom: 0;
-  left: var(--start-pct);
-  width: auto;
-  height: auto;
-  font-family: var(--Inter);
-  font-weight: 600;
-  font-size: calc(var(--unit) * 0.75);
-  letter-spacing: 0.00625rem;
-  padding: 0;
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
-  transition: all var(--transition) ease-out;
-}
-
-.timeline .cal {
-  position: absolute;
-  top: unset;
-  bottom: 0;
-  left: 0;
-  transform: translateX(calc(var(--unit) * 0.5));
-}
-
-.timeline .label.reference {
-  position: absolute;
-  top: 0;
-  bottom: unset;
-}
-
-.timeline .label.reference .cal {
-  top: 0;
-  bottom: unset;
-  padding-top: calc(var(--guide-date-stroke-weight) * 2);
-  color: var(--node-position-text);
 }
 
 
@@ -1532,9 +1549,6 @@ building custom inputs on top of native inputs. */
 .guide {
   position: absolute;
   mix-blend-mode: multiply;
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
   transition: all var(--transition) ease-out;
 
 

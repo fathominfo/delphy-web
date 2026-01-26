@@ -1,8 +1,11 @@
 import {toDateString} from '../pythia/dates';
-import { UNSET } from './common';
+import { nicenum, UNSET } from './common';
 import { noop } from '../constants';
-import { DistributionSeries, SeriesHoverCallback } from './timedistributioncanvas';
+import { Distribution } from './distribution';
 
+
+
+export type SeriesHoverCallback = (series: Distribution | null)=>void;
 
 const SERIES_GROUP_TEMPLATE = document.querySelector(".series.group") as SVGGElement;
 SERIES_GROUP_TEMPLATE.remove();
@@ -24,7 +27,7 @@ export class SVGSeriesGroup {
 export class TimeDistributionChart {
   svg: SVGElement;
   svgGroups: SVGSeriesGroup[];
-  series: DistributionSeries[];
+  series: Distribution[];
   width: number = UNSET;
   drawWidth: number = UNSET;
   height: number = UNSET;
@@ -44,7 +47,7 @@ export class TimeDistributionChart {
 
   // readout: HTMLElement;
 
-  constructor(series: DistributionSeries[], minDate: number, maxDate: number,
+  constructor(series: Distribution[], minDate: number, maxDate: number,
     svg: SVGElement, hoverCallback: SeriesHoverCallback = noop, groupType = SVGSeriesGroup) {
     this.series = [];
     this.groupType = groupType;
@@ -56,7 +59,7 @@ export class TimeDistributionChart {
     this.drawWidth = 0;
     this.height = 0;
     this.xheight = 0;
-    this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
+    this.allSeriesBandMax = nicenum(Math.max(...this.series.map(distribution=>distribution.bandMax || 0)));
 
     this.svg.addEventListener("mouseover", e=>this.handleMouseover(e));
     this.svg.addEventListener("mousemove", e=>this.handleMousemove(e));
@@ -68,7 +71,7 @@ export class TimeDistributionChart {
     this.hoverSeriesIndex = UNSET;
     this.hoverX = null;
     this.hoverDate = null;
-    const maxMedian = Math.max(...(series.map(ds=>ds?.distribution?.median || minDate)));
+    const maxMedian = Math.max(...(series.map(distribution=>distribution?.median || minDate)));
     this.textOnRight = (maxMedian - minDate) / (maxDate - minDate) < 0.4;
     this.resize();
   }
@@ -92,10 +95,10 @@ export class TimeDistributionChart {
     this.endIndex = Math.floor(maxDate - minDate + 1);
   }
 
-  setSeries(series: DistributionSeries[]) {
+  setSeries(series: Distribution[]) {
     this.series = series;
     this.svgGroups.length = 0;
-    this.allSeriesBandMax = Math.max(...this.series.map(s=>s?.distribution.bandMax || 0));
+    this.allSeriesBandMax = nicenum(Math.max(...this.series.map(distribution=>distribution.bandMax || 0)));
     this.svg.innerHTML = '';
     this.series.forEach(()=>{
       const group = new this.groupType(this.svg); // eslint-disable-line new-cap
@@ -104,9 +107,8 @@ export class TimeDistributionChart {
 
   }
 
-  drawDistribution(ds: DistributionSeries, svg: SVGSeriesGroup) {
+  drawDistribution(distribution: Distribution, svg: SVGSeriesGroup) {
     const {drawWidth, xheight, allSeriesBandMax} = this;
-    const {distribution} = ds;
     const {bands, bandwidth, bandTimes, kde} = distribution;
     let t = bandTimes[0],
       x = this.xFor(t, drawWidth),
@@ -145,9 +147,8 @@ export class TimeDistributionChart {
   }
 
 
-  drawCertainty(ds: DistributionSeries, svg: SVGSeriesGroup) {
+  drawCertainty(distribution: Distribution, svg: SVGSeriesGroup) {
     const {drawWidth, xheight} = this;
-    const {distribution} = ds;
     const {median} = distribution;
     const x = this.xFor(median, drawWidth);
     svg.line.setAttribute("x1", `${x}`);
@@ -164,14 +165,13 @@ export class TimeDistributionChart {
 
   private draw():void {
 
-    this.series.forEach((ds, i)=>{
-      if (!ds) return;
-      const distribution = ds.distribution;
+    this.series.forEach((distribution, i)=>{
+      if (!distribution) return;
       const svg = this.svgGroups[i];
       if (distribution.range > 0) {
-        this.drawDistribution(ds, svg);
+        this.drawDistribution(distribution, svg);
       } else {
-        this.drawCertainty(ds, svg);
+        this.drawCertainty(distribution, svg);
       }
 
     });
@@ -202,11 +202,11 @@ export class TimeDistributionChart {
     const hoverX = e.offsetX;
     const hoverDate = this.xForInverse(hoverX) as number;
     if (!hoverDate) return;
-    let hovered: DistributionSeries | null = null;
+    let hovered: Distribution | null = null;
     let maxValAtX = 0;
-    this.series.forEach((ds:DistributionSeries) => {
+    this.series.forEach((ds:Distribution) => {
       if (!ds) return;
-      const val = ds.distribution.getValueAt(hoverDate);
+      const val = ds.getValueAt(hoverDate);
       if (val > maxValAtX) {
         maxValAtX = Math.max(val, maxValAtX);
         hovered = ds;
@@ -226,9 +226,8 @@ export class TimeDistributionChart {
 
   handleRightClick = (event:Event) => {
     event.preventDefault();
-    const dist: DistributionSeries | undefined = this.series.length === 2 ? this.series[1] : this.series[0];
-    if (dist) {
-      const { distribution } = dist;
+    const distribution: Distribution | undefined = this.series.length === 2 ? this.series[1] : this.series[0];
+    if (distribution) {
       const times = distribution.times;
       const dates = times.map(t=>toDateString(t));
       dates.sort();

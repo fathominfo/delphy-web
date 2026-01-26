@@ -273,7 +273,7 @@ export class NodeSchematic {
 
 
   highlightNode(node: DisplayNode, mutation: Mutation|null) : void {
-    console.log(`nodePairMutations.highlightNode does not handle mutations yet`, mutation);
+    console.log(`nodeSchematic.highlightNode does not handle mutations yet`, mutation);
     if (node !== this.highlightedNode) {
       this.highlightedNode = node;
       this.draw();

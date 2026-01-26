@@ -1,4 +1,4 @@
-import { NodeCallback, HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistributionSeries, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
+import { NodeCallback, HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
@@ -64,8 +64,8 @@ class MutationTimeline {
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, undefined, NodeSVGSeriesGroup);
-    this.timeChart.setSeries([series] as NodeDistributionSeries[]);
-    this.median = data.series.distribution.median;
+    this.timeChart.setSeries([series] as NodeDistribution[]);
+    this.median = data.series.median;
     const dateLabel = toFullDateString(this.median);
     this.dateReadout.textContent = dateLabel;
 

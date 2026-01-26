@@ -14,7 +14,7 @@ import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
 import { SharedState } from '../../sharedstate';
 import { NodePairType, NodePair, NodeComparisonData,
   NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType,
-  NodeDistributionSeries,
+  NodeDistribution,
   OpenMutationPageFncType} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
@@ -623,7 +623,7 @@ export class LineagesUI extends MccUI {
       nodes.forEach(node=>{
         if (node.index >= 0) {
           node.times = pythia.getNodeTimeDistribution(node.index, summaryTree);
-          node.series = new NodeDistributionSeries(node.type, node.times);
+          node.series = new NodeDistribution(node.type, node.times);
         }
       });
       if (nodeAIndex === UNSET && nodeBIndex === UNSET) {

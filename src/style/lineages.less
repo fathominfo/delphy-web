@@ -1242,6 +1242,23 @@ details {
       }
     }
 
+
+    .tracker {
+      position: absolute;
+      top: 0;
+      width: var(--guide-date-stroke-weight);
+      height: 100%;
+      border-radius: var(--guide-date-stroke-weight);
+      background-color: var(--guide-date-stroke);
+      opacity: 0;
+      transform: translateX(-50%);
+
+      &.active {
+        opacity: var(--guide-date-opacity);
+      }
+
+    }
+
     #lineages-nt-root-date-label {color: var(--root-timeline-text)}
     #lineages-nt-mrca-date-label {color: var(--mrca-timeline-text)}
     #lineages-nt-a-date-label    {color: var(--a-timeline-text)}

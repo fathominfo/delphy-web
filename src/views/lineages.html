@@ -308,8 +308,8 @@
               <div class="feature">
                 <div class="y axis">
                   <div class="values">
-                    <span class="value"><span class="text"><span class="val">0%</span> <span class="units">probability</span></span><span class="tick"></span></span>
-                    <span class="value"><span class="text"><span class="val">100%</span> <span class="units">probability</span></span><span class="tick"></span></span>
+                    <span class="value min"><span class="text"><span class="val">0%</span> <span class="units">probability</span></span><span class="tick"></span></span>
+                    <span class="value max"><span class="text"><span class="val">100%</span> <span class="units">probability</span></span><span class="tick"></span></span>
                   </div>
                 </div>
                 <div class="displays">
@@ -317,9 +317,15 @@
                     <div class="timeline">
                       <div class="guide min"></div>
                       <div class="guide max"></div>
-                      <div class="label reference" style="--start-pct: 38.2500%;">
-                        <span class="cal"><span class="year">2020</span></span>
+                      <div class="label reference" >
+                        <div class="line"></div>
+                        <div class="text">
+                          <span class="cal"><span class="year">2020</span></span>
+                        </div>
                       </div>
+
+                      <div class="tracker"></div>
+
                       <div id="lineages-nt-root-date-label" class="label root" data-lineage="root" data-stamp="2019-12-01" style="--start-pct: 22.9268%">
                         <span class="cal"><span class="day">1</span><span>&nbsp;</span><span class="month">Dec</span></span>
                       </div>
@@ -338,29 +344,8 @@
                         <path class="dist" d="" fill="" stroke-width="0"></path>
                         <line class="pointer" x1="-1" y1="-1" x2="-1" y2="-1" fill="none" stroke="#000" stroke-linejoin="round"></line>
                       </g>
-
-
                     </svg>
-                    <!-- Hovered dates -->
-                    <!-- <div class="tracker-dates">
-                      <div class="tracker-date hover reference" style="left: 20.896%;">
-                        <div class="tracker"></div>
-                      </div>
-                    </div>
-                    -->
                   </div>
-
-                  <!--
-                  <div class="guide date reference" style="--start-pct: 38.2500%;"></div>
-                  <div class="range" style="--start-pct: 82.4390%; --width-pct: 0">
-                    <div class="guide date start nl?-mrca nl?-a" ></div>
-                  </div>
-                  <div class="range" style="--start-pct: 99.0244%; --width-pct: 0">
-                    <div class="guide date start nl?-mrca nl?-b" ></div>
-                  </div>
-                  <div class="guide max"></div>
-                  <div class="guide min"></div>
-                  -->
                 </div>
               </div>
               <div class="support">
