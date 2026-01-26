@@ -1561,18 +1561,55 @@ building custom inputs on top of native inputs. */
 
 }
 
-
-.axis-date {
-  .line {
-    height: var(--axis-date-one-line-height);
-  }
-  &.reference .line {
-    width: var(--chart-stroke-weight);
-    height: var(--axis-date-two-line-height);
-  }
+.axis-dates,
+.tracker-dates {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: calc(100% - var(--chart-displays-timeline-inset-x));
 }
 
+.axis-dates {
+  position: relative;
+  height: var(--axis-dates-height);
+}
+
+
+
+.date,
+.axis-date,
+.tracker-date {
+  font-family: var(--Inter-Tight);
+  font-variant-numeric: tabular-nums;
+}
+.date .day,
+.date .year,
+.axis-date .day,
+.axis-date .year,
+.tracker-date .day,
+.tracker-date .year {
+  letter-spacing: var(--tabular-numerals-tighter-spacing-1x);;
+}
+
+
 .axis-date, .tracker-date {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: inherit;
+  align-items: baseline;
+  gap: 0;
+  top: 0;
+  width: min-content;
+  height: 100%;
+  font-weight: var(--date-text-font-weight);
+  font-size: 8px;
+  line-height: 6px;
+  color: var(--date-text);
+  overflow-x: visible;
+  pointer-events: none;
 
   .line {
     position: absolute;
@@ -1581,8 +1618,6 @@ building custom inputs on top of native inputs. */
     width: var(--chart-tick-stroke-weight);
     transform: translate(-50%, calc(var(--chart-stroke-weight) / -2));
     background-color: var(--chart-stroke);
-
-
   }
 
   .text {
@@ -1593,8 +1628,7 @@ building custom inputs on top of native inputs. */
     gap: 0;
     height: var(--axis-date-text-height);
     padding: 0 var(--axis-date-text-inset-x);
-
-    font-weight: 500;
+    transition: opacity var(--axis-transition) ease-out;
   }
 
   .cal, .year {
@@ -1609,6 +1643,72 @@ building custom inputs on top of native inputs. */
   }
 }
 
+
+
+
+.tracker-date {
+  .line {
+    z-index: 1;
+    top: calc(100% + var(--chart-stroke-weight));
+    height: var(--axis-date-two-line-height);
+  }
+  .tracker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--chart-tick-stroke-weight);
+    height: 100%;
+    transform: translateX(-50%);
+    background-color: var(--chart-stroke);
+    mix-blend-mode: multiply;
+  }
+
+  .text {
+    position: absolute;
+    z-index: 0;
+    // top: calc(100% + var(--chart-stroke-weight));
+    top: 100%;
+    letter-spacing: 0;
+  }
+
+  .cal {
+    gap: var(--date-text-gap);
+  }
+
+  &.reference .tracker {
+    opacity: var(--date-reference-line-opacity);
+  }
+}
+
+
+.tracker-dates {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: calc(var(--lineages-prevalence-chart-feature-height) + var(--axis-dates-height));
+  opacity: 0;
+  transition: opacity var(--axis-transition) ease-out;
+  pointer-events: none;
+  &.active {
+    opacity: 1;
+  }
+}
+
+.axis-date {
+  .line {
+    height: var(--axis-date-one-line-height);
+  }
+  &.reference .line {
+    width: var(--chart-stroke-weight);
+    height: var(--axis-date-two-line-height);
+  }
+
+  &.off {
+    .line, .text {
+      opacity: 0;
+    }
+  }
+}
 
 .axis-date .cal {
   font-weight: 500;

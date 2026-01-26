@@ -1,4 +1,5 @@
 import { BaseTreeSeriesType } from '../../constants';
+import { DateTokenIndex, MONTHS_SHORT, toDateTokens } from '../../pythia/dates';
 import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName } from '../common';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { NodeCallback, NodeDisplay } from './lineagescommon';
@@ -7,6 +8,7 @@ const TARGET = 200;
 const TOO_MANY = TARGET * 2;
 
 const STROKE_WIDTH = 2;
+const DATE_LABEL_WIDTH_PX = 35;
 
 export class SVGPrevalenceMeanGroup {
   node: DisplayNode;
@@ -28,6 +30,10 @@ export class SVGPrevalenceMeanGroup {
 }
 
 
+type AxisLabel = {
+  div: HTMLDivElement,
+  left: number
+};
 
 
 
@@ -37,10 +43,13 @@ export class NodePrevalenceChart {
   nodeHighlightCallback: NodeCallback;
   nodes: NodeDisplay[];
   svg: SVGElement;
+  dateHoverContainer: HTMLDivElement;
+  dateHoverDiv: HTMLDivElement;
   svgMeanGroups: SVGPrevalenceMeanGroup[];
   dateAxis: HTMLDivElement;
   referenceDateTemplate: HTMLDivElement;
   dateTemplate: HTMLDivElement;
+  dateAxisEntries: AxisLabel[] = [];
   showingMean = true;
 
   dist: BaseTreeSeriesType = []; // number[][][], tree, series, date
@@ -63,6 +72,8 @@ export class NodePrevalenceChart {
   constructor(nodeHighlightCallback: NodeCallback) {
     const container = document.querySelector("#lineages--prevalence") as HTMLDivElement;
     this.svg = container.querySelector("#lineages--prevalence--chart") as SVGElement;
+    this.dateHoverContainer = container.querySelector(".tracker-dates") as HTMLDivElement;
+    this.dateHoverDiv = this.dateHoverContainer.querySelector(".tracker-date") as HTMLDivElement;
     this.svgMeanGroups = [];
     [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(nodeType=>{
       this.svgMeanGroups[nodeType] = new SVGPrevalenceMeanGroup(nodeType, this.svg);
@@ -228,7 +239,6 @@ export class NodePrevalenceChart {
 
 
   highlightNode(node: DisplayNode, dateIndex:number) : void {
-    console.log(`nodePrevalenceChart.highlightNode does not handle dates yet ${dateIndex}`);
     requestAnimationFrame(()=>{
       if (node === UNSET) {
         this.svgMeanGroups.forEach((group)=>{
@@ -241,6 +251,28 @@ export class NodePrevalenceChart {
           group.toggleClass("unmatching", node !== nodeType);
         });
       }
+      if (dateIndex === UNSET) {
+        this.dateHoverContainer.classList.remove("active");
+      } else {
+        const tokens = toDateTokens(dateIndex);
+        const month = tokens[DateTokenIndex.month];
+        const pct = 100 * dateIndex / (this.maxDate - this.minDate);
+        (this.dateHoverDiv.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
+        (this.dateHoverDiv.querySelector(".year") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;
+        (this.dateHoverDiv.querySelector(".year") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.year]}`;
+        this.dateHoverDiv.style.left = `${pct}%`;
+        this.dateHoverContainer.classList.add("active");
+        // hide overlapping labels
+        const widthInPct = DATE_LABEL_WIDTH_PX / this.width * 100;
+        let isOverlapping = false;
+        this.dateAxisEntries.forEach(({div, left})=>{
+          isOverlapping = left + widthInPct > pct && left < pct + widthInPct;
+          div.classList.toggle("off", isOverlapping);
+        });
+
+
+      }
+
     });
   }
 
@@ -434,6 +466,8 @@ export class NodePrevalenceChart {
   setAxisDates() {
     const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
     this.dateAxis.innerHTML = '';
+    entries.pop(); // don't show the last date here
+    this.dateAxisEntries.length = 0;
     entries.forEach(labelData=>{
       let div: HTMLDivElement;
       let label = '';
@@ -456,8 +490,10 @@ export class NodePrevalenceChart {
         }
       }
       (div.querySelector(".cal .month") as HTMLSpanElement).textContent = label;
-      div.style.left = `${100 * labelData.percent}%`;
+      const left = 100 * labelData.percent;
+      div.style.left = `${left}%`;
       this.dateAxis.appendChild(div);
+      this.dateAxisEntries.push({div, left});
     })
   }
 
