@@ -5,7 +5,7 @@ import { Distribution } from './distribution';
 
 
 
-export type SeriesHoverCallback = (series: Distribution | null)=>void;
+export type SeriesHoverCallback = (series: Distribution | null, dateIndex: number)=>void;
 
 const SERIES_GROUP_TEMPLATE = document.querySelector(".series.group") as SVGGElement;
 SERIES_GROUP_TEMPLATE.remove();
@@ -61,10 +61,10 @@ export class TimeDistributionChart {
     this.xheight = 0;
     this.allSeriesBandMax = nicenum(Math.max(...this.series.map(distribution=>distribution.bandMax || 0)));
 
-    this.svg.addEventListener("mouseover", e=>this.handleMouseover(e));
-    this.svg.addEventListener("mousemove", e=>this.handleMousemove(e));
-    this.svg.addEventListener("mouseout", ()=>this.handleMouseout());
-    this.svg.addEventListener('contextmenu', (event)=>this.handleRightClick(event));
+    this.svg.addEventListener("pointerover", e=>this.handleMouseover(e));
+    this.svg.addEventListener("pointermove", e=>this.handleMousemove(e));
+    this.svg.addEventListener("pointerout", ()=>this.handleMouseout());
+    // this.svg.addEventListener('contextmenu', (event)=>this.handleRightClick(event));
 
 
     this.isHighlighting = false;
@@ -96,6 +96,7 @@ export class TimeDistributionChart {
   }
 
   setSeries(series: Distribution[]) {
+    console.log(series)
     this.series = series;
     this.svgGroups.length = 0;
     this.allSeriesBandMax = nicenum(Math.max(...this.series.map(distribution=>distribution.bandMax || 0)));
@@ -187,11 +188,15 @@ export class TimeDistributionChart {
   }
 
   xForInverse(x: number): number {
+    const firstDate = this.minDate + this.startIndex,
+      dateIndex = this.dateIndexAt(x);
+    return dateIndex + firstDate;
+  }
+
+  dateIndexAt(x: number): number {
     const rescaled = x / this.drawWidth,
-      firstDate = this.minDate + this.startIndex,
-      lastDate = this.minDate + this.endIndex;
-    return rescaled * (lastDate - firstDate) + firstDate;
-    // return rescaled * (this.maxDate - this.minDate) + this.minDate;
+      range = this.maxDate - this.minDate;
+    return rescaled * range;
   }
 
   handleMouseover(e: MouseEvent) {
@@ -200,8 +205,8 @@ export class TimeDistributionChart {
 
   handleMousemove(e: MouseEvent) {
     const hoverX = e.offsetX;
-    const hoverDate = this.xForInverse(hoverX) as number;
-    if (!hoverDate) return;
+    const hoverDate = this.xForInverse(hoverX);
+    const dateIndex = Math.floor(this.dateIndexAt(hoverX));
     let hovered: Distribution | null = null;
     let maxValAtX = 0;
     this.series.forEach((ds:Distribution) => {
@@ -212,7 +217,7 @@ export class TimeDistributionChart {
         hovered = ds;
       }
     });
-    this.hoverCallback(hovered);
+    this.hoverCallback(hovered, dateIndex);
   }
 
   handleMouseout() {
@@ -220,7 +225,7 @@ export class TimeDistributionChart {
     // this.hoverSeriesIndex = UNSET;
     // this.hoverX = null;
     // this.hoverDate = null;
-    this.hoverCallback(null);
+    this.hoverCallback(null, UNSET);
   }
 
 

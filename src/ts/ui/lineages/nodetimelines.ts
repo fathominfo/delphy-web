@@ -36,12 +36,12 @@ export class NodeTimelines {
 
   constructor(nodeHighlightCallback: NodeCallback) {
 
-    const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null)=>{
+    const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, dateIndex: number)=>{
       let nodeType: DisplayNode =  UNSET;
       if (series) {
         nodeType = (series as NodeDistribution).nodeType;
       }
-      nodeHighlightCallback(nodeType, UNSET, null);
+      nodeHighlightCallback(nodeType, dateIndex, null);
     };
 
     this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
@@ -188,6 +188,8 @@ export class NodeTimelines {
       }
       this.highlighedtNode = node;
     }
+
+    console.log(`dateIndex ${dateIndex}`)
 
     if (dateIndex !== this.highlightedDate) {
       this.highlightedDate = dateIndex;

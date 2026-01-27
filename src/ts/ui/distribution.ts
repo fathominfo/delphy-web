@@ -88,6 +88,7 @@ export class Distribution {
             proxToMedian = dMedian;
           }
         }
+        if (this.range === 0) this.bandMax = 100;
         this.median = medianDate;
       }
       catch(err) {
