@@ -342,6 +342,7 @@ canvas {
     box-sizing: border-box;
     pointer-events: none;
     margin: 0 20px;
+    z-index: 1;
 
     .date {
       position: absolute;
@@ -404,6 +405,15 @@ canvas {
         .text {
           color: var(--date-reference-text);
         }
+        &.off {
+          .text {
+            opacity: 0;
+          }
+        }
+      }
+
+      &.hover {
+        .line { height: var(--date-line-height); }
       }
 
       &.marker {

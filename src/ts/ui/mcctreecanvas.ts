@@ -11,7 +11,10 @@ import {
   getNiceDateInterval,
   DateScale,
   DATE_TEMPLATE,
-  getCSSValue} from './common';
+  getCSSValue,
+  setDateLabel,
+  DATE_LABEL_WIDTH_PX,
+  AxisLabel} from './common';
 import { getTipCounts } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
 import { Context2d } from "jspdf";
@@ -102,6 +105,8 @@ export class MccTreeCanvas {
   horizontalZoom: number;
   zoomCenterX: number;
   drawBranch: DrawBranchFnc;
+  dateHoverDiv: HTMLDivElement | null;
+  dateAxisEntries: AxisLabel[] = [];
 
   minOpacity: number;
   maxOpacity: number;
@@ -144,6 +149,7 @@ export class MccTreeCanvas {
     this.zoomCenterY = 0.5;
     this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
+    this.dateHoverDiv = null;
 
     this.minOpacity = 0.1;
     this.maxOpacity = 1.0;
@@ -421,22 +427,23 @@ export class MccTreeCanvas {
     const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
+    this.dateAxisEntries.length = 0;
     entries.forEach((entry, i)=>{
-      // console.log(entry)
-      const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
       if (scale == DateScale.year) {
         //
       } else {
         if (entry.isNewYear || i === lastIndex) {
+          const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
           (div.querySelector(".cal .month") as HTMLSpanElement).textContent = entry.monthLabel;
           (div.querySelector(".cal .day") as HTMLSpanElement).textContent = entry.dateLabel;
           (div.querySelector(".year") as HTMLSpanElement).textContent = entry.yearLabel;
           div.classList.add("reference")
+          const left = this.getZoomX(entry.date);
+          div.style.left = `${left}px`;
+          this.dateAxis.appendChild(div);
+          this.dateAxisEntries.push({div, left})
         }
       }
-      const x = this.getZoomX(entry.date);
-      div.style.left = `${x}px`;
-      this.dateAxis.appendChild(div);
     })
   }
 
@@ -749,7 +756,29 @@ export class MccTreeCanvas {
   }
 
   setHoverDate(dateIndex:number) {
-    console.log('mccTreeCanvas.setHoverDate not yet implemented', dateIndex);
+    const date = dateIndex + this.minDate;
+    const x = this.getZoomX(date);
+    if (dateIndex === UNSET) {
+      if (this.dateHoverDiv !== null) {
+        this.dateHoverDiv.classList.remove("active");
+      }
+    } else {
+      if (this.dateHoverDiv === null) {
+        this.dateHoverDiv = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
+        this.dateAxis.appendChild(this.dateHoverDiv);
+        this.dateHoverDiv.classList.add("hover");
+      }
+      setDateLabel(date, this.dateHoverDiv);
+      this.dateHoverDiv.classList.add("active");
+      this.dateHoverDiv.style.left = `${x}px`;
+      // hide overlapping labels
+      let isOverlapping = false;
+      this.dateAxisEntries.forEach(({div, left})=>{
+        isOverlapping = left + DATE_LABEL_WIDTH_PX > x && left < x + DATE_LABEL_WIDTH_PX;
+        div.classList.toggle("off", isOverlapping);
+      });
+    }
+
   }
 
   setNodeColor(index:number, ctx:CanvasRenderingContext2D):void {

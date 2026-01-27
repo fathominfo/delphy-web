@@ -1,6 +1,6 @@
 import { BaseTreeSeriesType } from '../../constants';
-import { DateTokenIndex, MONTHS_SHORT, toDateTokens } from '../../pythia/dates';
-import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName } from '../common';
+import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName,
+  setDateLabel, DATE_LABEL_WIDTH_PX, AxisLabel } from '../common';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { NodeCallback, NodeDisplay } from './lineagescommon';
 
@@ -8,7 +8,7 @@ const TARGET = 200;
 const TOO_MANY = TARGET * 2;
 
 const STROKE_WIDTH = 2;
-const DATE_LABEL_WIDTH_PX = 35;
+
 
 export class SVGPrevalenceMeanGroup {
   node: DisplayNode;
@@ -28,12 +28,6 @@ export class SVGPrevalenceMeanGroup {
     this.g.classList.toggle(className, on);
   }
 }
-
-
-type AxisLabel = {
-  div: HTMLDivElement,
-  left: number
-};
 
 
 
@@ -254,12 +248,8 @@ export class NodePrevalenceChart {
       if (dateIndex === UNSET) {
         this.dateHoverContainer.classList.remove("active");
       } else {
-        const tokens = toDateTokens(dateIndex);
-        const month = tokens[DateTokenIndex.month];
+        setDateLabel(dateIndex, this.dateHoverDiv);
         const pct = 100 * dateIndex / (this.maxDate - this.minDate);
-        (this.dateHoverDiv.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
-        (this.dateHoverDiv.querySelector(".year") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;
-        (this.dateHoverDiv.querySelector(".year") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.year]}`;
         this.dateHoverDiv.style.left = `${pct}%`;
         this.dateHoverContainer.classList.add("active");
         // hide overlapping labels

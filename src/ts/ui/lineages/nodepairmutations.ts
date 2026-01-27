@@ -1,9 +1,11 @@
-import { NodeCallback, HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
+import { NodeCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
+import { SeriesHoverCallback } from '../timedistributionchart';
+import { Distribution } from '../distribution';
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -37,7 +39,8 @@ class MutationTimeline {
   dateReadout: HTMLDivElement;
   median: number;
 
-  constructor(data: MutationTimelineData, minDate: number, maxDate: number, goToMutations: OpenMutationPageFncType) {
+  constructor(data: MutationTimelineData, minDate: number, maxDate: number,
+    goToMutations: OpenMutationPageFncType, hoverCallback: SeriesHoverCallback) {
     this.data = data;
     const {mutation} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
@@ -63,7 +66,7 @@ class MutationTimeline {
     });
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
-    this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, undefined, NodeSVGSeriesGroup);
+    this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series] as NodeDistribution[]);
     this.median = data.series.median;
     const dateLabel = toFullDateString(this.median);
@@ -194,7 +197,10 @@ export class NodePairMutationList {
   setMutations():void {
     const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
-      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations);
+      const seriesCallback = (_series: Distribution | null, dateIndex: number)=>{
+        this.nodeHighlightCallback(UNSET, dateIndex, md.mutation.mutation);
+      };
+      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);
       mt.appendTo(this.mutationContainer);
       return mt;
     });
@@ -213,14 +219,22 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
+  highlightNode(node: DisplayNode, dateIndex: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
     if (node === UNSET) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
-    } else if (node === this.data.ancestorType || node === this.data.descendantType) {
+    } else if (node === this.data.descendantType) {
       classList.add(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
+      this.mutationTimelines.forEach(mt=>{
+        if (mt.data.mutation.mutation === mutation) {
+          console.log(`
+            match found
+            
+            `)
+        }
+      });
     } else {
       classList.remove(MATCH_CLASS);
       classList.add(NO_MATCH_CLASS);
@@ -301,8 +315,7 @@ export class NodeMutations {
     // console.log(`highlight ${node} `);
     console.log(`nodePairMutations.highlightNode does not handle date or mutations yet ${dateIndex}`, mutation);
     this.charts.forEach(chart=>{
-      chart.highlightNode(node);
-      chart.highlightNode(node);
+      chart.highlightNode(node, dateIndex, mutation);
     });
 
   }

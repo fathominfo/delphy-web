@@ -669,3 +669,19 @@ const root = document.querySelector(":root") as HTMLBodyElement,
 export const getCSSValue = (property: string) : string =>{
   return rootStyle.getPropertyValue(property);
 }
+
+export const DATE_LABEL_WIDTH_PX = 35;
+export type AxisLabel = {
+  div: HTMLDivElement,
+  left: number
+};
+
+
+
+export const setDateLabel = (dateIndex: number, div: HTMLDivElement)=>{
+  const tokens = toDateTokens(dateIndex);
+  const month = tokens[DateTokenIndex.month];
+  (div.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
+  (div.querySelector(".month") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;
+  (div.querySelector(".year") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.year]}`;
+}
