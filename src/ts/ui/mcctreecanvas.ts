@@ -496,9 +496,31 @@ export class MccTreeCanvas {
       maxOffset = zoomedWidth - width,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      pct =  (this.maxDate - t) / (this.maxDate - this.minDate);
-    return right - (pct * zoomedWidth - offset);
+      pct =  (this.maxDate - t) / (this.maxDate - this.minDate),
+      x = right - (pct * zoomedWidth - offset)
+    return x;
   }
+
+  getZoomDate(x: number) : number {
+    let t = UNSET;
+    const right = this.width - TREE_PADDING_RIGHT - 0.5,
+      width = right - TREE_PADDING_LEFT,
+      zoomedWidth = this.horizontalZoom * width,
+      unzoomedCenter = width * 0.5,
+      zoomCenter = this.zoomCenterX * zoomedWidth,
+      /*
+      constrain the offset so we don't have empty space at the top or bottom,
+      where does this offset put the bottom of the zoomed tree?
+      */
+      maxOffset = zoomedWidth - width,
+      minOffset = 0,
+      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
+      pct = (right - x + offset) / zoomedWidth;
+    t = this.maxDate - pct * (this.maxDate - this.minDate);
+    // console.log(x, this.minDate, t, this.maxDate);
+    return t;
+  }
+
 
   zoomToTips(tips: number[]) : void {
     const height = this.height - this.paddingBottom - this.paddingTop;
