@@ -2,11 +2,7 @@ import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { Pythia } from '../../pythia/pythia';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { MccUI } from '../mccui';
-import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
-  TREE_PADDING_BOTTOM,
-  TREE_PADDING_LEFT,
-  TREE_PADDING_RIGHT,
-  TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_PADDING_TOP, UNSET,
+import { DataResolveType, DisplayNode, Screens, UNSET,
   getNodeStroke, getNodeTypeName, getNodeClassName,
   getNodeFill,
   getCSSValue,
@@ -799,7 +795,7 @@ export class LineagesUI extends MccUI {
       in the prevalence chart
       */
       const prevalenceNodes = nodes.slice(0);
-      prevalenceNodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
+      prevalenceNodes.unshift({ index: UNSET, label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
 
       this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
       this.nodePrevalenceCanvas.requestDraw();
@@ -984,8 +980,7 @@ export class LineagesUI extends MccUI {
     if (!this.pythia) return;
 
     const ctx = this.highlightCtx,
-      treeCanvas = this.mccTreeCanvas,
-      barTop = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 2;
+      treeCanvas = this.mccTreeCanvas;
     treeCanvas.setHoverDate(dateIndex);
     ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
     if (subtreeNode !== UNSET) {
@@ -1003,7 +998,7 @@ export class LineagesUI extends MccUI {
     this.drawHighlightNode(mrcaIndex, DisplayNode.mrca, ctx, treeCanvas);
     this.drawHighlightNode(nodeAIndex, DisplayNode.nodeA, ctx, treeCanvas);
     this.drawHighlightNode(nodeBIndex, DisplayNode.nodeB, ctx, treeCanvas);
-    ctx.clearRect(0, 0, treeCanvas.width, barTop);
+
     // this.drawScrollBar();
   }
 
@@ -1123,7 +1118,6 @@ export class LineagesUI extends MccUI {
 const getNodeDisplay = (index: DisplayNode, dn: DisplayNode) => {
   return {
     index: index,
-    color: getNodeStroke(dn),
     label: getNodeTypeName(dn),
     type: dn,
     className: getNodeClassName(dn),

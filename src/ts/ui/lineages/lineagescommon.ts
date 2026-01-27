@@ -95,7 +95,6 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 
 export type NodeDisplay = {
   index: number,
-  color: string,
   label: string,
   type: DisplayNode,
   className: string,
