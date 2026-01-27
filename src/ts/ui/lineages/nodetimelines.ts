@@ -137,7 +137,7 @@ export class NodeTimelines {
 
     const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
     this.nodeTimesCanvas.setSeries(allSeries as NodeDistribution[]);
-    console.log(allSeries)
+    // console.log(allSeries)
     this.requestDraw();
   }
 

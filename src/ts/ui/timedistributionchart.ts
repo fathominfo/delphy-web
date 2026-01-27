@@ -96,7 +96,7 @@ export class TimeDistributionChart {
   }
 
   setSeries(series: Distribution[]) {
-    console.log(series)
+    // console.log(series)
     this.series = series;
     this.svgGroups.length = 0;
     this.allSeriesBandMax = nicenum(Math.max(...this.series.map(distribution=>distribution.bandMax || 0)));
