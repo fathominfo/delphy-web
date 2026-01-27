@@ -9,9 +9,10 @@ import { DataResolveType, DisplayNode, Screens, UNSET,
   getNodeTint} from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodePairType, NodePair, NodeComparisonData,
-  NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType,
+  HoverCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType,
   NodeDistribution,
-  OpenMutationPageFncType} from './lineagescommon';
+  OpenMutationPageFncType,
+  ZoomCallback} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';
@@ -109,7 +110,7 @@ export class LineagesUI extends MccUI {
   canvasLeaveHandler: ()=>void;
   keyupHandler: KeyEventHandler;
 
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
 
   prevMcc: SummaryTree | null;
 
@@ -128,8 +129,8 @@ export class LineagesUI extends MccUI {
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#lineages .tree-canvas");
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
-    const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
-    const nodeHighlightCallback: NodeCallback = (node, dateIndex, mutation)=>this.handleNodeHighlight(node, dateIndex, mutation);
+    const nodeZoomCallback: ZoomCallback = node=>this.handleNodeZoom(node);
+    const nodeHighlightCallback: HoverCallback = (node, dateIndex, mutation)=>this.handleNodeHighlight(node, dateIndex, mutation);
     // this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);

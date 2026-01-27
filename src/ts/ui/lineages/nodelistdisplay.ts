@@ -1,6 +1,6 @@
 import { DisplayNode, UNSET, getPercentLabel } from '../common';
 import { NodeMetadataValues } from '../nodemetadata';
-import { DismissCallback, NodeCallback } from './lineagescommon';
+import { DismissCallback, HoverCallback, ZoomCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
@@ -128,10 +128,11 @@ export class NodeListDisplay {
   private nodeADiv: NodeItem;
   private nodeBDiv: NodeItem;
   private dismissCallback: DismissCallback;
-  private nodeHighlightCallback: NodeCallback;
-  private nodeZoomCallback: NodeCallback;
+  private nodeHighlightCallback: HoverCallback;
+  private nodeZoomCallback: ZoomCallback;
 
-  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: NodeCallback, nodeZoomCallback: NodeCallback) {
+  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
+    nodeZoomCallback: ZoomCallback) {
     this.container = document.querySelector("#lineages--node-list") as HTMLElement;
 
     const getDiv = (selector: string)=>{
@@ -159,6 +160,7 @@ export class NodeListDisplay {
     const bindDiv = (div: HTMLDivElement, node: DisplayNode) => {
       div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
       div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
+      div.addEventListener('click', () => nodeZoomCallback(node));
     }
     // const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
     //   const icon = div.querySelector(".node-icon") as HTMLDivElement;

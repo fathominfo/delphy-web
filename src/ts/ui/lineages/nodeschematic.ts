@@ -3,7 +3,7 @@ import { Mutation } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNode, nfc, UNSET } from "../common";
-import { MATCH_CLASS, NO_MATCH_CLASS, NodeCallback, NodeComparisonData } from "./lineagescommon";
+import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData } from "./lineagescommon";
 import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
@@ -122,7 +122,7 @@ there is only one of these.
 export class NodeSchematic {
   hasMRCA: boolean;
   highlightedNode: DisplayNode | typeof UNSET;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   src: NodeComparisonData[] = [];
   indexes: [number, number, number, number] = [UNSET, UNSET, UNSET, UNSET];
   dataConfig: string;
@@ -133,7 +133,7 @@ export class NodeSchematic {
   lowerLine: Track;
   nodeAisUpper = true;
 
-  constructor(nodeHighlightCallback: NodeCallback) {
+  constructor(nodeHighlightCallback: HoverCallback) {
     this.hasMRCA = false;
     this.highlightedNode = UNSET;
     this.nodeHighlightCallback = nodeHighlightCallback;

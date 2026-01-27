@@ -162,9 +162,9 @@ export type NodeComparisonData = {
 }
 
 
-export type NodeCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;
+export type HoverCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;
 export type DismissCallback = (node:DisplayNode)=>void;
-export type HoverCallback = (node: DisplayNode)=>void;
+export type ZoomCallback = (node: DisplayNode)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 
 export const MATCH_CLASS = "matching";

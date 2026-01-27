@@ -236,7 +236,7 @@ export class MccConfig {
     this.zoomCenterY = 0.5;
     this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
-    (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
+    // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
     this.zoomFnc();
   }
 
@@ -248,7 +248,7 @@ export class MccConfig {
     this.verticalZoom = zoomY;
     const halfZoomY = 0.5 / zoomY;
     this.zoomCenterY = Math.min(1-halfZoomY, Math.max(halfZoomY, zoomCenterY));
-    (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
+    // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
     this.zoomFnc();
   }
 

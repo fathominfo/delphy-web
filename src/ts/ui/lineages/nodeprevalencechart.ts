@@ -2,7 +2,7 @@ import { BaseTreeSeriesType } from '../../constants';
 import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName,
   setDateLabel, DATE_LABEL_WIDTH_PX, AxisLabel } from '../common';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
-import { NodeCallback, NodeDisplay } from './lineagescommon';
+import { HoverCallback, NodeDisplay } from './lineagescommon';
 
 const TARGET = 200;
 const TOO_MANY = TARGET * 2;
@@ -34,7 +34,7 @@ export class SVGPrevalenceMeanGroup {
 export class NodePrevalenceChart {
   hoverDateIndex: number = UNSET;
   highlightDisplayNode: DisplayNode = UNSET;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   nodes: NodeDisplay[];
   svg: SVGElement;
   dateHoverContainer: HTMLDivElement;
@@ -63,7 +63,7 @@ export class NodePrevalenceChart {
 
 
 
-  constructor(nodeHighlightCallback: NodeCallback) {
+  constructor(nodeHighlightCallback: HoverCallback) {
     const container = document.querySelector("#lineages--prevalence") as HTMLDivElement;
     this.svg = container.querySelector("#lineages--prevalence--chart") as SVGElement;
     this.dateHoverContainer = container.querySelector(".tracker-dates") as HTMLDivElement;

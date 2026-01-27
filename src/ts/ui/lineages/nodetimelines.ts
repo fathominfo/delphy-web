@@ -1,4 +1,4 @@
-import { NodeCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
+import { HoverCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
 import { DateScale, DisplayNode, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
@@ -34,7 +34,7 @@ export class NodeTimelines {
   highlighedtNode: DisplayNode = UNSET;
   highlightedDate: number = UNSET;
 
-  constructor(nodeHighlightCallback: NodeCallback) {
+  constructor(nodeHighlightCallback: HoverCallback) {
 
     const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, dateIndex: number)=>{
       let nodeType: DisplayNode =  UNSET;

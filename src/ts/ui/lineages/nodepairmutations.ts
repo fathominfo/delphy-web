@@ -1,4 +1,4 @@
-import { NodeCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
+import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
@@ -108,14 +108,14 @@ export class NodePairMutationList {
   schematic: HTMLDivElement;
   mutationContainer: HTMLDivElement;
   goToMutations: OpenMutationPageFncType;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
   data: NodeComparisonChartData;
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
 
 
-  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback) {
+  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
     this.data = data;
     this.ancestorType = data.ancestorType;
     this.descendantType = data.descendantType;
@@ -256,10 +256,10 @@ export class NodePairMutationList {
 export class NodeMutations {
 
   goToMutations: OpenMutationPageFncType;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   charts: NodePairMutationList[];
 
-  constructor(goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback) {
+  constructor(goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
     this.goToMutations = goToMutations;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.charts = [];
