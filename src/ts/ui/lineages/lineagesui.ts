@@ -142,8 +142,8 @@ export class LineagesUI extends MccUI {
       let startTime = 0,
         startX = UNSET,
         startY = UNSET,
-        selectionX = UNSET,
-        selectionY = UNSET,
+        // selectionX = UNSET,
+        // selectionY = UNSET,
         dragging = false,
         dragged = false,
         canvas: HTMLCanvasElement | PdfCanvas;
@@ -174,8 +174,8 @@ export class LineagesUI extends MccUI {
           dragged = true;
         }
         if (dragged) {
-          selectionX = event.offsetX;
-          selectionY = event.offsetY;
+          // selectionX = event.offsetX;
+          // selectionY = event.offsetY;
           this.setHint(TreeHint.Zoom);
           this.mccTreeCanvas.setNoding(false, false);
         }
@@ -501,13 +501,13 @@ export class LineagesUI extends MccUI {
     }
 
     if (nodeIndex !== UNSET && this.pythia ) {
-      const mccRef = this.pythia.getMcc(),
-        summaryTree = this.mccTreeCanvas.tree as SummaryTree;
-      const mccIndex = this.pythia.getMccIndex() - this.pythia.kneeIndex;
-      const nodeDates = this.pythia.getNodeTimeDistribution(nodeIndex, summaryTree);
-      const date = nodeDates[mccIndex];
+      // const mccRef = this.pythia.getMcc(),
+      //   summaryTree = this.mccTreeCanvas.tree as SummaryTree;
+      // const mccIndex = this.pythia.getMccIndex() - this.pythia.kneeIndex;
+      // const nodeDates = this.pythia.getNodeTimeDistribution(nodeIndex, summaryTree);
+      // const date = nodeDates[mccIndex];
       // console.log(nodeIndex, date, toFullDateString(date));
-      mccRef.release();
+      // mccRef.release();
     }
 
 
