@@ -127,9 +127,6 @@ export class NodeListDisplay {
   private mrcaDiv: NodeItem;
   private nodeADiv: NodeItem;
   private nodeBDiv: NodeItem;
-  private dismissCallback: DismissCallback;
-  private nodeHighlightCallback: HoverCallback;
-  private nodeZoomCallback: ZoomCallback;
 
   constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
     nodeZoomCallback: ZoomCallback) {
@@ -146,40 +143,27 @@ export class NodeListDisplay {
     this.mrcaDiv = new NodeItem(getDiv('.lineages--node-item.mrca'));
     this.nodeADiv = new NodeItem(getDiv('.lineages--node-item.nodeA'));
     this.nodeBDiv = new NodeItem(getDiv('.lineages--node-item.nodeB'));
-    this.dismissCallback = dismissCallback;
-    this.nodeHighlightCallback = nodeHighlightCallback;
-    this.nodeZoomCallback = nodeZoomCallback;
+
 
     const bindDismiss = (div: HTMLDivElement, node: DisplayNode)=>{
       const dismiss = div.querySelector(".node-dismiss") as HTMLButtonElement;
       if (!dismiss) {
         throw new Error('the div has nothing for dismissing');
       }
-      dismiss.addEventListener('click', ()=>this.dismissCallback(node));
+      dismiss.addEventListener('click', ()=>dismissCallback(node));
     }
     const bindDiv = (div: HTMLDivElement, node: DisplayNode) => {
       div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
       div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
       div.addEventListener('click', () => nodeZoomCallback(node));
     }
-    // const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
-    //   const icon = div.querySelector(".node-icon") as HTMLDivElement;
-    //   if (!icon) {
-    //     throw new Error('the div has no icon to click');
-    //   }
-    //   icon.addEventListener('click', ()=>this.nodeZoomCallback(node));
-    // }
     bindDismiss(this.nodeADiv.div, DisplayNode.nodeA);
     bindDismiss(this.nodeBDiv.div, DisplayNode.nodeB);
-    // bindIcon(this.rootDiv.div, DisplayNode.root);
-    // bindIcon(this.mrcaDiv.div, DisplayNode.mrca);
-    // bindIcon(this.nodeADiv.div, DisplayNode.nodeA);
-    // bindIcon(this.nodeBDiv.div, DisplayNode.nodeB);
     bindDiv(this.rootDiv.div, DisplayNode.root);
     bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
     bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
     bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
-    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>this.nodeHighlightCallback(UNSET, UNSET, null));
+    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
 
   }
 
