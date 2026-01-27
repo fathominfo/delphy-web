@@ -188,9 +188,6 @@ export class NodeTimelines {
       }
       this.highlighedtNode = node;
     }
-
-    console.log(`dateIndex ${dateIndex}`)
-
     if (dateIndex !== this.highlightedDate) {
       this.highlightedDate = dateIndex;
       if (dateIndex === UNSET) {
