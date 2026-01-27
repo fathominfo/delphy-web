@@ -156,7 +156,8 @@ export class GammaHistCanvas extends TraceCanvas {
       // maxLabel, minLabel,
       // labelContainer,
       minSpan, maxSpan} = this;
-    const {dates, yearsMin, yearsMax, logRange, minMagnitude, maxMagnitude} = this.traceData as GammaData;
+    // const {dates, yearsMin, yearsMax, logRange, minMagnitude, maxMagnitude} = this.traceData as GammaData;
+    const {dates, logRange, minMagnitude, maxMagnitude} = this.traceData as GammaData;
     chartHeight -= HALF_BORDER * 2;
     // maxLabel.textContent = minimalDecimalLabel(yearsMax);
     // minLabel.textContent = minimalDecimalLabel(yearsMin);
@@ -173,7 +174,8 @@ export class GammaHistCanvas extends TraceCanvas {
     ctx.beginPath();
     const logLabels = (this.traceData as GammaData).logLabels;
     logLabels.forEach((ll:LogLabelType)=>{
-      const {value, mag, ticks} = ll;
+      // const {value, mag, ticks} = ll;
+      const {mag, ticks} = ll;
       ticks.forEach(([pct, tickLength], i)=>{
         const y = HALF_BORDER + chartHeight - pct * chartHeight;
         if (i === 0) {

@@ -673,19 +673,19 @@ export class RunUI extends UIScreen {
     if (this.pythia) {
       const {stepCount, ess}  = this;
       const {maxDate} = this.pythia;
-      let treeCount = 0,
-        mccCount = 0;
+      let treeCount = 0;
+      // let mccCount = 0;
       if (this.mccRef) {
         /* for safety, add extra ref while drawing */
-        const drawRef = this.pythia.getMcc(),
-          mcc = drawRef.getMcc();
+        const drawRef = this.pythia.getMcc();
+        // const mcc = drawRef.getMcc();
         try {
           this.mccTreeCanvas.draw(this.mccMinDate.value, maxDate, this.mccTimelineIndices);
         } catch (ex) {
           console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
         }
         treeCount = this.pythia.getBaseTreeCount();
-        mccCount = mcc.getNumBaseTrees();
+        // mccCount = mcc.getNumBaseTrees();
         drawRef.release();
         this.mccRef.release();
       } else {

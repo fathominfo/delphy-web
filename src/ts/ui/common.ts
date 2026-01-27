@@ -1,4 +1,5 @@
-import { addDays, addMonths, addWeeks, addYears, DateTokenIndex, MONTHS_SHORT, toDate, toDateNumber, toDateString, toDateTokens } from '../pythia/dates';
+import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
+  MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
 import { SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 

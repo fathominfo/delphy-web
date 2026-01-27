@@ -26,9 +26,9 @@ import { MccConfig } from "./mccconfig";
 import { isTip } from '../util/treeutils';
 
 
-const PDF_TYPEFACE = 'Roboto',
-  PDF_700_WT = '700',
-  PDF_500_WT = '500';
+// const PDF_TYPEFACE = 'Roboto',
+//   PDF_700_WT = '700',
+//   PDF_500_WT = '500';
 
 const HOVER_DISTANCE = 30;
 
@@ -429,7 +429,7 @@ export class MccTreeCanvas {
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
     entries.forEach((entry, i)=>{
-      if (scale == DateScale.year) {
+      if (scale === DateScale.year) {
         //
       } else {
         if (entry.isNewYear || i === lastIndex) {
@@ -821,7 +821,7 @@ export class MccTreeCanvas {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
-  draw(earliest:number, latest:number, dates:DateLabel[], pdf: PdfCanvas | null = null) {
+  draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
     const {ctx, width, height, nodeYs, drawBranch} = this,

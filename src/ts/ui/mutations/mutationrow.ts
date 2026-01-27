@@ -158,7 +158,7 @@ export class MutationRow {
       throw new Error("mutation row has nowhere for the time distribution to go");
     }
     const series: DistributionSeries = new DistributionSeries(mutationData.times);
-    const readout = this.rowDiv.querySelector(".time-chart--readout") as HTMLElement;
+    // const readout = this.rowDiv.querySelector(".time-chart--readout") as HTMLElement;
     // this.timeCanvas = new TimeDistributionCanvas([series], mutationData.minDate, mutationData.maxDate, canvas, readout);
     this.timeCanvas = new TimeDistributionCanvas([series], mutationData.minDate, mutationData.maxDate, canvas);
 

@@ -2,7 +2,6 @@ import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode, getNodeClassName, UNSET } from '../common';
 import { Distribution } from '../distribution';
-import { DistributionSeries } from '../timedistributioncanvas';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
 export enum NodePairType {
