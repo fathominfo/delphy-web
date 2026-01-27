@@ -793,7 +793,6 @@ export class LineagesUI extends MccUI {
       this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex], nodeAIsUpper);
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
 
       /*
       add an empty node before the root to represent the uninfected population
