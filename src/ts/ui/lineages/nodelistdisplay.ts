@@ -1,21 +1,11 @@
-import { BaseTreeSeriesType, NodeDistributionType } from '../../constants';
-import { toFullDateString } from '../../pythia/dates';
-import { DisplayNode, UNSET, numericSortReverse, resizeCanvas, getNtile, getPercentLabel, CHART_TEXT_SIZE } from '../common';
+import { DisplayNode, UNSET, getPercentLabel } from '../common';
 import { NodeMetadataValues } from '../nodemetadata';
-import { DismissCallback, NodeCallback, NodeDisplay } from './lineagescommon';
+import { DismissCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
 
-const REPORTING_NTILES = [0.025, 0.5, 0.975];
-
 const DEBUG = false;
-
-const TAU = Math.PI * 2;
-
-const TARGET = 200;
-const TOO_MANY = TARGET * 2;
-
 
 class NodeItem {
   div: HTMLDivElement;
