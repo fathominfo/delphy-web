@@ -1,6 +1,6 @@
 import { DisplayNode, UNSET, getPercentLabel } from '../common';
 import { NodeMetadataValues } from '../nodemetadata';
-import { DismissCallback, HoverCallback, ZoomCallback } from './lineagescommon';
+import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
@@ -15,6 +15,11 @@ class NodeItem {
   nodeIsTip: HTMLElement;
   tipIdSpan: HTMLElement;
   mdDiv: HTMLDivElement;
+  nodeConfidence: number = UNSET;
+  nodeChildCount: number = UNSET;
+  locked = false;
+  nodeMetadata: NodeMetadataValues | null = null;
+  nodeIndex: number = UNSET;
 
   constructor(div: HTMLDivElement) {
     this.div = div;
@@ -28,14 +33,37 @@ class NodeItem {
 
 
   setData(nodeConfidence: number, nodeChildCount: number, locked: boolean,
-    nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number = UNSET) : void {
+    nodeMetadata: NodeMetadataValues | null, nodeIndex: number = UNSET) : void {
+    this.nodeConfidence = nodeConfidence;
+    this.nodeChildCount = nodeChildCount;
+    this.locked = locked;
+    this.nodeMetadata = nodeMetadata;
+    this.nodeIndex = nodeIndex;
+  }
 
-    const {div, countSpan,
+
+  draw() {
+    const {
+      nodeConfidence,
+      nodeChildCount,
+      locked,
+      nodeMetadata,
+      nodeIndex,
+      div,
+      countSpan,
       confidenceSpan,
       nodeStats,
       nodeIsTip,
-      tipIdSpan, mdDiv} = this;
+      tipIdSpan,
+      mdDiv} = this;
 
+    if (nodeIndex === UNSET) {
+      this.div.classList.remove('active');
+      this.div.classList.remove('locked');
+      return;
+    }
+    div.classList.add('active');
+    div.classList.toggle('locked', locked);
     const isTip = nodeChildCount === 1;
     div.classList.toggle("is-tip", isTip);
 
@@ -52,7 +80,7 @@ class NodeItem {
       if (DEBUG) {
         tipIdSpan.innerText = `${nodeIndex} `;
       }
-      if (nodeMetadata !== undefined) {
+      if (nodeMetadata !== null) {
         if (nodeMetadata.id !== undefined) {
           tipIdSpan.innerText = `${nodeMetadata.id.value}`;
           tipIdSpan.title = nodeMetadata.id.value;
@@ -63,10 +91,8 @@ class NodeItem {
       }
     }
 
-    div.classList.add('active');
-    div.classList.toggle('locked', locked);
 
-    if (nodeMetadata === undefined || (Object.keys(nodeMetadata).length === 1 && nodeMetadata.id !== undefined)) {
+    if (nodeMetadata === null || (Object.keys(nodeMetadata).length === 1 && nodeMetadata.id !== undefined)) {
       mdDiv.classList.add('hidden');
     } else {
       mdDiv.classList.remove('hidden');
@@ -105,8 +131,7 @@ class NodeItem {
   }
 
   clear() {
-    this.div.classList.remove('active');
-    this.div.classList.remove('locked');
+    this.nodeIndex = UNSET;
   }
 
   pushback() {
@@ -129,7 +154,7 @@ export class NodeListDisplay {
   private nodeBDiv: NodeItem;
 
   constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
-    nodeZoomCallback: ZoomCallback) {
+    nodeZoomCallback: NodeCallback) {
     this.container = document.querySelector("#lineages--node-list") as HTMLElement;
 
     const getDiv = (selector: string)=>{
@@ -168,23 +193,20 @@ export class NodeListDisplay {
   }
 
 
-  setRoot(nodeConfidence: number, nodeChildCount: number, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setRoot(nodeConfidence: number, nodeChildCount: number, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.rootDiv.setData(nodeConfidence, nodeChildCount, false, nodeMetadata, nodeIndex);
   }
 
-  setMRCA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setMRCA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.mrcaDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
-    this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
-  setNodeA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setNodeA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.nodeADiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
-    this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
-  setNodeB(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setNodeB(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.nodeBDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
-    this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
   clearMRCA(): void {
@@ -197,6 +219,12 @@ export class NodeListDisplay {
 
   clearNodeB(): void {
     this.nodeBDiv.clear();
+  }
+
+  requestDraw() {
+    requestAnimationFrame(()=>{
+      [this.rootDiv, this.mrcaDiv, this.nodeADiv, this.nodeBDiv].forEach(div=>div.draw());
+    });
   }
 
   highlightNode(node: DisplayNode | typeof UNSET) : void {

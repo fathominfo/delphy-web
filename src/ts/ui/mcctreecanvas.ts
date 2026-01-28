@@ -811,12 +811,6 @@ export class MccTreeCanvas {
     ctx.strokeStyle = this.branchColors[index];
   }
 
-  setNoding(noding: boolean, isSelectable: boolean) {
-    if (this.canvas instanceof PdfCanvas) return;
-    this.canvas.classList.toggle("noding", noding);
-    this.canvas.classList.toggle("new-node", noding && isSelectable);
-  }
-
   setFade(fade: boolean) {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }

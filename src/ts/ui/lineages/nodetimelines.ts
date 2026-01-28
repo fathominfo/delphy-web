@@ -31,6 +31,7 @@ export class NodeTimelines {
   data: NodeDisplay[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
+  currentTypes: NodeDisplay[] = [];
   highlighedtNode: DisplayNode = UNSET;
   highlightedDate: number = UNSET;
 
@@ -90,59 +91,57 @@ export class NodeTimelines {
 
   setData(nodes: NodeDisplay[]) {
     this.data = nodes;
-    const currentTypes:NodeDisplay[] = [];
-    nodes.forEach((nd:NodeDisplay)=>currentTypes[nd.type] = nd);
-    [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(dn=>{
-      let nameSpan: HTMLSpanElement | null = null,
-        dateSpan: HTMLSpanElement | null = null;
-      switch (dn) {
-      case DisplayNode.root:
-        nameSpan = rootSpan;
-        dateSpan = rootDateSpan;
-        break;
-      case DisplayNode.mrca:
-        nameSpan = mrcaSpan;
-        dateSpan = mrcaDateSpan;
-        break;
-      case DisplayNode.nodeA:
-        nameSpan = nodeASpan;
-        dateSpan = nodeADateSpan;
-        break;
-      case DisplayNode.nodeB:
-        nameSpan = nodeBSpan;
-        dateSpan = nodeBDateSpan;
-        break;
-      }
-      if (!nameSpan || !dateSpan) return;
-      const nodeData = currentTypes[dn];
-      if (nodeData === undefined) {
-        nameSpan.classList.add("hidden");
-        dateSpan.classList.add("hidden");
-      } else {
-        const dist = nodeData.series;
-        if (!dist) {
-          nameSpan.classList.add("hidden");
-          dateSpan.classList.add("hidden");
-        } else {
-          nameSpan.classList.remove("hidden");
-          dateSpan.classList.remove("hidden");
-          const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
-          const dateLabel = toFullDateString(dist.median);
-          nameSpan.style.left = `${x}px`;
-          dateSpan.style.left = `${x}px`;
-          dateSpan.textContent = dateLabel;
-        }
-      }
-    });
-
+    this.currentTypes.length = 0;
+    nodes.forEach((nd:NodeDisplay)=>this.currentTypes[nd.type] = nd);
     const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
     this.nodeTimesCanvas.setSeries(allSeries as NodeDistribution[]);
-    // console.log(allSeries)
-    this.requestDraw();
   }
 
   requestDraw() : void {
     requestAnimationFrame(()=>{
+      [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(dn=>{
+        let nameSpan: HTMLSpanElement | null = null,
+          dateSpan: HTMLSpanElement | null = null;
+        switch (dn) {
+        case DisplayNode.root:
+          nameSpan = rootSpan;
+          dateSpan = rootDateSpan;
+          break;
+        case DisplayNode.mrca:
+          nameSpan = mrcaSpan;
+          dateSpan = mrcaDateSpan;
+          break;
+        case DisplayNode.nodeA:
+          nameSpan = nodeASpan;
+          dateSpan = nodeADateSpan;
+          break;
+        case DisplayNode.nodeB:
+          nameSpan = nodeBSpan;
+          dateSpan = nodeBDateSpan;
+          break;
+        }
+        if (!nameSpan || !dateSpan) return;
+        const nodeData = this.currentTypes[dn];
+        if (nodeData === undefined) {
+          nameSpan.classList.add("hidden");
+          dateSpan.classList.add("hidden");
+        } else {
+          const dist = nodeData.series;
+          if (!dist) {
+            nameSpan.classList.add("hidden");
+            dateSpan.classList.add("hidden");
+          } else {
+            nameSpan.classList.remove("hidden");
+            dateSpan.classList.remove("hidden");
+            const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
+            const dateLabel = toFullDateString(dist.median);
+            nameSpan.style.left = `${x}px`;
+            dateSpan.style.left = `${x}px`;
+            dateSpan.textContent = dateLabel;
+          }
+        }
+      });
+
       const max = this.nodeTimesCanvas.allSeriesBandMax;
       maxProbDiv.textContent = `${max}%`;
       this.nodeTimesCanvas.requestDraw();

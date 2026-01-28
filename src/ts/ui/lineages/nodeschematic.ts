@@ -155,10 +155,14 @@ export class NodeSchematic {
     ].forEach((line:Track)=>line.handleMutationMatch(mutationName));
   }
 
+  requestDraw() {
+    requestAnimationFrame(()=>this.requestDraw());
+  }
+
+
   draw() {
     this.div.setAttribute("data-config", this.dataConfig);
     [this.centralLine, this.endLine, this.upperLine, this.lowerLine].forEach((line:Track)=>line.render());
-
   }
 
   setData(src: NodeComparisonData[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {

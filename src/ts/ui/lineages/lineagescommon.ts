@@ -162,9 +162,48 @@ export type NodeComparisonData = {
 
 
 export type HoverCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;
+export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
+export type TreeSelectCallback = (displayNode: DisplayNode, nodeIndex: number)=>void;
 export type DismissCallback = (node:DisplayNode)=>void;
-export type ZoomCallback = (node: DisplayNode)=>void;
+export type NodeCallback = (displayNode: DisplayNode)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 
 export const MATCH_CLASS = "matching";
 export const NO_MATCH_CLASS = "unmatching";
+
+export const enum TreeHint {
+  Hover,
+
+  HoverRoot,
+  HoverMrca,
+  HoverNodeA,
+  HoverNodeBDescendant,
+  HoverNodeBCousin,
+
+  PreviewNodeA,
+  PreviewNodeBDescendant,
+  PreviewNodeBCousin,
+
+  MaxSelections,
+
+  Zoom
+}
+
+export const TREE_HINT_CLASSES = [
+  "hover",
+
+  "hover-root",
+  "hover-mrca",
+  "hover-node-a",
+  "hover-nodeB-descendant",
+  "hover-nodeB-cousin",
+
+  "preview-nodeA",
+  "preview-nodeB-descendant",
+  "preview-nodeB-cousin",
+
+  "max-selections",
+
+  "zoom"
+]
+export type SetHintType = (hint:TreeHint) => void;
