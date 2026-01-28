@@ -122,6 +122,7 @@ there is only one of these.
 export class NodeSchematic {
   hasMRCA: boolean;
   highlightedNode: DisplayNode | typeof UNSET;
+  highlightedMutation: Mutation | null;
   nodeHighlightCallback: HoverCallback;
   src: NodeComparisonData[] = [];
   indexes: [number, number, number, number] = [UNSET, UNSET, UNSET, UNSET];
@@ -136,6 +137,7 @@ export class NodeSchematic {
   constructor(nodeHighlightCallback: HoverCallback) {
     this.hasMRCA = false;
     this.highlightedNode = UNSET;
+    this.highlightedMutation = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.dataConfig = "root";
     this.div = document.querySelector("#subway") as HTMLDivElement;
@@ -277,10 +279,11 @@ export class NodeSchematic {
 
 
   highlightNode(node: DisplayNode, mutation: Mutation|null) : void {
-    console.log(`nodeSchematic.highlightNode does not handle mutations yet`, mutation);
-    if (node !== this.highlightedNode) {
+    if (node !== this.highlightedNode || mutation !== this.highlightedMutation) {
       this.highlightedNode = node;
-      this.draw();
+      this.highlightedMutation = mutation;
+      const name = mutation ? getMutationName(mutation) : '';
+      this.handleMutationMatch(name);
     }
   }
 

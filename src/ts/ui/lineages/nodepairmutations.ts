@@ -196,10 +196,10 @@ export class NodePairMutationList {
 
   setMutations():void {
     // const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
-    const {mutationTimelineData, minDate, maxDate} = this.data;
+    const {descendantType, mutationTimelineData, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
       const seriesCallback = (_series: Distribution | null, dateIndex: number)=>{
-        this.nodeHighlightCallback(UNSET, dateIndex, md.mutation.mutation);
+        this.nodeHighlightCallback(descendantType, dateIndex, md.mutation.mutation);
       };
       const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);
       mt.appendTo(this.mutationContainer);

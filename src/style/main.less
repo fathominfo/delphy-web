@@ -330,6 +330,17 @@ canvas {
 
 
 .tree-container {
+  display: flex;
+  flex-direction: column;
+  justify-self: flex-start;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  background-color: var(--tree-fill);
+  border: var(--tree-stroke-weight) solid var(--tree-stroke);
+  border-radius: var(--corner);
+  overflow: hidden;
+
   position: relative;
   padding: var(--tree-inset) var(--tree-inset) var(--tree-inset-bottom);
   box-sizing: content-box;
@@ -413,7 +424,15 @@ canvas {
       }
 
       &.hover {
+        pointer-events: none;
+        opacity: 0;
         .line { height: var(--date-line-height); }
+        .line, .text {
+          pointer-events: none;
+        }
+        &.active {
+          opacity: 1;
+        }
       }
 
       &.marker {
@@ -664,19 +683,6 @@ canvas {
   }
 }
 
-
-.tree-container {
-  display: flex;
-  flex-direction: column;
-  justify-self: flex-start;
-  align-items: flex-start;
-  gap: 0;
-  position: relative;
-  background-color: var(--tree-fill);
-  border: var(--tree-stroke-weight) solid var(--tree-stroke);
-  border-radius: var(--corner);
-  overflow: hidden;
-}
 
 
 /* DEFAULTS */
