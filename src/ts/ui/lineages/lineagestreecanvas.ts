@@ -43,13 +43,13 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     eventCanvas.addEventListener("pointerenter", (event)=>{
       const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY),
         date = this.getZoomDate(event.offsetX),
-        dateIndex = date - this.minDate;
+        dateIndex = Math.round(date - this.minDate);
       hoverCallback(nodeIndex, dateIndex);
     });
     eventCanvas.addEventListener("pointermove", (event)=>{
       const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY),
         date = this.getZoomDate(event.offsetX),
-        dateIndex = date - this.minDate;
+        dateIndex = Math.round(date - this.minDate);
       hoverCallback(nodeIndex, dateIndex);
     });
     eventCanvas.addEventListener("pointerleave", ()=>{
@@ -73,18 +73,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
 
   private drawSelection() {
     const ctx = this.highlightCtx;
-    // this.setHoverDate(dateIndex);
     ctx.clearRect(0, 0, this.width, this.height);
-    // if (subtreeNode !== UNSET) {
-    //   ctx.fillStyle = "rgba(255,255,255,0.85)";
-    //   ctx.fillRect(0, 0, this.width, this.height);
-    //   const stops = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].filter(n=>n !== UNSET && n !== subtreeNode);
-    //   const color = subtreeNode === mrcaIndex ? getNodeTint(DisplayNode.mrca)
-    //     : subtreeNode === nodeAIndex ? getNodeTint(DisplayNode.nodeA)
-    //       : subtreeNode === nodeBIndex ? getNodeTint(DisplayNode.nodeB)
-    //         : getNodeTint(DisplayNode.root);
-    //   // this.drawSubtree(subtreeNode, ctx, asSuper, color, stops);
-    // }
     this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
     this.drawNode(this.rootIndex, DisplayNode.root);
     this.drawNode(this.mrcaIndex, DisplayNode.mrca);
@@ -96,17 +85,6 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   requestDrawSelection() {
     requestAnimationFrame(()=>this.drawSelection());
   }
-
-  /*
-  need a means for the the mccconfig to invoke drawing
-  the tree and the highlights when the zoom has changed.
-  So we override the default request to draw the tree
-  with a version that also draws the highlight nodes.
-  */
-  // requestDraw(): void {
-  //   super.requestDraw();
-  //   this.requestDrawTreeHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-  // }
 
   draw(minDate : number, maxDate: number, timelineIndices: DateLabel[]) {
     super.draw(minDate, maxDate, timelineIndices);
@@ -148,7 +126,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       this.highlightCtx.globalAlpha = 1.0;
       this.drawNode(this.subtreeIndex, node);
     }
-
+    this.setHoverDate(dateIndex);
   }
 
 

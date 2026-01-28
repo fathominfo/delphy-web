@@ -85,7 +85,16 @@ export class LineagesUI extends MccUI {
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
     const nodeHighlightCallback: HoverCallback = (node, dateIndex, mutation)=>this.highlightCharts(node, dateIndex, mutation);
-    const treeHoverCallback: TreeHoverCallback = (node, dateIndex)=>this.handleNodeHover(node, dateIndex);
+    let previousNode = UNSET,
+      previousDate = UNSET
+    const treeHoverCallback: TreeHoverCallback = (node, dateIndex)=>{
+      if (dateIndex !== previousDate || node !== previousNode) {
+        previousNode = node;
+        previousDate = dateIndex;
+        this.handleNodeHover(node, dateIndex)
+      }
+
+    };
     const nodeSelectCallback: TreeSelectCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -334,7 +343,7 @@ export class LineagesUI extends MccUI {
 
     this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
     this.setHint(hint);
-    this.highlightCharts(displayNode, UNSET, null);
+    this.highlightCharts(displayNode, dateIndex, null);
   }
 
 
