@@ -1,5 +1,8 @@
-import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
-import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName, numericSort } from '../common';
+import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
+  NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
+} from './lineagescommon';
+import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName,
+  numericSort, getNiceDateInterval, DateScale } from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
@@ -108,6 +111,7 @@ export class NodePairMutationList {
   // mutationThresholdSpan: HTMLSpanElement;
   schematic: HTMLDivElement;
   mutationContainer: HTMLDivElement;
+  dateHoverDiv: HTMLDivElement;
   goToMutations: OpenMutationPageFncType;
   nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
@@ -121,6 +125,7 @@ export class NodePairMutationList {
     this.ancestorType = data.ancestorType;
     this.descendantType = data.descendantType;
     this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
+    this.dateHoverDiv = this.div.querySelector(".dates .reference") as HTMLDivElement;
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
       ancestorSpan = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
@@ -202,6 +207,7 @@ export class NodePairMutationList {
   /* set the date range based on the median dates for the bordering nodes */
   setDateRange() {
     const { minDate, maxDate, series } = this.data;
+    const dateContainerDiv = this.div.querySelector(".date-container .dates") as HTMLDivElement;
     const rangeSpan = series.filter(ser=>!!ser).map(ser=>ser.median);
     rangeSpan.sort(numericSort);
     const rangeMin = rangeSpan[0];
@@ -209,9 +215,26 @@ export class NodePairMutationList {
     const rangeMinPct = (rangeMin - minDate)/(maxDate - minDate) * 100;
     const rangeMaxPct = (rangeMax - minDate)/(maxDate - minDate) * 100;
     const rangeWidthPct = rangeMaxPct - rangeMinPct;
-    const rangeDiv = this.div.querySelector(".date-container .range") as HTMLDivElement;
+    const rangeDiv = dateContainerDiv.querySelector(".range") as HTMLDivElement;
     rangeDiv.style.left = `${rangeMinPct}%`;
     rangeDiv.style.width = `${rangeWidthPct}%`;
+
+    const template = this.dateHoverDiv.cloneNode(true) as HTMLDivElement;
+    template.classList.remove("hover");
+
+    const { scale, entries } = getNiceDateInterval(minDate, maxDate);
+    let first = true;
+    if (scale !== DateScale.year) {
+      entries.forEach(labelData=>{
+        if (first) first = false;
+        else if (labelData.isNewYear) {
+          const div = template.cloneNode(true) as HTMLDivElement;
+          const left = 100 * labelData.percent;
+          div.style.left = `${left}%`;
+          dateContainerDiv.appendChild(div);
+        }
+      });
+    }
   }
 
 
@@ -259,6 +282,18 @@ export class NodePairMutationList {
     } else {
       classList.remove(MATCH_CLASS);
       classList.add(NO_MATCH_CLASS);
+    }
+
+
+    if (dateIndex === UNSET) {
+      this.dateHoverDiv.classList.remove("active");
+    } else {
+
+      const { minDate, maxDate } = this.data;
+      // const datePercent = (dateIndex - minDate) / (maxDate - minDate) * 100;
+      const datePercent = dateIndex / (maxDate - minDate) * 100;
+      this.dateHoverDiv.style.left = `${datePercent}`;
+      this.dateHoverDiv.classList.add("active");
     }
   }
 
@@ -334,7 +369,6 @@ export class NodeMutations {
 
   highlightNode(node: DisplayNode, dateIndex: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
-    console.log(`nodePairMutations.highlightNode does not handle date or mutations yet ${dateIndex}`, mutation);
     this.charts.forEach(chart=>{
       chart.highlightNode(node, dateIndex, mutation);
     });
