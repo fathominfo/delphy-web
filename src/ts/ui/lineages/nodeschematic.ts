@@ -3,7 +3,7 @@ import { Mutation } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNode, nfc, UNSET } from "../common";
-import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData } from "./lineagescommon";
+import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData, NodePairType } from "./lineagescommon";
 import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
@@ -167,8 +167,14 @@ export class NodeSchematic {
     [this.centralLine, this.endLine, this.upperLine, this.lowerLine].forEach((line:Track)=>line.render());
   }
 
+  /*
+  @param src: contains data for each track that we will display.
+  @param indexes: the node index in the MCC for root, mrca, nodeA, and nodeB. Each can be `UNSET`.
+  @param nodeAIsUpper: when both nodeA and nodeB are set, indicates whether the display of
+    node A should be the upper track or the lower track
+  */
   setData(src: NodeComparisonData[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
-    // console.debug(src.map(ncd=>ncd.nodePair.pairType));
+    // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     this.src = src;
     this.indexes = indexes;
     this.nodeAisUpper = nodeAIsUpper;
@@ -201,16 +207,17 @@ export class NodeSchematic {
       } else {
         upperLabel = "b";
         lowerLabel = "a";
-        upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-        lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
+        upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
+        lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
       }
 
 
     } else if (indexes[DisplayNode.nodeA] !== UNSET) {
+      const nodeA = indexes[DisplayNode.nodeA];
       if (indexes[DisplayNode.nodeB] === UNSET) {
         this.dataConfig = "a";
         centerLabel = "a";
-        centralMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
+        centralMutations = getMutationsFor(nodeA);
       } else {
         /*
         are nodes 1 and 2 both descended from root,
