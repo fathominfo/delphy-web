@@ -1,8 +1,16 @@
-import { NodeCallback, HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistributionSeries, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
-import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
+import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
+  NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
+} from './lineagescommon';
+import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName,
+  numericSort, getNiceDateInterval, DateScale,
+  sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
+import { Mutation } from '../../pythia/delphy_api';
+import { SeriesHoverCallback } from '../timedistributionchart';
+import { Distribution } from '../distribution';
+
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -36,7 +44,8 @@ class MutationTimeline {
   dateReadout: HTMLDivElement;
   median: number;
 
-  constructor(data: MutationTimelineData, minDate: number, maxDate: number, goToMutations: OpenMutationPageFncType) {
+  constructor(data: MutationTimelineData, minDate: number, maxDate: number,
+    goToMutations: OpenMutationPageFncType, hoverCallback: SeriesHoverCallback) {
     this.data = data;
     const {mutation} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
@@ -62,9 +71,9 @@ class MutationTimeline {
     });
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
-    this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, undefined, NodeSVGSeriesGroup);
-    this.timeChart.setSeries([series] as NodeDistributionSeries[]);
-    this.median = data.series.distribution.median;
+    this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
+    this.timeChart.setSeries([series] as NodeDistribution[]);
+    this.median = data.series.median;
     const dateLabel = toFullDateString(this.median);
     this.dateReadout.textContent = dateLabel;
 
@@ -89,7 +98,34 @@ class MutationTimeline {
   resize() {
     this.timeChart.resize();
   }
+
+  checkMutationMatch(mutation: Mutation | null, date: number): boolean {
+    let matched = false;
+    if (mutation === null && date === UNSET) {
+      this.div.classList.remove("matching");
+      this.div.classList.remove("unmatching");
+    } else if (mutation !== null) {
+      if (sameMutation (this.data.mutation.mutation, mutation)) {
+        this.div.classList.add("matching");
+        this.div.classList.remove("unmatching");
+        matched = true;
+      } else {
+        this.div.classList.remove("matching");
+        this.div.classList.add("unmatching");
+      }
+    } else if (date !== UNSET) {
+      const { min, max } = this.data.series
+      const matching = date >= min && date <= max;
+      this.div.classList.toggle("matching", matching);
+      this.div.classList.toggle("unmatching", !matching);
+      if (matching) matched = true;
+    }
+    return matched;
+  }
+
 }
+
+
 
 
 
@@ -103,33 +139,36 @@ export class NodePairMutationList {
   // mutationThresholdSpan: HTMLSpanElement;
   schematic: HTMLDivElement;
   mutationContainer: HTMLDivElement;
+  dateHoverDiv: HTMLDivElement;
   goToMutations: OpenMutationPageFncType;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
   data: NodeComparisonChartData;
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
 
 
-  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback) {
+  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
     this.data = data;
     this.ancestorType = data.ancestorType;
     this.descendantType = data.descendantType;
     this.div = nodeComparisonTemplate.cloneNode(true) as HTMLDivElement;
+    this.dateHoverDiv = this.div.querySelector(".dates .reference") as HTMLDivElement;
     this.nodeHighlightCallback = nodeHighlightCallback;
     const mutationContainer = this.div.querySelector(mutationContainerSelector) as HTMLDivElement,
-      nodeASpan = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
-      nodeBSpan = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
+      ancestorSpan = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
+      descendantSpan = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
       schematic = this.div.querySelector(schematicSelector) as HTMLDivElement;
       // mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
       // mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement;
       // overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement;
-    if (!mutationContainer || !nodeASpan || !nodeBSpan || !schematic) {
+    if (!mutationContainer || !ancestorSpan || !descendantSpan || !schematic) {
       throw new Error("html is missing elements needed for mutation list");
     }
-    this.nodeASpan = nodeASpan;
-    this.nodeBSpan = nodeBSpan;
+    this.nodeASpan = ancestorSpan;
+    this.nodeBSpan = descendantSpan;
     this.schematic = schematic;
+
     // this.mutationCountSpan = mutationCountSpan;
     // this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
@@ -153,6 +192,7 @@ export class NodePairMutationList {
       this.div.classList.add('single');
     }
     this.setLabel(this.data.ancestorType, this.data.descendantType);
+    this.setDateRange();
     // const overlapCount = this.data.overlapCount;
     // if (overlapCount > 0) {
     //   const treeCount = this.data.treeCount;
@@ -170,25 +210,16 @@ export class NodePairMutationList {
     // }
 
 
-    const seriesHoverHandler: HoverCallback = (n: number)=>{
-      if (n === 0) {
-        nodeHighlightCallback(this.data.ancestorType);
-      } else if (n === 1) {
-        nodeHighlightCallback(this.data.descendantType);
-      } else {
-        nodeHighlightCallback(UNSET);
-      }
-    };
 
-
-    nodeASpan.addEventListener("mouseenter", () => seriesHoverHandler(0));
-    nodeASpan.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
-    nodeBSpan.addEventListener("mouseenter", () => seriesHoverHandler(1));
-    nodeBSpan.addEventListener("mouseleave", () => seriesHoverHandler(UNSET));
+    // ancestorSpan.addEventListener("mouseenter", () => nodeHighlightCallback(this.data.ancestorType, UNSET, null));
+    // ancestorSpan.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
+    // descendantSpan.addEventListener("mouseenter", () => nodeHighlightCallback(this.data.descendantType, UNSET, null));
+    // descendantSpan.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
 
     nodeComparisonContainer.appendChild(this.div);
     this.setMutations();
   }
+
 
   setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
     /* set title for the ancestor node */
@@ -200,10 +231,49 @@ export class NodePairMutationList {
     this.nodeBSpan.classList.add(getNodeClassName(descendantType));
   }
 
+
+  /* set the date range based on the median dates for the bordering nodes */
+  setDateRange() {
+    const { minDate, maxDate, series } = this.data;
+    const dateContainerDiv = this.div.querySelector(".date-container .dates") as HTMLDivElement;
+    const rangeSpan = series.filter(ser=>ser !== undefined).map(ser=>ser?.median) as number[];
+    rangeSpan.sort(numericSort);
+    const rangeMin = rangeSpan[0];
+    const rangeMax = rangeSpan[rangeSpan.length - 1] as number;
+    const rangeMinPct = (rangeMin - minDate)/(maxDate - minDate) * 100;
+    const rangeMaxPct = (rangeMax - minDate)/(maxDate - minDate) * 100;
+    const rangeWidthPct = rangeMaxPct - rangeMinPct;
+    const rangeDiv = dateContainerDiv.querySelector(".range") as HTMLDivElement;
+    rangeDiv.style.left = `${rangeMinPct}%`;
+    rangeDiv.style.width = `${rangeWidthPct}%`;
+
+    const template = this.dateHoverDiv.cloneNode(true) as HTMLDivElement;
+    template.classList.remove("hover");
+
+    const { scale, entries } = getNiceDateInterval(minDate, maxDate);
+    let first = true;
+    if (scale !== DateScale.year) {
+      entries.forEach(labelData=>{
+        if (first) first = false;
+        else if (labelData.isNewYear) {
+          const div = template.cloneNode(true) as HTMLDivElement;
+          const left = 100 * labelData.percent;
+          div.style.left = `${left}%`;
+          dateContainerDiv.appendChild(div);
+        }
+      });
+    }
+  }
+
+
   setMutations():void {
-    const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
+    // const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
+    const {descendantType, mutationTimelineData, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
-      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations);
+      const seriesCallback = (_series: Distribution | null, date: number)=>{
+        this.nodeHighlightCallback(descendantType, date, md.mutation.mutation);
+      };
+      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);
       mt.appendTo(this.mutationContainer);
       return mt;
     });
@@ -222,17 +292,31 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
+  highlightNode(node: DisplayNode, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
+    let matched = node === this.data.descendantType;
+    this.mutationTimelines.forEach(mt=>{
+      matched = mt.checkMutationMatch(mutation, date) || matched;
+    });
     if (node === UNSET) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
-    } else if (node === this.data.ancestorType || node === this.data.descendantType) {
+    } else if (matched) {
       classList.add(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
     } else {
       classList.remove(MATCH_CLASS);
       classList.add(NO_MATCH_CLASS);
+    }
+
+    // set the hover
+    if (date === UNSET) {
+      this.dateHoverDiv.classList.remove("active");
+    } else {
+      const { minDate, maxDate } = this.data;
+      const datePercent = (date - minDate) / (maxDate - minDate) * 100;
+      this.dateHoverDiv.style.left = `${datePercent}%`;
+      this.dateHoverDiv.classList.add("active");
     }
   }
 
@@ -251,10 +335,10 @@ export class NodePairMutationList {
 export class NodeMutations {
 
   goToMutations: OpenMutationPageFncType;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   charts: NodePairMutationList[];
 
-  constructor(goToMutations: OpenMutationPageFncType, nodeHighlightCallback: NodeCallback) {
+  constructor(goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
     this.goToMutations = goToMutations;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.charts = [];
@@ -306,11 +390,10 @@ export class NodeMutations {
     return this.charts;
   }
 
-  highlightNode(node: DisplayNode) {
+  highlightNode(node: DisplayNode, date: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
-      chart.highlightNode(node);
-      chart.highlightNode(node);
+      chart.highlightNode(node, date, mutation);
     });
 
   }

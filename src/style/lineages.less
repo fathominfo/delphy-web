@@ -1242,6 +1242,23 @@ details {
       }
     }
 
+
+    .tracker {
+      position: absolute;
+      top: 0;
+      width: var(--guide-date-stroke-weight);
+      height: 100%;
+      border-radius: var(--guide-date-stroke-weight);
+      background-color: var(--guide-date-stroke);
+      opacity: 0;
+      transform: translateX(-50%);
+
+      &.active {
+        opacity: var(--guide-date-opacity);
+      }
+
+    }
+
     #lineages-nt-root-date-label {color: var(--root-timeline-text)}
     #lineages-nt-mrca-date-label {color: var(--mrca-timeline-text)}
     #lineages-nt-a-date-label    {color: var(--a-timeline-text)}
@@ -1697,6 +1714,25 @@ details {
   font-weight: bolder;
 }
 
+.lineages--mutation-timeline .date-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  padding: 0 0 0 calc(var(--block-gap) + var(--mutation-emergence-mutation-width));
+  pointer-events: none;
+  z-index: 1;
+
+  .hover {
+    opacity: 0;
+    &.active {
+      opacity: var(--date-reference-line-opacity);
+    }
+  }
+
+}
+
 .lineages--node-comparison--mutation {
   display: flex;
   height: var(--duo-list-row-height);
@@ -1766,6 +1802,7 @@ details {
     font-size: calc(var(--unit) * 0.75);
     letter-spacing: 0.00625rem;
     padding: 0 0 0 3px;
+    pointer-events: none;
 
     .time-chart--series {
       display: none;

@@ -11,7 +11,10 @@ import {
   getNiceDateInterval,
   DateScale,
   DATE_TEMPLATE,
-  getCSSValue} from './common';
+  getCSSValue,
+  setDateLabel,
+  DATE_LABEL_WIDTH_PX,
+  AxisLabel} from './common';
 import { getTipCounts } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
 import { Context2d } from "jspdf";
@@ -23,9 +26,9 @@ import { MccConfig } from "./mccconfig";
 import { isTip } from '../util/treeutils';
 
 
-const PDF_TYPEFACE = 'Roboto',
-  PDF_700_WT = '700',
-  PDF_500_WT = '500';
+// const PDF_TYPEFACE = 'Roboto',
+//   PDF_700_WT = '700',
+//   PDF_500_WT = '500';
 
 const HOVER_DISTANCE = 30;
 
@@ -102,6 +105,8 @@ export class MccTreeCanvas {
   horizontalZoom: number;
   zoomCenterX: number;
   drawBranch: DrawBranchFnc;
+  dateHoverDiv: HTMLDivElement | null;
+  dateAxisEntries: AxisLabel[] = [];
 
   minOpacity: number;
   maxOpacity: number;
@@ -144,6 +149,7 @@ export class MccTreeCanvas {
     this.zoomCenterY = 0.5;
     this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
+    this.dateHoverDiv = null;
 
     this.minOpacity = 0.1;
     this.maxOpacity = 1.0;
@@ -421,22 +427,23 @@ export class MccTreeCanvas {
     const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
+    this.dateAxisEntries.length = 0;
     entries.forEach((entry, i)=>{
-      // console.log(entry)
-      const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
-      if (scale == DateScale.year) {
+      if (scale === DateScale.year) {
         //
       } else {
         if (entry.isNewYear || i === lastIndex) {
+          const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
           (div.querySelector(".cal .month") as HTMLSpanElement).textContent = entry.monthLabel;
           (div.querySelector(".cal .day") as HTMLSpanElement).textContent = entry.dateLabel;
           (div.querySelector(".year") as HTMLSpanElement).textContent = entry.yearLabel;
           div.classList.add("reference")
+          const left = this.getZoomX(entry.date);
+          div.style.left = `${left}px`;
+          this.dateAxis.appendChild(div);
+          this.dateAxisEntries.push({div, left})
         }
       }
-      const x = this.getZoomX(entry.date);
-      div.style.left = `${x}px`;
-      this.dateAxis.appendChild(div);
     })
   }
 
@@ -489,9 +496,31 @@ export class MccTreeCanvas {
       maxOffset = zoomedWidth - width,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      pct =  (this.maxDate - t) / (this.maxDate - this.minDate);
-    return right - (pct * zoomedWidth - offset);
+      pct =  (this.maxDate - t) / (this.maxDate - this.minDate),
+      x = right - (pct * zoomedWidth - offset)
+    return x;
   }
+
+  getZoomDate(x: number) : number {
+    let t = UNSET;
+    const right = this.width - TREE_PADDING_RIGHT - 0.5,
+      width = right - TREE_PADDING_LEFT,
+      zoomedWidth = this.horizontalZoom * width,
+      unzoomedCenter = width * 0.5,
+      zoomCenter = this.zoomCenterX * zoomedWidth,
+      /*
+      constrain the offset so we don't have empty space at the top or bottom,
+      where does this offset put the bottom of the zoomed tree?
+      */
+      maxOffset = zoomedWidth - width,
+      minOffset = 0,
+      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
+      pct = (right - x + offset) / zoomedWidth;
+    t = this.maxDate - pct * (this.maxDate - this.minDate);
+    // console.log(x, this.minDate, t, this.maxDate);
+    return t;
+  }
+
 
   zoomToTips(tips: number[]) : void {
     const height = this.height - this.paddingBottom - this.paddingTop;
@@ -748,6 +777,30 @@ export class MccTreeCanvas {
     this.colorsUnSet = false;
   }
 
+  setHoverDate(date:number) {
+    const x = this.getZoomX(date);
+    if (date === UNSET) {
+      if (this.dateHoverDiv !== null) {
+        this.dateHoverDiv.classList.remove("active");
+      }
+    } else {
+      if (this.dateHoverDiv === null) {
+        this.dateHoverDiv = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
+        this.dateAxis.appendChild(this.dateHoverDiv);
+        this.dateHoverDiv.classList.add("hover");
+      }
+      setDateLabel(date, this.dateHoverDiv);
+      this.dateHoverDiv.classList.add("active");
+      this.dateHoverDiv.style.left = `${x}px`;
+      // hide overlapping labels
+      let isOverlapping = false;
+      this.dateAxisEntries.forEach(({div, left})=>{
+        isOverlapping = left + DATE_LABEL_WIDTH_PX > x && left < x + DATE_LABEL_WIDTH_PX;
+        div.classList.toggle("off", isOverlapping);
+      });
+    }
+
+  }
 
   setNodeColor(index:number, ctx:CanvasRenderingContext2D):void {
     (ctx || this.ctx).fillStyle = this.nodeColors[index];
@@ -757,17 +810,11 @@ export class MccTreeCanvas {
     ctx.strokeStyle = this.branchColors[index];
   }
 
-  setNoding(noding: boolean, isSelectable: boolean) {
-    if (this.canvas instanceof PdfCanvas) return;
-    this.canvas.classList.toggle("noding", noding);
-    this.canvas.classList.toggle("new-node", noding && isSelectable);
-  }
-
   setFade(fade: boolean) {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
-  draw(earliest:number, latest:number, dates:DateLabel[], pdf: PdfCanvas | null = null) {
+  draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
     const {ctx, width, height, nodeYs, drawBranch} = this,

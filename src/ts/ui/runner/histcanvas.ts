@@ -1,6 +1,6 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
-import { TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
+import { TraceCanvas, TICK_LENGTH, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
 import { kneeHoverListenerType } from './runcommon';
 import { HistData } from "./histdata";
 
@@ -107,8 +107,8 @@ export class HistCanvas extends TraceCanvas {
   }
 
   draw() {
-    let {data, mccIndex, sampleIndex, hideBurnIn,
-      currentKneeIndex: kneeIndex, savedKneeIndex } = this.traceData as HistData;
+    let {data, mccIndex, sampleIndex, currentKneeIndex: kneeIndex } = this.traceData as HistData;
+    const {hideBurnIn, savedKneeIndex } = this.traceData as HistData;
     if (hideBurnIn && savedKneeIndex > 0) {
       data = data.slice(savedKneeIndex);
       kneeIndex -= savedKneeIndex;

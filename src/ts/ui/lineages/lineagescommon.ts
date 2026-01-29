@@ -1,7 +1,7 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode, getNodeClassName, UNSET } from '../common';
-import { DistributionSeries } from '../timedistributioncanvas';
+import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
 export enum NodePairType {
@@ -31,7 +31,7 @@ Extensions to the classes that make up a TimeDistributionChart
 */
 
 
-export class NodeDistributionSeries extends DistributionSeries {
+export class NodeDistribution extends Distribution {
   nodeType: DisplayNode;
 
   constructor(type: DisplayNode, times: number[]) {
@@ -50,14 +50,14 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
 export class NodeTimeDistributionChart extends TimeDistributionChart {
 
-  setSeries(series: NodeDistributionSeries[]) {
+  setSeries(series: NodeDistribution[]) {
     super.setSeries(series);
     this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
-      const series = this.series[i] as NodeDistributionSeries;
+      const series = this.series[i] as NodeDistribution;
       const className = getNodeClassName(series.nodeType);
       nodeGroup.setNodeClass(className);
-      nodeGroup.setNodeClass("tip", series.distribution.range === 0);
+      nodeGroup.setNodeClass("tip", series.range === 0);
     });
   }
 
@@ -71,7 +71,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     } else {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
-        const series = this.series[i] as NodeDistributionSeries;
+        const series = this.series[i] as NodeDistribution;
         if (series.nodeType === node) {
           nodeGroup.setNodeClass("matching");
           nodeGroup.setNodeClass("unmatching", false);
@@ -94,12 +94,11 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 
 export type NodeDisplay = {
   index: number,
-  color: string,
   label: string,
   type: DisplayNode,
   className: string,
   times: number[],
-  series: NodeDistributionSeries | null
+  series: NodeDistribution | null
 };
 
 export const getAncestorType = (npt: NodePairType): DisplayNode => {
@@ -162,10 +161,50 @@ export type NodeComparisonData = {
 }
 
 
-export type NodeCallback = (node:DisplayNode)=>void;
+export type HoverCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;
+export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
+export type TreeSelectCallback = (nodeIndex: number)=>void;
 export type DismissCallback = (node:DisplayNode)=>void;
-export type HoverCallback = (node: DisplayNode)=>void;
+export type NodeCallback = (displayNode: DisplayNode)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
+export type KeyEventHandler = (event: KeyboardEvent)=>void;
 
 export const MATCH_CLASS = "matching";
 export const NO_MATCH_CLASS = "unmatching";
+
+export const enum TreeHint {
+  Hover,
+
+  HoverRoot,
+  HoverMrca,
+  HoverNodeA,
+  HoverNodeBDescendant,
+  HoverNodeBCousin,
+
+  PreviewNodeA,
+  PreviewNodeBDescendant,
+  PreviewNodeBCousin,
+
+  MaxSelections,
+
+  Zoom
+}
+
+export const TREE_HINT_CLASSES = [
+  "hover",
+
+  "hover-root",
+  "hover-mrca",
+  "hover-node-a",
+  "hover-nodeB-descendant",
+  "hover-nodeB-cousin",
+
+  "preview-nodeA",
+  "preview-nodeB-descendant",
+  "preview-nodeB-cousin",
+
+  "max-selections",
+
+  "zoom"
+]
+export type SetHintType = (hint:TreeHint) => void;

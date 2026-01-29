@@ -1,21 +1,11 @@
-import { BaseTreeSeriesType, NodeDistributionType } from '../../constants';
-import { toFullDateString } from '../../pythia/dates';
-import { DisplayNode, UNSET, numericSortReverse, resizeCanvas, getNtile, getPercentLabel, CHART_TEXT_SIZE } from '../common';
+import { DisplayNode, UNSET, getPercentLabel } from '../common';
 import { NodeMetadataValues } from '../nodemetadata';
-import { DismissCallback, NodeCallback, NodeDisplay } from './lineagescommon';
+import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
 
-const REPORTING_NTILES = [0.025, 0.5, 0.975];
-
 const DEBUG = false;
-
-const TAU = Math.PI * 2;
-
-const TARGET = 200;
-const TOO_MANY = TARGET * 2;
-
 
 class NodeItem {
   div: HTMLDivElement;
@@ -25,18 +15,11 @@ class NodeItem {
   nodeIsTip: HTMLElement;
   tipIdSpan: HTMLElement;
   mdDiv: HTMLDivElement;
-  minDate: number;
-  maxDate: number;
-  dailyDistribution: number[][];
-  nTiles: number[][];
-  dayCount: number;
-  rgb: string;
-
-  width: number;
-  height: number;
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  hoverDate: number;
+  nodeConfidence: number = UNSET;
+  nodeChildCount: number = UNSET;
+  locked = false;
+  nodeMetadata: NodeMetadataValues | null = null;
+  nodeIndex: number = UNSET;
 
   constructor(div: HTMLDivElement) {
     this.div = div;
@@ -46,32 +29,41 @@ class NodeItem {
     this.nodeIsTip = div.querySelector(".tip-info") as HTMLElement;
     this.tipIdSpan = div.querySelector(".tip-id") as HTMLElement;
     this.mdDiv = div.querySelector(".node-metadata") as HTMLDivElement;
-    this.minDate = UNSET;
-    this.maxDate = UNSET;
-    this.dailyDistribution = [];
-    this.nTiles = [];
-    this.dayCount = UNSET;
-    this.canvas = div.querySelector("canvas") as HTMLCanvasElement;
-    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-    this.rgb = '';
-    const {width, height} = resizeCanvas(this.canvas);
-    this.width = width;
-    this.height = height;
-    this.canvas.addEventListener('pointermove', event=>this.handlePointerMove(event));
-    this.canvas.addEventListener('pointerleave', ()=>this.handlePointerLeave());
-    this.hoverDate = UNSET;
   }
 
 
   setData(nodeConfidence: number, nodeChildCount: number, locked: boolean,
-    nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number = UNSET) : void {
+    nodeMetadata: NodeMetadataValues | null, nodeIndex: number = UNSET) : void {
+    this.nodeConfidence = nodeConfidence;
+    this.nodeChildCount = nodeChildCount;
+    this.locked = locked;
+    this.nodeMetadata = nodeMetadata;
+    this.nodeIndex = nodeIndex;
+  }
 
-    const {div, countSpan,
+
+  draw() {
+    const {
+      nodeConfidence,
+      nodeChildCount,
+      locked,
+      nodeMetadata,
+      nodeIndex,
+      div,
+      countSpan,
       confidenceSpan,
       nodeStats,
       nodeIsTip,
-      tipIdSpan, mdDiv} = this;
+      tipIdSpan,
+      mdDiv} = this;
 
+    if (nodeIndex === UNSET) {
+      this.div.classList.remove('active');
+      this.div.classList.remove('locked');
+      return;
+    }
+    div.classList.add('active');
+    div.classList.toggle('locked', locked);
     const isTip = nodeChildCount === 1;
     div.classList.toggle("is-tip", isTip);
 
@@ -88,7 +80,7 @@ class NodeItem {
       if (DEBUG) {
         tipIdSpan.innerText = `${nodeIndex} `;
       }
-      if (nodeMetadata !== undefined) {
+      if (nodeMetadata !== null) {
         if (nodeMetadata.id !== undefined) {
           tipIdSpan.innerText = `${nodeMetadata.id.value}`;
           tipIdSpan.title = nodeMetadata.id.value;
@@ -99,10 +91,8 @@ class NodeItem {
       }
     }
 
-    div.classList.add('active');
-    div.classList.toggle('locked', locked);
 
-    if (nodeMetadata === undefined || (Object.keys(nodeMetadata).length === 1 && nodeMetadata.id !== undefined)) {
+    if (nodeMetadata === null || (Object.keys(nodeMetadata).length === 1 && nodeMetadata.id !== undefined)) {
       mdDiv.classList.add('hidden');
     } else {
       mdDiv.classList.remove('hidden');
@@ -140,150 +130,8 @@ class NodeItem {
     }
   }
 
-  setPrevalenceData(index: number, nodeDist: BaseTreeSeriesType, minDate: number, maxDate: number, color: string) {
-    // const t1 = Date.now();
-    this.minDate = minDate;
-    this.maxDate = maxDate;
-    this.rgb = color;
-    const treeCount = nodeDist.length;
-    // const seriesCount = nodeDist[0].length;
-    const rawDayCount = nodeDist[0][0].length;
-    const rebinning = rawDayCount > TOO_MANY;
-    const dayCount = rebinning ? TARGET : rawDayCount;
-
-    this.nTiles = REPORTING_NTILES.map(()=>Array(dayCount).fill(0));
-    this.dailyDistribution = Array(dayCount);
-
-    for (let d = 0; d < dayCount; d++) {
-      const dd = rebinning ? Math.round(d / (dayCount - 1) * (rawDayCount -1)) : d;
-      const dist: number[] = Array(treeCount);
-      for (let t = 0; t < treeCount; t++) {
-        dist[t] = nodeDist[t][index][dd];
-      }
-      dist.sort(numericSortReverse);
-      REPORTING_NTILES.forEach((ntile, i)=>{
-        this.nTiles[i][d] = getNtile(dist, ntile);
-      });
-      this.dailyDistribution[d] = dist;
-    }
-    this.dayCount = dayCount;
-    // console.debug(`             nodeListDisplay.NodeItem.setPrevalenceData ${index}    ${dayCount}            ${(Date.now()-t1)/1000}ms`);
-    requestAnimationFrame(()=>this.draw());
-  }
-
-
-  setDateRange(minDate: number, maxDate: number) : void {
-    this.minDate = minDate;
-    this.maxDate = maxDate;
-  }
-
-
-  draw() {
-    const {ctx, width, height, nTiles, dayCount, rgb} = this,
-      [lo, median, hi] = nTiles;
-    if (lo) {
-      ctx.fillStyle = 'rgb(250,250,250)'
-      ctx.fillRect(0, 0, width, height);
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = rgb;
-      ctx.beginPath();
-      let x = 0,
-        y = (1 - lo[0]) * height;
-      ctx.moveTo(x, y);
-      for (let i = 1; i < dayCount; i++) {
-        x = i / (dayCount-1) * width;
-        y = (1 - lo[i]) * height;
-        ctx.lineTo(x, y);
-      }
-      for (let i = dayCount -1; i >= 0; i--) {
-        x = i / (dayCount-1) * width;
-        y = (1 - hi[i]) * height;
-        ctx.lineTo(x, y);
-      }
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = rgb;
-      ctx.lineWidth = 2;
-      let drawing = false;
-      ctx.beginPath();
-      for (let i = 0; i < dayCount; i++) {
-        if (drawing || median[i] > 0) {
-          x = i / (dayCount-1) * width;
-          y = (1 - median[i]) * height;
-          if (!drawing) {
-            ctx.moveTo(x, height);
-            drawing = true;
-          }
-          ctx.lineTo(x, y);
-        }
-      }
-      ctx.stroke();
-      if (this.hoverDate !== UNSET) {
-        x = this.hoverDate / dayCount * width;
-        const dayData = this.nTiles.map(series=>series[this.hoverDate]),
-          ys = dayData.map(n=>(1 - n) * height),
-          labels = dayData.map(n=>`${getPercentLabel(n)}%`);
-        ctx.strokeStyle = 'black';
-        ctx.fillStyle = 'black';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, ys[0]);
-        ctx.lineTo(x, ys[2]);
-        ctx.stroke();
-        ctx.beginPath();
-        ys.forEach(y=>{
-          ctx.moveTo(x, y+2);
-          ctx.arc(x, y, 2, 0, TAU);
-        });
-        ctx.fill();
-        ctx.textBaseline = 'alphabetic';
-        /*
-        space the label text. make sure the top and bottom are in the canvas,
-        and that the center one doesn't overlap them.
-        after that, if either the top or the bottom overlaps the center, move them out.
-        */
-        const labelX = x > width - 60 ? x - 25 : x + 5,
-          LINE_SPACING = CHART_TEXT_SIZE * 1.25,
-          BOTTOM = height - 3;
-        ys[0] = Math.max(ys[0], CHART_TEXT_SIZE);
-        ys[1] = Math.min(BOTTOM - LINE_SPACING, Math.max(CHART_TEXT_SIZE + LINE_SPACING, ys[1]));
-        ys[2] = Math.min(ys[2], BOTTOM);
-        if (ys[0] > ys[1]-LINE_SPACING) {
-          ys[0] = ys[1] - LINE_SPACING;
-        }
-        if (ys[2] < ys[1]+LINE_SPACING) {
-          ys[2] = ys[1] + LINE_SPACING;
-        }
-        labels.forEach((label:string, i: number)=>{
-          ctx.fillText(label, labelX, ys[i]);
-        });
-
-      }
-    }
-  }
-
-
-  handlePointerMove(event: PointerEvent) {
-    const x = event.offsetX,
-      dateIndex = Math.round(x / this.width * this.dayCount);
-    if (dateIndex !== this.hoverDate) {
-      this.hoverDate = dateIndex;
-      requestAnimationFrame(()=>this.draw());
-    }
-  }
-
-  handlePointerLeave() {
-    if (this.hoverDate !== UNSET) {
-      this.hoverDate = UNSET;
-      requestAnimationFrame(()=>this.draw());
-    }
-  }
-
-
-
   clear() {
-    this.div.classList.remove('active');
-    this.div.classList.remove('locked');
+    this.nodeIndex = UNSET;
   }
 
   pushback() {
@@ -304,11 +152,9 @@ export class NodeListDisplay {
   private mrcaDiv: NodeItem;
   private nodeADiv: NodeItem;
   private nodeBDiv: NodeItem;
-  private dismissCallback: DismissCallback;
-  private nodeHighlightCallback: NodeCallback;
-  private nodeZoomCallback: NodeCallback;
 
-  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: NodeCallback, nodeZoomCallback: NodeCallback) {
+  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
+    nodeZoomCallback: NodeCallback) {
     this.container = document.querySelector("#lineages--node-list") as HTMLElement;
 
     const getDiv = (selector: string)=>{
@@ -322,72 +168,45 @@ export class NodeListDisplay {
     this.mrcaDiv = new NodeItem(getDiv('.lineages--node-item.mrca'));
     this.nodeADiv = new NodeItem(getDiv('.lineages--node-item.nodeA'));
     this.nodeBDiv = new NodeItem(getDiv('.lineages--node-item.nodeB'));
-    this.dismissCallback = dismissCallback;
-    this.nodeHighlightCallback = nodeHighlightCallback;
-    this.nodeZoomCallback = nodeZoomCallback;
+
 
     const bindDismiss = (div: HTMLDivElement, node: DisplayNode)=>{
       const dismiss = div.querySelector(".node-dismiss") as HTMLButtonElement;
       if (!dismiss) {
         throw new Error('the div has nothing for dismissing');
       }
-      dismiss.addEventListener('click', ()=>this.dismissCallback(node));
+      dismiss.addEventListener('click', ()=>dismissCallback(node));
     }
     const bindDiv = (div: HTMLDivElement, node: DisplayNode) => {
-      div.addEventListener('pointerenter', () => nodeHighlightCallback(node));
-      div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET));
+      div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
+      div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
+      div.addEventListener('click', () => nodeZoomCallback(node));
     }
-    // const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
-    //   const icon = div.querySelector(".node-icon") as HTMLDivElement;
-    //   if (!icon) {
-    //     throw new Error('the div has no icon to click');
-    //   }
-    //   icon.addEventListener('click', ()=>this.nodeZoomCallback(node));
-    // }
     bindDismiss(this.nodeADiv.div, DisplayNode.nodeA);
     bindDismiss(this.nodeBDiv.div, DisplayNode.nodeB);
-    // bindIcon(this.rootDiv.div, DisplayNode.root);
-    // bindIcon(this.mrcaDiv.div, DisplayNode.mrca);
-    // bindIcon(this.nodeADiv.div, DisplayNode.nodeA);
-    // bindIcon(this.nodeBDiv.div, DisplayNode.nodeB);
     bindDiv(this.rootDiv.div, DisplayNode.root);
     bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
     bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
     bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
-    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>this.nodeHighlightCallback(UNSET));
+    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
 
   }
 
 
-  setPrevalenceData(nodeDist: NodeDistributionType, nodes: NodeDisplay[], minDate: number, maxDate: number) {
-    const series: BaseTreeSeriesType = nodeDist.series;
-    for (let i = 0; i < nodes.length; i++) {
-      switch( nodes[i].type) {
-      case DisplayNode.root: this.rootDiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
-      case DisplayNode.mrca: this.mrcaDiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
-      case DisplayNode.nodeA: this.nodeADiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
-      case DisplayNode.nodeB: this.nodeBDiv.setPrevalenceData(i, series, minDate, maxDate, nodes[i].color); break;
-      }
-    }
-  }
-
-  setRoot(nodeConfidence: number, nodeChildCount: number, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setRoot(nodeConfidence: number, nodeChildCount: number, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.rootDiv.setData(nodeConfidence, nodeChildCount, false, nodeMetadata, nodeIndex);
   }
 
-  setMRCA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setMRCA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.mrcaDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
-    this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
-  setNodeA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setNodeA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.nodeADiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
-    this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
-  setNodeB(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number) : void {
+  setNodeB(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
     this.nodeBDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
-    this.container.scrollTo({ top: this.container.scrollHeight, behavior: "smooth" });
   }
 
   clearMRCA(): void {
@@ -400,6 +219,12 @@ export class NodeListDisplay {
 
   clearNodeB(): void {
     this.nodeBDiv.clear();
+  }
+
+  requestDraw() {
+    requestAnimationFrame(()=>{
+      [this.rootDiv, this.mrcaDiv, this.nodeADiv, this.nodeBDiv].forEach(div=>div.draw());
+    });
   }
 
   highlightNode(node: DisplayNode | typeof UNSET) : void {
@@ -421,15 +246,6 @@ export class NodeListDisplay {
       }
 
     }
-  }
-
-  requestDraw(): void {
-    requestAnimationFrame(()=>{
-      this.rootDiv.draw();
-      this.mrcaDiv.draw();
-      this.nodeADiv.draw();
-      this.nodeBDiv.draw();
-    });
   }
 
 }

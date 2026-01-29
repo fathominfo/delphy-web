@@ -340,13 +340,13 @@
   --lineages-prevalence-chart-height: calc((var(--selection-height) * var(--lineages-selections-max)) + (var(--selections-gap) * (var(--lineages-selections-max) - 1)));
   --lineages-prevalence-chart-feature-height: calc(100% - var(--axis-dates-height));
   /* --lineages-chart-yaxis-width: calc(var(--unit) * 2.8125); */
-  --lineages-chart-yaxis-width: calc(var(--unit) * 4.875);
+  --lineages-chart-yaxis-width: calc(var(--unit) * 5.875);
   --lineages-prevalence-chart-feature-zindex: 1;
   --lineages-prevalence-chart-support-zindex: 0;
   --subway-overflow-y: calc(var(--subway-row-height) * 1.5);
   --subway-offset-y: calc(var(--subway-overflow-y) * 0.05);
   --lineages-emergence-timeline-height: calc(var(--subway-height) + var(--subway-overflow-y));
-  --mutation-emergence-mutation-width: var(--lineages-chart-yaxis-width);
+  --mutation-emergence-mutation-width: calc(var(--lineages-chart-yaxis-width) - var(--block-gap));
   --mutation-emergence-mutation-space-right: calc(var(--unit) * 0.25);
   --mutation-emergence-mutation-space-right-external: var(--mutation-emergence-mutation-space-right) * 2;
   --mutation-emergence-mutation-gap: 0.025rem;
@@ -1457,68 +1457,85 @@ building custom inputs on top of native inputs. */
     gap: inherit;
 }
 
+
+
+
+
+
 .timeline {
   width: 100%;
   justify-content: center;
   cursor: default;
+
+  .display {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cal {
+    position: absolute;
+    top: unset;
+    bottom: 0;
+    left: 0;
+    transform: translateX(calc(var(--unit) * 0.5));
+  }
+
+  .label {
+    position: absolute;
+    z-index: 1;
+    top: unset;
+    bottom: 0;
+    left: var(--start-pct);
+    width: auto;
+    height: auto;
+    font-family: var(--Inter);
+    font-weight: 600;
+    font-size: calc(var(--unit) * 0.75);
+    letter-spacing: 0.00625rem;
+    padding: 0;
+    transition: all var(--transition) ease-out;
+
+    &.reference {
+      position: absolute;
+      top: 0;
+      bottom: unset;
+      height: 100%;
+
+      .line {
+        position: relative;
+        top: 0;
+        width: var(--guide-date-stroke-weight);
+        height: 100%;
+        border-radius: var(--guide-date-stroke-weight);
+        background-color: var(--guide-date-stroke);
+        opacity: var(--guide-date-opacity);
+        transform: translateX(-50%);
+      }
+
+      .cal {
+        top: 0;
+        bottom: unset;
+        padding-top: calc(var(--guide-date-stroke-weight) * 2);
+        color: var(--node-position-text);
+      }
+    }
+
+  }
+
 }
 
-.timeline .display {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.timeline canvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
 
 .chart .timeline {
   position: absolute;
   height: 100%;
   align-items: flex-end;
-}
-
-.timeline .label {
-  position: absolute;
-  z-index: 1;
-  top: unset;
-  bottom: 0;
-  left: var(--start-pct);
-  width: auto;
-  height: auto;
-  font-family: var(--Inter);
-  font-weight: 600;
-  font-size: calc(var(--unit) * 0.75);
-  letter-spacing: 0.00625rem;
-  padding: 0;
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
-  transition: all var(--transition) ease-out;
-}
-
-.timeline .cal {
-  position: absolute;
-  top: unset;
-  bottom: 0;
-  left: 0;
-  transform: translateX(calc(var(--unit) * 0.5));
-}
-
-.timeline .label.reference {
-  position: absolute;
-  top: 0;
-  bottom: unset;
-}
-
-.timeline .label.reference .cal {
-  top: 0;
-  bottom: unset;
-  padding-top: calc(var(--guide-date-stroke-weight) * 2);
-  color: var(--node-position-text);
 }
 
 
@@ -1532,9 +1549,6 @@ building custom inputs on top of native inputs. */
 .guide {
   position: absolute;
   mix-blend-mode: multiply;
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
   transition: all var(--transition) ease-out;
 
 
@@ -1561,18 +1575,55 @@ building custom inputs on top of native inputs. */
 
 }
 
-
-.axis-date {
-  .line {
-    height: var(--axis-date-one-line-height);
-  }
-  &.reference .line {
-    width: var(--chart-stroke-weight);
-    height: var(--axis-date-two-line-height);
-  }
+.axis-dates,
+.tracker-dates {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: calc(100% - var(--chart-displays-timeline-inset-x));
 }
 
+.axis-dates {
+  position: relative;
+  height: var(--axis-dates-height);
+}
+
+
+
+.date,
+.axis-date,
+.tracker-date {
+  font-family: var(--Inter-Tight);
+  font-variant-numeric: tabular-nums;
+}
+.date .day,
+.date .year,
+.axis-date .day,
+.axis-date .year,
+.tracker-date .day,
+.tracker-date .year {
+  letter-spacing: var(--tabular-numerals-tighter-spacing-1x);;
+}
+
+
 .axis-date, .tracker-date {
+  position: absolute;
+  display: flex;
+  flex-direction: row;
+  justify-content: inherit;
+  align-items: baseline;
+  gap: 0;
+  top: 0;
+  width: min-content;
+  height: 100%;
+  font-weight: var(--date-text-font-weight);
+  font-size: 8px;
+  line-height: 6px;
+  color: var(--date-text);
+  overflow-x: visible;
+  pointer-events: none;
 
   .line {
     position: absolute;
@@ -1581,8 +1632,6 @@ building custom inputs on top of native inputs. */
     width: var(--chart-tick-stroke-weight);
     transform: translate(-50%, calc(var(--chart-stroke-weight) / -2));
     background-color: var(--chart-stroke);
-
-
   }
 
   .text {
@@ -1593,8 +1642,7 @@ building custom inputs on top of native inputs. */
     gap: 0;
     height: var(--axis-date-text-height);
     padding: 0 var(--axis-date-text-inset-x);
-
-    font-weight: 500;
+    transition: opacity var(--axis-transition) ease-out;
   }
 
   .cal, .year {
@@ -1610,7 +1658,107 @@ building custom inputs on top of native inputs. */
 }
 
 
+
+
+.tracker-date {
+  .line {
+    z-index: 1;
+    top: calc(100% + var(--chart-stroke-weight));
+    height: var(--axis-date-two-line-height);
+  }
+  .tracker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--chart-tick-stroke-weight);
+    height: 100%;
+    transform: translateX(-50%);
+    background-color: var(--chart-stroke);
+    mix-blend-mode: multiply;
+  }
+
+  .text {
+    position: absolute;
+    z-index: 0;
+    // top: calc(100% + var(--chart-stroke-weight));
+    top: 100%;
+    letter-spacing: 0;
+  }
+
+  .cal {
+    gap: var(--date-text-gap);
+  }
+
+  &.reference .tracker {
+    opacity: var(--date-reference-line-opacity);
+  }
+}
+
+
+.tracker-dates {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: calc(var(--lineages-prevalence-chart-feature-height) + var(--axis-dates-height));
+  opacity: 0;
+  transition: opacity var(--axis-transition) ease-out;
+  pointer-events: none;
+  &.active {
+    opacity: 1;
+  }
+}
+
+.axis-date {
+  .line {
+    height: var(--axis-date-one-line-height);
+  }
+  &.reference .line {
+    width: var(--chart-stroke-weight);
+    height: var(--axis-date-two-line-height);
+  }
+
+  &.off {
+    .line, .text {
+      opacity: 0;
+    }
+  }
+}
+
 .axis-date .cal {
   font-weight: 500;
   gap: 0.05rem;
+}
+
+
+.dates {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.range {
+  position: absolute;
+  top: 0;
+  // left: var(--start-pct);
+  // width: calc(var(--width-pct));
+  height: 100%;
+  background-color: var(--range-fill);
+  overflow: visible;
+  .guide {
+    opacity: var(--guide-range-date-opacity);
+    &.start { left: 0; }
+    &.start { left: 100%; }
+  }
+}
+
+.guide.date {
+  top: 0;
+  width: var(--guide-date-stroke-weight);
+  height: 100%;
+  border-radius: var(--guide-date-stroke-weight);
+  background-color: var(--guide-date-stroke);
+  opacity: var(--guide-date-opacity);
+  transform: translateX(-50%);
 }

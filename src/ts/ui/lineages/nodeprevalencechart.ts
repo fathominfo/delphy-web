@@ -1,12 +1,14 @@
 import { BaseTreeSeriesType } from '../../constants';
-import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName } from '../common';
+import { DateScale, DisplayNode, UNSET, getNiceDateInterval, getNodeClassName,
+  setDateLabel, DATE_LABEL_WIDTH_PX, AxisLabel } from '../common';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
-import { NodeCallback, NodeDisplay } from './lineagescommon';
+import { HoverCallback, NodeDisplay } from './lineagescommon';
 
 const TARGET = 200;
 const TOO_MANY = TARGET * 2;
 
 const STROKE_WIDTH = 2;
+
 
 export class SVGPrevalenceMeanGroup {
   node: DisplayNode;
@@ -29,18 +31,19 @@ export class SVGPrevalenceMeanGroup {
 
 
 
-
-
 export class NodePrevalenceChart {
-  hoverDateIndex: number = UNSET;
+  hoverDate: number = UNSET;
   highlightDisplayNode: DisplayNode = UNSET;
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
   nodes: NodeDisplay[];
   svg: SVGElement;
+  dateHoverContainer: HTMLDivElement;
+  dateHoverDiv: HTMLDivElement;
   svgMeanGroups: SVGPrevalenceMeanGroup[];
   dateAxis: HTMLDivElement;
   referenceDateTemplate: HTMLDivElement;
   dateTemplate: HTMLDivElement;
+  dateAxisEntries: AxisLabel[] = [];
   showingMean = true;
 
   dist: BaseTreeSeriesType = []; // number[][][], tree, series, date
@@ -60,9 +63,11 @@ export class NodePrevalenceChart {
 
 
 
-  constructor(nodeHighlightCallback: NodeCallback) {
+  constructor(nodeHighlightCallback: HoverCallback) {
     const container = document.querySelector("#lineages--prevalence") as HTMLDivElement;
     this.svg = container.querySelector("#lineages--prevalence--chart") as SVGElement;
+    this.dateHoverContainer = container.querySelector(".tracker-dates") as HTMLDivElement;
+    this.dateHoverDiv = this.dateHoverContainer.querySelector(".tracker-date") as HTMLDivElement;
     this.svgMeanGroups = [];
     [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(nodeType=>{
       this.svgMeanGroups[nodeType] = new SVGPrevalenceMeanGroup(nodeType, this.svg);
@@ -196,32 +201,38 @@ export class NodePrevalenceChart {
     }
 
     const hoverX = e.offsetX,
-      dateCount = Math.floor(this.maxDate - this.minDate + 1),
-      dateIndex = Math.floor(hoverX / this.width * dateCount);
+      xPct = hoverX / this.width,
+      date = this.minDate + xPct * (this.maxDate - this.minDate);
 
-    if (dateIndex !== this.hoverDateIndex) {
-      this.hoverDateIndex = dateIndex;
+    let requesting = false;
+    if (date !== this.hoverDate) {
+      this.hoverDate = date;
+      requesting = true;
     }
 
     if (displayNode !== this.highlightDisplayNode) {
       this.highlightDisplayNode = displayNode;
-      this.nodeHighlightCallback(displayNode);
+      requesting = true;
+    }
+
+    if (requesting) {
+      this.nodeHighlightCallback(displayNode, date, null);
     }
 
 
   }
 
   handleMouseout = () => {
-    if (this.hoverDateIndex !== UNSET) {
-      this.hoverDateIndex = UNSET;
+    if (this.hoverDate !== UNSET) {
+      this.hoverDate = UNSET;
       this.highlightDisplayNode = UNSET;
       this.requestDraw();
     }
-    this.nodeHighlightCallback(UNSET);
+    this.nodeHighlightCallback(UNSET, UNSET, null);
   }
 
 
-  highlightNode(node: DisplayNode) : void {
+  highlightNode(node: DisplayNode, date:number) : void {
     requestAnimationFrame(()=>{
       if (node === UNSET) {
         this.svgMeanGroups.forEach((group)=>{
@@ -234,6 +245,24 @@ export class NodePrevalenceChart {
           group.toggleClass("unmatching", node !== nodeType);
         });
       }
+      if (date === UNSET) {
+        this.dateHoverContainer.classList.remove("active");
+      } else {
+        setDateLabel(date, this.dateHoverDiv);
+        const pct = 100 * (date - this.minDate) / (this.maxDate - this.minDate);
+        this.dateHoverDiv.style.left = `${pct}%`;
+        this.dateHoverContainer.classList.add("active");
+        // hide overlapping labels
+        const widthInPct = DATE_LABEL_WIDTH_PX / this.width * 100;
+        let isOverlapping = false;
+        this.dateAxisEntries.forEach(({div, left})=>{
+          isOverlapping = left + widthInPct > pct && left < pct + widthInPct;
+          div.classList.toggle("off", isOverlapping);
+        });
+
+
+      }
+
     });
   }
 
@@ -427,6 +456,8 @@ export class NodePrevalenceChart {
   setAxisDates() {
     const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
     this.dateAxis.innerHTML = '';
+    entries.pop(); // don't show the last date here
+    this.dateAxisEntries.length = 0;
     entries.forEach(labelData=>{
       let div: HTMLDivElement;
       let label = '';
@@ -449,8 +480,10 @@ export class NodePrevalenceChart {
         }
       }
       (div.querySelector(".cal .month") as HTMLSpanElement).textContent = label;
-      div.style.left = `${100 * labelData.percent}%`;
+      const left = 100 * labelData.percent;
+      div.style.left = `${left}%`;
       this.dateAxis.appendChild(div);
+      this.dateAxisEntries.push({div, left});
     })
   }
 

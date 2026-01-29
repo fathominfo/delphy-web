@@ -1,8 +1,8 @@
-import { NodeCallback, NodeDisplay, NodeDistributionSeries, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
-import { DisplayNode, UNSET } from '../common';
-import { DistributionSeries, SeriesHoverCallback } from '../timedistributioncanvas';
+import { HoverCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
+import { DateScale, DisplayNode, getNiceDateInterval, UNSET } from '../common';
+import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
-import {  } from '../timedistributionchart';
+import { Distribution } from '../distribution';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 
@@ -14,7 +14,14 @@ const rootSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-label"
   mrcaDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-date-label") as HTMLSpanElement,
   nodeADateSpan = nodeComparisonContainer.querySelector("#lineages-nt-a-date-label") as HTMLSpanElement,
   nodeBDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-date-label") as HTMLSpanElement,
-  svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement;
+  svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement,
+  dateMarkerContainer = nodeComparisonContainer.querySelector(".timeline") as HTMLDivElement,
+  dateMarkerTemplate = dateMarkerContainer.querySelector(".label.reference") as HTMLDivElement,
+  dateHoverDiv = nodeComparisonContainer.querySelector(".tracker") as HTMLDivElement,
+  maxProbDiv = nodeComparisonContainer.querySelector(".axis.y .max .val") as HTMLDivElement
+
+dateMarkerTemplate.remove();
+
 
 
 
@@ -24,35 +31,37 @@ export class NodeTimelines {
   data: NodeDisplay[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
+  currentTypes: NodeDisplay[] = [];
   highlighedtNode: DisplayNode = UNSET;
+  highlightedDate: number = UNSET;
 
-  constructor(nodeHighlightCallback: NodeCallback) {
+  constructor(nodeHighlightCallback: HoverCallback) {
 
-    const seriesHoverHandler: SeriesHoverCallback = (series: DistributionSeries | null)=>{
+    const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, date: number)=>{
       let nodeType: DisplayNode =  UNSET;
       if (series) {
-        nodeType = (series as NodeDistributionSeries).nodeType;
+        nodeType = (series as NodeDistribution).nodeType;
       }
-      nodeHighlightCallback(nodeType);
+      nodeHighlightCallback(nodeType, date, null);
     };
 
     this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
 
     [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
       rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET));
+      span.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
     });
     [ rootSpan, rootDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.root));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.root, UNSET, null));
     });
     [ mrcaSpan, mrcaDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca, UNSET, null));
     });
     [ nodeASpan, nodeADateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeA));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeA, UNSET, null));
     });
     [ nodeBSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeB));
+      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeB, UNSET, null));
     });
   }
 
@@ -60,105 +69,137 @@ export class NodeTimelines {
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.nodeTimesCanvas.setDateRange(minDate, maxDate);
+    dateMarkerContainer.querySelectorAll(".label.reference").forEach(div=>div.remove());
+    const { scale, entries } = getNiceDateInterval(minDate, maxDate);
+    let first = true;
+    if (scale !== DateScale.year) {
+      entries.forEach(labelData=>{
+        if (first) first = false;
+        else if (labelData.isNewYear) {
+          const div = dateMarkerTemplate.cloneNode(true) as HTMLDivElement;
+          const yearSpan = div.querySelector(".year") as HTMLSpanElement;
+          yearSpan.textContent = labelData.yearLabel;
+          const left = 100 * labelData.percent;
+          div.style.left = `${left}%`;
+          dateMarkerContainer.appendChild(div);
+        }
+      });
+    }
   }
 
 
 
   setData(nodes: NodeDisplay[]) {
     this.data = nodes;
-    const currentTypes:NodeDisplay[] = [];
-    nodes.forEach((nd:NodeDisplay)=>currentTypes[nd.type] = nd);
-    [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(dn=>{
-      let nameSpan: HTMLSpanElement | null = null,
-        dateSpan: HTMLSpanElement | null = null;
-      switch (dn) {
-      case DisplayNode.root:
-        nameSpan = rootSpan;
-        dateSpan = rootDateSpan;
-        break;
-      case DisplayNode.mrca:
-        nameSpan = mrcaSpan;
-        dateSpan = mrcaDateSpan;
-        break;
-      case DisplayNode.nodeA:
-        nameSpan = nodeASpan;
-        dateSpan = nodeADateSpan;
-        break;
-      case DisplayNode.nodeB:
-        nameSpan = nodeBSpan;
-        dateSpan = nodeBDateSpan;
-        break;
-      }
-      if (!nameSpan || !dateSpan) return;
-      const nodeData = currentTypes[dn];
-      if (nodeData === undefined) {
-        nameSpan.classList.add("hidden");
-        dateSpan.classList.add("hidden");
-      } else {
-        const dist = nodeData.series?.distribution;
-        if (!dist) {
-          nameSpan.classList.add("hidden");
-          dateSpan.classList.add("hidden");
-        } else {
-          nameSpan.classList.remove("hidden");
-          dateSpan.classList.remove("hidden");
-          const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
-          const dateLabel = toFullDateString(dist.median);
-          nameSpan.style.left = `${x}px`;
-          dateSpan.style.left = `${x}px`;
-          dateSpan.textContent = dateLabel;
-        }
-      }
-    });
-
+    this.currentTypes.length = 0;
+    nodes.forEach((nd:NodeDisplay)=>this.currentTypes[nd.type] = nd);
     const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
-    this.nodeTimesCanvas.setSeries(allSeries as NodeDistributionSeries[]);
-    this.requestDraw();
+    this.nodeTimesCanvas.setSeries(allSeries as NodeDistribution[]);
   }
 
   requestDraw() : void {
     requestAnimationFrame(()=>{
+      [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(dn=>{
+        let nameSpan: HTMLSpanElement | null = null,
+          dateSpan: HTMLSpanElement | null = null;
+        switch (dn) {
+        case DisplayNode.root:
+          nameSpan = rootSpan;
+          dateSpan = rootDateSpan;
+          break;
+        case DisplayNode.mrca:
+          nameSpan = mrcaSpan;
+          dateSpan = mrcaDateSpan;
+          break;
+        case DisplayNode.nodeA:
+          nameSpan = nodeASpan;
+          dateSpan = nodeADateSpan;
+          break;
+        case DisplayNode.nodeB:
+          nameSpan = nodeBSpan;
+          dateSpan = nodeBDateSpan;
+          break;
+        }
+        if (!nameSpan || !dateSpan) return;
+        const nodeData = this.currentTypes[dn];
+        if (nodeData === undefined) {
+          nameSpan.classList.add("hidden");
+          dateSpan.classList.add("hidden");
+        } else {
+          const dist = nodeData.series;
+          if (!dist) {
+            nameSpan.classList.add("hidden");
+            dateSpan.classList.add("hidden");
+          } else {
+            nameSpan.classList.remove("hidden");
+            dateSpan.classList.remove("hidden");
+            const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
+            const dateLabel = toFullDateString(dist.median);
+            nameSpan.style.left = `${x}px`;
+            dateSpan.style.left = `${x}px`;
+            dateSpan.textContent = dateLabel;
+          }
+        }
+      });
+
+      const max = this.nodeTimesCanvas.allSeriesBandMax;
+      maxProbDiv.textContent = `${max}%`;
       this.nodeTimesCanvas.requestDraw();
     });
   }
 
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
+  highlightNode(node: DisplayNode, date: number) : void {
     if (!this.data) return;
-    if (node === this.highlighedtNode) return;
-    nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
 
-    this.nodeTimesCanvas.setMatching(node);
+    if (node !== this.highlighedtNode) {
+      nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
+
+      this.nodeTimesCanvas.setMatching(node);
 
 
-    rootSpan.classList.remove("highlight");
-    rootDateSpan.classList.remove("highlight");
-    mrcaSpan.classList.remove("highlight");
-    mrcaDateSpan.classList.remove("highlight");
-    nodeASpan.classList.remove("highlight");
-    nodeADateSpan.classList.remove("highlight");
-    nodeBSpan.classList.remove("highlight");
-    nodeBDateSpan.classList.remove("highlight");
-    nodeComparisonContainer.classList.remove("highlighting");
-    switch (node) {
-    case DisplayNode.root:
-      rootSpan.classList.add("highlight");
-      rootDateSpan.classList.add("highlight");
-      break;
-    case DisplayNode.mrca:
+      rootSpan.classList.remove("highlight");
+      rootDateSpan.classList.remove("highlight");
       mrcaSpan.classList.remove("highlight");
       mrcaDateSpan.classList.remove("highlight");
-      break;
-    case DisplayNode.nodeA:
       nodeASpan.classList.remove("highlight");
       nodeADateSpan.classList.remove("highlight");
-      break;
-    case DisplayNode.nodeB:
       nodeBSpan.classList.remove("highlight");
       nodeBDateSpan.classList.remove("highlight");
-      break;
+      nodeComparisonContainer.classList.remove("highlighting");
+      switch (node) {
+      case DisplayNode.root:
+        rootSpan.classList.add("highlight");
+        rootDateSpan.classList.add("highlight");
+        break;
+      case DisplayNode.mrca:
+        mrcaSpan.classList.remove("highlight");
+        mrcaDateSpan.classList.remove("highlight");
+        break;
+      case DisplayNode.nodeA:
+        nodeASpan.classList.remove("highlight");
+        nodeADateSpan.classList.remove("highlight");
+        break;
+      case DisplayNode.nodeB:
+        nodeBSpan.classList.remove("highlight");
+        nodeBDateSpan.classList.remove("highlight");
+        break;
+      }
+      this.highlighedtNode = node;
     }
-    this.highlighedtNode = node;
+    if (date !== this.highlightedDate) {
+      this.highlightedDate = date;
+      if (date === UNSET) {
+        dateHoverDiv.classList.remove("active");
+      } else {
+        const pct = 100 * (date - this.minDate) / (this.maxDate - this.minDate);
+        dateHoverDiv.style.left = `${pct}%`;
+        dateHoverDiv.classList.add("active");
+      }
+    }
+
+
+
   }
 
   resize() {

@@ -1,6 +1,7 @@
 import {Distribution} from './distribution';
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
-import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
+import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain,
+  measureText, resizeCanvas} from './common';
 import { noop } from '../constants';
 
 const margin = {
@@ -13,7 +14,7 @@ const margin = {
 
 export type SeriesHoverCallback = (series: DistributionSeries | null)=>void;
 
-const SERIES_COLOR = 'rgba(80, 80, 80, ';
+// const SERIES_COLOR = 'rgba(80, 80, 80, ';
 const LINE_COLOR = 'rgba(156, 156, 156, ';
 
 // let READOUT_SERIES_TEMPLATE: HTMLElement;
@@ -262,22 +263,22 @@ export class TimeDistributionCanvas {
       textX = constrain(textX, textWidth / 2, width - textWidth / 2);
 
       ctx.globalAlpha = 0.7;
-      // if (this.hoverSeriesIndex === index || isCertain) {
-      //   ctx.fillText(dateLabel, textX, topY);
-      // } else {
-      //   ctx.fillText(dateLabel, textX, middleY);
-      // }
+      if (this.hoverSeriesIndex === index || isCertain) {
+        ctx.fillText(dateLabel, textX, topY);
+      } else {
+        ctx.fillText(dateLabel, textX, middleY);
+      }
       /* values that are certain do not need min and max drawn */
       if (isCertain) return;
-      // if (this.hoverSeriesIndex === index) {
-      //   ctx.textBaseline = "middle";
+      if (this.hoverSeriesIndex === index) {
+        ctx.textBaseline = "middle";
 
-      //   ctx.textAlign = "right";
-      //   ctx.fillText(minDateStr, minX, middleY);
+        ctx.textAlign = "right";
+        ctx.fillText(minDateStr, minX, middleY);
 
-      //   ctx.textAlign = "left";
-      //   ctx.fillText(maxDateStr, maxX, middleY);
-      // }
+        ctx.textAlign = "left";
+        ctx.fillText(maxDateStr, maxX, middleY);
+      }
 
       middleY += textMetrics.height;
       topY += textMetrics.height;
@@ -349,10 +350,10 @@ export class TimeDistributionCanvas {
     ctx.textBaseline = "alphabetic";
     const label = "95% HPD";
     const textX = this.textOnRight ? this.drawWidth / 2 : 0;
-    // ctx.fillText(label, textX, LINE_HEIGHT);
+    ctx.fillText(label, textX, LINE_HEIGHT);
 
-    // ctx.font = CHART_TEXT_FONT;
-    // ctx.fillText(`${minDateStr} – ${maxDateStr}`, textX+COL_2, LINE_HEIGHT);
+    ctx.font = CHART_TEXT_FONT;
+    ctx.fillText(`${minDateStr} – ${maxDateStr}`, textX+COL_2, LINE_HEIGHT);
   }
 
   labelHover() {
@@ -377,13 +378,13 @@ export class TimeDistributionCanvas {
     ctx.stroke();
 
     // date
-    const dateLabel = toFullDateString(this.hoverDate);
+    // const dateLabel = toFullDateString(this.hoverDate);
     // if (this.readout) {
     //   (this.readout.querySelector(".time-chart--date") as HTMLElement).innerText = dateLabel;
     //   this.readout.style.left = `${this.hoverX}px`;
     // }
 
-    this.series.forEach((ds, i) => {
+    this.series.forEach((ds) => {
       if (!ds) return;
       // if (ds.distribution.name === undefined) return;
       if (!this.hoverDate || !this.hoverX) return;
@@ -419,7 +420,7 @@ export class TimeDistributionCanvas {
       ctx.fill();
 
       // value label
-      const pctLabel = `${getPercentLabel(pct)}%`;
+      // const pctLabel = `${getPercentLabel(pct)}%`;
       // (series.querySelector(".value-label") as HTMLElement).innerText = pctLabel;
     });
   }
@@ -490,7 +491,7 @@ export class TimeDistributionCanvas {
     if (!hoverDate) return;
     let hovered: DistributionSeries | null = null;
     let maxValAtX = 0;
-    this.series.forEach((ds, i) => {
+    this.series.forEach((ds) => {
       if (!ds) return;
       const val = ds.distribution.getValueAt(hoverDate);
       if (val > maxValAtX) {

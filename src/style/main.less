@@ -330,6 +330,17 @@ canvas {
 
 
 .tree-container {
+  display: flex;
+  flex-direction: column;
+  justify-self: flex-start;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  background-color: var(--tree-fill);
+  border: var(--tree-stroke-weight) solid var(--tree-stroke);
+  border-radius: var(--corner);
+  overflow: hidden;
+
   position: relative;
   padding: var(--tree-inset) var(--tree-inset) var(--tree-inset-bottom);
   box-sizing: content-box;
@@ -342,6 +353,7 @@ canvas {
     box-sizing: border-box;
     pointer-events: none;
     margin: 0 20px;
+    z-index: 1;
 
     .date {
       position: absolute;
@@ -403,6 +415,23 @@ canvas {
         }
         .text {
           color: var(--date-reference-text);
+        }
+        &.off {
+          .text {
+            opacity: 0;
+          }
+        }
+      }
+
+      &.hover {
+        pointer-events: none;
+        opacity: 0;
+        .line { height: var(--date-line-height); }
+        .line, .text {
+          pointer-events: none;
+        }
+        &.active {
+          opacity: 1;
         }
       }
 
@@ -655,19 +684,6 @@ canvas {
 }
 
 
-.tree-container {
-  display: flex;
-  flex-direction: column;
-  justify-self: flex-start;
-  align-items: flex-start;
-  gap: 0;
-  position: relative;
-  background-color: var(--tree-fill);
-  border: var(--tree-stroke-weight) solid var(--tree-stroke);
-  border-radius: var(--corner);
-  overflow: hidden;
-}
-
 
 /* DEFAULTS */
 
@@ -741,108 +757,6 @@ h1, h2, h3, h4, h5, h6 {
   font-variant-numeric: tabular-nums;
 } */
 
-.date,
-.axis-date,
-.tracker-date {
-  font-family: var(--Inter-Tight);
-  font-variant-numeric: tabular-nums;
-}
-.date .day,
-.date .year,
-.axis-date .day,
-.axis-date .year,
-.tracker-date .day,
-.tracker-date .year {
-  letter-spacing: var(--tabular-numerals-tighter-spacing-1x);;
-}
-
-.axis-dates,
-.tracker-dates {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  align-items: flex-start;
-  width: calc(100% - var(--chart-displays-timeline-inset-x));
-}
-
-.axis-dates {
-  position: relative;
-  height: var(--axis-dates-height);
-}
-
-.tracker-dates {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: calc(var(--lineages-prevalence-chart-feature-height) + var(--axis-dates-height));
-  opacity: 0;
-  -webkit-transition: opacity var(--axis-transition) ease-out;
-  -moz-transition: opacity var(--axis-transition) ease-out;
-  -ms-transition: opacity var(--axis-transition) ease-out;
-  transition: opacity var(--axis-transition) ease-out;
-  pointer-events: none;
-}
-
-.tracker-dates.active {
-  opacity: 1;
-}
-
-
-
-.axis-date,
-.tracker-date {
-  position: absolute;
-  display: flex;
-  flex-direction: row;
-  justify-content: inherit;
-  align-items: baseline;
-  gap: 0;
-  top: 0;
-  width: min-content;
-  height: 100%;
-  font-weight: var(--date-text-font-weight);
-  font-size: 8px;
-  line-height: 6px;
-  color: var(--date-text);
-  overflow-x: visible;
-  pointer-events: none;
-}
-
-.axis-date, .tracker-date {
-  .line {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: var(--chart-tick-stroke-weight);
-    transform: translate(-50%, calc(var(--chart-stroke-weight) / -2));
-    background-color: var(--chart-stroke);
-  }
-}
-
-
-
-.tracker-date {
-  .line {
-    z-index: 1;
-    top: calc(100% + var(--chart-stroke-weight));
-    height: var(--axis-date-two-line-height);
-  }
-  .tracker {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: var(--chart-tick-stroke-weight);
-    height: 100%;
-    transform: translateX(-50%);
-    background-color: var(--chart-stroke);
-    mix-blend-mode: multiply;
-  }
-
-  &.reference .tracker {
-    opacity: var(--date-reference-line-opacity);
-  }
-}
 
 
 

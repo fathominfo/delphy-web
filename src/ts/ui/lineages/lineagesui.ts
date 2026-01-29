@@ -2,89 +2,44 @@ import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { Pythia } from '../../pythia/pythia';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { MccUI } from '../mccui';
-import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
-  TREE_PADDING_BOTTOM,
-  TREE_PADDING_LEFT,
-  TREE_PADDING_RIGHT,
-  TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_PADDING_TOP, UNSET,
-  getNodeStroke, getNodeTypeName, getNodeClassName,
-  getNodeFill,
-  getCSSValue,
-  getNodeTint} from '../common';
+import { DataResolveType, DisplayNode, Screens, UNSET,
+  getNodeTypeName, getNodeClassName } from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodePairType, NodePair, NodeComparisonData,
-  NodeCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType,
-  NodeDistributionSeries,
-  OpenMutationPageFncType} from './lineagescommon';
+  HoverCallback, DismissCallback, NodeDisplay, getAncestorType, getDescendantType,
+  NodeDistribution,
+  OpenMutationPageFncType,
+  TreeSelectCallback,
+  TreeHint,
+  TREE_HINT_CLASSES,
+  TreeHoverCallback,
+  NodeCallback} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';
 import { NodePrevalenceChart } from './nodeprevalencechart';
 import { isTip } from '../../util/treeutils';
 import autocomplete from 'autocompleter';
-import { PdfCanvas } from '../../util/pdfcanvas';
+// import { PdfCanvas } from '../../util/pdfcanvas';
 import { FieldTipCount, NodeMetadata } from '../nodemetadata';
 import { NodeComparisonChartData } from './nodecomparisonchartdata';
 import { NodeSchematic } from './nodeschematic';
-import { MccTreeCanvas } from '../mcctreecanvas';
-import { toFullDateString } from '../../pythia/dates';
+import { LineagesTreeCanvas } from './lineagestreecanvas';
 
 
-type KeyEventHandler = (event: KeyboardEvent)=>void;
 
-
-enum DisplayNodeSizes {
-  root = 4,
-  mrca = 4,
-  nodeA = 5.5,
-  nodeB = 5.5
-}
 
 
 const AC_SUGGESTION_TEMPLATE = document.querySelector(".autocomplete-suggestion") as HTMLElement;
 AC_SUGGESTION_TEMPLATE.remove();
 
 
-const CLICK_TIME = 300;
-const DRAG_DIST = 15;
-const DRAG_DIST_2 = DRAG_DIST * DRAG_DIST;
+// const CLICK_TIME = 300;
+// const DRAG_DIST = 15;
+// const DRAG_DIST_2 = DRAG_DIST * DRAG_DIST;
 // const SCROLLBAR_W = 10;
 
-const enum TreeHint {
-  Hover,
 
-  HoverRoot,
-  HoverMrca,
-  HoverNodeA,
-  HoverNodeBDescendant,
-  HoverNodeBCousin,
-
-  PreviewNodeA,
-  PreviewNodeBDescendant,
-  PreviewNodeBCousin,
-
-  MaxSelections,
-
-  Zoom
-}
-
-const TREE_HINT_CLASSES = [
-  "hover",
-
-  "hover-root",
-  "hover-mrca",
-  "hover-node-a",
-  "hover-nodeB-descendant",
-  "hover-nodeB-cousin",
-
-  "preview-nodeA",
-  "preview-nodeB-descendant",
-  "preview-nodeB-cousin",
-
-  "max-selections",
-
-  "zoom"
-]
 
 export class LineagesUI extends MccUI {
   nodeAIndex = UNSET;
@@ -97,7 +52,6 @@ export class LineagesUI extends MccUI {
   maxVal = 0;
 
 
-  // nodeRelationChart: NodeRelationChart;
   nodeSchematic: NodeSchematic;
   nodeListDisplay: NodeListDisplay;
   nodeComparisonData: NodeComparisonChartData[];
@@ -105,20 +59,18 @@ export class LineagesUI extends MccUI {
   nodeMutationCharts: NodeMutations;
 
 
-  highlightNode: DisplayNode | typeof UNSET;
+  highlightNode: DisplayNode;
+  highlightDate: number;
+  highlightMutation: Mutation | null;
 
-  canvasDownHandler: (event:MouseEvent)=>void; // eslint-disable-line no-unused-vars
-  canvasMoveHandler: (event:MouseEvent)=>void; // eslint-disable-line no-unused-vars
-  canvasLeaveHandler: ()=>void;
-  keyupHandler: KeyEventHandler;
-
-  nodeHighlightCallback: NodeCallback;
+  nodeHighlightCallback: HoverCallback;
 
   prevMcc: SummaryTree | null;
 
   nodePrevalenceCanvas: NodePrevalenceChart;
 
-  currentHover: number;
+  hoveredNode: number;
+  hoveredDate: number;
   selectable: boolean;
 
   constrainHoverByCredibility: boolean;
@@ -132,132 +84,38 @@ export class LineagesUI extends MccUI {
     super(sharedState, divSelector, "#lineages .tree-canvas");
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
-    const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
-    // this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
+    const nodeHighlightCallback: HoverCallback = (node, date, mutation)=>this.highlightCharts(node, date, mutation);
+    let previousNode = UNSET,
+      previousDate = UNSET
+    const treeHoverCallback: TreeHoverCallback = (node, date)=>{
+      if (date !== previousDate || node !== previousNode) {
+        previousNode = node;
+        previousDate = date;
+        this.handleNodeHover(node, date)
+      }
+
+    };
+    const nodeSelectCallback: TreeSelectCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
+    const canvas = this.mccTreeCanvas.getCanvas();
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
     this.nodeComparisonData = []
 
     this.nodeMutationCharts = new NodeMutations( this.goToMutations, nodeHighlightCallback);
     this.constrainHoverByCredibility = false;
-    {
-      let startTime = 0,
-        startX = UNSET,
-        startY = UNSET,
-        selectionX = UNSET,
-        selectionY = UNSET,
-        dragging = false,
-        dragged = false,
-        canvas: HTMLCanvasElement | PdfCanvas;
-      const drawSelection = ()=>{
-        const ctx = this.highlightCtx,
-          treeCanvas = this.mccTreeCanvas;
-        ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
-        ctx.fillStyle = 'rgba(240,240,240,0.8)';
-        ctx.fillRect(0, 0, treeCanvas.width, treeCanvas.height);
-        ctx.clearRect(startX, startY, selectionX - startX, selectionY - startY);
-        this.drawHighlightNode(this.rootIndex, DisplayNode.root, ctx, treeCanvas);
-        this.drawHighlightNode(this.mrcaIndex, DisplayNode.mrca, ctx, treeCanvas);
-        this.drawHighlightNode(this.nodeAIndex, DisplayNode.nodeA, ctx, treeCanvas);
-        this.drawHighlightNode(this.nodeBIndex, DisplayNode.nodeB, ctx, treeCanvas);
-        ctx.fillStyle = "rgb(84,84,84)";
-        ctx.textBaseline = "top";
-        ctx.font = CHART_TEXT_FONT;
-        ctx.fillText("Zoom to selection", startX, Math.max(startY, selectionY) + 3);
-      }
-      this.canvasDownHandler = (event: MouseEvent)=>{
-        canvas = this.mccTreeCanvas.getCanvas();
-        event.preventDefault();
-        lookupInput.blur();
-        if (!(canvas instanceof HTMLCanvasElement)) return;
-
-        startTime = Date.now();
-        dragging = true;
-        dragged = false;
-        startX = event.offsetX;
-        startY = event.offsetY;
-        // this.sharedState.mccConfig.startDrag();
-        canvas.addEventListener('pointerup', canvasUpHandler);
-        canvas.setPointerCapture((event as PointerEvent).pointerId);
-      };
-      this.canvasMoveHandler = (event: MouseEvent)=>{
-        if (!dragging) {
-          this.hoverCallback(event);
-          return;
-        }
-
-        const dx = event.offsetX - startX,
-          dy = event.offsetY - startY,
-          d2 = dx * dx + dy * dy;
-        if (d2 > DRAG_DIST_2) {
-          dragged = true;
-        }
-        if (dragged) {
-          selectionX = event.offsetX;
-          selectionY = event.offsetY;
-          drawSelection();
-          this.setHint(TreeHint.Zoom);
-          this.mccTreeCanvas.setNoding(false, false);
-        }
-      };
-      const canvasUpHandler = (event: MouseEvent)=>{
-        if (canvas instanceof HTMLCanvasElement) {
-          dragging = false;
-          canvas.removeEventListener('pointerup', canvasUpHandler);
-          if (dragged) {
-            const left = TREE_PADDING_LEFT,
-              right = this.mccTreeCanvas.width - TREE_PADDING_RIGHT,
-              top = TREE_PADDING_TOP,
-              bottom = this.mccTreeCanvas.height - TREE_PADDING_BOTTOM,
-              height = bottom - top,
-              width = right - left;
-            startX = Math.min(right, Math.max(left, startX));
-            startY = Math.min(bottom, Math.max(top, startY));
-            selectionX = Math.min(right, Math.max(left, selectionX));
-            selectionY = Math.min(bottom, Math.max(top, selectionY));
-            const h = Math.abs(selectionY - startY),
-              w = Math.abs(selectionX - startX),
-              vZoom = height / h * this.mccTreeCanvas.verticalZoom,
-              hZoom = width / w * this.mccTreeCanvas.horizontalZoom,
-              cy = ((selectionY + startY) / 2 - TREE_PADDING_TOP) / height,
-              cx = 1 - ((selectionX + startX) / 2 - TREE_PADDING_LEFT) / width,
-              zY = this.mccTreeCanvas.zoomCenterY + (cy - 0.5) / this.mccTreeCanvas.verticalZoom,
-              zX = this.mccTreeCanvas.zoomCenterX + (cx - 0.5) / this.mccTreeCanvas.horizontalZoom;
-            this.sharedState.mccConfig.setZoom(hZoom, vZoom, zX, zY);
-          } else if (Date.now() - startTime < CLICK_TIME) {
-            const nodeIndex:number = this.mccTreeCanvas.getNodeAt(startX, startY);
-            if (!this.constrainHoverByCredibility || this.mccTreeCanvas.creds[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
-              this.selectNode(nodeIndex);
-            }
-          }
-          canvas.releasePointerCapture((event as PointerEvent).pointerId);
-        }
-      };
-      this.canvasLeaveHandler = ()=>{
-        this.exitCallback();
-        if (this.selectable) {
-          this.setHint(TreeHint.Hover);
-        } else {
-          this.setHint(TreeHint.MaxSelections);
-        }
-      }
-      this.keyupHandler = (event: KeyboardEvent)=>{
-        if (dragging && event.key === 'Escape') {
-          dragging = false;
-          dragged = false;
-          this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-        }
-      };
-    }
-
     this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeChildCount = [];
     this.prevMcc = null;
-    this.highlightNode = UNSET;
+    this.highlightNode = DisplayNode.UNSET;
+    this.highlightDate = UNSET;
+    this.highlightMutation = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
 
     this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
-    this.currentHover = UNSET;
+    this.hoveredNode = UNSET;
+    this.hoveredDate = UNSET;
     this.selectable = true;
 
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
@@ -330,24 +188,24 @@ export class LineagesUI extends MccUI {
     const {minDate, maxDate} = this.mccTreeCanvas;
     this.nodeTimelines.setDateRange(minDate, maxDate);
 
-    const canvas = this.mccTreeCanvas.getCanvas();
-    if (canvas instanceof HTMLCanvasElement) {
-      canvas.addEventListener('pointerdown', this.canvasDownHandler);
-      canvas.addEventListener('pointermove', this.canvasMoveHandler);
-      canvas.addEventListener('pointerleave', this.canvasLeaveHandler);
-      document.addEventListener('keyup', this.keyupHandler);
-    }
+    // const canvas = this.mccTreeCanvas.getCanvas();
+    // if (canvas instanceof HTMLCanvasElement) {
+    //   canvas.addEventListener('pointerdown', this.canvasDownHandler);
+    //   canvas.addEventListener('pointermove', this.canvasMoveHandler);
+    //   canvas.addEventListener('pointerleave', this.canvasLeaveHandler);
+    //   document.addEventListener('keyup', this.keyupHandler);
+    // }
   }
 
   deactivate() {
     super.deactivate();
-    const canvas = this.mccTreeCanvas.getCanvas();
-    if (canvas instanceof HTMLCanvasElement) {
-      canvas.removeEventListener('pointerdown', this.canvasDownHandler);
-      canvas.removeEventListener('pointermove', this.canvasMoveHandler);
-      canvas.removeEventListener('pointerleave', this.canvasLeaveHandler);
-      document.removeEventListener('keyup', this.keyupHandler);
-    }
+    // const canvas = this.mccTreeCanvas.getCanvas();
+    // if (canvas instanceof HTMLCanvasElement) {
+    //   canvas.removeEventListener('pointerdown', this.canvasDownHandler);
+    //   canvas.removeEventListener('pointermove', this.canvasMoveHandler);
+    //   canvas.removeEventListener('pointerleave', this.canvasLeaveHandler);
+    //   document.removeEventListener('keyup', this.keyupHandler);
+    // }
     const nodes = [ this.nodeAIndex, this.nodeBIndex].filter(n=>n!==UNSET);
     if (nodes.length > 0) {
       this.sharedState.setNodeSelection(nodes);
@@ -361,6 +219,7 @@ export class LineagesUI extends MccUI {
     this.nodeTimelines.resize();
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
+    this.nodeTimelines.requestDraw();
   }
 
 
@@ -377,8 +236,7 @@ export class LineagesUI extends MccUI {
       super.updateData()
         .then((summary:SummaryTree)=>{
           this.updateNodeData();
-          this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-          this.requestDrawNodeRelationChart();
+          this.requestDraw();
           resolve(summary);
         })
     });
@@ -417,11 +275,12 @@ export class LineagesUI extends MccUI {
           }
         }
         this.nodeChildCount = childCounts;
-        this.nodeListDisplay.setRoot(rootConfidence, this.nodeChildCount[rootIndex], this.sharedState.mccConfig.nodeMetadata?.getNodeMetadata(rootIndex), rootIndex);
-        this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-        this.requestDrawNodeRelationChart();
+        let rootMetadata = null;
+        if (this.sharedState.mccConfig.nodeMetadata) {
+          rootMetadata = this.sharedState.mccConfig.nodeMetadata.getNodeMetadata(rootIndex);
+        }
+        this.nodeListDisplay.setRoot(rootConfidence, this.nodeChildCount[rootIndex], rootMetadata, rootIndex);
         this.setChartData(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-
       }
       mccRef.release();
     }
@@ -429,120 +288,84 @@ export class LineagesUI extends MccUI {
 
 
 
-  hoverCallback(event:MouseEvent):void {
+  handleNodeHover(nodeIndex: number, date:number):void {
     const rootIndex = this.rootIndex;
     let mrcaIndex = this.mrcaIndex,
       nodeAIndex = this.nodeAIndex,
-      nodeBIndex = this.nodeBIndex;
-
-    const nodeIndex:number = this.mccTreeCanvas.getNodeAt(event.offsetX, event.offsetY);
-
-    if (this.constrainHoverByCredibility) {
-      // if lower than threshold, don't do anything
-      if (this.mccTreeCanvas.creds[nodeIndex] < this.sharedState.mccConfig.confidenceThreshold) {
-        return;
-      }
+      nodeBIndex = this.nodeBIndex,
+      hint: TreeHint = TreeHint.Zoom;
+    if (!this.constrainHoverByCredibility || this.mccTreeCanvas.creds[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
+      this.hoveredNode = nodeIndex;
     }
-
-    if (nodeIndex === this.currentHover) {
-      // already hovering
-      const onNode = nodeIndex !== UNSET;
-      const onExistingNode = onNode && (nodeIndex === rootIndex || nodeIndex === mrcaIndex || nodeIndex === nodeAIndex || nodeIndex === nodeBIndex);
-
-      const isNoding = (this.selectable && onNode) || (!this.selectable && onExistingNode);
-      const isSelectable = this.selectable && !onExistingNode;
-
-      this.mccTreeCanvas.setNoding(isNoding, isSelectable);
-
-      return;
-    }
-
-    this.currentHover = nodeIndex;
+    this.hoveredDate = date;
     let displayNode: DisplayNode = DisplayNode.UNSET;
     if (nodeIndex === UNSET) {
-      /* if hovering didn't result in a new node, then clear the hover */
-      this.exitCallback();
-      this.setHint(TreeHint.Zoom);
-    } else if (nodeIndex === rootIndex || nodeIndex === mrcaIndex || nodeIndex === nodeAIndex || nodeIndex === nodeBIndex) {
+      hint = TreeHint.Zoom;
+    } else if (nodeIndex === rootIndex) {
       /* new hover on existing node */
-      this.requestDrawHighlights(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, nodeIndex);
-      switch (nodeIndex) {
-      case rootIndex: {
-        displayNode = DisplayNode.root;
-        this.setHint(TreeHint.HoverRoot);
-        break;
+      displayNode = DisplayNode.root;
+      hint = TreeHint.HoverRoot;
+    } else if (nodeIndex === mrcaIndex) {
+      /* new hover on existing node */
+      displayNode = DisplayNode.mrca;
+      hint = TreeHint.HoverMrca;
+    } else if (nodeIndex === nodeAIndex) {
+      /* new hover on existing node */
+      displayNode = DisplayNode.nodeA;
+      hint = TreeHint.HoverNodeA;
+    } else if (nodeIndex === nodeBIndex) {
+      /* new hover on existing node */
+      displayNode = DisplayNode.nodeB;
+      if (mrcaIndex === UNSET) {
+        hint = TreeHint.HoverNodeBDescendant;
+      } else {
+        hint = TreeHint.HoverNodeBCousin;
       }
-      case mrcaIndex: {
-        displayNode = DisplayNode.mrca;
-        this.setHint(TreeHint.HoverMrca);
-        break;
-      }
-      case nodeAIndex: {
-        displayNode = DisplayNode.nodeA;
-        this.setHint(TreeHint.HoverNodeA);
-        break;
-      }
-      case nodeBIndex: {
-        displayNode = DisplayNode.nodeB;
-        if (mrcaIndex === UNSET) {
-          this.setHint(TreeHint.HoverNodeBDescendant);
-        } else {
-          this.setHint(TreeHint.HoverNodeBCousin);
-        }
-        break;
-      }
-      default: break;
-      }
-      this.handleNodeHighlight(displayNode);
-      this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
-    } else if (nodeAIndex !== UNSET && nodeBIndex !== UNSET ) {
-      /* if both the settable nodes are locked, then skip */
-      this.exitCallback();
-      this.setHint(TreeHint.Zoom);
-    } else {
-      if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
-        /* selecting node 1 */
-        nodeAIndex = nodeIndex;
-        displayNode = DisplayNode.nodeA;
-        if (nodeBIndex !== UNSET) {
-          mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-        }
-        this.setHint(TreeHint.PreviewNodeA);
-      } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
-        /* selecting node 2 */
-        nodeBIndex = nodeIndex;
+    } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
+      /* selecting node 1 */
+      nodeAIndex = nodeIndex;
+      displayNode = DisplayNode.nodeA;
+      if (nodeBIndex !== UNSET) {
         mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-        displayNode = DisplayNode.nodeB;
-        if (mrcaIndex === UNSET) {
-          this.setHint(TreeHint.PreviewNodeBDescendant);
-        } else {
-          this.setHint(TreeHint.PreviewNodeBCousin);
-        }
       }
-      this.requestDrawHighlights(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, nodeIndex);
-      this.requestDrawNodeRelationChart();
-      this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
+      hint = TreeHint.PreviewNodeA;
+    } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
+      /* selecting node 2 */
+      nodeBIndex = nodeIndex;
+      mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+      displayNode = DisplayNode.nodeB;
+      if (mrcaIndex === UNSET) {
+        hint = TreeHint.PreviewNodeBDescendant;
+      } else {
+        hint = TreeHint.PreviewNodeBCousin;
+      }
     }
 
-    if (nodeIndex !== UNSET && this.pythia ) {
-      const mccRef = this.pythia.getMcc(),
-        summaryTree = this.mccTreeCanvas.tree as SummaryTree;
-      const mccIndex = this.pythia.getMccIndex() - this.pythia.kneeIndex;
-      const nodeDates = this.pythia.getNodeTimeDistribution(nodeIndex, summaryTree);
-      const date = nodeDates[mccIndex];
-      // console.log(nodeIndex, date, toFullDateString(date));
-      mccRef.release();
+    this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
+    this.setHint(hint);
+    this.highlightCharts(displayNode, date, null);
+  }
 
+
+  highlightCharts(displayNode: DisplayNode, date: number, mutation: Mutation | null) {
+    if (displayNode === this.highlightNode && date === this.highlightDate && mutation === this.highlightMutation) {
+      // no need to check again
+      return;
+    }
+    if (displayNode === DisplayNode.UNSET && date === UNSET && mutation === null) {
+      console.log(`we're clearing`)
     }
 
+    this.highlightNode = displayNode;
+    this.highlightDate = date;
+    this.highlightMutation =  mutation;
 
-
+    (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(displayNode, date);
     this.nodeListDisplay.highlightNode(displayNode);
-    this.nodeSchematic.highlightNode(displayNode);
-    // this.nodeRelationChart.highlightNode(displayNode);
-    this.nodePrevalenceCanvas.highlightNode(displayNode);
-    this.nodeMutationCharts.highlightNode(displayNode);
-    this.nodeTimelines.highlightNode(displayNode);
+    this.nodeSchematic.highlightNode(displayNode, mutation);
+    this.nodePrevalenceCanvas.highlightNode(displayNode, date);
+    this.nodeMutationCharts.highlightNode(displayNode, date, mutation);
+    this.nodeTimelines.highlightNode(displayNode, date);
   }
 
 
@@ -573,9 +396,9 @@ export class LineagesUI extends MccUI {
       this.setSelectable(true);
     }
 
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, nodeIndex);
-    this.requestDrawNodeRelationChart();
     this.setChartData(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
+    // this.requestDrawTreeHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, nodeIndex);
+
   }
 
   getMRCA(index1: number, index2: number): number {
@@ -624,8 +447,6 @@ export class LineagesUI extends MccUI {
   }
 
   exitCallback():void {
-    this.handleNodeHighlight(UNSET);
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
     this.setChartData(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
   }
 
@@ -646,7 +467,7 @@ export class LineagesUI extends MccUI {
       nodes.forEach(node=>{
         if (node.index >= 0) {
           node.times = pythia.getNodeTimeDistribution(node.index, summaryTree);
-          node.series = new NodeDistributionSeries(node.type, node.times);
+          node.series = new NodeDistribution(node.type, node.times);
         }
       });
       if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
@@ -808,6 +629,7 @@ export class LineagesUI extends MccUI {
       // console.log('dates', minDate, maxDate, zoomMinDate, zoomMaxDate);
       // const zoomDateRange = zoomMaxDate - zoomMinDate;
       // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
+      (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, nodePairs.map(np=>np.nodePair));
       this.nodeComparisonData = nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, this.isApobecEnabled));
       this.nodeTimelines.setData(nodes);
       this.nodeTimelines.setDateRange(minDate, maxDate);
@@ -816,20 +638,26 @@ export class LineagesUI extends MccUI {
       this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex], nodeAIsUpper);
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      this.nodeListDisplay.setPrevalenceData(nodePrevalenceData, nodes, minDate, maxDate);
 
       /*
       add an empty node before the root to represent the uninfected population
       in the prevalence chart
       */
       const prevalenceNodes = nodes.slice(0);
-      prevalenceNodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
+      prevalenceNodes.unshift({ index: UNSET, label: 'other', type: DisplayNode.UNSET, className: "", times: [], series: null });
 
       this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
-      this.nodePrevalenceCanvas.requestDraw();
-
+      this.requestDraw();
       mccRef.release();
     }
+  }
+
+  requestDraw() {
+    (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
+    this.nodeSchematic.requestDraw()
+    this.nodeListDisplay.requestDraw();
+    this.nodePrevalenceCanvas.requestDraw();
+    this.nodeTimelines.requestDraw();
   }
 
   setSelectable(selectable: boolean) {
@@ -842,7 +670,7 @@ export class LineagesUI extends MccUI {
 
   setHint(hint: TreeHint) {
     const className = TREE_HINT_CLASSES[hint];
-    this.treeHints.forEach(th => th.classList.toggle("hidden", !th.classList.contains(className)));
+    requestAnimationFrame(()=>this.treeHints.forEach(th => th.classList.toggle("hidden", !th.classList.contains(className))));
   }
 
   assembleNodePair(index1: number, index2: number, nodePairType: NodePairType, pythia: Pythia): NodePair {
@@ -876,21 +704,11 @@ export class LineagesUI extends MccUI {
       break;
     }
 
-    this.mccTreeCanvas.setFade(false);
-    super.requestTreeDraw();
-
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
     this.setChartData(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-
-    this.nodeListDisplay.highlightNode(UNSET);
-    // this.nodeRelationChart.highlightNode(UNSET);
-    this.nodeSchematic.highlightNode(UNSET);
-    this.nodePrevalenceCanvas.highlightNode(UNSET);
-    this.nodeMutationCharts.highlightNode(UNSET);
-    this.nodeTimelines.highlightNode(UNSET);
-
+    this.highlightCharts(UNSET, UNSET, null);
     this.setHint(TreeHint.Hover);
   }
+
 
   handleNodeZoom(node: DisplayNode | typeof UNSET) : void {
     let zoomNode = UNSET;
@@ -916,215 +734,11 @@ export class LineagesUI extends MccUI {
       this.sharedState.mccConfig.setZoom(1, treeCanvas.verticalZoom, 0.5, treeCanvas.zoomCenterY);
     }
     super.requestTreeDraw();
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
-    // this.nodeRelationChart.highlightNode(node);
-    this.nodeSchematic.highlightNode(node);
-  }
-
-  handleNodeHighlight(node: DisplayNode | typeof UNSET) : void {
-    // console.log(`handleNodeHighlight(${node})`);
-    if (node === this.highlightNode) {
-      // no need to check again
-      return;
-    }
-    this.highlightNode = node;
-
-    /*
-    for the tree, push back most of the tree,
-    and draw the highlighted subtree on the highlight canvas
-    */
-    this.mccTreeCanvas.setFade(node !== UNSET);
-    super.requestTreeDraw();
-    let subtreeIndex = UNSET;
-    switch(node) {
-    case DisplayNode.root: {
-      subtreeIndex = this.rootIndex;
-      this.setHint(TreeHint.HoverRoot);
-    }
-      break;
-    case DisplayNode.mrca: {
-      subtreeIndex = this.mrcaIndex;
-      this.setHint(TreeHint.HoverMrca);
-    }
-      break;
-    case DisplayNode.nodeA: {
-      subtreeIndex = this.nodeAIndex;
-      this.setHint(TreeHint.HoverNodeA);
-    }
-      break;
-    case DisplayNode.nodeB: {
-      subtreeIndex = this.nodeBIndex;
-      if (this.nodeAIndex !== UNSET) {
-        this.setHint(TreeHint.HoverNodeBDescendant);
-      } else {
-        this.setHint(TreeHint.HoverNodeBCousin);
-      }
-    }
-      break;
-    default: {
-      if (this.nodeAIndex !== UNSET && this.nodeBIndex !== UNSET) {
-        this.setHint(TreeHint.MaxSelections);
-      } else {
-        this.setHint(TreeHint.Hover);
-      }
-    }
-      break;
-    }
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, subtreeIndex);
-
-    /* highlight node in other components */
-    this.nodeListDisplay.highlightNode(node);
-    this.nodePrevalenceCanvas.highlightNode(node);
-    this.nodeSchematic.highlightNode(node);
-    this.nodeTimelines.highlightNode(node);
-    this.nodeMutationCharts.highlightNode(node);
-  }
-
-
-  /*
-  need a means for the the mccconfig to invoke drawing
-  the tree and the highlights when the zoom has changed.
-  So we override the default request to draw the tree
-  with a version that also draws the highlight nodes.
-  */
-  requestTreeDraw(): void {
-    super.requestTreeDraw();
-    this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex);
+    this.nodeSchematic.highlightNode(node, null);
   }
 
 
 
-
-  private requestDrawHighlights(rootIndex:number, mrcaIndex:number, nodeAIndex:number, nodeBIndex:number, subtreeNode: number = UNSET) {
-    requestAnimationFrame(()=>this.drawHighlights(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, subtreeNode));
-  }
-
-  private drawHighlights(rootIndex:number, mrcaIndex:number, nodeAIndex:number, nodeBIndex:number, subtreeNode: number):void {
-    if (!this.pythia) return;
-
-    const ctx = this.highlightCtx,
-      treeCanvas = this.mccTreeCanvas,
-      barTop = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 2;
-    ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
-    if (subtreeNode !== UNSET) {
-      ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillRect(0, 0, treeCanvas.width, treeCanvas.height);
-      const stops = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].filter(n=>n !== UNSET && n !== subtreeNode);
-      const color = subtreeNode === mrcaIndex ? getNodeTint(DisplayNode.mrca)
-        : subtreeNode === nodeAIndex ? getNodeTint(DisplayNode.nodeA)
-          : subtreeNode === nodeBIndex ? getNodeTint(DisplayNode.nodeB)
-            : getNodeTint(DisplayNode.root);
-      this.drawSubtree(subtreeNode, ctx, treeCanvas, color, stops);
-    }
-    this.nodeComparisonData.forEach(nodeData=>this.drawAncestry(nodeData.nodePair, ctx, treeCanvas));
-    this.drawHighlightNode(rootIndex, DisplayNode.root, ctx, treeCanvas);
-    this.drawHighlightNode(mrcaIndex, DisplayNode.mrca, ctx, treeCanvas);
-    this.drawHighlightNode(nodeAIndex, DisplayNode.nodeA, ctx, treeCanvas);
-    this.drawHighlightNode(nodeBIndex, DisplayNode.nodeB, ctx, treeCanvas);
-    ctx.clearRect(0, 0, treeCanvas.width, barTop);
-    // this.drawScrollBar();
-  }
-
-
-
-
-  private drawAncestry(pair: NodePair, ctx: CanvasRenderingContext2D, treeCanvas: MccTreeCanvas): void {
-    const {index1, index2} = pair;
-    if (index2 === UNSET) return;
-    let displayNode: DisplayNode = DisplayNode.root;
-    switch(pair.pairType) {
-    case NodePairType.rootToMrca:
-      displayNode = DisplayNode.mrca;
-      break;
-    case NodePairType.rootToNodeA:
-    case NodePairType.mrcaToNodeA:
-    case NodePairType.nodeBToNodeA:
-      displayNode = DisplayNode.nodeA;
-      break;
-    case NodePairType.rootToNodeB:
-    case NodePairType.mrcaToNodeB:
-    case NodePairType.nodeAToNodeB:
-      displayNode = DisplayNode.nodeB;
-      break;
-    }
-
-    const mcc = treeCanvas.tree as SummaryTree;
-    let parentIndex = index2;
-    let x = treeCanvas.getZoomX(mcc.getTimeOf(index2)),
-      y = treeCanvas.getZoomY(index2);
-    let py, px;
-    ctx.globalAlpha = this.highlightNode === UNSET || displayNode === this.highlightNode ? 1 : 0.5;
-    ctx.strokeStyle = getNodeStroke(displayNode);
-    ctx.lineWidth = parseFloat(getCSSValue("--lineages-tree-descent-stroke-weight"));
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    while (parentIndex !== index1 && parentIndex !== UNSET) {
-      parentIndex = mcc.getParentIndexOf(parentIndex);
-      px = treeCanvas.getZoomX(mcc.getTimeOf(parentIndex));
-      py = treeCanvas.getZoomY(parentIndex);
-      ctx.lineTo(px, y);
-      ctx.lineTo(px, py);
-      x = px;
-      y = py;
-    }
-    ctx.stroke();
-
-  }
-
-
-  private drawHighlightNode(index: number, displayNode: DisplayNode,
-    ctx: CanvasRenderingContext2D, treeCanvas: MccTreeCanvas): void {
-    if (index === UNSET) return;
-    const mcc = treeCanvas.tree as SummaryTree,
-      x = treeCanvas.getZoomX(mcc.getTimeOf(index)),
-      y = treeCanvas.getZoomY(index);
-    let radius: number;
-    let fillColor: string;
-    if (displayNode === DisplayNode.root || displayNode === DisplayNode.mrca) {
-      fillColor = getNodeStroke(displayNode);
-      radius = DisplayNodeSizes.root; // same as mrca
-    } else {
-      fillColor = getNodeFill(displayNode);
-      radius = DisplayNodeSizes.nodeA; // same as nodeB
-    }
-    const strokeColor = getNodeStroke(displayNode);
-    ctx.globalAlpha = this.highlightNode === UNSET || displayNode === this.highlightNode ? 1 : 0.5;
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    if (displayNode === DisplayNode.nodeA || displayNode === DisplayNode.nodeB) {
-      ctx.strokeStyle = strokeColor;
-      ctx.stroke();
-    }
-    //   let alpha = 1.0;
-    //   if ((displayNode === DisplayNode.nodeA && this.nodeAIndex === UNSET) ||
-    //       (displayNode === DisplayNode.nodeB && this.nodeBIndex === UNSET)) {
-    //     ctx.setLineDash([4, 2]);
-    //     alpha = 0.5;
-    //     ctx.lineWidth = 2;
-    //   }
-    //   ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-    //   ctx.fill();
-    //   ctx.stroke();
-    // }
-
-    // ctx.setLineDash([]);
-  }
-
-  drawSubtree(index: number, ctx: CanvasRenderingContext2D, treeCanvas: MccTreeCanvas, color: string, stops: number[]) : void {
-    ctx.lineWidth  = parseFloat(getCSSValue("--tree-branch-d-stroke-weight"));
-    ctx.strokeStyle = color;
-    treeCanvas.drawSubtree(index, ctx, stops);
-  }
-
-
-  private requestDrawNodeRelationChart() {
-    requestAnimationFrame(() => this.nodeSchematic.draw());
-  }
 
   goToMutations: OpenMutationPageFncType = (mutation?: Mutation) => {
     if (mutation) {
@@ -1141,7 +755,6 @@ export class LineagesUI extends MccUI {
 const getNodeDisplay = (index: DisplayNode, dn: DisplayNode) => {
   return {
     index: index,
-    color: getNodeStroke(dn),
     label: getNodeTypeName(dn),
     type: dn,
     className: getNodeClassName(dn),
@@ -1152,7 +765,7 @@ const getNodeDisplay = (index: DisplayNode, dn: DisplayNode) => {
 
 
 const getNodeMetadata = (nodeIndex:number, nodeMetadata: NodeMetadata | null, tipIds:string[])=>{
-  let md = undefined;
+  let md = null;
   if (nodeMetadata) {
     md = nodeMetadata.getNodeMetadata(nodeIndex);
   } else if (nodeIndex < tipIds.length) {

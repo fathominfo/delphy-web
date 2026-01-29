@@ -1,5 +1,7 @@
-import { addDays, addMonths, addWeeks, addYears, DateTokenIndex, MONTHS_SHORT, toDate, toDateNumber, toDateString, toDateTokens } from '../pythia/dates';
-import { SummaryTree } from '../pythia/delphy_api';
+import { getMutationName } from '../constants';
+import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
+  MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
+import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
 export const UNDEF = '-';
@@ -472,7 +474,7 @@ const MONTH_THRESHOLD = 0.5;
 const YEAR_THRESHOLD = 0.5;
 /*
 this may need to become dynamic if we allow for charts of different
-widths, but for now it's a constart [mark 260121] */
+widths, but for now it's a constant [mark 260121] */
 const TARGET_NUM_TICKS = 6;
 
 export type DateIntervalData = {
@@ -669,3 +671,25 @@ const root = document.querySelector(":root") as HTMLBodyElement,
 export const getCSSValue = (property: string) : string =>{
   return rootStyle.getPropertyValue(property);
 }
+
+export const DATE_LABEL_WIDTH_PX = 35;
+export type AxisLabel = {
+  div: HTMLDivElement,
+  left: number
+};
+
+
+
+export const setDateLabel = (date: number, div: HTMLDivElement)=>{
+  const tokens = toDateTokens(date);
+  const month = tokens[DateTokenIndex.month];
+  (div.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
+  (div.querySelector(".month") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;
+  (div.querySelector(".year") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.year]}`;
+};
+
+
+export const sameMutation = (m1: Mutation | null, m2: Mutation | null) : boolean=>{
+  return m1 !== null && m2 !== null && getMutationName(m1) === getMutationName(m2);
+};
+

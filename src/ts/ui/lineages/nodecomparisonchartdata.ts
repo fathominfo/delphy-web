@@ -2,7 +2,7 @@ import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, NodeComparisonData, getAncestorType, getDescendantType } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { DisplayNode, getPercentLabel, UNSET } from '../common';
-import { DistributionSeries } from '../timedistributioncanvas';
+import { Distribution } from '../distribution';
 
 
 /* should we provide an interface to this ? [mark 230524]*/
@@ -17,7 +17,7 @@ export class MutationTimelineData {
   nameParts: [string, string, string];
   name: string;
   className: string;
-  series: DistributionSeries;
+  series: Distribution;
   isApobecRun: boolean;
 
   constructor(mutation: MutationDistribution, isApobecRun: boolean) {
@@ -25,7 +25,7 @@ export class MutationTimelineData {
     this.nameParts = getMutationNameParts(mutation.mutation);
     this.name = getMutationName(mutation.mutation);
     this.className = "mutation";
-    this.series = new DistributionSeries(mutation.times);
+    this.series = new Distribution(mutation.times);
     this.isApobecRun = isApobecRun;
   }
 
@@ -44,7 +44,7 @@ export class NodeComparisonChartData {
 
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
-  series: [DistributionSeries, DistributionSeries?];
+  series: [Distribution, Distribution?];
   thresholdLabel = "";
 
   constructor(nodeComparisonData : NodeComparisonData, minDate: number, maxDate: number, isApobecRun: boolean) {
@@ -65,13 +65,13 @@ export class NodeComparisonChartData {
 
     const createSeries = (dn: DisplayNode, i: number) => {
       const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
-      const ds = new DistributionSeries(times);
+      const ds = new Distribution(times);
       return ds;
     }
     if (this.descendantType === UNSET) {
-      this.series = [this.ancestorType].map(createSeries) as [DistributionSeries];
+      this.series = [this.ancestorType].map(createSeries) as [Distribution];
     } else {
-      this.series = [this.ancestorType, this.descendantType].map(createSeries) as [DistributionSeries, DistributionSeries];
+      this.series = [this.ancestorType, this.descendantType].map(createSeries) as [Distribution, Distribution];
     }
 
 
