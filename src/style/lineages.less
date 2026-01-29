@@ -1714,6 +1714,18 @@ details {
   font-weight: bolder;
 }
 
+.lineages--mutation-timeline .date-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  padding: 0 0 0 calc(var(--block-gap) + var(--mutation-emergence-mutation-width));
+  pointer-events: none;
+  z-index: 1;
+
+}
+
 .lineages--node-comparison--mutation {
   display: flex;
   height: var(--duo-list-row-height);

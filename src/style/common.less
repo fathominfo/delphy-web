@@ -340,13 +340,13 @@
   --lineages-prevalence-chart-height: calc((var(--selection-height) * var(--lineages-selections-max)) + (var(--selections-gap) * (var(--lineages-selections-max) - 1)));
   --lineages-prevalence-chart-feature-height: calc(100% - var(--axis-dates-height));
   /* --lineages-chart-yaxis-width: calc(var(--unit) * 2.8125); */
-  --lineages-chart-yaxis-width: calc(var(--unit) * 4.875);
+  --lineages-chart-yaxis-width: calc(var(--unit) * 5.875);
   --lineages-prevalence-chart-feature-zindex: 1;
   --lineages-prevalence-chart-support-zindex: 0;
   --subway-overflow-y: calc(var(--subway-row-height) * 1.5);
   --subway-offset-y: calc(var(--subway-overflow-y) * 0.05);
   --lineages-emergence-timeline-height: calc(var(--subway-height) + var(--subway-overflow-y));
-  --mutation-emergence-mutation-width: var(--lineages-chart-yaxis-width);
+  --mutation-emergence-mutation-width: calc(var(--lineages-chart-yaxis-width) - var(--block-gap));
   --mutation-emergence-mutation-space-right: calc(var(--unit) * 0.25);
   --mutation-emergence-mutation-space-right-external: var(--mutation-emergence-mutation-space-right) * 2;
   --mutation-emergence-mutation-gap: 0.025rem;
@@ -1727,4 +1727,38 @@ building custom inputs on top of native inputs. */
 .axis-date .cal {
   font-weight: 500;
   gap: 0.05rem;
+}
+
+
+.dates {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.range {
+  position: absolute;
+  top: 0;
+  // left: var(--start-pct);
+  // width: calc(var(--width-pct));
+  height: 100%;
+  background-color: var(--range-fill);
+  overflow: visible;
+  .guide {
+    opacity: var(--guide-range-date-opacity);
+    &.start { left: 0; }
+    &.start { left: 100%; }
+  }
+}
+
+.guide.date {
+  top: 0;
+  width: var(--guide-date-stroke-weight);
+  height: 100%;
+  border-radius: var(--guide-date-stroke-weight);
+  background-color: var(--guide-date-stroke);
+  opacity: var(--guide-date-opacity);
+  transform: translateX(-50%);
 }

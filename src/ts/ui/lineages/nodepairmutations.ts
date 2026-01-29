@@ -1,11 +1,12 @@
 import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart, NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS } from './lineagescommon';
-import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName } from '../common';
+import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName, numericSort } from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { Distribution } from '../distribution';
+import { getMutationName } from '../../constants';
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -134,6 +135,7 @@ export class NodePairMutationList {
     this.nodeASpan = ancestorSpan;
     this.nodeBSpan = descendantSpan;
     this.schematic = schematic;
+
     // this.mutationCountSpan = mutationCountSpan;
     // this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
@@ -157,6 +159,7 @@ export class NodePairMutationList {
       this.div.classList.add('single');
     }
     this.setLabel(this.data.ancestorType, this.data.descendantType);
+    this.setDateRange();
     // const overlapCount = this.data.overlapCount;
     // if (overlapCount > 0) {
     //   const treeCount = this.data.treeCount;
@@ -184,6 +187,7 @@ export class NodePairMutationList {
     this.setMutations();
   }
 
+
   setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
     /* set title for the ancestor node */
     this.nodeASpan.innerText = getNodeTypeName(ancestorType);
@@ -193,6 +197,23 @@ export class NodePairMutationList {
     this.nodeBSpan.innerText = getNodeTypeName(descendantType);
     this.nodeBSpan.classList.add(getNodeClassName(descendantType));
   }
+
+
+  /* set the date range based on the median dates for the bordering nodes */
+  setDateRange() {
+    const { minDate, maxDate, series } = this.data;
+    const rangeSpan = series.filter(ser=>!!ser).map(ser=>ser.median);
+    rangeSpan.sort(numericSort);
+    const rangeMin = rangeSpan[0];
+    const rangeMax = rangeSpan[rangeSpan.length - 1] as number;
+    const rangeMinPct = (rangeMin - minDate)/(maxDate - minDate) * 100;
+    const rangeMaxPct = (rangeMax - minDate)/(maxDate - minDate) * 100;
+    const rangeWidthPct = rangeMaxPct - rangeMinPct;
+    const rangeDiv = this.div.querySelector(".date-container .range") as HTMLDivElement;
+    rangeDiv.style.left = `${rangeMinPct}%`;
+    rangeDiv.style.width = `${rangeWidthPct}%`;
+  }
+
 
   setMutations():void {
     // const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
@@ -231,8 +252,7 @@ export class NodePairMutationList {
       this.mutationTimelines.forEach(mt=>{
         if (mt.data.mutation.mutation === mutation) {
           console.log(`
-            match found
-            
+            match found ${getMutationName(mutation)} ${dateIndex}            
             `)
         }
       });
