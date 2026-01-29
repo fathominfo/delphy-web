@@ -7,7 +7,6 @@ import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData } from "
 import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
 
 
-const UNSET_CHAR = "-";
 const MUTATION_LIMIT = 30;
 
 const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
