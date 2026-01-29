@@ -352,6 +352,10 @@ export class LineagesUI extends MccUI {
       // no need to check again
       return;
     }
+    if (displayNode === DisplayNode.UNSET && date === UNSET && mutation === null) {
+      console.log(`we're clearing`)
+    }
+
     this.highlightNode = displayNode;
     this.highlightDate = date;
     this.highlightMutation =  mutation;

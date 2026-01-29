@@ -1,6 +1,7 @@
+import { getMutationName } from '../constants';
 import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
   MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
-import { SummaryTree } from '../pythia/delphy_api';
+import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
 export const UNDEF = '-';
@@ -685,4 +686,10 @@ export const setDateLabel = (date: number, div: HTMLDivElement)=>{
   (div.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
   (div.querySelector(".month") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;
   (div.querySelector(".year") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.year]}`;
-}
+};
+
+
+export const sameMutation = (m1: Mutation | null, m2: Mutation | null) : boolean=>{
+  return m1 !== null && m2 !== null && getMutationName(m1) === getMutationName(m2);
+};
+

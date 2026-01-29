@@ -2,14 +2,15 @@ import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
   NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
 import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName,
-  numericSort, getNiceDateInterval, DateScale } from '../common';
+  numericSort, getNiceDateInterval, DateScale,
+  sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { Distribution } from '../distribution';
-import { getMutationName } from '../../constants';
+
 
 
 const nodeComparisonTemplate = document.querySelector(".lineages--track-mutations") as HTMLDivElement;
@@ -97,7 +98,34 @@ class MutationTimeline {
   resize() {
     this.timeChart.resize();
   }
+
+  checkMutationMatch(mutation: Mutation | null, date: number): boolean {
+    let matched = false;
+    if (mutation === null && date === UNSET) {
+      this.div.classList.remove("matching");
+      this.div.classList.remove("unmatching");
+    } else if (mutation !== null) {
+      if (sameMutation (this.data.mutation.mutation, mutation)) {
+        this.div.classList.add("matching");
+        this.div.classList.remove("unmatching");
+        matched = true;
+      } else {
+        this.div.classList.remove("matching");
+        this.div.classList.add("unmatching");
+      }
+    } else if (date !== UNSET) {
+      const { min, max } = this.data.series
+      const matching = date >= min && date <= max;
+      this.div.classList.toggle("matching", matching);
+      this.div.classList.toggle("unmatching", !matching);
+      if (matching) matched = true;
+    }
+    return matched;
+  }
+
 }
+
+
 
 
 
@@ -266,32 +294,28 @@ export class NodePairMutationList {
 
   highlightNode(node: DisplayNode, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
+    let matched = node === this.data.descendantType;
+    this.mutationTimelines.forEach(mt=>{
+      matched = mt.checkMutationMatch(mutation, date) || matched;
+    });
     if (node === UNSET) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
-    } else if (node === this.data.descendantType) {
+    } else if (matched) {
       classList.add(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
-      this.mutationTimelines.forEach(mt=>{
-        if (mt.data.mutation.mutation === mutation) {
-          console.log(`
-            match found ${getMutationName(mutation)} ${date}            
-            `)
-        }
-      });
     } else {
       classList.remove(MATCH_CLASS);
       classList.add(NO_MATCH_CLASS);
     }
 
-
+    // set the hover
     if (date === UNSET) {
       this.dateHoverDiv.classList.remove("active");
     } else {
-
       const { minDate, maxDate } = this.data;
       const datePercent = (date - minDate) / (maxDate - minDate) * 100;
-      this.dateHoverDiv.style.left = `${datePercent}`;
+      this.dateHoverDiv.style.left = `${datePercent}%`;
       this.dateHoverDiv.classList.add("active");
     }
   }

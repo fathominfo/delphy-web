@@ -13,12 +13,20 @@ const MUTATION_LIMIT = 30;
 const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
 MUTATION_TEMPLATE?.remove();
 
-type MATCH_HANDLER_TYPE = (name: string)=>void;
+type MATCH_HANDLER_TYPE = (node: DisplayNode, mutation: Mutation | null)=>void;
+
+const NODE_LABELS: string[] = [];
+{
+  NODE_LABELS[DisplayNode.root] = "root";
+  NODE_LABELS[DisplayNode.mrca] = "mrca";
+  NODE_LABELS[DisplayNode.nodeA] = "a";
+  NODE_LABELS[DisplayNode.nodeB] = "b";
+}
 
 
 class Track {
-  startCode: string = UNSET_CHAR;
-  endCode: string = UNSET_CHAR;
+  startNode: DisplayNode = DisplayNode.UNSET;
+  endNode: DisplayNode = DisplayNode.UNSET;
   line: HTMLDivElement;
   terminus: HTMLDivElement;
   signage: HTMLSpanElement;
@@ -40,18 +48,22 @@ class Track {
       mutDiv.addEventListener("pointerenter", ()=>{
         const mut = this.mutationList[i]?.mutation;
         if (mut) {
-          const name = getMutationName(mut);
-          matchHandler(name);
-        }
+          matchHandler(this.endNode, mut);
+        } else {
+          matchHandler(this.endNode, null);}
       });
-      mutDiv.addEventListener("pointerleave", ()=>matchHandler(''));
+      // mutDiv.addEventListener("pointerleave", ()=>matchHandler(UNSET, null));
     }
+    this.line.addEventListener("pointerleave", ()=>{
+      console.log('leaving line')
+      matchHandler(UNSET, null)
+    });
   }
 
-  set(startCode:string, endCode:string, mutations:MutationDistribution[]) {
-    this.startCode = startCode;
-    this.endCode = endCode;
-    this.label = endCode === UNSET_CHAR ? '' : endCode.toUpperCase();
+  set(startNode:DisplayNode, endNode:DisplayNode, mutations:MutationDistribution[]) {
+    this.startNode = startNode;
+    this.endNode = endNode;
+    this.label = endNode === DisplayNode.UNSET ? '' : NODE_LABELS[endNode].toUpperCase();
     this.mutationList = mutations;
     this.mutationCount = mutations.length;
   }
@@ -59,8 +71,8 @@ class Track {
   render() {
     this.line.classList.remove(MATCH_CLASS);
     this.line.classList.remove(NO_MATCH_CLASS);
-    this.line.setAttribute("data-from", this.startCode);
-    this.line.setAttribute("data-to", this.endCode);
+    this.line.setAttribute("data-from", NODE_LABELS[this.startNode]);
+    this.line.setAttribute("data-to", NODE_LABELS[this.endNode]);
     this.terminus.textContent = this.label;
     this.signage.textContent = nfc(this.mutationCount);
     if (this.mutationCount > MUTATION_LIMIT) {
@@ -83,11 +95,12 @@ class Track {
     }
   }
 
-  handleMutationMatch(mutationName:string) {
-    if (mutationName === '') {
+  handleMatch(node: DisplayNode,mutation:Mutation | null) {
+    if (mutation === null) {
       this.line.classList.remove(MATCH_CLASS);
       this.line.classList.remove(NO_MATCH_CLASS);
     } else {
+      const mutationName = getMutationName(mutation);
       let anyMatches = false;
       this.mutationList.forEach((mut:MutationDistribution, i)=>{
         const name = getMutationName(mut.mutation);
@@ -141,7 +154,7 @@ export class NodeSchematic {
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.dataConfig = "root";
     this.div = document.querySelector("#subway") as HTMLDivElement;
-    const handleMut = (name:string)=>this.handleMutationMatch(name);
+    const handleMut: MATCH_HANDLER_TYPE = (node: DisplayNode, mutation: Mutation | null)=>nodeHighlightCallback(node, UNSET, mutation);
     this.centralLine = new Track(this.div.querySelector(".line.central"), handleMut);
     this.endLine = new Track(this.div.querySelector(".line.end"), handleMut);
     this.upperLine = new Track(this.div.querySelector(".line.upper"), handleMut);
@@ -149,12 +162,12 @@ export class NodeSchematic {
   }
 
 
-  handleMutationMatch(mutationName:string) {
+  handleMutationMatch(node: DisplayNode, mutation: Mutation | null) {
     [ this.centralLine,
       this.endLine,
       this.upperLine,
       this.lowerLine
-    ].forEach((line:Track)=>line.handleMutationMatch(mutationName));
+    ].forEach((line:Track)=>line.handleMatch(node, mutation));
   }
 
   requestDraw() {
@@ -185,10 +198,10 @@ export class NodeSchematic {
       return muts;
     }
     this.dataConfig = "root";
-    let centerLabel = UNSET_CHAR;
-    let endLabel = UNSET_CHAR;
-    let upperLabel = UNSET_CHAR;
-    let lowerLabel = UNSET_CHAR;
+    let centerLabel = DisplayNode.UNSET;
+    let endLabel = DisplayNode.UNSET;
+    let upperLabel = DisplayNode.UNSET;
+    let lowerLabel = DisplayNode.UNSET;
 
     let centralMutations: MutationDistribution[] = [];
     let endMutations: MutationDistribution[] = [];
@@ -197,16 +210,16 @@ export class NodeSchematic {
 
     if (indexes[DisplayNode.mrca] !== UNSET) {
       this.dataConfig = "mrca";
-      centerLabel = "mrca";
+      centerLabel = DisplayNode.mrca;
       centralMutations = getMutationsFor(indexes[DisplayNode.mrca]);
       if (nodeAIsUpper) {
-        upperLabel = "a";
-        lowerLabel = "b";
+        upperLabel = DisplayNode.nodeA;
+        lowerLabel = DisplayNode.nodeB;
         upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
         lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
       } else {
-        upperLabel = "b";
-        lowerLabel = "a";
+        upperLabel = DisplayNode.nodeB;
+        lowerLabel = DisplayNode.nodeA;
         upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
         lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
       }
@@ -216,7 +229,7 @@ export class NodeSchematic {
       const nodeA = indexes[DisplayNode.nodeA];
       if (indexes[DisplayNode.nodeB] === UNSET) {
         this.dataConfig = "a";
-        centerLabel = "a";
+        centerLabel = DisplayNode.nodeA;
         centralMutations = getMutationsFor(nodeA);
       } else {
         /*
@@ -237,21 +250,21 @@ export class NodeSchematic {
           if (nodeBParent === root) {
             if (nodeAIsUpper)  {
               this.dataConfig = "ab";
-              upperLabel = "a";
-              lowerLabel = "b";
+              upperLabel = DisplayNode.nodeA;
+              lowerLabel = DisplayNode.nodeB;
               upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
               lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
             } else {
               this.dataConfig = "ba";
-              upperLabel = "b";
-              lowerLabel = "a";
+              upperLabel = DisplayNode.nodeB;
+              lowerLabel = DisplayNode.nodeA;
               upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
               lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
             }
           } else if (nodeBParent === nodeA) {
             this.dataConfig = "a2b";
-            centerLabel = "a";
-            endLabel = "b";
+            centerLabel = DisplayNode.nodeA;
+            endLabel = DisplayNode.nodeB;
             centralMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
             endMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
           } else {
@@ -259,8 +272,8 @@ export class NodeSchematic {
           }
         } else if (nodeAParent === nodeB && nodeBParent === root) {
           this.dataConfig = "b2a";
-          centerLabel = "b";
-          endLabel = "a";
+          centerLabel = DisplayNode.nodeB;
+          endLabel = DisplayNode.nodeA;
           centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
           endMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
         } else {
@@ -269,11 +282,11 @@ export class NodeSchematic {
       }
     } else if (indexes[DisplayNode.nodeB] !== UNSET) {
       this.dataConfig = "b";
-      centerLabel = "B";
+      centerLabel = DisplayNode.nodeB;
       centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
     }
 
-    this.centralLine.set( "root", centerLabel, centralMutations);
+    this.centralLine.set( DisplayNode.root, centerLabel, centralMutations);
     this.endLine.set(centerLabel, endLabel, endMutations);
     this.upperLine.set(centerLabel, upperLabel, upperMutations);
     this.lowerLine.set(centerLabel, lowerLabel, lowerMutations);
@@ -289,8 +302,7 @@ export class NodeSchematic {
     if (node !== this.highlightedNode || mutation !== this.highlightedMutation) {
       this.highlightedNode = node;
       this.highlightedMutation = mutation;
-      const name = mutation ? getMutationName(mutation) : '';
-      this.handleMutationMatch(name);
+      this.handleMutationMatch(node, mutation);
     }
   }
 
