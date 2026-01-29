@@ -84,14 +84,14 @@ export class LineagesUI extends MccUI {
     super(sharedState, divSelector, "#lineages .tree-canvas");
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
-    const nodeHighlightCallback: HoverCallback = (node, dateIndex, mutation)=>this.highlightCharts(node, dateIndex, mutation);
+    const nodeHighlightCallback: HoverCallback = (node, date, mutation)=>this.highlightCharts(node, date, mutation);
     let previousNode = UNSET,
       previousDate = UNSET
-    const treeHoverCallback: TreeHoverCallback = (node, dateIndex)=>{
-      if (dateIndex !== previousDate || node !== previousNode) {
+    const treeHoverCallback: TreeHoverCallback = (node, date)=>{
+      if (date !== previousDate || node !== previousNode) {
         previousNode = node;
-        previousDate = dateIndex;
-        this.handleNodeHover(node, dateIndex)
+        previousDate = date;
+        this.handleNodeHover(node, date)
       }
 
     };
@@ -288,7 +288,7 @@ export class LineagesUI extends MccUI {
 
 
 
-  handleNodeHover(nodeIndex: number, dateIndex:number):void {
+  handleNodeHover(nodeIndex: number, date:number):void {
     const rootIndex = this.rootIndex;
     let mrcaIndex = this.mrcaIndex,
       nodeAIndex = this.nodeAIndex,
@@ -297,7 +297,7 @@ export class LineagesUI extends MccUI {
     if (!this.constrainHoverByCredibility || this.mccTreeCanvas.creds[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
       this.hoveredNode = nodeIndex;
     }
-    this.hoveredDate = dateIndex;
+    this.hoveredDate = date;
     let displayNode: DisplayNode = DisplayNode.UNSET;
     if (nodeIndex === UNSET) {
       hint = TreeHint.Zoom;
@@ -343,25 +343,25 @@ export class LineagesUI extends MccUI {
 
     this.setChartData(this.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
     this.setHint(hint);
-    this.highlightCharts(displayNode, dateIndex, null);
+    this.highlightCharts(displayNode, date, null);
   }
 
 
-  highlightCharts(displayNode: DisplayNode, dateIndex: number, mutation: Mutation | null) {
-    if (displayNode === this.highlightNode && dateIndex === this.highlightDate && mutation === this.highlightMutation) {
+  highlightCharts(displayNode: DisplayNode, date: number, mutation: Mutation | null) {
+    if (displayNode === this.highlightNode && date === this.highlightDate && mutation === this.highlightMutation) {
       // no need to check again
       return;
     }
     this.highlightNode = displayNode;
-    this.highlightDate = dateIndex;
+    this.highlightDate = date;
     this.highlightMutation =  mutation;
 
-    (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(displayNode, dateIndex);
+    (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(displayNode, date);
     this.nodeListDisplay.highlightNode(displayNode);
     this.nodeSchematic.highlightNode(displayNode, mutation);
-    this.nodePrevalenceCanvas.highlightNode(displayNode, dateIndex);
-    this.nodeMutationCharts.highlightNode(displayNode, dateIndex, mutation);
-    this.nodeTimelines.highlightNode(displayNode, dateIndex);
+    this.nodePrevalenceCanvas.highlightNode(displayNode, date);
+    this.nodeMutationCharts.highlightNode(displayNode, date, mutation);
+    this.nodeTimelines.highlightNode(displayNode, date);
   }
 
 

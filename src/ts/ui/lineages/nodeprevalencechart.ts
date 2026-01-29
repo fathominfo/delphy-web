@@ -32,7 +32,7 @@ export class SVGPrevalenceMeanGroup {
 
 
 export class NodePrevalenceChart {
-  hoverDateIndex: number = UNSET;
+  hoverDate: number = UNSET;
   highlightDisplayNode: DisplayNode = UNSET;
   nodeHighlightCallback: HoverCallback;
   nodes: NodeDisplay[];
@@ -201,12 +201,12 @@ export class NodePrevalenceChart {
     }
 
     const hoverX = e.offsetX,
-      dateCount = Math.floor(this.maxDate - this.minDate + 1),
-      dateIndex = Math.floor(hoverX / this.width * dateCount);
+      xPct = hoverX / this.width,
+      date = this.minDate + xPct * (this.maxDate - this.minDate);
 
     let requesting = false;
-    if (dateIndex !== this.hoverDateIndex) {
-      this.hoverDateIndex = dateIndex;
+    if (date !== this.hoverDate) {
+      this.hoverDate = date;
       requesting = true;
     }
 
@@ -216,15 +216,15 @@ export class NodePrevalenceChart {
     }
 
     if (requesting) {
-      this.nodeHighlightCallback(displayNode, dateIndex, null);
+      this.nodeHighlightCallback(displayNode, date, null);
     }
 
 
   }
 
   handleMouseout = () => {
-    if (this.hoverDateIndex !== UNSET) {
-      this.hoverDateIndex = UNSET;
+    if (this.hoverDate !== UNSET) {
+      this.hoverDate = UNSET;
       this.highlightDisplayNode = UNSET;
       this.requestDraw();
     }
@@ -232,7 +232,7 @@ export class NodePrevalenceChart {
   }
 
 
-  highlightNode(node: DisplayNode, dateIndex:number) : void {
+  highlightNode(node: DisplayNode, date:number) : void {
     requestAnimationFrame(()=>{
       if (node === UNSET) {
         this.svgMeanGroups.forEach((group)=>{
@@ -245,11 +245,11 @@ export class NodePrevalenceChart {
           group.toggleClass("unmatching", node !== nodeType);
         });
       }
-      if (dateIndex === UNSET) {
+      if (date === UNSET) {
         this.dateHoverContainer.classList.remove("active");
       } else {
-        setDateLabel(dateIndex, this.dateHoverDiv);
-        const pct = 100 * dateIndex / (this.maxDate - this.minDate);
+        setDateLabel(date, this.dateHoverDiv);
+        const pct = 100 * (date - this.minDate) / (this.maxDate - this.minDate);
         this.dateHoverDiv.style.left = `${pct}%`;
         this.dateHoverContainer.classList.add("active");
         // hide overlapping labels

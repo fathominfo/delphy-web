@@ -208,7 +208,7 @@ export class NodePairMutationList {
   setDateRange() {
     const { minDate, maxDate, series } = this.data;
     const dateContainerDiv = this.div.querySelector(".date-container .dates") as HTMLDivElement;
-    const rangeSpan = series.filter(ser=>!!ser).map(ser=>ser.median);
+    const rangeSpan = series.filter(ser=>ser !== undefined).map(ser=>ser?.median) as number[];
     rangeSpan.sort(numericSort);
     const rangeMin = rangeSpan[0];
     const rangeMax = rangeSpan[rangeSpan.length - 1] as number;
@@ -242,8 +242,8 @@ export class NodePairMutationList {
     // const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
     const {descendantType, mutationTimelineData, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
-      const seriesCallback = (_series: Distribution | null, dateIndex: number)=>{
-        this.nodeHighlightCallback(descendantType, dateIndex, md.mutation.mutation);
+      const seriesCallback = (_series: Distribution | null, date: number)=>{
+        this.nodeHighlightCallback(descendantType, date, md.mutation.mutation);
       };
       const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);
       mt.appendTo(this.mutationContainer);
@@ -264,7 +264,7 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNode, dateIndex: number, mutation: Mutation | null) : void {
+  highlightNode(node: DisplayNode, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
     if (node === UNSET) {
       classList.remove(MATCH_CLASS);
@@ -275,7 +275,7 @@ export class NodePairMutationList {
       this.mutationTimelines.forEach(mt=>{
         if (mt.data.mutation.mutation === mutation) {
           console.log(`
-            match found ${getMutationName(mutation)} ${dateIndex}            
+            match found ${getMutationName(mutation)} ${date}            
             `)
         }
       });
@@ -285,13 +285,12 @@ export class NodePairMutationList {
     }
 
 
-    if (dateIndex === UNSET) {
+    if (date === UNSET) {
       this.dateHoverDiv.classList.remove("active");
     } else {
 
       const { minDate, maxDate } = this.data;
-      // const datePercent = (dateIndex - minDate) / (maxDate - minDate) * 100;
-      const datePercent = dateIndex / (maxDate - minDate) * 100;
+      const datePercent = (date - minDate) / (maxDate - minDate) * 100;
       this.dateHoverDiv.style.left = `${datePercent}`;
       this.dateHoverDiv.classList.add("active");
     }
@@ -367,10 +366,10 @@ export class NodeMutations {
     return this.charts;
   }
 
-  highlightNode(node: DisplayNode, dateIndex: number, mutation: Mutation|null) {
+  highlightNode(node: DisplayNode, date: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
-      chart.highlightNode(node, dateIndex, mutation);
+      chart.highlightNode(node, date, mutation);
     });
 
   }

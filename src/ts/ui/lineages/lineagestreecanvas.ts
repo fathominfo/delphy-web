@@ -42,15 +42,13 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     // need to handle dragging when zoomed
     eventCanvas.addEventListener("pointerenter", (event)=>{
       const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY),
-        date = this.getZoomDate(event.offsetX),
-        dateIndex = Math.round(date - this.minDate);
-      hoverCallback(nodeIndex, dateIndex);
+        date = this.getZoomDate(event.offsetX);
+      hoverCallback(nodeIndex, date);
     });
     eventCanvas.addEventListener("pointermove", (event)=>{
       const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY),
-        date = this.getZoomDate(event.offsetX),
-        dateIndex = Math.round(date - this.minDate);
-      hoverCallback(nodeIndex, dateIndex);
+        date = this.getZoomDate(event.offsetX);
+      hoverCallback(nodeIndex, date);
     });
     eventCanvas.addEventListener("pointerleave", ()=>{
       hoverCallback(UNSET, UNSET);
@@ -91,10 +89,10 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     this.drawSelection();
   }
 
-  highlightNode(node: DisplayNode, dateIndex: number) {
+  highlightNode(node: DisplayNode, date: number) {
     this.highlightCtx.clearRect(0, 0, this.width, this.height);
     this.highlightedNode = node;
-    this.highlightedDate = dateIndex;
+    this.highlightedDate = date;
     this.subtreeIndex = UNSET;
     const others: [number, DisplayNode][] = [];
     [
@@ -126,7 +124,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       this.highlightCtx.globalAlpha = 1.0;
       this.drawNode(this.subtreeIndex, node);
     }
-    this.setHoverDate(dateIndex);
+    this.setHoverDate(date);
   }
 
 

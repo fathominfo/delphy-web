@@ -37,12 +37,12 @@ export class NodeTimelines {
 
   constructor(nodeHighlightCallback: HoverCallback) {
 
-    const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, dateIndex: number)=>{
+    const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, date: number)=>{
       let nodeType: DisplayNode =  UNSET;
       if (series) {
         nodeType = (series as NodeDistribution).nodeType;
       }
-      nodeHighlightCallback(nodeType, dateIndex, null);
+      nodeHighlightCallback(nodeType, date, null);
     };
 
     this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
@@ -149,7 +149,7 @@ export class NodeTimelines {
   }
 
 
-  highlightNode(node: DisplayNode, dateIndex: number) : void {
+  highlightNode(node: DisplayNode, date: number) : void {
     if (!this.data) return;
 
     if (node !== this.highlighedtNode) {
@@ -187,12 +187,12 @@ export class NodeTimelines {
       }
       this.highlighedtNode = node;
     }
-    if (dateIndex !== this.highlightedDate) {
-      this.highlightedDate = dateIndex;
-      if (dateIndex === UNSET) {
+    if (date !== this.highlightedDate) {
+      this.highlightedDate = date;
+      if (date === UNSET) {
         dateHoverDiv.classList.remove("active");
       } else {
-        const pct = 100 * dateIndex / (this.maxDate - this.minDate);
+        const pct = 100 * (date - this.minDate) / (this.maxDate - this.minDate);
         dateHoverDiv.style.left = `${pct}%`;
         dateHoverDiv.classList.add("active");
       }

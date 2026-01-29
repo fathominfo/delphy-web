@@ -679,8 +679,8 @@ export type AxisLabel = {
 
 
 
-export const setDateLabel = (dateIndex: number, div: HTMLDivElement)=>{
-  const tokens = toDateTokens(dateIndex);
+export const setDateLabel = (date: number, div: HTMLDivElement)=>{
+  const tokens = toDateTokens(date);
   const month = tokens[DateTokenIndex.month];
   (div.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
   (div.querySelector(".month") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;

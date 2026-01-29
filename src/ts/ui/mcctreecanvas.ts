@@ -777,10 +777,9 @@ export class MccTreeCanvas {
     this.colorsUnSet = false;
   }
 
-  setHoverDate(dateIndex:number) {
-    const date = dateIndex + this.minDate;
+  setHoverDate(date:number) {
     const x = this.getZoomX(date);
-    if (dateIndex === UNSET) {
+    if (date === UNSET) {
       if (this.dateHoverDiv !== null) {
         this.dateHoverDiv.classList.remove("active");
       }
