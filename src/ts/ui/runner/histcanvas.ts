@@ -1,6 +1,6 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
-import { TraceCanvas, TICK_LENGTH, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
+import { TraceCanvas, BG_COLOR, BORDER_COLOR } from "./tracecanvas";
 import { kneeHoverListenerType } from './runcommon';
 import { HistData } from "./histdata";
 
@@ -31,15 +31,11 @@ export class HistCanvas extends TraceCanvas {
     super(label, unit);
     this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
-    this.height = UNSET;
-    this.width = UNSET;
-    this.traceWidth = UNSET;
-    this.distLeft = UNSET;
-    this.chartHeight = UNSET;
     this.hideBurnIn = false;
     this.isVisible = true;
     this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
-    const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
+    // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
+    const requestDraw = ()=>this.drawSvg();
     this.canvas.addEventListener('pointerover', ()=>{
       this.hovering = true;
       requestDraw();
@@ -62,11 +58,11 @@ export class HistCanvas extends TraceCanvas {
     this.canvas.classList.add('dragging');
     // this.stateListeners.forEach(fnc=>fnc(true));
     const moveHandler = (event:PointerEvent)=>{
-      const x = event.offsetX - TICK_LENGTH;
+      const x = event.offsetX;
       const count = this.traceData.count;
-      let pct = x /  this.traceWidth;
+      let pct = x /  this.width;
       // console.log('knee', x, pct)
-      if (count * MAX_STEP_SIZE < this.traceWidth) {
+      if (count * MAX_STEP_SIZE < this.width) {
         pct = x / (count * MAX_STEP_SIZE);
       }
       if (this.hideBurnIn) {
@@ -107,19 +103,122 @@ export class HistCanvas extends TraceCanvas {
   }
 
   draw() {
-    let {data, mccIndex, sampleIndex, currentKneeIndex: kneeIndex } = this.traceData as HistData;
-    const {hideBurnIn, savedKneeIndex } = this.traceData as HistData;
-    if (hideBurnIn && savedKneeIndex > 0) {
-      data = data.slice(savedKneeIndex);
-      kneeIndex -= savedKneeIndex;
-      mccIndex -= savedKneeIndex;
-      sampleIndex -= savedKneeIndex;
+    // let {data, mccIndex, sampleIndex, currentKneeIndex: kneeIndex } = this.traceData as HistData;
+    // const {hideBurnIn, savedKneeIndex } = this.traceData as HistData;
+    // if (hideBurnIn && savedKneeIndex > 0) {
+    //   data = data.slice(savedKneeIndex);
+    //   kneeIndex -= savedKneeIndex;
+    //   mccIndex -= savedKneeIndex;
+    //   sampleIndex -= savedKneeIndex;
+    // }
+    // const {ctx, width, height} = this;
+    // ctx.clearRect(0, 0, width + 1, height + 1);
+    // this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
+    // this.drawHistogram(data, kneeIndex);
+    // this.drawLabels(data, kneeIndex);
+    this.drawSvg();
+  }
+
+
+  drawSvg() {
+    const { data } = this.traceData as HistData;
+    const { width } = this;
+    const { hideBurnIn, savedKneeIndex } = this.traceData as HistData;
+    const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
+    const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
+    const burnInTrend = burnInContainer.querySelector(".trend") as SVGPathElement;
+    const activeContainer = this.svg.querySelector(".run") as SVGGElement;
+    const activeField = activeContainer.querySelector(".period") as SVGRectElement;
+    const activeInTrend = activeContainer.querySelector(".trend") as SVGPathElement;
+
+    let displayCount = data.length,
+      startIndex = 0,
+      burnInWidth = savedKneeIndex / displayCount * width;
+    if (hideBurnIn) {
+      displayCount -= savedKneeIndex;
+      startIndex = savedKneeIndex;
+      burnInWidth = 0;
     }
-    const {ctx, width, height} = this;
-    ctx.clearRect(0, 0, width + 1, height + 1);
-    this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
-    this.drawHistogram(data, kneeIndex);
-    this.drawLabels(data, kneeIndex);
+    let activeWidth = width - burnInWidth;
+
+
+    let burnInPath = "";
+    let activePath = "";
+
+    let height = this.height;
+
+    if (displayCount === 0) {
+      burnInWidth = 0;
+      activeWidth = width;
+    } else if (displayCount === 1) {
+      activePath = `M0 ${height * 0.5} 3 ${height * 0.5} `;
+    } else if (displayCount > 1) {
+      const { displayMin, displayMax, isDiscrete } = this.traceData;
+      const valRange = displayMax - displayMin;
+      const stepW = Math.min(MAX_STEP_SIZE, width / displayCount || 1);
+
+      if (isDiscrete && valRange < 20) {
+        const h = height / (valRange + 1);
+        height -= h;
+      }
+
+      if (displayMax === displayMin) {
+        burnInPath = `M0 ${height * 0.5} ${burnInWidth} ${height * 0.5} `;
+        activePath = `${burnInWidth} ${height * 0.5} ${this.width} ${height * 0.5} `;
+      } else {
+        if (!hideBurnIn) {
+          burnInWidth = stepW * savedKneeIndex;
+          activeWidth = width - burnInWidth;
+        }
+
+        const verticalScale = height / (valRange || 1);
+        let currentPath = "";
+        let first = true;
+        let n: number,
+          x: number = UNSET,
+          y: number,
+          prevX = UNSET,
+          prevY = UNSET;
+        for (let i = startIndex; i < data.length; i++) {
+          if (i === savedKneeIndex) {
+            burnInPath = currentPath;
+            currentPath = `M${prevX} ${prevY} L `;
+          }
+          n = data[i];
+          x = i * stepW;
+          if (isNaN(n) || !isFinite(n)) {
+            y = height;
+          } else {
+            y = height-(n-displayMin) * verticalScale;
+          }
+          if (first) {
+            currentPath = `M${x} ${y} L`;
+          } else {
+            if (isDiscrete) {
+              currentPath += `${prevX} ${y} `;
+            }
+            currentPath += `${x} ${y} `;
+          }
+          first = false;
+          prevX = x;
+          prevY = y;
+        }
+        activePath = currentPath;
+      }
+    }
+
+    // requestAnimationFrame(()=>{
+    burnInField.setAttribute("width", `${burnInWidth}`);
+    activeField.setAttribute("x", `${burnInWidth}`);
+    activeField.setAttribute("width", `${activeWidth}`);
+    burnInTrend.setAttribute("d", burnInPath);
+    activeInTrend.setAttribute("d", activePath);
+    // });
+
+
+    // this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
+    // this.drawHistogram(data, kneeIndex);
+    // this.drawLabels(data, kneeIndex);
   }
 
 
@@ -130,8 +229,8 @@ export class HistCanvas extends TraceCanvas {
     // }
 
     const {displayCount} = this.traceData as HistData;
-    const {ctx, traceWidth} = this;
-    let chartHeight = this.chartHeight,
+    const {ctx, width} = this;
+    let height = this.height,
       top = 0;
 
     this.drawField();
@@ -142,25 +241,25 @@ export class HistCanvas extends TraceCanvas {
     to counter that by getting a lighter line weight as we get more data.
     */
     ctx.beginPath();
-    ctx.lineWidth = TRACE_WEIGHT * Math.min(1, Math.sqrt(traceWidth / data.length));
+    ctx.lineWidth = TRACE_WEIGHT * Math.min(1, Math.sqrt(width / data.length));
     if (data.length === 1) {
       ctx.strokeStyle = TRACE_COLOR;
-      ctx.moveTo(0, chartHeight * 0.5);
-      ctx.lineTo(3, chartHeight * 0.5);
+      ctx.moveTo(0, height * 0.5);
+      ctx.lineTo(3, height * 0.5);
       ctx.stroke();
     } else if (data.length > 1) {
       const {displayMin, displayMax, isDiscrete} = this.traceData;
       const valRange = displayMax - displayMin;
 
       if (isDiscrete && valRange < 20) {
-        const h = chartHeight / (valRange + 1);
+        const h = height / (valRange + 1);
         top = h * 0.5;
-        chartHeight -= h;
+        height -= h;
       }
 
 
-      const stepW = Math.min(MAX_STEP_SIZE, traceWidth / displayCount || 1);
-      const burnInX = TICK_LENGTH + kneeIndex * stepW;
+      const stepW = Math.min(MAX_STEP_SIZE, width / displayCount || 1);
+      const burnInX = 0 + kneeIndex * stepW;
 
 
       ctx.strokeStyle = TRACE_COLOR;
@@ -168,11 +267,11 @@ export class HistCanvas extends TraceCanvas {
         // console.log(displayMax);
         ctx.strokeStyle = TRACE_COLOR;
         ctx.beginPath();
-        ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
-        ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
+        ctx.moveTo(0, height * 0.5);
+        ctx.lineTo(0 + width, height * 0.5);
         ctx.stroke();
       } else {
-        const verticalScale = chartHeight / (valRange || 1);
+        const verticalScale = height / (valRange || 1);
         // find the middlemost step
         let n = data[0],
           x = 0,
@@ -186,25 +285,25 @@ export class HistCanvas extends TraceCanvas {
           x = burnInX;
           ctx.beginPath();
           ctx.moveTo(x, 0);
-          ctx.lineTo(x, chartHeight);
+          ctx.lineTo(x, height);
           ctx.stroke();
           ctx.strokeStyle = TRACE_COLOR_PRE_KNEE;
         }
         ctx.beginPath();
-        x = TICK_LENGTH;
+        x = 0;
         if (isNaN(n) || !isFinite(n)) {
-          ctx.moveTo(x, chartHeight);
+          ctx.moveTo(x, height);
         } else {
-          ctx.moveTo(x, chartHeight-(n-displayMin) * verticalScale);
+          ctx.moveTo(x, height-(n-displayMin) * verticalScale);
         }
         for (let i = 1; i < data.length; i++) {
           n = data[i];
           if (!isNaN(n) && isFinite(n)) {
-            y = top + chartHeight -(n-displayMin) * verticalScale;
+            y = top + height -(n-displayMin) * verticalScale;
             if (this.traceData.isDiscrete) {
               ctx.lineTo(x, y);
             }
-            x = TICK_LENGTH + i * stepW;
+            x = i * stepW;
             ctx.lineTo(x, y);
             if (i === kneeIndex) {
               ctx.stroke();
@@ -240,15 +339,14 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawHistogram(data:number[], kneeIndex:number) {
-    const {ctx, distLeft, chartHeight} = this;
+    const {ctx, width, height} = this;
 
 
     /* draw background and borders for the charts */
     ctx.fillStyle = BG_COLOR;
     ctx.strokeStyle = BORDER_COLOR;
-    ctx.lineWidth = BORDER_WEIGHT;
-    ctx.fillRect(distLeft, 0, DIST_WIDTH, chartHeight);
-    ctx.strokeRect(distLeft+HALF_BORDER, HALF_BORDER, DIST_WIDTH-1, chartHeight-1);
+    ctx.fillRect(0, 0, width, height);
+
 
     if (data.length > 1) {
       const {displayMin, displayMax, isDiscrete} = this.traceData as HistData;
@@ -257,39 +355,39 @@ export class HistCanvas extends TraceCanvas {
       estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
       if (estimateData.length >= 10) {
         if (isDiscrete && valRange < 20) {
-          this.drawDiscreteHistogram(estimateData, valRange, displayMin, chartHeight, distLeft, ctx);
+          this.drawDiscreteHistogram(estimateData, valRange, displayMin, width, 0, ctx);
         } else {
-          this.drawKDE(estimateData, valRange, displayMin, chartHeight, distLeft, ctx);
+          this.drawKDE(estimateData, valRange, displayMin, height, width, ctx);
         }
       }
     }
   }
 
-  drawDiscreteHistogram(estimateData: number[], valRange: number, displayMin: number, chartHeight: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
+  drawDiscreteHistogram(estimateData: number[], valRange: number, displayMin: number, height: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
     const buckets: number[] = Array(valRange + 1).fill(0),
-      h = chartHeight / (valRange + 1);
+      h = height / (valRange + 1);
     estimateData.forEach(n=>buckets[n-displayMin]++);
     const bandMax = Math.max(...buckets);
-    let y = chartHeight - h;
+    let y = height - h;
     ctx.fillStyle = DIST_BAR_COLOR;
     buckets.forEach((n)=>{
-      const x = n / bandMax * DIST_WIDTH;
+      const x = n / bandMax; //* DIST_WIDTH;
       ctx.fillRect(distLeft, y, x, h);
       y -= h;
     })
   }
 
 
-  drawKDE(estimateData: number[], valRange: number, minVal: number, chartHeight: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
+  drawKDE(estimateData: number[], valRange: number, minVal: number, height: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
     const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
       bands = [],
       min = kde.min_sample,
       max = kde.max_sample,
       bandwidth = kde.bandwidth,
       limit = max - bandwidth / 2,
-      h = bandwidth / valRange * chartHeight;
+      h = bandwidth / valRange * height;
     let n = min + bandwidth / 2,
-      y = (1 - (min - minVal) / valRange) * chartHeight - h,
+      y = (1 - (min - minVal) / valRange) * height - h,
       bandMax = 0;
     while (n <= limit && bandwidth > 0) {
       const gaust = kde.value_at(n);
@@ -299,7 +397,7 @@ export class HistCanvas extends TraceCanvas {
     }
     ctx.fillStyle = DIST_BAR_COLOR;
     bands.forEach(n=>{
-      const x = n / bandMax * DIST_WIDTH;
+      const x = n / bandMax; // * DIST_WIDTH;
       ctx.fillRect(distLeft, y, x, h);
       y -= h;
     });
@@ -309,71 +407,71 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawLabels(data:number[], kneeIndex:number) {
-    const count:number = data.length;
-    this.traceData.count = count;
-    const {ctx, traceWidth, chartHeight} = this;
+    // const count:number = data.length;
+    // this.traceData.count = count;
+    // const {ctx, width, height} = this;
 
 
-    /* draw background and borders for the charts */
-    ctx.fillStyle = BG_COLOR;
+    // /* draw background and borders for the charts */
+    // ctx.fillStyle = BG_COLOR;
 
 
-    /*
-    as we get more and more data, the time series gets more compact,
-    and the lines acquire a density that is fairly ugly. So we try
-    to counter that by getting a lighter line weight as we get more data.
-    */
-    ctx.beginPath();
-    if (data.length > 1) {
-      const {displayMin, displayMax} = this.traceData;
-      // this.readout.innerHTML = `${safeLabel(data[data.length - 1])} ${this.traceData.unit}`;
+    // /*
+    // as we get more and more data, the time series gets more compact,
+    // and the lines acquire a density that is fairly ugly. So we try
+    // to counter that by getting a lighter line weight as we get more data.
+    // */
+    // ctx.beginPath();
+    // if (data.length > 1) {
+    //   const {displayMin, displayMax} = this.traceData;
+    //   // this.readout.innerHTML = `${safeLabel(data[data.length - 1])} ${this.traceData.unit}`;
 
-      ctx.strokeStyle = TRACE_COLOR;
-      if (displayMax === displayMin) {
-        ctx.strokeStyle = TRACE_COLOR;
-        ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
-        ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
-        ctx.stroke();
-        // this.maxLabel.innerHTML = ``;
-        // this.minLabel.innerHTML = ``;
-        // this.avgLabel.innerHTML = `${safeLabel(displayMax)}`;
-      } else {
+    //   ctx.strokeStyle = TRACE_COLOR;
+    //   if (displayMax === displayMin) {
+    //     ctx.strokeStyle = TRACE_COLOR;
+    //     ctx.moveTo(0, height * 0.5);
+    //     ctx.lineTo(0 + width, height * 0.5);
+    //     ctx.stroke();
+    //     // this.maxLabel.innerHTML = ``;
+    //     // this.minLabel.innerHTML = ``;
+    //     // this.avgLabel.innerHTML = `${safeLabel(displayMax)}`;
+    //   } else {
 
-        ctx.strokeStyle = BORDER_COLOR;
-        ctx.lineWidth = BORDER_WEIGHT;
-        ctx.beginPath();
-        ctx.moveTo(0, BORDER_WEIGHT * 0.5);
-        ctx.lineTo(TICK_LENGTH, BORDER_WEIGHT * 0.5);
+    //     ctx.strokeStyle = BORDER_COLOR;
+    //     ctx.lineWidth = BORDER_WEIGHT;
+    //     ctx.beginPath();
+    //     ctx.moveTo(0, 0);
+    //     ctx.lineTo(0, 0);
 
-        const midVal = (displayMin + displayMax) / 2;
-        // this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
-        // this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
-        let skipMiddle = false;
-        if (this.traceData.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
-          skipMiddle = true;
-        } else if (safeLabel(displayMax) === safeLabel(midVal)) skipMiddle = true;
-        else if (safeLabel(displayMin) === safeLabel(midVal)) skipMiddle = true;
-        if (skipMiddle) {
-          // this.avgLabel.innerHTML = '';
-        } else {
-          // this.avgLabel.innerHTML = `${safeLabel(midVal)}`;
-          ctx.moveTo(0, chartHeight/2);
-          ctx.lineTo(TICK_LENGTH, chartHeight/2);
-        }
-        ctx.moveTo(0, chartHeight - BORDER_WEIGHT * 0.5);
-        ctx.lineTo(TICK_LENGTH, chartHeight - BORDER_WEIGHT * 0.5);
-        ctx.stroke();
-      }
-      // this.firstStepLabel.innerHTML = '';
-      // this.midStepLabel.innerHTML = ``;
-      // this.lastStepLabel.innerHTML = '';
-    } else {
-      // this.readout.innerHTML = `0 ${this.unit}`;
-    }
-    this.canvas.classList.toggle('kneed', kneeIndex > 0);
-    // ctx.fillStyle = 'black';
-    // const label = `ESS: ${  this.ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
-    // ctx.fillText(label, this.distLeft - 70, chartHeight - 2);
+    //     const midVal = (displayMin + displayMax) / 2;
+    //     // this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
+    //     // this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
+    //     let skipMiddle = false;
+    //     if (this.traceData.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
+    //       skipMiddle = true;
+    //     } else if (safeLabel(displayMax) === safeLabel(midVal)) skipMiddle = true;
+    //     else if (safeLabel(displayMin) === safeLabel(midVal)) skipMiddle = true;
+    //     if (skipMiddle) {
+    //       // this.avgLabel.innerHTML = '';
+    //     } else {
+    //       // this.avgLabel.innerHTML = `${safeLabel(midVal)}`;
+    //       ctx.moveTo(0, height/2);
+    //       ctx.lineTo(0, height/2);
+    //     }
+    //     ctx.moveTo(0, height - BORDER_WEIGHT * 0.5);
+    //     ctx.lineTo(0, height - BORDER_WEIGHT * 0.5);
+    //     ctx.stroke();
+    //   }
+    //   // this.firstStepLabel.innerHTML = '';
+    //   // this.midStepLabel.innerHTML = ``;
+    //   // this.lastStepLabel.innerHTML = '';
+    // } else {
+    //   // this.readout.innerHTML = `0 ${this.unit}`;
+    // }
+    // this.canvas.classList.toggle('kneed', kneeIndex > 0);
+    // // ctx.fillStyle = 'black';
+    // // const label = `ESS: ${  this.ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
+    // // ctx.fillText(label, this.distLeft - 70, height - 2);
   }
 
 

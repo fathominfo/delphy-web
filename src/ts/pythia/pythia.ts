@@ -164,6 +164,14 @@ export class Pythia {
   logPosteriorHist : number[] = [];
   logGHist : number[] = [];
   numMutationsHist : number[] = [];
+  alphaHist: number[] = [];
+  logCoalescentPriorHist: number[] = [];
+  logOtherPriorsHist: number[] = [];
+  hkyKappaHist: number[] = [];
+  hkyPiAHist: number[] = [];
+  hkyPiCHist: number[] = [];
+  hkyPiGHist: number[] = [];
+  hkyPiTHist: number[] = [];
   popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
@@ -556,6 +564,14 @@ export class Pythia {
     this.logPosteriorHist = [];
     this.logGHist = [];
     this.numMutationsHist = [];
+    this.alphaHist = [];
+    this.logCoalescentPriorHist = [];
+    this.logOtherPriorsHist = [];
+    this.hkyKappaHist = [];
+    this.hkyPiAHist = [];
+    this.hkyPiCHist = [];
+    this.hkyPiGHist = [];
+    this.hkyPiTHist = [];
     this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
@@ -579,6 +595,14 @@ export class Pythia {
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
       this.numMutationsHist.push(this.run.getNumMutations());
+      this.alphaHist.push(this.run.getAlpha());
+      this.logCoalescentPriorHist.push(this.run.getLogCoalescentPrior());
+      this.logOtherPriorsHist.push(this.run.getLogOtherPriors());
+      this.hkyKappaHist.push(this.run.getHkyKappa());
+      this.hkyPiAHist.push(this.run.getHkyPiA());
+      this.hkyPiCHist.push(this.run.getHkyPiC());
+      this.hkyPiGHist.push(this.run.getHkyPiG());
+      this.hkyPiTHist.push(this.run.getHkyPiT());
       this.popModelHist.push(this.run.getPopModel());
       this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());

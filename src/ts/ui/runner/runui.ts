@@ -55,12 +55,9 @@ export class RunUI extends UIScreen {
 
   private mccTreeCanvas: MccTreeCanvas;
 
-  private logPosteriorCanvas: HistCanvas;
-  private muCanvas: HistCanvas;
-  private muStarCanvas: HistCanvas;
-  private TCanvas: HistCanvas;
   private mutCountCanvas: HistCanvas;
-  private popGrowthCanvas: HistCanvas;
+  private muCanvas: HistCanvas;
+  private logPosteriorCanvas: HistCanvas;
   private gammaCanvas: GammaHistCanvas;
   private histCanvases: TraceCanvas[];
 
@@ -175,13 +172,9 @@ export class RunUI extends UIScreen {
 
     this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
     this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
-    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
     this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
-    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
-    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
     this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
-      this.popGrowthCanvas, this.gammaCanvas];
+    this.histCanvases = [this.mutCountCanvas, this.muCanvas, this.logPosteriorCanvas, this.gammaCanvas];
     (this.mutCountCanvas.traceData as HistData).isDiscrete = true;
     this.hideBurnIn = false;
     this.mccTimelineIndices = [];
@@ -465,12 +458,7 @@ export class RunUI extends UIScreen {
 
     // toggle canvases
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
-    this.toggleHistCanvasVisibility(this.muStarCanvas, params.apobecEnabled);
-    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed && !params.popModelIsSkygrid);
     this.toggleHistCanvasVisibility(this.gammaCanvas, params.popModelIsSkygrid)
-    // disable fieldsets
-    // this.mutationRateFieldset.disabled = params.apobecEnabled;
-    // this.apobecFieldset.disabled = params.mutationRateIsFixed || params.siteRateHeterogeneityEnabled;
 
     const treeCount = pythia.treeHist.length;
     if (treeCount > 1) {
@@ -606,7 +594,7 @@ export class RunUI extends UIScreen {
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
       sampleIndex = UNSET,
-      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popModelHist, kneeIndex} = this.pythia;
+      {muHist, logPosteriorHist, numMutationsHist, popModelHist, totalBranchLengthHist, kneeIndex} = this.pythia;
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
     const serieses = [
@@ -617,32 +605,37 @@ export class RunUI extends UIScreen {
       //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
     ];
 
+
+    const totalLengthData = new HistData("", "year");
+    totalLengthData.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+
+
     this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     const essCandidates: number[] = [
       (this.logPosteriorCanvas.traceData as HistData).ess,
       (this.muCanvas.traceData as HistData).ess,
-      (this.TCanvas.traceData as HistData).ess,
+      totalLengthData.ess,
       // this.mutCountCanvas.ess,
       // this.popGrowthCanvas.ess
     ];
-    if (this.getRunParams().apobecEnabled) {
-      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      serieses.push(muudStar);
-      essCandidates.push((this.muStarCanvas.traceData as HistData).ess);
-    }
+
+    // if (this.getRunParams().apobecEnabled) {
+    //   const muudStar = muStarHist.map(n=>n*MU_FACTOR);
+    //   this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    //   serieses.push(muudStar);
+    //   essCandidates.push((this.muStarCanvas.traceData as HistData).ess);
+    // }
     if (this.getRunParams().popModelIsSkygrid) {
       const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
       console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
       const xHist = (popModelHist[0] as SkygridPopModel).x;
       const isLogLinear = (popModelHist[0] as SkygridPopModel).type === SkygridPopModelType.LogLinear;
       this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
-    } else {
-      const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
-      this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    // } else {
+    //   const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
+    //   this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     }
     this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
@@ -693,15 +686,14 @@ export class RunUI extends UIScreen {
       }
       this.logPosteriorCanvas.draw();
       this.muCanvas.draw();
-      if (this.getRunParams().apobecEnabled) {
-        this.muStarCanvas.draw();
-      }
-      this.TCanvas.draw();
+      // if (this.getRunParams().apobecEnabled) {
+      //   this.muStarCanvas.draw();
+      // }
       this.mutCountCanvas.draw();
       if (this.getRunParams().popModelIsSkygrid) {
         this.gammaCanvas.draw();
-      } else {
-        this.popGrowthCanvas.draw();
+      // } else {
+      //   this.popGrowthCanvas.draw();
       }
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       // this.treeCountText.innerHTML = `${nfc(treeCount)}`;

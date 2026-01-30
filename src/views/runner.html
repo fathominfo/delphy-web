@@ -262,40 +262,6 @@
               </svg>
             </a>
           </div>
-
-
-          <!-- <div class="toolbar">
-            <div class="meter">
-              <div class="bar" data-meter-level="1"></div>
-              <div class="bar" data-meter-level="2"></div>
-              <div class="bar" data-meter-level="3"></div>
-            </div>
-            <div class="readout">
-              <span class="label" data-readout-level="1">Converging</span>
-              <span class="label" data-readout-level="2">Stable</span>
-              <span class="label" data-readout-level="3">Robust</span>
-            </div>
-
-
-            <div id="ess-meter-stages" class="converging">
-
-
-
-              <div class="stage converging">
-                <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Converging</div></a>
-                <p>Not enough statistically independent samples to be reliable.</p>
-              </div>
-              <div class="stage stable">
-                <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Stable</div></a>
-                <p>Ready for initial exploration. Running longer will refine results.</p>
-              </div>
-              <div class="stage publish">
-                <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Robust</div></a>
-                <p>Running longer is unlikely to materially change any results.</p>
-              </div>
-            </div>
-            <p>Learn more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a></p>
-          </div> -->
         </div>
 
       </div>
@@ -306,10 +272,6 @@
           {{>mcc_tree}}
 
           <div class="mcc-legend">
-            <!-- <div class="mcc-legend-swatch low-cred">
-            <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
-            <div class="mcc-legend-swatch hi-cred"></div>
-            <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
             <div class="mcc-opt-list confidence">
               <label for="mcc-opt--confidence-range">Credibility threshold</label>
               <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
@@ -347,6 +309,16 @@
                     <div class="y axis"></div>
                     <div class="displays">
                       <div class="graph display">
+                        <svg class="dummy" xmlns="svgXMLNS" viewBox="0 0 170.67 96">
+                          <g class="burn-in">
+                            <rect class="period" x="0" y="0" height="96" width="20.08"></rect>
+                            <path class="trend" d="m0,68c1.25,4,5.02,8,18.66,7.63.47,0,.95,0,1.42,0"></path>
+                          </g>
+                          <g class="run">
+                            <rect class="period" x="20.08" y="0" height="96" width="150.59"></rect>
+                            <path class="trend" d="m170.67,75.34c-8.14-.05-16.29-1.47-24.41-.97-13.46.84-26.91.64-40.36.92-11.94.24-23.88,1.33-35.8-.33-10.65-1.48-21.27.73-31.9.31-6.04-.24-12.07.37-18.11.36-.47,0-.95,0-1.42,0-13.64.37-17.4-3.63-18.66-7.63"></path>
+                          </g>
+                        </svg>
                         <canvas></canvas>
                         <div class="position">
                           <div class="x p"></div>
@@ -356,6 +328,17 @@
                       </div>
                       <div class="histogram display">
                         <canvas></canvas>
+                        <svg class="dummy" xmlns="svgXMLNS" viewBox="0 0 37.33 96">
+                          <g class="bars">
+                            <g class="distribution">
+                              <rect y="77" width="3.73" height="2"></rect>
+                              <rect y="75" width="22.4" height="2"></rect>
+                            </g>
+                            <g class="mean-value">
+                              <rect y="73" width="37.33" height="2"></rect>
+                            </g>
+                          </g>
+                        </svg>
                       </div>
                     </div>
                   </div>

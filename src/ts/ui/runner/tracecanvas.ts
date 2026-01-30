@@ -16,15 +16,9 @@ const template = <HTMLDivElement> maybeTemplate;
 template.remove();
 
 
-export const DIST_WIDTH = 0;
-export const TRACE_MARGIN = 0;
 export const BG_COLOR = '#f5f5f5';
 export const BORDER_COLOR = '#cbcbcb';
-export const BORDER_WEIGHT = 0;
-export const TICK_LENGTH = 0;
 
-
-export const HALF_BORDER = BORDER_WEIGHT / 2;
 
 
 
@@ -35,22 +29,13 @@ export class TraceCanvas {
   traceData: TraceData;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  svg: SVGElement;
   container: HTMLDivElement;
-  // maxLabel: HTMLLIElement;
-  // minLabel: HTMLLIElement;
-  // avgLabel: HTMLLIElement;
-  // firstStepLabel: HTMLLIElement;
-  // midStepLabel: HTMLLIElement;
-  // lastStepLabel: HTMLLIElement;
-  // readout: HTMLParagraphElement;
   className: string;
 
 
   height: number;
   width: number;
-  traceWidth: number;
-  distLeft: number;
-  chartHeight: number;
   hovering: boolean;
 
   isVisible: boolean;
@@ -62,26 +47,14 @@ export class TraceCanvas {
     this.container = <HTMLDivElement>template.cloneNode(true);
     this.className = label.toLowerCase().replace(/ /g, '-').replace(/[()]/g, '');
     this.container.classList.add(this.className);
-    // const moduleGroup = getModuleGroupContainer();
-    // moduleGroup.appendChild(this.container);
     chartContainer.appendChild(this.container);
     const header = this.container.querySelector('h3.title') as HTMLHeadingElement;
     header.textContent = label;
     this.canvas = this.container.querySelector('canvas') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-    // this.maxLabel = this.getLI('.max');
-    // this.minLabel = this.getLI('.min');
-    // this.avgLabel = this.getLI('.median');
-    // this.firstStepLabel = this.getLI('.step-first');
-    // this.midStepLabel = this.getLI('.step-mid');
-    // this.lastStepLabel = this.getLI('.step-last');
-    // this.readout = this.container.querySelector(".block-readout") as HTMLParagraphElement;
-
+    this.svg = this.container.querySelector(".graph svg") as SVGElement;
     this.height = UNSET;
     this.width = UNSET;
-    this.traceWidth = UNSET;
-    this.distLeft = UNSET;
-    this.chartHeight = UNSET;
     this.hovering = false;
     this.isVisible = true;
   }
@@ -89,15 +62,22 @@ export class TraceCanvas {
   sizeCanvas() {
     // hack to get the right height in the flex container:
     // set width and height to zero, then recalculate
-    this.canvas.width = 0;
-    this.canvas.height = 0;
-
-    const {width, height} = resizeCanvas(this.canvas);
-    this.width = width;
-    this.height = height;
-    this.distLeft = this.width - DIST_WIDTH;
-    this.traceWidth = this.distLeft - TRACE_MARGIN - TICK_LENGTH;
-    this.chartHeight = this.height - TICK_LENGTH;
+    const wrapper = this.svg.parentElement as HTMLDivElement;
+    this.width = wrapper.offsetWidth;
+    this.height = wrapper.offsetHeight;
+    requestAnimationFrame(()=>{
+      if (window.devicePixelRatio > 1) {
+        this.canvas.width = Math.round(window.devicePixelRatio * this.width);
+        this.canvas.height = Math.round(window.devicePixelRatio * this.height);
+        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      } else {
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+      }
+      this.svg.setAttribute("width", `${this.width}`);
+      this.svg.setAttribute("height", `${this.height}`);
+      this.svg.setAttribute("viewBox", `0 0 ${this.width} ${this.height}`);
+    });
   }
 
   setVisible(showIt: boolean) {
@@ -120,13 +100,10 @@ export class TraceCanvas {
   draw() {} // eslint-disable-line @typescript-eslint/no-empty-function
 
   drawField() {
-    const {ctx, traceWidth, chartHeight} = this;
+    const {ctx, width, height} = this;
     /* draw background and borders for the charts */
     ctx.fillStyle = BG_COLOR;
-    ctx.strokeStyle = BORDER_COLOR;
-    ctx.lineWidth = BORDER_WEIGHT;
-    ctx.fillRect(TICK_LENGTH, 0, traceWidth, chartHeight);
-    ctx.strokeRect(TICK_LENGTH + HALF_BORDER, HALF_BORDER, traceWidth-1, chartHeight-1);
+    ctx.fillRect(0, 0, width, height);
   }
 
 }

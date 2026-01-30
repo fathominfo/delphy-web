@@ -13,6 +13,56 @@
     flex-direction: column;
     gap: var(--view-gap);
   }
+
+
+
+  .chart {
+
+    .display {
+      background-color: white;
+    }
+
+    .burn-in {
+      .trend {
+        stroke: var(--chart-graph-burn-in-trend-stroke);
+        stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
+      }
+      .period {
+        fill: var(--chart-graph-burn-in-period-fill);
+      }
+    }
+    .run {
+      .period {
+        fill: var(--chart-graph-run-period-fill);
+      }
+      .trend {
+        stroke: var(--chart-graph-run-trend-stroke);
+      }
+
+    }
+    .graph {
+      .trend  {
+        fill: none;
+        stroke-width: var(--chart-graph-trend-stroke-weight);
+      }
+    }
+
+
+    .bars {
+      opacity: 0.75;
+      .distribution {
+        opacity: 0.375;
+      }
+      rect {
+        fill: var(--chart-histogram-bar-fill);
+      }
+    }
+
+
+    .display canvas {
+      position: relative;
+    }
+  }
 }
 
 
