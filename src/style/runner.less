@@ -8,6 +8,8 @@
     display: block;
   }
 
+
+
   .main-content {
     display: flex;
     flex-direction: column;
@@ -15,11 +17,32 @@
   }
 
 
+  .module .header .readout {
+    display: none;
+  }
+
 
   .chart {
 
+    canvas {
+      display: none;
+    }
+
+    .displays {
+      flex-direction: column;
+    }
+
+
+    .feature {
+      // flex-direction: column;
+    }
+
     .display {
       background-color: white;
+      width: var(--trace-chart-width);
+      canvas {
+        position: relative;
+      }
     }
 
     .burn-in {
@@ -41,6 +64,8 @@
 
     }
     .graph {
+
+      height: var(--trace-chart-height);
       .trend  {
         fill: none;
         stroke-width: var(--chart-graph-trend-stroke-weight);
@@ -58,10 +83,29 @@
       }
     }
 
-
-    .display canvas {
-      position: relative;
+    .axis {
+      background-color: pink;
+      &.x {
+        margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
+        width: var(--trace-chart-width);
+      }
+      &.y {
+        margin-top: calc(var(--chart-histogram-height) + 1px);
+        height: var(--trace-chart-height);
+      }
     }
+
+
+    .divider {
+      height: var(--chart-divider-stroke-weight);
+      width: 100%;
+      right: unset;
+      left: 0;
+      top: unset;
+      bottom: 0;
+      transform: translateY(50%);
+    }
+
   }
 }
 

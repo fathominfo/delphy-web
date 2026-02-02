@@ -1,21 +1,25 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
-import { TraceCanvas, BG_COLOR, BORDER_COLOR } from "./tracecanvas";
+import { TraceCanvas, BG_COLOR, BORDER_COLOR, TRACE_TEMPLATE } from "./tracecanvas";
 import { kneeHoverListenerType } from './runcommon';
 import { HistData } from "./histdata";
 
 
-
-const TRACE_WEIGHT = 1;
-const TRACE_COLOR = 'rgb(45, 126, 207)';
-const TRACE_COLOR_PRE_KNEE = 'rgb(150, 181, 212)';
-const DOT_COLOR = 'rgb(52, 107, 190)';
-const DOT_SIZE = 4;
-const KNEE_LINE_COLOR = 'rgb(104,104,104)';
-const MCC_DOT_COLOR = 'rgb(28, 189, 168)';
-const DIST_BAR_COLOR = '#aaaaaa';
 const MAX_STEP_SIZE = 3;
 
+const MIN_COUNT_FOR_HISTO = 10;
+const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".chart .histogram .bars .distribution rect") as SVGRectElement;
+BAR_TEMPLATE.remove();
+
+
+
+type BucketConfig = {
+  buckets: number[],
+  values: number[],
+  maxValue: number,
+  displayMin: number,
+  valRange: number
+};
 
 
 
@@ -23,26 +27,52 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  hideBurnIn: boolean;
   kneeListener: kneeHoverListenerType;
+  bucketConfig: BucketConfig;
+  histoSVG: SVGElement;
+  histoWidth: number;
+  histoHeight: number;
+  histoBarParent: SVGGElement;
 
 
   constructor(label:string, unit='', kneeListener: kneeHoverListenerType) {
     super(label, unit);
     this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
-    this.hideBurnIn = false;
     this.isVisible = true;
-    this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
+    this.bucketConfig = { buckets: [], maxValue: 0, values : [], displayMin: 0, valRange: 0 };
+    this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
+    this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
+    this.histoWidth = UNSET;
+    this.histoHeight = UNSET;
+    // this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
     // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
-    const requestDraw = ()=>this.drawSvg();
-    this.canvas.addEventListener('pointerover', ()=>{
-      this.hovering = true;
-      requestDraw();
-    });
-    this.canvas.addEventListener('pointerleave', ()=>{
-      this.hovering = false;
-      requestDraw();
+    // const requestDraw = ()=>this.drawSvg();
+    // this.canvas.addEventListener('pointerover', ()=>{
+    //   this.hovering = true;
+    //   requestDraw();
+    // });
+    // this.canvas.addEventListener('pointerleave', ()=>{
+    //   this.hovering = false;
+    //   requestDraw();
+    // });
+
+  }
+
+  sizeCanvas(): void {
+    const wrapper = this.histoSVG.parentElement as HTMLDivElement;
+    this.histoWidth = wrapper.offsetWidth;
+    this.histoHeight = wrapper.offsetHeight;
+    super.sizeCanvas();
+  }
+
+  protected setSizes() {
+    super.setSizes();
+    this.histoSVG.setAttribute("width", `${this.histoWidth}`);
+    this.histoSVG.setAttribute("height", `${this.histoHeight}`);
+    this.histoSVG.setAttribute("viewBox", `0 0 ${this.histoWidth} ${this.histoHeight}`);
+    this.svg.querySelectorAll(".graph.display rect.period").forEach(rect=>{
+      (rect as SVGRectElement).setAttribute("width", `${this.width}`);
     });
 
   }
@@ -65,7 +95,7 @@ export class HistCanvas extends TraceCanvas {
       if (count * MAX_STEP_SIZE < this.width) {
         pct = x / (count * MAX_STEP_SIZE);
       }
-      if (this.hideBurnIn) {
+      if ((this.traceData as HistData).hideBurnIn) {
         /*
         rescale the pct from just the visible trees
         to all the trees.
@@ -92,10 +122,51 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
-    (this.traceData as HistData).setData(data, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+  setData(sourceData:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+    const histData = this.traceData as HistData;
+    histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+
+    this.setBucketData();
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
+
+
+  setBucketData() {
+    const histData = this.traceData as HistData;
+    const { data, savedKneeIndex } = histData;
+
+    if (data.length > 1) {
+      const {displayMin, displayMax, isDiscrete} = this.traceData as HistData;
+      const valRange = displayMax - displayMin;
+      let estimateData: number[];
+      if ((this.traceData as HistData).hideBurnIn && savedKneeIndex > 0) {
+        estimateData = data.slice(savedKneeIndex);
+      } else {
+        estimateData = data.slice(0);
+      }
+      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
+      if (estimateData.length >= MIN_COUNT_FOR_HISTO) {
+        const distincts: { [n: string]:  boolean; } = {};
+        estimateData.forEach(n=>distincts[`${n}`] = true);
+        const keys = Object.keys(distincts).map(n=>parseFloat(n));
+        // do we have just a few distinct values, or do we need a KDE?
+        // probably want to add a check that the values are somewhat evenly spaced
+        // [mark 260202]
+        const isInt = keys.reduce((any, n)=>any && n === Math.round(n), true);
+        if (isInt && keys.length < 12) {
+          this.bucketConfig = this.getDiscreteHistoBuckets(estimateData, valRange, displayMin);
+        } else if (isDiscrete && valRange < 20) {
+          this.bucketConfig = this.getDiscreteHistoBuckets(estimateData, valRange, displayMin);
+        } else {
+          this.bucketConfig = this.getKDEBuckets(estimateData, valRange, displayMin);
+        }
+
+      }
+    }
+
+
+  }
+
 
   setMetadata(count: number, kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     super.setKneeIndex(count, kneeIndex);
@@ -116,13 +187,14 @@ export class HistCanvas extends TraceCanvas {
     // this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
     // this.drawHistogram(data, kneeIndex);
     // this.drawLabels(data, kneeIndex);
-    this.drawSvg();
+    this.drawTrace();
+    this.drawHistogramSVG();
   }
 
 
-  drawSvg() {
+  drawTrace() {
     const { data } = this.traceData as HistData;
-    const { width } = this;
+    const { height } = this;
     const { hideBurnIn, savedKneeIndex } = this.traceData as HistData;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
     const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
@@ -131,52 +203,59 @@ export class HistCanvas extends TraceCanvas {
     const activeField = activeContainer.querySelector(".period") as SVGRectElement;
     const activeInTrend = activeContainer.querySelector(".trend") as SVGPathElement;
 
+    let width = this.width;
+
     let displayCount = data.length,
       startIndex = 0,
-      burnInWidth = savedKneeIndex / displayCount * width;
+      burnInHeight = savedKneeIndex / displayCount * height;
     if (hideBurnIn) {
       displayCount -= savedKneeIndex;
       startIndex = savedKneeIndex;
-      burnInWidth = 0;
+      burnInHeight = 0;
     }
-    let activeWidth = width - burnInWidth;
+    let activeHeight = height - burnInHeight;
 
 
     let burnInPath = "";
     let activePath = "";
 
-    let height = this.height;
+
 
     if (displayCount === 0) {
-      burnInWidth = 0;
-      activeWidth = width;
+      burnInHeight = 0;
+      activeHeight = height;
     } else if (displayCount === 1) {
-      activePath = `M0 ${height * 0.5} 3 ${height * 0.5} `;
+      activePath = `M${width * 0.5} 0 ${width * 0.5} 3`;
     } else if (displayCount > 1) {
       const { displayMin, displayMax, isDiscrete } = this.traceData;
       const valRange = displayMax - displayMin;
-      const stepW = Math.min(MAX_STEP_SIZE, width / displayCount || 1);
+      const stepH = Math.min(MAX_STEP_SIZE, height / displayCount || 1);
 
       if (isDiscrete && valRange < 20) {
-        const h = height / (valRange + 1);
-        height -= h;
+        const w = width / (valRange + 1);
+        width -= w;
       }
 
       if (displayMax === displayMin) {
-        burnInPath = `M0 ${height * 0.5} ${burnInWidth} ${height * 0.5} `;
-        activePath = `${burnInWidth} ${height * 0.5} ${this.width} ${height * 0.5} `;
+        activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
+        burnInPath = `M${width * 0.5} ${burnInHeight} L${width * 0.5} ${height * 0.5} `;
       } else {
-        if (!hideBurnIn) {
-          burnInWidth = stepW * savedKneeIndex;
-          activeWidth = width - burnInWidth;
+        if (hideBurnIn) {
+          activeHeight = height;
+          burnInHeight = 0;
+        } else {
+          activeHeight = stepH * (displayCount - savedKneeIndex);
+          burnInHeight = height - activeHeight;
         }
 
-        const verticalScale = height / (valRange || 1);
+        const dataScale = width / (valRange || 1);
+        const bottom = Math.min(height, displayCount * stepH);
+        // console.log(bottom, height, displayCount * stepH);
         let currentPath = "";
         let first = true;
         let n: number,
           x: number = UNSET,
-          y: number,
+          y: number = UNSET,
           prevX = UNSET,
           prevY = UNSET;
         for (let i = startIndex; i < data.length; i++) {
@@ -185,11 +264,11 @@ export class HistCanvas extends TraceCanvas {
             currentPath = `M${prevX} ${prevY} L `;
           }
           n = data[i];
-          x = i * stepW;
+          y = bottom - (i - startIndex) * stepH;
           if (isNaN(n) || !isFinite(n)) {
-            y = height;
+            x = 0;
           } else {
-            y = height-(n-displayMin) * verticalScale;
+            x = width-(n-displayMin) * dataScale;
           }
           if (first) {
             currentPath = `M${x} ${y} L`;
@@ -208,9 +287,9 @@ export class HistCanvas extends TraceCanvas {
     }
 
     // requestAnimationFrame(()=>{
-    burnInField.setAttribute("width", `${burnInWidth}`);
-    activeField.setAttribute("x", `${burnInWidth}`);
-    activeField.setAttribute("width", `${activeWidth}`);
+    burnInField.setAttribute("height", `${burnInHeight}`);
+    burnInField.setAttribute("y", `${activeHeight}`);
+    activeField.setAttribute("height", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
     // });
@@ -222,172 +301,48 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
+  drawHistogramSVG() {
+    const { bucketConfig, histoWidth, histoHeight } = this;
+    const { buckets, maxValue } = bucketConfig;
+    const bucketSize = histoWidth / buckets.length;
+    this.histoBarParent.innerHTML = '';
+    let x = 0;
 
-  drawSeries(data:number[], kneeIndex:number, mccIndex:number, sampleIndex: number) {
-    // if (this.label === "Mutation Rate μ") {
-    //   console.log( `   `, this.label, kneeIndex, ess)
-    // }
-
-    const {displayCount} = this.traceData as HistData;
-    const {ctx, width} = this;
-    let height = this.height,
-      top = 0;
-
-    this.drawField();
-
-    /*
-    as we get more and more data, the time series gets more compact,
-    and the lines acquire a density that is fairly ugly. So we try
-    to counter that by getting a lighter line weight as we get more data.
-    */
-    ctx.beginPath();
-    ctx.lineWidth = TRACE_WEIGHT * Math.min(1, Math.sqrt(width / data.length));
-    if (data.length === 1) {
-      ctx.strokeStyle = TRACE_COLOR;
-      ctx.moveTo(0, height * 0.5);
-      ctx.lineTo(3, height * 0.5);
-      ctx.stroke();
-    } else if (data.length > 1) {
-      const {displayMin, displayMax, isDiscrete} = this.traceData;
-      const valRange = displayMax - displayMin;
-
-      if (isDiscrete && valRange < 20) {
-        const h = height / (valRange + 1);
-        top = h * 0.5;
-        height -= h;
-      }
-
-
-      const stepW = Math.min(MAX_STEP_SIZE, width / displayCount || 1);
-      const burnInX = 0 + kneeIndex * stepW;
-
-
-      ctx.strokeStyle = TRACE_COLOR;
-      if (displayMax === displayMin) {
-        // console.log(displayMax);
-        ctx.strokeStyle = TRACE_COLOR;
-        ctx.beginPath();
-        ctx.moveTo(0, height * 0.5);
-        ctx.lineTo(0 + width, height * 0.5);
-        ctx.stroke();
-      } else {
-        const verticalScale = height / (valRange || 1);
-        // find the middlemost step
-        let n = data[0],
-          x = 0,
-          y = 0,
-          mccX = UNSET,
-          mccY = UNSET,
-          sampleX = UNSET,
-          sampleY = UNSET;
-        if (kneeIndex > 0) {
-          ctx.strokeStyle = KNEE_LINE_COLOR;
-          x = burnInX;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-          ctx.strokeStyle = TRACE_COLOR_PRE_KNEE;
-        }
-        ctx.beginPath();
-        x = 0;
-        if (isNaN(n) || !isFinite(n)) {
-          ctx.moveTo(x, height);
-        } else {
-          ctx.moveTo(x, height-(n-displayMin) * verticalScale);
-        }
-        for (let i = 1; i < data.length; i++) {
-          n = data[i];
-          if (!isNaN(n) && isFinite(n)) {
-            y = top + height -(n-displayMin) * verticalScale;
-            if (this.traceData.isDiscrete) {
-              ctx.lineTo(x, y);
-            }
-            x = i * stepW;
-            ctx.lineTo(x, y);
-            if (i === kneeIndex) {
-              ctx.stroke();
-              ctx.strokeStyle = TRACE_COLOR
-              ctx.beginPath();
-              ctx.moveTo(x, y);
-            }
-            if (i === mccIndex) {
-              mccX = x;
-              mccY = y;
-            } else if (i === sampleIndex || sampleIndex === UNSET) {
-              sampleX = x;
-              sampleY = y;
-            }
-          }
-        }
-        ctx.stroke();
-        ctx.fillStyle = DOT_COLOR;
-        ctx.beginPath();
-        ctx.arc(sampleX, sampleY, 2, 0, Math.PI * 2);
-        ctx.fill();
-        if (this.hovering && mccIndex>UNSET) {
-          ctx.fillStyle = MCC_DOT_COLOR;
-          ctx.beginPath();
-          ctx.arc(mccX, mccY, DOT_SIZE, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-  }
-
-
-
-
-  drawHistogram(data:number[], kneeIndex:number) {
-    const {ctx, width, height} = this;
-
-
-    /* draw background and borders for the charts */
-    ctx.fillStyle = BG_COLOR;
-    ctx.strokeStyle = BORDER_COLOR;
-    ctx.fillRect(0, 0, width, height);
-
-
-    if (data.length > 1) {
-      const {displayMin, displayMax, isDiscrete} = this.traceData as HistData;
-      const valRange = displayMax - displayMin;
-      let estimateData = kneeIndex > 0 ? data.slice(kneeIndex) : data.slice(0);
-      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
-      if (estimateData.length >= 10) {
-        if (isDiscrete && valRange < 20) {
-          this.drawDiscreteHistogram(estimateData, valRange, displayMin, width, 0, ctx);
-        } else {
-          this.drawKDE(estimateData, valRange, displayMin, height, width, ctx);
-        }
-      }
-    }
-  }
-
-  drawDiscreteHistogram(estimateData: number[], valRange: number, displayMin: number, height: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
-    const buckets: number[] = Array(valRange + 1).fill(0),
-      h = height / (valRange + 1);
-    estimateData.forEach(n=>buckets[n-displayMin]++);
-    const bandMax = Math.max(...buckets);
-    let y = height - h;
-    ctx.fillStyle = DIST_BAR_COLOR;
     buckets.forEach((n)=>{
-      const x = n / bandMax; //* DIST_WIDTH;
-      ctx.fillRect(distLeft, y, x, h);
-      y -= h;
+      const ht = n / maxValue * histoHeight;
+      const top = histoHeight - ht;
+      const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
+      bar.setAttribute("x", `${x}`);
+      bar.setAttribute("y", `${top}`);
+      bar.setAttribute("width", `${bucketSize}`);
+      bar.setAttribute("height", `${ht}`);
+      this.histoBarParent.appendChild(bar);
+      x += bucketSize;
     })
   }
 
 
-  drawKDE(estimateData: number[], valRange: number, minVal: number, height: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
+
+
+  getDiscreteHistoBuckets(estimateData: number[], valRange: number, displayMin: number) : BucketConfig {
+    const values: number[] = Array(valRange + 1).fill(0);
+    estimateData.forEach(n=>values[n-displayMin]++);
+    const buckets = values.map(n=>n-displayMin);
+    const bandMax = Math.max(...buckets);
+    return { buckets, values, maxValue: bandMax, displayMin, valRange };
+  }
+
+
+  getKDEBuckets(estimateData: number[], valRange: number, minVal: number) : BucketConfig {
     const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
-      bands = [],
+      bands: number[] = [],
       min = kde.min_sample,
       max = kde.max_sample,
       bandwidth = kde.bandwidth,
       limit = max - bandwidth / 2,
-      h = bandwidth / valRange * height;
+      h = bandwidth / valRange;
     let n = min + bandwidth / 2,
-      y = (1 - (min - minVal) / valRange) * height - h,
+      y = (1 - (min - minVal) / valRange) - h,
       bandMax = 0;
     while (n <= limit && bandwidth > 0) {
       const gaust = kde.value_at(n);
@@ -395,12 +350,8 @@ export class HistCanvas extends TraceCanvas {
       bandMax = Math.max(bandMax, gaust);
       n += bandwidth;
     }
-    ctx.fillStyle = DIST_BAR_COLOR;
-    bands.forEach(n=>{
-      const x = n / bandMax; // * DIST_WIDTH;
-      ctx.fillRect(distLeft, y, x, h);
-      y -= h;
-    });
+    const values = bands.slice(0);
+    return { buckets: bands, values, maxValue: bandMax, displayMin: 0, valRange };
   }
 
 

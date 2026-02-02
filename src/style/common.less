@@ -161,7 +161,9 @@
   --chart-position-locus-size: calc(var(--unit) / 2);
   --chart-tick-offset: calc(var(--chart-stroke-weight) * -1);
   --chart-height: calc(var(--unit) * 9);
-  --chart-graph-width: calc(var(--unit) * 16);
+  --trace-chart-width: var(--chart-height);
+  --trace-chart-height: calc(var(--unit) * 14);
+  --chart-graph-width: calc(var(--unit) * 14);
   --chart-graph-burn-in-trend-stroke-dasharray: var(--chart-graph-trend-stroke-weight) calc(var(--chart-graph-trend-stroke-weight) * 2);
   --chart-position-axis-stroke-weight: var(--position-line-stroke-weight);
   --chart-divider-stroke-weight: var(--position-line-stroke-weight);
@@ -183,6 +185,7 @@
   --chart-xaxis-width: calc(var(--chart-graph-width) + var(--chart-stroke-weight));
   --chart-xaxis-height: calc(var(--unit) * 3);
   --chart-histogram-width: calc(var(--chart-yaxis-width));
+  --chart-histogram-height: calc(var(--chart-yaxis-width));
   --kit-gap: calc(var(--unit) * 0.75);
   --kit-axis-gap: 0;
   --kit-values-gap: calc(var(--unit) * 0.25);

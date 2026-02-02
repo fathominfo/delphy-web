@@ -306,17 +306,31 @@
                 </div>
                 <div class="chart">
                   <div class="feature">
-                    <div class="y axis"></div>
+                    <div class="y axis">Y</div>
                     <div class="displays">
-                      <div class="graph display">
-                        <svg class="dummy" xmlns="svgXMLNS" viewBox="0 0 170.67 96">
-                          <g class="burn-in">
-                            <rect class="period" x="0" y="0" height="96" width="20.08"></rect>
-                            <path class="trend" d="m0,68c1.25,4,5.02,8,18.66,7.63.47,0,.95,0,1.42,0"></path>
+                      <div class="histogram display">
+                        <canvas></canvas>
+                        <svg xmlns="svgXMLNS" viewBox="0 0 96 37.33">
+                          <g class="bars">
+                            <g class="distribution">
+                              <rect x="48" y="0" height="3.73" width="2"></rect>
+                            </g>
+                            <!-- <g class="mean-value">
+                              <rect x="73" height="37.33" width="2"></rect>
+                            </g> -->
                           </g>
+                        </svg>
+                        <div class="divider"></div>
+                      </div>
+                      <div class="graph display">
+                        <svg xmlns="svgXMLNS" viewBox="0 0 96 149">
                           <g class="run">
-                            <rect class="period" x="20.08" y="0" height="96" width="150.59"></rect>
-                            <path class="trend" d="m170.67,75.34c-8.14-.05-16.29-1.47-24.41-.97-13.46.84-26.91.64-40.36.92-11.94.24-23.88,1.33-35.8-.33-10.65-1.48-21.27.73-31.9.31-6.04-.24-12.07.37-18.11.36-.47,0-.95,0-1.42,0-13.64.37-17.4-3.63-18.66-7.63"></path>
+                            <rect class="period" x="0" y="0" height="96" width="149"></rect>
+                            <path class="trend" d=""></path>
+                          </g>
+                          <g class="burn-in">
+                            <rect class="period" x="0" y="96" height="0" width="149"></rect>
+                            <path class="trend" d=""></path>
                           </g>
                         </svg>
                         <canvas></canvas>
@@ -324,45 +338,15 @@
                           <div class="x p"></div>
                           <div class="y p"><div class="pos"></div></div>
                         </div>
-                        <div class="divider"></div>
-                      </div>
-                      <div class="histogram display">
-                        <canvas></canvas>
-                        <svg class="dummy" xmlns="svgXMLNS" viewBox="0 0 37.33 96">
-                          <g class="bars">
-                            <g class="distribution">
-                              <rect y="77" width="3.73" height="2"></rect>
-                              <rect y="75" width="22.4" height="2"></rect>
-                            </g>
-                            <g class="mean-value">
-                              <rect y="73" width="37.33" height="2"></rect>
-                            </g>
-                          </g>
-                        </svg>
+
                       </div>
                     </div>
                   </div>
                   <div class="support">
-                    <div class="x axis"></div>
+                    <div class="x axis">X</div>
                   </div>
                 </div>
               </div>
-              <!-- <div class="module">
-                <h3 class="block-header"></h3>
-                <div class="block--chart">
-                  <ul class="y-axis">
-                    <li class="max"></li><li class="median"></li><li class="min"></li>
-                  </ul>
-                  <div class="graphic">
-                    <div class="chart">
-                      <canvas></canvas>
-                    </div>
-                    <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
-                  </div>
-                </div>
-                <p class="block-readout"></p>
-              </div> -->
-
           </div>
           <div id="burn-in-wrapper" class="pre">
             <input type="checkbox" id="burn-in-toggle" disabled />
