@@ -167,7 +167,7 @@ export class RunUI extends UIScreen {
     };
 
     const hoverHandler: hoverListenerType = (treeIndex:number)=>{
-      // console.log(`hovering tree ${treeIndex}`);
+      console.log(`hovering tree ${treeIndex}`);
       this.histCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
@@ -201,8 +201,7 @@ export class RunUI extends UIScreen {
     this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler, hoverHandler);
     this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler, hoverHandler);
     this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
-      this.popGrowthCanvas];
+    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.popGrowthCanvas];
     this.traceCanvases = (this.histCanvases as TraceCanvas[] ).concat(this.gammaCanvas);
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
@@ -733,13 +732,13 @@ export class RunUI extends UIScreen {
       } else {
         // console.debug('no mcc ref available')
       }
+      this.mutCountCanvas.draw();
       this.logPosteriorCanvas.draw();
       this.muCanvas.draw();
       if (this.getRunParams().apobecEnabled) {
         this.muStarCanvas.draw();
       }
       this.TCanvas.draw();
-      this.mutCountCanvas.draw();
       if (this.getRunParams().popModelIsSkygrid) {
         this.gammaCanvas.draw();
       } else {
