@@ -435,17 +435,17 @@ export class HistCanvas extends TraceCanvas {
         ctx.fillRect(distLeft, y, size, - bucketSize);
       }
       positions[i] = y;
-      if (i === 0) {
-        ctx.fillStyle = 'black';
-        ctx.textBaseline = "top";
-        ctx.fillText(`${value}`, distLeft, y);
-        ctx.fillStyle = DIST_BAR_COLOR;
-      } else if (i === buckets.length - 1) {
-        ctx.fillStyle = 'black';
-        ctx.textBaseline = "bottom";
-        ctx.fillText(`${nextValue}`, distLeft, y - bucketSize);
-        ctx.fillStyle = DIST_BAR_COLOR;
-      }
+      // if (i === 0) {
+      //   ctx.fillStyle = 'black';
+      //   ctx.textBaseline = "top";
+      //   ctx.fillText(`${value}`, distLeft, y);
+      //   ctx.fillStyle = DIST_BAR_COLOR;
+      // } else if (i === buckets.length - 1) {
+      //   ctx.fillStyle = 'black';
+      //   ctx.textBaseline = "bottom";
+      //   ctx.fillText(`${nextValue}`, distLeft, y - bucketSize);
+      //   ctx.fillStyle = DIST_BAR_COLOR;
+      // }
     });
     if (highlightY !== UNSET) {
       ctx.fillStyle = DOT_COLOR;
