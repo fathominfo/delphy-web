@@ -252,10 +252,10 @@ export class HistCanvas extends TraceCanvas {
       const {displayMin, displayMax} = this;
       const valRange = displayMax - displayMin;
 
-      if (this.isDiscrete && valRange < 20) {
-        const h = chartHeight / (valRange + 1);
-        top = h * 0.5;
-        chartHeight -= h;
+      if (this.isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
+        const bucketSize = chartHeight / (valRange + 1);
+        top = bucketSize * 0.5;
+        chartHeight -= bucketSize;
       }
 
 
@@ -338,9 +338,11 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawHistogram() {
-    const { ctx, distLeft, chartHeight, bucketConfig, displayMax, displayMin } = this;
+    const { ctx, distLeft, bucketConfig, displayMax, displayMin } = this;
     const { buckets, values, maxBucketValue } = bucketConfig;
-    const valRange = displayMax - displayMin;
+    const valRange = displayMax - displayMin + 1;
+    let { chartHeight } = this;
+    let top = 0;
     /* draw background and borders for the charts */
     ctx.fillStyle = BG_COLOR;
     ctx.strokeStyle = BORDER_COLOR;
@@ -354,18 +356,35 @@ export class HistCanvas extends TraceCanvas {
     */
     const firstValue = values[0];
     const lastValue = values[values.length-1];
-    const histoValueRange = lastValue - firstValue;
+    const histoValueRange = lastValue - firstValue + 1;
     const histoSize = histoValueRange / valRange * chartHeight;
-    const bucketSize = histoSize / buckets.length;
+    let bucketSize = histoSize / buckets.length;
+
+
     // if (this.className === 'mutation-rate-μ') {
     //   console.log(`         ${this.className}`);
     // }
+
+    if (this.label === "Number of Mutations") {
+      console.log( `   `, this.label);
+    }
+
+
+    if (this.isDiscrete && histoValueRange < MAX_COUNT_FOR_DISCRETE) {
+      bucketSize = chartHeight / (valRange + 1);
+      top = bucketSize * 0.5;
+      chartHeight -= bucketSize;
+    }
     ctx.fillStyle = DIST_BAR_COLOR;
     buckets.forEach((n, i)=>{
       const value = values[i];
-      const y = (1 - (value - displayMin) / valRange) * chartHeight
-      const ht = n / maxBucketValue * DIST_WIDTH;
-      ctx.fillRect(distLeft, y, ht, bucketSize);
+      const size = n / maxBucketValue * DIST_WIDTH;
+      /*
+      we go from low values at the bottom to higher at the top
+      which also accounts for the negative height
+      */
+      const y = (1 - (value - displayMin) / valRange) * chartHeight + top;
+      ctx.fillRect(distLeft, y, size, - bucketSize);
     });
 
 
