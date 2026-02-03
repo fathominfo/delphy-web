@@ -16,7 +16,13 @@ const MCC_DOT_COLOR = 'rgb(28, 189, 168)';
 const DIST_BAR_COLOR = '#aaaaaa';
 const MAX_STEP_SIZE = 3;
 
+type BucketConfig = {
+  buckets: number[],
+  values: number[],
+  maxBucketValue: number
+};
 
+const MIN_COUNT_FOR_HISTO = 10;
 
 
 export class HistCanvas extends TraceCanvas {
@@ -32,6 +38,7 @@ export class HistCanvas extends TraceCanvas {
   sampleCount: number;
   ess: number;
   displayCount: number;
+  bucketConfig: BucketConfig;
 
   kneeListener: kneeListenerType;
 
@@ -52,6 +59,7 @@ export class HistCanvas extends TraceCanvas {
     this.displayCount = 0;
     this.hideBurnIn = false;
     this.isVisible = true;
+    this.bucketConfig = { buckets: [], maxBucketValue: 0, values : [] };
     this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
     const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
     this.canvas.addEventListener('pointerover', ()=>{
@@ -132,8 +140,68 @@ export class HistCanvas extends TraceCanvas {
       this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
     }
 
+
+    this.setBucketData();
+
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
+
+
+  setBucketData() {
+    const {data } = this,
+      kneeIndex = this.currentKneeIndex;
+    if (data.length > 1) {
+      let estimateData = kneeIndex > 0 ? data.slice(kneeIndex) : data.slice(0);
+      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
+      if (estimateData.length >= MIN_COUNT_FOR_HISTO) {
+        const histoMinVal = Math.min(...estimateData);
+        const histoMaxVal = Math.max(...estimateData);
+        const histoRange = histoMaxVal - histoMinVal;
+        if (this.isDiscrete && histoRange < 20) {
+          this.bucketConfig = this.getDiscreteHistoData(estimateData, histoRange, histoMinVal);
+        } else {
+          this.bucketConfig = this.getKDEHistoData(estimateData);
+        }
+      }
+    }
+  }
+
+  getDiscreteHistoData(estimateData: number[], valRange: number, displayMin: number) : BucketConfig {
+    const buckets: number[] = Array(valRange + 1).fill(0);
+    estimateData.forEach(n=>buckets[n-displayMin]++);
+    const values = buckets.map((_n, i)=>i+displayMin);
+    const maxBucketValue = Math.max(...buckets);
+    return {buckets, values, maxBucketValue };
+  }
+
+  getKDEHistoData(estimateData: number[]) : BucketConfig {
+    const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
+      buckets: number[] = [],
+      values: number[] = [],
+      min = kde.min_sample,
+      max = kde.max_sample,
+      bandwidth = kde.bandwidth,
+      limit = max - bandwidth / 2;
+    let n = min + bandwidth / 2,
+      maxBucketValue = 0;
+    while (n <= limit && bandwidth > 0) {
+      const gaust = kde.value_at(n);
+      values.push(n);
+      buckets.push(gaust);
+      maxBucketValue = Math.max(maxBucketValue, gaust);
+      n += bandwidth;
+    }
+    // ctx.fillStyle = DIST_BAR_COLOR;
+    // buckets.forEach(n=>{
+    //   const x = n / maxBucketValue * DIST_WIDTH;
+    //   ctx.fillRect(distLeft, y, x, h);
+    //   y -= h;
+    // });
+    return {buckets, values, maxBucketValue };
+  }
+
+
+
 
   setMetadata(count: number, kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     super.setKneeIndex(count, kneeIndex);
@@ -155,7 +223,7 @@ export class HistCanvas extends TraceCanvas {
     const {ctx, width, height} = this;
     ctx.clearRect(0, 0, width + 1, height + 1);
     this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
-    this.drawHistogram(data, kneeIndex);
+    this.drawHistogram();
     this.drawLabels(data, kneeIndex);
   }
 
@@ -274,12 +342,10 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-
-
-  drawHistogram(data:number[], kneeIndex:number) {
-    const {ctx, distLeft, chartHeight} = this;
-
-
+  drawHistogram() {
+    const { ctx, distLeft, chartHeight, bucketConfig, displayMax, displayMin } = this;
+    const { buckets, values, maxBucketValue } = bucketConfig;
+    const valRange = displayMax - displayMin;
     /* draw background and borders for the charts */
     ctx.fillStyle = BG_COLOR;
     ctx.strokeStyle = BORDER_COLOR;
@@ -287,59 +353,28 @@ export class HistCanvas extends TraceCanvas {
     ctx.fillRect(distLeft, 0, DIST_WIDTH, chartHeight);
     ctx.strokeRect(distLeft+HALF_BORDER, HALF_BORDER, DIST_WIDTH-1, chartHeight-1);
 
-    if (data.length > 1) {
-      const {displayMin, displayMax} = this;
-      const valRange = displayMax - displayMin;
-      let estimateData = kneeIndex > 0 ? data.slice(kneeIndex) : data.slice(0);
-      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
-      if (estimateData.length >= 10) {
-        if (this.isDiscrete && valRange < 20) {
-          this.drawDiscreteHistogram(estimateData, valRange, displayMin, chartHeight, distLeft, ctx);
-        } else {
-          this.drawKDE(estimateData, valRange, displayMin, chartHeight, distLeft, ctx);
-        }
-      }
-    }
-  }
-
-  drawDiscreteHistogram(estimateData: number[], valRange: number, displayMin: number, chartHeight: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
-    const buckets: number[] = Array(valRange + 1).fill(0),
-      h = chartHeight / (valRange + 1);
-    estimateData.forEach(n=>buckets[n-displayMin]++);
-    const bandMax = Math.max(...buckets);
-    let y = chartHeight - h;
+    /*
+    since burnin might be visible, and the histogram does not include burn-in values,
+    we need to calculate how much room the histogram takes.
+    */
+    const firstValue = values[0];
+    const lastValue = values[values.length-1];
+    const histoValueRange = lastValue - firstValue;
+    const histoSize = histoValueRange / valRange * chartHeight;
+    const bucketSize = histoSize / buckets.length;
+    // if (this.className === 'mutation-rate-μ') {
+    //   console.log(`         ${this.className}`);
+    // }
     ctx.fillStyle = DIST_BAR_COLOR;
-    buckets.forEach((n)=>{
-      const x = n / bandMax * DIST_WIDTH;
-      ctx.fillRect(distLeft, y, x, h);
-      y -= h;
-    })
-  }
-
-
-  drawKDE(estimateData: number[], valRange: number, minVal: number, chartHeight: number, distLeft: number, ctx: CanvasRenderingContext2D) : void {
-    const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
-      bands = [],
-      min = kde.min_sample,
-      max = kde.max_sample,
-      bandwidth = kde.bandwidth,
-      limit = max - bandwidth / 2,
-      h = bandwidth / valRange * chartHeight;
-    let n = min + bandwidth / 2,
-      y = (1 - (min - minVal) / valRange) * chartHeight - h,
-      bandMax = 0;
-    while (n <= limit && bandwidth > 0) {
-      const gaust = kde.value_at(n);
-      bands.push(gaust);
-      bandMax = Math.max(bandMax, gaust);
-      n += bandwidth;
-    }
-    ctx.fillStyle = DIST_BAR_COLOR;
-    bands.forEach(n=>{
-      const x = n / bandMax * DIST_WIDTH;
-      ctx.fillRect(distLeft, y, x, h);
-      y -= h;
+    buckets.forEach((n, i)=>{
+      const value = values[i];
+      const y = (1 - (value - displayMin) / valRange) * chartHeight
+      const ht = n / maxBucketValue * DIST_WIDTH;
+      ctx.fillRect(distLeft, y, ht, bucketSize);
     });
+
+
+
   }
 
 
