@@ -2,7 +2,7 @@ import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { log10, TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
-import { kneeListenerType } from './runcommon';
+import { hoverListenerType, kneeListenerType } from './runcommon';
 
 
 
@@ -19,6 +19,7 @@ const MAX_STEP_SIZE = 3;
 type BucketConfig = {
   buckets: number[],
   values: number[],
+  positions: number[],
   maxBucketValue: number
 };
 
@@ -30,46 +31,48 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  hideBurnIn: boolean;
+  hideBurnIn = false;
+  data:number[] = []
+  mccIndex: number = UNSET;
+  sampleIndex: number = UNSET;
+  sampleCount = 0;
+  ess = 0;
+  displayCount = 0;
+  isDragging = false;
+  readoutIndex: number = UNSET;
 
-
-  data:number[];
-  mccIndex: number;
-  sampleIndex: number;
-  sampleCount: number;
-  ess: number;
-  displayCount: number;
   bucketConfig: BucketConfig;
-
   kneeListener: kneeListenerType;
+  hoverListener: hoverListenerType;
 
 
-  constructor(label:string, unit='', kneeListener: kneeListenerType) {
+  constructor(label:string, unit='', kneeListener: kneeListenerType, hoverListener: hoverListenerType) {
     super(label, unit);
     this.kneeListener = kneeListener;
-    this.data = [];
-    this.ess = UNSET;
-    this.sampleCount = UNSET;
-    this.height = UNSET;
-    this.width = UNSET;
-    this.traceWidth = UNSET;
-    this.distLeft = UNSET;
-    this.chartHeight = UNSET;
-    this.mccIndex = UNSET;
-    this.sampleIndex = UNSET;
-    this.displayCount = 0;
-    this.hideBurnIn = false;
-    this.isVisible = true;
-    this.bucketConfig = { buckets: [], maxBucketValue: 0, values : [] };
-    this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
-    const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
+    this.hoverListener = hoverListener;
+    this.bucketConfig = { buckets: [], maxBucketValue: 0, values : [], positions: []};
+    this.canvas.addEventListener('pointerdown', event=>{
+      this.canvas.classList.add('dragging');
+      this.isDragging = true;
+      this.handlePointerMove(event);
+    });
+    this.canvas.addEventListener('pointermove', event=>{
+      this.handlePointerMove(event);
+    });
+    this.canvas.addEventListener('pointerup', ()=>{
+      this.canvas.classList.remove('dragging');
+      this.isDragging = false;
+    });
+    // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
     this.canvas.addEventListener('pointerover', ()=>{
-      this.hovering = true;
-      requestDraw();
+      // this.hovering = true;
+      // requestDraw();
     });
     this.canvas.addEventListener('pointerleave', ()=>{
-      this.hovering = false;
-      requestDraw();
+      // this.hovering = false;
+
+      // requestDraw();
+      this.hoverListener(this.data.length - 1);
     });
 
   }
@@ -78,15 +81,11 @@ export class HistCanvas extends TraceCanvas {
     this.settingKnee = isSettingKnee;
   }
 
-
-
-
-  handleMouseDown(event:PointerEvent) : void {
-    this.canvas.classList.add('dragging');
-    // this.stateListeners.forEach(fnc=>fnc(true));
-    const moveHandler = (event:PointerEvent)=>{
-      const x = event.offsetX - TICK_LENGTH;
-      let pct = x /  this.traceWidth;
+  getTreePercentAtX(event:PointerEvent) {
+    let pct = UNSET;
+    const x = event.offsetX - TICK_LENGTH;
+    if (x >= 0) {
+      pct = x / this.traceWidth;
       // console.log('knee', x, pct)
       if (this.count * MAX_STEP_SIZE < this.traceWidth) {
         pct = x / (this.count * MAX_STEP_SIZE);
@@ -102,19 +101,38 @@ export class HistCanvas extends TraceCanvas {
           totalIndex = this.savedKneeIndex + Math.round(pct * this.count);
         pct = totalIndex / totalCount;
       }
+    }
+    return pct;
+  }
+
+  getTreeAtX(event:PointerEvent) {
+    const pct = this.getTreePercentAtX(event);
+    let index = Math.floor(pct * this.data.length);
+    if (!Number.isFinite(this.data[index])) {
+      index = UNSET;
+    }
+    return index;
+  }
+
+
+  handlePointerMove(event:PointerEvent) : void {
+    if (this.isDragging) {
+      const pct = this.getTreePercentAtX(event);
       if (pct <= 1) {
         this.kneeListener(pct);
       }
+    } else {
+      const treeIndex = this.getTreeAtX(event);
+      this.hoverListener(treeIndex);
     }
-    moveHandler(event);
-    const remover = ()=>{
-      this.canvas.removeEventListener('pointermove', moveHandler);
-      this.canvas.removeEventListener('pointerup', remover);
-      this.canvas.classList.remove('dragging');
-      // this.stateListeners.forEach(fnc=>fnc(false));
-    };
-    this.canvas.addEventListener('pointermove', moveHandler);
-    this.canvas.addEventListener('pointerup', remover);
+  }
+
+  handleTreeHighlight(treeIndex: number): void {
+    const { data, readout, unit } = this;
+    const readoutIndex = treeIndex === UNSET ? data.length - 1: treeIndex;
+    this.readoutIndex = readoutIndex;
+    readout.innerHTML = `${safeLabel(data[readoutIndex])} ${unit}`;
+
   }
 
 
@@ -124,6 +142,9 @@ export class HistCanvas extends TraceCanvas {
     this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
     const shown = hideBurnIn && this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     const safe = shown.filter(n=>!isNaN(n) && isFinite(n));
+    if (this.readoutIndex === UNSET) {
+      this.readoutIndex = data.length - 1;
+    }
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
@@ -172,7 +193,7 @@ export class HistCanvas extends TraceCanvas {
     estimateData.forEach(n=>buckets[n-displayMin]++);
     const values = buckets.map((_n, i)=>i+displayMin);
     const maxBucketValue = Math.max(...buckets);
-    return {buckets, values, maxBucketValue };
+    return {buckets, values, maxBucketValue, positions: [] };
   }
 
   getKDEHistoData(estimateData: number[]) : BucketConfig {
@@ -192,7 +213,7 @@ export class HistCanvas extends TraceCanvas {
       maxBucketValue = Math.max(maxBucketValue, gaust);
       n += bandwidth;
     }
-    return {buckets, values, maxBucketValue };
+    return {buckets, values, maxBucketValue, positions: [] };
   }
 
 
@@ -277,8 +298,10 @@ export class HistCanvas extends TraceCanvas {
         let n = data[0],
           x = 0,
           y = 0,
-          mccX = UNSET,
-          mccY = UNSET,
+          // mccX = UNSET,
+          // mccY = UNSET,
+          hoverX = UNSET,
+          hoverY = UNSET,
           sampleX = UNSET,
           sampleY = UNSET;
         if (kneeIndex > 0) {
@@ -312,26 +335,38 @@ export class HistCanvas extends TraceCanvas {
               ctx.beginPath();
               ctx.moveTo(x, y);
             }
-            if (i === mccIndex) {
-              mccX = x;
-              mccY = y;
-            } else if (i === sampleIndex || sampleIndex === UNSET) {
+            // if (i === mccIndex) {
+            //   mccX = x;
+            //   mccY = y;
+            // } else
+            if (i === sampleIndex || sampleIndex === UNSET) {
               sampleX = x;
               sampleY = y;
+            }
+            if (i === this.readoutIndex) {
+              hoverX = x;
+              hoverY = y;
             }
           }
         }
         ctx.stroke();
-        ctx.fillStyle = DOT_COLOR;
-        ctx.beginPath();
-        ctx.arc(sampleX, sampleY, 2, 0, Math.PI * 2);
-        ctx.fill();
-        if (this.hovering && mccIndex>UNSET) {
-          ctx.fillStyle = MCC_DOT_COLOR;
+        // ctx.fillStyle = DOT_COLOR;
+        // ctx.beginPath();
+        // ctx.arc(sampleX, sampleY, 2, 0, Math.PI * 2);
+        // ctx.fill();
+        // if (this.hovering && mccIndex>UNSET) {
+        //   ctx.fillStyle = MCC_DOT_COLOR;
+        //   ctx.beginPath();
+        //   ctx.arc(mccX, mccY, DOT_SIZE, 0, Math.PI * 2);
+        //   ctx.fill();
+        // }
+        if (hoverX !== UNSET) {
+          ctx.fillStyle = DOT_COLOR;
           ctx.beginPath();
-          ctx.arc(mccX, mccY, DOT_SIZE, 0, Math.PI * 2);
+          ctx.arc(hoverX, hoverY, DOT_SIZE, 0, Math.PI * 2);
           ctx.fill();
         }
+
       }
     }
   }
@@ -339,7 +374,7 @@ export class HistCanvas extends TraceCanvas {
 
   drawHistogram() {
     const { ctx, distLeft, bucketConfig, displayMax, displayMin } = this;
-    const { buckets, values, maxBucketValue } = bucketConfig;
+    const { buckets, values, maxBucketValue, positions } = bucketConfig;
     const valRange = displayMax - displayMin + 1;
     let { chartHeight } = this;
     let top = 0;
@@ -385,6 +420,13 @@ export class HistCanvas extends TraceCanvas {
       */
       const y = (1 - (value - displayMin) / valRange) * chartHeight + top;
       ctx.fillRect(distLeft, y, size, - bucketSize);
+      positions[i] = y;
+      if (i === 0 || i === buckets.length - 1) {
+        ctx.fillStyle = 'black';
+        ctx.textBaseline = i === 0 ? "top" : "bottom";
+        ctx.fillText(`${value}`, distLeft, i === 0 ? y : y - bucketSize);
+        ctx.fillStyle = DIST_BAR_COLOR;
+      }
     });
 
 
@@ -412,7 +454,8 @@ export class HistCanvas extends TraceCanvas {
     ctx.beginPath();
     if (data.length > 1) {
       const {displayMin, displayMax} = this;
-      this.readout.innerHTML = `${safeLabel(data[data.length - 1])} ${this.unit}`;
+      const label = safeLabel(data[this.readoutIndex]) || ' ';
+      this.readout.innerHTML = `${label} ${this.unit}`;
 
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
