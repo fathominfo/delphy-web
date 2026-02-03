@@ -83,7 +83,7 @@ export class GammaHistCanvas extends TraceCanvas {
   }
 
   handleTreeHighlight(treeIndex: number): void {
-    const readoutIndex = treeIndex === UNSET ? this.rangeData.length - 1: treeIndex;
+    const readoutIndex = treeIndex === this.rangeData.length - 1 ? UNSET : treeIndex;
     this.readoutIndex = readoutIndex;
   }
 

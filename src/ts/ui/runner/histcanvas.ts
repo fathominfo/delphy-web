@@ -130,8 +130,13 @@ export class HistCanvas extends TraceCanvas {
 
   handleTreeHighlight(treeIndex: number): void {
     const { data, readout, unit } = this;
+    /* if the requested tree is unset, use the default (which is the latest) */
     const readoutIndex = treeIndex === UNSET ? data.length - 1: treeIndex;
-    this.readoutIndex = readoutIndex;
+    /*
+    on the other hand, if the requested tree is the latest, mark it as UNSET.
+    We'll use that as a flag to highlight the latest tree.
+    */
+    this.readoutIndex = treeIndex === this.data.length - 1 ? UNSET : treeIndex;
     readout.innerHTML = `${safeLabel(data[readoutIndex])} ${unit}`;
   }
 
@@ -143,8 +148,8 @@ export class HistCanvas extends TraceCanvas {
     this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
     const shown = hideBurnIn && this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     const safe = shown.filter(n=>!isNaN(n) && isFinite(n));
-    if (this.readoutIndex === UNSET || (hideBurnIn && this.readoutIndex < kneeIndex)) {
-      this.readoutIndex = data.length - 1;
+    if (this.readoutIndex === data.length - 1 || (hideBurnIn && this.readoutIndex < kneeIndex)) {
+      this.readoutIndex = UNSET;
     }
 
     this.dataMin = Math.min(...safe);
@@ -242,7 +247,8 @@ export class HistCanvas extends TraceCanvas {
   draw() {
     let {data, readoutIndex} = this,
       kneeIndex = this.currentKneeIndex;
-    const readoutValue = this.data[this.readoutIndex];
+    if (readoutIndex === UNSET) readoutIndex = data.length - 1;
+    const readoutValue = this.data[readoutIndex];
     if (this.hideBurnIn && this.savedKneeIndex > 0) {
       data = data.slice(this.savedKneeIndex);
       kneeIndex -= this.savedKneeIndex;
