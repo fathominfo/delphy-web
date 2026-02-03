@@ -23,6 +23,7 @@ type BucketConfig = {
 };
 
 const MIN_COUNT_FOR_HISTO = 10;
+const MAX_COUNT_FOR_DISCRETE = 20;
 
 
 export class HistCanvas extends TraceCanvas {
@@ -129,7 +130,7 @@ export class HistCanvas extends TraceCanvas {
     /* what scale is the range in? */
     const range = this.dataMax - this.dataMin;
 
-    if (range === 0 || this.isDiscrete && range < 20) {
+    if (range === 0 || this.isDiscrete && range < MAX_COUNT_FOR_DISCRETE) {
       this.displayMin = this.dataMin;
       this.displayMax = this.dataMax;
     } else {
@@ -191,12 +192,6 @@ export class HistCanvas extends TraceCanvas {
       maxBucketValue = Math.max(maxBucketValue, gaust);
       n += bandwidth;
     }
-    // ctx.fillStyle = DIST_BAR_COLOR;
-    // buckets.forEach(n=>{
-    //   const x = n / maxBucketValue * DIST_WIDTH;
-    //   ctx.fillRect(distLeft, y, x, h);
-    //   y -= h;
-    // });
     return {buckets, values, maxBucketValue };
   }
 
