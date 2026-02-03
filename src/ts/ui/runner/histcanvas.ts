@@ -34,7 +34,7 @@ export class HistCanvas extends TraceCanvas {
   hideBurnIn = false;
   data:number[] = []
   mccIndex: number = UNSET;
-  sampleIndex: number = UNSET;
+  hoverIndex: number = UNSET;
   sampleCount = 0;
   ess = 0;
   displayCount = 0;
@@ -133,7 +133,6 @@ export class HistCanvas extends TraceCanvas {
     const readoutIndex = treeIndex === UNSET ? data.length - 1: treeIndex;
     this.readoutIndex = readoutIndex;
     readout.innerHTML = `${safeLabel(data[readoutIndex])} ${unit}`;
-
   }
 
 
@@ -236,7 +235,7 @@ export class HistCanvas extends TraceCanvas {
     super.setKneeIndex(count, kneeIndex);
     this.mccIndex = mccIndex;
     this.hideBurnIn = hideBurnIn;
-    this.sampleIndex = sampleIndex;
+    this.hoverIndex = sampleIndex;
     this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
   }
 
