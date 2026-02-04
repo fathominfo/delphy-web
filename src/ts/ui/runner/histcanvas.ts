@@ -16,7 +16,7 @@ BAR_TEMPLATE.remove();
 type BucketConfig = {
   buckets: number[],
   values: number[],
-  maxValue: number,
+  maxBucketValue: number,
   displayMin: number,
   valRange: number
 };
@@ -40,7 +40,7 @@ export class HistCanvas extends TraceCanvas {
     this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
     this.isVisible = true;
-    this.bucketConfig = { buckets: [], maxValue: 0, values : [], displayMin: 0, valRange: 0 };
+    this.bucketConfig = { buckets: [], maxBucketValue: 0, values : [], displayMin: 0, valRange: 0 };
     this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
     this.histoWidth = UNSET;
@@ -133,14 +133,14 @@ export class HistCanvas extends TraceCanvas {
 
   setBucketData() {
     const histData = this.traceData as HistData;
-    const { data, savedKneeIndex } = histData;
+    const { data, currentKneeIndex } = histData;
 
     if (data.length > 1) {
       const {displayMin, displayMax, isDiscrete} = this.traceData as HistData;
       const valRange = displayMax - displayMin;
       let estimateData: number[];
-      if ((this.traceData as HistData).hideBurnIn && savedKneeIndex > 0) {
-        estimateData = data.slice(savedKneeIndex);
+      if ((this.traceData as HistData).hideBurnIn && currentKneeIndex > 0) {
+        estimateData = data.slice(currentKneeIndex);
       } else {
         estimateData = data.slice(0);
       }
@@ -303,22 +303,22 @@ export class HistCanvas extends TraceCanvas {
 
   drawHistogramSVG() {
     const { bucketConfig, histoWidth, histoHeight } = this;
-    const { buckets, maxValue } = bucketConfig;
+    const { buckets, values, maxBucketValue, displayMin, valRange } = bucketConfig;
     const bucketSize = histoWidth / buckets.length;
     this.histoBarParent.innerHTML = '';
-    let x = 0;
 
-    buckets.forEach((n)=>{
-      const ht = n / maxValue * histoHeight;
+    buckets.forEach((n, i)=>{
+      const value = values[i];
+      const ht = n / maxBucketValue * histoHeight;
       const top = histoHeight - ht;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
+      const x = (value - displayMin) / valRange * this.histoWidth;
       bar.setAttribute("x", `${x}`);
       bar.setAttribute("y", `${top}`);
       bar.setAttribute("width", `${bucketSize}`);
       bar.setAttribute("height", `${ht}`);
       this.histoBarParent.appendChild(bar);
-      x += bucketSize;
-    })
+    });
   }
 
 
@@ -328,30 +328,32 @@ export class HistCanvas extends TraceCanvas {
     const values: number[] = Array(valRange + 1).fill(0);
     estimateData.forEach(n=>values[n-displayMin]++);
     const buckets = values.map(n=>n-displayMin);
-    const bandMax = Math.max(...buckets);
-    return { buckets, values, maxValue: bandMax, displayMin, valRange };
+    const maxBucketValue = Math.max(...buckets);
+    console.log(this.className, 'getDiscreteHistoBuckets', values.length);
+    return { buckets, values, maxBucketValue, displayMin, valRange };
   }
 
 
   getKDEBuckets(estimateData: number[], valRange: number, minVal: number) : BucketConfig {
     const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
       bands: number[] = [],
+      values: number[] = [],
       min = kde.min_sample,
       max = kde.max_sample,
       bandwidth = kde.bandwidth,
-      limit = max - bandwidth / 2,
-      h = bandwidth / valRange;
+      limit = max - bandwidth / 2;
     let n = min + bandwidth / 2,
-      y = (1 - (min - minVal) / valRange) - h,
       bandMax = 0;
     while (n <= limit && bandwidth > 0) {
       const gaust = kde.value_at(n);
+      const value = n;
       bands.push(gaust);
+      values.push(value);
       bandMax = Math.max(bandMax, gaust);
       n += bandwidth;
     }
-    const values = bands.slice(0);
-    return { buckets: bands, values, maxValue: bandMax, displayMin: 0, valRange };
+    console.log(this.className, 'getKDEBuckets', values.length);
+    return { buckets: bands, values, maxBucketValue: bandMax, displayMin: 0, valRange };
   }
 
 
