@@ -19,26 +19,18 @@ export const MAX_COUNT_FOR_DISCRETE = 20;
 
 export class HistData extends TraceData {
 
-  hideBurnIn: boolean;
-
-
-  data:number[];
-  mccIndex: number;
-  highlightIndex: number;
-  sampleCount: number;
-  ess: number;
-  displayCount: number;
+  hideBurnIn = false;
+  data:number[] = [];
+  mccIndex: number = UNSET;
+  highlightIndex: number = UNSET;
+  sampleCount = 0;
+  ess: number = UNSET;
+  displayCount= 0;
+  dataMean: number = UNSET;
   bucketConfig: BucketConfig;
 
   constructor(label:string, unit='') {
     super(label, unit);
-    this.data = [];
-    this.ess = UNSET;
-    this.sampleCount = UNSET;
-    this.mccIndex = UNSET;
-    this.highlightIndex = UNSET;
-    this.displayCount = 0;
-    this.hideBurnIn = false;
     this.bucketConfig = { buckets: [], values : [], positions: [], maxBucketValue: 0, step: 0 };
   }
 
@@ -52,6 +44,8 @@ export class HistData extends TraceData {
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
+    const dataSum = safe.reduce((tot, n)=>tot+n, 0);
+    this.dataMean = dataSum / safe.length;
     /* what scale is the range in? */
     const range = this.dataMax - this.dataMin;
 

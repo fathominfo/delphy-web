@@ -8,7 +8,7 @@ import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} fro
 import {SoftFloat} from '../../util/softfloat.js';
 import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
-import { kneeHoverListenerType } from './runcommon';
+import { hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -154,6 +154,18 @@ export class RunUI extends UIScreen {
       this.kneeHandler(pct);
     }
 
+    const hoverHandler: hoverListenerType = (treeIndex:number)=>{
+      // if (treeIndex === UNSET) {
+      //   console.log(`hoverHandler(${treeIndex})`);
+      // }
+      this.histCanvases.forEach(hc=>{
+        if (hc.isVisible) {
+          hc.handleTreeHighlight(treeIndex);
+        }
+      });
+      this.requestDraw();
+    };
+
     this.mccRef = null;
     this.mccTreeCanvas = instantiateMccTreeCanvas("#runner--mcc .tree-canvas");
     this.runControl = document.querySelector("#run-input") as HTMLInputElement;
@@ -170,9 +182,9 @@ export class RunUI extends UIScreen {
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
 
 
-    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
+    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler, hoverHandler);
+    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler, hoverHandler);
+    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler, hoverHandler);
     this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
     this.histCanvases = [this.mutCountCanvas, this.muCanvas, this.logPosteriorCanvas, this.gammaCanvas];
     (this.mutCountCanvas.traceData as HistData).isDiscrete = true;

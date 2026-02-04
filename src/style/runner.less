@@ -76,10 +76,14 @@
     .bars {
       opacity: 0.75;
       .distribution {
-        opacity: 0.375;
+        // opacity: 0.375;
       }
       rect {
         fill: var(--chart-histogram-bar-fill);
+        opacity: 0.375;
+        &.highlight {
+          opacity: 1.0;
+        }
       }
     }
 

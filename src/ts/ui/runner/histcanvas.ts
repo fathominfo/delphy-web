@@ -1,7 +1,7 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
 import { TraceCanvas, TRACE_TEMPLATE } from "./tracecanvas";
-import { kneeHoverListenerType } from './runcommon';
+import { hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
@@ -18,35 +18,111 @@ export class HistCanvas extends TraceCanvas {
 
 
   kneeListener: kneeHoverListenerType;
+  hoverListener: hoverListenerType;
   histoSVG: SVGElement;
   histoWidth: number;
   histoHeight: number;
   histoBarParent: SVGGElement;
+  highlightDiv: HTMLDivElement;
+  isDragging = false;
 
 
-  constructor(label:string, unit='', kneeListener: kneeHoverListenerType) {
+  constructor(label:string, unit='', kneeListener: kneeHoverListenerType, hoverListener: hoverListenerType) {
     super(label, unit);
     this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
+    this.hoverListener = hoverListener;
     this.isVisible = true;
 
     this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
     this.histoWidth = UNSET;
     this.histoHeight = UNSET;
-    // this.canvas.addEventListener('pointerdown', event=>this.handleMouseDown(event));
+    this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
+    this.highlightDiv.addEventListener('pointerdown', event=>{
+      this.canvas.classList.add('dragging');
+      this.isDragging = true;
+      this.handlePointerMove(event);
+    });
+    this.highlightDiv.addEventListener('pointermove', event=>{
+      this.handlePointerMove(event);
+    });
+    this.highlightDiv.addEventListener('pointerup', ()=>{
+      this.canvas.classList.remove('dragging');
+      this.isDragging = false;
+    });
     // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
-    // const requestDraw = ()=>this.drawSvg();
     // this.canvas.addEventListener('pointerover', ()=>{
     //   this.hovering = true;
     //   requestDraw();
     // });
-    // this.canvas.addEventListener('pointerleave', ()=>{
-    //   this.hovering = false;
-    //   requestDraw();
-    // });
+    this.highlightDiv.addEventListener('pointerleave', ()=>{
+      // this.hovering = false;
+      // requestDraw();
+      this.hoverListener(UNSET);
+    });
+
 
   }
+
+
+  getTreePercentAtY(event:PointerEvent) {
+    let pct = UNSET;
+    const y = event.offsetY;
+    const { count, savedKneeIndex, hideBurnIn } = this.traceData as HistData;
+    if (y >= 0) {
+      pct = y / this.height;
+      // console.log('knee', x, pct)
+      if (count * MAX_STEP_SIZE < this.height) {
+        pct = y / (count * MAX_STEP_SIZE);
+      }
+      if (hideBurnIn) {
+        /*
+        rescale the pct from just the visible trees
+        to all the trees.
+
+        the visible trees are what percent of all the trees?
+        */
+        const totalCount = savedKneeIndex + count,
+          totalIndex = savedKneeIndex + Math.round(pct * count);
+        pct = totalIndex / totalCount;
+      }
+    }
+    return pct;
+  }
+
+  getTreeAtY(event:PointerEvent) {
+    const pct = this.getTreePercentAtY(event);
+    const data = (this.traceData as HistData).data;
+    let index = Math.floor(pct * data.length);
+    if (!Number.isFinite(data[index])) {
+      index = UNSET;
+    }
+    return index;
+  }
+
+
+  handlePointerMove(event:PointerEvent) : void {
+    if (this.isDragging) {
+      const pct = this.getTreePercentAtY(event);
+      if (pct <= 1) {
+        this.kneeListener(pct);
+      }
+    } else {
+      const treeIndex = this.getTreeAtY(event);
+      // if (this.hideBurnIn) treeIndex += this.savedKneeIndex
+      this.hoverListener(treeIndex);
+    }
+  }
+
+  handleTreeHighlight(treeIndex: number): void {
+    // const isMean = treeIndex === UNSET;
+    const traceData = this.traceData as HistData;
+    // const readoutValue = isMean ? traceData.dataMean: traceData.data[treeIndex];
+    traceData.highlightIndex = treeIndex;
+    // this.setReadoutLabel(isMean, readoutValue, traceData.unit, treeIndex);
+  }
+
 
   sizeCanvas(): void {
     const wrapper = this.histoSVG.parentElement as HTMLDivElement;
@@ -66,6 +142,7 @@ export class HistCanvas extends TraceCanvas {
 
   }
 
+
   setState(isSettingKnee:boolean): void {
     this.traceData.settingKnee = isSettingKnee;
   }
@@ -73,42 +150,6 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  handleMouseDown(event:PointerEvent) : void {
-    this.canvas.classList.add('dragging');
-    // this.stateListeners.forEach(fnc=>fnc(true));
-    const moveHandler = (event:PointerEvent)=>{
-      const x = event.offsetX;
-      const count = this.traceData.count;
-      let pct = x /  this.width;
-      // console.log('knee', x, pct)
-      if (count * MAX_STEP_SIZE < this.width) {
-        pct = x / (count * MAX_STEP_SIZE);
-      }
-      if ((this.traceData as HistData).hideBurnIn) {
-        /*
-        rescale the pct from just the visible trees
-        to all the trees.
-
-        the visible trees are what percent of all the trees?
-        */
-        const totalCount = this.traceData.savedKneeIndex + count,
-          totalIndex = this.traceData.savedKneeIndex + Math.round(pct * count);
-        pct = totalIndex / totalCount;
-      }
-      if (pct <= 1) {
-        this.kneeListener(pct);
-      }
-    }
-    moveHandler(event);
-    const remover = ()=>{
-      this.canvas.removeEventListener('pointermove', moveHandler);
-      this.canvas.removeEventListener('pointerup', remover);
-      this.canvas.classList.remove('dragging');
-      // this.stateListeners.forEach(fnc=>fnc(false));
-    };
-    this.canvas.addEventListener('pointermove', moveHandler);
-    this.canvas.addEventListener('pointerup', remover);
-  }
 
 
   setData(sourceData:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
@@ -125,26 +166,23 @@ export class HistCanvas extends TraceCanvas {
   }
 
   draw() {
-    // let {data, mccIndex, sampleIndex, currentKneeIndex: kneeIndex } = this.traceData as HistData;
-    // const {hideBurnIn, savedKneeIndex } = this.traceData as HistData;
-    // if (hideBurnIn && savedKneeIndex > 0) {
-    //   data = data.slice(savedKneeIndex);
-    //   kneeIndex -= savedKneeIndex;
-    //   mccIndex -= savedKneeIndex;
-    //   sampleIndex -= savedKneeIndex;
-    // }
-    // const {ctx, width, height} = this;
-    // ctx.clearRect(0, 0, width + 1, height + 1);
-    // this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
-    // this.drawHistogram(data, kneeIndex);
-    // this.drawLabels(data, kneeIndex);
-    this.drawTrace();
-    this.drawHistogramSVG(0);
+    const traceData = this.traceData as HistData;
+    let { data, highlightIndex, dataMean, hideBurnIn, savedKneeIndex } = traceData,
+      kneeIndex = traceData.currentKneeIndex;
+    const isMean = highlightIndex === UNSET;
+    const readoutValue = isMean ? dataMean: data[highlightIndex];
+    if (hideBurnIn && savedKneeIndex > 0) {
+      data = data.slice(savedKneeIndex);
+      kneeIndex -= savedKneeIndex;
+      highlightIndex -= savedKneeIndex;
+    }
+    this.drawTrace(data, kneeIndex, highlightIndex);
+    this.drawHistogramSVG(readoutValue);
   }
 
 
-  drawTrace() {
-    const { data, displayCount, savedKneeIndex, hideBurnIn } = this.traceData as HistData;
+  drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
+    const { displayCount, hideBurnIn } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
     const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
@@ -153,6 +191,7 @@ export class HistCanvas extends TraceCanvas {
     const activeField = activeContainer.querySelector(".period") as SVGRectElement;
     const activeInTrend = activeContainer.querySelector(".trend") as SVGPathElement;
 
+
     let width = this.width;
 
     let burnInHeight = 0;
@@ -160,6 +199,8 @@ export class HistCanvas extends TraceCanvas {
 
     let burnInPath = "";
     let activePath = "";
+    let hoverX = UNSET;
+    let hoverY = UNSET;
 
     if (displayCount === 0) {
       burnInHeight = 0;
@@ -169,7 +210,7 @@ export class HistCanvas extends TraceCanvas {
     } else if (displayCount > 1) {
       const { displayMin, displayMax, isDiscrete } = this.traceData;
       const valRange = displayMax - displayMin;
-      let startIndex = 0;
+      const startIndex = 0;
       let left = 0;
       if (isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
         const bucketSize = width / (valRange + 1);
@@ -178,14 +219,8 @@ export class HistCanvas extends TraceCanvas {
       }
 
       const stepSize = Math.min(MAX_STEP_SIZE, height / displayCount || 1);
-
-      if (hideBurnIn) {
-        startIndex = savedKneeIndex;
-      } else {
-        burnInHeight = savedKneeIndex * stepSize;
-        activeHeight = height - burnInHeight;
-      }
-
+      burnInHeight = kneeIndex * stepSize;
+      activeHeight = height - burnInHeight;
 
       if (displayMax === displayMin) {
         activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
@@ -203,7 +238,7 @@ export class HistCanvas extends TraceCanvas {
           prevX = UNSET,
           prevY = UNSET;
         for (let i = startIndex; i < data.length; i++) {
-          if (i === savedKneeIndex) {
+          if (i === kneeIndex) {
             burnInPath = currentPath;
             currentPath = `M${prevX} ${prevY} L `;
           }
@@ -222,6 +257,10 @@ export class HistCanvas extends TraceCanvas {
             }
             currentPath += `${x} ${y} `;
           }
+          if (i === highlightIndex) {
+            hoverX = x;
+            hoverY = y;
+          }
           first = false;
           prevX = x;
           prevY = y;
@@ -230,18 +269,25 @@ export class HistCanvas extends TraceCanvas {
       }
     }
 
-    // requestAnimationFrame(()=>{
+    if (hoverX === UNSET) {
+      this.highlightDiv.classList.remove("active");
+    } else {
+      this.highlightDiv.classList.add("active");
+      const pointDiv = this.highlightDiv.querySelector(".pos") as HTMLDivElement;
+      const xDiv = this.highlightDiv.querySelector(".x.p") as HTMLDivElement;
+      const yDiv = this.highlightDiv.querySelector(".y.p") as HTMLDivElement;
+      pointDiv.style.left = `${hoverX}px`;
+      pointDiv.style.top = `${hoverY}px`;
+      xDiv.style.left = `${hoverX}px`;
+      yDiv.style.top = `${hoverY}px`;
+
+    }
+
     burnInField.setAttribute("height", `${burnInHeight}`);
     burnInField.setAttribute("y", `${activeHeight}`);
     activeField.setAttribute("height", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
-    // });
-
-
-    // this.drawSeries(data, kneeIndex, mccIndex, sampleIndex);
-    // this.drawHistogram(data, kneeIndex);
-    // this.drawLabels(data, kneeIndex);
   }
 
 

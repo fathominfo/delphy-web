@@ -101,7 +101,14 @@ export class TraceCanvas {
     this.traceData.setKneeIndex(count, kneeIndex);
   }
 
-  draw() {} // eslint-disable-line @typescript-eslint/no-empty-function
+
+  handleTreeHighlight(treeIndex: number): void {
+    this.traceData.handleTreeHighlight(treeIndex);
+  }
+
+  /* eslint-disable @typescript-eslint/no-empty-function */
+  draw() {}
+  /* eslint-enable @typescript-eslint/no-empty-function */
 
   drawField() {
     const {ctx, width, height} = this;
