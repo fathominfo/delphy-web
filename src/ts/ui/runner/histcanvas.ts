@@ -1,25 +1,15 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
-import { TraceCanvas, BG_COLOR, BORDER_COLOR, TRACE_TEMPLATE } from "./tracecanvas";
+import { TraceCanvas, TRACE_TEMPLATE } from "./tracecanvas";
 import { kneeHoverListenerType } from './runcommon';
-import { HistData } from "./histdata";
+import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
 const MAX_STEP_SIZE = 3;
 
-const MIN_COUNT_FOR_HISTO = 10;
 const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".chart .histogram .bars .distribution rect") as SVGRectElement;
 BAR_TEMPLATE.remove();
 
-
-
-type BucketConfig = {
-  buckets: number[],
-  values: number[],
-  maxBucketValue: number,
-  displayMin: number,
-  valRange: number
-};
 
 
 
@@ -28,7 +18,6 @@ export class HistCanvas extends TraceCanvas {
 
 
   kneeListener: kneeHoverListenerType;
-  bucketConfig: BucketConfig;
   histoSVG: SVGElement;
   histoWidth: number;
   histoHeight: number;
@@ -40,7 +29,7 @@ export class HistCanvas extends TraceCanvas {
     this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
     this.isVisible = true;
-    this.bucketConfig = { buckets: [], maxBucketValue: 0, values : [], displayMin: 0, valRange: 0 };
+
     this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
     this.histoWidth = UNSET;
@@ -125,47 +114,9 @@ export class HistCanvas extends TraceCanvas {
   setData(sourceData:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-
-    this.setBucketData();
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
-
-  setBucketData() {
-    const histData = this.traceData as HistData;
-    const { data, currentKneeIndex } = histData;
-
-    if (data.length > 1) {
-      const {displayMin, displayMax, isDiscrete} = this.traceData as HistData;
-      const valRange = displayMax - displayMin;
-      let estimateData: number[];
-      if ((this.traceData as HistData).hideBurnIn && currentKneeIndex > 0) {
-        estimateData = data.slice(currentKneeIndex);
-      } else {
-        estimateData = data.slice(0);
-      }
-      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
-      if (estimateData.length >= MIN_COUNT_FOR_HISTO) {
-        const distincts: { [n: string]:  boolean; } = {};
-        estimateData.forEach(n=>distincts[`${n}`] = true);
-        const keys = Object.keys(distincts).map(n=>parseFloat(n));
-        // do we have just a few distinct values, or do we need a KDE?
-        // probably want to add a check that the values are somewhat evenly spaced
-        // [mark 260202]
-        const isInt = keys.reduce((any, n)=>any && n === Math.round(n), true);
-        if (isInt && keys.length < 12) {
-          this.bucketConfig = this.getDiscreteHistoBuckets(estimateData, valRange, displayMin);
-        } else if (isDiscrete && valRange < 20) {
-          this.bucketConfig = this.getDiscreteHistoBuckets(estimateData, valRange, displayMin);
-        } else {
-          this.bucketConfig = this.getKDEBuckets(estimateData, valRange, displayMin);
-        }
-
-      }
-    }
-
-
-  }
 
 
   setMetadata(count: number, kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
@@ -188,14 +139,13 @@ export class HistCanvas extends TraceCanvas {
     // this.drawHistogram(data, kneeIndex);
     // this.drawLabels(data, kneeIndex);
     this.drawTrace();
-    this.drawHistogramSVG();
+    this.drawHistogramSVG(0);
   }
 
 
   drawTrace() {
-    const { data } = this.traceData as HistData;
+    const { data, displayCount, savedKneeIndex, hideBurnIn } = this.traceData as HistData;
     const { height } = this;
-    const { hideBurnIn, savedKneeIndex } = this.traceData as HistData;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
     const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
     const burnInTrend = burnInContainer.querySelector(".trend") as SVGPathElement;
@@ -205,21 +155,11 @@ export class HistCanvas extends TraceCanvas {
 
     let width = this.width;
 
-    let displayCount = data.length,
-      startIndex = 0,
-      burnInHeight = savedKneeIndex / displayCount * height;
-    if (hideBurnIn) {
-      displayCount -= savedKneeIndex;
-      startIndex = savedKneeIndex;
-      burnInHeight = 0;
-    }
-    let activeHeight = height - burnInHeight;
-
+    let burnInHeight = 0;
+    let activeHeight = height;
 
     let burnInPath = "";
     let activePath = "";
-
-
 
     if (displayCount === 0) {
       burnInHeight = 0;
@@ -229,27 +169,31 @@ export class HistCanvas extends TraceCanvas {
     } else if (displayCount > 1) {
       const { displayMin, displayMax, isDiscrete } = this.traceData;
       const valRange = displayMax - displayMin;
-      const stepH = Math.min(MAX_STEP_SIZE, height / displayCount || 1);
-
-      if (isDiscrete && valRange < 20) {
-        const w = width / (valRange + 1);
-        width -= w;
+      let startIndex = 0;
+      let left = 0;
+      if (isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
+        const bucketSize = width / (valRange + 1);
+        left = bucketSize * 0.5;
+        width -= bucketSize;
       }
+
+      const stepSize = Math.min(MAX_STEP_SIZE, height / displayCount || 1);
+
+      if (hideBurnIn) {
+        startIndex = savedKneeIndex;
+      } else {
+        burnInHeight = savedKneeIndex * stepSize;
+        activeHeight = height - burnInHeight;
+      }
+
 
       if (displayMax === displayMin) {
         activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
         burnInPath = `M${width * 0.5} ${burnInHeight} L${width * 0.5} ${height * 0.5} `;
       } else {
-        if (hideBurnIn) {
-          activeHeight = height;
-          burnInHeight = 0;
-        } else {
-          activeHeight = stepH * (displayCount - savedKneeIndex);
-          burnInHeight = height - activeHeight;
-        }
 
         const dataScale = width / (valRange || 1);
-        const bottom = Math.min(height, displayCount * stepH);
+        const bottom = Math.min(height, displayCount * stepSize);
         // console.log(bottom, height, displayCount * stepH);
         let currentPath = "";
         let first = true;
@@ -264,11 +208,11 @@ export class HistCanvas extends TraceCanvas {
             currentPath = `M${prevX} ${prevY} L `;
           }
           n = data[i];
-          y = bottom - (i - startIndex) * stepH;
+          y = bottom - (i - startIndex) * stepSize;
           if (isNaN(n) || !isFinite(n)) {
-            x = 0;
+            x = left;
           } else {
-            x = width-(n-displayMin) * dataScale;
+            x = left + (n-displayMin) * dataScale;
           }
           if (first) {
             currentPath = `M${x} ${y} L`;
@@ -301,59 +245,45 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  drawHistogramSVG() {
-    const { bucketConfig, histoWidth, histoHeight } = this;
-    const { buckets, values, maxBucketValue, displayMin, valRange } = bucketConfig;
-    const bucketSize = histoWidth / buckets.length;
-    this.histoBarParent.innerHTML = '';
+  drawHistogramSVG(highlightValue: number) {
+    const { traceData, histoWidth, histoHeight } = this;
+    const { bucketConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
+    const { buckets, values, maxBucketValue, positions, step } = bucketConfig;
+    let valRange = displayMax - displayMin;
+    const left = 0;
 
+    /*
+    since burnin might be visible, and the histogram does not include burn-in values,
+    we need to calculate how much room the histogram takes.
+    */
+    const firstValue = values[0];
+    const lastValue = values[values.length-1] + step;
+    const histoValueRange = lastValue - firstValue;
+    const histoSize = histoValueRange / valRange * histoWidth;
+    let bucketSize = histoSize / buckets.length;
+
+    if (isDiscrete && histoValueRange < MAX_COUNT_FOR_DISCRETE) {
+      valRange += step;
+      bucketSize = histoWidth / (valRange);
+    }
+
+    this.histoBarParent.innerHTML = '';
     buckets.forEach((n, i)=>{
       const value = values[i];
-      const ht = n / maxBucketValue * histoHeight;
-      const top = histoHeight - ht;
+      let nextValue = values[i + 1];
+      if (nextValue === undefined) nextValue = value + step;
+      const size = n / maxBucketValue * histoHeight;
+      const top = histoHeight - size;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
       const x = (value - displayMin) / valRange * this.histoWidth;
       bar.setAttribute("x", `${x}`);
       bar.setAttribute("y", `${top}`);
       bar.setAttribute("width", `${bucketSize}`);
-      bar.setAttribute("height", `${ht}`);
+      bar.setAttribute("height", `${size}`);
+      bar.classList.toggle("highlight", highlightValue >= value && highlightValue < nextValue);
       this.histoBarParent.appendChild(bar);
+      positions[i] = x;
     });
-  }
-
-
-
-
-  getDiscreteHistoBuckets(estimateData: number[], valRange: number, displayMin: number) : BucketConfig {
-    const values: number[] = Array(valRange + 1).fill(0);
-    estimateData.forEach(n=>values[n-displayMin]++);
-    const buckets = values.map(n=>n-displayMin);
-    const maxBucketValue = Math.max(...buckets);
-    console.log(this.className, 'getDiscreteHistoBuckets', values.length);
-    return { buckets, values, maxBucketValue, displayMin, valRange };
-  }
-
-
-  getKDEBuckets(estimateData: number[], valRange: number, minVal: number) : BucketConfig {
-    const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
-      bands: number[] = [],
-      values: number[] = [],
-      min = kde.min_sample,
-      max = kde.max_sample,
-      bandwidth = kde.bandwidth,
-      limit = max - bandwidth / 2;
-    let n = min + bandwidth / 2,
-      bandMax = 0;
-    while (n <= limit && bandwidth > 0) {
-      const gaust = kde.value_at(n);
-      const value = n;
-      bands.push(gaust);
-      values.push(value);
-      bandMax = Math.max(bandMax, gaust);
-      n += bandwidth;
-    }
-    console.log(this.className, 'getKDEBuckets', values.length);
-    return { buckets: bands, values, maxBucketValue: bandMax, displayMin: 0, valRange };
   }
 
 

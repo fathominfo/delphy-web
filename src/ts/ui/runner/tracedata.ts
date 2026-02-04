@@ -17,6 +17,8 @@ export class TraceData {
   unit:string;
   count: number;
 
+  highlightIndex: number;
+
   /*
   distinguish between the knee index
   that is used as the leftmost sample when we are
@@ -41,6 +43,7 @@ export class TraceData {
 
     this.sampleIndex = UNSET;
     this.count = 0;
+    this.highlightIndex = UNSET;
     this.savedKneeIndex = UNSET;
     this.currentKneeIndex = UNSET;
     this.settingKnee = false;
@@ -56,6 +59,10 @@ export class TraceData {
     }
   }
 
+
+  handleTreeHighlight(treeIndex: number): void {
+    this.highlightIndex = treeIndex;
+  }
 
 
 }

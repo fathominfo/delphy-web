@@ -16,7 +16,7 @@ export class GammaData extends TraceData {
   converted: number[][] = [];
   dates: number[] = [];
   isLogLinear = false;
-  sampleIndex: number = UNSET;
+  highlightIndex: number = UNSET;
   yearsMin: number = UNSET;
   yearsMax: number = UNSET;
   minMagnitude: number = UNSET;
@@ -34,7 +34,7 @@ export class GammaData extends TraceData {
     this.dates = dates;
     this.isLogLinear = isLogLinear;
     this.setKneeIndex(data.length, kneeIndex);
-    this.sampleIndex = sampleIndex;
+    this.highlightIndex = sampleIndex;
     const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     /* pivot the data to make arrays for every knot */
     const byKnots:number[][] = shown[0].map(()=>new Array(shown.length));

@@ -41,6 +41,9 @@ export class GammaHistCanvas extends TraceCanvas {
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
+  handleTreeHighlight(treeIndex: number): void {
+    this.traceData.handleTreeHighlight(treeIndex);
+  }
 
   draw():void {
     const {converted} = this.traceData as GammaData;
@@ -105,7 +108,7 @@ export class GammaHistCanvas extends TraceCanvas {
     ctx.fill();
 
     // draw the population curve for the current sample
-    const {rangeData, sampleIndex } = (this.traceData as GammaData);
+    const {rangeData, highlightIndex: sampleIndex } = (this.traceData as GammaData);
     const drawnSampleIndex = sampleIndex === UNSET ? rangeData.length - 1 : sampleIndex;
     if (0 <= drawnSampleIndex && drawnSampleIndex < rangeData.length) {
       const sampleData = rangeData[drawnSampleIndex];
