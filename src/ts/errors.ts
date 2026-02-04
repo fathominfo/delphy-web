@@ -20,7 +20,14 @@ export const setShowFormat = (fnc:()=>void)=>{
   showFormatCallback = fnc;
 }
 
-
+export const SAFARI_26_2_REGEX = /26\.2( mobile.*)? safari/i;
+export const SAFARI_26_2_ERR_MSG = `This web browser appears to be Safari version 26.2, which contains a bug that prevents the web version of Delphy from running.
+We expect this issue to be fixed in the next Safari release. For now, please try a different browser (and not on an iPhone).
+Sorry for the inconvenience!`;
+export const isBadSafari = ()=>{
+  console.log(`userAgent`, window.navigator.userAgent);
+  return SAFARI_26_2_REGEX.test(window.navigator.userAgent);
+};
 
 /*
 add a last chance error handler
@@ -47,8 +54,12 @@ const onError = (err: ErrorEvent)=>{
       msg += "If you continue to have trouble, please let us know at delphy@fathom.info.";
       break;
     case STAGES.parsing:
-      msg = "Could not parse your file. Please check that the fasta file is formatted correctly, reload the page, and try again. ";
-      msg += "If you continue to have trouble, please let us know at delphy@fathom.info.";
+      if  (isBadSafari()) {
+        msg = SAFARI_26_2_ERR_MSG;
+      } else {
+        msg = "Could not parse your file. Please check that the fasta file is formatted correctly, reload the page, and try again. ";
+        msg += "If you continue to have trouble, please let us know at delphy@fathom.info.";
+      }
       showFormatCallback();
       break;
     case STAGES.loaded:

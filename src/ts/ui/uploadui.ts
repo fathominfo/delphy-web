@@ -1,5 +1,5 @@
 import { noop, STAGES } from '../constants';
-import { setShowFormat, setStage } from '../errors';
+import { isBadSafari, setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
 import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
@@ -128,7 +128,9 @@ const warningsLabelAddendum = () => {
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{
-    showFormatHints()
+    if (!isBadSafari()) {
+      showFormatHints()
+    }
     uploadDiv.classList.remove('parsing');
     uploadDiv.classList.remove('loading');
     uploadDiv.classList.add('error');
