@@ -13,6 +13,7 @@ import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
+import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
 
 type returnless = ()=>void;
 
@@ -297,7 +298,12 @@ export class Pythia {
         })
         .catch(err => {
           console.error(err);
-          errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
+          if (isBadSafari()) {
+            errCallback(SAFARI_26_2_ERR_MSG);
+          } else {
+            errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
+          }
+
         });
     });
   }
