@@ -30,6 +30,7 @@ export class GammaHistCanvas extends TraceCanvas {
     super(label, '');
     this.minSpan = document.createElement('span');
     this.maxSpan = document.createElement('span');
+    this.readout.textContent = '';
     this.readout.appendChild(this.minSpan);
     this.readout.appendChild(this.maxSpan);
     this.readout.classList.add('range');

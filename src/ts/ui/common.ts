@@ -143,6 +143,18 @@ export const safeLabel = (x:number)=>{
   return Math.abs(x) >= 100 ? nfc(Math.round(x)) : x.toFixed(2);
 }
 
+export const getOrdinal = (n:number)=>{
+  const lastDigit = n % 10;
+  let ord = `${n}`;
+  switch(Math.abs(lastDigit)) {
+  case 1: ord += 'st'; break;
+  case 2: ord += 'nd'; break;
+  case 3: ord += 'rd'; break;
+  default: ord += 'th'; break;
+  }
+  return ord;
+}
+
 export const minimalDecimalLabel = (x:number)=>{
   if (x === undefined || isNaN(x) || x === null) return '';
   let label = '';

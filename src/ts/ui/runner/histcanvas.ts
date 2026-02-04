@@ -1,5 +1,5 @@
 import { KernelDensityEstimate } from "../../pythia/kde";
-import { safeLabel, UNSET } from '../common';
+import { getOrdinal, safeLabel, UNSET } from '../common';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { log10, TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
 import { hoverListenerType, kneeListenerType } from './runcommon';
@@ -40,6 +40,7 @@ export class HistCanvas extends TraceCanvas {
   displayCount = 0;
   isDragging = false;
   readoutIndex: number = UNSET;
+  dataMean: number = UNSET;
 
   bucketConfig: BucketConfig;
   kneeListener: kneeListenerType;
@@ -64,15 +65,14 @@ export class HistCanvas extends TraceCanvas {
       this.isDragging = false;
     });
     // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
-    this.canvas.addEventListener('pointerover', ()=>{
-      // this.hovering = true;
-      // requestDraw();
-    });
+    // this.canvas.addEventListener('pointerover', ()=>{
+    //   this.hovering = true;
+    //   requestDraw();
+    // });
     this.canvas.addEventListener('pointerleave', ()=>{
       // this.hovering = false;
-
       // requestDraw();
-      this.hoverListener(this.data.length - 1);
+      this.hoverListener(UNSET);
     });
 
   }
@@ -129,15 +129,10 @@ export class HistCanvas extends TraceCanvas {
   }
 
   handleTreeHighlight(treeIndex: number): void {
-    const { data, readout, unit } = this;
-    /* if the requested tree is unset, use the default (which is the latest) */
-    const readoutIndex = treeIndex === UNSET ? data.length - 1: treeIndex;
-    /*
-    on the other hand, if the requested tree is the latest, mark it as UNSET.
-    We'll use that as a flag to highlight the latest tree.
-    */
-    this.readoutIndex = treeIndex === this.data.length - 1 ? UNSET : treeIndex;
-    readout.innerHTML = `${safeLabel(data[readoutIndex])} ${unit}`;
+    const isMean = treeIndex === UNSET;
+    const readoutValue = isMean ? this.dataMean: this.data[treeIndex];
+    this.readoutIndex = treeIndex;
+    this.setReadoutLabel(isMean, readoutValue, this.unit, treeIndex);
   }
 
 
@@ -154,6 +149,8 @@ export class HistCanvas extends TraceCanvas {
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
+    const dataSum = safe.reduce((tot, n)=>tot+n, 0);
+    this.dataMean = dataSum / safe.length;
     /* what scale is the range in? */
     const range = this.dataMax - this.dataMin;
 
@@ -247,8 +244,8 @@ export class HistCanvas extends TraceCanvas {
   draw() {
     let {data, readoutIndex} = this,
       kneeIndex = this.currentKneeIndex;
-    if (readoutIndex === UNSET) readoutIndex = data.length - 1;
-    const readoutValue = this.data[readoutIndex];
+    const isMean = readoutIndex === UNSET;
+    const readoutValue = isMean ? this.dataMean: this.data[readoutIndex];
     if (this.hideBurnIn && this.savedKneeIndex > 0) {
       data = data.slice(this.savedKneeIndex);
       kneeIndex -= this.savedKneeIndex;
@@ -258,7 +255,7 @@ export class HistCanvas extends TraceCanvas {
     ctx.clearRect(0, 0, width + 1, height + 1);
     this.drawSeries(data, kneeIndex, readoutIndex);
     this.drawHistogram(readoutValue);
-    this.drawLabels(data, kneeIndex, readoutValue);
+    this.drawLabels(data, kneeIndex, this.readoutIndex, readoutValue, isMean);
   }
 
 
@@ -386,11 +383,9 @@ export class HistCanvas extends TraceCanvas {
     ctx.fillRect(distLeft, 0, DIST_WIDTH, chartHeight);
     ctx.strokeRect(distLeft+HALF_BORDER, HALF_BORDER, DIST_WIDTH-1, chartHeight-1);
 
-    if (this.label === "Number of Mutations") {
-      console.log( `   `, this.label);
-    }
-
-
+    // if (this.label === "Number of Mutations") {
+    //   console.log( `   `, this.label);
+    // }
 
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
@@ -461,7 +456,7 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  drawLabels(data:number[], kneeIndex:number, readoutValue: number) {
+  drawLabels(data:number[], kneeIndex:number, readoutIndex: number, readoutValue: number, isMean: boolean) {
     const count:number = data.length;
     this.count = count;
     const {ctx, traceWidth, chartHeight} = this;
@@ -474,8 +469,7 @@ export class HistCanvas extends TraceCanvas {
     ctx.beginPath();
     if (data.length > 1) {
       const {displayMin, displayMax} = this;
-      const label = safeLabel(readoutValue) || ' ';
-      this.readout.innerHTML = `${label} ${this.unit}`;
+      this.setReadoutLabel(isMean, readoutValue, this.unit, readoutIndex);
 
       ctx.strokeStyle = TRACE_COLOR;
       if (displayMax === displayMin) {
@@ -521,7 +515,8 @@ export class HistCanvas extends TraceCanvas {
       this.midStepLabel.innerHTML = ``;
       this.lastStepLabel.innerHTML = '';
     } else {
-      this.readout.innerHTML = `0 ${this.unit}`;
+      // this.readout.innerHTML = `0 ${this.unit}`;
+      this.setReadoutLabel(false, readoutValue, this.unit, 0);
     }
     this.maxLabel.style.marginTop = `${stepSize}px`;
     this.minLabel.style.marginBottom = `${stepSize}px`;
@@ -532,6 +527,30 @@ export class HistCanvas extends TraceCanvas {
     // ctx.fillText(label, this.distLeft - 70, chartHeight - 2);
   }
 
+
+  setReadoutLabel(isMean: boolean, value: number, unit: string, treeIndex: number = UNSET) {
+    if (this.label === 'Number of Mutations') {
+      // if (prevWas && !isMean) {
+      //   console.log(`
+      //     setReadoutLabel(isMean: ${isMean}, value: ${value}, unit: ${unit}, treeIndex: ${treeIndex}) `);
+      // }
+      prevWas = isMean;
+    }
+
+    if (isMean) {
+      this.readout.classList.add("meaning");
+    } else {
+      this.readout.classList.remove("meaning");
+      (this.readout.querySelector(".tree-label-index") as HTMLSpanElement).textContent = getOrdinal(treeIndex);
+    }
+    (this.readout.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+    if (unit) {
+      this.readout.classList.remove("unitless");
+      (this.readout.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
+    } else {
+      this.readout.classList.add("unitless");
+    }
+  }
 
   drawEssIntervals(stepW: number, burnInX: number) {
     const {sampleCount, ess, ctx, distLeft, chartHeight} = this;
@@ -561,3 +580,4 @@ export class HistCanvas extends TraceCanvas {
 //   chartContainer.appendChild(sectionLabel);
 // }
 
+let prevWas = false;

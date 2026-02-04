@@ -167,6 +167,9 @@ export class RunUI extends UIScreen {
     };
 
     const hoverHandler: hoverListenerType = (treeIndex:number)=>{
+      if (treeIndex === UNSET) {
+        console.log(`hoverHandler(${treeIndex})`);
+      }
       this.traceCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
