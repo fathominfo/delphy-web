@@ -291,7 +291,7 @@ export class Pythia {
         .catch(err => {
           console.error(err);
           if (isBadSafari()) {
-            errCallback(SAFARI_26_2_ERR_MSG)
+            errCallback(SAFARI_26_2_ERR_MSG);
           } else {
             errCallback(`Error loading the file: "${err}". Please check that it is formatted correctly. If you continue to have trouble, please contact us at delphy@fathom.info.`);
           }
