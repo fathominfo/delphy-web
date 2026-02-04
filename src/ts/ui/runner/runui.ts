@@ -10,7 +10,7 @@ import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} fro
 import {SoftFloat} from '../../util/softfloat.js';
 import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
-import { kneeListenerType } from './runcommon';
+import { hoverListenerType, kneeListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -64,7 +64,8 @@ export class RunUI extends UIScreen {
   private mutCountCanvas: HistCanvas;
   private popGrowthCanvas: HistCanvas;
   private gammaCanvas: GammaHistCanvas;
-  private histCanvases: TraceCanvas[];
+  private traceCanvases: TraceCanvas[];
+  private histCanvases: HistCanvas[];
 
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
@@ -165,6 +166,19 @@ export class RunUI extends UIScreen {
       this.updateRunData();
     };
 
+    const hoverHandler: hoverListenerType = (treeIndex:number)=>{
+      // if (treeIndex === UNSET) {
+      //   console.log(`hoverHandler(${treeIndex})`);
+      // }
+      this.traceCanvases.forEach(hc=>{
+        if (hc.isVisible) {
+          hc.handleTreeHighlight(treeIndex);
+        }
+      });
+      this.requestDraw();
+    };
+
+
     this.mccRef = null;
     this.treeCanvas = instantiateTreeCanvas("#ui");
     this.mccTreeCanvas = instantiateMccTreeCanvas("#ui_mcc");
@@ -182,15 +196,15 @@ export class RunUI extends UIScreen {
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
     this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
 
-    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
-    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler);
-    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler);
-    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler);
+    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler, hoverHandler);
+    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler, hoverHandler);
+    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler, hoverHandler);
+    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler, hoverHandler);
+    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler, hoverHandler);
+    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler, hoverHandler);
     this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.mutCountCanvas,
-      this.popGrowthCanvas, this.gammaCanvas];
+    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.popGrowthCanvas];
+    this.traceCanvases = (this.histCanvases as TraceCanvas[] ).concat(this.gammaCanvas);
     this.mutCountCanvas.isDiscrete = true;
     this.hideBurnIn = false;
     this.timelineIndices = [];
@@ -550,7 +564,7 @@ export class RunUI extends UIScreen {
     this.mccTreeCanvas.sizeCanvas();
     this.treeScrubber.sizeCanvas();
 
-    this.histCanvases.forEach(hc => {
+    this.traceCanvases.forEach(hc => {
       if (hc.isVisible) {
         hc.sizeCanvas();
       }
@@ -720,13 +734,13 @@ export class RunUI extends UIScreen {
       } else {
         // console.debug('no mcc ref available')
       }
+      this.mutCountCanvas.draw();
       this.logPosteriorCanvas.draw();
       this.muCanvas.draw();
       if (this.getRunParams().apobecEnabled) {
         this.muStarCanvas.draw();
       }
       this.TCanvas.draw();
-      this.mutCountCanvas.draw();
       if (this.getRunParams().popModelIsSkygrid) {
         this.gammaCanvas.draw();
       } else {
@@ -792,7 +806,7 @@ export class RunUI extends UIScreen {
   private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
     canvas.setVisible(showIt);
 
-    this.histCanvases.forEach(hc => {
+    this.traceCanvases.forEach(hc => {
       if (hc.isVisible) {
         hc.sizeCanvas();
         hc.draw();

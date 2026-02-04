@@ -22,7 +22,7 @@ export class GammaHistCanvas extends TraceCanvas {
   minSpan: HTMLSpanElement;
   maxSpan: HTMLSpanElement;
   isLogLinear = false;
-  sampleIndex: number;
+  readoutIndex: number;
   midLabels: HTMLLIElement[];
   labelContainer: HTMLUListElement;
 
@@ -30,24 +30,25 @@ export class GammaHistCanvas extends TraceCanvas {
     super(label, '');
     this.minSpan = document.createElement('span');
     this.maxSpan = document.createElement('span');
+    this.readout.textContent = '';
     this.readout.appendChild(this.minSpan);
     this.readout.appendChild(this.maxSpan);
     this.readout.classList.add('range');
     this.midLabels = [];
-    this.sampleIndex = UNSET;
+    this.readoutIndex = UNSET;
     this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
     // use the avgLabel as a cloning template
     this.avgLabel.textContent = '';
     this.avgLabel.style.position = 'absolute';
   }
 
-  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
+  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, readoutIndex: number):void {
 
     this.rangeData = data;
     this.dates = dates;
     this.isLogLinear = isLogLinear;
     this.setKneeIndex(data.length, kneeIndex);
-    this.sampleIndex = sampleIndex;
+    this.readoutIndex = readoutIndex;
     const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     /* pivot the data to make arrays for every knot */
     const byKnots:number[][] = shown[0].map(()=>new Array(shown.length));
@@ -80,6 +81,11 @@ export class GammaHistCanvas extends TraceCanvas {
     }
 
     requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
+  }
+
+  handleTreeHighlight(treeIndex: number): void {
+    const readoutIndex = treeIndex === this.rangeData.length - 1 ? UNSET : treeIndex;
+    this.readoutIndex = readoutIndex;
   }
 
 
@@ -146,7 +152,7 @@ export class GammaHistCanvas extends TraceCanvas {
     ctx.fill();
 
     // draw the population curve for the current sample
-    const drawnSampleIndex = this.sampleIndex === UNSET ? this.rangeData.length - 1 : this.sampleIndex;
+    const drawnSampleIndex = this.readoutIndex === UNSET ? this.rangeData.length - 1 : this.readoutIndex;
     if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
       const sampleData = this.rangeData[drawnSampleIndex];
       console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
