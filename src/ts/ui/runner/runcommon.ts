@@ -9,4 +9,5 @@ export const CURRENT_POP_CURVE_COLOR = 'rgb(150, 181, 212)';
 
 
 export type kneeHoverListenerType = (pct:number)=>void;
+export type hoverListenerType = (treeIndex:number)=>void;
 export type requestDrawFnc = ()=>void;

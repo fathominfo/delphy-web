@@ -1,5 +1,5 @@
 import { noop, STAGES } from '../constants';
-import { setShowFormat, setStage } from '../errors';
+import { isBadSafari, setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
 import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';
 import { ConfigExport } from './mccconfig';
@@ -122,7 +122,9 @@ const warningsLabelAddendum = () => {
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{
-    showFormatHints()
+    if (isBadSafari()) {
+      showFormatHints();
+    }
     uploadDiv.classList.remove('parsing');
     uploadDiv.classList.remove('loading');
     uploadDiv.classList.add('error');
@@ -342,7 +344,18 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     if (!dataUrl.startsWith("http")) {
       dataUrl = `${loc.origin}${loc.pathname}${dataUrl}`;
     }
-    loadNow(dataUrl);
+    /*
+    If the url is distributed in a mailing, it may have garbage like
+    `utm_source=fathominfo&utm_medium=email&utm_campaign=2024-at-fathom`
+    which could trigger an error and not look good. So ignore urls with
+    ampersands (is that too wide a net?).
+    ref https://github.com/fathominfo/delphy-web/issues/52 [mark 260115]
+    */
+    if (!/&/.test(dataUrl)) {
+      loadNow(dataUrl);
+    } else {
+      window.location.href = window.location.origin;
+    }
   } else {
     button = document.querySelector("#uploader--demo-button") as HTMLButtonElement;
     button.focus();
@@ -407,7 +420,7 @@ const showURLFailureMessage = (url:string)=>{
     uploadDiv.classList.remove('direct-loading');
     dismissButton.removeEventListener("click", dismiss);
     popup.classList.remove("active");
-    window.location.reload();
+    window.location.href = window.location.origin;
   }
   serverSpan.textContent = `of ${urlDict.hostname}`;
   dismissButton.addEventListener("click", dismiss);

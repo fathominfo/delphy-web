@@ -8,8 +8,8 @@ function estimate_data_variance(xs: number[]): number {
     sum += x;
     sum2 += x * x;
   });
-  sum /= xs.length;
-  sum2 /= xs.length;
+  sum /= N;
+  sum2 /= N;
   const sumsum = sum*sum;
   const sample_variance = sum2 - sumsum;
   return (N / (N-1)) * sample_variance;
