@@ -915,11 +915,11 @@ export class LineagesUI extends MccUI {
     let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange();  // eslint-disable-line prefer-const
     const zoomDateRange = zoomMaxDate - zoomMinDate;
     zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
-    this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
-    this.nodeComparisons.forEach((nc: NodeComparison)=>{
-      nc.setDateRange(zoomMinDate, zoomMaxDate);
-      nc.requestDraw();
-    });
+    // this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
+    // this.nodeComparisons.forEach((nc: NodeComparison)=>{
+    //   nc.setDateRange(zoomMinDate, zoomMaxDate);
+    //   nc.requestDraw();
+    // });
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
     this.nodePrevalenceCanvas.requestDraw();
 
