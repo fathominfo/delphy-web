@@ -1,15 +1,15 @@
 import { safeLabel, UNSET } from '../common';
-import { TraceCanvas, TRACE_TEMPLATE } from "./tracecanvas";
+import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
-const MAX_STEP_SIZE = 3;
-
+export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
+TRACE_TEMPLATE.remove();
 const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".chart .histogram .bars .distribution rect") as SVGRectElement;
 BAR_TEMPLATE.remove();
 
-
+const MAX_STEP_SIZE = 3;
 
 
 export class HistCanvas extends TraceCanvas {
@@ -27,7 +27,7 @@ export class HistCanvas extends TraceCanvas {
 
 
   constructor(label:string, unit='', kneeListener: kneeHoverListenerType, hoverListener: hoverListenerType) {
-    super(label, unit);
+    super(label, unit, TRACE_TEMPLATE);
     this.traceData = new HistData(label, unit)
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
@@ -39,7 +39,7 @@ export class HistCanvas extends TraceCanvas {
     this.histoHeight = UNSET;
     this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
-      this.canvas.classList.add('dragging');
+      this.svg.classList.add('dragging');
       this.isDragging = true;
       this.handlePointerMove(event);
     });
@@ -47,7 +47,7 @@ export class HistCanvas extends TraceCanvas {
       this.handlePointerMove(event);
     });
     this.highlightDiv.addEventListener('pointerup', ()=>{
-      this.canvas.classList.remove('dragging');
+      this.svg.classList.remove('dragging');
       this.isDragging = false;
     });
     // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
@@ -154,7 +154,7 @@ export class HistCanvas extends TraceCanvas {
   setData(sourceData:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
+    // requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
 

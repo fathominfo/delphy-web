@@ -294,7 +294,7 @@
         <div id="run--indicators">
 
           <div id="runner--panel--modules" class="blocks">
-              <div class="module" data-element="mutations">
+              <div class="module trace">
                 <div class="header">
                   <h3 class="title"></h3>
                   <div class="readout">
@@ -309,7 +309,6 @@
                     <div class="y axis">Y</div>
                     <div class="displays">
                       <div class="histogram display">
-                        <canvas></canvas>
                         <svg xmlns="svgXMLNS" viewBox="0 0 96 37.33">
                           <g class="bars">
                             <g class="distribution">
@@ -333,7 +332,6 @@
                             <path class="trend" d=""></path>
                           </g>
                         </svg>
-                        <canvas></canvas>
                         <div class="position">
                           <div class="x p"></div>
                           <div class="y p"><div class="pos"></div></div>
@@ -347,6 +345,48 @@
                   </div>
                 </div>
               </div>
+
+              <div class="module population">
+                <div class="header">
+                  <h3 class="title"></h3>
+                  <div class="readout">
+                    <div class="mean">
+                      <span class="value"><span class="abbrev">M</span><span class="text">668</span></span>
+                      <span class="units">mutations</span>
+                    </div>
+                    <div class="pointer"><div class="shape"><span>▲</span></div></div></div>
+                </div>
+                <div class="chart">
+                  <div class="feature">
+                    <div class="y axis">
+                      <li class="readout max">max</li>
+                      <li class="readout"></li>
+                      <li class="readout min">min</li>
+                    </div>
+                    <div class="displays">
+                      <div class="graph display">
+                        <svg xmlns="svgXMLNS" viewBox="0 0 149 96">
+                          <path class="trend range" d=""></path>
+                          <path class="trend median" d=""></path>
+                          <path class="trend sample" d=""></path>
+                        </svg>
+                        <div class="position">
+                          <div class="x p"></div>
+                          <div class="y p"><div class="pos"></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="support">
+                    <div class="x axis">
+                      <div class="min-date"></div>
+                      <div class="max-date"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
           </div>
           <div id="burn-in-wrapper" class="pre">
             <input type="checkbox" id="burn-in-toggle" disabled />

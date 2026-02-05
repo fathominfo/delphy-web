@@ -16,104 +16,6 @@
     gap: var(--view-gap);
   }
 
-
-  .module .header .readout {
-    display: none;
-  }
-
-
-  .chart {
-
-    width: fit-content;
-
-    canvas {
-      display: none;
-    }
-
-    .displays {
-      flex-direction: column;
-    }
-
-
-    .feature {
-      // flex-direction: column;
-    }
-
-    .display {
-      background-color: white;
-      width: var(--trace-chart-width);
-      canvas {
-        position: relative;
-      }
-    }
-
-    .burn-in {
-      .trend {
-        stroke: var(--chart-graph-burn-in-trend-stroke);
-        stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
-      }
-      .period {
-        fill: var(--chart-graph-burn-in-period-fill);
-      }
-    }
-    .run {
-      .period {
-        fill: var(--chart-graph-run-period-fill);
-      }
-      .trend {
-        stroke: var(--chart-graph-run-trend-stroke);
-      }
-
-    }
-    .graph {
-
-      height: var(--trace-chart-height);
-      .trend  {
-        fill: none;
-        stroke-width: var(--chart-graph-trend-stroke-weight);
-      }
-    }
-
-
-    .bars {
-      opacity: 0.75;
-      .distribution {
-        // opacity: 0.375;
-      }
-      rect {
-        fill: var(--chart-histogram-bar-fill);
-        opacity: 0.375;
-        &.highlight {
-          opacity: 1.0;
-        }
-      }
-    }
-
-    .axis {
-      background-color: pink;
-      &.x {
-        margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
-        margin-right: unset;
-        width: var(--trace-chart-width);
-      }
-      &.y {
-        margin-top: calc(var(--chart-histogram-height) + 1px);
-        height: var(--trace-chart-height);
-      }
-    }
-
-
-    .divider {
-      height: var(--chart-divider-stroke-weight);
-      width: 100%;
-      right: unset;
-      left: 0;
-      top: unset;
-      bottom: 0;
-      transform: translateY(50%);
-    }
-
-  }
 }
 
 
@@ -314,10 +216,123 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  // min-width: 300px;
-  // max-width: 320px;
-  // margin-left: @gap * 3;
-  // gap: 10px;
+
+  .module {
+    flex: 1;
+
+    .header .readout {
+      display: none;
+    }
+
+    &.trace {
+      max-width: var(--indicator-trace-module-width);
+      .chart {
+        width: fit-content;
+        canvas { display: none; }
+        .displays { flex-direction: column; }
+        .display {
+          background-color: white;
+          width: var(--trace-chart-width);
+        }
+        .burn-in {
+          .trend {
+            stroke: var(--chart-graph-burn-in-trend-stroke);
+            stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
+          }
+          .period {
+            fill: var(--chart-graph-burn-in-period-fill);
+          }
+        }
+        .run {
+          .period {
+            fill: var(--chart-graph-run-period-fill);
+          }
+          .trend {
+            stroke: var(--chart-graph-run-trend-stroke);
+          }
+        }
+
+        .graph {
+          height: var(--trace-chart-height);
+          .trend  {
+            fill: none;
+            stroke-width: var(--chart-graph-trend-stroke-weight);
+          }
+        }
+        .bars {
+          opacity: 0.75;
+          .distribution {
+            // opacity: 0.375;
+          }
+          rect {
+            fill: var(--chart-histogram-bar-fill);
+            opacity: 0.375;
+            &.highlight {
+              opacity: 1.0;
+            }
+          }
+        }
+        .axis {
+          background-color: pink;
+          &.x {
+            margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
+            margin-right: unset;
+            width: var(--trace-chart-width);
+          }
+          &.y {
+            margin-top: calc(var(--chart-histogram-height) + 1px);
+            height: var(--trace-chart-height);
+          }
+        }
+        .divider {
+          height: var(--chart-divider-stroke-weight);
+          width: 100%;
+          right: unset;
+          left: 0;
+          top: unset;
+          bottom: 0;
+          transform: translateY(50%);
+        }
+
+      }
+
+    }
+
+
+    &.population {
+      min-width: var(--indicator-pop-module-width);
+      max-width: var(--indicator-pop-module-width);
+      .chart {
+        background-color: yellow;
+        .graph {
+          background-color: white;
+          width: var(--pop-chart-graph-width);
+        }
+
+        .trend {
+          &.range {
+            fill: pink;
+            stroke: none;
+          }
+          &.median {
+            fill: none;
+            stroke: black;
+          }
+          &.sample {
+            fill: none;
+            stroke: red;
+          }
+        }
+
+        .display canvas {
+          position: relative;
+        }
+      }
+    }
+  }
+
+
+
 }
 
 
@@ -1345,10 +1360,6 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 
-#run--indicators .module {
-  flex: 1;
-  max-width: var(--indicator-module-width);
-}
 
 
 @keyframes rotation {

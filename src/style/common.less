@@ -163,7 +163,8 @@
   --chart-height: calc(var(--unit) * 9);
   --trace-chart-width: var(--chart-height);
   --trace-chart-height: calc(var(--unit) * 14);
-  --chart-graph-width: calc(var(--unit) * 14);
+  --trace-chart-graph-width: calc(var(--unit) * 14);
+  --pop-chart-graph-width: calc(var(--unit) * 30);
   --chart-graph-burn-in-trend-stroke-dasharray: var(--chart-graph-trend-stroke-weight) calc(var(--chart-graph-trend-stroke-weight) * 2);
   --chart-position-axis-stroke-weight: var(--position-line-stroke-weight);
   --chart-divider-stroke-weight: var(--position-line-stroke-weight);
@@ -182,7 +183,7 @@
   --date-text-line-height: var(--date-text-font-size);
   --chart-yaxis-width: calc(var(--unit) * 3.5);
   --chart-yaxis-height: calc(var(--chart-height) + (var(--chart-stroke-weight) * 2));
-  --chart-xaxis-width: calc(var(--chart-graph-width) + var(--chart-stroke-weight));
+  --chart-xaxis-width: calc(var(--trace-chart-graph-width) + var(--chart-stroke-weight));
   --chart-xaxis-height: calc(var(--unit) * 3);
   --chart-histogram-width: calc(var(--chart-yaxis-width));
   --chart-histogram-height: calc(var(--chart-yaxis-width));
@@ -202,18 +203,24 @@
   --block-gap: var(--module-gap);
   --module-header-readout-basis-width: calc(var(--chart-histogram-width) + var(--chart-stroke-weight));
   --module-header-readout-gap: calc(var(--unit) / 2);
-  --indicator-module-width: calc(
+  --indicator-trace-module-width: calc(
     var(--chart-yaxis-width) +
     var(--chart-stroke-weight) +
-    var(--chart-graph-width) +
+    var(--trace-chart-graph-width) +
     var(--chart-histogram-width) +
     var(--chart-stroke-weight)
   );
-  --indicator-module-height: calc(
+  --indicator-trace-module-height: calc(
     var(--view-header-height) +
     var(--module-gap) +
     var(--chart-yaxis-height) +
     var(--chart-xaxis-height)
+  );
+  --indicator-pop-module-width: calc(
+    var(--chart-yaxis-width) +
+    var(--chart-stroke-weight) +
+    var(--pop-chart-graph-width) +
+    var(--chart-stroke-weight)
   );
   --indicator-module-header-title-max-width: calc(var(--indicator-module-width) - var(--module-header-readout-basis-width) - var(--view-header-gap));
   --tree-max-height: calc(
