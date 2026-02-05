@@ -1,4 +1,3 @@
-import { KernelDensityEstimate } from "../../pythia/kde";
 import { safeLabel, UNSET } from '../common';
 import { TraceCanvas, TRACE_TEMPLATE } from "./tracecanvas";
 import { hoverListenerType, kneeHoverListenerType } from './runcommon';
@@ -71,10 +70,10 @@ export class HistCanvas extends TraceCanvas {
     const y = event.offsetY;
     const { count, savedKneeIndex, hideBurnIn } = this.traceData as HistData;
     if (y >= 0) {
-      pct = y / this.height;
+      pct = 1 - y / this.height;
       // console.log('knee', x, pct)
       if (count * MAX_STEP_SIZE < this.height) {
-        pct = y / (count * MAX_STEP_SIZE);
+        pct = 1 - y / (count * MAX_STEP_SIZE);
       }
       if (hideBurnIn) {
         /*
@@ -210,7 +209,6 @@ export class HistCanvas extends TraceCanvas {
     } else if (displayCount > 1) {
       const { displayMin, displayMax, isDiscrete } = this.traceData;
       const valRange = displayMax - displayMin;
-      const startIndex = 0;
       let left = 0;
       if (isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
         const bucketSize = width / (valRange + 1);
@@ -218,8 +216,14 @@ export class HistCanvas extends TraceCanvas {
         width -= bucketSize;
       }
 
-      const stepSize = Math.min(MAX_STEP_SIZE, height / displayCount || 1);
-      burnInHeight = kneeIndex * stepSize;
+      const stepSize = Math.min(MAX_STEP_SIZE, height / (displayCount - 1) || 1);
+      /*
+      in early stages of the run, there might not be enough samples to cover
+      the whole chart. So how much of the chart are we covering?
+      */
+      const plotSize = Math.min(height, displayCount * stepSize);
+      const leftover = height - plotSize;
+      burnInHeight = hideBurnIn ? 0 : kneeIndex * stepSize + leftover;
       activeHeight = height - burnInHeight;
 
       if (displayMax === displayMin) {
@@ -228,7 +232,7 @@ export class HistCanvas extends TraceCanvas {
       } else {
 
         const dataScale = width / (valRange || 1);
-        const bottom = Math.min(height, displayCount * stepSize);
+        const bottom = Math.min(height, (displayCount - 1) * stepSize);
         // console.log(bottom, height, displayCount * stepH);
         let currentPath = "";
         let first = true;
@@ -237,13 +241,13 @@ export class HistCanvas extends TraceCanvas {
           y: number = UNSET,
           prevX = UNSET,
           prevY = UNSET;
-        for (let i = startIndex; i < data.length; i++) {
+        for (let i = 0; i < data.length; i++) {
           if (i === kneeIndex) {
             burnInPath = currentPath;
             currentPath = `M${prevX} ${prevY} L `;
           }
           n = data[i];
-          y = bottom - (i - startIndex) * stepSize;
+          y = bottom - i * stepSize;
           if (isNaN(n) || !isFinite(n)) {
             x = left;
           } else {
@@ -277,7 +281,7 @@ export class HistCanvas extends TraceCanvas {
       const xDiv = this.highlightDiv.querySelector(".x.p") as HTMLDivElement;
       const yDiv = this.highlightDiv.querySelector(".y.p") as HTMLDivElement;
       pointDiv.style.left = `${hoverX}px`;
-      pointDiv.style.top = `${hoverY}px`;
+      pointDiv.style.top = `0px`;
       xDiv.style.left = `${hoverX}px`;
       yDiv.style.top = `${hoverY}px`;
 

@@ -1,4 +1,4 @@
-import { resizeCanvas, UNSET } from '../common';
+import { UNSET } from '../common';
 import { TraceData } from './tracedata';
 
 const maybeChartContainer = document.querySelector('#runner--panel--modules');
