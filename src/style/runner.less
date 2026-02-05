@@ -24,6 +24,8 @@
 
   .chart {
 
+    width: fit-content;
+
     canvas {
       display: none;
     }
@@ -91,6 +93,7 @@
       background-color: pink;
       &.x {
         margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
+        margin-right: unset;
         width: var(--trace-chart-width);
       }
       &.y {
