@@ -111,8 +111,11 @@ export class NodePrevalenceCanvas extends BaseTreeMeanCanvas {
     this.readout.classList.remove("hidden");
 
     // date
-    const hoverX = (this.hoverDateIndex - this.startIndex) / (this.endIndex - this.startIndex) * width;
-    const dateLabel = toFullDateString(this.minDate + this.hoverDateIndex);
+    const pctOfCurrent = (this.hoverDateIndex - this.startIndex) / (this.endIndex - this.startIndex);
+    const hoverX = pctOfCurrent * width;
+    const dateIndex = pctOfCurrent * (this.maxDate - this.minDate) + this.minDate;
+    // dist /* pct for each series indexed by tree, series, date */
+    const dateLabel = toFullDateString(dateIndex);
     this.readoutDate.innerText = dateLabel;
     this.readout.style.left = `${hoverX}px`;
 
