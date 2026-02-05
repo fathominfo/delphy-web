@@ -134,9 +134,28 @@ export const nfc = (x:number)=>{
   return x === undefined ? '' : x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-export const safeLabel = (x:number)=>{
+
+/*
+@param lowerOOM, upperOOM: lower and upper orders of magnitude at which
+we switch to scientific notation
+*/
+export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   if (x === undefined || isNaN(x) || x === null) return '';
-  return Math.abs(x) >= 100 ? nfc(Math.round(x)) : x.toFixed(2);
+  const magnitude = Math.log10(x);
+  let label = '';
+  if (magnitude < lowerOOM || magnitude > upperOOM) {
+    label = x.toExponential();
+  } else if (Math.abs(x) >= 100) {
+    label = nfc(Math.round(x));
+  } else if (Math.abs(x) >= 10) {
+    label = x.toFixed(1);
+  } else if (x >= 0.1) {
+    label = x.toFixed(2);
+  } else {
+    const oom = Math.floor(magnitude);
+    label = x.toFixed(Math.abs(oom));
+  }
+  return label;
 }
 
 export const getOrdinal = (n:number)=>{

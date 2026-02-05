@@ -224,11 +224,21 @@
       display: none;
     }
 
+
+    .axis {
+      font-family: var(--Inter);
+      font-variant-numeric: tabular-nums;
+      font-weight: var(--chart-axis-text-font-weight);
+      font-size: var(--chart-axis-text-font-size);
+      line-height: var(--chart-axis-text-line-height);
+      color: var(--chart-axis-text);
+      fill: var(--chart-axis-text);
+    }
+
     &.trace {
       max-width: var(--indicator-trace-module-width);
       .chart {
         width: fit-content;
-        canvas { display: none; }
         .displays { flex-direction: column; }
         .display {
           background-color: white;
@@ -303,7 +313,7 @@
       min-width: var(--indicator-pop-module-width);
       max-width: var(--indicator-pop-module-width);
       .chart {
-        background-color: yellow;
+        // background-color: yellow;
         .graph {
           background-color: white;
           width: var(--pop-chart-graph-width);
@@ -311,21 +321,39 @@
 
         .trend {
           &.range {
-            fill: pink;
+            fill: var(--chart-histogram-bar-fill);
+            opacity: 0.25;
             stroke: none;
           }
           &.median {
             fill: none;
-            stroke: black;
+            stroke: var(--chart-graph-run-trend-stroke);
           }
           &.sample {
             fill: none;
-            stroke: red;
+            stroke: var(--chart-histogram-bar-fill);
           }
         }
 
-        .display canvas {
-          position: relative;
+
+        .axis.y {
+          line {
+            stroke-width: 0.5;
+            stroke: var(--chart-graph-run-trend-stroke);
+            opacity: 0.3;
+            &.mag {opacity: 1;}
+          }
+          text {
+            alignment-baseline: middle;
+            text-anchor: end;
+          }
+        }
+
+        .axis.x {
+          margin-left: var(--chart-yaxis-width);
+          margin-right: unset;
+          width: var(--pop-chart-graph-width);
+          .min-date {flex-grow: 1;}
         }
       }
     }
@@ -1139,9 +1167,9 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 .block.effective-population-size-log-scale .block--chart {
-  canvas, canvas.kneed {
-    cursor: default;
-  }
+  // canvas, canvas.kneed {
+  //   cursor: default;
+  // }
 }
 
 

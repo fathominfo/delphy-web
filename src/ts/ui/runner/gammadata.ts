@@ -3,6 +3,9 @@ import { calcHPD } from '../distribution';
 import { TraceData } from './tracedata';
 
 
+const MIN_TIC_LENGTH = 4;
+const MAX_TICS_FACTOR = 10 * 10 + MIN_TIC_LENGTH;
+
 export type LogLabelType = {
   value: number,
   mag: number,
@@ -89,13 +92,11 @@ export class GammaData extends TraceData {
         const n = i * tens;
         const nLog = Math.log10(n);
         const pct = (nLog - this.minMagnitude) / this.logRange;
-        let tickLength = UNSET;
+        const tickLength = this.getTickLength(i);
         if (i === 1) {
+          // only set these values once
           logLabel.value = n;
           logLabel.mag = mag;
-          tickLength = 1;
-        } else {
-          tickLength = 10 * (4 + i * i) / 104.0; // 10 * 10 + 4
         }
         logLabel.ticks.push([pct, tickLength]);
       }
@@ -106,6 +107,10 @@ export class GammaData extends TraceData {
 
   }
 
+  getTickLength(logStep: number): number {
+    const len = 10 * (MIN_TIC_LENGTH + Math.pow(logStep, 2)) / MAX_TICS_FACTOR;
+    return len;
+  }
 
 
 }

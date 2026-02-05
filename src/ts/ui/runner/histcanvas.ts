@@ -147,10 +147,6 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-
-
-
-
   setData(sourceData:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);

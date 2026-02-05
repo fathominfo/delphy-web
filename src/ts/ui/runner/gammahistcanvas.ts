@@ -1,16 +1,15 @@
 import { toFullDateString } from "../../pythia/dates";
-import { UNSET } from "../common";
+import { safeLabel, UNSET } from "../common";
 import { GammaData, LogLabelType } from "./gammadata";
-import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 
 
-export const POP_TEMPLATE = chartContainer.querySelector('.module.population') as HTMLDivElement;
+
+const POP_TEMPLATE = chartContainer.querySelector('.module.population') as HTMLDivElement;
 POP_TEMPLATE.remove();
 
-
-
-const HPD_COLOR = 'rgb(184, 208, 238)';
+/* labels for the y-axis can extend above and below the range of the chart */
+const Y_AXIS_OVERFLOW = 10;
 
 const LABEL_HEIGHT = 14;
 
@@ -19,36 +18,52 @@ const MAX_HPD_INDEX = 1;
 const MEDIAN_INDEX = 3;
 
 
+const LOWER_OOM = -2;
+const UPPER_OOM = 3;
+
+
 export class GammaHistCanvas extends TraceCanvas {
 
-  midLabels: HTMLLIElement[];
   minSpan: HTMLDivElement;
   maxSpan: HTMLDivElement;
   trendRange: SVGPathElement;
   medianTrend: SVGPathElement;
   sampleTrend: SVGPathElement;
-  // labelContainer: HTMLUListElement;
+  labelContainer: SVGElement;
+  labelTextTemplate: SVGTextElement;
+  labelTicTemplate: SVGLineElement;
+  yAxisWidth: number = UNSET;
+  yAxisHeight: number = UNSET;
 
   constructor(label:string) {
     super(label, '', POP_TEMPLATE);
     this.traceData = new GammaData(label);
-    this.midLabels = [];
-    // const minDate = dates[0];
-    // const maxDate = dates[dates.length - 1];
     this.minSpan = this.container.querySelector(".support .axis.x .min-date") as HTMLDivElement;
     this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as HTMLDivElement;
     this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
     this.medianTrend = this.svg.querySelector(".trend.median") as SVGPathElement;
     this.sampleTrend = this.svg.querySelector(".trend.sample") as SVGPathElement;
-    // this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
-    // use the avgLabel as a cloning template
-    // this.avgLabel.textContent = '';
-    // this.avgLabel.style.position = 'absolute';
+    this.labelContainer = this.container.querySelector(".chart .feature .axis.y svg.log-scale-tics") as SVGElement;
+    this.labelTextTemplate = this.labelContainer.querySelector("text") as SVGTextElement;
+    this.labelTicTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
   }
 
   sizeCanvas() {
-    console.log('sizing gamma')
     super.sizeCanvas();
+    const wrapper = this.labelContainer.parentElement as HTMLDivElement;
+    this.yAxisWidth = wrapper.offsetWidth;
+    this.yAxisHeight = wrapper.offsetHeight;
+    requestAnimationFrame(()=>this.setSizes());
+  }
+
+  protected setSizes(): void {
+    super.setSizes();
+    const svgHeight = this.yAxisHeight + (Y_AXIS_OVERFLOW * 2);
+    const viewBox = `0 -${Y_AXIS_OVERFLOW -1 } ${this.yAxisWidth} ${svgHeight + 4}`;
+    this.labelContainer.setAttribute("width", `${this.yAxisWidth}`);
+    this.labelContainer.setAttribute("height", `${svgHeight}`);
+    this.labelContainer.setAttribute("viewBox", viewBox);
+    this.labelContainer.style.marginTop = `-${Y_AXIS_OVERFLOW - 1}px`;
   }
 
   setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
@@ -68,7 +83,7 @@ export class GammaHistCanvas extends TraceCanvas {
   drawRangeSeriesSVG():void {
     const data:number[][] = (this.traceData as GammaData).converted;
     if (data.length === 0) return;
-    const {height, svg, width} = this;
+    const {height, width} = this;
     const {displayMin, displayMax} = this.traceData;
     const valRange = displayMax - displayMin;
     const verticalScale = height / (valRange || 1);
@@ -118,9 +133,8 @@ export class GammaHistCanvas extends TraceCanvas {
 
     // draw the population curve for the current sample
     const {rangeData, highlightIndex: sampleIndex } = (this.traceData as GammaData);
-    const drawnSampleIndex = sampleIndex === UNSET ? rangeData.length - 1 : sampleIndex;
-    if (0 <= drawnSampleIndex && drawnSampleIndex < rangeData.length) {
-      const sampleData = rangeData[drawnSampleIndex];
+    if (sampleIndex !== UNSET) {
+      const sampleData = rangeData[sampleIndex];
       console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
       x = 0;
       y = height-(sampleData[0]-displayMin) * verticalScale;
@@ -162,53 +176,57 @@ export class GammaHistCanvas extends TraceCanvas {
 
 
   drawLabels():void {
-    const {height} = this;
-    const { midLabels, minSpan, maxSpan} = this;
-    const {dates, logRange, minMagnitude, maxMagnitude} = this.traceData as GammaData;
-    /* clear the mid labels */
-    midLabels.forEach(ele=>ele.remove());
-    midLabels.length = 0;
+    const { yAxisWidth, yAxisHeight, minSpan, maxSpan} = this;
+    const {dates, logRange, maxMagnitude} = this.traceData as GammaData;
+    this.labelContainer.innerHTML = '';
     minSpan.textContent = toFullDateString(dates[0])
     maxSpan.textContent = toFullDateString(dates[dates.length - 1]);
     const labelHeight = LABEL_HEIGHT * logRange;
-    const labelsOK = height >= labelHeight;
+    const labelsOK = yAxisHeight >= labelHeight;
     // ctx.strokeStyle = 'black';
     // ctx.lineWidth = 0;
     // ctx.beginPath();
+
+    this.addTic(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
     const logLabels = (this.traceData as GammaData).logLabels;
     logLabels.forEach((ll:LogLabelType)=>{
-      const {mag, ticks} = ll;
+      const { ticks, value } = ll;
       ticks.forEach(([pct, tickLength], i)=>{
-        const y = 0 + height - pct * height;
-        if (i === 0) {
-          // ctx.stroke();
-          // ctx.beginPath();
-          // ctx.lineWidth = 0;
-          // ctx.globalAlpha = 1;
-          // ctx.moveTo(0, y);
-          // ctx.lineTo(0 - tickLength, y);
-          // ctx.stroke();
-          // ctx.beginPath();
-          // ctx.globalAlpha = 0.7;
-          // if (!labelsOK) {
-          //   ctx.lineWidth = 0 / 2;
-          // }
-        } else if (labelsOK || i % 3 === 1) {
-        //   ctx.moveTo(0, y);
-        //   ctx.lineTo(0 - tickLength, y);
+        const y = yAxisHeight - pct * yAxisHeight;
+        const x2 = yAxisWidth - tickLength;
+        /* we don't want the tics to be so dense that they become a single shape */
+        if (labelsOK || i === 0 || i % 3 === 1) {
+          const tic = this.addTic(y, x2);
+          if (i === 0) {
+            tic.classList.add("on-mag");
+            this.addText(safeLabel(value), y);
+          }
         }
-
-
       });
+
     });
-    /* the top tick */
-    // ctx.stroke();
-    // ctx.beginPath();
-    // ctx.lineWidth = 0;
-    // ctx.globalAlpha = 1;
-    // ctx.moveTo(0, 0);
-    // ctx.lineTo(0, 0);
-    // ctx.stroke();
+    /* label the top tick */
+    this.addTic(0, (this.traceData as GammaData).getTickLength(9));
+    this.addText(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM), 0);
+  }
+
+  addTic(y: number, x2: number) : SVGLineElement {
+    const tic = this.labelTicTemplate.cloneNode(true) as SVGLineElement;
+    tic.setAttribute("x1", `${ this.yAxisWidth }`);
+    tic.setAttribute("y1", `${ y }`);
+    tic.setAttribute("x2", `${ x2 }`);
+    tic.setAttribute("y2", `${ y }`);
+    this.labelContainer.appendChild(tic);
+    return tic;
+  }
+
+  addText(text: string, y: number): SVGTextElement {
+    const textEle = this.labelTextTemplate.cloneNode(true) as SVGTextElement;
+    textEle.textContent = text;
+    textEle.setAttribute("x", `${ this.yAxisWidth - 12 }`);
+    textEle.setAttribute("y", `${y}`);
+    this.labelContainer.appendChild(textEle);
+    return textEle;
   }
 
 }
