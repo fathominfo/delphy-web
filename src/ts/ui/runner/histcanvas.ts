@@ -529,14 +529,6 @@ export class HistCanvas extends TraceCanvas {
 
 
   setReadoutLabel(isMean: boolean, value: number, unit: string, treeIndex: number = UNSET) {
-    if (this.label === 'Number of Mutations') {
-      // if (prevWas && !isMean) {
-      //   console.log(`
-      //     setReadoutLabel(isMean: ${isMean}, value: ${value}, unit: ${unit}, treeIndex: ${treeIndex}) `);
-      // }
-      prevWas = isMean;
-    }
-
     if (isMean) {
       this.readout.classList.add("meaning");
     } else {
@@ -580,4 +572,3 @@ export class HistCanvas extends TraceCanvas {
 //   chartContainer.appendChild(sectionLabel);
 // }
 
-let prevWas = false;

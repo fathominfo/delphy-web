@@ -336,7 +336,10 @@ export class LineagesUI extends MccUI {
 
   resize(): void {
     super.resize();
-    this.nodeComparisons.forEach(nc => nc.resize());
+    this.nodeComparisons.forEach(nc => {
+      nc.resize();
+      nc.requestDraw();
+    });
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
   }
@@ -740,12 +743,12 @@ export class LineagesUI extends MccUI {
       });
       nodes.unshift({ index: UNSET, color: 'rgb(240,240,240)', label: 'other', type: DisplayNode.UNSET, className: "" });
 
-      let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
+      // let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange(); // eslint-disable-line prefer-const
       // const zoomDateRange = zoomMaxDate - zoomMinDate;
       // zoomMinDate += Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
 
       this.nodeComparisons = setComparisons(src, minDate, maxDate, this.goToMutations, this.nodeHighlightCallback,
-        this.isApobecEnabled, zoomMinDate, zoomMaxDate);
+        this.isApobecEnabled, minDate, maxDate);
       const node1IsUpper = this.mccTreeCanvas.getZoomY(node1Index) < this.mccTreeCanvas.getZoomY(node2Index);
       this.nodeRelationChart.setData(src, [rootIndex, mrcaIndex, node1Index, node2Index], node1IsUpper);
       // const nodeColors = nodes.map(({color})=>color),
@@ -915,11 +918,11 @@ export class LineagesUI extends MccUI {
     let [zoomMinDate, zoomMaxDate] = this.mccTreeCanvas.getZoomedDateRange();  // eslint-disable-line prefer-const
     const zoomDateRange = zoomMaxDate - zoomMinDate;
     zoomMinDate -= Math.round(PREVALENCE_PCT_DAYS * zoomDateRange);
-    this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
-    this.nodeComparisons.forEach((nc: NodeComparison)=>{
-      nc.setDateRange(zoomMinDate, zoomMaxDate);
-      nc.requestDraw();
-    });
+    // this.nodePrevalenceCanvas.setDateRange(zoomMinDate, zoomMaxDate);
+    // this.nodeComparisons.forEach((nc: NodeComparison)=>{
+    //   nc.setDateRange(zoomMinDate, zoomMaxDate);
+    //   nc.requestDraw();
+    // });
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
     this.nodePrevalenceCanvas.requestDraw();
 
