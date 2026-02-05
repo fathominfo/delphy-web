@@ -336,7 +336,10 @@ export class LineagesUI extends MccUI {
 
   resize(): void {
     super.resize();
-    this.nodeComparisons.forEach(nc => nc.resize());
+    this.nodeComparisons.forEach(nc => {
+      nc.resize();
+      nc.requestDraw();
+    });
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
   }
