@@ -31,7 +31,7 @@ export class GammaHistCanvas extends TraceCanvas {
   sampleTrend: SVGPathElement;
   labelContainer: SVGElement;
   labelTextTemplate: SVGTextElement;
-  labelTicTemplate: SVGLineElement;
+  labelTickTemplate: SVGLineElement;
   yAxisWidth: number = UNSET;
   yAxisHeight: number = UNSET;
 
@@ -43,9 +43,9 @@ export class GammaHistCanvas extends TraceCanvas {
     this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
     this.medianTrend = this.svg.querySelector(".trend.median") as SVGPathElement;
     this.sampleTrend = this.svg.querySelector(".trend.sample") as SVGPathElement;
-    this.labelContainer = this.container.querySelector(".chart .feature .axis.y svg.log-scale-tics") as SVGElement;
+    this.labelContainer = this.container.querySelector(".chart .feature .axis.y svg.log-scale-ticks") as SVGElement;
     this.labelTextTemplate = this.labelContainer.querySelector("text") as SVGTextElement;
-    this.labelTicTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
+    this.labelTickTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
   }
 
   sizeCanvas() {
@@ -187,7 +187,7 @@ export class GammaHistCanvas extends TraceCanvas {
     // ctx.lineWidth = 0;
     // ctx.beginPath();
 
-    this.addTic(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
+    this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
     const logLabels = (this.traceData as GammaData).logLabels;
     logLabels.forEach((ll:LogLabelType)=>{
       const { ticks, value } = ll;
@@ -196,7 +196,7 @@ export class GammaHistCanvas extends TraceCanvas {
         const x2 = yAxisWidth - tickLength;
         /* we don't want the tics to be so dense that they become a single shape */
         if (labelsOK || i === 0 || i % 3 === 1) {
-          const tic = this.addTic(y, x2);
+          const tic = this.addTick(y, x2);
           if (i === 0) {
             tic.classList.add("on-mag");
             this.addText(safeLabel(value), y);
@@ -206,18 +206,18 @@ export class GammaHistCanvas extends TraceCanvas {
 
     });
     /* label the top tick */
-    this.addTic(0, (this.traceData as GammaData).getTickLength(9));
+    this.addTick(0, (this.traceData as GammaData).getTickLength(9));
     this.addText(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM), 0);
   }
 
-  addTic(y: number, x2: number) : SVGLineElement {
-    const tic = this.labelTicTemplate.cloneNode(true) as SVGLineElement;
-    tic.setAttribute("x1", `${ this.yAxisWidth }`);
-    tic.setAttribute("y1", `${ y }`);
-    tic.setAttribute("x2", `${ x2 }`);
-    tic.setAttribute("y2", `${ y }`);
-    this.labelContainer.appendChild(tic);
-    return tic;
+  addTick(y: number, x2: number) : SVGLineElement {
+    const tick = this.labelTickTemplate.cloneNode(true) as SVGLineElement;
+    tick.setAttribute("x1", `${ this.yAxisWidth }`);
+    tick.setAttribute("y1", `${ y }`);
+    tick.setAttribute("x2", `${ x2 }`);
+    tick.setAttribute("y2", `${ y }`);
+    this.labelContainer.appendChild(tick);
+    return tick;
   }
 
   addText(text: string, y: number): SVGTextElement {
