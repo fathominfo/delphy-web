@@ -94,6 +94,7 @@
 
   .p, .pos {
     position: absolute;
+    pointer-events: none;
   }
 
   .p {
@@ -228,6 +229,8 @@
         flex-direction: column-reverse;
         justify-content: space-between;
         align-items: flex-end;
+        position: relative;
+
       }
 
       .tick {
@@ -242,6 +245,8 @@
         align-items: center;
         width: auto;
         height: 0;
+        position: absolute;
+        right: 0;
 
         &.hover {
           top: calc(100% * var(--py));

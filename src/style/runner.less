@@ -241,7 +241,6 @@
         width: fit-content;
         .displays { flex-direction: column; }
         .display {
-          background-color: white;
           width: var(--trace-chart-width);
         }
         .burn-in {
@@ -263,11 +262,16 @@
         }
 
         .graph {
+          background-color: white;
           height: var(--trace-chart-height);
           .trend  {
             fill: none;
             stroke-width: var(--chart-graph-trend-stroke-weight);
+            pointer-events: none;
           }
+        }
+        .histogram {
+          background-color: var(--chart-histogram-fill);
         }
         .bars {
           opacity: 0.75;
@@ -283,11 +287,11 @@
           }
         }
         .axis {
-          background-color: pink;
           &.x {
             margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
             margin-right: unset;
             width: var(--trace-chart-width);
+            background-color: pink;
           }
           &.y {
             margin-top: calc(var(--chart-histogram-height) + 1px);

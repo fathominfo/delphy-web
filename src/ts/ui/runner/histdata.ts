@@ -25,7 +25,7 @@ export class HistData extends TraceData {
   highlightIndex: number = UNSET;
   sampleCount = 0;
   ess: number = UNSET;
-  displayCount= 0;
+  displayCount = 0;
   dataMean: number = UNSET;
   bucketConfig: BucketConfig;
 

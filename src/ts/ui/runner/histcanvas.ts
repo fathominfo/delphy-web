@@ -1,4 +1,4 @@
-import { safeLabel, UNSET } from '../common';
+import { nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
@@ -10,7 +10,7 @@ const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".chart .histogram .bars .dist
 BAR_TEMPLATE.remove();
 
 const MAX_STEP_SIZE = 3;
-
+const TARGET_LABEL_SPACING = 25; // in px
 
 export class HistCanvas extends TraceCanvas {
 
@@ -23,6 +23,10 @@ export class HistCanvas extends TraceCanvas {
   histoHeight: number;
   histoBarParent: SVGGElement;
   highlightDiv: HTMLDivElement;
+  yAxisDiv: HTMLDivElement;
+  yAxisTickTemplate: HTMLDivElement;
+  yAxisHoverDiv: HTMLDivElement;
+  hoverY: number = UNSET;
   isDragging = false;
 
 
@@ -38,6 +42,10 @@ export class HistCanvas extends TraceCanvas {
     this.histoWidth = UNSET;
     this.histoHeight = UNSET;
     this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
+    this.yAxisDiv = this.container.querySelector(".chart .feature .axis.y") as HTMLDivElement;
+    this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
+    this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
+
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
@@ -68,23 +76,22 @@ export class HistCanvas extends TraceCanvas {
   getTreePercentAtY(event:PointerEvent) {
     let pct = UNSET;
     const y = event.offsetY;
-    const { count, savedKneeIndex, hideBurnIn } = this.traceData as HistData;
+    const { height } = this;
+    const { count, savedKneeIndex, hideBurnIn, displayCount } = this.traceData as HistData;
     if (y >= 0) {
-      pct = 1 - y / this.height;
+      pct = 1 - y / height;
       // console.log('knee', x, pct)
-      if (count * MAX_STEP_SIZE < this.height) {
+      if (count * MAX_STEP_SIZE < height) {
         pct = 1 - y / (count * MAX_STEP_SIZE);
-      }
-      if (hideBurnIn) {
+      } else if (hideBurnIn) {
         /*
         rescale the pct from just the visible trees
         to all the trees.
 
-        the visible trees are what percent of all the trees?
+        what would the height be if we included the burnin?
         */
-        const totalCount = savedKneeIndex + count,
-          totalIndex = savedKneeIndex + Math.round(pct * count);
-        pct = totalIndex / totalCount;
+        const heightWithInvisible = count / displayCount * height;
+        pct = 1 - y / heightWithInvisible;
       }
     }
     return pct;
@@ -109,7 +116,7 @@ export class HistCanvas extends TraceCanvas {
       }
     } else {
       const treeIndex = this.getTreeAtY(event);
-      // if (this.hideBurnIn) treeIndex += this.savedKneeIndex
+      console.log('handlePointerMove', treeIndex);
       this.hoverListener(treeIndex);
     }
   }
@@ -162,7 +169,7 @@ export class HistCanvas extends TraceCanvas {
 
   draw() {
     const traceData = this.traceData as HistData;
-    let { data, highlightIndex, dataMean, hideBurnIn, savedKneeIndex } = traceData,
+    let { data, highlightIndex, dataMean, hideBurnIn, savedKneeIndex, displayCount } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const isMean = highlightIndex === UNSET;
     const readoutValue = isMean ? dataMean: data[highlightIndex];
@@ -171,8 +178,13 @@ export class HistCanvas extends TraceCanvas {
       kneeIndex -= savedKneeIndex;
       highlightIndex -= savedKneeIndex;
     }
+    /*
+    order matters here, since the location of the hovered
+    sample is set in `drawTrace` and read in `drawLabels`
+    */
     this.drawTrace(data, kneeIndex, highlightIndex);
     this.drawHistogramSVG(readoutValue);
+    this.drawLabels(hideBurnIn, traceData.highlightIndex);
   }
 
 
@@ -197,11 +209,8 @@ export class HistCanvas extends TraceCanvas {
     let hoverX = UNSET;
     let hoverY = UNSET;
 
-    if (displayCount === 0) {
-      burnInHeight = 0;
-      activeHeight = height;
-    } else if (displayCount === 1) {
-      activePath = `M${width * 0.5} 0 ${width * 0.5} 3`;
+    if (displayCount === 1) {
+      activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
     } else if (displayCount > 1) {
       const { displayMin, displayMax, isDiscrete } = this.traceData;
       const valRange = displayMax - displayMin;
@@ -280,7 +289,6 @@ export class HistCanvas extends TraceCanvas {
       pointDiv.style.top = `0px`;
       xDiv.style.left = `${hoverX}px`;
       yDiv.style.top = `${hoverY}px`;
-
     }
 
     burnInField.setAttribute("height", `${burnInHeight}`);
@@ -288,6 +296,7 @@ export class HistCanvas extends TraceCanvas {
     activeField.setAttribute("height", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
+    this.hoverY = hoverY;
   }
 
 
@@ -335,76 +344,73 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  drawLabels(data:number[], kneeIndex:number) {
-    // const count:number = data.length;
-    // this.traceData.count = count;
-    // const {ctx, width, height} = this;
+  drawLabels(hideBurnIn: boolean, highlightIndex: number) {
+    const { height, traceData } = this;
+    const { count, savedKneeIndex, displayCount } = traceData as HistData;
+    this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
+    if (count === 0) return;
+    let sampleCount = count;
+    let startPoint = 0;
+    if (hideBurnIn && savedKneeIndex > 0) {
+      if (savedKneeIndex === 20) {
+        console.log("qu'est-ce que ce passe?")
+      }
+      sampleCount = sampleCount - savedKneeIndex + 1;
+      startPoint = savedKneeIndex;
+    }
+
+    /*
+    how much space does the charting take?
+    during the early parts of the run, the chart does not
+    stretch over the whole height.
+    */
+    let activeHeight = height;
+    if (displayCount <= 1) {
+      activeHeight = MAX_STEP_SIZE;
+    } else {
+      activeHeight = Math.min(height, MAX_STEP_SIZE * displayCount);
+    }
+    const targetTickCount = Math.ceil(activeHeight / TARGET_LABEL_SPACING);
+
+    const tickInterval = Math.max(10, nicenum(sampleCount / targetTickCount));
+    const intervalSize = tickInterval / sampleCount * activeHeight;
+    let tickStart = 0;
 
 
-    // /* draw background and borders for the charts */
-    // ctx.fillStyle = BG_COLOR;
 
-
-    // /*
-    // as we get more and more data, the time series gets more compact,
-    // and the lines acquire a density that is fairly ugly. So we try
-    // to counter that by getting a lighter line weight as we get more data.
-    // */
-    // ctx.beginPath();
-    // if (data.length > 1) {
-    //   const {displayMin, displayMax} = this.traceData;
-    //   // this.readout.innerHTML = `${safeLabel(data[data.length - 1])} ${this.traceData.unit}`;
-
-    //   ctx.strokeStyle = TRACE_COLOR;
-    //   if (displayMax === displayMin) {
-    //     ctx.strokeStyle = TRACE_COLOR;
-    //     ctx.moveTo(0, height * 0.5);
-    //     ctx.lineTo(0 + width, height * 0.5);
-    //     ctx.stroke();
-    //     // this.maxLabel.innerHTML = ``;
-    //     // this.minLabel.innerHTML = ``;
-    //     // this.avgLabel.innerHTML = `${safeLabel(displayMax)}`;
-    //   } else {
-
-    //     ctx.strokeStyle = BORDER_COLOR;
-    //     ctx.lineWidth = BORDER_WEIGHT;
-    //     ctx.beginPath();
-    //     ctx.moveTo(0, 0);
-    //     ctx.lineTo(0, 0);
-
-    //     const midVal = (displayMin + displayMax) / 2;
-    //     // this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
-    //     // this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
-    //     let skipMiddle = false;
-    //     if (this.traceData.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
-    //       skipMiddle = true;
-    //     } else if (safeLabel(displayMax) === safeLabel(midVal)) skipMiddle = true;
-    //     else if (safeLabel(displayMin) === safeLabel(midVal)) skipMiddle = true;
-    //     if (skipMiddle) {
-    //       // this.avgLabel.innerHTML = '';
-    //     } else {
-    //       // this.avgLabel.innerHTML = `${safeLabel(midVal)}`;
-    //       ctx.moveTo(0, height/2);
-    //       ctx.lineTo(0, height/2);
-    //     }
-    //     ctx.moveTo(0, height - BORDER_WEIGHT * 0.5);
-    //     ctx.lineTo(0, height - BORDER_WEIGHT * 0.5);
-    //     ctx.stroke();
-    //   }
-    //   // this.firstStepLabel.innerHTML = '';
-    //   // this.midStepLabel.innerHTML = ``;
-    //   // this.lastStepLabel.innerHTML = '';
-    // } else {
-    //   // this.readout.innerHTML = `0 ${this.unit}`;
-    // }
-    // this.canvas.classList.toggle('kneed', kneeIndex > 0);
-    // // ctx.fillStyle = 'black';
-    // // const label = `ESS: ${  this.ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
-    // // ctx.fillText(label, this.distLeft - 70, height - 2);
+    let startY = activeHeight;
+    if (hideBurnIn && savedKneeIndex > 0) {
+      /* what's the first nice num after the start point? */
+      tickStart = Math.ceil(savedKneeIndex / tickInterval) * tickInterval - 1;
+      startY = (sampleCount - tickStart + savedKneeIndex) / sampleCount * activeHeight;
+    }
+    let tick = tickStart;
+    let y = startY;
+    while (tick < sampleCount) {
+      this.addYTick(y, tick + 1);
+      if (tick === 0) tick += tickInterval - 1;
+      else tick += tickInterval;
+      y -= intervalSize;
+    }
+    if (highlightIndex === UNSET) {
+      this.yAxisHoverDiv.classList.add("hidden");
+    } else {
+      console.log('drawLabels', highlightIndex)
+      this.yAxisHoverDiv.classList.remove("hidden");
+      this.yAxisHoverDiv.style.top = `${this.hoverY}px`;
+      /* report the tree index starting from 1, not 0 */
+      (this.yAxisHoverDiv.querySelector(".val") as HTMLDivElement).textContent = nfc( highlightIndex + 1);
+    }
   }
 
 
-
+  addYTick(y: number, value: number) : HTMLDivElement {
+    const div = this.yAxisTickTemplate.cloneNode(true) as HTMLDivElement;
+    (div.querySelector(".val") as HTMLDivElement).textContent = nfc(value);
+    div.style.top = `${y}px`;
+    this.yAxisDiv.appendChild(div);
+    return div;
+  }
 
 }
 
