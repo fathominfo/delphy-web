@@ -194,7 +194,8 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
-    const { displayCount, hideBurnIn } = this.traceData as HistData;
+    const { displayCount, hideBurnIn, dataMean, displayMin,
+      displayMax, isDiscrete } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
     const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
@@ -213,13 +214,13 @@ export class HistCanvas extends TraceCanvas {
     let activePath = "";
     let hoverX = UNSET;
     let hoverY = UNSET;
+    let left = 0;
+    let dataScale = 1;
 
     if (displayCount === 1) {
       activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
     } else if (displayCount > 1) {
-      const { displayMin, displayMax, isDiscrete } = this.traceData;
       const valRange = displayMax - displayMin;
-      let left = 0;
       if (isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
         const bucketSize = width / (valRange + 1);
         left = bucketSize * 0.5;
@@ -240,8 +241,7 @@ export class HistCanvas extends TraceCanvas {
         activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
         burnInPath = `M${width * 0.5} ${burnInHeight} L${width * 0.5} ${height * 0.5} `;
       } else {
-
-        const dataScale = width / (valRange || 1);
+        dataScale = width / (valRange || 1);
         const bottom = Math.min(height, (displayCount - 1) * stepSize);
         // console.log(bottom, height, displayCount * stepH);
         let currentPath = "";
@@ -285,6 +285,12 @@ export class HistCanvas extends TraceCanvas {
 
     if (hoverX === UNSET) {
       this.highlightDiv.classList.remove("active");
+      /* set the x value for the mean */
+      if (displayCount > 1) {
+        hoverX = left + (dataMean - displayMin) * dataScale;
+      } else {
+        hoverX = width / 2;
+      }
     } else {
       this.highlightDiv.classList.add("active");
       const pointDiv = this.highlightDiv.querySelector(".pos") as HTMLDivElement;
