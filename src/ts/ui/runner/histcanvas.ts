@@ -26,6 +26,9 @@ export class HistCanvas extends TraceCanvas {
   yAxisDiv: HTMLDivElement;
   yAxisTickTemplate: HTMLDivElement;
   yAxisHoverDiv: HTMLDivElement;
+  xAxisDiv: HTMLDivElement;
+  xAxisTick: HTMLSpanElement;
+  hoverX: number = UNSET;
   hoverY: number = UNSET;
   isDragging = false;
 
@@ -42,10 +45,11 @@ export class HistCanvas extends TraceCanvas {
     this.histoWidth = UNSET;
     this.histoHeight = UNSET;
     this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
-    this.yAxisDiv = this.container.querySelector(".chart .feature .axis.y") as HTMLDivElement;
+    this.yAxisDiv = this.container.querySelector(".chart .feature .axis.y .values") as HTMLDivElement;
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
-
+    this.xAxisDiv = this.container.querySelector(".chart .support .axis.x") as HTMLDivElement;
+    this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
@@ -122,11 +126,11 @@ export class HistCanvas extends TraceCanvas {
   }
 
   handleTreeHighlight(treeIndex: number): void {
-    // const isMean = treeIndex === UNSET;
+    const isMean = treeIndex === UNSET;
     const traceData = this.traceData as HistData;
-    // const readoutValue = isMean ? traceData.dataMean: traceData.data[treeIndex];
+    const readoutValue = isMean ? traceData.dataMean: traceData.data[treeIndex];
     traceData.highlightIndex = treeIndex;
-    // this.setReadoutLabel(isMean, readoutValue, traceData.unit, treeIndex);
+    this.setReadoutLabel(isMean, readoutValue, traceData.unit);
   }
 
 
@@ -184,7 +188,7 @@ export class HistCanvas extends TraceCanvas {
     */
     this.drawTrace(data, kneeIndex, highlightIndex);
     this.drawHistogramSVG(readoutValue);
-    this.drawLabels(hideBurnIn, traceData.highlightIndex);
+    this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
   }
 
 
@@ -296,6 +300,7 @@ export class HistCanvas extends TraceCanvas {
     activeField.setAttribute("height", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
+    this.hoverX = hoverX;
     this.hoverY = hoverY;
   }
 
@@ -344,7 +349,7 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  drawLabels(hideBurnIn: boolean, highlightIndex: number) {
+  drawYAxisLabels(hideBurnIn: boolean, highlightIndex: number) {
     const { height, traceData, hoverY } = this;
     const { count, savedKneeIndex, displayCount } = traceData as HistData;
     this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
@@ -414,6 +419,25 @@ export class HistCanvas extends TraceCanvas {
     this.yAxisDiv.appendChild(div);
     return div;
   }
+
+
+  setReadoutLabel(isMean: boolean, value: number, unit: string) {
+    this.xAxisTick.style.left = `${ this.hoverX }px`;
+    if (isMean) {
+      this.xAxisDiv.classList.add("meaning");
+    } else {
+      this.xAxisDiv.classList.remove("meaning");
+    }
+    (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+    if (unit) {
+      this.xAxisDiv.classList.remove("unitless");
+      (this.xAxisDiv.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
+    } else {
+      this.xAxisDiv.classList.add("unitless");
+    }
+  }
+
+
 
 }
 

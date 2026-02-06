@@ -291,8 +291,41 @@
             margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
             margin-right: unset;
             width: var(--trace-chart-width);
-            background-color: pink;
-          }
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            .tick {
+              position: absolute;
+              background-color: var(--chart-xaxis-hover-text);
+            }
+            p {
+              display: flex;
+              flex-direction: row;
+              width: 100%;
+              :first-child {flex-grow: 1;}
+            }
+            .mean-label, .tree-label {
+              margin-right: 0.25em;
+            }
+            .readout-unit {
+              white-space: nowrap;
+              display: block;
+            }
+            .readout-value {
+              font-size: var(--chart-xaxis-hover-text-font-size);
+              font-weight: var(--chart-xaxis-hover-text-font-weight);
+              letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+              color: var(--chart-yaxis-hover-text);
+            }
+            .mean-label {display: none;}
+            .tree-label {display: inline-block;}
+            &.meaning {
+              .mean-label {display: inline-block;}
+              .tree-label {display: none;}
+            }
+            &.unitless .readout-unit {display: none;}
+
+         }
           &.y {
             margin-top: calc(var(--chart-histogram-height) + 1px);
             height: var(--trace-chart-height);
