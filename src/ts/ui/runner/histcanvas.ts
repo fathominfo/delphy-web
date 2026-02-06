@@ -189,6 +189,7 @@ export class HistCanvas extends TraceCanvas {
     this.drawTrace(data, kneeIndex, highlightIndex);
     this.drawHistogramSVG(readoutValue);
     this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
+    this.setReadoutLabel(isMean, readoutValue, traceData.unit);
   }
 
 
