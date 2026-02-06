@@ -18,6 +18,7 @@ export class SharedState {
   mutationsNeedReloading: boolean;
   kneeIsCurated: boolean;
   qc: RecordQuality;
+  descriptor: string | null;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
@@ -30,6 +31,7 @@ export class SharedState {
     this.tipIds = [];
     this.mutationsNeedReloading = false;
     this.qc = new RecordQuality();
+    this.descriptor = null;
   }
 
 
@@ -56,9 +58,15 @@ export class SharedState {
     return exp;
   }
 
-  importConfig(config: ConfigExport) : void {
+  importConfig(config: ConfigExport, descriptor: string) : void {
     this.hideBurnIn = config.burnin === 1;
     this.mccConfig.importConfig(config);
+    this.descriptor = descriptor;
+    console.log(`
+      
+      descriptor: ${ descriptor }
+      
+      `)
   }
 
   getTipIndexFromId(id: string): number {
