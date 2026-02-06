@@ -345,7 +345,7 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawLabels(hideBurnIn: boolean, highlightIndex: number) {
-    const { height, traceData } = this;
+    const { height, traceData, hoverY } = this;
     const { count, savedKneeIndex, displayCount } = traceData as HistData;
     this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
     if (count === 0) return;
@@ -387,7 +387,10 @@ export class HistCanvas extends TraceCanvas {
     let tick = tickStart;
     let y = startY;
     while (tick < sampleCount) {
-      this.addYTick(y, tick + 1);
+      /* make sure this doesn't overlap with the hover */
+      if (hoverY === UNSET || Math.abs(hoverY - y) >= TARGET_LABEL_SPACING / 2) {
+        this.addYTick(y, tick + 1);
+      }
       if (tick === 0) tick += tickInterval - 1;
       else tick += tickInterval;
       y -= intervalSize;
@@ -395,9 +398,9 @@ export class HistCanvas extends TraceCanvas {
     if (highlightIndex === UNSET) {
       this.yAxisHoverDiv.classList.add("hidden");
     } else {
-      console.log('drawLabels', highlightIndex)
+      // console.log('drawLabels', highlightIndex)
       this.yAxisHoverDiv.classList.remove("hidden");
-      this.yAxisHoverDiv.style.top = `${this.hoverY}px`;
+      this.yAxisHoverDiv.style.top = `${ hoverY }px`;
       /* report the tree index starting from 1, not 0 */
       (this.yAxisHoverDiv.querySelector(".val") as HTMLDivElement).textContent = nfc( highlightIndex + 1);
     }
