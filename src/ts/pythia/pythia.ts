@@ -15,6 +15,9 @@ import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
 
+
+export type readyCallbackType = (_:Pythia)=>void;
+
 type returnless = ()=>void;
 
 type emptyResolveType = (m:undefined)=>void;
@@ -1495,10 +1498,10 @@ export const checkApobecCtx = (mut: Mutation, rootSeq: Uint8Array)=>{
 
 
 let globalDelphy: Delphy | null;
-let readyCallback: (_:Pythia)=>void; // eslint-disable-line no-unused-vars
+let readyCallback: readyCallbackType;
 
 
-export function setReadyCallback(fnc:(_:Pythia)=>void):void { // eslint-disable-line no-unused-vars
+export function setReadyCallback(fnc: readyCallbackType):void { // eslint-disable-line no-unused-vars
   readyCallback = fnc;
   if (globalDelphy) {
     readyCallback(new Pythia());

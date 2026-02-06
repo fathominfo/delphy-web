@@ -1,5 +1,5 @@
 import { Pythia, setReadyCallback } from './pythia/pythia';
-import { bindUpload, hideUpload } from './ui/uploadui';
+import { bindUpload, configCallbackType, hideUpload } from './ui/uploadui';
 import { NavLabel, bindNav, activateView } from  "./ui/nav";
 import { UIScreen } from './ui/uiscreen';
 import { RunUI } from './ui/runner/runui';
@@ -110,8 +110,12 @@ function onReady(p:Pythia):void {
       });
     }
   };
-  const configCallback = (config: ConfigExport)=>{
-    sharedState.importConfig(config);
+  const configCallback: configCallbackType = (config: ConfigExport, descriptor: string)=>{
+    sharedState.importConfig(config, descriptor);
+    /* set the header text */
+    document.querySelectorAll(".header--descriptor .description .text").forEach((div)=>{
+      (div as HTMLSpanElement).textContent = descriptor;
+    });
   };
   bindUpload(p, sharedState, runCallback, configCallback);
   setStage(STAGES.selecting);

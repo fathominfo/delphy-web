@@ -9,6 +9,8 @@ import { parse_iso_date } from '../pythia/dates';
 
 const DEMO_FILES = './demofiles.json'
 
+export type configCallbackType = (config: ConfigExport, descriptor:string)=>void;
+
 type DemoOption = {
   folder:string,
   pathogen:string,
@@ -63,7 +65,7 @@ const activateProgressBar = (showit=true)=>{
 }
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
-  configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
+  configCallback = (config: ConfigExport, _:string)=>console.debug('configCallback not assigned', config);
 
 
 const warningsLabelAddendum = () => {
@@ -149,7 +151,7 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
+function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
   pythia = p;
   qc = sstate.qc;
   runCallback = callback;
@@ -185,7 +187,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   const folderData: {[fname:string]:DemoOption} = {};
 
   const setDemoSelection = (selection: string)=>{
-    const option = folderData[selection];
+    const option: DemoOption = folderData[selection];
     const zipFilename = `${option.folder}.zip`;
     const zipFilepath = `demo/${option.folder}/${zipFilename}`;
 
@@ -236,8 +238,9 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   runButton.addEventListener("click", ()=>{
     const folder = demoForm.folder.value as string;
     const fileToLoad = `./demo/${folder}/${folder}.maple`;
-    const fileData = folderData[folder];
+    const fileData: DemoOption = folderData[folder];
     const config = fileData.config;
+    const description = fileData.description;
     let runParams: RunParamConfig | null = null;
     if (config !== null) {
       const asObject: any = getEmptyRunParamConfig() as object; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -272,7 +275,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
           .then(txt=>{
             mccConfig.metadataText = txt;
             mccConfig.metadataDelimiter = ',';
-            configCallback(mccConfig);
+            configCallback(mccConfig, description);
           });
       }
     }
@@ -492,7 +495,7 @@ const checkFiles = (files: File[] | FileList)=>{
               showSimpleProgress(action, t, p);
             };
             pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
-              .then(mccConfig=>configCallback(mccConfig as ConfigExport));
+              .then(mccConfig=>configCallback(mccConfig as ConfigExport, fname));
           } else {
             alert(`could not read file.`);
           }
