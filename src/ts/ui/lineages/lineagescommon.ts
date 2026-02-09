@@ -1,6 +1,6 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNodeClass, DisplayNodes, UNSET } from '../common';
+import { DisplayNodeClass, DisplayNodes } from '../common';
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
@@ -99,42 +99,7 @@ export type NodeDisplay = {
   series: NodeDistribution | null
 };
 
-export const getAncestorType = (npt: NodePairType): DisplayNodeClass => {
-  // incorrectly gives ancestor=nodeB for nodeAToNodeB?
-
-  // const mod = npt % 3;
-  // const nodeType: DisplayNode = mod === 0 ? DisplayNode.root
-  //   : mod === 1 ? DisplayNode.mrca
-  //     : npt < NodePairType.rootToNodeB ? DisplayNode.nodeA : DisplayNode.nodeB;
-
-  switch (npt) {
-  case NodePairType.rootToMrca:
-  case NodePairType.rootToNodeA:
-  case NodePairType.rootToNodeB:
-  case NodePairType.rootOnly:
-    return DisplayNodes.filter(dn=>dn.name === 'root')[0];
-  case NodePairType.mrcaToNodeA:
-  case NodePairType.mrcaToNodeB:
-    return  DisplayNodes.filter(dn=>dn.name === 'mrca')[0];
-  case NodePairType.nodeAToNodeB:
-    return  DisplayNodes.filter(dn=>dn.name === 'nodeA')[0];
-  case NodePairType.nodeBToNodeA:
-    return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
-  default:
-    return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
-  }
-
-  // return nodeType;
-}
-
-
 const descendantTypes:DisplayNodeClass[] = DisplayNodes.filter(dn=>dn.name !== "root");
-
-export const getDescendantType = (npt: NodePairType)=>{
-  if (npt === NodePairType.rootOnly) return null;
-  const index = Math.floor(npt / 3);
-  return descendantTypes[index];
-}
 
 export class NodePair {
   index1: number;
@@ -147,6 +112,32 @@ export class NodePair {
     this.index2 = index2;
     this.pairType = pairType;
     this.mutations = mutations;
+  }
+
+  getDescendantType() {
+    if (this.pairType === NodePairType.rootOnly) return null;
+    const index = Math.floor(this.pairType / 3);
+    return descendantTypes[index];
+  }
+
+  getAncestorType(): DisplayNodeClass {
+    switch (this.pairType) {
+    case NodePairType.rootToMrca:
+    case NodePairType.rootToNodeA:
+    case NodePairType.rootToNodeB:
+    case NodePairType.rootOnly:
+      return DisplayNodes.filter(dn=>dn.name === 'root')[0];
+    case NodePairType.mrcaToNodeA:
+    case NodePairType.mrcaToNodeB:
+      return  DisplayNodes.filter(dn=>dn.name === 'mrca')[0];
+    case NodePairType.nodeAToNodeB:
+      return  DisplayNodes.filter(dn=>dn.name === 'nodeA')[0];
+    case NodePairType.nodeBToNodeA:
+      return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
+    default:
+      return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
+    }
+
   }
 }
 

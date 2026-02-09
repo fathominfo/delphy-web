@@ -1,5 +1,5 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { NodePair, NodeComparisonData, getAncestorType, getDescendantType } from './lineagescommon';
+import { NodePair, NodeComparisonData } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { DisplayNodeClass, getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
@@ -55,8 +55,8 @@ export class NodeComparisonChartData {
     this.mutationTimelineData = [];
 
 
-    this.ancestorType = getAncestorType(this.nodePair.pairType);
-    this.descendantType = getDescendantType(this.nodePair.pairType);
+    this.ancestorType = this.nodePair.getAncestorType();
+    this.descendantType = this.nodePair.getDescendantType();
 
     this.overlapCount = nodeComparisonData.overlapCount;
     this.treeCount = nodeComparisonData.upperNodeTimes.length;

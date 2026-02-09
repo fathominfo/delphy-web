@@ -82,6 +82,7 @@ export const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 
 
 export const getNodeTypeName = (dn: DisplayNode)=>nodeTypeNames[dn];
+
 export const getNodeStroke = (dn:DisplayNode)=>{
   const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-stroke`;
   return getCSSValue(strokeProp);
