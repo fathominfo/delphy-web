@@ -126,7 +126,8 @@ export class CoreLineagesData {
         summaryTree = mccTreeCanvas.tree as SummaryTree,
         nodeMetadata = this.sharedState.mccConfig.nodeMetadata,
         tipIds = this.sharedState.getTipIds();
-
+      chartData.minDate = minDate;
+      chartData.maxDate = maxDate;
       let setMRCA = false,
         setA = false,
         setB = false;
