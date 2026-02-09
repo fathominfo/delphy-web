@@ -1,6 +1,6 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNode, getNodeClassName, UNSET } from '../common';
+import { DisplayNodeClass, DisplayNodes, UNSET } from '../common';
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
@@ -32,11 +32,11 @@ Extensions to the classes that make up a TimeDistributionChart
 
 
 export class NodeDistribution extends Distribution {
-  nodeType: DisplayNode;
+  nodeClass: DisplayNodeClass;
 
-  constructor(type: DisplayNode, times: number[]) {
+  constructor(type: DisplayNodeClass, times: number[]) {
     super(times);
-    this.nodeType = type;
+    this.nodeClass = type;
   }
 }
 
@@ -55,14 +55,13 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
       const series = this.series[i] as NodeDistribution;
-      const className = getNodeClassName(series.nodeType);
-      nodeGroup.setNodeClass(className);
+      nodeGroup.setNodeClass(series.nodeClass.className);
       nodeGroup.setNodeClass("tip", series.range === 0);
     });
   }
 
-  setMatching(node:DisplayNode) {
-    if (node === UNSET) {
+  setMatching(node:DisplayNodeClass | null) {
+    if (node === null) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         nodeGroup.setNodeClass("matching", false);
@@ -72,7 +71,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         const series = this.series[i] as NodeDistribution;
-        if (series.nodeType === node) {
+        if (series.nodeClass === node) {
           nodeGroup.setNodeClass("matching");
           nodeGroup.setNodeClass("unmatching", false);
         } else {
@@ -95,13 +94,12 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 export type NodeDisplay = {
   index: number,
   label: string,
-  type: DisplayNode,
-  className: string,
+  type: DisplayNodeClass | null,
   times: number[],
   series: NodeDistribution | null
 };
 
-export const getAncestorType = (npt: NodePairType): DisplayNode => {
+export const getAncestorType = (npt: NodePairType): DisplayNodeClass => {
   // incorrectly gives ancestor=nodeB for nodeAToNodeB?
 
   // const mod = npt % 3;
@@ -114,26 +112,26 @@ export const getAncestorType = (npt: NodePairType): DisplayNode => {
   case NodePairType.rootToNodeA:
   case NodePairType.rootToNodeB:
   case NodePairType.rootOnly:
-    return DisplayNode.root;
+    return DisplayNodes.filter(dn=>dn.name === 'root')[0];
   case NodePairType.mrcaToNodeA:
   case NodePairType.mrcaToNodeB:
-    return DisplayNode.mrca;
+    return  DisplayNodes.filter(dn=>dn.name === 'mrca')[0];
   case NodePairType.nodeAToNodeB:
-    return DisplayNode.nodeA;
+    return  DisplayNodes.filter(dn=>dn.name === 'nodeA')[0];
   case NodePairType.nodeBToNodeA:
-    return DisplayNode.nodeB;
+    return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
   default:
-    return DisplayNode.nodeB;
+    return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
   }
 
   // return nodeType;
 }
 
 
-const descendantTypes:DisplayNode[] = [DisplayNode.nodeA, DisplayNode.nodeB, DisplayNode.mrca]
+const descendantTypes:DisplayNodeClass[] = DisplayNodes.filter(dn=>dn.name !== "root");
 
 export const getDescendantType = (npt: NodePairType)=>{
-  if (npt === NodePairType.rootOnly) return UNSET;
+  if (npt === NodePairType.rootOnly) return null;
   const index = Math.floor(npt / 3);
   return descendantTypes[index];
 }
@@ -161,11 +159,11 @@ export type NodeComparisonData = {
 }
 
 
-export type HoverCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;
+export type HoverCallback = (node:DisplayNodeClass | null, dateIndex: number, mutation: Mutation|null)=>void;
 export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
 export type TreeSelectCallback = (nodeIndex: number)=>void;
-export type DismissCallback = (node:DisplayNode)=>void;
-export type NodeCallback = (displayNode: DisplayNode)=>void;
+export type DismissCallback = (node:DisplayNodeClass)=>void;
+export type NodeCallback = (displayNode: DisplayNodeClass)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 export type KeyEventHandler = (event: KeyboardEvent)=>void;
 

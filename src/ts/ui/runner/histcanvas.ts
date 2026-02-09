@@ -81,7 +81,7 @@ export class HistCanvas extends TraceCanvas {
     let pct = UNSET;
     const y = event.offsetY;
     const { height } = this;
-    const { count, savedKneeIndex, hideBurnIn, displayCount } = this.traceData as HistData;
+    const { count, hideBurnIn, displayCount } = this.traceData as HistData;
     if (y >= 0) {
       pct = 1 - y / height;
       // console.log('knee', x, pct)
@@ -173,8 +173,9 @@ export class HistCanvas extends TraceCanvas {
 
   draw() {
     const traceData = this.traceData as HistData;
-    let { data, highlightIndex, dataMean, hideBurnIn, savedKneeIndex, displayCount } = traceData,
+    let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
+    const { dataMean, hideBurnIn, savedKneeIndex } = traceData;
     const isMean = highlightIndex === UNSET;
     const readoutValue = isMean ? dataMean: data[highlightIndex];
     if (hideBurnIn && savedKneeIndex > 0) {
@@ -317,7 +318,6 @@ export class HistCanvas extends TraceCanvas {
     const { bucketConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
     const { buckets, values, maxBucketValue, positions, step } = bucketConfig;
     let valRange = displayMax - displayMin;
-    const left = 0;
 
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
@@ -362,13 +362,11 @@ export class HistCanvas extends TraceCanvas {
     this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
     if (count === 0) return;
     let sampleCount = count;
-    let startPoint = 0;
     if (hideBurnIn && savedKneeIndex > 0) {
       if (savedKneeIndex === 20) {
         console.log("qu'est-ce que ce passe?")
       }
       sampleCount = sampleCount - savedKneeIndex + 1;
-      startPoint = savedKneeIndex;
     }
 
     /*

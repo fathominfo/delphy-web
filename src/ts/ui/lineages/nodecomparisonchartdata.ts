@@ -1,7 +1,7 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, NodeComparisonData, getAncestorType, getDescendantType } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getPercentLabel, UNSET } from '../common';
+import { DisplayNodeClass, getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
 
 
@@ -42,8 +42,8 @@ export class NodeComparisonChartData {
   treeCount: number = UNSET;
   mutationCount: number = UNSET;
 
-  ancestorType: DisplayNode;
-  descendantType: DisplayNode;
+  ancestorType: DisplayNodeClass;
+  descendantType: DisplayNodeClass | null;
   series: [Distribution, Distribution?];
   thresholdLabel = "";
 
@@ -63,12 +63,12 @@ export class NodeComparisonChartData {
 
     this.setMutations(isApobecRun);
 
-    const createSeries = (dn: DisplayNode, i: number) => {
+    const createSeries = (dn: DisplayNodeClass, i: number) => {
       const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
       const ds = new Distribution(times);
       return ds;
     }
-    if (this.descendantType === UNSET) {
+    if (this.descendantType === null) {
       this.series = [this.ancestorType].map(createSeries) as [Distribution];
     } else {
       this.series = [this.ancestorType, this.descendantType].map(createSeries) as [Distribution, Distribution];

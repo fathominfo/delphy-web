@@ -62,7 +62,6 @@ export const TIP_COLOR = 'rgb(88,88,88)',
   BRANCH_WEIGHT = 0.5,
   BRANCH_WEIGHT_MIN = 0.25,
   BRANCH_WEIGHT_MAX = 2.0,
-  // MUTATION_COLOR = 'rgb(200,0,0)',
   MUTATION_COLOR = 'rgb(200,200,200)',
   MUTATION_RADIUS = 1;
 
@@ -71,7 +70,7 @@ export const UNSTYLED_CANVAS_WIDTH = 100;
 
 
 
-export const enum DisplayNode {
+const enum DisplayNode {
   root = 0,
   mrca = 1,
   nodeA = 2,
@@ -95,9 +94,48 @@ export const getNodeTint = (dn:DisplayNode)=>{
   const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-tint`;
   return getCSSValue(strokeProp);
 };
-// export const getNodeColorDark = (dn:DisplayNode)=>nodeColorsDark[dn];
-// export const getNodeColorStream = (dn:DisplayNode)=>nodeColorsStream[dn];
 export const getNodeClassName = (dn: DisplayNode)=>nodeClassNames[dn];
+
+export class DisplayNodeClass {
+  name: string;
+  index: number;
+  private dnIndex: number;
+  className: string;
+
+  constructor(dn: number) {
+    this.dnIndex = dn;
+    this.index = DisplayNode.UNSET;
+    this.name = nodeTypeNames[dn];
+    this.className = nodeClassNames[dn];
+    DisplayNodes[this.index] = this;
+  }
+  getStroke(): string {
+    const strokeProp = `--${ this.name.toLowerCase() }-stroke`;
+    return getCSSValue(strokeProp);
+  }
+  getFill(): string {
+    const strokeProp = `--${ this.name.toLowerCase() }-fill`;
+    return getCSSValue(strokeProp);
+  }
+  getTint(): string {
+    const strokeProp = `--${ this.name.toLowerCase() }-tint`;
+    return getCSSValue(strokeProp);
+  }
+  setIndex(index: number):void {
+    this.index = index;
+  }
+  deactivate(): void {
+    this.index = UNSET;
+  }
+}
+
+
+export const DisplayNodes: DisplayNodeClass[] = [];
+new DisplayNodeClass(0);
+new DisplayNodeClass(1);
+new DisplayNodeClass(2);
+new DisplayNodeClass(3);
+
 
 
 export const TREE_PADDING_TOP = 10,

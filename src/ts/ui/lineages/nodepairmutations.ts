@@ -1,7 +1,7 @@
 import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
   NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
-import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName,
+import { DisplayNodeClass, getPercentLabel, UNSET,
   numericSort, getNiceDateInterval, DateScale,
   sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
@@ -144,8 +144,8 @@ export class NodePairMutationList {
   nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
   data: NodeComparisonChartData;
-  ancestorType: DisplayNode;
-  descendantType: DisplayNode;
+  ancestorType: DisplayNodeClass;
+  descendantType: DisplayNodeClass | null;
 
 
   constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
@@ -174,21 +174,21 @@ export class NodePairMutationList {
     this.mutationContainer = mutationContainer;
     this.goToMutations = goToMutations;
 
-    const fromType = getNodeTypeName(this.data.ancestorType).toLowerCase();
-    let toType = getNodeTypeName(this.data.descendantType);
+    const fromType = this.data.ancestorType.name.toLowerCase();
+    let toType = this.data.descendantType?.name;
     if (toType) toType = toType.toLowerCase();
     this.div.setAttribute("data-from", fromType);
-    this.div.setAttribute("data-to", toType);
+    this.div.setAttribute("data-to", toType || '');
 
-    let trailAlignment = "center";
-    if (this.data.ancestorType === DisplayNode.mrca) {
-      trailAlignment = this.data.descendantType === DisplayNode.nodeA ? "up" : "down";
-    }
+    const trailAlignment = "center";
+    // if (this.data.ancestorType === DisplayNodeClass.mrca) {
+    //   trailAlignment = this.data.descendantType === DisplayNodeClass.nodeA ? "up" : "down";
+    // }
     this.schematic.setAttribute("data-trail-alignment", trailAlignment);
 
 
 
-    if (this.data.descendantType === UNSET) {
+    if (this.data.descendantType === null) {
       this.div.classList.add('single');
     }
     this.setLabel(this.data.ancestorType, this.data.descendantType);
@@ -221,14 +221,14 @@ export class NodePairMutationList {
   }
 
 
-  setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
+  setLabel(ancestorType: DisplayNodeClass, descendantType: DisplayNodeClass | null): void {
     /* set title for the ancestor node */
-    this.nodeASpan.innerText = getNodeTypeName(ancestorType);
-    this.nodeASpan.classList.add(getNodeClassName(ancestorType));
+    // this.nodeASpan.innerText = getNodeTypeName(ancestorType);
+    // this.nodeASpan.classList.add(getNodeClassName(ancestorType));
 
-    /* set title for the descendant node */
-    this.nodeBSpan.innerText = getNodeTypeName(descendantType);
-    this.nodeBSpan.classList.add(getNodeClassName(descendantType));
+    // /* set title for the descendant node */
+    // this.nodeBSpan.innerText = getNodeTypeName(descendantType);
+    // this.nodeBSpan.classList.add(getNodeClassName(descendantType));
   }
 
 
@@ -292,13 +292,13 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNode, date: number, mutation: Mutation | null) : void {
+  highlightNode(node: DisplayNodeClass | null, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
     let matched = node === this.data.descendantType;
     this.mutationTimelines.forEach(mt=>{
       matched = mt.checkMutationMatch(mutation, date) || matched;
     });
-    if (node === UNSET) {
+    if (node === null) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
     } else if (matched) {
@@ -354,43 +354,44 @@ export class NodeMutations {
     nodeComparisonContainer.innerHTML = '';
     const sorted = nodeComparisonData.sort((a, b)=>{
     /* node A goes at the start of the list */
-      if (a.descendantType === DisplayNode.nodeA) {
-        return -1;
-      }
-      if (b.descendantType === DisplayNode.nodeA) {
-        return 1;
-      }
-      /* node B comes next */
-      if (a.descendantType === DisplayNode.nodeB) {
-        return -1;
-      }
-      if (b.descendantType === DisplayNode.nodeB) {
-        return 1;
-      }
-      /* then the MRCA */
-      if (a.descendantType === DisplayNode.mrca) {
-        return -1;
-      }
-      if (b.descendantType === DisplayNode.mrca) {
-        return 1;
-      }
+      // if (a.descendantType === DisplayNodeClass.nodeA) {
+      //   return -1;
+      // }
+      // if (b.descendantType === DisplayNodeClass.nodeA) {
+      //   return 1;
+      // }
+      // /* node B comes next */
+      // if (a.descendantType === DisplayNodeClass.nodeB) {
+      //   return -1;
+      // }
+      // if (b.descendantType === DisplayNodeClass.nodeB) {
+      //   return 1;
+      // }
+      // /* then the MRCA */
+      // if (a.descendantType === DisplayNodeClass.mrca) {
+      //   return -1;
+      // }
+      // if (b.descendantType === DisplayNodeClass.mrca) {
+      //   return 1;
+      // }
       /*
-    if we have gotten this far, then the only path
-    is the one where root is the ancestor and there
-    is no descendant.
-    */
+      if we have gotten this far, then the only path
+      is the one where root is the ancestor and there
+      is no descendant.
+      */
       return 0;
     });
     this.charts.length = 0;
     sorted.filter(pair=>pair.mutationCount > 0).forEach(chartData=>{
-      const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
-      nc.requestDraw();
-      this.charts.push(nc);
+      // console.log('NodePairMutationList', chartData)
+      // const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
+      // nc.requestDraw();
+      // this.charts.push(nc);
     });
     return this.charts;
   }
 
-  highlightNode(node: DisplayNode, date: number, mutation: Mutation|null) {
+  highlightNode(node: DisplayNodeClass | null, date: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
       chart.highlightNode(node, date, mutation);

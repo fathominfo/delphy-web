@@ -1,6 +1,6 @@
 import { Context2d } from "jspdf";
 import { PdfCanvas } from "../../util/pdfcanvas";
-import { DisplayNode, getCSSValue, getNodeFill, getNodeStroke, getNodeTint, UNSET } from "../common";
+import { DisplayNodeClass, getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { TreeSelectCallback, NodePair, NodePairType, TreeHoverCallback, } from "./lineagescommon";
@@ -16,13 +16,13 @@ enum DisplayNodeSizes {
 
 
 export class LineagesTreeCanvas extends MccTreeCanvas {
-  rootIndex: number = UNSET;
-  mrcaIndex: number = UNSET;
-  nodeAIndex: number = UNSET;
-  nodeBIndex: number = UNSET;
+  rootNode: DisplayNodeClass | null = null;
+  mrcaNode: DisplayNodeClass | null = null;
+  nodeANode: DisplayNodeClass | null = null;
+  nodeBNode: DisplayNodeClass | null = null;
   descendants: NodePair[] = [];
-  subtreeIndex: number = UNSET;
-  highlightedNode: DisplayNode = DisplayNode.UNSET;
+  subtreeNode: DisplayNodeClass | null = null;
+  highlightedNode: DisplayNodeClass | null = null;
   highlightedDate: number = UNSET;
   highlightCanvas: HTMLCanvasElement;
   highlightCtx: CanvasRenderingContext2D;
@@ -60,23 +60,69 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  setNodes(rootIndex: DisplayNode, mrcaIndex: DisplayNode, nodeAIndex: DisplayNode,
-    nodeBIndex: DisplayNode, descendants: NodePair[]) {
-    this.rootIndex = rootIndex;
-    this.mrcaIndex = mrcaIndex;
-    this.nodeAIndex = nodeAIndex;
-    this.nodeBIndex = nodeBIndex;
+  setNodes(rootIndex: number, mrcaIndex: number, nodeAIndex: number,
+    nodeBIndex: number, descendants: NodePair[]) {
+    if (rootIndex === UNSET) {
+      if (this.rootNode !== null) {
+        this.rootNode.deactivate();
+        this.rootNode = null;
+      }
+    } else if (this.rootNode === null) {
+      this.rootNode = new DisplayNodeClass(0);
+      this.rootNode.setIndex(rootIndex);
+    } else if (rootIndex !== this.rootNode.index) {
+      this.rootNode.setIndex(rootIndex);
+    }
+
+    if (mrcaIndex === UNSET) {
+      if (this.mrcaNode !== null) {
+        this.mrcaNode.deactivate();
+        this.mrcaNode = null;
+      }
+    } else if (this.mrcaNode === null) {
+      this.mrcaNode = new DisplayNodeClass(0);
+      this.mrcaNode.setIndex(mrcaIndex);
+    } else if (mrcaIndex !== this.mrcaNode.index) {
+      this.mrcaNode.setIndex(mrcaIndex);
+    }
+
+    if (nodeAIndex === UNSET) {
+      if (this.nodeANode !== null) {
+        this.nodeANode.deactivate();
+        this.nodeANode = null;
+      }
+    } else if (this.nodeANode === null) {
+      this.nodeANode = new DisplayNodeClass(0);
+      this.nodeANode.setIndex(nodeAIndex);
+    } else if (nodeAIndex !== this.nodeANode.index) {
+      this.nodeANode.setIndex(nodeAIndex);
+    }
+
+    if (nodeBIndex === UNSET) {
+      if (this.nodeBNode !== null) {
+        this.nodeBNode.deactivate();
+        this.nodeBNode = null;
+      }
+    } else if (this.nodeBNode === null) {
+      this.nodeBNode = new DisplayNodeClass(0);
+      this.nodeBNode.setIndex(nodeBIndex);
+    } else if (nodeBIndex !== this.nodeBNode.index) {
+      this.nodeBNode.setIndex(nodeBIndex);
+    }
+
+
     this.descendants = descendants;
   }
+
 
   private drawSelection() {
     const ctx = this.highlightCtx;
     ctx.clearRect(0, 0, this.width, this.height);
     this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
-    this.drawNode(this.rootIndex, DisplayNode.root);
-    this.drawNode(this.mrcaIndex, DisplayNode.mrca);
-    this.drawNode(this.nodeAIndex, DisplayNode.nodeA);
-    this.drawNode(this.nodeBIndex, DisplayNode.nodeB);
+    this.drawNode(this.rootNode);
+    this.drawNode(this.mrcaNode);
+    this.drawNode(this.nodeANode);
+    this.drawNode(this.nodeBNode);
   }
 
 
@@ -89,40 +135,40 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     this.drawSelection();
   }
 
-  highlightNode(node: DisplayNode, date: number) {
+  highlightNode(node: DisplayNodeClass | null, date: number) {
     this.highlightCtx.clearRect(0, 0, this.width, this.height);
     this.highlightedNode = node;
     this.highlightedDate = date;
-    this.subtreeIndex = UNSET;
-    const others: [number, DisplayNode][] = [];
+    this.subtreeNode = null;
+    const others: DisplayNodeClass[] = [];
     [
-      [this.rootIndex, DisplayNode.root],
-      [this.mrcaIndex, DisplayNode.mrca],
-      [this.nodeAIndex, DisplayNode.nodeA],
-      [this.nodeBIndex, DisplayNode.nodeB],
-    ].filter(([index, _nodeType])=>index !== UNSET) // eslint-disable-line @typescript-eslint/no-unused-vars
-      .forEach(([index, nodeType])=>{
-        if (nodeType === node) {
-          this.subtreeIndex = index;
-        } else {
-          others.push([index, nodeType]);
+      this.rootNode,
+      this.mrcaNode,
+      this.nodeANode,
+      this.nodeBNode,
+    ].filter((node)=>node !== null) // eslint-disable-line @typescript-eslint/no-unused-vars
+      .forEach((displayNode)=>{
+        if (displayNode === node) {
+          this.subtreeNode = displayNode;
+        } else if (displayNode !== null) {
+          others.push(displayNode);
         }
       });
-    if (this.subtreeIndex === UNSET) {
+    if (this.subtreeNode === UNSET) {
       this.highlightCtx.globalAlpha = 1.0;
       this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
-      others.forEach(([index, displayNode])=>{
-        this.drawNode(index, displayNode);
+      others.forEach((displayNode)=>{
+        this.drawNode(displayNode);
       });
     } else {
       this.highlightCtx.globalAlpha = 0.5;
       this.renderSubtree();
       this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
-      others.forEach(([index, displayNode])=>{
-        this.drawNode(index, displayNode);
+      others.forEach((displayNode)=>{
+        this.drawNode(displayNode);
       });
       this.highlightCtx.globalAlpha = 1.0;
-      this.drawNode(this.subtreeIndex, node);
+      this.drawNode(this.subtreeNode);
     }
     this.setHoverDate(date);
   }
@@ -133,30 +179,30 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     const highlightNode = this.highlightedNode;
     const {index1, index2} = pair;
     if (index2 === UNSET) return;
-    let displayNode: DisplayNode = DisplayNode.root;
+    let displayNode: DisplayNodeClass | null = this.rootNode;
     switch(pair.pairType) {
     case NodePairType.rootToMrca:
-      displayNode = DisplayNode.mrca;
+      displayNode = this.mrcaNode;
       break;
     case NodePairType.rootToNodeA:
     case NodePairType.mrcaToNodeA:
     case NodePairType.nodeBToNodeA:
-      displayNode = DisplayNode.nodeA;
+      displayNode = this.nodeANode;
       break;
     case NodePairType.rootToNodeB:
     case NodePairType.mrcaToNodeB:
     case NodePairType.nodeAToNodeB:
-      displayNode = DisplayNode.nodeB;
+      displayNode = this.nodeBNode;
       break;
     }
-
+    if (!displayNode) return;
     const mcc = this.tree as SummaryTree;
     let parentIndex = index2;
     let x = this.getZoomX(mcc.getTimeOf(index2)),
       y = this.getZoomY(index2);
     let py, px;
-    ctx.globalAlpha = highlightNode === UNSET || displayNode === highlightNode ? 1 : 0.5;
-    ctx.strokeStyle = getNodeStroke(displayNode);
+    ctx.globalAlpha = highlightNode === null || displayNode === highlightNode ? 1 : 0.5;
+    ctx.strokeStyle = displayNode?.getStroke();
     ctx.lineWidth = parseFloat(getCSSValue("--lineages-tree-descent-stroke-weight"));
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -173,8 +219,10 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  drawNode(index: number, displayNode: DisplayNode): void {
-    if (index === UNSET) return;
+  drawNode(displayNode: DisplayNodeClass | null): void {
+    if (displayNode === null) return;
+    const index = displayNode.index;
+    const typeName = displayNode.className;
     const ctx = this.highlightCtx;
     const highlightNode = this.highlightedNode;
     const mcc = this.tree as SummaryTree,
@@ -182,15 +230,17 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       y = this.getZoomY(index);
     let radius: number;
     let fillColor: string;
-    if (displayNode === DisplayNode.root || displayNode === DisplayNode.mrca) {
-      fillColor = getNodeStroke(displayNode);
+    let outlining = false;
+    if (typeName === 'root' || typeName === 'mrca') {
+      fillColor = displayNode.getStroke();
       radius = DisplayNodeSizes.root; // same as mrca
     } else {
-      fillColor = getNodeFill(displayNode);
+      fillColor = displayNode.getFill();
       radius = DisplayNodeSizes.nodeA; // same as nodeB
+      outlining = true;
     }
-    const strokeColor = getNodeStroke(displayNode);
-    ctx.globalAlpha = highlightNode === UNSET || displayNode === highlightNode ? 1 : 0.5;
+    const strokeColor = displayNode.getStroke();
+    ctx.globalAlpha = highlightNode === null || displayNode === highlightNode ? 1 : 0.5;
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -198,7 +248,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fillStyle = fillColor;
     ctx.fill();
-    if (displayNode === DisplayNode.nodeA || displayNode === DisplayNode.nodeB) {
+    if (outlining) {
       ctx.strokeStyle = strokeColor;
       ctx.stroke();
     }
@@ -206,17 +256,15 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
 
 
   renderSubtree() : void {
+    if (!this.subtreeNode) return;
     this.highlightCtx.lineWidth  = parseFloat(getCSSValue("--tree-branch-d-stroke-weight"));
-    const stops = [this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex].filter(n=>n !== UNSET && n !== this.subtreeIndex);
+    const stops = [this.rootNode, this.mrcaNode, this.nodeANode, this.nodeBNode].filter(n=>n !== null && n !== this.subtreeNode).map(n=>n?.index) as number[];
     let color = "rgba(0,0,0,0)";
-    switch (this.subtreeIndex) {
-    case this.rootIndex: color = getNodeTint(DisplayNode.root); break;
-    case this.mrcaIndex:  color = getNodeTint(DisplayNode.mrca); break;
-    case this.nodeAIndex: color = getNodeTint(DisplayNode.nodeA); break;
-    case this.nodeBIndex: color = getNodeTint(DisplayNode.nodeB); break;
+    if (this.subtreeNode) {
+      color = this.subtreeNode.getTint();
     }
     this.highlightCtx.strokeStyle = color;
-    super.drawSubtree(this.subtreeIndex, this.highlightCtx, stops);
+    super.drawSubtree(this.subtreeNode.index, this.highlightCtx, stops);
   }
 
 }

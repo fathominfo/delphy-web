@@ -1,5 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
-import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+// import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+import {SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -19,7 +20,7 @@ import { TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
 
 const DAYS_PER_YEAR = 365;
-const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
+// const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
 const EPSILON = 1e-7;
 

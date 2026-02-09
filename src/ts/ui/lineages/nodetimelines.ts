@@ -1,5 +1,5 @@
 import { HoverCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
-import { DateScale, DisplayNode, getNiceDateInterval, UNSET } from '../common';
+import { DateScale, DisplayNodeClass, DisplayNodes, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
 import { Distribution } from '../distribution';
@@ -32,15 +32,15 @@ export class NodeTimelines {
   minDate: number = UNSET;
   maxDate: number = UNSET;
   currentTypes: NodeDisplay[] = [];
-  highlighedtNode: DisplayNode = UNSET;
+  highlighedtNode: DisplayNodeClass | null = null;
   highlightedDate: number = UNSET;
 
   constructor(nodeHighlightCallback: HoverCallback) {
 
     const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, date: number)=>{
-      let nodeType: DisplayNode =  UNSET;
+      let nodeType: DisplayNodeClass | null = null;
       if (series) {
-        nodeType = (series as NodeDistribution).nodeType;
+        nodeType = (series as NodeDistribution).nodeClass;
       }
       nodeHighlightCallback(nodeType, date, null);
     };
@@ -49,19 +49,19 @@ export class NodeTimelines {
 
     [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
       rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseleave", () => nodeHighlightCallback(UNSET, UNSET, null));
+      span.addEventListener("mouseleave", () => nodeHighlightCallback(null, UNSET, null));
     });
     [ rootSpan, rootDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.root, UNSET, null));
+      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.root, UNSET, null));
     });
     [ mrcaSpan, mrcaDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.mrca, UNSET, null));
+      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.mrca, UNSET, null));
     });
     [ nodeASpan, nodeADateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeA, UNSET, null));
+      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.nodeA, UNSET, null));
     });
     [ nodeBSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNode.nodeB, UNSET, null));
+      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.nodeB, UNSET, null));
     });
   }
 
@@ -92,54 +92,54 @@ export class NodeTimelines {
   setData(nodes: NodeDisplay[]) {
     this.data = nodes;
     this.currentTypes.length = 0;
-    nodes.forEach((nd:NodeDisplay)=>this.currentTypes[nd.type] = nd);
+    // nodes.forEach((nd:NodeDisplay)=>this.currentTypes[nd.type] = nd);
     const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
     this.nodeTimesCanvas.setSeries(allSeries as NodeDistribution[]);
   }
 
   requestDraw() : void {
     requestAnimationFrame(()=>{
-      [DisplayNode.root, DisplayNode.mrca, DisplayNode.nodeA, DisplayNode.nodeB].forEach(dn=>{
-        let nameSpan: HTMLSpanElement | null = null,
+      [DisplayNodes].forEach(dn=>{
+        const nameSpan: HTMLSpanElement | null = null,
           dateSpan: HTMLSpanElement | null = null;
-        switch (dn) {
-        case DisplayNode.root:
-          nameSpan = rootSpan;
-          dateSpan = rootDateSpan;
-          break;
-        case DisplayNode.mrca:
-          nameSpan = mrcaSpan;
-          dateSpan = mrcaDateSpan;
-          break;
-        case DisplayNode.nodeA:
-          nameSpan = nodeASpan;
-          dateSpan = nodeADateSpan;
-          break;
-        case DisplayNode.nodeB:
-          nameSpan = nodeBSpan;
-          dateSpan = nodeBDateSpan;
-          break;
-        }
-        if (!nameSpan || !dateSpan) return;
-        const nodeData = this.currentTypes[dn];
-        if (nodeData === undefined) {
-          nameSpan.classList.add("hidden");
-          dateSpan.classList.add("hidden");
-        } else {
-          const dist = nodeData.series;
-          if (!dist) {
-            nameSpan.classList.add("hidden");
-            dateSpan.classList.add("hidden");
-          } else {
-            nameSpan.classList.remove("hidden");
-            dateSpan.classList.remove("hidden");
-            const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
-            const dateLabel = toFullDateString(dist.median);
-            nameSpan.style.left = `${x}px`;
-            dateSpan.style.left = `${x}px`;
-            dateSpan.textContent = dateLabel;
-          }
-        }
+        // switch (dn) {
+        // case DisplayNodeClass.root:
+        //   nameSpan = rootSpan;
+        //   dateSpan = rootDateSpan;
+        //   break;
+        // case DisplayNodeClass.mrca:
+        //   nameSpan = mrcaSpan;
+        //   dateSpan = mrcaDateSpan;
+        //   break;
+        // case DisplayNodeClass.nodeA:
+        //   nameSpan = nodeASpan;
+        //   dateSpan = nodeADateSpan;
+        //   break;
+        // case DisplayNodeClass.nodeB:
+        //   nameSpan = nodeBSpan;
+        //   dateSpan = nodeBDateSpan;
+        //   break;
+        // }
+        // if (!nameSpan || !dateSpan) return;
+        // const nodeData = this.currentTypes[dn];
+        // if (nodeData === undefined) {
+        //   nameSpan.classList.add("hidden");
+        //   dateSpan.classList.add("hidden");
+        // } else {
+        //   const dist = nodeData.series;
+        //   if (!dist) {
+        //     nameSpan.classList.add("hidden");
+        //     dateSpan.classList.add("hidden");
+        //   } else {
+        //     // nameSpan.classList.remove("hidden");
+        //     // dateSpan.classList.remove("hidden");
+        //     // const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
+        //     const dateLabel = toFullDateString(dist.median);
+        //     nameSpan.style.left = `${x}px`;
+        //     dateSpan.style.left = `${x}px`;
+        //     dateSpan.textContent = dateLabel;
+        //   }
+        // }
       });
 
       const max = this.nodeTimesCanvas.allSeriesBandMax;
@@ -149,11 +149,11 @@ export class NodeTimelines {
   }
 
 
-  highlightNode(node: DisplayNode, date: number) : void {
+  highlightNode(node: DisplayNodeClass | null, date: number) : void {
     if (!this.data) return;
 
     if (node !== this.highlighedtNode) {
-      nodeComparisonContainer.classList.toggle("highlighting", node !== UNSET);
+      nodeComparisonContainer.classList.toggle("highlighting", node !== null);
 
       this.nodeTimesCanvas.setMatching(node);
 
@@ -167,24 +167,24 @@ export class NodeTimelines {
       nodeBSpan.classList.remove("highlight");
       nodeBDateSpan.classList.remove("highlight");
       nodeComparisonContainer.classList.remove("highlighting");
-      switch (node) {
-      case DisplayNode.root:
-        rootSpan.classList.add("highlight");
-        rootDateSpan.classList.add("highlight");
-        break;
-      case DisplayNode.mrca:
-        mrcaSpan.classList.remove("highlight");
-        mrcaDateSpan.classList.remove("highlight");
-        break;
-      case DisplayNode.nodeA:
-        nodeASpan.classList.remove("highlight");
-        nodeADateSpan.classList.remove("highlight");
-        break;
-      case DisplayNode.nodeB:
-        nodeBSpan.classList.remove("highlight");
-        nodeBDateSpan.classList.remove("highlight");
-        break;
-      }
+      // switch (node) {
+      // case DisplayNodeClass.root:
+      //   rootSpan.classList.add("highlight");
+      //   rootDateSpan.classList.add("highlight");
+      //   break;
+      // case DisplayNodeClass.mrca:
+      //   mrcaSpan.classList.remove("highlight");
+      //   mrcaDateSpan.classList.remove("highlight");
+      //   break;
+      // case DisplayNodeClass.nodeA:
+      //   nodeASpan.classList.remove("highlight");
+      //   nodeADateSpan.classList.remove("highlight");
+      //   break;
+      // case DisplayNodeClass.nodeB:
+      //   nodeBSpan.classList.remove("highlight");
+      //   nodeBDateSpan.classList.remove("highlight");
+      //   break;
+      // }
       this.highlighedtNode = node;
     }
     if (date !== this.highlightedDate) {

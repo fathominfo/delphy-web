@@ -1,4 +1,4 @@
-import { DisplayNode, UNSET, getPercentLabel } from '../common';
+import { DisplayNodeClass, UNSET, getPercentLabel } from '../common';
 import { NodeMetadataValues } from '../nodemetadata';
 import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
@@ -170,25 +170,25 @@ export class NodeListDisplay {
     this.nodeBDiv = new NodeItem(getDiv('.lineages--node-item.nodeB'));
 
 
-    const bindDismiss = (div: HTMLDivElement, node: DisplayNode)=>{
+    const bindDismiss = (div: HTMLDivElement, node: DisplayNodeClass)=>{
       const dismiss = div.querySelector(".node-dismiss") as HTMLButtonElement;
       if (!dismiss) {
         throw new Error('the div has nothing for dismissing');
       }
       dismiss.addEventListener('click', ()=>dismissCallback(node));
     }
-    const bindDiv = (div: HTMLDivElement, node: DisplayNode) => {
-      div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
-      div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
-      div.addEventListener('click', () => nodeZoomCallback(node));
-    }
-    bindDismiss(this.nodeADiv.div, DisplayNode.nodeA);
-    bindDismiss(this.nodeBDiv.div, DisplayNode.nodeB);
-    bindDiv(this.rootDiv.div, DisplayNode.root);
-    bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
-    bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
-    bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
-    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
+    // const bindDiv = (div: HTMLDivElement, node: DisplayNodeClass) => {
+    //   div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
+    //   div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
+    //   div.addEventListener('click', () => nodeZoomCallback(node));
+    // }
+    // bindDismiss(this.nodeADiv.div, DisplayNode.nodeA);
+    // bindDismiss(this.nodeBDiv.div, DisplayNode.nodeB);
+    // bindDiv(this.rootDiv.div, DisplayNode.root);
+    // bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
+    // bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
+    // bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
+    // (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
 
   }
 
@@ -227,8 +227,8 @@ export class NodeListDisplay {
     });
   }
 
-  highlightNode(node: DisplayNode | typeof UNSET) : void {
-    if (node === UNSET) {
+  highlightNode(node: DisplayNodeClass | null) : void {
+    if (node === null) {
       this.rootDiv.restore();
       this.mrcaDiv.restore();
       this.nodeADiv.restore();
@@ -238,12 +238,12 @@ export class NodeListDisplay {
       this.mrcaDiv.pushback();
       this.nodeADiv.pushback();
       this.nodeBDiv.pushback();
-      switch (node) {
-      case DisplayNode.root: this.rootDiv.restore(); break;
-      case DisplayNode.mrca: this.mrcaDiv.restore(); break;
-      case DisplayNode.nodeA: this.nodeADiv.restore(); break;
-      case DisplayNode.nodeB: this.nodeBDiv.restore(); break;
-      }
+      // switch (node) {
+      // case DisplayNode.root: this.rootDiv.restore(); break;
+      // case DisplayNode.mrca: this.mrcaDiv.restore(); break;
+      // case DisplayNode.nodeA: this.nodeADiv.restore(); break;
+      // case DisplayNode.nodeB: this.nodeBDiv.restore(); break;
+      // }
 
     }
   }
