@@ -1,3 +1,4 @@
+import { BaseTreeSeriesType } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
@@ -37,7 +38,7 @@ export type NodeListItemData = {
 
 export type ChartData = {
   nodeListData: NodeListItemData[],
-  nodeDistributions: [],
+  nodeDistributions: BaseTreeSeriesType | null,
   prevalenceNodes : NodeDisplay[],
   minDate: number,
   maxDate: number
@@ -107,7 +108,7 @@ export class CoreLineagesData {
     const pythia = this.pythia,
       chartData: ChartData = {
         nodeListData: [],
-        nodeDistributions: [],
+        nodeDistributions: null,
         prevalenceNodes: [],
         minDate: UNSET,
         maxDate: UNSET,
@@ -319,10 +320,12 @@ export class CoreLineagesData {
           }
         });
       });
+      chartData.nodes = nodes;
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, isApobecEnabled));
       chartData.nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+      chartData.nodeDistributions = nodeDistributions;
       /*
       add an empty node before the root to represent the uninfected population
       in the prevalence chart

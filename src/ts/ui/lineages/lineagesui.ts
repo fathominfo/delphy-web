@@ -24,6 +24,7 @@ import { NodeComparisonChartData } from './nodecomparisonchartdata';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { CoreLineagesData } from './corelineagesdata';
+import { BaseTreeSeriesType } from '../../constants';
 
 
 
@@ -288,7 +289,7 @@ export class LineagesUI extends MccUI {
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);
     this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex], nodeAIsUpper);
-    this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
+    this.nodePrevalenceCanvas.setData(nodeDistributions as BaseTreeSeriesType, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
     mccRef.release();
   }
