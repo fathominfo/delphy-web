@@ -3,8 +3,7 @@ import { Mutation } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNodeClass, nfc, UNSET } from "../common";
-import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData } from "./lineagescommon";
-import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
+import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData, mutationPrevalenceThreshold } from "./lineagescommon";
 
 
 const MUTATION_LIMIT = 30;

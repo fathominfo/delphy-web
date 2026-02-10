@@ -1,14 +1,8 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { NodePair, NodeComparisonData } from './lineagescommon';
+import { NodePair, NodeComparisonData, mutationPrevalenceThreshold } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { DisplayNodeClass, getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
-
-
-/* should we provide an interface to this ? [mark 230524]*/
-/* adding it for now! [katherine 230608] */
-export const mutationPrevalenceThreshold = 0.5;
-
 
 
 

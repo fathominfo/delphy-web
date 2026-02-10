@@ -133,8 +133,8 @@ class MutationTimeline {
 
 export class NodePairMutationList {
   div: HTMLDivElement;
-  nodeASpan: HTMLSpanElement;
-  nodeBSpan: HTMLSpanElement;
+  ancestorSpan: HTMLSpanElement;
+  descendantSpan: HTMLSpanElement;
   // mutationCountSpan: HTMLSpanElement;
   // mutationThresholdSpan: HTMLSpanElement;
   schematic: HTMLDivElement;
@@ -165,8 +165,8 @@ export class NodePairMutationList {
     if (!mutationContainer || !ancestorSpan || !descendantSpan || !schematic) {
       throw new Error("html is missing elements needed for mutation list");
     }
-    this.nodeASpan = ancestorSpan;
-    this.nodeBSpan = descendantSpan;
+    this.ancestorSpan = ancestorSpan;
+    this.descendantSpan = descendantSpan;
     this.schematic = schematic;
 
     // this.mutationCountSpan = mutationCountSpan;

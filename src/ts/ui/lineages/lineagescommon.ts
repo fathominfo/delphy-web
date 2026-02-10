@@ -126,16 +126,16 @@ export class NodePair {
     case NodePairType.rootToNodeA:
     case NodePairType.rootToNodeB:
     case NodePairType.rootOnly:
-      return DisplayNodes.filter(dn=>dn.name === 'root')[0];
+      return DisplayNodes.filter(dn=>dn.className === 'root')[0];
     case NodePairType.mrcaToNodeA:
     case NodePairType.mrcaToNodeB:
-      return  DisplayNodes.filter(dn=>dn.name === 'mrca')[0];
+      return  DisplayNodes.filter(dn=>dn.className === 'mrca')[0];
     case NodePairType.nodeAToNodeB:
-      return  DisplayNodes.filter(dn=>dn.name === 'nodeA')[0];
+      return  DisplayNodes.filter(dn=>dn.className === 'nodeA')[0];
     case NodePairType.nodeBToNodeA:
-      return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
+      return  DisplayNodes.filter(dn=>dn.className === 'nodeB')[0];
     default:
-      return  DisplayNodes.filter(dn=>dn.name === 'nodeB')[0];
+      return  DisplayNodes.filter(dn=>dn.className === 'root')[0];
     }
 
   }
@@ -197,3 +197,10 @@ export const TREE_HINT_CLASSES = [
   "zoom"
 ]
 export type SetHintType = (hint:TreeHint) => void;
+
+
+/* should we provide an interface to this ? [mark 230524]*/
+/* adding it for now! [katherine 230608] */
+export const mutationPrevalenceThreshold = 0.5;
+
+

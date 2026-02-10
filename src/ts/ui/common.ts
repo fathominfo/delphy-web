@@ -111,7 +111,7 @@ export class DisplayNodeClass {
     this.index = DisplayNode.UNSET;
     this.name = nodeTypeNames[dn];
     this.className = nodeClassNames[dn];
-    DisplayNodes[this.index] = this;
+    DisplayNodes[this.dnIndex] = this;
   }
 
   // setSeries(series: NodeDistribution | null): void {

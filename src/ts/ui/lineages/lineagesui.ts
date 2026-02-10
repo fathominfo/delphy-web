@@ -3,10 +3,7 @@ import { Pythia } from '../../pythia/pythia';
 import { MccUI } from '../mccui';
 import { DataResolveType, DisplayNodeClass, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
-import { NodePairType, NodePair, NodeComparisonData,
-  HoverCallback, DismissCallback, NodeDisplay,
-  NodeDistribution,
-  OpenMutationPageFncType,
+import { HoverCallback, DismissCallback, OpenMutationPageFncType,
   TreeSelectCallback,
   TreeHint,
   TREE_HINT_CLASSES,
@@ -16,11 +13,8 @@ import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';
 import { NodePrevalenceChart } from './nodeprevalencechart';
-import { isTip } from '../../util/treeutils';
 import autocomplete from 'autocompleter';
 // import { PdfCanvas } from '../../util/pdfcanvas';
-import { FieldTipCount, NodeMetadata } from '../nodemetadata';
-import { NodeComparisonChartData } from './nodecomparisonchartdata';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { CoreLineagesData } from './corelineagesdata';
