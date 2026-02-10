@@ -3,6 +3,7 @@ import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
   MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
 import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
+import { NodeDistribution } from './lineages/lineagescommon';
 
 export const UNDEF = '-';
 
@@ -102,6 +103,8 @@ export class DisplayNodeClass {
   index: number;
   private dnIndex: number;
   className: string;
+  /* we need series in order to fully replace the NodeDisplay type */
+  // series: NodeDistribution | null = null;
 
   constructor(dn: number) {
     this.dnIndex = dn;
@@ -110,6 +113,11 @@ export class DisplayNodeClass {
     this.className = nodeClassNames[dn];
     DisplayNodes[this.index] = this;
   }
+
+  // setSeries(series: NodeDistribution | null): void {
+  //   this.series = series;
+  // }
+
   getStroke(): string {
     const strokeProp = `--${ this.name.toLowerCase() }-stroke`;
     return getCSSValue(strokeProp);

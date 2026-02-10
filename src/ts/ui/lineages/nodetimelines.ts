@@ -1,29 +1,79 @@
 import { HoverCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
-import { DateScale, DisplayNodeClass, DisplayNodes, getNiceDateInterval, UNSET } from '../common';
+import { DateScale, DisplayNodeClass, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
 import { Distribution } from '../distribution';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 
-const rootSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-label") as HTMLSpanElement,
-  mrcaSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-label") as HTMLSpanElement,
-  nodeASpan = nodeComparisonContainer.querySelector("#lineages-nt-a-label") as HTMLSpanElement,
-  nodeBSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-label") as HTMLSpanElement,
-  rootDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-root-date-label") as HTMLSpanElement,
-  mrcaDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-mrca-date-label") as HTMLSpanElement,
-  nodeADateSpan = nodeComparisonContainer.querySelector("#lineages-nt-a-date-label") as HTMLSpanElement,
-  nodeBDateSpan = nodeComparisonContainer.querySelector("#lineages-nt-b-date-label") as HTMLSpanElement,
-  svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement,
+const svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement,
   dateMarkerContainer = nodeComparisonContainer.querySelector(".timeline") as HTMLDivElement,
   dateMarkerTemplate = dateMarkerContainer.querySelector(".label.reference") as HTMLDivElement,
   dateHoverDiv = nodeComparisonContainer.querySelector(".tracker") as HTMLDivElement,
-  maxProbDiv = nodeComparisonContainer.querySelector(".axis.y .max .val") as HTMLDivElement
+  maxProbDiv = nodeComparisonContainer.querySelector(".axis.y .max .val") as HTMLDivElement;
+
+
+const nameSpanTemplate = nodeComparisonContainer.querySelector(".support .tag") as HTMLSpanElement;
+const dateSpanTemplate = nodeComparisonContainer.querySelector(".label.date") as HTMLSpanElement;
+nameSpanTemplate.classList.remove("root");
+dateSpanTemplate.classList.remove("root");
+const nameLabelContainer = nameSpanTemplate.parentNode as HTMLDivElement;
+const dateLabelContainer = dateSpanTemplate.parentNode as HTMLDivElement;
+nameSpanTemplate.remove();
+dateSpanTemplate.remove();
+
 
 dateMarkerTemplate.remove();
 
 
+class NodeLabels {
+  nameSpan: HTMLSpanElement;
+  dateSpan: HTMLSpanElement;
+  className: string;
+  index: number;
 
+  constructor(dn: DisplayNodeClass, hoverCallback: HoverCallback) {
+    this.index = dn.index;
+    this.className = dn.className;
+    this.nameSpan = nameSpanTemplate.cloneNode(true) as HTMLSpanElement;
+    this.dateSpan = dateSpanTemplate.cloneNode(true) as HTMLSpanElement;
+    nameLabelContainer?.appendChild(this.nameSpan);
+    dateLabelContainer?.appendChild(this.dateSpan);
+    [this.nameSpan, this.dateSpan].forEach(span=>{
+      span.classList.add(this.className);
+      span.setAttribute("data-index", `${this.index}`);
+      span.addEventListener("pointerenter", () => hoverCallback(dn, UNSET, null))
+      span.addEventListener("mouseleave", () => hoverCallback(null, UNSET, null));
+    });
+    this.nameSpan.textContent = dn.name;
+  }
+
+  hide() {
+    this.nameSpan.style.display = "none";
+    this.dateSpan.style.display = "none";
+  }
+
+  show() {
+    this.nameSpan.style.display = "";
+    this.dateSpan.style.display = "";
+  }
+
+  unhighlight() {
+    this.nameSpan.classList.remove("highlight");
+    this.dateSpan.classList.remove("highlight");
+  }
+
+  highlight() {
+    this.nameSpan.classList.add("highlight");
+    this.dateSpan.classList.add("highlight");
+  }
+
+  setLabel(x: number, dateLabel: string) {
+    this.nameSpan.style.left = `${x}px`;
+    this.dateSpan.style.left = `${x}px`;
+    this.dateSpan.textContent = dateLabel;
+  }
+}
 
 
 export class NodeTimelines {
@@ -31,9 +81,10 @@ export class NodeTimelines {
   data: NodeDisplay[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
-  currentTypes: NodeDisplay[] = [];
   highlighedtNode: DisplayNodeClass | null = null;
   highlightedDate: number = UNSET;
+  nodeLabels: {[className: string]: NodeLabels} = {};
+  hoverCallback: HoverCallback;
 
   constructor(nodeHighlightCallback: HoverCallback) {
 
@@ -46,24 +97,9 @@ export class NodeTimelines {
     };
 
     this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
-
-    [ rootSpan, mrcaSpan, nodeASpan, nodeBSpan,
-      rootDateSpan, mrcaDateSpan, nodeADateSpan, nodeBDateSpan].forEach(span=>{
-      span.addEventListener("mouseleave", () => nodeHighlightCallback(null, UNSET, null));
-    });
-    [ rootSpan, rootDateSpan].forEach(span=>{
-      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.root, UNSET, null));
-    });
-    [ mrcaSpan, mrcaDateSpan].forEach(span=>{
-      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.mrca, UNSET, null));
-    });
-    [ nodeASpan, nodeADateSpan].forEach(span=>{
-      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.nodeA, UNSET, null));
-    });
-    [ nodeBSpan, nodeBDateSpan].forEach(span=>{
-      // span.addEventListener("mouseenter", () => nodeHighlightCallback(DisplayNodeClass.nodeB, UNSET, null));
-    });
+    this.hoverCallback = nodeHighlightCallback;
   }
+
 
   setDateRange(minDate:number, maxDate:number): void {
     this.minDate = minDate;
@@ -91,57 +127,36 @@ export class NodeTimelines {
 
   setData(nodes: NodeDisplay[]) {
     this.data = nodes;
-    this.currentTypes.length = 0;
-    // nodes.forEach((nd:NodeDisplay)=>this.currentTypes[nd.type] = nd);
     const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
     this.nodeTimesCanvas.setSeries(allSeries as NodeDistribution[]);
   }
 
   requestDraw() : void {
     requestAnimationFrame(()=>{
-      [DisplayNodes].forEach(dn=>{
-        const nameSpan: HTMLSpanElement | null = null,
-          dateSpan: HTMLSpanElement | null = null;
-        // switch (dn) {
-        // case DisplayNodeClass.root:
-        //   nameSpan = rootSpan;
-        //   dateSpan = rootDateSpan;
-        //   break;
-        // case DisplayNodeClass.mrca:
-        //   nameSpan = mrcaSpan;
-        //   dateSpan = mrcaDateSpan;
-        //   break;
-        // case DisplayNodeClass.nodeA:
-        //   nameSpan = nodeASpan;
-        //   dateSpan = nodeADateSpan;
-        //   break;
-        // case DisplayNodeClass.nodeB:
-        //   nameSpan = nodeBSpan;
-        //   dateSpan = nodeBDateSpan;
-        //   break;
-        // }
-        // if (!nameSpan || !dateSpan) return;
-        // const nodeData = this.currentTypes[dn];
-        // if (nodeData === undefined) {
-        //   nameSpan.classList.add("hidden");
-        //   dateSpan.classList.add("hidden");
-        // } else {
-        //   const dist = nodeData.series;
-        //   if (!dist) {
-        //     nameSpan.classList.add("hidden");
-        //     dateSpan.classList.add("hidden");
-        //   } else {
-        //     // nameSpan.classList.remove("hidden");
-        //     // dateSpan.classList.remove("hidden");
-        //     // const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
-        //     const dateLabel = toFullDateString(dist.median);
-        //     nameSpan.style.left = `${x}px`;
-        //     dateSpan.style.left = `${x}px`;
-        //     dateSpan.textContent = dateLabel;
-        //   }
-        // }
+      const displaying: {[_: string]: boolean} = {};
+      this.data.forEach((nd) => {
+        const dn = nd.type;
+        const dist = nd.series;
+        if (dn !== null && dist) {
+          const className = dn.className;
+          displaying[className] = true;
+          let labels = this.nodeLabels[className];
+          if (labels === undefined) {
+            labels = new NodeLabels(dn, this.hoverCallback);
+            this.nodeLabels[className] = labels;
+          } else {
+            labels.show();
+          }
+          const x = this.nodeTimesCanvas.xFor(dist.median, this.nodeTimesCanvas.width);
+          const dateLabel = toFullDateString(dist.median);
+          labels.setLabel(x, dateLabel);
+        }
       });
-
+      Object.values(this.nodeLabels).forEach(labels=>{
+        if (displaying[labels.className] === undefined) {
+          labels.hide();
+        }
+      })
       const max = this.nodeTimesCanvas.allSeriesBandMax;
       maxProbDiv.textContent = `${max}%`;
       this.nodeTimesCanvas.requestDraw();
@@ -156,35 +171,15 @@ export class NodeTimelines {
       nodeComparisonContainer.classList.toggle("highlighting", node !== null);
 
       this.nodeTimesCanvas.setMatching(node);
+      Object.values(this.nodeLabels).forEach(nl=>nl.unhighlight());
 
-
-      rootSpan.classList.remove("highlight");
-      rootDateSpan.classList.remove("highlight");
-      mrcaSpan.classList.remove("highlight");
-      mrcaDateSpan.classList.remove("highlight");
-      nodeASpan.classList.remove("highlight");
-      nodeADateSpan.classList.remove("highlight");
-      nodeBSpan.classList.remove("highlight");
-      nodeBDateSpan.classList.remove("highlight");
       nodeComparisonContainer.classList.remove("highlighting");
-      // switch (node) {
-      // case DisplayNodeClass.root:
-      //   rootSpan.classList.add("highlight");
-      //   rootDateSpan.classList.add("highlight");
-      //   break;
-      // case DisplayNodeClass.mrca:
-      //   mrcaSpan.classList.remove("highlight");
-      //   mrcaDateSpan.classList.remove("highlight");
-      //   break;
-      // case DisplayNodeClass.nodeA:
-      //   nodeASpan.classList.remove("highlight");
-      //   nodeADateSpan.classList.remove("highlight");
-      //   break;
-      // case DisplayNodeClass.nodeB:
-      //   nodeBSpan.classList.remove("highlight");
-      //   nodeBDateSpan.classList.remove("highlight");
-      //   break;
-      // }
+      if (node !== null) {
+        const labels = this.nodeLabels[node.className];
+        if (labels !== undefined) {
+          labels.highlight();
+        }
+      }
       this.highlighedtNode = node;
     }
     if (date !== this.highlightedDate) {
