@@ -5,7 +5,7 @@ import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName,
   numericSort, getNiceDateInterval, DateScale,
   sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
-import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
+import { MutationTimelineData, NodeMutationsData } from './nodecomparisonchartdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
@@ -143,12 +143,12 @@ export class NodePairMutationList {
   goToMutations: OpenMutationPageFncType;
   nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
-  data: NodeComparisonChartData;
+  data: NodeMutationsData;
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
 
 
-  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
+  constructor(data : NodeMutationsData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
     this.data = data;
     this.ancestorType = data.ancestorType;
     this.descendantType = data.descendantType;
@@ -349,7 +349,7 @@ export class NodeMutations {
   }
 
 
-  setData(nodeComparisonData: NodeComparisonChartData[]): NodePairMutationList[] {
+  setData(nodeComparisonData: NodeMutationsData[]): NodePairMutationList[] {
     nodeComparisonContainer.innerHTML = '';
     const sorted = nodeComparisonData.sort((a, b)=>{
     /* node A goes at the start of the list */

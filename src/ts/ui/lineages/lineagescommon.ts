@@ -153,12 +153,6 @@ export class NodePair {
 }
 
 
-export type NodeComparisonData = {
-  nodePair : NodePair,
-  upperNodeTimes: number[],
-  lowerNodeTimes: number[],
-  // overlapCount: number
-}
 
 
 export type HoverCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;

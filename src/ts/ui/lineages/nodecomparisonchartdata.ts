@@ -1,5 +1,5 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { NodePair, NodeComparisonData, getAncestorType, getDescendantType } from './lineagescommon';
+import { NodePair, getAncestorType, getDescendantType } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { DisplayNode, getMedian, getPercentLabel, numericSort, UNSET } from '../common';
 import { Distribution } from '../distribution';
@@ -32,7 +32,7 @@ export class MutationTimelineData {
 }
 
 
-export class NodeComparisonChartData {
+export class NodeMutationsData {
   nodePair: NodePair;
   minDate: number;
   maxDate: number;
