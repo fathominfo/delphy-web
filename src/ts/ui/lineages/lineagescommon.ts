@@ -20,6 +20,12 @@ export enum NodePairType {
 }
 
 
+export enum NodeRelationType {
+  singleDescendant = 1,
+  upperDescendant = 2,
+  lowerDescendant = 3
+}
+
 
 
 
@@ -55,7 +61,9 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
       const series = this.series[i] as NodeDistribution;
-      nodeGroup.setNodeClass(series.nodeClass.className);
+      if (series.nodeClass) {
+        nodeGroup.setNodeClass(series.nodeClass.className);
+      }
       nodeGroup.setNodeClass("tip", series.range === 0);
     });
   }

@@ -223,12 +223,14 @@ export class NodePairMutationList {
 
   setLabel(ancestorType: DisplayNodeClass, descendantType: DisplayNodeClass | null): void {
     /* set title for the ancestor node */
-    // this.nodeASpan.innerText = getNodeTypeName(ancestorType);
-    // this.nodeASpan.classList.add(getNodeClassName(ancestorType));
+    this.ancestorSpan.innerText = ancestorType.name;
+    this.ancestorSpan.classList.add(ancestorType.className);
 
     // /* set title for the descendant node */
-    // this.nodeBSpan.innerText = getNodeTypeName(descendantType);
-    // this.nodeBSpan.classList.add(getNodeClassName(descendantType));
+    if (descendantType !== null) {
+      this.descendantSpan.innerText = descendantType.name;
+      this.descendantSpan.classList.add(descendantType.className);
+    }
   }
 
 
@@ -349,40 +351,24 @@ export class NodeMutations {
   setData(nodeComparisonData: NodeMutationsData[]): NodePairMutationList[] {
     nodeComparisonContainer.innerHTML = '';
     const sorted = nodeComparisonData.sort((a, b)=>{
-    /* node A goes at the start of the list */
-      // if (a.descendantType === DisplayNodeClass.nodeA) {
-      //   return -1;
-      // }
-      // if (b.descendantType === DisplayNodeClass.nodeA) {
-      //   return 1;
-      // }
-      // /* node B comes next */
-      // if (a.descendantType === DisplayNodeClass.nodeB) {
-      //   return -1;
-      // }
-      // if (b.descendantType === DisplayNodeClass.nodeB) {
-      //   return 1;
-      // }
-      // /* then the MRCA */
-      // if (a.descendantType === DisplayNodeClass.mrca) {
-      //   return -1;
-      // }
-      // if (b.descendantType === DisplayNodeClass.mrca) {
-      //   return 1;
-      // }
-      /*
-      if we have gotten this far, then the only path
-      is the one where root is the ancestor and there
-      is no descendant.
-      */
-      return 0;
+      let diff = a.ancestorType.generationsFromRoot - b.ancestorType.generationsFromRoot;
+      if (diff === 0) {
+        if (a.descendantType === null) {
+          diff = 1;
+        } else if (b.descendantType === null) {
+          diff = -1;
+        } else {
+          diff = a.descendantType.generationsFromRoot - b.descendantType.generationsFromRoot;
+        }
+      }
+      return diff;
     });
     this.charts.length = 0;
     sorted.filter(pair=>pair.mutationCount > 0).forEach(chartData=>{
-      // console.log('NodePairMutationList', chartData)
-      // const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
-      // nc.requestDraw();
-      // this.charts.push(nc);
+      console.log('NodePairMutationList', chartData)
+      const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
+      nc.requestDraw();
+      this.charts.push(nc);
     });
     return this.charts;
   }

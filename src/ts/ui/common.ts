@@ -6,6 +6,8 @@ import { DateLabel } from './datelabel';
 import { NodeDistribution } from './lineages/lineagescommon';
 
 export const UNDEF = '-';
+export const UNSET = -1;
+
 
 export enum YSpacing {
   even = 1,
@@ -103,6 +105,7 @@ export class DisplayNodeClass {
   index: number;
   private dnIndex: number;
   className: string;
+  generationsFromRoot: number;
   /* we need series in order to fully replace the NodeDisplay type */
   // series: NodeDistribution | null = null;
 
@@ -111,6 +114,7 @@ export class DisplayNodeClass {
     this.index = DisplayNode.UNSET;
     this.name = nodeTypeNames[dn];
     this.className = nodeClassNames[dn];
+    this.generationsFromRoot = UNSET;
     DisplayNodes[this.dnIndex] = this;
   }
 
@@ -456,8 +460,6 @@ export function textIntersects(metrics1: MyTextMetrics, metrics2: MyTextMetrics)
 
   return true;
 }
-
-export const UNSET = -1;
 
 export type ZoomFnc = (vertZoom: number, vertScroll: number, horizZoom: number, horizScroll: number)=>void;
 
