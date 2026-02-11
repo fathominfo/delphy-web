@@ -1,7 +1,7 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, getAncestorType, getDescendantType } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getMedian, getPercentLabel, numericSort, UNSET } from '../common';
+import { DisplayNode, getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
 
 
