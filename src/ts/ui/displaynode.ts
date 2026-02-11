@@ -7,6 +7,7 @@ const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 export class DisplayNode {
   name: string;
   index: number;
+  private nameIndex: number;
   className: string;
   generationsFromRoot: number;
   isInferred: boolean;
@@ -14,13 +15,19 @@ export class DisplayNode {
   /* we need series in order to fully replace the NodeDisplay type */
   // series: NodeDistribution | null = null;
 
-  constructor(dn: number, generationsFromRoot: number, isInferred: boolean, isRoot: boolean) {
+
+  // nameIndex currently is 0: root, 1: mrca, 2: nodeA, 3: nodeB
+  constructor(nameIndex: number, generationsFromRoot: number, isInferred: boolean, isRoot: boolean) {
     this.index = UNSET;
-    this.name = nodeTypeNames[dn];
-    this.className = nodeClassNames[dn];
+    this.nameIndex = nameIndex;
+    this.name = nodeTypeNames[nameIndex];
+    this.className = nodeClassNames[nameIndex];
     this.generationsFromRoot = generationsFromRoot;
     this.isInferred = isInferred;
     this.isRoot = isRoot;
+    // this.name = String.fromCharCode(ASCII_BASE + nameIndex)
+    // this.className = `node-${this.name}`;
+    NUMS_IN_USE[this.nameIndex] = true;
   }
 
   // setSeries(series: NodeDistribution | null): void {
@@ -43,6 +50,7 @@ export class DisplayNode {
     this.index = index;
   }
   deactivate(): void {
+    NUMS_IN_USE[this.nameIndex] = false;
     this.index = UNSET;
   }
 }
@@ -52,47 +60,6 @@ export class DisplayNode {
 const MAX_NODE_COUNT = 26;
 const NUMS_IN_USE: boolean[] = new Array(MAX_NODE_COUNT);
 NUMS_IN_USE.fill(false);
-
-
-
-
-export class DisplayNodeClass {
-  name: string;
-  nodeIndex: number;
-  className: string;
-  inferred: boolean;
-  private nameIndex: number;
-  generationsFromRoot: number;
-
-
-  constructor(nameIndex: number, nodeIndex: number, inferred = false) {
-    this.nameIndex = nameIndex;
-    this.name = String.fromCharCode(ASCII_BASE + nameIndex)
-    this.nodeIndex = nodeIndex;
-    this.className = `node-${this.name}`;
-    this.inferred = inferred;
-    this.generationsFromRoot = UNSET;
-    NUMS_IN_USE[this.nameIndex] = true;
-  }
-
-  getStroke(): string {
-    const strokeProp = `--${ this.name.toLowerCase() }-stroke`;
-    return getCSSValue(strokeProp);
-  }
-  getFill(): string {
-    const strokeProp = `--${ this.name.toLowerCase() }-fill`;
-    return getCSSValue(strokeProp);
-  }
-  getTint(): string {
-    const strokeProp = `--${ this.name.toLowerCase() }-tint`;
-    return getCSSValue(strokeProp);
-  }
-
-  deactivate() {
-    NUMS_IN_USE[this.nameIndex] = false;
-  }
-
-}
 
 
 

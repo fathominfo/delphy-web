@@ -5,31 +5,11 @@ import { DisplayNode } from '../displaynode';
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
-export enum NodePairType {
-  rootToNodeA = 0,
-  mrcaToNodeA = 1,
-  nodeBToNodeA = 2,
-
-  rootToNodeB = 3,
-  mrcaToNodeB = 4,
-  nodeAToNodeB = 5,
-
-  rootToMrca = 6,
-
-  rootOnly = 7
-
-}
-
-
 export enum NodeRelationType {
   singleDescendant = 1,
   upperDescendant = 2,
   lowerDescendant = 3
 }
-
-
-
-
 
 /*
 
@@ -111,15 +91,13 @@ export type NodeDisplay = {
 export class NodePair {
   ancestor: DisplayNode;
   descendant: DisplayNode;
-  pairType : NodePairType;
   relation: NodeRelationType;
   mutations : MutationDistribution[]
 
   constructor(ancestor: DisplayNode, descendant: DisplayNode,
-    pairType : NodePairType, relation: NodeRelationType, mutations: MutationDistribution[]) {
+    relation: NodeRelationType, mutations: MutationDistribution[]) {
     this.ancestor = ancestor;
     this.descendant = descendant;
-    this.pairType = pairType;
     this.relation = relation;
     this.mutations = mutations;
   }
