@@ -2,7 +2,7 @@ import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
   NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
 import { DisplayNodeClass, getPercentLabel, UNSET,
-  numericSort, getNiceDateInterval, DateScale,
+  getNiceDateInterval, DateScale,
   sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
 import { MutationTimelineData, NodeMutationsData } from './nodemutationsdata';

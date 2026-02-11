@@ -177,8 +177,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   drawAncestry(pair: NodePair): void {
     const ctx = this.highlightCtx;
     const highlightNode = this.highlightedNode;
-    const {index1, index2} = pair;
-    if (index2 === UNSET) return;
+    const {ancestor, descendant} = pair;
     let displayNode: DisplayNodeClass | null = this.rootNode;
     switch(pair.pairType) {
     case NodePairType.rootToMrca:
@@ -197,16 +196,16 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     }
     if (!displayNode) return;
     const mcc = this.tree as SummaryTree;
-    let parentIndex = index2;
-    let x = this.getZoomX(mcc.getTimeOf(index2)),
-      y = this.getZoomY(index2);
+    let parentIndex = descendant.index;
+    let x = this.getZoomX(mcc.getTimeOf(parentIndex)),
+      y = this.getZoomY(parentIndex);
     let py, px;
     ctx.globalAlpha = highlightNode === null || displayNode === highlightNode ? 1 : 0.5;
     ctx.strokeStyle = displayNode?.getStroke();
     ctx.lineWidth = parseFloat(getCSSValue("--lineages-tree-descent-stroke-weight"));
     ctx.beginPath();
     ctx.moveTo(x, y);
-    while (parentIndex !== index1 && parentIndex !== UNSET) {
+    while (parentIndex !== ancestor.index && parentIndex !== UNSET) {
       parentIndex = mcc.getParentIndexOf(parentIndex);
       px = this.getZoomX(mcc.getTimeOf(parentIndex));
       py = this.getZoomY(parentIndex);

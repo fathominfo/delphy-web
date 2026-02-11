@@ -191,7 +191,7 @@ export class NodeSchematic {
     this.nodeAisUpper = nodeAIsUpper;
 
     const getMutationsFor = (nodeIndex: number)=>{
-      const data = src.filter(nodePair=>nodePair.index2 === nodeIndex)[0],
+      const data = src.filter(nodePair=>nodePair.descendant.index === nodeIndex)[0],
         muts = !data? []: data.mutations.filter(md => md.getConfidence() >= mutationPrevalenceThreshold);
       return muts;
     }

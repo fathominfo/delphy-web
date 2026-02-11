@@ -134,13 +134,21 @@ export class CoreLineagesData {
         setB = false;
 
       const currentIndices = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex];
-      let nodes: NodeDisplay[] = currentIndices.map(getNodeDisplay);
       const nodeTimes: number[][] = [];
       currentIndices.filter(index=> index !== UNSET)
         .forEach(index=>{
           nodeTimes[index] = pythia.getNodeTimeDistribution(index, summaryTree);
         });
 
+      let nodes: NodeDisplay[] = currentIndices.map(getNodeDisplay);
+      const nodeClasses: DisplayNodeClass[] = [];
+      nodes.forEach(nd=>{
+        if (nd.index !== UNSET && nd.type) {
+          nodeClasses[nd.type.index] = nd.type;
+        }
+
+
+      });
 
       // let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].map((index, i)=>getNodeDisplay(index, i));
       nodes.forEach(node=>{
@@ -151,8 +159,6 @@ export class CoreLineagesData {
       });
       if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
         /* we clear all but the root node */
-        const nodePair = this.assembleNodePair(rootIndex, UNSET, NodePairType.rootOnly, pythia, summaryTree);
-        chartData.nodePairs.push(nodePair);
         this.setSelectable(true);
       } else {
         let nodePair: NodePair;
@@ -161,14 +167,14 @@ export class CoreLineagesData {
           if (nodeAIndex === UNSET) {
             if (nodeBIndex !== UNSET) {
               setB = true;
-              nodePair = this.assembleNodePair(rootIndex, nodeBIndex, NodePairType.rootToNodeB, pythia, summaryTree);
+              nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodePairType.rootToNodeB, pythia, summaryTree);
               chartData.nodePairs.push(nodePair);
             }
             this.setSelectable(true);
           } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
             /* we have node 1 without node 2 */
             setA = true;
-            nodePair = this.assembleNodePair(rootIndex, nodeAIndex, NodePairType.rootToNodeA, pythia, summaryTree);
+            nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodePairType.rootToNodeA, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
             this.setSelectable(true);
           } else {
@@ -224,9 +230,9 @@ export class CoreLineagesData {
             }
             setA = true;
             setB = true;
-            nodePair = this.assembleNodePair(ancestor1Index, descendant1Index, pair1, pythia, summaryTree);
+            nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], pair1, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
-            nodePair = this.assembleNodePair(ancestor2Index, descendant2Index, pair2, pythia, summaryTree);
+            nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], pair2, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
             // this.disableSelections();
           }
@@ -235,11 +241,11 @@ export class CoreLineagesData {
           setA = true;
           setB = true;
           setMRCA = true;
-          nodePair = this.assembleNodePair(rootIndex, mrcaIndex, NodePairType.rootToMrca, pythia, summaryTree);
+          nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[mrcaIndex], NodePairType.rootToMrca, pythia, summaryTree);
           chartData.nodePairs.push(nodePair);
-          nodePair = this.assembleNodePair(mrcaIndex, nodeAIndex, NodePairType.mrcaToNodeA, pythia, summaryTree);
+          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeAIndex], NodePairType.mrcaToNodeA, pythia, summaryTree);
           chartData.nodePairs.push(nodePair);
-          nodePair = this.assembleNodePair(mrcaIndex, nodeBIndex, NodePairType.mrcaToNodeB, pythia, summaryTree);
+          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeBIndex], NodePairType.mrcaToNodeB, pythia, summaryTree);
           chartData.nodePairs.push(nodePair);
           // this.disableSelections();
         }
@@ -282,8 +288,8 @@ export class CoreLineagesData {
         nodeDistributions = nodePrevalenceData.series;
       chartData.nodes = nodes;
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
-        const ascendantTimes = nodeTimes[np.index1],
-          descendantTimes = nodeTimes[np.index2] || [],
+        const ascendantTimes = nodeTimes[np.ancestor.index],
+          descendantTimes = nodeTimes[np.descendant.index] || [],
           ancestorMedianDate = getMedian(ascendantTimes),
           descendantMedianDate = getMedian(descendantTimes);
         return new NodeMutationsData(np, ancestorMedianDate, descendantMedianDate, minDate, maxDate, isApobecEnabled)
@@ -307,9 +313,9 @@ export class CoreLineagesData {
 
 
 
-  assembleNodePair(index1: number, index2: number, nodePairType: NodePairType, pythia: Pythia, tree: SummaryTree): NodePair {
-    const mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(index1, index2, tree);
-    return new NodePair(index1, index2, nodePairType, mutTimes);
+  assembleNodePair(ancestor: DisplayNodeClass, descendant: DisplayNodeClass, nodePairType: NodePairType, pythia: Pythia, tree: SummaryTree): NodePair {
+    const mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(ancestor.index, descendant.index, tree);
+    return new NodePair(ancestor, descendant, nodePairType, mutTimes);
   }
 
 

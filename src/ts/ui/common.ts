@@ -80,25 +80,10 @@ const enum DisplayNode {
   nodeB = 3,
   UNSET = -1
 }
-export const nodeTypeNames = ["Root", "MRCA", "A", "B"];
-export const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
+const nodeTypeNames = ["Root", "MRCA", "A", "B"];
+const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 
 
-export const getNodeTypeName = (dn: DisplayNode)=>nodeTypeNames[dn];
-
-export const getNodeStroke = (dn:DisplayNode)=>{
-  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-stroke`;
-  return getCSSValue(strokeProp);
-};
-export const getNodeFill = (dn:DisplayNode)=>{
-  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-fill`;
-  return getCSSValue(strokeProp);
-};
-export const getNodeTint = (dn:DisplayNode)=>{
-  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-tint`;
-  return getCSSValue(strokeProp);
-};
-export const getNodeClassName = (dn: DisplayNode)=>nodeClassNames[dn];
 
 export class DisplayNodeClass {
   name: string;

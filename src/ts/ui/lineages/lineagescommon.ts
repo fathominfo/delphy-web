@@ -110,14 +110,14 @@ export type NodeDisplay = {
 const descendantTypes:DisplayNodeClass[] = DisplayNodes.filter(dn=>dn.name !== "root");
 
 export class NodePair {
-  index1: number;
-  index2: number;
+  ancestor: DisplayNodeClass;
+  descendant: DisplayNodeClass;
   pairType : NodePairType;
   mutations : MutationDistribution[]
 
-  constructor(index1: number, index2: number,  pairType : NodePairType, mutations: MutationDistribution[]) {
-    this.index1 = index1;
-    this.index2 = index2;
+  constructor(ancestor: DisplayNodeClass, descendant: DisplayNodeClass,  pairType : NodePairType, mutations: MutationDistribution[]) {
+    this.ancestor = ancestor;
+    this.descendant = descendant;
     this.pairType = pairType;
     this.mutations = mutations;
   }
