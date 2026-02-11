@@ -145,7 +145,8 @@ export class CoreLineagesData {
 
       let nodes: NodeDisplay[] = currentIndices.map((index, dn)=>{
         const isInferred = index === rootIndex || index === mrcaIndex;
-        const nd = getNodeDisplay(index, dn, summaryTree, isInferred);
+        const isRoot = index == rootIndex;
+        const nd = getNodeDisplay(index, dn, summaryTree, isInferred, isRoot);
         chartData.nodes[dn] = nd.type;
         return nd;
       });
@@ -559,7 +560,7 @@ export class CoreLineagesData {
 
 
 const getNodeDisplay = (index: number, dnIndex: number,
-  summaryTree: SummaryTree, isInferred: boolean) => {
+  summaryTree: SummaryTree, isInferred: boolean, isRoot: boolean) => {
   let generationsFromRoot = UNSET;
   if (index !== UNSET) {
     let parent = index;
@@ -569,7 +570,7 @@ const getNodeDisplay = (index: number, dnIndex: number,
       generationsFromRoot++;
     }
   }
-  const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred);
+  const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred, isRoot);
   dnc.setIndex(index);
   return {
     index: index,

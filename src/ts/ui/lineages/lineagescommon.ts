@@ -1,6 +1,6 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNode, DisplayNodes } from '../displaynode';
+import { DisplayNode } from '../displaynode';
 
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
@@ -108,8 +108,6 @@ export type NodeDisplay = {
   series: NodeDistribution | null
 };
 
-const descendantTypes:DisplayNode[] = DisplayNodes.filter(dn=>dn.name !== "root");
-
 export class NodePair {
   ancestor: DisplayNode;
   descendant: DisplayNode;
@@ -126,29 +124,12 @@ export class NodePair {
     this.mutations = mutations;
   }
 
-  getDescendantType() {
-    const index = Math.floor(this.pairType / 3);
-    return descendantTypes[index];
+  getDescendant(): DisplayNode {
+    return this.descendant;
   }
 
-  getAncestorType(): DisplayNode {
-    switch (this.pairType) {
-    case NodePairType.rootToMrca:
-    case NodePairType.rootToNodeA:
-    case NodePairType.rootToNodeB:
-    case NodePairType.rootOnly:
-      return DisplayNodes.filter(dn=>dn.className === 'root')[0];
-    case NodePairType.mrcaToNodeA:
-    case NodePairType.mrcaToNodeB:
-      return  DisplayNodes.filter(dn=>dn.className === 'mrca')[0];
-    case NodePairType.nodeAToNodeB:
-      return  DisplayNodes.filter(dn=>dn.className === 'nodeA')[0];
-    case NodePairType.nodeBToNodeA:
-      return  DisplayNodes.filter(dn=>dn.className === 'nodeB')[0];
-    default:
-      return  DisplayNodes.filter(dn=>dn.className === 'root')[0];
-    }
-
+  getAncestor(): DisplayNode {
+    return this.ancestor;
   }
 }
 

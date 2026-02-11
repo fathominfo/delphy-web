@@ -48,8 +48,8 @@ export class NodeMutationsData {
     this.maxDate = maxDate;
     this.isApobecRun = isApobecRun;
     this.mutationTimelineData = [];
-    this.ancestorType = this.nodePair.getAncestorType();
-    this.descendantType = this.nodePair.getDescendantType();
+    this.ancestorType = this.nodePair.getAncestor();
+    this.descendantType = this.nodePair.getDescendant();
     this.ancestorMedianDate = ancestorMedianDate;
     this.descendantMedianDate = descendantMedianDate;
 
