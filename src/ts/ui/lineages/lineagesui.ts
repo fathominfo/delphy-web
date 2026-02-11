@@ -1,7 +1,7 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { Pythia } from '../../pythia/pythia';
 import { MccUI } from '../mccui';
-import { DataResolveType, DisplayNodeClass, Screens, UNSET } from '../common';
+import { DataResolveType, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, DismissCallback, OpenMutationPageFncType,
   TreeSelectCallback,
@@ -19,6 +19,7 @@ import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { CoreLineagesData } from './corelineagesdata';
 import { BaseTreeSeriesType } from '../../constants';
+import { DisplayNode } from '../displaynode';
 
 
 
@@ -225,7 +226,7 @@ export class LineagesUI extends MccUI {
   }
 
 
-  highlightCharts(displayNode: DisplayNodeClass|null, date: number, mutation: Mutation | null) {
+  highlightCharts(displayNode: DisplayNode|null, date: number, mutation: Mutation | null) {
     if (this.coreData.checkNewHighlight(displayNode, date, mutation)) {
       (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(this.coreData.highlightNode, this.coreData.highlightDate);
       this.nodeListDisplay.highlightNode(this.coreData.highlightNode);
@@ -311,7 +312,7 @@ export class LineagesUI extends MccUI {
   }
 
 
-  handleNodeDismiss(node:DisplayNodeClass): void {
+  handleNodeDismiss(node:DisplayNode): void {
     // switch (node) {
     // case DisplayNodeClass.nodeA: {
     //   this.nodeAIndex = UNSET;
@@ -341,8 +342,8 @@ export class LineagesUI extends MccUI {
   }
 
 
-  handleNodeZoom(node: DisplayNodeClass | null) : void {
-    const zoomNode: DisplayNodeClass | null = null;
+  handleNodeZoom(node: DisplayNode | null) : void {
+    const zoomNode: DisplayNode | null = null;
 
     // switch (node) {
     // case DisplayNodeClass.mrca:

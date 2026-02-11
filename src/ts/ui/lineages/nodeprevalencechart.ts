@@ -1,6 +1,7 @@
 import { BaseTreeSeriesType } from '../../constants';
-import { DateScale, DisplayNodeClass, UNSET, getNiceDateInterval,
+import { DateScale, UNSET, getNiceDateInterval,
   setDateLabel, DATE_LABEL_WIDTH_PX, AxisLabel } from '../common';
+import { DisplayNode } from '../displaynode';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { HoverCallback, NodeDisplay } from './lineagescommon';
 
@@ -14,12 +15,12 @@ const TREND_TEMPLATE = CONTAINER.querySelector("g.group") as SVGGElement;
 
 
 export class SVGPrevalenceMeanGroup {
-  node: DisplayNodeClass;
+  node: DisplayNode;
   g: SVGGElement;
   shape: SVGPathElement;
   trend: SVGLineElement;
 
-  constructor(node:DisplayNodeClass) {
+  constructor(node:DisplayNode) {
     this.node = node;
     this.g = TREND_TEMPLATE.cloneNode(true) as SVGGElement;
     this.g.classList.add(node.className);
@@ -37,7 +38,7 @@ export class SVGPrevalenceMeanGroup {
 
 export class NodePrevalenceChart {
   hoverDate: number = UNSET;
-  highlightDisplayNode: DisplayNodeClass | null = null;
+  highlightDisplayNode: DisplayNode | null = null;
   nodeHighlightCallback: HoverCallback;
   nodes: NodeDisplay[] = [];
   svg: SVGElement;
@@ -231,7 +232,7 @@ export class NodePrevalenceChart {
   }
 
 
-  highlightNode(node: DisplayNodeClass | null, date:number) : void {
+  highlightNode(node: DisplayNode | null, date:number) : void {
     requestAnimationFrame(()=>{
       if (node === null) {
         Object.values(this.svgGroups).forEach((group)=>{

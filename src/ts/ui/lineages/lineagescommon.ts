@@ -1,6 +1,7 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNodeClass, DisplayNodes } from '../common';
+import { DisplayNode, DisplayNodes } from '../displaynode';
+
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 
@@ -38,9 +39,9 @@ Extensions to the classes that make up a TimeDistributionChart
 
 
 export class NodeDistribution extends Distribution {
-  nodeClass: DisplayNodeClass;
+  nodeClass: DisplayNode;
 
-  constructor(type: DisplayNodeClass, times: number[]) {
+  constructor(type: DisplayNode, times: number[]) {
     super(times);
     this.nodeClass = type;
   }
@@ -68,7 +69,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     });
   }
 
-  setMatching(node:DisplayNodeClass | null) {
+  setMatching(node:DisplayNode | null) {
     if (node === null) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
@@ -102,21 +103,21 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 export type NodeDisplay = {
   index: number,
   label: string,
-  type: DisplayNodeClass | null,
+  type: DisplayNode | null,
   times: number[],
   series: NodeDistribution | null
 };
 
-const descendantTypes:DisplayNodeClass[] = DisplayNodes.filter(dn=>dn.name !== "root");
+const descendantTypes:DisplayNode[] = DisplayNodes.filter(dn=>dn.name !== "root");
 
 export class NodePair {
-  ancestor: DisplayNodeClass;
-  descendant: DisplayNodeClass;
+  ancestor: DisplayNode;
+  descendant: DisplayNode;
   pairType : NodePairType;
   relation: NodeRelationType;
   mutations : MutationDistribution[]
 
-  constructor(ancestor: DisplayNodeClass, descendant: DisplayNodeClass,
+  constructor(ancestor: DisplayNode, descendant: DisplayNode,
     pairType : NodePairType, relation: NodeRelationType, mutations: MutationDistribution[]) {
     this.ancestor = ancestor;
     this.descendant = descendant;
@@ -126,12 +127,11 @@ export class NodePair {
   }
 
   getDescendantType() {
-    if (this.pairType === NodePairType.rootOnly) return null;
     const index = Math.floor(this.pairType / 3);
     return descendantTypes[index];
   }
 
-  getAncestorType(): DisplayNodeClass {
+  getAncestorType(): DisplayNode {
     switch (this.pairType) {
     case NodePairType.rootToMrca:
     case NodePairType.rootToNodeA:
@@ -152,11 +152,11 @@ export class NodePair {
   }
 }
 
-export type HoverCallback = (node:DisplayNodeClass | null, dateIndex: number, mutation: Mutation|null)=>void;
+export type HoverCallback = (node:DisplayNode | null, dateIndex: number, mutation: Mutation|null)=>void;
 export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
 export type TreeSelectCallback = (nodeIndex: number)=>void;
-export type DismissCallback = (node:DisplayNodeClass)=>void;
-export type NodeCallback = (displayNode: DisplayNodeClass)=>void;
+export type DismissCallback = (node:DisplayNode)=>void;
+export type NodeCallback = (displayNode: DisplayNode)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 export type KeyEventHandler = (event: KeyboardEvent)=>void;
 

@@ -1,8 +1,9 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, mutationPrevalenceThreshold } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNodeClass, getPercentLabel, UNSET } from '../common';
+import { getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
+import { DisplayNode } from '../displaynode';
 
 
 
@@ -34,8 +35,8 @@ export class NodeMutationsData {
   mutationTimelineData:MutationTimelineData[];
   mutationCount: number = UNSET;
 
-  ancestorType: DisplayNodeClass;
-  descendantType: DisplayNodeClass | null;
+  ancestorType: DisplayNode;
+  descendantType: DisplayNode;
   ancestorMedianDate: number = UNSET;
   descendantMedianDate: number = UNSET;
   thresholdLabel = "";

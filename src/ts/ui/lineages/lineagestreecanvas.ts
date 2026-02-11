@@ -1,10 +1,11 @@
 import { Context2d } from "jspdf";
 import { PdfCanvas } from "../../util/pdfcanvas";
-import { DisplayNodeClass, getCSSValue, UNSET } from "../common";
+import { getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { TreeSelectCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
 import { DateLabel } from "../datelabel";
+import { DisplayNode } from "../displaynode";
 
 const INFERRED_NODE_RADIUS = 4;
 const SELECTED_NODE_RADIUS = 5.5;
@@ -12,10 +13,10 @@ const SELECTED_NODE_RADIUS = 5.5;
 
 
 export class LineagesTreeCanvas extends MccTreeCanvas {
-  nodes: DisplayNodeClass[] = [];
+  nodes: DisplayNode[] = [];
   descendants: NodePair[] = [];
-  subtreeNode: DisplayNodeClass | null = null;
-  highlightedNode: DisplayNodeClass | null = null;
+  subtreeNode: DisplayNode | null = null;
+  highlightedNode: DisplayNode | null = null;
   highlightedDate: number = UNSET;
   highlightCanvas: HTMLCanvasElement;
   highlightCtx: CanvasRenderingContext2D;
@@ -53,7 +54,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  setNodes(nodes: DisplayNodeClass [],
+  setNodes(nodes: DisplayNode [],
     descendants: NodePair[]) {
     this.nodes = nodes;
     this.descendants = descendants;
@@ -77,13 +78,13 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     this.drawSelection();
   }
 
-  highlightNode(node: DisplayNodeClass | null, date: number) {
+  highlightNode(node: DisplayNode | null, date: number) {
     this.highlightCtx.clearRect(0, 0, this.width, this.height);
     this.highlightedNode = node;
     this.highlightedDate = date;
     this.subtreeNode = node;
     if (node !== null) {
-      const others: DisplayNodeClass[] = this.nodes.filter(n=>n!==node)
+      const others: DisplayNode[] = this.nodes.filter(n=>n!==node)
       this.highlightCtx.globalAlpha = 0.5;
       this.renderSubtree();
       this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
@@ -126,7 +127,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  drawNode(displayNode: DisplayNodeClass | null): void {
+  drawNode(displayNode: DisplayNode | null): void {
     if (displayNode === null) return;
     const index = displayNode.index;
     if (index === UNSET) return;

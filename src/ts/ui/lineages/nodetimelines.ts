@@ -1,8 +1,9 @@
 import { HoverCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
-import { DateScale, DisplayNodeClass, getNiceDateInterval, UNSET } from '../common';
+import { DateScale, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
 import { Distribution } from '../distribution';
+import { DisplayNode } from '../displaynode';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 
@@ -32,7 +33,7 @@ class NodeLabels {
   className: string;
   index: number;
 
-  constructor(dn: DisplayNodeClass, hoverCallback: HoverCallback) {
+  constructor(dn: DisplayNode, hoverCallback: HoverCallback) {
     this.index = dn.index;
     this.className = dn.className;
     this.nameSpan = nameSpanTemplate.cloneNode(true) as HTMLSpanElement;
@@ -81,7 +82,7 @@ export class NodeTimelines {
   data: NodeDisplay[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
-  highlighedtNode: DisplayNodeClass | null = null;
+  highlighedtNode: DisplayNode | null = null;
   highlightedDate: number = UNSET;
   nodeLabels: {[className: string]: NodeLabels} = {};
   hoverCallback: HoverCallback;
@@ -89,7 +90,7 @@ export class NodeTimelines {
   constructor(nodeHighlightCallback: HoverCallback) {
 
     const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, date: number)=>{
-      let nodeType: DisplayNodeClass | null = null;
+      let nodeType: DisplayNode | null = null;
       if (series) {
         nodeType = (series as NodeDistribution).nodeClass;
       }
@@ -164,7 +165,7 @@ export class NodeTimelines {
   }
 
 
-  highlightNode(node: DisplayNodeClass | null, date: number) : void {
+  highlightNode(node: DisplayNode | null, date: number) : void {
     if (!this.data) return;
 
     if (node !== this.highlighedtNode) {

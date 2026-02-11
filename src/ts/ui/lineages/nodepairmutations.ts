@@ -1,7 +1,7 @@
 import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
   NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
-import { DisplayNodeClass, getPercentLabel, UNSET,
+import { getPercentLabel, UNSET,
   getNiceDateInterval, DateScale,
   sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
@@ -10,6 +10,7 @@ import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { Distribution } from '../distribution';
+import { DisplayNode } from '../displaynode';
 
 
 
@@ -144,8 +145,8 @@ export class NodePairMutationList {
   nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
   data: NodeMutationsData;
-  ancestorType: DisplayNodeClass;
-  descendantType: DisplayNodeClass | null;
+  ancestorType: DisplayNode;
+  descendantType: DisplayNode;
 
 
   constructor(data : NodeMutationsData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
@@ -221,7 +222,7 @@ export class NodePairMutationList {
   }
 
 
-  setLabel(ancestorType: DisplayNodeClass, descendantType: DisplayNodeClass | null): void {
+  setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
     /* set title for the ancestor node */
     this.ancestorSpan.innerText = ancestorType.name;
     this.ancestorSpan.classList.add(ancestorType.className);
@@ -290,7 +291,7 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNodeClass | null, date: number, mutation: Mutation | null) : void {
+  highlightNode(node: DisplayNode | null, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
     let matched = node === this.data.descendantType;
     this.mutationTimelines.forEach(mt=>{
@@ -373,7 +374,7 @@ export class NodeMutations {
     return this.charts;
   }
 
-  highlightNode(node: DisplayNodeClass | null, date: number, mutation: Mutation|null) {
+  highlightNode(node: DisplayNode | null, date: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
       chart.highlightNode(node, date, mutation);

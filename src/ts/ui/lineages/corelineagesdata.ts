@@ -4,7 +4,8 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
-import { DisplayNodeClass, getMedian, UNSET } from "../common";
+import { getMedian, UNSET } from "../common";
+import { DisplayNode } from "../displaynode";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { NodeDisplay, NodeDistribution, NodePair, NodePairType, NodeRelationType, TreeHint } from "./lineagescommon";
@@ -17,7 +18,7 @@ export type NodeHoverData = {
   nodeAIndex: number,
   nodeBIndex: number,
   hint: TreeHint,
-  displayNode: DisplayNodeClass | null
+  displayNode: DisplayNode | null
 };
 
 
@@ -46,7 +47,7 @@ export type ChartData = {
   nodeAIsUpper: boolean,
   nodeDisplays: NodeDisplay[],
   nodePairs: NodePair[],
-  nodes: DisplayNodeClass[]
+  nodes: DisplayNode[]
 }
 
 
@@ -60,10 +61,10 @@ export class CoreLineagesData {
   nodeBIndex = UNSET;
   mrcaIndex = UNSET;
   rootIndex = UNSET;
-  nodeANode : DisplayNodeClass | null = null;
-  nodeBNode : DisplayNodeClass | null = null;
-  mrcaNode : DisplayNodeClass | null = null;
-  rootNode : DisplayNodeClass | null = null;
+  nodeANode : DisplayNode | null = null;
+  nodeBNode : DisplayNode | null = null;
+  mrcaNode : DisplayNode | null = null;
+  rootNode : DisplayNode | null = null;
 
   nodeChildCount: number[] = [];
 
@@ -77,7 +78,7 @@ export class CoreLineagesData {
   selectable = true;
 
   constrainHoverByCredibility = false;
-  highlightNode: DisplayNodeClass | null = null;
+  highlightNode: DisplayNode | null = null;
   highlightDate: number = UNSET;
   highlightMutation: Mutation | null = null;
 
@@ -148,7 +149,7 @@ export class CoreLineagesData {
         chartData.nodes[dn] = nd.type;
         return nd;
       });
-      const nodeClasses: DisplayNodeClass[] = [];
+      const nodeClasses: DisplayNode[] = [];
       nodes.forEach(nd=>{
         if (nd.index !== UNSET && nd.type) {
           nodeClasses[nd.type.index] = nd.type;
@@ -325,7 +326,7 @@ export class CoreLineagesData {
 
 
 
-  assembleNodePair(ancestor: DisplayNodeClass, descendant: DisplayNodeClass,
+  assembleNodePair(ancestor: DisplayNode, descendant: DisplayNode,
     nodePairType: NodePairType, relation: NodeRelationType, pythia: Pythia, tree: SummaryTree): NodePair {
     const mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(ancestor.index, descendant.index, tree);
     return new NodePair(ancestor, descendant, nodePairType, relation, mutTimes);
@@ -333,7 +334,7 @@ export class CoreLineagesData {
 
 
 
-  checkNewHighlight(displayNode: DisplayNodeClass | null, date: number, mutation: Mutation | null): boolean{
+  checkNewHighlight(displayNode: DisplayNode | null, date: number, mutation: Mutation | null): boolean{
     if (displayNode === this.highlightNode && date === this.highlightDate && mutation === this.highlightMutation) {
       return false;
     }
@@ -448,7 +449,7 @@ export class CoreLineagesData {
       this.hoveredNode = nodeIndex;
     }
     this.hoveredDate = date;
-    let displayNode: DisplayNodeClass|null = null;
+    let displayNode: DisplayNode|null = null;
     if (nodeIndex === UNSET) {
       hint = TreeHint.Zoom;
     } else if (nodeIndex === rootIndex) {
@@ -568,7 +569,7 @@ const getNodeDisplay = (index: number, dnIndex: number,
       generationsFromRoot++;
     }
   }
-  const dnc = new DisplayNodeClass(dnIndex, generationsFromRoot, isInferred);
+  const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred);
   dnc.setIndex(index);
   return {
     index: index,

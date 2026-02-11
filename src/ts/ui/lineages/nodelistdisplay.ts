@@ -1,4 +1,5 @@
-import { DisplayNodeClass, UNSET, getPercentLabel } from '../common';
+import { UNSET, getPercentLabel } from '../common';
+import { DisplayNode } from '../displaynode';
 import { NodeMetadataValues } from '../nodemetadata';
 import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
@@ -170,7 +171,7 @@ export class NodeListDisplay {
     this.nodeBDiv = new NodeItem(getDiv('.lineages--node-item.nodeB'));
 
 
-    const bindDismiss = (div: HTMLDivElement, node: DisplayNodeClass)=>{
+    const bindDismiss = (div: HTMLDivElement, node: DisplayNode)=>{
       const dismiss = div.querySelector(".node-dismiss") as HTMLButtonElement;
       if (!dismiss) {
         throw new Error('the div has nothing for dismissing');
@@ -227,7 +228,7 @@ export class NodeListDisplay {
     });
   }
 
-  highlightNode(node: DisplayNodeClass | null) : void {
+  highlightNode(node: DisplayNode | null) : void {
     if (node === null) {
       this.rootDiv.restore();
       this.mrcaDiv.restore();
