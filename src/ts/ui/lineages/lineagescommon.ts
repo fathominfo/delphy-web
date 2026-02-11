@@ -113,12 +113,15 @@ export class NodePair {
   ancestor: DisplayNodeClass;
   descendant: DisplayNodeClass;
   pairType : NodePairType;
+  relation: NodeRelationType;
   mutations : MutationDistribution[]
 
-  constructor(ancestor: DisplayNodeClass, descendant: DisplayNodeClass,  pairType : NodePairType, mutations: MutationDistribution[]) {
+  constructor(ancestor: DisplayNodeClass, descendant: DisplayNodeClass,
+    pairType : NodePairType, relation: NodeRelationType, mutations: MutationDistribution[]) {
     this.ancestor = ancestor;
     this.descendant = descendant;
     this.pairType = pairType;
+    this.relation = relation;
     this.mutations = mutations;
   }
 

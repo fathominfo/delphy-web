@@ -259,7 +259,7 @@ export class LineagesUI extends MccUI {
     const chartData = this.coreData.setChartData(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex,
       this.mccTreeCanvas, this.isApobecEnabled);
     const {  nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
-      nodeComparisonData, nodeAIsUpper, nodes, nodePairs } = chartData;
+      nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
     if (nodeListData[1]) {
       const { confidence, index, childCount, isLocked, metadata } = nodeListData[1];
       this.nodeListDisplay.setMRCA(confidence, childCount, isLocked, metadata, index);
@@ -278,8 +278,9 @@ export class LineagesUI extends MccUI {
     } else {
       this.nodeListDisplay.clearNodeB();
     }
-    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, nodePairs);
-    this.nodeTimelines.setData(nodes);
+    const [root, mrca, nodeA, nodeB] = nodes;
+    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes([root, mrca, nodeA, nodeB].filter(dnc=>dnc.index !== UNSET), nodePairs);
+    this.nodeTimelines.setData(nodeDisplays);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);
     this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex], nodeAIsUpper);

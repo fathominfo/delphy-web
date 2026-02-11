@@ -7,7 +7,7 @@ import { isTip } from "../../util/treeutils";
 import { DisplayNodeClass, getMedian, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { NodeDisplay, NodeDistribution, NodePair, NodePairType, TreeHint } from "./lineagescommon";
+import { NodeDisplay, NodeDistribution, NodePair, NodePairType, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 
 
@@ -44,8 +44,9 @@ export type ChartData = {
   maxDate: number
   nodeComparisonData: NodeMutationsData[],
   nodeAIsUpper: boolean,
-  nodes: NodeDisplay[],
-  nodePairs: NodePair[]
+  nodeDisplays: NodeDisplay[],
+  nodePairs: NodePair[],
+  nodes: DisplayNodeClass[]
 }
 
 
@@ -114,8 +115,9 @@ export class CoreLineagesData {
         maxDate: UNSET,
         nodeComparisonData: [],
         nodeAIsUpper: true,
-        nodes: [],
-        nodePairs: []
+        nodeDisplays: [],
+        nodePairs: [],
+        nodes: []
       };
     if (pythia) {
 
@@ -140,14 +142,17 @@ export class CoreLineagesData {
           nodeTimes[index] = pythia.getNodeTimeDistribution(index, summaryTree);
         });
 
-      let nodes: NodeDisplay[] = currentIndices.map(getNodeDisplay);
+      let nodes: NodeDisplay[] = currentIndices.map((index, dn)=>{
+        const isInferred = index === rootIndex || index === mrcaIndex;
+        const nd = getNodeDisplay(index, dn, summaryTree, isInferred);
+        chartData.nodes[dn] = nd.type;
+        return nd;
+      });
       const nodeClasses: DisplayNodeClass[] = [];
       nodes.forEach(nd=>{
         if (nd.index !== UNSET && nd.type) {
           nodeClasses[nd.type.index] = nd.type;
         }
-
-
       });
 
       // let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].map((index, i)=>getNodeDisplay(index, i));
@@ -167,14 +172,14 @@ export class CoreLineagesData {
           if (nodeAIndex === UNSET) {
             if (nodeBIndex !== UNSET) {
               setB = true;
-              nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodePairType.rootToNodeB, pythia, summaryTree);
+              nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodePairType.rootToNodeB, NodeRelationType.singleDescendant, pythia, summaryTree);
               chartData.nodePairs.push(nodePair);
             }
             this.setSelectable(true);
           } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
             /* we have node 1 without node 2 */
             setA = true;
-            nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodePairType.rootToNodeA, pythia, summaryTree);
+            nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodePairType.rootToNodeA, NodeRelationType.singleDescendant, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
             this.setSelectable(true);
           } else {
@@ -189,50 +194,47 @@ export class CoreLineagesData {
 
               */
             const mrca = this.getMRCA(nodeAIndex, nodeBIndex, summaryTree),
-              ancestor1: NodeDisplay | null = nodes.filter(n=>n.label === "Root")[0],
               ancestor1Index = rootIndex;
-            let descendant1: NodeDisplay | null = null,
-              ancestor2: NodeDisplay | null = null,
-              descendant2: NodeDisplay | null = null,
-              ancestor2Index = rootIndex,
+            let ancestor2Index = rootIndex,
               descendant1Index = rootIndex,
               descendant2Index = rootIndex,
               pair1: NodePairType = NodePairType.rootToNodeA,
-              pair2: NodePairType = NodePairType.rootToNodeB;
-
+              pair2: NodePairType = NodePairType.rootToNodeB,
+              rel1: NodeRelationType = NodeRelationType.singleDescendant,
+              rel2: NodeRelationType = NodeRelationType.singleDescendant;
             if (mrca === rootIndex) {
               pair1 = NodePairType.rootToNodeA;
-              descendant1 = nodes.filter(n=>n.label === "A")[0];
               descendant1Index = nodeAIndex;
               pair2 = NodePairType.rootToNodeB;
-              descendant2 = nodes.filter(n=>n.label === "B")[0];
               descendant2Index = nodeBIndex;
+              const nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
+              if (nodeAIsUpper) {
+                rel1 = NodeRelationType.upperDescendant;
+                rel2 = NodeRelationType.lowerDescendant;
+              } else {
+                rel1 = NodeRelationType.lowerDescendant;
+                rel2 = NodeRelationType.upperDescendant;
+              }
             } else if (mrca === nodeAIndex) {
               pair1 = NodePairType.rootToNodeA;
-              descendant1 = nodes.filter(n=>n.label === "A")[0];
               descendant1Index = nodeAIndex;
               pair2 = NodePairType.nodeAToNodeB;
-              ancestor2 = nodes.filter(n=>n.label === "A")[0];
               ancestor2Index = nodeAIndex;
-              descendant2 = nodes.filter(n=>n.label === "B")[0];
               descendant2Index = nodeBIndex;
             } else if (mrca === nodeBIndex) {
               pair1 = NodePairType.rootToNodeB;
-              descendant1 = nodes.filter(n=>n.label === "B")[0];
               descendant1Index = nodeBIndex;
               pair2 = NodePairType.nodeBToNodeA;
-              ancestor2 = nodes.filter(n=>n.label === "B")[0];
               ancestor2Index = nodeBIndex;
-              descendant2 = nodes.filter(n=>n.label === "A")[0];
               descendant2Index = nodeAIndex;
             } else {
               console.warn("need to revisit how node pairs are made");
             }
             setA = true;
             setB = true;
-            nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], pair1, pythia, summaryTree);
+            nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], pair1, rel1, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
-            nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], pair2, pythia, summaryTree);
+            nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], pair2, rel2, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
             // this.disableSelections();
           }
@@ -241,11 +243,21 @@ export class CoreLineagesData {
           setA = true;
           setB = true;
           setMRCA = true;
-          nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[mrcaIndex], NodePairType.rootToMrca, pythia, summaryTree);
+          const nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
+          let relA: NodeRelationType;
+          let relB: NodeRelationType;
+          if (nodeAIsUpper) {
+            relA = NodeRelationType.upperDescendant;
+            relB = NodeRelationType.lowerDescendant;
+          } else {
+            relA = NodeRelationType.lowerDescendant;
+            relB = NodeRelationType.upperDescendant;
+          }
+          nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[mrcaIndex], NodePairType.rootToMrca, NodeRelationType.singleDescendant, pythia, summaryTree);
           chartData.nodePairs.push(nodePair);
-          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeAIndex], NodePairType.mrcaToNodeA, pythia, summaryTree);
+          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeAIndex], NodePairType.mrcaToNodeA, relA, pythia, summaryTree);
           chartData.nodePairs.push(nodePair);
-          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeBIndex], NodePairType.mrcaToNodeB, pythia, summaryTree);
+          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeBIndex], NodePairType.mrcaToNodeB, relB, pythia, summaryTree);
           chartData.nodePairs.push(nodePair);
           // this.disableSelections();
         }
@@ -286,7 +298,7 @@ export class CoreLineagesData {
       const nodeIndices = nodes.map(({index})=>index),
         nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),
         nodeDistributions = nodePrevalenceData.series;
-      chartData.nodes = nodes;
+      chartData.nodeDisplays = nodes;
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
         const ascendantTimes = nodeTimes[np.ancestor.index],
           descendantTimes = nodeTimes[np.descendant.index] || [],
@@ -313,9 +325,10 @@ export class CoreLineagesData {
 
 
 
-  assembleNodePair(ancestor: DisplayNodeClass, descendant: DisplayNodeClass, nodePairType: NodePairType, pythia: Pythia, tree: SummaryTree): NodePair {
+  assembleNodePair(ancestor: DisplayNodeClass, descendant: DisplayNodeClass,
+    nodePairType: NodePairType, relation: NodeRelationType, pythia: Pythia, tree: SummaryTree): NodePair {
     const mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(ancestor.index, descendant.index, tree);
-    return new NodePair(ancestor, descendant, nodePairType, mutTimes);
+    return new NodePair(ancestor, descendant, nodePairType, relation, mutTimes);
   }
 
 
@@ -544,8 +557,18 @@ export class CoreLineagesData {
 }
 
 
-const getNodeDisplay = (index: number, dnIndex: number) => {
-  const dnc = new DisplayNodeClass(dnIndex);
+const getNodeDisplay = (index: number, dnIndex: number,
+  summaryTree: SummaryTree, isInferred: boolean) => {
+  let generationsFromRoot = UNSET;
+  if (index !== UNSET) {
+    let parent = index;
+    const rootIndex = summaryTree.getRootIndex();
+    while (parent !== rootIndex) {
+      parent = summaryTree.getParentIndexOf(parent);
+      generationsFromRoot++;
+    }
+  }
+  const dnc = new DisplayNodeClass(dnIndex, generationsFromRoot, isInferred);
   dnc.setIndex(index);
   return {
     index: index,

@@ -3,7 +3,6 @@ import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
   MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
 import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
-import { NodeDistribution } from './lineages/lineagescommon';
 
 export const UNDEF = '-';
 export const UNSET = -1;
@@ -91,15 +90,17 @@ export class DisplayNodeClass {
   private dnIndex: number;
   className: string;
   generationsFromRoot: number;
+  isInferred: boolean;
   /* we need series in order to fully replace the NodeDisplay type */
   // series: NodeDistribution | null = null;
 
-  constructor(dn: number) {
+  constructor(dn: number, generationsFromRoot: number, isInferred: boolean) {
     this.dnIndex = dn;
     this.index = DisplayNode.UNSET;
     this.name = nodeTypeNames[dn];
     this.className = nodeClassNames[dn];
-    this.generationsFromRoot = UNSET;
+    this.generationsFromRoot = generationsFromRoot;
+    this.isInferred = isInferred;
     DisplayNodes[this.dnIndex] = this;
   }
 
@@ -129,10 +130,10 @@ export class DisplayNodeClass {
 
 
 export const DisplayNodes: DisplayNodeClass[] = [];
-new DisplayNodeClass(0);
-new DisplayNodeClass(1);
-new DisplayNodeClass(2);
-new DisplayNodeClass(3);
+new DisplayNodeClass(0, 0, true);
+new DisplayNodeClass(1, 0, true);
+new DisplayNodeClass(2, 0, false);
+new DisplayNodeClass(3, 0, false);
 
 
 
