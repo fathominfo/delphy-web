@@ -1,7 +1,7 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, NodeComparisonData, getAncestorType, getDescendantType } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getPercentLabel, UNSET } from '../common';
+import { DisplayNode, getMedian, getPercentLabel, numericSort, UNSET } from '../common';
 import { Distribution } from '../distribution';
 
 
@@ -38,43 +38,29 @@ export class NodeComparisonChartData {
   maxDate: number;
   isApobecRun: boolean;
   mutationTimelineData:MutationTimelineData[];
-  overlapCount: number;
-  treeCount: number = UNSET;
   mutationCount: number = UNSET;
 
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
-  series: [Distribution, Distribution?];
+  ancestorMedianDate: number = UNSET;
+  descendantMedianDate: number = UNSET;
   thresholdLabel = "";
 
-  constructor(nodeComparisonData : NodeComparisonData, minDate: number, maxDate: number, isApobecRun: boolean) {
-    this.nodePair = nodeComparisonData.nodePair;
+
+
+  constructor(nodePair: NodePair, ancestorMedianDate: number,
+    descendantMedianDate: number, minDate: number, maxDate: number,
+    isApobecRun: boolean) {
+    this.nodePair = nodePair;
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.isApobecRun = isApobecRun;
     this.mutationTimelineData = [];
-
-
     this.ancestorType = getAncestorType(this.nodePair.pairType);
     this.descendantType = getDescendantType(this.nodePair.pairType);
-
-    this.overlapCount = nodeComparisonData.overlapCount;
-    this.treeCount = nodeComparisonData.upperNodeTimes.length;
-
+    this.ancestorMedianDate = ancestorMedianDate;
+    this.descendantMedianDate = descendantMedianDate;
     this.setMutations(isApobecRun);
-
-    const createSeries = (dn: DisplayNode, i: number) => {
-      const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
-      const ds = new Distribution(times);
-      return ds;
-    }
-    if (this.descendantType === UNSET) {
-      this.series = [this.ancestorType].map(createSeries) as [Distribution];
-    } else {
-      this.series = [this.ancestorType, this.descendantType].map(createSeries) as [Distribution, Distribution];
-    }
-
-
   }
 
 
@@ -91,5 +77,6 @@ export class NodeComparisonChartData {
 
 
 }
+
 
 

@@ -724,3 +724,15 @@ export const sameMutation = (m1: Mutation | null, m2: Mutation | null) : boolean
   return m1 !== null && m2 !== null && getMutationName(m1) === getMutationName(m2);
 };
 
+export const getMedian = (arr:number[])=>{
+  let median = 0;
+  if (arr.length > 0) {
+    const sorted = arr.sort(numericSort);
+    if (sorted.length % 2 === 1) {
+      median = sorted[Math.floor(sorted.length/2)];
+    } else {
+      median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
+    }
+  }
+  return median;
+}

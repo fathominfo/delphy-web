@@ -73,7 +73,7 @@ class MutationTimeline {
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series] as NodeDistribution[]);
-    this.median = data.series.median;
+    this.median = series.median;
     const dateLabel = toFullDateString(this.median);
     this.dateReadout.textContent = dateLabel;
 
@@ -234,12 +234,11 @@ export class NodePairMutationList {
 
   /* set the date range based on the median dates for the bordering nodes */
   setDateRange() {
-    const { minDate, maxDate, series } = this.data;
+    const { minDate, maxDate, ancestorMedianDate, descendantMedianDate } = this.data;
     const dateContainerDiv = this.div.querySelector(".date-container .dates") as HTMLDivElement;
-    const rangeSpan = series.filter(ser=>ser !== undefined).map(ser=>ser?.median) as number[];
-    rangeSpan.sort(numericSort);
-    const rangeMin = rangeSpan[0];
-    const rangeMax = rangeSpan[rangeSpan.length - 1] as number;
+    // get the medians of the nodes at either end
+    const rangeMin = ancestorMedianDate;
+    const rangeMax = descendantMedianDate;
     const rangeMinPct = (rangeMin - minDate)/(maxDate - minDate) * 100;
     const rangeMaxPct = (rangeMax - minDate)/(maxDate - minDate) * 100;
     const rangeWidthPct = rangeMaxPct - rangeMinPct;

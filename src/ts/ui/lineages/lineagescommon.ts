@@ -157,7 +157,7 @@ export type NodeComparisonData = {
   nodePair : NodePair,
   upperNodeTimes: number[],
   lowerNodeTimes: number[],
-  overlapCount: number
+  // overlapCount: number
 }
 
 
