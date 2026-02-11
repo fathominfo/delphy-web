@@ -3,7 +3,7 @@ import { Mutation } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { DisplayNodeClass, nfc, UNSET } from "../common";
-import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodeComparisonData, mutationPrevalenceThreshold } from "./lineagescommon";
+import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair } from "./lineagescommon";
 
 
 const MUTATION_LIMIT = 30;
@@ -135,7 +135,7 @@ export class NodeSchematic {
   highlightedNode: DisplayNodeClass | null;
   highlightedMutation: Mutation | null;
   nodeHighlightCallback: HoverCallback;
-  src: NodeComparisonData[] = [];
+  src: NodePair[] = [];
   indexes: [number, number, number, number] = [UNSET, UNSET, UNSET, UNSET];
   dataConfig: string;
   div: HTMLDivElement;
@@ -184,15 +184,15 @@ export class NodeSchematic {
   @param nodeAIsUpper: when both nodeA and nodeB are set, indicates whether the display of
     node A should be the upper track or the lower track
   */
-  setData(src: NodeComparisonData[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
+  setData(src: NodePair[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     this.src = src;
     this.indexes = indexes;
     this.nodeAisUpper = nodeAIsUpper;
 
     const getMutationsFor = (nodeIndex: number)=>{
-      const data = src.filter(ncd=>ncd.nodePair.index2 === nodeIndex)[0],
-        muts = !data? []: data.nodePair.mutations.filter(md => md.getConfidence() >= mutationPrevalenceThreshold);
+      const data = src.filter(nodePair=>nodePair.index2 === nodeIndex)[0],
+        muts = !data? []: data.mutations.filter(md => md.getConfidence() >= mutationPrevalenceThreshold);
       return muts;
     }
     this.dataConfig = "root";
@@ -239,8 +239,7 @@ export class NodeSchematic {
     //       nodeB = indexes[DisplayNodeClass.nodeB];
     //     let nodeAParent: number = UNSET,
     //       nodeBParent: number = UNSET;
-    //     src.forEach((ncd: NodeComparisonData)=>{
-    //       const pair = ncd.nodePair;
+    //     src.forEach((pair: NodePair)=>{
     //       if (pair.index2 === nodeA) nodeAParent = pair.index1;
     //       else if (pair.index2 === nodeB) nodeBParent = pair.index1;
     //     });

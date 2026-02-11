@@ -141,15 +141,6 @@ export class NodePair {
   }
 }
 
-
-export type NodeComparisonData = {
-  nodePair : NodePair,
-  upperNodeTimes: number[],
-  lowerNodeTimes: number[],
-  overlapCount: number
-}
-
-
 export type HoverCallback = (node:DisplayNodeClass | null, dateIndex: number, mutation: Mutation|null)=>void;
 export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
 export type TreeSelectCallback = (nodeIndex: number)=>void;

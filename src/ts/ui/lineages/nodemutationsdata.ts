@@ -1,5 +1,5 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { NodePair, NodeComparisonData, mutationPrevalenceThreshold } from './lineagescommon';
+import { NodePair, mutationPrevalenceThreshold } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { DisplayNodeClass, getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
@@ -26,48 +26,33 @@ export class MutationTimelineData {
 }
 
 
-export class NodeComparisonChartData {
+export class NodeMutationsData {
   nodePair: NodePair;
   minDate: number;
   maxDate: number;
   isApobecRun: boolean;
   mutationTimelineData:MutationTimelineData[];
-  overlapCount: number;
-  treeCount: number = UNSET;
   mutationCount: number = UNSET;
 
   ancestorType: DisplayNodeClass;
   descendantType: DisplayNodeClass | null;
-  series: [Distribution, Distribution?];
+  ancestorMedianDate: number = UNSET;
+  descendantMedianDate: number = UNSET;
   thresholdLabel = "";
 
-  constructor(nodeComparisonData : NodeComparisonData, minDate: number, maxDate: number, isApobecRun: boolean) {
-    this.nodePair = nodeComparisonData.nodePair;
+  constructor(nodePair: NodePair, ancestorMedianDate: number,
+    descendantMedianDate: number, minDate: number, maxDate: number, isApobecRun: boolean) {
+    this.nodePair = nodePair;
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.isApobecRun = isApobecRun;
     this.mutationTimelineData = [];
-
-
     this.ancestorType = this.nodePair.getAncestorType();
     this.descendantType = this.nodePair.getDescendantType();
-
-    this.overlapCount = nodeComparisonData.overlapCount;
-    this.treeCount = nodeComparisonData.upperNodeTimes.length;
+    this.ancestorMedianDate = ancestorMedianDate;
+    this.descendantMedianDate = descendantMedianDate;
 
     this.setMutations(isApobecRun);
-
-    const createSeries = (dn: DisplayNodeClass, i: number) => {
-      const times = (i === 0) ? nodeComparisonData.upperNodeTimes : nodeComparisonData.lowerNodeTimes;
-      const ds = new Distribution(times);
-      return ds;
-    }
-    if (this.descendantType === null) {
-      this.series = [this.ancestorType].map(createSeries) as [Distribution];
-    } else {
-      this.series = [this.ancestorType, this.descendantType].map(createSeries) as [Distribution, Distribution];
-    }
-
 
   }
 

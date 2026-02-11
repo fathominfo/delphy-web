@@ -5,7 +5,7 @@ import { DisplayNodeClass, getPercentLabel, UNSET,
   numericSort, getNiceDateInterval, DateScale,
   sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
-import { MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
+import { MutationTimelineData, NodeMutationsData } from './nodemutationsdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
@@ -73,7 +73,7 @@ class MutationTimeline {
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series] as NodeDistribution[]);
-    this.median = data.series.median;
+    this.median = series.median;
     const dateLabel = toFullDateString(this.median);
     this.dateReadout.textContent = dateLabel;
 
@@ -143,12 +143,12 @@ export class NodePairMutationList {
   goToMutations: OpenMutationPageFncType;
   nodeHighlightCallback: HoverCallback;
   mutationTimelines: MutationTimeline[] = [];
-  data: NodeComparisonChartData;
+  data: NodeMutationsData;
   ancestorType: DisplayNodeClass;
   descendantType: DisplayNodeClass | null;
 
 
-  constructor(data : NodeComparisonChartData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
+  constructor(data : NodeMutationsData, goToMutations: OpenMutationPageFncType, nodeHighlightCallback: HoverCallback) {
     this.data = data;
     this.ancestorType = data.ancestorType;
     this.descendantType = data.descendantType;
@@ -234,14 +234,10 @@ export class NodePairMutationList {
 
   /* set the date range based on the median dates for the bordering nodes */
   setDateRange() {
-    const { minDate, maxDate, series } = this.data;
+    const { minDate, maxDate, ancestorMedianDate, descendantMedianDate } = this.data;
     const dateContainerDiv = this.div.querySelector(".date-container .dates") as HTMLDivElement;
-    const rangeSpan = series.filter(ser=>ser !== undefined).map(ser=>ser?.median) as number[];
-    rangeSpan.sort(numericSort);
-    const rangeMin = rangeSpan[0];
-    const rangeMax = rangeSpan[rangeSpan.length - 1] as number;
-    const rangeMinPct = (rangeMin - minDate)/(maxDate - minDate) * 100;
-    const rangeMaxPct = (rangeMax - minDate)/(maxDate - minDate) * 100;
+    const rangeMinPct = (ancestorMedianDate - minDate)/(maxDate - minDate) * 100;
+    const rangeMaxPct = (descendantMedianDate - minDate)/(maxDate - minDate) * 100;
     const rangeWidthPct = rangeMaxPct - rangeMinPct;
     const rangeDiv = dateContainerDiv.querySelector(".range") as HTMLDivElement;
     rangeDiv.style.left = `${rangeMinPct}%`;
@@ -350,7 +346,7 @@ export class NodeMutations {
   }
 
 
-  setData(nodeComparisonData: NodeComparisonChartData[]): NodePairMutationList[] {
+  setData(nodeComparisonData: NodeMutationsData[]): NodePairMutationList[] {
     nodeComparisonContainer.innerHTML = '';
     const sorted = nodeComparisonData.sort((a, b)=>{
     /* node A goes at the start of the list */

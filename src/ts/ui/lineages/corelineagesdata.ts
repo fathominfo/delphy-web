@@ -4,11 +4,11 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
-import { DisplayNodeClass, UNSET } from "../common";
+import { DisplayNodeClass, getMedian, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { NodeComparisonData, NodeDisplay, NodeDistribution, NodePair, NodePairType, TreeHint } from "./lineagescommon";
-import { NodeComparisonChartData } from "./nodecomparisonchartdata";
+import { NodeDisplay, NodeDistribution, NodePair, NodePairType, TreeHint } from "./lineagescommon";
+import { NodeMutationsData } from "./nodemutationsdata";
 
 
 
@@ -42,10 +42,10 @@ export type ChartData = {
   prevalenceNodes : NodeDisplay[],
   minDate: number,
   maxDate: number
-  nodeComparisonData: NodeComparisonChartData[],
+  nodeComparisonData: NodeMutationsData[],
   nodeAIsUpper: boolean,
   nodes: NodeDisplay[],
-  nodePairs: NodeComparisonData[]
+  nodePairs: NodePair[]
 }
 
 
@@ -68,7 +68,7 @@ export class CoreLineagesData {
 
   maxVal = 0;
 
-  nodeComparisonData: NodeComparisonChartData[] = [];
+  nodeComparisonData: NodeMutationsData[] = [];
 
 
   hoveredNode: number = UNSET;
@@ -133,46 +133,43 @@ export class CoreLineagesData {
         setA = false,
         setB = false;
 
-      let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].map((index, i)=>getNodeDisplay(index, i));
+      const currentIndices = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex];
+      let nodes: NodeDisplay[] = currentIndices.map(getNodeDisplay);
+      const nodeTimes: number[][] = [];
+      currentIndices.filter(index=> index !== UNSET)
+        .forEach(index=>{
+          nodeTimes[index] = pythia.getNodeTimeDistribution(index, summaryTree);
+        });
+
+
+      // let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].map((index, i)=>getNodeDisplay(index, i));
       nodes.forEach(node=>{
         if (node.type !== null && node.index >= 0) {
-          node.times = pythia.getNodeTimeDistribution(node.index, summaryTree);
+          node.times = nodeTimes[node.index];
           node.series = new NodeDistribution(node.type, node.times);
         }
       });
       if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
         /* we clear all but the root node */
-        const nodePair = this.assembleNodePair(rootIndex, UNSET, NodePairType.rootOnly, pythia, summaryTree),
-          upperNodeTimes = nodes[0].times,
-          lowerNodeTimes: number[] = [],
-          overlapCount = 0;
-        chartData.nodePairs.push({ nodePair, upperNodeTimes, lowerNodeTimes, overlapCount});
+        const nodePair = this.assembleNodePair(rootIndex, UNSET, NodePairType.rootOnly, pythia, summaryTree);
+        chartData.nodePairs.push(nodePair);
         this.setSelectable(true);
       } else {
-        let nodePair: NodePair,
-          upperNodeTimes: number[],
-          lowerNodeTimes: number[];
-        const overlapCount = 0;
+        let nodePair: NodePair;
         if (mrcaIndex === UNSET) {
           /* if there is no mrca, then we connect the root directly to the other nodes */
           if (nodeAIndex === UNSET) {
             if (nodeBIndex !== UNSET) {
               setB = true;
               nodePair = this.assembleNodePair(rootIndex, nodeBIndex, NodePairType.rootToNodeB, pythia, summaryTree);
-              upperNodeTimes = nodes[0].times;
-              lowerNodeTimes = nodes[3].times;
-              chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
+              chartData.nodePairs.push(nodePair);
             }
             this.setSelectable(true);
           } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
             /* we have node 1 without node 2 */
             setA = true;
-
             nodePair = this.assembleNodePair(rootIndex, nodeAIndex, NodePairType.rootToNodeA, pythia, summaryTree);
-            upperNodeTimes = nodes[0].times;
-            lowerNodeTimes = nodes[2].times;
-            chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
-
+            chartData.nodePairs.push(nodePair);
             this.setSelectable(true);
           } else {
             /*
@@ -227,18 +224,10 @@ export class CoreLineagesData {
             }
             setA = true;
             setB = true;
-
-
-
             nodePair = this.assembleNodePair(ancestor1Index, descendant1Index, pair1, pythia, summaryTree);
-            upperNodeTimes = ancestor1.times;
-            lowerNodeTimes = (descendant1 as NodeDisplay).times;
-            chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
-
+            chartData.nodePairs.push(nodePair);
             nodePair = this.assembleNodePair(ancestor2Index, descendant2Index, pair2, pythia, summaryTree);
-            upperNodeTimes = (ancestor2 as NodeDisplay).times;
-            lowerNodeTimes = (descendant2 as NodeDisplay).times;
-            chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
+            chartData.nodePairs.push(nodePair);
             // this.disableSelections();
           }
 
@@ -246,20 +235,12 @@ export class CoreLineagesData {
           setA = true;
           setB = true;
           setMRCA = true;
-
-
-
           nodePair = this.assembleNodePair(rootIndex, mrcaIndex, NodePairType.rootToMrca, pythia, summaryTree);
-          upperNodeTimes = nodes[0].times;
-          lowerNodeTimes = nodes[1].times;
-          chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
-          upperNodeTimes = lowerNodeTimes;
+          chartData.nodePairs.push(nodePair);
           nodePair = this.assembleNodePair(mrcaIndex, nodeAIndex, NodePairType.mrcaToNodeA, pythia, summaryTree);
-          lowerNodeTimes = nodes[2].times;
-          chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
+          chartData.nodePairs.push(nodePair);
           nodePair = this.assembleNodePair(mrcaIndex, nodeBIndex, NodePairType.mrcaToNodeB, pythia, summaryTree);
-          lowerNodeTimes = nodes[3].times;
-          chartData.nodePairs.push({nodePair, upperNodeTimes, lowerNodeTimes, overlapCount });
+          chartData.nodePairs.push(nodePair);
           // this.disableSelections();
         }
       }
@@ -298,30 +279,15 @@ export class CoreLineagesData {
       nodes = nodes.filter(({index})=>index>=0);
       const nodeIndices = nodes.map(({index})=>index),
         nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),
-        nodeDistributions = nodePrevalenceData.series,
-        overlap = nodePrevalenceData.overlap;
-
-
-      /*
-      The list `nodes` has an indicator of whether the node in question is Root, MRCA, Selection A or B.
-      The `overlap` list was built from a list that does not have that information, and where unset
-      nodes were removed. The `index1` and `index2` attributes of each item in the `overlap` list reference index
-      positions of the nodes list. Combine them now in order to find which node pair `index1` and `index2` are referring to,
-      then track the overlap on the NodeComparisonData item.
-      */
-      overlap.forEach(oItem=>{
-        const nodeAType = nodes[oItem.index1].type,
-          nodeBType = nodes[oItem.index2].type;
-        chartData.nodePairs.forEach((ncd:NodeComparisonData)=>{
-          const na = ncd.nodePair.getAncestorType(),
-            nb = ncd.nodePair.getDescendantType();
-          if (na === nodeAType && nb === nodeBType) {
-            ncd.overlapCount = oItem.count;
-          }
-        });
-      });
+        nodeDistributions = nodePrevalenceData.series;
       chartData.nodes = nodes;
-      chartData.nodeComparisonData = chartData.nodePairs.map(np=>new NodeComparisonChartData(np, minDate, maxDate, isApobecEnabled));
+      chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
+        const ascendantTimes = nodeTimes[np.index1],
+          descendantTimes = nodeTimes[np.index2] || [],
+          ancestorMedianDate = getMedian(ascendantTimes),
+          descendantMedianDate = getMedian(descendantTimes);
+        return new NodeMutationsData(np, ancestorMedianDate, descendantMedianDate, minDate, maxDate, isApobecEnabled)
+      });
       chartData.nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));

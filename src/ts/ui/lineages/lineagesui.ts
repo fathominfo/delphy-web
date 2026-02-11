@@ -278,7 +278,7 @@ export class LineagesUI extends MccUI {
     } else {
       this.nodeListDisplay.clearNodeB();
     }
-    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, nodePairs.map(np=>np.nodePair));
+    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex, nodePairs);
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);
