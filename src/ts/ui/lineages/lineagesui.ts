@@ -209,7 +209,7 @@ export class LineagesUI extends MccUI {
         if (this.sharedState.mccConfig.nodeMetadata) {
           rootMetadata = this.sharedState.mccConfig.nodeMetadata.getNodeMetadata(this.coreData.rootIndex);
         }
-        this.setChartData(this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex);
+        this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
       }
       mccRef.release();
     }
@@ -218,8 +218,8 @@ export class LineagesUI extends MccUI {
 
 
   handleNodeHover(nodeIndex: number, date:number):void {
-    const {mrcaIndex, nodeAIndex, nodeBIndex, hint, displayNode} = this.coreData.handleNodeHover(nodeIndex, date, this.mccTreeCanvas);
-    this.setChartData(this.coreData.rootIndex, mrcaIndex, nodeAIndex, nodeBIndex);
+    const {indices, hint, displayNode} = this.coreData.handleNodeHover(nodeIndex, date, this.mccTreeCanvas);
+    this.setChartData([this.coreData.rootIndex].concat(indices));
     this.setHint(hint);
     this.highlightCharts(displayNode, date, null);
   }
@@ -243,16 +243,17 @@ export class LineagesUI extends MccUI {
       this.setHint(hint);
       this.setSelectable(selectable);
     }
-    this.setChartData(this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex);
+    this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
     // this.requestDrawTreeHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, nodeIndex);
   }
 
   exitCallback():void {
-    this.setChartData(this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex);
+    this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
   }
 
 
-  setChartData(rootIndex:number, mrcaIndex:number, nodeAIndex:number, nodeBIndex:number): void {
+  setChartData(nodeIndices: number[]): void {
+    const [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex] = nodeIndices;
 
     const pythia = this.pythia as Pythia,
       mccRef = pythia.getMcc();
@@ -318,7 +319,7 @@ export class LineagesUI extends MccUI {
     //   break;
     // }
 
-    this.setChartData(this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex);
+    this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
     this.highlightCharts(null, UNSET, null);
     this.setHint(TreeHint.Hover);
   }

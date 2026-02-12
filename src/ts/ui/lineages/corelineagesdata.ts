@@ -15,9 +15,7 @@ import { NodeMutationsData } from "./nodemutationsdata";
 
 
 export type NodeHoverData = {
-  mrcaIndex: number,
-  nodeAIndex: number,
-  nodeBIndex: number,
+  indices: number[],
   hint: TreeHint,
   displayNode: DisplayNode | null
 };
@@ -456,7 +454,7 @@ export class CoreLineagesData {
       }
     }
 
-    return { mrcaIndex, nodeAIndex, nodeBIndex, hint, displayNode} as NodeHoverData;
+    return { indices: [mrcaIndex, nodeAIndex, nodeBIndex], hint, displayNode} as NodeHoverData;
 
   }
 
