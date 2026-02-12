@@ -366,7 +366,7 @@ export class NodeMutations {
     });
     this.charts.length = 0;
     sorted.filter(pair=>pair.mutationCount > 0).forEach(chartData=>{
-      console.log('NodePairMutationList', chartData)
+      // console.log('NodePairMutationList', chartData)
       const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
       nc.requestDraw();
       this.charts.push(nc);

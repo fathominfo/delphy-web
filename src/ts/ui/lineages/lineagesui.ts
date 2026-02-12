@@ -209,7 +209,6 @@ export class LineagesUI extends MccUI {
         if (this.sharedState.mccConfig.nodeMetadata) {
           rootMetadata = this.sharedState.mccConfig.nodeMetadata.getNodeMetadata(this.coreData.rootIndex);
         }
-        // this.nodeListDisplay.setRoot(rootConfidence, this.coreData.nodeChildCount[this.coreData.rootIndex], rootMetadata, this.coreData.rootIndex);
         this.setChartData(this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex);
       }
       mccRef.release();
@@ -259,9 +258,16 @@ export class LineagesUI extends MccUI {
       mccRef = pythia.getMcc();
     const chartData = this.coreData.setChartData(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex,
       this.mccTreeCanvas, this.isApobecEnabled);
-    const {  nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
+    const { nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
       nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
+    if (nodeListData[0]) {
+      this.nodeListDisplay.setRoot(nodeListData[0]);
+    } else {
+      console.log(`
+        like, um, how? ${this.coreData.rootIndex}
+        `, nodeListData)
+    }
     if (nodeListData[1]) {
       this.nodeListDisplay.setMRCA(nodeListData[1]);
     } else {

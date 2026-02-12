@@ -122,6 +122,7 @@ export class CoreLineagesData {
         nodePairs: [],
         nodes: []
       };
+    if (rootIndex !== UNSET) this.rootIndex = rootIndex;
     if (pythia) {
 
 
@@ -149,7 +150,7 @@ export class CoreLineagesData {
         const valid = index !== UNSET;
         const times = valid ? nodeTimes[index] : [];
         const isInferred = index === rootIndex || index === mrcaIndex;
-        const isRoot = index == rootIndex;
+        const isRoot = index === rootIndex;
         const confidence: number = valid ? nodeConfidence[index] : UNSET;
         const childCount: number =  valid ? this.nodeChildCount[index] : UNSET;
         const series: Distribution = new Distribution(times);
@@ -161,18 +162,15 @@ export class CoreLineagesData {
         return nd;
       });
       const nodeClasses: DisplayNode[] = [];
-      nodes.forEach(nd=>{
-        if (nd.index !== UNSET && nd.type) {
-          nodeClasses[nd.type.index] = nd.type;
-        }
-      });
       nodes.forEach(node=>{
-        if (node.type !== null && node.index >= 0) {
+        if (node.index !== UNSET && node.type) {
+          nodeClasses[node.type.index] = node.type;
           node.times = nodeTimes[node.index];
         }
       });
       if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
         /* we clear all but the root node */
+
         this.setSelectable(true);
       } else {
         let nodePair: NodePair;
@@ -263,6 +261,14 @@ export class CoreLineagesData {
           // this.disableSelections();
         }
       }
+      chartData.nodeListData[0] = {
+        confidence: nodeConfidence[rootIndex],
+        index: rootIndex,
+        childCount: this.nodeChildCount[rootIndex],
+        isLocked: false,
+        metadata: this.getNodeMetadata(rootIndex, nodeMetadata, tipIds)
+      };
+
       if (setMRCA) {
         chartData.nodeListData[1] = {
           confidence: nodeConfidence[mrcaIndex],
