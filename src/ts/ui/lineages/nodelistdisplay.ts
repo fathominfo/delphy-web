@@ -1,15 +1,17 @@
 import { UNSET, getPercentLabel } from '../common';
 import { DisplayNode } from '../displaynode';
-import { NodeMetadataValues } from '../nodemetadata';
-import { NodeListItemData } from './corelineagesdata';
 import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
+const NODE_DIV_TEMPLATE = document.querySelector(".lineages--node-item") as HTMLDivElement;
+const CONTAINER = document.querySelector("#lineages--node-list") as HTMLElement
+NODE_DIV_TEMPLATE.remove();
+
 
 const DEBUG = false;
 
-class NodeItem {
+class NodeDiv {
   div: HTMLDivElement;
   countSpan: HTMLSpanElement;
   confidenceSpan: HTMLSpanElement;
@@ -17,40 +19,35 @@ class NodeItem {
   nodeIsTip: HTMLElement;
   tipIdSpan: HTMLElement;
   mdDiv: HTMLDivElement;
-  nodeConfidence: number = UNSET;
-  nodeChildCount: number = UNSET;
-  locked = false;
-  nodeMetadata: NodeMetadataValues | null = null;
-  nodeIndex: number = UNSET;
+  dismiss: HTMLButtonElement;
+  monophyletic: HTMLSpanElement;
+  nodeName: HTMLSpanElement;
+  nodeSource: HTMLSpanElement;
+  node: DisplayNode | null = null;
 
-  constructor(div: HTMLDivElement) {
-    this.div = div;
-    this.countSpan = div.querySelector('.node--tip-count') as HTMLSpanElement;
-    this.confidenceSpan = div.querySelector('.node--confidence') as HTMLSpanElement;
-    this.nodeStats = div.querySelector(".node-stats") as HTMLElement;
-    this.nodeIsTip = div.querySelector(".tip-info") as HTMLElement;
-    this.tipIdSpan = div.querySelector(".tip-id") as HTMLElement;
-    this.mdDiv = div.querySelector(".node-metadata") as HTMLDivElement;
+  constructor() {
+    this.div = NODE_DIV_TEMPLATE.cloneNode(true) as HTMLDivElement;
+    this.countSpan = this.div.querySelector('.node--tip-count') as HTMLSpanElement;
+    this.confidenceSpan = this.div.querySelector('.node--confidence') as HTMLSpanElement;
+    this.nodeStats = this.div.querySelector(".node-stats") as HTMLElement;
+    this.nodeIsTip = this.div.querySelector(".tip-info") as HTMLElement;
+    this.tipIdSpan = this.div.querySelector(".tip-id") as HTMLElement;
+    this.mdDiv = this.div.querySelector(".node-metadata") as HTMLDivElement;
+    this.dismiss = this.div.querySelector(".node-dismiss") as HTMLButtonElement;
+    this.monophyletic = this.div.querySelector(".mono-hover") as HTMLSpanElement;
+    this.nodeName = this.div.querySelector(".node-name") as HTMLSpanElement;
+    this.nodeSource = this.div.querySelector(".node-source") as HTMLSpanElement;
   }
 
 
-  setData(node: NodeListItemData) : void {
-    const {confidence, index, childCount, isLocked, metadata} = node;
-    this.nodeConfidence = confidence;
-    this.nodeChildCount = childCount;
-    this.locked = isLocked;
-    this.nodeMetadata = metadata;
-    this.nodeIndex = index;
+  setData(node: DisplayNode) : void {
+    this.node = node;
   }
 
 
   draw() {
     const {
-      nodeConfidence,
-      nodeChildCount,
-      locked,
-      nodeMetadata,
-      nodeIndex,
+      node,
       div,
       countSpan,
       confidenceSpan,
@@ -59,48 +56,59 @@ class NodeItem {
       tipIdSpan,
       mdDiv} = this;
 
-    if (nodeIndex === UNSET) {
+    if (node === null) {
       this.div.classList.remove('active');
       this.div.classList.remove('locked');
       return;
     }
+    if (!div.parentNode) {
+      CONTAINER.appendChild(div);
+    }
+
     div.classList.add('active');
-    div.classList.toggle('locked', locked);
-    const isTip = nodeChildCount === 1;
+    div.classList.toggle('locked', node.isLocked);
+    const isTip = node.childCount === 1;
     div.classList.toggle("is-tip", isTip);
+
+    div.setAttribute("data-nodetype", node.label.toLowerCase());
+    this.nodeName.textContent = node.label;
+    this.nodeSource.classList.toggle("hidden", !node.isInferred && !node.isRoot);
+    this.dismiss.classList.toggle("hidden", node.isInferred);
+    this.monophyletic.classList.toggle("hidden", node.isRoot);
+
 
     if (!isTip) {
       nodeStats.classList.remove("hidden");
       nodeIsTip.classList.add("hidden");
-      countSpan.innerText = `${nodeChildCount} tip${nodeChildCount === 1 ? '' : 's'}`;
+      countSpan.innerText = `${node.childCount} tip${node.childCount === 1 ? '' : 's'}`;
       if (confidenceSpan) {
-        confidenceSpan.innerText = `${getPercentLabel(nodeConfidence)}%`;
+        confidenceSpan.innerText = `${getPercentLabel(node.confidence)}%`;
       }
     } else {
       nodeStats.classList.add("hidden");
       nodeIsTip.classList.remove("hidden");
       if (DEBUG) {
-        tipIdSpan.innerText = `${nodeIndex} `;
+        tipIdSpan.innerText = `${node.index} `;
       }
-      if (nodeMetadata !== null) {
-        if (nodeMetadata.id !== undefined) {
-          tipIdSpan.innerText = `${nodeMetadata.id.value}`;
-          tipIdSpan.title = nodeMetadata.id.value;
-        } else if (nodeMetadata.accession !== undefined) {
-          tipIdSpan.innerText = `${nodeMetadata.accession.value}`;
-          tipIdSpan.title = nodeMetadata.accession.value;
+      if (node.metadata !== null) {
+        if (node.metadata.id !== undefined) {
+          tipIdSpan.innerText = `${node.metadata.id.value}`;
+          tipIdSpan.title = node.metadata.id.value;
+        } else if (node.metadata.accession !== undefined) {
+          tipIdSpan.innerText = `${node.metadata.accession.value}`;
+          tipIdSpan.title = node.metadata.accession.value;
         }
       }
     }
 
 
-    if (nodeMetadata === null || (Object.keys(nodeMetadata).length === 1 && nodeMetadata.id !== undefined)) {
+    if (node.metadata === null || (Object.keys(node.metadata).length === 1 && node.metadata.id !== undefined)) {
       mdDiv.classList.add('hidden');
     } else {
       mdDiv.classList.remove('hidden');
 
       mdDiv.querySelectorAll(".node-metadata-item").forEach(div=>div.remove());
-      Object.entries(nodeMetadata).forEach(([key, value])=>{
+      Object.entries(node.metadata).forEach(([key, value])=>{
         if (key.toLowerCase() !== 'id' && key.toLowerCase() !== 'accession'){
           const item = METADATA_ITEM_TEMPLATE.cloneNode(true) as HTMLElement;
           mdDiv.appendChild(item);
@@ -133,7 +141,8 @@ class NodeItem {
   }
 
   clear() {
-    this.nodeIndex = UNSET;
+    this.node = null;
+    this.div.remove();
   }
 
   pushback() {
@@ -148,108 +157,129 @@ class NodeItem {
 
 
 
+type DivClaim = {
+  div: NodeDiv,
+  inUse: boolean
+};
+
+class DivPool {
+  divs: Set<DivClaim>;
+
+  constructor() {
+    this.divs = new Set();
+  }
+
+  getDiv(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
+    nodeZoomCallback: NodeCallback): NodeDiv {
+    let div: NodeDiv | null = null;
+    for (const claim of this.divs) {
+      if (!claim.inUse && div === null) {
+        div = claim.div;
+        claim.inUse = true;
+      }
+    }
+    if (div === null) {
+      div = new NodeDiv();
+      const actualDiv = div.div;
+      CONTAINER.appendChild(actualDiv);
+      div.dismiss.addEventListener('click', ()=>dismissCallback(div?.node as DisplayNode));
+      actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback(div?.node as DisplayNode, UNSET, null));
+      actualDiv.addEventListener('pointerleave', () => nodeHighlightCallback(null, UNSET, null));
+      actualDiv.addEventListener('click', () => nodeZoomCallback(div?.node as DisplayNode));
+      this.divs.add({div, inUse: true});
+    }
+    return div;
+  }
+
+  releaseDiv(div: NodeDiv) : void {
+    for (const claim of this.divs) {
+      if (claim.div === div) {
+        claim.inUse = false;
+      }
+    }
+    console.log(`pool size: ${this.divs.size}`)
+  }
+
+}
+
+
+
+
+
 export class NodeListDisplay {
-  private container: HTMLElement;
-  private rootDiv: NodeItem;
-  private mrcaDiv: NodeItem;
-  private nodeADiv: NodeItem;
-  private nodeBDiv: NodeItem;
+  // the index of these arrays will be the DisplayNode index
+  private nodeDivs: (NodeDiv | null)[] = [];
+  private pool: DivPool;
+  private nodes: (DisplayNode | null)[] = [];
+  private dismissCallback: DismissCallback;
+  private nodeHighlightCallback: HoverCallback;
+  private nodeZoomCallback: NodeCallback;
 
   constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
     nodeZoomCallback: NodeCallback) {
-    this.container = document.querySelector("#lineages--node-list") as HTMLElement;
+    this.pool = new DivPool();
+    this.dismissCallback = dismissCallback;
+    this.nodeHighlightCallback = nodeHighlightCallback;
+    this.nodeZoomCallback = nodeZoomCallback;
+    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(null, UNSET, null));
+  }
 
-    const getDiv = (selector: string)=>{
-      const div = document.querySelector(selector) as HTMLDivElement;
-      if (!div) {
-        throw new Error(`could not find display div for "${selector}"`);
-      }
-      return div;
-    };
-    this.rootDiv = new NodeItem(getDiv('.lineages--node-item.root'));
-    this.mrcaDiv = new NodeItem(getDiv('.lineages--node-item.mrca'));
-    this.nodeADiv = new NodeItem(getDiv('.lineages--node-item.nodeA'));
-    this.nodeBDiv = new NodeItem(getDiv('.lineages--node-item.nodeB'));
-
-
-    const bindDismiss = (div: HTMLDivElement, node: DisplayNode)=>{
-      const dismiss = div.querySelector(".node-dismiss") as HTMLButtonElement;
-      if (!dismiss) {
-        throw new Error('the div has nothing for dismissing');
-      }
-      dismiss.addEventListener('click', ()=>dismissCallback(node));
+  addNode(node: DisplayNode) : void {
+    const index = node.index;
+    let nodeDiv = this.nodeDivs[index];
+    if (!nodeDiv) {
+      nodeDiv = this.pool.getDiv(this.dismissCallback, this.nodeHighlightCallback, this.nodeZoomCallback);
+      this.nodeDivs[index] = nodeDiv;
     }
-    // const bindDiv = (div: HTMLDivElement, node: DisplayNodeClass) => {
-    //   div.addEventListener('pointerenter', () => nodeHighlightCallback(node, UNSET, null));
-    //   div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
-    //   div.addEventListener('click', () => nodeZoomCallback(node));
-    // }
-    // bindDismiss(this.nodeADiv.div, DisplayNode.nodeA);
-    // bindDismiss(this.nodeBDiv.div, DisplayNode.nodeB);
-    // bindDiv(this.rootDiv.div, DisplayNode.root);
-    // bindDiv(this.mrcaDiv.div, DisplayNode.mrca);
-    // bindDiv(this.nodeADiv.div, DisplayNode.nodeA);
-    // bindDiv(this.nodeBDiv.div, DisplayNode.nodeB);
-    // (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
+    this.nodes[index] = node;
+    nodeDiv.setData(node);
+  }
 
+  clearNode(node: DisplayNode | null) {
+    if (node !== null) {
+      const div = this.nodeDivs[node.index];
+      if (div) {
+        div.clear();
+        this.pool.releaseDiv(div);
+      }
+      this.nodeDivs[node.index] = null;
+      this.nodes[node.index] = null;
+    }
   }
 
 
-  setRoot(node: NodeListItemData) : void {
-    this.rootDiv.setData(node);
-  }
-
-  setMRCA(node: NodeListItemData) : void {
-    this.mrcaDiv.setData(node);
-  }
-
-  setNodeA(node: NodeListItemData) : void {
-    this.nodeADiv.setData(node);
-  }
-
-  setNodeB(node: NodeListItemData) : void {
-    this.nodeBDiv.setData(node);
-  }
-
-  clearMRCA(): void {
-    this.mrcaDiv.clear();
-  }
-
-  clearNodeA(): void {
-    this.nodeADiv.clear();
-  }
-
-  clearNodeB(): void {
-    this.nodeBDiv.clear();
+  /*
+  @param nodes: a sparse array where the array index corresponds
+    to a node in the tree
+  */
+  setNodes(nodes: DisplayNode[]) {
+    this.nodes.forEach(node=>{
+      if (node !== null) {
+        if (nodes[node.index] === undefined) {
+          this.clearNode(node);
+        }
+      }
+    });
+    nodes.forEach(node=>{
+      this.addNode(node);
+    });
   }
 
   requestDraw() {
-    requestAnimationFrame(()=>{
-      [this.rootDiv, this.mrcaDiv, this.nodeADiv, this.nodeBDiv].forEach(div=>div.draw());
-    });
+    requestAnimationFrame(()=>this.nodeDivs.forEach(div=>div?.draw()));
   }
 
   highlightNode(node: DisplayNode | null) : void {
     if (node === null) {
-      this.rootDiv.restore();
-      this.mrcaDiv.restore();
-      this.nodeADiv.restore();
-      this.nodeBDiv.restore();
+      this.nodeDivs.forEach(div=>div?.restore());
     } else {
-      this.rootDiv.pushback();
-      this.mrcaDiv.pushback();
-      this.nodeADiv.pushback();
-      this.nodeBDiv.pushback();
-      // switch (node) {
-      // case DisplayNode.root: this.rootDiv.restore(); break;
-      // case DisplayNode.mrca: this.mrcaDiv.restore(); break;
-      // case DisplayNode.nodeA: this.nodeADiv.restore(); break;
-      // case DisplayNode.nodeB: this.nodeBDiv.restore(); break;
-      // }
-
+      this.nodeDivs.forEach(div=>div?.pushback());
+      this.nodeDivs[node.index]?.restore();
     }
   }
 
 }
 
 const replaceUnknown = (val: string)=>val === '-' ? 'Unknown' : val;
+
+

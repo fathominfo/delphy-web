@@ -8,17 +8,20 @@ const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 
 export class DisplayNode {
   name: string;
+  label: string;
   index: number;
   private nameIndex: number;
   className: string;
   generationsFromRoot: number;
   isInferred: boolean;
   isRoot: boolean;
+  isLocked: boolean;
   confidence: number;
   childCount: number;
   metadata: NodeMetadataValues | null;
   /* we need series in order to fully replace the NodeDisplay type */
   series: Distribution | null = null;
+  times: number[] = [];
 
 
   // nameIndex currently is 0: root, 1: mrca, 2: nodeA, 3: nodeB
@@ -29,13 +32,16 @@ export class DisplayNode {
     this.index = UNSET;
     this.nameIndex = nameIndex;
     this.name = nodeTypeNames[nameIndex];
+    this.label = this.name;
     this.className = nodeClassNames[nameIndex];
     this.generationsFromRoot = generationsFromRoot;
     this.isInferred = isInferred;
     this.isRoot = isRoot;
+    this.isLocked = false;
     this.confidence = confidence;
     this.childCount = childCount;
     this.series = series;
+    this.times = series.times;
     this.metadata = metadata;
 
     // this.name = String.fromCharCode(ASCII_BASE + nameIndex)

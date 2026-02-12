@@ -39,7 +39,7 @@ export type NodeListItemData = {
 }
 
 export type ChartData = {
-  nodeListData: NodeListItemData[],
+  nodeListData: DisplayNode[],
   nodeDistributions: BaseTreeSeriesType | null,
   prevalenceNodes : NodeDisplay[],
   minDate: number,
@@ -261,46 +261,7 @@ export class CoreLineagesData {
           // this.disableSelections();
         }
       }
-      chartData.nodeListData[0] = {
-        confidence: nodeConfidence[rootIndex],
-        index: rootIndex,
-        childCount: this.nodeChildCount[rootIndex],
-        isLocked: false,
-        metadata: this.getNodeMetadata(rootIndex, nodeMetadata, tipIds)
-      };
-
-      if (setMRCA) {
-        chartData.nodeListData[1] = {
-          confidence: nodeConfidence[mrcaIndex],
-          index: mrcaIndex,
-          childCount: this.nodeChildCount[mrcaIndex],
-          isLocked: false,
-          metadata: this.getNodeMetadata(mrcaIndex, nodeMetadata, tipIds)
-        };
-      }
-      if (setA) {
-        const nodeALocked = nodeAIndex === this.nodeAIndex;
-        chartData.nodeListData[2] = {
-          confidence: nodeConfidence[nodeAIndex],
-          index: nodeAIndex,
-          childCount: this.nodeChildCount[nodeAIndex],
-          isLocked: nodeALocked,
-          metadata: this.getNodeMetadata(nodeAIndex, nodeMetadata, tipIds)
-        };
-      }
-      if (setB) {
-        const nodeBLocked = nodeBIndex === this.nodeBIndex;
-        chartData.nodeListData[3] = {
-          confidence: nodeConfidence[nodeBIndex],
-          index: nodeBIndex,
-          childCount: this.nodeChildCount[nodeBIndex],
-          isLocked: nodeBLocked,
-          metadata: this.getNodeMetadata(nodeBIndex, nodeMetadata, tipIds)
-        };
-      }
-
-
-
+      chartData.nodeListData = nodeClasses;
       nodes = nodes.filter(({index})=>index>=0);
       const nodeIndices = nodes.map(({index})=>index),
         nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),

@@ -261,28 +261,7 @@ export class LineagesUI extends MccUI {
     const { nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
       nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
-    if (nodeListData[0]) {
-      this.nodeListDisplay.setRoot(nodeListData[0]);
-    } else {
-      console.log(`
-        like, um, how? ${this.coreData.rootIndex}
-        `, nodeListData)
-    }
-    if (nodeListData[1]) {
-      this.nodeListDisplay.setMRCA(nodeListData[1]);
-    } else {
-      this.nodeListDisplay.clearMRCA();
-    }
-    if (nodeListData[2]) {
-      this.nodeListDisplay.setNodeA(nodeListData[2]);
-    } else {
-      this.nodeListDisplay.clearNodeA();
-    }
-    if (nodeListData[3]) {
-      this.nodeListDisplay.setNodeB(nodeListData[3]);
-    } else {
-      this.nodeListDisplay.clearNodeB();
-    }
+    this.nodeListDisplay.setNodes(nodeListData);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs);
     this.nodeTimelines.setData(nodeDisplays);
     this.nodeTimelines.setDateRange(minDate, maxDate);
