@@ -253,11 +253,9 @@ export class LineagesUI extends MccUI {
 
 
   setChartData(nodeIndices: number[]): void {
-    const [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex] = nodeIndices;
-
     const pythia = this.pythia as Pythia,
       mccRef = pythia.getMcc();
-    const chartData = this.coreData.setChartData(rootIndex, mrcaIndex, nodeAIndex, nodeBIndex,
+    const chartData = this.coreData.setChartData(nodeIndices,
       this.mccTreeCanvas, this.isApobecEnabled);
     const { nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
       nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
@@ -267,7 +265,7 @@ export class LineagesUI extends MccUI {
     this.nodeTimelines.setData(nodeDisplays);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);
-    this.nodeSchematic.setData(nodePairs, [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex], nodeAIsUpper);
+    this.nodeSchematic.setData(nodePairs, nodeIndices, nodeAIsUpper);
     this.nodePrevalenceCanvas.setData(nodeDistributions as BaseTreeSeriesType, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
     mccRef.release();

@@ -97,7 +97,7 @@ export class CoreLineagesData {
   }
 
 
-  setChartData(rootIndex:number, mrcaIndex:number, nodeAIndex:number, nodeBIndex:number,
+  setChartData(nodeIndices: number[],
     mccTreeCanvas: MccTreeCanvas, isApobecEnabled: boolean
   ): ChartData {
     const pythia = this.pythia,
@@ -113,6 +113,7 @@ export class CoreLineagesData {
         nodePairs: [],
         nodes: []
       };
+    const [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex] = nodeIndices;
     if (rootIndex !== UNSET) this.rootIndex = rootIndex;
     if (pythia) {
 

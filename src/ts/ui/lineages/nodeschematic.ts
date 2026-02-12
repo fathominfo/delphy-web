@@ -137,7 +137,7 @@ export class NodeSchematic {
   highlightedMutation: Mutation | null;
   nodeHighlightCallback: HoverCallback;
   src: NodePair[] = [];
-  indexes: [number, number, number, number] = [UNSET, UNSET, UNSET, UNSET];
+  indexes: number[] = [UNSET, UNSET, UNSET, UNSET];
   dataConfig: string;
   div: HTMLDivElement;
   // centralLine: Track;
@@ -185,7 +185,7 @@ export class NodeSchematic {
   @param nodeAIsUpper: when both nodeA and nodeB are set, indicates whether the display of
     node A should be the upper track or the lower track
   */
-  setData(src: NodePair[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
+  setData(src: NodePair[], indexes: number[], nodeAIsUpper: boolean) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     this.src = src;
     this.indexes = indexes;
