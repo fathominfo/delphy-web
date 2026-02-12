@@ -9,7 +9,7 @@ import { DisplayNode } from "../displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { NodeDisplay, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
+import { NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 
 
@@ -30,26 +30,19 @@ export type NodeSelectData = {
 };
 
 
-export type NodeListItemData = {
-  confidence: number,
-  index: number,
-  childCount: number,
-  isLocked: boolean,
-  metadata: NodeMetadataValues | null
-}
-
 export type ChartData = {
   nodeListData: DisplayNode[],
   nodeDistributions: BaseTreeSeriesType | null,
-  prevalenceNodes : NodeDisplay[],
+  prevalenceNodes : DisplayNode[],
   minDate: number,
   maxDate: number
   nodeComparisonData: NodeMutationsData[],
   nodeAIsUpper: boolean,
-  nodeDisplays: NodeDisplay[],
+  nodeDisplays: DisplayNode[],
   nodePairs: NodePair[],
   nodes: DisplayNode[]
 }
+
 
 
 export class CoreLineagesData {
@@ -146,7 +139,7 @@ export class CoreLineagesData {
           nodeTimes[index] = pythia.getNodeTimeDistribution(index, summaryTree);
         });
 
-      let nodes: NodeDisplay[] = currentIndices.map((index, dn)=>{
+      let nodes: DisplayNode[] = currentIndices.map((index, dn)=>{
         const valid = index !== UNSET;
         const times = valid ? nodeTimes[index] : [];
         const isInferred = index === rootIndex || index === mrcaIndex;
@@ -158,13 +151,13 @@ export class CoreLineagesData {
         const nd = getNodeDisplay(index, dn, summaryTree, isInferred, isRoot,
           confidence, childCount, series, metadata
         );
-        chartData.nodes[dn] = nd.type;
+        chartData.nodes[dn] = nd;
         return nd;
       });
       const nodeClasses: DisplayNode[] = [];
       nodes.forEach(node=>{
-        if (node.index !== UNSET && node.type) {
-          nodeClasses[node.type.index] = node.type;
+        if (node.index !== UNSET) {
+          nodeClasses[node.index] = node;
           node.times = nodeTimes[node.index];
         }
       });
@@ -266,7 +259,7 @@ export class CoreLineagesData {
       const nodeIndices = nodes.map(({index})=>index),
         nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),
         nodeDistributions = nodePrevalenceData.series;
-      chartData.nodeDisplays = nodes;
+      chartData.nodeDisplays = nodes.slice(0);
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
         const ascendantTimes = nodeTimes[np.ancestor.index],
           descendantTimes = nodeTimes[np.descendant.index] || [],
@@ -283,7 +276,10 @@ export class CoreLineagesData {
       in the prevalence chart
       */
       const prevalenceNodes = nodes.slice(0);
-      prevalenceNodes.unshift({ index: UNSET, label: 'other', type: null, times: [] });
+
+
+
+      prevalenceNodes.unshift(nullNode);
       chartData.prevalenceNodes = prevalenceNodes;
       mccRef.release();
 
@@ -529,11 +525,11 @@ export class CoreLineagesData {
 
 
 const getNodeDisplay = (index: number, dnIndex: number,
-  summaryTree: SummaryTree, isInferred: boolean, isRoot: boolean,
+  summaryTree: SummaryTree | null, isInferred: boolean, isRoot: boolean,
   confidence: number, childCount: number, series: Distribution,
-  metadata: NodeMetadataValues | null) => {
+  metadata: NodeMetadataValues | null): DisplayNode => {
   let generationsFromRoot = UNSET;
-  if (index !== UNSET) {
+  if (index !== UNSET && summaryTree !== null) {
     let parent = index;
     const rootIndex = summaryTree.getRootIndex();
     while (parent !== rootIndex) {
@@ -544,13 +540,8 @@ const getNodeDisplay = (index: number, dnIndex: number,
   const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred,
     isRoot, confidence, childCount, series, metadata);
   dnc.setIndex(index);
-  return {
-    index: index,
-    label: dnc.name,
-    type: dnc,
-    times: [],
-    series: null
-  };
+  return dnc;
 }
 
-
+// { index: UNSET, label: 'other', type: null, times: [] }
+const nullNode: DisplayNode = getNodeDisplay(UNSET, UNSET, null, false, false, UNSET, UNSET, new Distribution([]), null);

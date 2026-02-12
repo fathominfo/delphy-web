@@ -93,13 +93,6 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 
 
 
-export type NodeDisplay = {
-  index: number,
-  label: string,
-  type: DisplayNode | null,
-  times: number[]
-};
-
 export class NodePair {
   ancestor: DisplayNode;
   descendant: DisplayNode;

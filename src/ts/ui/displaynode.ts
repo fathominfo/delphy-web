@@ -19,7 +19,6 @@ export class DisplayNode {
   confidence: number;
   childCount: number;
   metadata: NodeMetadataValues | null;
-  /* we need series in order to fully replace the NodeDisplay type */
   series: Distribution | null = null;
   times: number[] = [];
 

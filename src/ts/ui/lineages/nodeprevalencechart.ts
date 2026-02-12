@@ -3,7 +3,7 @@ import { DateScale, UNSET, getNiceDateInterval,
   setDateLabel, DATE_LABEL_WIDTH_PX, AxisLabel } from '../common';
 import { DisplayNode } from '../displaynode';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
-import { HoverCallback, NodeDisplay } from './lineagescommon';
+import { HoverCallback } from './lineagescommon';
 
 const TARGET = 200;
 const TOO_MANY = TARGET * 2;
@@ -40,7 +40,7 @@ export class NodePrevalenceChart {
   hoverDate: number = UNSET;
   highlightDisplayNode: DisplayNode | null = null;
   nodeHighlightCallback: HoverCallback;
-  nodes: NodeDisplay[] = [];
+  nodes: DisplayNode[] = [];
   svg: SVGElement;
   dateHoverContainer: HTMLDivElement;
   dateHoverDiv: HTMLDivElement;
@@ -107,7 +107,7 @@ export class NodePrevalenceChart {
   }
 
 
-  setData(nodeDist: BaseTreeSeriesType, nodes: NodeDisplay[], minDate: number, maxDate: number) {
+  setData(nodeDist: BaseTreeSeriesType, nodes: DisplayNode[], minDate: number, maxDate: number) {
     this.dist = nodeDist; // tree, series, day
     this.treeCount = nodeDist.length;
     this.seriesCount = nodeDist[0].length;
@@ -289,20 +289,18 @@ export class NodePrevalenceChart {
     const { nodes, svgGroups } = this;
     const dataMapping: {[_:string]: boolean} = {};
     Object.values(nodes).forEach((nd, i)=>{
-      if (nd.type) {
-        const className = nd.type.className;
-        const fillCoords: string = this.getMeanAreaCoords(i);
-        const strokeCoords: string = this.getMeanTopCoords(i);
-        dataMapping[className] = true;
-        let svgGroup = svgGroups[className];
-        if (svgGroup === undefined) {
-          svgGroup = new SVGPrevalenceMeanGroup(nd.type);
-          svgGroups[className] = svgGroup;
-        }
-        svgGroup.toggleClass("hidden", false);
-        svgGroup.shape.setAttribute("d", fillCoords);
-        svgGroup.trend.setAttribute("d", strokeCoords);
+      const className = nd.className;
+      const fillCoords: string = this.getMeanAreaCoords(i);
+      const strokeCoords: string = this.getMeanTopCoords(i);
+      dataMapping[className] = true;
+      let svgGroup = svgGroups[className];
+      if (svgGroup === undefined) {
+        svgGroup = new SVGPrevalenceMeanGroup(nd);
+        svgGroups[className] = svgGroup;
       }
+      svgGroup.toggleClass("hidden", false);
+      svgGroup.shape.setAttribute("d", fillCoords);
+      svgGroup.trend.setAttribute("d", strokeCoords);
     });
     /* hide any svgs for nodes that are not in the current list */
     Object.entries(svgGroups).forEach(([nodeType, group])=>{
@@ -378,20 +376,18 @@ export class NodePrevalenceChart {
     const { nodes, svgGroups } = this;
     const dataMapping: {[_:string]: boolean} = {};
     Object.values(nodes).forEach((nd, i)=>{
-      if (nd.type) {
-        const className = nd.type.className;
-        const fillCoords: string = this.getHPDAreaCoords(i);
-        const strokeCoords: string = this.getMedianCoords(i);
-        dataMapping[className] = true;
-        let svgGroup = svgGroups[className];
-        if (svgGroup === undefined) {
-          svgGroup = new SVGPrevalenceMeanGroup(nd.type);
-          svgGroups[className] = svgGroup;
-        }
-        svgGroup.toggleClass("hidden", false);
-        svgGroup.shape.setAttribute("d", fillCoords);
-        svgGroup.trend.setAttribute("d", strokeCoords);
+      const className = nd.className;
+      const fillCoords: string = this.getHPDAreaCoords(i);
+      const strokeCoords: string = this.getMedianCoords(i);
+      dataMapping[className] = true;
+      let svgGroup = svgGroups[className];
+      if (svgGroup === undefined) {
+        svgGroup = new SVGPrevalenceMeanGroup(nd);
+        svgGroups[className] = svgGroup;
       }
+      svgGroup.toggleClass("hidden", false);
+      svgGroup.shape.setAttribute("d", fillCoords);
+      svgGroup.trend.setAttribute("d", strokeCoords);
     });
     /* hide any svgs for nodes that are not in the current list */
     Object.entries(svgGroups).forEach(([nodeType, group])=>{
