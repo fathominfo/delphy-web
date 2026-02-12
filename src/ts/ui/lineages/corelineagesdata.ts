@@ -5,7 +5,7 @@ import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
 import { getMedian, UNSET } from "../common";
-import { DisplayNode } from "../displaynode";
+import { DisplayNode } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";

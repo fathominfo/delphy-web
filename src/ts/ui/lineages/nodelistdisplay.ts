@@ -1,5 +1,5 @@
 import { UNSET, getPercentLabel } from '../common';
-import { DisplayNode } from '../displaynode';
+import { DisplayNode } from './displaynode';
 import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;

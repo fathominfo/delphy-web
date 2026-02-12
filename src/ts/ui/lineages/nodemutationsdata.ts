@@ -3,7 +3,7 @@ import { NodePair, mutationPrevalenceThreshold } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
-import { DisplayNode } from '../displaynode';
+import { DisplayNode } from './displaynode';
 
 
 

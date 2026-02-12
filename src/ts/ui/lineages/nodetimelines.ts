@@ -3,7 +3,7 @@ import { DateScale, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
 import { Distribution } from '../distribution';
-import { DisplayNode } from '../displaynode';
+import { DisplayNode } from './displaynode';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 

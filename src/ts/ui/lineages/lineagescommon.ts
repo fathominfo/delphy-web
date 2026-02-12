@@ -1,6 +1,6 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNode } from '../displaynode';
+import { DisplayNode } from './displaynode';
 
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';

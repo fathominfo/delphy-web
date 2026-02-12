@@ -19,7 +19,7 @@ import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { CoreLineagesData } from './corelineagesdata';
 import { BaseTreeSeriesType } from '../../constants';
-import { DisplayNode } from '../displaynode';
+import { DisplayNode } from './displaynode';
 
 
 

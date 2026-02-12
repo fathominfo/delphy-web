@@ -5,7 +5,7 @@ import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { TreeSelectCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
 import { DateLabel } from "../datelabel";
-import { DisplayNode } from "../displaynode";
+import { DisplayNode } from "./displaynode";
 
 const INFERRED_NODE_RADIUS = 4;
 const SELECTED_NODE_RADIUS = 5.5;

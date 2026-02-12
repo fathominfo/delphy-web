@@ -3,7 +3,7 @@ import { Mutation } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 
 import { nfc, UNSET } from "../common";
-import { DisplayNode } from "../displaynode";
+import { DisplayNode } from "./displaynode";
 import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair } from "./lineagescommon";
 
 

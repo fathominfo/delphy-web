@@ -1,6 +1,6 @@
-import { getCSSValue, UNSET } from "./common";
-import { Distribution } from "./distribution";
-import { NodeMetadataValues } from "./nodemetadata";
+import { getCSSValue, UNSET } from "../common";
+import { Distribution } from "../distribution";
+import { NodeMetadataValues } from "../nodemetadata";
 
 
 const nodeTypeNames = ["Root", "MRCA", "A", "B"];

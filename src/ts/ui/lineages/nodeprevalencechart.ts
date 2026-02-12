@@ -1,7 +1,7 @@
 import { BaseTreeSeriesType } from '../../constants';
 import { DateScale, UNSET, getNiceDateInterval,
   setDateLabel, DATE_LABEL_WIDTH_PX, AxisLabel } from '../common';
-import { DisplayNode } from '../displaynode';
+import { DisplayNode } from './displaynode';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { HoverCallback } from './lineagescommon';
 
