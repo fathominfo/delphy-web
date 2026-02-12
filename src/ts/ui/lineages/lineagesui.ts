@@ -202,13 +202,8 @@ export class LineagesUI extends MccUI {
     if (this.pythia) {
       const mccRef = this.pythia.getMcc(),
         summaryTree = this.mccTreeCanvas.tree as SummaryTree;
-      if (summaryTree !== this.coreData.prevMcc) {
-        this.coreData.updateNodeData(summaryTree);
-        const rootConfidence = this.mccTreeCanvas.creds[this.coreData.rootIndex];
-        let rootMetadata = null;
-        if (this.sharedState.mccConfig.nodeMetadata) {
-          rootMetadata = this.sharedState.mccConfig.nodeMetadata.getNodeMetadata(this.coreData.rootIndex);
-        }
+      if (summaryTree !== this.coreData.summaryTree) {
+        this.coreData.initNodeData(this.mccTreeCanvas);
         this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
       }
       mccRef.release();
@@ -255,8 +250,7 @@ export class LineagesUI extends MccUI {
   setChartData(nodeIndices: number[]): void {
     const pythia = this.pythia as Pythia,
       mccRef = pythia.getMcc();
-    const chartData = this.coreData.setChartData(nodeIndices,
-      this.mccTreeCanvas, this.isApobecEnabled);
+    const chartData = this.coreData.setChartData(nodeIndices, this.isApobecEnabled);
     const { nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
       nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);

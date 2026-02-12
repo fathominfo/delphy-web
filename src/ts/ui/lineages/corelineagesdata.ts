@@ -41,14 +41,32 @@ export type ChartData = {
   nodes: DisplayNode[]
 }
 
-
+type getYFunction = (_: number) => number;
 
 export class CoreLineagesData {
 
+  /* shared data stores that we need */
   sharedState: SharedState;
   pythia: Pythia | null = null;
-  prevMcc: SummaryTree | null = null;
+  nodeMetadata: NodeMetadata | null = null;
+  tipIds: string[] = [];
 
+
+
+  /*
+  local copies of data that gets updated
+  every time the MCC switches
+  */
+  summaryTree: SummaryTree | null = null;
+  nodeChildCount: number[] = [];
+  nodeConfidence: number[] = [];
+  getY: getYFunction | null = null;
+
+
+
+  /*
+  current state
+  */
   nodeAIndex = UNSET;
   nodeBIndex = UNSET;
   mrcaIndex = UNSET;
@@ -59,9 +77,6 @@ export class CoreLineagesData {
   rootNode : DisplayNode | null = null;
   nodes: DisplayNode[] = [];
 
-  nodeChildCount: number[] = [];
-
-  maxVal = 0;
 
   nodeComparisonData: NodeMutationsData[] = [];
 
@@ -76,8 +91,15 @@ export class CoreLineagesData {
   highlightMutation: Mutation | null = null;
 
 
+  /*
+  for the prevalence chart, we need a node like object
+  to represent the uninfected population.
+  */
+  nullNode: DisplayNode;
+
   constructor(sharedState: SharedState) {
     this.sharedState = sharedState;
+    this.nullNode =  this.getNodeDisplay(UNSET, UNSET, false, false);
   }
 
   activate() {
@@ -86,6 +108,45 @@ export class CoreLineagesData {
 
   deactivate() {
     this.pythia = null;
+  }
+
+  initNodeData(mccTreeCanvas: MccTreeCanvas) : boolean {
+    const summaryTree = mccTreeCanvas.tree as SummaryTree;
+    if (summaryTree !== this.summaryTree) {
+      const nodeCount = summaryTree.getSize(),
+        rootIndex = summaryTree.getRootIndex(),
+        childCounts = new Array(nodeCount);
+      childCounts.fill(0);
+      for (let i = 0; i < nodeCount; i++) {
+        if (isTip(summaryTree,i)) {
+          /* this is a tip */
+          let ii = i;
+          while (ii !== UNSET) {
+            childCounts[ii]++;
+            ii = summaryTree.getParentIndexOf(ii);
+          }
+        }
+      }
+      this.rootIndex = rootIndex;
+      this.nodeAIndex = UNSET;
+      this.nodeBIndex = UNSET;
+      this.mrcaIndex = UNSET;
+      if (this.sharedState.nodeList.length > 0) {
+        this.nodeAIndex = this.sharedState.nodeList[0];
+        if (this.sharedState.nodeList.length > 1) {
+          this.nodeBIndex = this.sharedState.nodeList[1];
+          this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex, summaryTree);
+        }
+      }
+      this.nodeChildCount = childCounts;
+      this.summaryTree = summaryTree;
+      this.nodeConfidence = mccTreeCanvas.creds;
+      this.getY = (n:number)=>mccTreeCanvas.getZoomY(n);
+      this.nodeMetadata = this.sharedState.mccConfig.nodeMetadata;
+      this.tipIds = this.sharedState.getTipIds();
+      return true;
+    }
+    return false;
   }
 
   setCredibilityConstrained(constrained: boolean) : void {
@@ -97,8 +158,7 @@ export class CoreLineagesData {
   }
 
 
-  setChartData(nodeIndices: number[],
-    mccTreeCanvas: MccTreeCanvas, isApobecEnabled: boolean
+  setChartData(nodeIndices: number[], isApobecEnabled: boolean
   ): ChartData {
     const pythia = this.pythia,
       chartData: ChartData = {
@@ -117,20 +177,13 @@ export class CoreLineagesData {
     if (rootIndex !== UNSET) this.rootIndex = rootIndex;
     if (pythia) {
 
-
+      const summaryTree = this.summaryTree as SummaryTree;
+      const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
-        maxDate = pythia.maxDate,
-        nodeConfidence = mccTreeCanvas.creds,
-        summaryTree = mccTreeCanvas.tree as SummaryTree,
-        nodeMetadata = this.sharedState.mccConfig.nodeMetadata,
-        tipIds = this.sharedState.getTipIds();
+        maxDate = pythia.maxDate;
       chartData.minDate = minDate;
       chartData.maxDate = maxDate;
-      let setMRCA = false,
-        setA = false,
-        setB = false;
-
       const currentIndices = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex];
       const nodeTimes: number[][] = [];
       currentIndices.filter(index=> index !== UNSET)
@@ -139,17 +192,9 @@ export class CoreLineagesData {
         });
 
       let nodes: DisplayNode[] = currentIndices.map((index, dn)=>{
-        const valid = index !== UNSET;
-        const times = valid ? nodeTimes[index] : [];
         const isInferred = index === rootIndex || index === mrcaIndex;
         const isRoot = index === rootIndex;
-        const confidence: number = valid ? nodeConfidence[index] : UNSET;
-        const childCount: number =  valid ? this.nodeChildCount[index] : UNSET;
-        const series: Distribution = new Distribution(times);
-        const metadata: NodeMetadataValues | null = this.getNodeMetadata(mrcaIndex, nodeMetadata, tipIds);
-        const nd = getNodeDisplay(index, dn, summaryTree, isInferred, isRoot,
-          confidence, childCount, series, metadata
-        );
+        const nd = this.getNodeDisplay(index, dn, isInferred, isRoot);
         chartData.nodes[dn] = nd;
         return nd;
       });
@@ -170,14 +215,12 @@ export class CoreLineagesData {
           /* if there is no mrca, then we connect the root directly to the other nodes */
           if (nodeAIndex === UNSET) {
             if (nodeBIndex !== UNSET) {
-              setB = true;
               nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
               chartData.nodePairs.push(nodePair);
             }
             this.setSelectable(true);
           } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
             /* we have node 1 without node 2 */
-            setA = true;
             nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
             this.setSelectable(true);
@@ -202,7 +245,7 @@ export class CoreLineagesData {
             if (mrca === rootIndex) {
               descendant1Index = nodeAIndex;
               descendant2Index = nodeBIndex;
-              const nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
+              const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
               if (nodeAIsUpper) {
                 rel1 = NodeRelationType.upperDescendant;
                 rel2 = NodeRelationType.lowerDescendant;
@@ -221,8 +264,6 @@ export class CoreLineagesData {
             } else {
               console.warn("need to revisit how node pairs are made");
             }
-            setA = true;
-            setB = true;
             nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], rel1, pythia, summaryTree);
             chartData.nodePairs.push(nodePair);
             nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], rel2, pythia, summaryTree);
@@ -231,10 +272,7 @@ export class CoreLineagesData {
           }
 
         } else {
-          setA = true;
-          setB = true;
-          setMRCA = true;
-          const nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
+          const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
           let relA: NodeRelationType;
           let relB: NodeRelationType;
           if (nodeAIsUpper) {
@@ -266,7 +304,7 @@ export class CoreLineagesData {
           descendantMedianDate = getMedian(descendantTimes);
         return new NodeMutationsData(np, ancestorMedianDate, descendantMedianDate, minDate, maxDate, isApobecEnabled)
       });
-      chartData.nodeAIsUpper = mccTreeCanvas.getZoomY(nodeAIndex) < mccTreeCanvas.getZoomY(nodeBIndex);
+      chartData.nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       chartData.nodeDistributions = nodeDistributions;
@@ -275,10 +313,7 @@ export class CoreLineagesData {
       in the prevalence chart
       */
       const prevalenceNodes = nodes.slice(0);
-
-
-
-      prevalenceNodes.unshift(nullNode);
+      prevalenceNodes.unshift(this.nullNode);
       chartData.prevalenceNodes = prevalenceNodes;
       mccRef.release();
 
@@ -312,7 +347,7 @@ export class CoreLineagesData {
     const ids: string[] = [];
     [this.nodeAIndex, this.nodeBIndex].forEach(index=>{
       if (index !== UNSET) {
-        const metadata = this.sharedState.mccConfig.nodeMetadata?.getNodeMetadata(index);
+        const metadata = this.nodeMetadata?.getNodeMetadata(index);
         if (metadata) {
           const id = metadata.id?.value;
           if (id) {
@@ -330,40 +365,6 @@ export class CoreLineagesData {
     if (nodes.length > 0) {
       this.sharedState.setNodeSelection(nodes);
     }
-  }
-
-  updateNodeData(summaryTree: SummaryTree) : boolean {
-    if (summaryTree !== this.prevMcc) {
-      const nodeCount = summaryTree.getSize(),
-        rootIndex = summaryTree.getRootIndex(),
-        childCounts = new Array(nodeCount);
-      childCounts.fill(0);
-      for (let i = 0; i < nodeCount; i++) {
-        if (isTip(summaryTree,i)) {
-          /* this is a tip */
-          let ii = i;
-          while (ii !== UNSET) {
-            childCounts[ii]++;
-            ii = summaryTree.getParentIndexOf(ii);
-          }
-        }
-      }
-      this.rootIndex = rootIndex;
-      this.nodeAIndex = UNSET;
-      this.nodeBIndex = UNSET;
-      this.mrcaIndex = UNSET;
-      if (this.sharedState.nodeList.length > 0) {
-        this.nodeAIndex = this.sharedState.nodeList[0];
-        if (this.sharedState.nodeList.length > 1) {
-          this.nodeBIndex = this.sharedState.nodeList[1];
-          this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex, summaryTree);
-        }
-      }
-      this.nodeChildCount = childCounts;
-      this.prevMcc = summaryTree;
-      return true;
-    }
-    return false;
   }
 
   getMRCA(index1: number, index2: number, mcc: SummaryTree): number {
@@ -502,9 +503,10 @@ export class CoreLineagesData {
   }
 
 
-  getNodeMetadata(nodeIndex:number, nodeMetadata: NodeMetadata | null,
-    tipIds:string[]): NodeMetadataValues | null {
+  getNodeMetadata(nodeIndex:number): NodeMetadataValues | null {
     if (nodeIndex === UNSET) return null;
+    const nodeMetadata: NodeMetadata | null = this.nodeMetadata;
+    const tipIds: string[] = this.tipIds;
     let md = null;
     if (nodeMetadata) {
       md = nodeMetadata.getNodeMetadata(nodeIndex);
@@ -518,29 +520,32 @@ export class CoreLineagesData {
   }
 
 
-
-
-}
-
-
-const getNodeDisplay = (index: number, dnIndex: number,
-  summaryTree: SummaryTree | null, isInferred: boolean, isRoot: boolean,
-  confidence: number, childCount: number, series: Distribution,
-  metadata: NodeMetadataValues | null): DisplayNode => {
-  let generationsFromRoot = UNSET;
-  if (index !== UNSET && summaryTree !== null) {
-    let parent = index;
-    const rootIndex = summaryTree.getRootIndex();
-    while (parent !== rootIndex) {
-      parent = summaryTree.getParentIndexOf(parent);
-      generationsFromRoot++;
+  getNodeDisplay(index: number, dnIndex: number, isInferred: boolean, isRoot: boolean): DisplayNode {
+    const summaryTree = this.summaryTree;
+    let confidence = UNSET;
+    let childCount = 0;
+    let times: number[] = [];
+    const metadata = this.getNodeMetadata(index);
+    let generationsFromRoot = UNSET;
+    if (index !== UNSET && summaryTree !== null) {
+      let parent = index;
+      const rootIndex = summaryTree.getRootIndex();
+      while (parent !== rootIndex) {
+        parent = summaryTree.getParentIndexOf(parent);
+        generationsFromRoot++;
+      }
+      confidence = this.nodeConfidence[index];
+      childCount = this.nodeChildCount[index];
+      times = (this.pythia as Pythia).getNodeTimeDistribution(index, summaryTree);
     }
+    const series = new Distribution(times);
+    const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred,
+      isRoot, confidence, childCount, series, metadata);
+    dnc.setIndex(index);
+    return dnc;
   }
-  const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred,
-    isRoot, confidence, childCount, series, metadata);
-  dnc.setIndex(index);
-  return dnc;
+
+
+
 }
 
-// { index: UNSET, label: 'other', type: null, times: [] }
-const nullNode: DisplayNode = getNodeDisplay(UNSET, UNSET, null, false, false, UNSET, UNSET, new Distribution([]), null);
