@@ -1,4 +1,6 @@
 import { getCSSValue, UNSET } from "./common";
+import { Distribution } from "./distribution";
+import { NodeMetadataValues } from "./nodemetadata";
 
 
 const nodeTypeNames = ["Root", "MRCA", "A", "B"];
@@ -12,12 +14,18 @@ export class DisplayNode {
   generationsFromRoot: number;
   isInferred: boolean;
   isRoot: boolean;
+  confidence: number;
+  childCount: number;
+  metadata: NodeMetadataValues | null;
   /* we need series in order to fully replace the NodeDisplay type */
-  // series: NodeDistribution | null = null;
+  series: Distribution | null = null;
 
 
   // nameIndex currently is 0: root, 1: mrca, 2: nodeA, 3: nodeB
-  constructor(nameIndex: number, generationsFromRoot: number, isInferred: boolean, isRoot: boolean) {
+  constructor(nameIndex: number, generationsFromRoot: number, isInferred: boolean,
+    isRoot: boolean, confidence: number, childCount: number,
+    series: Distribution,
+    metadata: NodeMetadataValues | null) {
     this.index = UNSET;
     this.nameIndex = nameIndex;
     this.name = nodeTypeNames[nameIndex];
@@ -25,6 +33,11 @@ export class DisplayNode {
     this.generationsFromRoot = generationsFromRoot;
     this.isInferred = isInferred;
     this.isRoot = isRoot;
+    this.confidence = confidence;
+    this.childCount = childCount;
+    this.series = series;
+    this.metadata = metadata;
+
     // this.name = String.fromCharCode(ASCII_BASE + nameIndex)
     // this.className = `node-${this.name}`;
     NUMS_IN_USE[this.nameIndex] = true;
@@ -81,8 +94,8 @@ const getNextNameNum = ():number=>{
 }
 
 
-export const addSelectedNode = (nodeIndex: number)=>{
-  const nameNum = getNextNameNum();
-  const node = new DisplayNode(nameNum, nodeIndex, false, false);
-  return node;
-}
+// export const addSelectedNode = (nodeIndex: number)=>{
+//   const nameNum = getNextNameNum();
+//   const node = new DisplayNode(nameNum, nodeIndex, false, false);
+//   return node;
+// }

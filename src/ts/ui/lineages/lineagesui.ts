@@ -209,7 +209,7 @@ export class LineagesUI extends MccUI {
         if (this.sharedState.mccConfig.nodeMetadata) {
           rootMetadata = this.sharedState.mccConfig.nodeMetadata.getNodeMetadata(this.coreData.rootIndex);
         }
-        this.nodeListDisplay.setRoot(rootConfidence, this.coreData.nodeChildCount[this.coreData.rootIndex], rootMetadata, this.coreData.rootIndex);
+        // this.nodeListDisplay.setRoot(rootConfidence, this.coreData.nodeChildCount[this.coreData.rootIndex], rootMetadata, this.coreData.rootIndex);
         this.setChartData(this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex);
       }
       mccRef.release();
@@ -261,26 +261,23 @@ export class LineagesUI extends MccUI {
       this.mccTreeCanvas, this.isApobecEnabled);
     const {  nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
       nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
+    const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     if (nodeListData[1]) {
-      const { confidence, index, childCount, isLocked, metadata } = nodeListData[1];
-      this.nodeListDisplay.setMRCA(confidence, childCount, isLocked, metadata, index);
+      this.nodeListDisplay.setMRCA(nodeListData[1]);
     } else {
       this.nodeListDisplay.clearMRCA();
     }
     if (nodeListData[2]) {
-      const { confidence, index, childCount, isLocked, metadata } = nodeListData[2];
-      this.nodeListDisplay.setNodeA(confidence, childCount, isLocked, metadata, index);
+      this.nodeListDisplay.setNodeA(nodeListData[2]);
     } else {
       this.nodeListDisplay.clearNodeA();
     }
     if (nodeListData[3]) {
-      const { confidence, index, childCount, isLocked, metadata } = nodeListData[3];
-      this.nodeListDisplay.setNodeB(confidence, childCount, isLocked, metadata, index);
+      this.nodeListDisplay.setNodeB(nodeListData[3]);
     } else {
       this.nodeListDisplay.clearNodeB();
     }
-    const [root, mrca, nodeA, nodeB] = nodes;
-    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes([root, mrca, nodeA, nodeB].filter(dnc=>dnc.index !== UNSET), nodePairs);
+    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs);
     this.nodeTimelines.setData(nodeDisplays);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);

@@ -5,7 +5,7 @@ import { Distribution } from './distribution';
 
 
 
-export type SeriesHoverCallback = (series: Distribution | null, dateIndex: number)=>void;
+export type SeriesHoverCallback = (hoveredIndex: number, dateIndex: number)=>void;
 
 const SERIES_GROUP_TEMPLATE = document.querySelector(".series.group") as SVGGElement;
 SERIES_GROUP_TEMPLATE.remove();
@@ -48,7 +48,7 @@ export class TimeDistributionChart {
   // readout: HTMLElement;
 
   constructor(series: Distribution[], minDate: number, maxDate: number,
-    svg: SVGElement, hoverCallback: SeriesHoverCallback = noop, groupType = SVGSeriesGroup) {
+    svg: SVGElement, hoverCallback: SeriesHoverCallback = noop, groupType: typeof SVGSeriesGroup = SVGSeriesGroup) {
     this.series = [];
     this.groupType = groupType;
     this.setDateRange(minDate, maxDate);
@@ -207,17 +207,17 @@ export class TimeDistributionChart {
     const hoverX = e.offsetX;
     const hoverDate = this.xForInverse(hoverX);
     const dateIndex = Math.floor(this.dateIndexAt(hoverX));
-    let hovered: Distribution | null = null;
+    let hoveredIndex: number = UNSET;
     let maxValAtX = 0;
-    this.series.forEach((ds:Distribution) => {
+    this.series.forEach((ds:Distribution, i) => {
       if (!ds) return;
       const val = ds.getValueAt(hoverDate);
       if (val > maxValAtX) {
         maxValAtX = Math.max(val, maxValAtX);
-        hovered = ds;
+        hoveredIndex = i;
       }
     });
-    this.hoverCallback(hovered, dateIndex);
+    this.hoverCallback(hoveredIndex, dateIndex);
   }
 
   handleMouseout() {
@@ -225,7 +225,7 @@ export class TimeDistributionChart {
     // this.hoverSeriesIndex = UNSET;
     // this.hoverX = null;
     // this.hoverDate = null;
-    this.hoverCallback(null, UNSET);
+    this.hoverCallback(UNSET, UNSET);
   }
 
 

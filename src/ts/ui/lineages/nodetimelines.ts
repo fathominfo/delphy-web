@@ -1,4 +1,4 @@
-import { HoverCallback, NodeDisplay, NodeDistribution, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
+import { HoverCallback, NodeDisplay, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
 import { DateScale, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
@@ -89,10 +89,10 @@ export class NodeTimelines {
 
   constructor(nodeHighlightCallback: HoverCallback) {
 
-    const seriesHoverHandler: SeriesHoverCallback = (series: Distribution | null, date: number)=>{
+    const seriesHoverHandler: SeriesHoverCallback = (seriesIndex: number, date: number)=>{
       let nodeType: DisplayNode | null = null;
-      if (series) {
-        nodeType = (series as NodeDistribution).nodeClass;
+      if (seriesIndex !== UNSET) {
+        nodeType = this.data[seriesIndex].type;
       }
       nodeHighlightCallback(nodeType, date, null);
     };
@@ -127,9 +127,10 @@ export class NodeTimelines {
 
 
   setData(nodes: NodeDisplay[]) {
-    this.data = nodes;
-    const allSeries = nodes.map(n=>n.series).filter(s => s !== null);
-    this.nodeTimesCanvas.setSeries(allSeries as NodeDistribution[]);
+    /* only take the nodes that have series */
+    this.data = nodes.filter(n=>n.type?.series && n.type.series);
+    const allSeries = this.data.map(n=>n.type?.series);
+    this.nodeTimesCanvas.setSeries(allSeries as Distribution[]);
   }
 
   requestDraw() : void {
@@ -137,7 +138,7 @@ export class NodeTimelines {
       const displaying: {[_: string]: boolean} = {};
       this.data.forEach((nd) => {
         const dn = nd.type;
-        const dist = nd.series;
+        const dist = dn?.series;
         if (dn !== null && dist) {
           const className = dn.className;
           displaying[className] = true;

@@ -6,9 +6,10 @@ import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
 import { getMedian, UNSET } from "../common";
 import { DisplayNode } from "../displaynode";
+import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { NodeDisplay, NodeDistribution, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
+import { NodeDisplay, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 
 
@@ -65,6 +66,7 @@ export class CoreLineagesData {
   nodeBNode : DisplayNode | null = null;
   mrcaNode : DisplayNode | null = null;
   rootNode : DisplayNode | null = null;
+  nodes: DisplayNode[] = [];
 
   nodeChildCount: number[] = [];
 
@@ -144,9 +146,17 @@ export class CoreLineagesData {
         });
 
       let nodes: NodeDisplay[] = currentIndices.map((index, dn)=>{
+        const valid = index !== UNSET;
+        const times = valid ? nodeTimes[index] : [];
         const isInferred = index === rootIndex || index === mrcaIndex;
         const isRoot = index == rootIndex;
-        const nd = getNodeDisplay(index, dn, summaryTree, isInferred, isRoot);
+        const confidence: number = valid ? nodeConfidence[index] : UNSET;
+        const childCount: number =  valid ? this.nodeChildCount[index] : UNSET;
+        const series: Distribution = new Distribution(times);
+        const metadata: NodeMetadataValues | null = this.getNodeMetadata(mrcaIndex, nodeMetadata, tipIds);
+        const nd = getNodeDisplay(index, dn, summaryTree, isInferred, isRoot,
+          confidence, childCount, series, metadata
+        );
         chartData.nodes[dn] = nd.type;
         return nd;
       });
@@ -156,12 +166,9 @@ export class CoreLineagesData {
           nodeClasses[nd.type.index] = nd.type;
         }
       });
-
-      // let nodes: NodeDisplay[] = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex].map((index, i)=>getNodeDisplay(index, i));
       nodes.forEach(node=>{
         if (node.type !== null && node.index >= 0) {
           node.times = nodeTimes[node.index];
-          node.series = new NodeDistribution(node.type, node.times);
         }
       });
       if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
@@ -309,13 +316,14 @@ export class CoreLineagesData {
       in the prevalence chart
       */
       const prevalenceNodes = nodes.slice(0);
-      prevalenceNodes.unshift({ index: UNSET, label: 'other', type: null, times: [], series: null });
+      prevalenceNodes.unshift({ index: UNSET, label: 'other', type: null, times: [] });
       chartData.prevalenceNodes = prevalenceNodes;
       mccRef.release();
 
     }
     return chartData;
   }
+
 
 
 
@@ -485,7 +493,7 @@ export class CoreLineagesData {
       }
     }
 
-    return { mrcaIndex, nodeAIndex, nodeBIndex, hint, displayNode};
+    return { mrcaIndex, nodeAIndex, nodeBIndex, hint, displayNode} as NodeHoverData;
 
   }
 
@@ -532,7 +540,9 @@ export class CoreLineagesData {
   }
 
 
-  getNodeMetadata(nodeIndex:number, nodeMetadata: NodeMetadata | null, tipIds:string[]) {
+  getNodeMetadata(nodeIndex:number, nodeMetadata: NodeMetadata | null,
+    tipIds:string[]): NodeMetadataValues | null {
+    if (nodeIndex === UNSET) return null;
     let md = null;
     if (nodeMetadata) {
       md = nodeMetadata.getNodeMetadata(nodeIndex);
@@ -552,7 +562,9 @@ export class CoreLineagesData {
 
 
 const getNodeDisplay = (index: number, dnIndex: number,
-  summaryTree: SummaryTree, isInferred: boolean, isRoot: boolean) => {
+  summaryTree: SummaryTree, isInferred: boolean, isRoot: boolean,
+  confidence: number, childCount: number, series: Distribution,
+  metadata: NodeMetadataValues | null) => {
   let generationsFromRoot = UNSET;
   if (index !== UNSET) {
     let parent = index;
@@ -562,7 +574,8 @@ const getNodeDisplay = (index: number, dnIndex: number,
       generationsFromRoot++;
     }
   }
-  const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred, isRoot);
+  const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred,
+    isRoot, confidence, childCount, series, metadata);
   dnc.setIndex(index);
   return {
     index: index,

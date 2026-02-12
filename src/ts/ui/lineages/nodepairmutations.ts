@@ -1,5 +1,5 @@
 import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
-  NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
+  NodeSVGSeriesGroup, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
 import { getPercentLabel, UNSET,
   getNiceDateInterval, DateScale,
@@ -73,7 +73,7 @@ class MutationTimeline {
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
-    this.timeChart.setSeries([series] as NodeDistribution[]);
+    this.timeChart.setSeries([series]);
     this.median = series.median;
     const dateLabel = toFullDateString(this.median);
     this.dateReadout.textContent = dateLabel;
@@ -269,7 +269,7 @@ export class NodePairMutationList {
     // const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
     const {descendantType, mutationTimelineData, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
-      const seriesCallback = (_series: Distribution | null, date: number)=>{
+      const seriesCallback = (_seriesIndex: number, date: number)=>{
         this.nodeHighlightCallback(descendantType, date, md.mutation.mutation);
       };
       const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);

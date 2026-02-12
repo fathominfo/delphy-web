@@ -18,16 +18,23 @@ Extensions to the classes that make up a TimeDistributionChart
 */
 
 
-export class NodeDistribution extends Distribution {
-  nodeClass: DisplayNode;
+// export class NodeDistribution extends Distribution {
+//   nodeClass: DisplayNode;
 
-  constructor(type: DisplayNode, times: number[]) {
-    super(times);
-    this.nodeClass = type;
-  }
-}
+//   constructor(type: DisplayNode, times: number[]) {
+//     super(times);
+//     this.nodeClass = type;
+//   }
+// }
 
 export class NodeSVGSeriesGroup extends SVGSeriesGroup {
+
+  node: DisplayNode | null = null;
+
+  setNode(node: DisplayNode, toggle=true) {
+    this.node = node;
+    this.g.classList.toggle(node.className, toggle);
+  }
 
   setNodeClass(className: string, toggle=true) {
     this.g.classList.toggle(className, toggle);
@@ -37,20 +44,26 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
 export class NodeTimeDistributionChart extends TimeDistributionChart {
 
-  setSeries(series: NodeDistribution[]) {
-    super.setSeries(series);
+  setNodeSeries(nodes: DisplayNode[]) {
+    const serieses: Distribution[] = [];
+    const correspondingNodes: DisplayNode[] = [];
+    nodes.forEach(node=>{
+      if (node.series !== null) {
+        correspondingNodes.push(node);
+        serieses.push(node.series);
+      }
+    });
+    super.setSeries(serieses);
     this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
-      const series = this.series[i] as NodeDistribution;
-      if (series.nodeClass) {
-        nodeGroup.setNodeClass(series.nodeClass.className);
-      }
-      nodeGroup.setNodeClass("tip", series.range === 0);
+      const node = correspondingNodes[i];
+      nodeGroup.setNode(node);
+      nodeGroup.setNodeClass("tip", node.series === null || node.series.range === 0);
     });
   }
 
-  setMatching(node:DisplayNode | null) {
-    if (node === null) {
+  setMatching(matchNode:DisplayNode | null) {
+    if (matchNode === null) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         nodeGroup.setNodeClass("matching", false);
@@ -59,8 +72,8 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     } else {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
-        const series = this.series[i] as NodeDistribution;
-        if (series.nodeClass === node) {
+        const node = nodeGroup.node;
+        if (node === matchNode) {
           nodeGroup.setNodeClass("matching");
           nodeGroup.setNodeClass("unmatching", false);
         } else {
@@ -84,8 +97,7 @@ export type NodeDisplay = {
   index: number,
   label: string,
   type: DisplayNode | null,
-  times: number[],
-  series: NodeDistribution | null
+  times: number[]
 };
 
 export class NodePair {

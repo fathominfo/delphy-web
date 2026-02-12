@@ -1,6 +1,7 @@
 import { UNSET, getPercentLabel } from '../common';
 import { DisplayNode } from '../displaynode';
 import { NodeMetadataValues } from '../nodemetadata';
+import { NodeListItemData } from './corelineagesdata';
 import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
@@ -33,13 +34,13 @@ class NodeItem {
   }
 
 
-  setData(nodeConfidence: number, nodeChildCount: number, locked: boolean,
-    nodeMetadata: NodeMetadataValues | null, nodeIndex: number = UNSET) : void {
-    this.nodeConfidence = nodeConfidence;
-    this.nodeChildCount = nodeChildCount;
-    this.locked = locked;
-    this.nodeMetadata = nodeMetadata;
-    this.nodeIndex = nodeIndex;
+  setData(node: NodeListItemData) : void {
+    const {confidence, index, childCount, isLocked, metadata} = node;
+    this.nodeConfidence = confidence;
+    this.nodeChildCount = childCount;
+    this.locked = isLocked;
+    this.nodeMetadata = metadata;
+    this.nodeIndex = index;
   }
 
 
@@ -194,20 +195,20 @@ export class NodeListDisplay {
   }
 
 
-  setRoot(nodeConfidence: number, nodeChildCount: number, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
-    this.rootDiv.setData(nodeConfidence, nodeChildCount, false, nodeMetadata, nodeIndex);
+  setRoot(node: NodeListItemData) : void {
+    this.rootDiv.setData(node);
   }
 
-  setMRCA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
-    this.mrcaDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
+  setMRCA(node: NodeListItemData) : void {
+    this.mrcaDiv.setData(node);
   }
 
-  setNodeA(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
-    this.nodeADiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
+  setNodeA(node: NodeListItemData) : void {
+    this.nodeADiv.setData(node);
   }
 
-  setNodeB(nodeConfidence: number, nodeChildCount: number, locked = false, nodeMetadata: NodeMetadataValues | null, nodeIndex: number) : void {
-    this.nodeBDiv.setData(nodeConfidence, nodeChildCount, locked, nodeMetadata, nodeIndex);
+  setNodeB(node: NodeListItemData) : void {
+    this.nodeBDiv.setData(node);
   }
 
   clearMRCA(): void {
