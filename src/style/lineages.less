@@ -550,21 +550,114 @@ details {
    }
 
 
-  &[data-nodetype="a"] {
-    .node-name {color: var(--selection-a-text-static);}
+   &[data-nodetype="a"] {
+    .node-name {color: var(--a-text);}
   	.node-icon .shape {
-      border-color: var(--selection-a-stroke-static);
-      background-color: var(--selection-a-fill-static);
+      border-color: var(--a-text);
+      background-color: var(--a-fill);
     }
    }
 
-  &[data-nodetype="b"] {
-    .node-name {color: var(--selection-b-text-static);}
+
+   &[data-nodetype="b"] {
+    .node-name {color: var(--b-text);}
   	.node-icon .shape {
-      border-color: var(--selection-b-stroke-static);
-      background-color: var(--selection-b-fill-static);
+      border-color: var(--b-text);
+      background-color: var(--b-fill);
     }
    }
+
+
+   &[data-nodetype="c"] {
+    .node-name {color: var(--c-text);}
+  	.node-icon .shape {
+      border-color: var(--c-text);
+      background-color: var(--c-fill);
+    }
+   }
+
+
+   &[data-nodetype="d"] {
+    .node-name {color: var(--d-text);}
+  	.node-icon .shape {
+      border-color: var(--d-text);
+      background-color: var(--d-fill);
+    }
+   }
+
+
+   &[data-nodetype="e"] {
+    .node-name {color: var(--e-text);}
+  	.node-icon .shape {
+      border-color: var(--e-text);
+      background-color: var(--e-fill);
+    }
+   }
+
+
+   &[data-nodetype="f"] {
+    .node-name {color: var(--f-text);}
+  	.node-icon .shape {
+      border-color: var(--f-text);
+      background-color: var(--f-fill);
+    }
+   }
+
+
+   &[data-nodetype="g"] {
+    .node-name {color: var(--g-text);}
+  	.node-icon .shape {
+      border-color: var(--g-text);
+      background-color: var(--g-fill);
+    }
+   }
+
+
+   &[data-nodetype="h"] {
+    .node-name {color: var(--h-text);}
+  	.node-icon .shape {
+      border-color: var(--h-text);
+      background-color: var(--h-fill);
+    }
+   }
+
+
+   &[data-nodetype="i"] {
+    .node-name {color: var(--i-text);}
+  	.node-icon .shape {
+      border-color: var(--i-text);
+      background-color: var(--i-fill);
+    }
+   }
+
+
+   &[data-nodetype="j"] {
+    .node-name {color: var(--j-text);}
+  	.node-icon .shape {
+      border-color: var(--j-text);
+      background-color: var(--j-fill);
+    }
+   }
+
+
+   &[data-nodetype="k"] {
+    .node-name {color: var(--k-text);}
+  	.node-icon .shape {
+      border-color: var(--k-text);
+      background-color: var(--k-fill);
+    }
+   }
+
+
+   &[data-nodetype="l"] {
+    .node-name {color: var(--l-text);}
+  	.node-icon .shape {
+      border-color: var(--l-text);
+      background-color: var(--l-fill);
+    }
+   }
+
+
 
 
 }
@@ -670,13 +763,53 @@ details {
       .shape { fill: var(--mrca-timeline-fill);}
       .trend { stroke: var(--mrca-timeline-stroke); }
     }
-    &.nodeA {
-      .shape  { fill: var(--a-timeline-fill);}
+    &.a {
+      .shape { fill: var(--a-timeline-fill); }
       .trend { stroke: var(--a-timeline-stroke); }
     }
-    &.nodeB {
-      .shape  { fill: var(--b-timeline-fill);}
+    &.b {
+      .shape { fill: var(--b-timeline-fill); }
       .trend { stroke: var(--b-timeline-stroke); }
+    }
+    &.c {
+      .shape { fill: var(--c-timeline-fill); }
+      .trend { stroke: var(--c-timeline-stroke); }
+    }
+    &.d {
+      .shape { fill: var(--d-timeline-fill); }
+      .trend { stroke: var(--d-timeline-stroke); }
+    }
+    &.e {
+      .shape { fill: var(--e-timeline-fill); }
+      .trend { stroke: var(--e-timeline-stroke); }
+    }
+    &.f {
+      .shape { fill: var(--f-timeline-fill); }
+      .trend { stroke: var(--f-timeline-stroke); }
+    }
+    &.g {
+      .shape { fill: var(--g-timeline-fill); }
+      .trend { stroke: var(--g-timeline-stroke); }
+    }
+    &.h {
+      .shape { fill: var(--h-timeline-fill); }
+      .trend { stroke: var(--h-timeline-stroke); }
+    }
+    &.i {
+      .shape { fill: var(--i-timeline-fill); }
+      .trend { stroke: var(--i-timeline-stroke); }
+    }
+    &.j {
+      .shape { fill: var(--j-timeline-fill); }
+      .trend { stroke: var(--j-timeline-stroke); }
+    }
+    &.k {
+      .shape { fill: var(--k-timeline-fill); }
+      .trend { stroke: var(--k-timeline-stroke); }
+    }
+    &.l {
+      .shape { fill: var(--l-timeline-fill); }
+      .trend { stroke: var(--l-timeline-stroke); }
     }
   }
 
@@ -1259,12 +1392,35 @@ details {
 
     .label.date.root      {color: var(--root-text)}
     .label.date.mrca      {color: var(--mrca-text)}
-    .label.date.nodeA    {color: var(--a-text)}
-    .label.date.nodeB    {color: var(--b-text)}
+    .label.date.a    {color: var(--a-text)}
+    .label.date.b    {color: var(--b-text)}
+    .label.date.c    {color: var(--c-text)}
+    .label.date.d    {color: var(--d-text)}
+    .label.date.e    {color: var(--e-text)}
+    .label.date.f    {color: var(--f-text)}
+    .label.date.g    {color: var(--g-text)}
+    .label.date.h    {color: var(--h-text)}
+    .label.date.i    {color: var(--i-text)}
+    .label.date.j    {color: var(--j-text)}
+    .label.date.k    {color: var(--k-text)}
+    .label.date.l    {color: var(--l-text)}
+    .label.date.m    {color: var(--m-text)}
+
     .tag.root     {color: var(--root-timeline-text)}
     .tag.mrca     {color: var(--mrca-timeline-text)}
-    .tag.nodeA    {color: var(--a-timeline-text)}
-    .tag.nodeB    {color: var(--b-timeline-text)}
+    .tag.a        {color: var(--a-timeline-text)}
+    .tag.b        {color: var(--b-timeline-text)}
+    .tag.c        {color: var(--c-timeline-text)}
+    .tag.d        {color: var(--d-timeline-text)}
+    .tag.e        {color: var(--e-timeline-text)}
+    .tag.f        {color: var(--f-timeline-text)}
+    .tag.g        {color: var(--g-timeline-text)}
+    .tag.h        {color: var(--h-timeline-text)}
+    .tag.i        {color: var(--i-timeline-text)}
+    .tag.j        {color: var(--j-timeline-text)}
+    .tag.k        {color: var(--k-timeline-text)}
+    .tag.l        {color: var(--l-timeline-text)}
+    .tag.m        {color: var(--m-timeline-text)}
 
   }
 
@@ -1344,14 +1500,54 @@ details {
     path { fill: var(--mrca-timeline-fill); }
     line { stroke: var(--mrca-timeline-stroke); }
   }
-  .nodeA {
-    path { fill: var(--a-timeline-fill); }
-    line { stroke: var(--a-timeline-stroke); }
-  }
-  .nodeB {
-    path { fill: var(--b-timeline-fill); }
-    line { stroke: var(--b-timeline-stroke); }
-  }
+    &.a {
+      path { fill: var(--a-timeline-fill); }
+      stroke  { stroke: var(--a-timeline-stroke); }
+    }
+    &.b {
+      path { fill: var(--b-timeline-fill); }
+      stroke  { stroke: var(--b-timeline-stroke); }
+    }
+    &.c {
+      path { fill: var(--c-timeline-fill); }
+      stroke  { stroke: var(--c-timeline-stroke); }
+    }
+    &.d {
+      path { fill: var(--d-timeline-fill); }
+      stroke  { stroke: var(--d-timeline-stroke); }
+    }
+    &.e {
+      path { fill: var(--e-timeline-fill); }
+      stroke  { stroke: var(--e-timeline-stroke); }
+    }
+    &.f {
+      path { fill: var(--f-timeline-fill); }
+      stroke  { stroke: var(--f-timeline-stroke); }
+    }
+    &.g {
+      path { fill: var(--g-timeline-fill); }
+      stroke  { stroke: var(--g-timeline-stroke); }
+    }
+    &.h {
+      path { fill: var(--h-timeline-fill); }
+      stroke  { stroke: var(--h-timeline-stroke); }
+    }
+    &.i {
+      path { fill: var(--i-timeline-fill); }
+      stroke  { stroke: var(--i-timeline-stroke); }
+    }
+    &.j {
+      path { fill: var(--j-timeline-fill); }
+      stroke  { stroke: var(--j-timeline-stroke); }
+    }
+    &.k {
+      path { fill: var(--k-timeline-fill); }
+      stroke  { stroke: var(--k-timeline-stroke); }
+    }
+    &.l {
+      path { fill: var(--l-timeline-fill); }
+      stroke  { stroke: var(--l-timeline-stroke); }
+    }
 }
 
 
