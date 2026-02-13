@@ -54,8 +54,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  setNodes(nodes: DisplayNode [],
-    descendants: NodePair[]) {
+  setNodes(nodes: DisplayNode [], descendants: NodePair[]) {
     this.nodes = nodes;
     this.descendants = descendants;
   }

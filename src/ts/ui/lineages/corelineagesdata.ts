@@ -37,14 +37,11 @@ export type HighlightData = {
 
 
 export type ChartData = {
-  nodeListData: DisplayNode[],
   nodeDistributions: BaseTreeSeriesType,
   prevalenceNodes : DisplayNode[],
   minDate: number,
   maxDate: number
   nodeComparisonData: NodeMutationsData[],
-  nodeAIsUpper: boolean,
-  nodeDisplays: DisplayNode[],
   nodePairs: NodePair[],
   nodes: DisplayNode[]
 }
@@ -168,14 +165,11 @@ export class CoreLineagesData {
     const pythia = this.pythia;
     if (pythia) {
       const chartData: ChartData = {
-        nodeListData: [],
         nodeDistributions: [],
         prevalenceNodes: [],
         minDate: UNSET,
         maxDate: UNSET,
         nodeComparisonData: [],
-        nodeAIsUpper: true,
-        nodeDisplays: [],
         nodePairs: [],
         nodes: []
       };
@@ -302,8 +296,7 @@ export class CoreLineagesData {
       //     // this.disableSelections();
       //   }
       // }
-      chartData.nodeListData = currentNodes;
-      chartData.nodeDisplays = currentNodes.slice(0);
+      chartData.nodes = currentNodes;
       chartData.nodeComparisonData = [];
       // chartData.nodePairs.map(np=>{
       //   const ascendantTimes = nodeTimes[np.ancestor.index],
@@ -369,50 +362,59 @@ export class CoreLineagesData {
 
   hoverNode(nodeIndex: number, date:number): void {
     let hint: TreeHint = TreeHint.Zoom;
-    if (!this.constrainHoverByCredibility || this.nodeConfidence[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
-      this.getNodeDisplay(nodeIndex, 2, false, false, this.highlightNode);
-    }
     this.highlightDate = date;
-    if (nodeIndex === UNSET) {
-      hint = TreeHint.Zoom;
-    // } else if (nodeIndex === rootIndex) {
-    //   /* new hover on existing node */
-    //   displayNode = null;
-    //   hint = TreeHint.HoverRoot;
-    // } else if (nodeIndex === mrcaIndex) {
-    //   /* new hover on existing node */
-    //   displayNode = this.mrcaNode;
-    //   hint = TreeHint.HoverMrca;
-    // } else if (nodeIndex === nodeAIndex) {
-    //   /* new hover on existing node */
-    //   displayNode = this.nodeANode;
-    //   hint = TreeHint.HoverNodeA;
-    // } else if (nodeIndex === nodeBIndex) {
-    //   /* new hover on existing node */
-    //   displayNode = this.nodeBNode;
-    //   if (mrcaIndex === UNSET) {
-    //     hint = TreeHint.HoverNodeBDescendant;
-    //   } else {
-    //     hint = TreeHint.HoverNodeBCousin;
-    //   }
-    // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
-    //   /* selecting node 1 */
-    //   nodeAIndex = nodeIndex;
-    //   displayNode = this.nodeANode;
-    //   if (nodeBIndex !== UNSET) {
-    //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-    //   }
-    //   hint = TreeHint.PreviewNodeA;
-    // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
-    //   /* selecting node 2 */
-    //   nodeBIndex = nodeIndex;
-    //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-    //   displayNode = this.nodeBNode;
-    //   if (mrcaIndex === UNSET) {
-    //     hint = TreeHint.PreviewNodeBDescendant;
-    //   } else {
-    //     hint = TreeHint.PreviewNodeBCousin;
-    //   }
+    if (nodeIndex !== this.highlightNode.index) {
+      if (!this.constrainHoverByCredibility || this.nodeConfidence[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
+        this.getNodeDisplay(nodeIndex, 2, false, false, this.highlightNode);
+      }
+      const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
+      if (nodeIndex !== UNSET) {
+        toMap.push(this.highlightNode);
+      }
+      console.log(toMap)
+      this.minimapData = new MiniMapData(toMap, this.summaryTree as SummaryTree);
+      if (nodeIndex === UNSET) {
+        hint = TreeHint.Zoom;
+      // } else if (nodeIndex === rootIndex) {
+      //   /* new hover on existing node */
+      //   displayNode = null;
+      //   hint = TreeHint.HoverRoot;
+      // } else if (nodeIndex === mrcaIndex) {
+      //   /* new hover on existing node */
+      //   displayNode = this.mrcaNode;
+      //   hint = TreeHint.HoverMrca;
+      // } else if (nodeIndex === nodeAIndex) {
+      //   /* new hover on existing node */
+      //   displayNode = this.nodeANode;
+      //   hint = TreeHint.HoverNodeA;
+      // } else if (nodeIndex === nodeBIndex) {
+      //   /* new hover on existing node */
+      //   displayNode = this.nodeBNode;
+      //   if (mrcaIndex === UNSET) {
+      //     hint = TreeHint.HoverNodeBDescendant;
+      //   } else {
+      //     hint = TreeHint.HoverNodeBCousin;
+      //   }
+      // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
+      //   /* selecting node 1 */
+      //   nodeAIndex = nodeIndex;
+      //   displayNode = this.nodeANode;
+      //   if (nodeBIndex !== UNSET) {
+      //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+      //   }
+      //   hint = TreeHint.PreviewNodeA;
+      // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
+      //   /* selecting node 2 */
+      //   nodeBIndex = nodeIndex;
+      //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+      //   displayNode = this.nodeBNode;
+      //   if (mrcaIndex === UNSET) {
+      //     hint = TreeHint.PreviewNodeBDescendant;
+      //   } else {
+      //     hint = TreeHint.PreviewNodeBCousin;
+      //   }
+      }
+
     }
 
     this.setChartData();
