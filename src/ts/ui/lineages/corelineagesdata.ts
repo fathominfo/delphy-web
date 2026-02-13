@@ -9,9 +9,9 @@ import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
+import { getMRCA, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
-import { MiniMapData, TreeNode } from "./minimapdata";
+import { MiniMapData, MRCANodeCreator, TreeNode } from "./minimapdata";
 
 
 
@@ -144,11 +144,12 @@ export class CoreLineagesData {
       this.nodeMetadata = this.sharedState.mccConfig.nodeMetadata;
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
-
+      const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
+      this.minimapData = new MiniMapData(summaryTree, childCounts, mrcaMaker);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
-        this.minimapData = new MiniMapData([this.rootNode], summaryTree);
       }
+      this.minimapData.setData([this.rootNode]);
       if (this.sharedState.nodeList.length > 0) {
         // this.nodeAIndex = this.sharedState.nodeList[0];
         // if (this.sharedState.nodeList.length > 1) {
@@ -367,12 +368,13 @@ export class CoreLineagesData {
       if (!this.constrainHoverByCredibility || this.nodeConfidence[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
         this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
       }
+      const minimap = this.minimapData as MiniMapData;
       const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
       if (nodeIndex !== UNSET) {
         toMap.push(this.highlightNode);
       }
       console.log(toMap)
-      this.minimapData = new MiniMapData(toMap, this.summaryTree as SummaryTree);
+      minimap.setData(toMap);
       if (nodeIndex === UNSET) {
         hint = TreeHint.Zoom;
       // } else if (nodeIndex === rootIndex) {
@@ -505,47 +507,11 @@ export class CoreLineagesData {
     }
   }
 
-  getMRCA(index1: number, index2: number): number {
-    /* check for a common ancestor that is not root */
-    const summaryTree = this.summaryTree as SummaryTree;
-    let mrcaIndex = UNSET;
-    const root = summaryTree.getRootIndex();
-    let i1 = index1,
-      i2 = index2,
-      steps = 0;
-    while (i1 !== i2 && i1 !== root && i2 !== root) {
-      /*
-      the mrca will always have more tips
-      so if we aren't matched yet, then take the
-      parent of the node that has fewer tips.
-      */
-      const size1 = this.nodeChildCount[i1],
-        size2 = this.nodeChildCount[i2];
-      if (size1 < size2) {
-        i1 = summaryTree.getParentIndexOf(i1);
-      } else {
-        i2 = summaryTree.getParentIndexOf(i2);
-      }
-      steps++;
-      if (steps >= 1000) {
-        console.warn(`we had a problem on ${index1} and ${index2}, setting mrca to root`)
-        mrcaIndex = root;
-        break;
-      }
-    }
-    if (i1 === i2) {
-      mrcaIndex = i1;
-    } else if (i1 === root || i2 === root) {
-      mrcaIndex = root;
-    }
-    return mrcaIndex;
-  }
-
 
 
 
   checkMRCA(index1: number, index2: number): number {
-    const mrca = this.getMRCA(index1, index2);
+    const mrca = getMRCA(index1, index2, this.summaryTree as SummaryTree, this.nodeChildCount);
     if (mrca === this.rootNode.index || mrca === index1 || mrca === index2) {
       return UNSET;
     }

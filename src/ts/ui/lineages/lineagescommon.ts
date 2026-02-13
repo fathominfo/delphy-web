@@ -1,9 +1,10 @@
-import { Mutation } from '../../pythia/delphy_api';
+import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode } from './displaynode';
 
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
+import { UNSET } from '../common';
 
 export enum NodeRelationType {
   singleDescendant = 1,
@@ -170,3 +171,38 @@ export type SetHintType = (hint:TreeHint) => void;
 export const mutationPrevalenceThreshold = 0.5;
 
 
+export const getMRCA = (index1: number, index2: number,
+  summaryTree: SummaryTree, nodeChildCount: number[]): number => {
+  /* check for a common ancestor that is not root */
+  let mrcaIndex = UNSET;
+  const root = summaryTree.getRootIndex();
+  let i1 = index1,
+    i2 = index2,
+    steps = 0;
+  while (i1 !== i2 && i1 !== root && i2 !== root) {
+    /*
+    the mrca will always have more tips
+    so if we aren't matched yet, then take the
+    parent of the node that has fewer tips.
+    */
+    const size1 = nodeChildCount[i1],
+      size2 = nodeChildCount[i2];
+    if (size1 < size2) {
+      i1 = summaryTree.getParentIndexOf(i1);
+    } else {
+      i2 = summaryTree.getParentIndexOf(i2);
+    }
+    steps++;
+    if (steps >= 1000) {
+      console.warn(`we had a problem on ${index1} and ${index2}, setting mrca to root`)
+      mrcaIndex = root;
+      break;
+    }
+  }
+  if (i1 === i2) {
+    mrcaIndex = i1;
+  } else if (i1 === root || i2 === root) {
+    mrcaIndex = root;
+  }
+  return mrcaIndex;
+}

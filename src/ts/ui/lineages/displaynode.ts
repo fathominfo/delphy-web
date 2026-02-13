@@ -84,15 +84,15 @@ export class DisplayNode {
   }
 
   getStroke(): string {
-    const strokeProp = `--${ this.name.toLowerCase() }-stroke`;
+    const strokeProp = `--${ this.className.toLowerCase() }-stroke`;
     return getCSSValue(strokeProp);
   }
   getFill(): string {
-    const strokeProp = `--${ this.name.toLowerCase() }-fill`;
+    const strokeProp = `--${ this.className.toLowerCase() }-fill`;
     return getCSSValue(strokeProp);
   }
   getTint(): string {
-    const strokeProp = `--${ this.name.toLowerCase() }-tint`;
+    const strokeProp = `--${ this.className.toLowerCase() }-tint`;
     return getCSSValue(strokeProp);
   }
   setIndex(index: number):void {
