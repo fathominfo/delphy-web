@@ -43,8 +43,8 @@ class NodeLabels {
     [this.nameSpan, this.dateSpan].forEach(span=>{
       span.classList.add(this.className);
       span.setAttribute("data-index", `${this.index}`);
-      span.addEventListener("pointerenter", () => hoverCallback(dn, UNSET, null))
-      span.addEventListener("mouseleave", () => hoverCallback(null, UNSET, null));
+      span.addEventListener("pointerenter", () => hoverCallback(dn.index, UNSET, null))
+      span.addEventListener("mouseleave", () => hoverCallback(UNSET, UNSET, null));
     });
     this.nameSpan.textContent = dn.name;
   }
@@ -90,11 +90,12 @@ export class NodeTimelines {
   constructor(nodeHighlightCallback: HoverCallback) {
 
     const seriesHoverHandler: SeriesHoverCallback = (seriesIndex: number, date: number)=>{
-      let nodeType: DisplayNode | null = null;
+      let nodeIndex = UNSET;
       if (seriesIndex !== UNSET) {
-        nodeType = this.data[seriesIndex];
+        const node = this.data[seriesIndex];
+        nodeIndex = node.index;
       }
-      nodeHighlightCallback(nodeType, date, null);
+      nodeHighlightCallback(nodeIndex, date, null);
     };
 
     this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
@@ -165,10 +166,10 @@ export class NodeTimelines {
   }
 
 
-  highlightNode(node: DisplayNode | null, date: number) : void {
+  highlightNode(node: DisplayNode, date: number) : void {
     if (!this.data) return;
 
-    if (node !== this.highlighedtNode) {
+    if (node.index !== this.highlighedtNode?.index) {
       nodeComparisonContainer.classList.toggle("highlighting", node !== null);
 
       this.nodeTimesCanvas.setMatching(node);

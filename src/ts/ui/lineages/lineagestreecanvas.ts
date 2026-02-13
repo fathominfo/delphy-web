@@ -78,12 +78,12 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     this.drawSelection();
   }
 
-  highlightNode(node: DisplayNode | null, date: number) {
+  highlightNode(node: DisplayNode, date: number) {
     this.highlightCtx.clearRect(0, 0, this.width, this.height);
     this.highlightedNode = node;
     this.highlightedDate = date;
     this.subtreeNode = node;
-    if (node !== null) {
+    if (node.index !== UNSET) {
       const others: DisplayNode[] = this.nodes.filter(n=>n!==node)
       this.highlightCtx.globalAlpha = 0.5;
       this.renderSubtree();

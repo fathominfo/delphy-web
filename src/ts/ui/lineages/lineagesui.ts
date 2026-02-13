@@ -17,7 +17,7 @@ import autocomplete from 'autocompleter';
 // import { PdfCanvas } from '../../util/pdfcanvas';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
-import { CoreLineagesData } from './corelineagesdata';
+import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
 import { BaseTreeSeriesType } from '../../constants';
 import { DisplayNode } from './displaynode';
 
@@ -54,10 +54,11 @@ export class LineagesUI extends MccUI {
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#lineages .tree-canvas");
-    this.coreData = new CoreLineagesData(sharedState);
-    const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
-    const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
-    const nodeHighlightCallback: HoverCallback = (node, date, mutation)=>this.highlightCharts(node, date, mutation);
+    const updateCallback: updateFunction = (data: ChartData)=>this.update(data);
+    this.coreData = new CoreLineagesData(sharedState, updateCallback);
+    const dismissCallback: DismissCallback = nodeIndex=>this.handleNodeDismiss(nodeIndex);
+    const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
+    const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.highlightCharts(nodeIndex, date, mutation);
     let previousNode = UNSET,
       previousDate = UNSET
     const treeHoverCallback: TreeHoverCallback = (node, date)=>{
@@ -143,25 +144,10 @@ export class LineagesUI extends MccUI {
     this.coreData.activate();
     const {minDate, maxDate} = this.mccTreeCanvas;
     this.nodeTimelines.setDateRange(minDate, maxDate);
-
-    // const canvas = this.mccTreeCanvas.getCanvas();
-    // if (canvas instanceof HTMLCanvasElement) {
-    //   canvas.addEventListener('pointerdown', this.canvasDownHandler);
-    //   canvas.addEventListener('pointermove', this.canvasMoveHandler);
-    //   canvas.addEventListener('pointerleave', this.canvasLeaveHandler);
-    //   document.addEventListener('keyup', this.keyupHandler);
-    // }
   }
 
   deactivate() {
     super.deactivate();
-    // const canvas = this.mccTreeCanvas.getCanvas();
-    // if (canvas instanceof HTMLCanvasElement) {
-    //   canvas.removeEventListener('pointerdown', this.canvasDownHandler);
-    //   canvas.removeEventListener('pointermove', this.canvasMoveHandler);
-    //   canvas.removeEventListener('pointerleave', this.canvasLeaveHandler);
-    //   document.removeEventListener('keyup', this.keyupHandler);
-    // }
     this.coreData.setNodeSelection();
     this.coreData.deactivate();
 
@@ -200,57 +186,18 @@ export class LineagesUI extends MccUI {
 
   private updateNodeData() : void {
     if (this.pythia) {
-      const mccRef = this.pythia.getMcc(),
-        summaryTree = this.mccTreeCanvas.tree as SummaryTree;
-      if (summaryTree !== this.coreData.summaryTree) {
-        this.coreData.initNodeData(this.mccTreeCanvas);
-        this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
-      }
+      const mccRef = this.pythia.getMcc();
+      this.coreData.initNodeData(this.mccTreeCanvas, this.isApobecEnabled);
       mccRef.release();
     }
   }
 
 
-
-  handleNodeHover(nodeIndex: number, date:number):void {
-    const {indices, hint, displayNode} = this.coreData.handleNodeHover(nodeIndex, date, this.mccTreeCanvas);
-    this.setChartData([this.coreData.rootIndex].concat(indices));
-    this.setHint(hint);
-    this.highlightCharts(displayNode, date, null);
+  setChartData(): void {
+    this.coreData.setChartData();
   }
 
-
-  highlightCharts(displayNode: DisplayNode|null, date: number, mutation: Mutation | null) {
-    if (this.coreData.checkNewHighlight(displayNode, date, mutation)) {
-      (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(this.coreData.highlightNode, this.coreData.highlightDate);
-      this.nodeListDisplay.highlightNode(this.coreData.highlightNode);
-      this.nodeSchematic.highlightNode(this.coreData.highlightNode, this.coreData.highlightMutation);
-      this.nodePrevalenceCanvas.highlightNode(this.coreData.highlightNode, this.coreData.highlightDate);
-      this.nodeMutationCharts.highlightNode(this.coreData.highlightNode, this.coreData.highlightDate, this.coreData.highlightMutation);
-      this.nodeTimelines.highlightNode(this.coreData.highlightNode, this.coreData.highlightDate);
-    }
-  }
-
-
-  selectNode(nodeIndex: number): void {
-    const { updated, hint, selectable } = this.coreData.handleNodeSelect(nodeIndex, this.mccTreeCanvas.tree as SummaryTree);
-    if (updated) {
-      this.setHint(hint);
-      this.setSelectable(selectable);
-    }
-    this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
-    // this.requestDrawTreeHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, nodeIndex);
-  }
-
-  exitCallback():void {
-    this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
-  }
-
-
-  setChartData(nodeIndices: number[]): void {
-    const pythia = this.pythia as Pythia,
-      mccRef = pythia.getMcc();
-    const chartData = this.coreData.setChartData(nodeIndices, this.isApobecEnabled);
+  update(chartData: ChartData): void {
     const { nodeListData, nodeDistributions, prevalenceNodes, minDate, maxDate,
       nodeComparisonData, nodeAIsUpper, nodeDisplays, nodePairs, nodes } = chartData;
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
@@ -259,10 +206,12 @@ export class LineagesUI extends MccUI {
     this.nodeTimelines.setData(nodeDisplays);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);
-    this.nodeSchematic.setData(nodePairs, nodeIndices, nodeAIsUpper);
-    this.nodePrevalenceCanvas.setData(nodeDistributions as BaseTreeSeriesType, prevalenceNodes, minDate, maxDate);
+    this.nodeSchematic.setData(nodePairs, [], nodeAIsUpper);
+    if (prevalenceNodes.length > 1 && prevalenceNodes[1].index === -1) {
+      console.log(`Nodes: ${prevalenceNodes.map(n=>n.index).join(',')}`, nodeDistributions);
+    }
+    this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
-    mccRef.release();
   }
 
   requestDraw() {
@@ -273,10 +222,48 @@ export class LineagesUI extends MccUI {
     this.nodeTimelines.requestDraw();
   }
 
+
+
+
+  /* invoked by the tree when hovering a node */
+  handleNodeHover(nodeIndex: number, date:number):void {
+    // const {indices, hint, displayNode} =
+    this.coreData.hoverNode(nodeIndex, date);
+    // this.setChartData([this.coreData.rootIndex].concat(indices));
+    // this.setHint(hint);
+    // this.highlightCharts(displayNode, date, null);
+  }
+
+
+  highlightCharts(nodeIndex: number, date: number, mutation: Mutation | null) {
+    if (this.coreData.checkNewHighlight(nodeIndex, date, mutation)) {
+      // const displayNode: DisplayNode|null = null;
+      const { node, date, mutation } = this.coreData.getHighlights();
+      (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
+      this.nodeListDisplay.highlightNode(node);
+      this.nodeSchematic.highlightNode(node, mutation);
+      this.nodePrevalenceCanvas.highlightNode(node, date);
+      this.nodeMutationCharts.highlightNode(node, date, mutation);
+      this.nodeTimelines.highlightNode(node, date);
+    }
+  }
+
+
+  selectNode(nodeIndex: number): void {
+    // const { updated, hint, selectable } =
+    this.coreData.selectNode(nodeIndex);
+    // if (updated) {
+    //   this.setHint(hint);
+    //   this.setSelectable(selectable);
+    // }
+    // this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
+    // this.requestDrawTreeHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, nodeIndex);
+  }
+
   setSelectable(selectable: boolean) {
     this.coreData.setSelectable(selectable);
     const lookupInput = document.querySelector(".id-lookup--input") as HTMLInputElement;
-    lookupInput.disabled = !this.coreData.selectable;
+    lookupInput.disabled = !this.coreData.selectionsAvailable();
     // lookupInput.placeholder = selectable ? "Lookup a sequence id…" : "deselect a node below to enable search";
     // more hints...
   }
@@ -287,61 +274,39 @@ export class LineagesUI extends MccUI {
   }
 
 
-  handleNodeDismiss(node:DisplayNode): void {
-    // switch (node) {
-    // case DisplayNodeClass.nodeA: {
-    //   this.nodeAIndex = UNSET;
-    //   this.mrcaIndex = UNSET;
-    //   this.nodeListDisplay.clearNodeA();
-    //   this.nodeListDisplay.clearMRCA();
-
-    //   if (this.nodeBIndex !== UNSET) {
-    //     this.nodeAIndex = this.nodeBIndex;
-    //     this.nodeBIndex = UNSET;
-    //     this.nodeListDisplay.clearNodeB();
-    //   }
-    // }
-    //   break;
-    // case DisplayNodeClass.nodeB: {
-    //   this.nodeBIndex = UNSET;
-    //   this.mrcaIndex = UNSET;
-    //   this.nodeListDisplay.clearNodeB();
-    //   this.nodeListDisplay.clearMRCA();
-    // }
-    //   break;
-    // }
-
-    this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
-    this.highlightCharts(null, UNSET, null);
-    this.setHint(TreeHint.Hover);
+  handleNodeDismiss(nodeIndex: number): void {
+    this.coreData.dismissNode(nodeIndex);
+    // this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
+    // this.highlightCharts(null, UNSET, null);
+    // this.setHint(TreeHint.Hover);
   }
 
 
-  handleNodeZoom(node: DisplayNode | null) : void {
-    const zoomNode: DisplayNode | null = null;
+  handleNodeZoom(nodeIndex: number) : void {
+    // const zoomNode: DisplayNode | null = null;
 
-    // switch (node) {
-    // case DisplayNodeClass.mrca:
-    //   zoomNode = this.mrcaIndex;
-    //   break;
-    // case DisplayNodeClass.nodeA:
-    //   zoomNode = this.nodeAIndex;
-    //   break;
-    // case DisplayNodeClass.nodeB:
-    //   zoomNode = this.nodeBIndex;
-    //   break;
+    // // switch (node) {
+    // // case DisplayNodeClass.mrca:
+    // //   zoomNode = this.mrcaIndex;
+    // //   break;
+    // // case DisplayNodeClass.nodeA:
+    // //   zoomNode = this.nodeAIndex;
+    // //   break;
+    // // case DisplayNodeClass.nodeB:
+    // //   zoomNode = this.nodeBIndex;
+    // //   break;
+    // // }
+    // if (zoomNode === null) {
+    //   this.mccTreeCanvas.resetZoom();
+    //   this.sharedState.mccConfig.resetZoom();
+    // } else if (this.pythia) {
+    //   const tips = this.pythia.getMccNodeTips(zoomNode),
+    //     treeCanvas = this.mccTreeCanvas;
+    //   treeCanvas.zoomToTips(tips);
+    //   this.sharedState.mccConfig.setZoom(1, treeCanvas.verticalZoom, 0.5, treeCanvas.zoomCenterY);
     // }
-    if (zoomNode === null) {
-      this.mccTreeCanvas.resetZoom();
-      this.sharedState.mccConfig.resetZoom();
-    } else if (this.pythia) {
-      const tips = this.pythia.getMccNodeTips(zoomNode),
-        treeCanvas = this.mccTreeCanvas;
-      treeCanvas.zoomToTips(tips);
-      this.sharedState.mccConfig.setZoom(1, treeCanvas.verticalZoom, 0.5, treeCanvas.zoomCenterY);
-    }
-    super.requestTreeDraw();
-    this.nodeSchematic.highlightNode(node, null);
+    // super.requestTreeDraw();
+    // this.nodeSchematic.highlightNode(zoomNode, null);
   }
 
 

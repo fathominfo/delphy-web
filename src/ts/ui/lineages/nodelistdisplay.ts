@@ -182,10 +182,16 @@ class DivPool {
       div = new NodeDiv();
       const actualDiv = div.div;
       CONTAINER.appendChild(actualDiv);
-      div.dismiss.addEventListener('click', ()=>dismissCallback(div?.node as DisplayNode));
-      actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback(div?.node as DisplayNode, UNSET, null));
-      actualDiv.addEventListener('pointerleave', () => nodeHighlightCallback(null, UNSET, null));
-      actualDiv.addEventListener('click', () => nodeZoomCallback(div?.node as DisplayNode));
+      div.dismiss.addEventListener('click', ()=>dismissCallback((div?.node as DisplayNode).index));
+      actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback((div?.node as DisplayNode).index, UNSET, null));
+      actualDiv.addEventListener('pointerleave', () => {
+        console.log(`
+          leaving node list
+          
+          `)
+        nodeHighlightCallback(UNSET, UNSET, null)
+      });
+      actualDiv.addEventListener('click', () => nodeZoomCallback((div?.node as DisplayNode).index));
       this.divs.add({div, inUse: true});
     }
     return div;
@@ -197,7 +203,7 @@ class DivPool {
         claim.inUse = false;
       }
     }
-    console.log(`pool size: ${this.divs.size}`)
+    // console.log(`pool size: ${this.divs.size}`)
   }
 
 }
@@ -221,7 +227,7 @@ export class NodeListDisplay {
     this.dismissCallback = dismissCallback;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.nodeZoomCallback = nodeZoomCallback;
-    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(null, UNSET, null));
+    (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
   }
 
   addNode(node: DisplayNode) : void {
@@ -269,8 +275,8 @@ export class NodeListDisplay {
     requestAnimationFrame(()=>this.nodeDivs.forEach(div=>div?.draw()));
   }
 
-  highlightNode(node: DisplayNode | null) : void {
-    if (node === null) {
+  highlightNode(node: DisplayNode) : void {
+    if (node.index === UNSET) {
       this.nodeDivs.forEach(div=>div?.restore());
     } else {
       this.nodeDivs.forEach(div=>div?.pushback());

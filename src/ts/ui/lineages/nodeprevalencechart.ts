@@ -228,13 +228,13 @@ export class NodePrevalenceChart {
       this.highlightDisplayNode = null;
       this.requestDraw();
     }
-    this.nodeHighlightCallback(null, UNSET, null);
+    this.nodeHighlightCallback(UNSET, UNSET, null);
   }
 
 
-  highlightNode(node: DisplayNode | null, date:number) : void {
+  highlightNode(node: DisplayNode, date:number) : void {
     requestAnimationFrame(()=>{
-      if (node === null) {
+      if (node.index === UNSET) {
         Object.values(this.svgGroups).forEach((group)=>{
           group.toggleClass("matching", false);
           group.toggleClass("unmatching", false);

@@ -116,11 +116,11 @@ export class NodePair {
   }
 }
 
-export type HoverCallback = (node:DisplayNode | null, dateIndex: number, mutation: Mutation|null)=>void;
-export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
+export type HoverCallback = (nodeIndex: number, dateIndex: number, mutation: Mutation|null)=>void;
+export type TreeHoverCallback = (nodeIndex: number, dateIndex: number)=>void;
 export type TreeSelectCallback = (nodeIndex: number)=>void;
-export type DismissCallback = (node:DisplayNode)=>void;
-export type NodeCallback = (displayNode: DisplayNode)=>void;
+export type DismissCallback = (nodeIndex: number)=>void;
+export type NodeCallback = (nodeIndex: number)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 export type KeyEventHandler = (event: KeyboardEvent)=>void;
 

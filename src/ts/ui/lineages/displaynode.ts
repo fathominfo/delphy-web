@@ -7,50 +7,70 @@ const nodeTypeNames = ["Root", "MRCA", "A", "B"];
 const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
 
 export class DisplayNode {
-  name: string;
-  label: string;
-  index: number;
+  index: number = UNSET;
+  name = '';
+  label = '';
+  className = '';
   private nameIndex: number;
-  className: string;
-  generationsFromRoot: number;
-  isInferred: boolean;
-  isRoot: boolean;
-  isLocked: boolean;
-  confidence: number;
-  childCount: number;
-  metadata: NodeMetadataValues | null;
+  generationsFromRoot: number = UNSET;
+  isInferred = false;
+  isRoot = false;
+  isLocked = false;
+  confidence: number = UNSET;
+  childCount = 0;
+  metadata: NodeMetadataValues | null = null;
   series: Distribution | null = null;
   times: number[] = [];
 
 
   // nameIndex currently is 0: root, 1: mrca, 2: nodeA, 3: nodeB
-  constructor(nameIndex: number, generationsFromRoot: number, isInferred: boolean,
+  constructor(nameIndex: number, index: number, generationsFromRoot: number, isInferred: boolean,
     isRoot: boolean, confidence: number, childCount: number,
     series: Distribution,
     metadata: NodeMetadataValues | null) {
-    this.index = UNSET;
     this.nameIndex = nameIndex;
-    this.name = nodeTypeNames[nameIndex];
-    this.label = this.name;
-    this.className = nodeClassNames[nameIndex];
-    this.generationsFromRoot = generationsFromRoot;
-    this.isInferred = isInferred;
-    this.isRoot = isRoot;
-    this.isLocked = false;
-    this.confidence = confidence;
-    this.childCount = childCount;
-    this.series = series;
-    this.times = series.times;
-    this.metadata = metadata;
+    this.setData(index, generationsFromRoot, isInferred, isRoot,
+      confidence, childCount, series, metadata);
 
     // this.name = String.fromCharCode(ASCII_BASE + nameIndex)
     // this.className = `node-${this.name}`;
     NUMS_IN_USE[this.nameIndex] = true;
   }
 
-  // setSeries(series: NodeDistribution | null): void {
-  //   this.series = series;
-  // }
+  setData(index: number, generationsFromRoot: number, isInferred: boolean,
+    isRoot: boolean, confidence: number, childCount: number,
+    series: Distribution,
+    metadata: NodeMetadataValues | null) {
+    this.index = index;
+    this.name = nodeTypeNames[this.nameIndex] || '';
+    this.label = this.name;
+    this.className = nodeClassNames[this.nameIndex];
+    this.generationsFromRoot = generationsFromRoot;
+    this.isInferred = isInferred;
+    this.isRoot = isRoot;
+    this.isLocked = false; // <--- maybe this is a bad idea? [mark 261212]
+    this.confidence = confidence;
+    this.childCount = childCount;
+    this.series = series;
+    this.times = series.times;
+    this.metadata = metadata;
+  }
+
+  copyFrom(other: DisplayNode) {
+    this.index = other.index;
+    this.name = other.name;
+    this.label = other.label;
+    this.className = other.className;
+    this.generationsFromRoot = other.generationsFromRoot;
+    this.isInferred = other.isInferred;
+    this.isRoot = other.isRoot;
+    this.isLocked = other.isLocked;
+    this.confidence = other.confidence;
+    this.childCount = other.childCount;
+    this.series = other.series;
+    this.times = other.times;
+    this.metadata = other.metadata;
+  }
 
   getStroke(): string {
     const strokeProp = `--${ this.name.toLowerCase() }-stroke`;
@@ -67,8 +87,13 @@ export class DisplayNode {
   setIndex(index: number):void {
     this.index = index;
   }
+
+  lock() { this.isLocked = true; }
+  unlock() { this.isLocked = false; }
+
   deactivate(): void {
     NUMS_IN_USE[this.nameIndex] = false;
+    this.unlock();
     this.index = UNSET;
   }
 }

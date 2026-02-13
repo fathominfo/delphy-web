@@ -270,7 +270,7 @@ export class NodePairMutationList {
     const {descendantType, mutationTimelineData, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
       const seriesCallback = (_seriesIndex: number, date: number)=>{
-        this.nodeHighlightCallback(descendantType, date, md.mutation.mutation);
+        this.nodeHighlightCallback(descendantType.index, date, md.mutation.mutation);
       };
       const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);
       mt.appendTo(this.mutationContainer);
@@ -291,13 +291,13 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNode | null, date: number, mutation: Mutation | null) : void {
+  highlightNode(node: DisplayNode, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
     let matched = node === this.data.descendantType;
     this.mutationTimelines.forEach(mt=>{
       matched = mt.checkMutationMatch(mutation, date) || matched;
     });
-    if (node === null) {
+    if (node.index === UNSET) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
     } else if (matched) {
@@ -374,7 +374,7 @@ export class NodeMutations {
     return this.charts;
   }
 
-  highlightNode(node: DisplayNode | null, date: number, mutation: Mutation|null) {
+  highlightNode(node: DisplayNode, date: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
       chart.highlightNode(node, date, mutation);

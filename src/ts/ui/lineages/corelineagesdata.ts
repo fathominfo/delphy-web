@@ -4,13 +4,14 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
-import { getMedian, UNSET } from "../common";
+import { UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
+import { MiniMapData, TreeNode } from "./minimapdata";
 
 
 
@@ -28,9 +29,16 @@ export type NodeSelectData = {
 };
 
 
+export type HighlightData = {
+  node: DisplayNode,
+  date: number,
+  mutation: Mutation | null
+};
+
+
 export type ChartData = {
   nodeListData: DisplayNode[],
-  nodeDistributions: BaseTreeSeriesType | null,
+  nodeDistributions: BaseTreeSeriesType,
   prevalenceNodes : DisplayNode[],
   minDate: number,
   maxDate: number
@@ -43,13 +51,19 @@ export type ChartData = {
 
 type getYFunction = (_: number) => number;
 
+export type updateFunction = (_: ChartData)=>void;
+
 export class CoreLineagesData {
+
+  /* interface to push updates */
+  update: updateFunction;
 
   /* shared data stores that we need */
   sharedState: SharedState;
   pythia: Pythia | null = null;
   nodeMetadata: NodeMetadata | null = null;
   tipIds: string[] = [];
+  isApobecEnabled = false;
 
 
 
@@ -57,49 +71,46 @@ export class CoreLineagesData {
   local copies of data that gets updated
   every time the MCC switches
   */
-  summaryTree: SummaryTree | null = null;
-  nodeChildCount: number[] = [];
-  nodeConfidence: number[] = [];
-  getY: getYFunction | null = null;
+  private summaryTree: SummaryTree | null = null;
+  private nodeChildCount: number[] = [];
+  private nodeConfidence: number[] = [];
+  private getY: getYFunction | null = null;
 
 
 
   /*
   current state
   */
-  nodeAIndex = UNSET;
-  nodeBIndex = UNSET;
-  mrcaIndex = UNSET;
-  rootIndex = UNSET;
-  nodeANode : DisplayNode | null = null;
-  nodeBNode : DisplayNode | null = null;
-  mrcaNode : DisplayNode | null = null;
-  rootNode : DisplayNode | null = null;
-  nodes: DisplayNode[] = [];
+  private rootNode : DisplayNode;
+  private selectedNodes: DisplayNode[] = [];
+  /*
+  the minimap includes nodes that are _not_ selected:
+    inferred nodes
+    highlight node
+  */
+  private minimapData: MiniMapData | null = null;
+  private selectable = true;
+  private constrainHoverByCredibility = false;
 
 
-  nodeComparisonData: NodeMutationsData[] = [];
-
-
-  hoveredNode: number = UNSET;
-  hoveredDate: number = UNSET;
-  selectable = true;
-
-  constrainHoverByCredibility = false;
-  highlightNode: DisplayNode | null = null;
-  highlightDate: number = UNSET;
-  highlightMutation: Mutation | null = null;
+  private highlightNode: DisplayNode;
+  private highlightDate: number = UNSET;
+  private highlightMutation: Mutation | null = null;
 
 
   /*
   for the prevalence chart, we need a node like object
   to represent the uninfected population.
   */
-  nullNode: DisplayNode;
+  private nullNode: DisplayNode;
 
-  constructor(sharedState: SharedState) {
+  constructor(sharedState: SharedState, update: updateFunction) {
+    this.update = update;
     this.sharedState = sharedState;
-    this.nullNode =  this.getNodeDisplay(UNSET, UNSET, false, false);
+    this.nullNode = this.getNodeDisplay(UNSET, UNSET, false, false);
+    /* create a placeholder for */
+    this.rootNode = this.getNodeDisplay(UNSET, 0, true, true);
+    this.highlightNode = this.getNodeDisplay(UNSET, 2, false, false)
   }
 
   activate() {
@@ -110,9 +121,11 @@ export class CoreLineagesData {
     this.pythia = null;
   }
 
-  initNodeData(mccTreeCanvas: MccTreeCanvas) : boolean {
+  initNodeData(mccTreeCanvas: MccTreeCanvas, isApobecEnabled: boolean) {
     const summaryTree = mccTreeCanvas.tree as SummaryTree;
     if (summaryTree !== this.summaryTree) {
+      /* prep the data and methods that will allow for fast processing of nodes */
+
       const nodeCount = summaryTree.getSize(),
         rootIndex = summaryTree.getRootIndex(),
         childCounts = new Array(nodeCount);
@@ -127,27 +140,334 @@ export class CoreLineagesData {
           }
         }
       }
-      this.rootIndex = rootIndex;
-      this.nodeAIndex = UNSET;
-      this.nodeBIndex = UNSET;
-      this.mrcaIndex = UNSET;
-      if (this.sharedState.nodeList.length > 0) {
-        this.nodeAIndex = this.sharedState.nodeList[0];
-        if (this.sharedState.nodeList.length > 1) {
-          this.nodeBIndex = this.sharedState.nodeList[1];
-          this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex, summaryTree);
-        }
-      }
       this.nodeChildCount = childCounts;
       this.summaryTree = summaryTree;
       this.nodeConfidence = mccTreeCanvas.creds;
       this.getY = (n:number)=>mccTreeCanvas.getZoomY(n);
       this.nodeMetadata = this.sharedState.mccConfig.nodeMetadata;
       this.tipIds = this.sharedState.getTipIds();
-      return true;
+      this.isApobecEnabled = isApobecEnabled;
+
+      if (rootIndex !== this.rootNode.index) {
+        this.getNodeDisplay(rootIndex, 0, true, true, this.rootNode);
+        this.minimapData = new MiniMapData([this.rootNode], summaryTree);
+      }
+      if (this.sharedState.nodeList.length > 0) {
+        // this.nodeAIndex = this.sharedState.nodeList[0];
+        // if (this.sharedState.nodeList.length > 1) {
+        //   this.nodeBIndex = this.sharedState.nodeList[1];
+        //   this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex);
+        // }
+      }
+
+      this.setChartData();
     }
-    return false;
   }
+
+  setChartData() {
+    const pythia = this.pythia;
+    if (pythia) {
+      const chartData: ChartData = {
+        nodeListData: [],
+        nodeDistributions: [],
+        prevalenceNodes: [],
+        minDate: UNSET,
+        maxDate: UNSET,
+        nodeComparisonData: [],
+        nodeAIsUpper: true,
+        nodeDisplays: [],
+        nodePairs: [],
+        nodes: []
+      };
+      const summaryTree = this.summaryTree as SummaryTree;
+      const minimapData = this.minimapData as MiniMapData;
+      const getY = this.getY as getYFunction;
+      const mccRef = pythia.getMcc(),
+        minDate = pythia.getBaseTreeMinDate(),
+        maxDate = pythia.maxDate;
+      chartData.minDate = minDate;
+      chartData.maxDate = maxDate;
+
+      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node);
+      const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
+      const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
+      const nodeDistributions = nodePrevalenceData.series;
+      /* we want the default distribution to come first, so take it off the end and put it first */
+      nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+      chartData.nodeDistributions = nodeDistributions;
+      minimapData.found.forEach(treeNode=>{
+        const ancestor = treeNode.parent;
+        if (ancestor) {
+          const descendant = treeNode.node;
+          let relation: NodeRelationType = NodeRelationType.singleDescendant;
+          if (ancestor.children.length > 1) {
+            const other: TreeNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
+            if (getY(other.node.index) > getY(descendant.index)) {
+              relation = NodeRelationType.upperDescendant;
+            } else {
+              relation = NodeRelationType.upperDescendant;
+            }
+          }
+          const nodePair: NodePair = this.assembleNodePair(ancestor.node, descendant, relation);
+          chartData.nodePairs.push(nodePair);
+        }
+      });
+
+
+
+
+      // if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
+      //   /* we clear all but the root node */
+
+      //   this.setSelectable(true);
+      // } else {
+      //   let nodePair: NodePair;
+      //   if (mrcaIndex === UNSET) {
+      //     /* if there is no mrca, then we connect the root directly to the other nodes */
+      //     if (nodeAIndex === UNSET) {
+      //       if (nodeBIndex !== UNSET) {
+      //         nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
+      //         chartData.nodePairs.push(nodePair);
+      //       }
+      //       this.setSelectable(true);
+      //     } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
+      //       /* we have node 1 without node 2 */
+      //       nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
+      //       chartData.nodePairs.push(nodePair);
+      //       this.setSelectable(true);
+      //     } else {
+      //       /*
+      //         we have both node 1 and node 2, but no mrca.
+      //         this could mean both are descended from root,
+      //         or one is descended from the other.
+      //         We know we have two pairs, and in the first one
+      //         the ancestor node is root. So the questions are:
+      //           in the second pair, is the ancestor node root, nodeA, or nodeB?
+      //             this
+
+      //         */
+      //       const mrca = this.getMRCA(nodeAIndex, nodeBIndex),
+      //         ancestor1Index = rootIndex;
+      //       let ancestor2Index = rootIndex,
+      //         descendant1Index = rootIndex,
+      //         descendant2Index = rootIndex,
+      //         rel1: NodeRelationType = NodeRelationType.singleDescendant,
+      //         rel2: NodeRelationType = NodeRelationType.singleDescendant;
+      //       if (mrca === rootIndex) {
+      //         descendant1Index = nodeAIndex;
+      //         descendant2Index = nodeBIndex;
+      //         const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
+      //         if (nodeAIsUpper) {
+      //           rel1 = NodeRelationType.upperDescendant;
+      //           rel2 = NodeRelationType.lowerDescendant;
+      //         } else {
+      //           rel1 = NodeRelationType.lowerDescendant;
+      //           rel2 = NodeRelationType.upperDescendant;
+      //         }
+      //       } else if (mrca === nodeAIndex) {
+      //         descendant1Index = nodeAIndex;
+      //         ancestor2Index = nodeAIndex;
+      //         descendant2Index = nodeBIndex;
+      //       } else if (mrca === nodeBIndex) {
+      //         descendant1Index = nodeBIndex;
+      //         ancestor2Index = nodeBIndex;
+      //         descendant2Index = nodeAIndex;
+      //       } else {
+      //         console.warn("need to revisit how node pairs are made");
+      //       }
+      //       nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], rel1, pythia, summaryTree);
+      //       chartData.nodePairs.push(nodePair);
+      //       nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], rel2, pythia, summaryTree);
+      //       chartData.nodePairs.push(nodePair);
+      //       // this.disableSelections();
+      //     }
+
+      //   } else {
+      //     const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
+      //     let relA: NodeRelationType;
+      //     let relB: NodeRelationType;
+      //     if (nodeAIsUpper) {
+      //       relA = NodeRelationType.upperDescendant;
+      //       relB = NodeRelationType.lowerDescendant;
+      //     } else {
+      //       relA = NodeRelationType.lowerDescendant;
+      //       relB = NodeRelationType.upperDescendant;
+      //     }
+      //     nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[mrcaIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
+      //     chartData.nodePairs.push(nodePair);
+      //     nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeAIndex], relA, pythia, summaryTree);
+      //     chartData.nodePairs.push(nodePair);
+      //     nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeBIndex], relB, pythia, summaryTree);
+      //     chartData.nodePairs.push(nodePair);
+      //     // this.disableSelections();
+      //   }
+      // }
+      chartData.nodeListData = currentNodes;
+      chartData.nodeDisplays = currentNodes.slice(0);
+      chartData.nodeComparisonData = [];
+      // chartData.nodePairs.map(np=>{
+      //   const ascendantTimes = nodeTimes[np.ancestor.index],
+      //     descendantTimes = nodeTimes[np.descendant.index] || [],
+      //     ancestorMedianDate = getMedian(ascendantTimes),
+      //     descendantMedianDate = getMedian(descendantTimes);
+      //   return new NodeMutationsData(np, ancestorMedianDate, descendantMedianDate, minDate, maxDate, this.isApobecEnabled)
+      // });
+      // chartData.nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
+      /*
+      add an empty node before the root to represent the uninfected population
+      in the prevalence chart
+      */
+      const prevalenceNodes = currentNodes.slice(0);
+      prevalenceNodes.unshift(this.nullNode);
+      chartData.prevalenceNodes = prevalenceNodes;
+      mccRef.release();
+      this.update(chartData);
+    }
+
+  }
+
+
+
+
+  assembleNodePair(ancestor: DisplayNode, descendant: DisplayNode, relation: NodeRelationType): NodePair {
+    const pythia = this.pythia as Pythia;
+    const tree = this.summaryTree as SummaryTree;
+    const mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(ancestor.index, descendant.index, tree);
+    return new NodePair(ancestor, descendant, relation, mutTimes);
+  }
+
+
+
+  checkNewHighlight(nodeIndex: number, date: number, mutation: Mutation | null): boolean{
+    if (nodeIndex === this.highlightNode.index && date === this.highlightDate && mutation === this.highlightMutation) {
+      return false;
+    }
+    const minimap = this.minimapData as MiniMapData;
+
+    let displayNode: DisplayNode | null = null;
+    if (nodeIndex === UNSET) {
+      this.getNodeDisplay(UNSET, 2, false, false, this.highlightNode);
+    } else {
+      /* do any existing nodes match?  */
+      minimap.found.filter(n=>n).forEach(treeNode=>{
+        if (treeNode.node.index === nodeIndex) {
+          displayNode = treeNode.node;
+        }
+      });
+      /* if not, set the data on the highlight node */
+      if (displayNode === null) {
+        this.getNodeDisplay(nodeIndex, 2, false, false, this.highlightNode);
+      } else {
+        this.highlightNode.copyFrom(displayNode);
+      }
+    }
+
+    this.highlightDate = date;
+    this.highlightMutation =  mutation;
+    return true;
+  }
+
+  hoverNode(nodeIndex: number, date:number): void {
+    let hint: TreeHint = TreeHint.Zoom;
+    if (!this.constrainHoverByCredibility || this.nodeConfidence[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
+      this.getNodeDisplay(nodeIndex, 2, false, false, this.highlightNode);
+    }
+    this.highlightDate = date;
+    if (nodeIndex === UNSET) {
+      hint = TreeHint.Zoom;
+    // } else if (nodeIndex === rootIndex) {
+    //   /* new hover on existing node */
+    //   displayNode = null;
+    //   hint = TreeHint.HoverRoot;
+    // } else if (nodeIndex === mrcaIndex) {
+    //   /* new hover on existing node */
+    //   displayNode = this.mrcaNode;
+    //   hint = TreeHint.HoverMrca;
+    // } else if (nodeIndex === nodeAIndex) {
+    //   /* new hover on existing node */
+    //   displayNode = this.nodeANode;
+    //   hint = TreeHint.HoverNodeA;
+    // } else if (nodeIndex === nodeBIndex) {
+    //   /* new hover on existing node */
+    //   displayNode = this.nodeBNode;
+    //   if (mrcaIndex === UNSET) {
+    //     hint = TreeHint.HoverNodeBDescendant;
+    //   } else {
+    //     hint = TreeHint.HoverNodeBCousin;
+    //   }
+    // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
+    //   /* selecting node 1 */
+    //   nodeAIndex = nodeIndex;
+    //   displayNode = this.nodeANode;
+    //   if (nodeBIndex !== UNSET) {
+    //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+    //   }
+    //   hint = TreeHint.PreviewNodeA;
+    // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
+    //   /* selecting node 2 */
+    //   nodeBIndex = nodeIndex;
+    //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+    //   displayNode = this.nodeBNode;
+    //   if (mrcaIndex === UNSET) {
+    //     hint = TreeHint.PreviewNodeBDescendant;
+    //   } else {
+    //     hint = TreeHint.PreviewNodeBCousin;
+    //   }
+    }
+
+    this.setChartData();
+
+  }
+
+  selectNode(nodeIndex: number) : void {
+
+    // if (nodeIndex === this.nodeAIndex || nodeIndex === this.nodeBIndex) {
+    //   /* clicking on an already selected node */
+    //   return {updated: false, hint: TreeHint.Hover, selectable: false}
+    // }
+    // let hint = TreeHint.Hover;
+    // let selectable = this.selectable;
+    // if (this.nodeAIndex === UNSET) {
+    //   this.nodeAIndex = nodeIndex;
+    //   hint = TreeHint.HoverNodeA;
+    // } else if (this.nodeBIndex === UNSET) {
+    //   this.nodeBIndex = nodeIndex;
+    // }
+
+    // if (this.nodeAIndex !== UNSET && this.nodeBIndex !== UNSET) {
+    //   this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex);
+    //   this.setSelectable(false);
+    //   if (nodeIndex === this.nodeBIndex) {
+    //     if (this.mrcaIndex === UNSET) {
+    //       hint = TreeHint.HoverNodeBDescendant;
+    //     } else {
+    //       hint = TreeHint.HoverNodeBCousin;
+    //     }
+    //   }
+    // } else {
+    //   selectable = true;
+    // }
+    // return {updated: true, hint, selectable}
+
+    if (this.selectedNodes.includes(this.highlightNode)) {
+      return;
+    }
+    this.highlightNode.lock();
+    this.selectedNodes.push(this.highlightNode);
+    /* check for an MRCA  and add it if need be */
+
+    /* prep the next hover */
+    this.highlightNode = this.getNodeDisplay(UNSET, 2, false, false);
+    this.setChartData();
+  }
+
+
+  dismissNode(nodeIndex: number) : void {
+    const index = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
+    const node = this.selectedNodes.splice(index, 1)[0];
+    node.deactivate();
+  }
+
 
   setCredibilityConstrained(constrained: boolean) : void {
     this.constrainHoverByCredibility = constrained;
@@ -158,194 +478,10 @@ export class CoreLineagesData {
   }
 
 
-  setChartData(nodeIndices: number[], isApobecEnabled: boolean
-  ): ChartData {
-    const pythia = this.pythia,
-      chartData: ChartData = {
-        nodeListData: [],
-        nodeDistributions: null,
-        prevalenceNodes: [],
-        minDate: UNSET,
-        maxDate: UNSET,
-        nodeComparisonData: [],
-        nodeAIsUpper: true,
-        nodeDisplays: [],
-        nodePairs: [],
-        nodes: []
-      };
-    const [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex] = nodeIndices;
-    if (rootIndex !== UNSET) this.rootIndex = rootIndex;
-    if (pythia) {
-
-      const summaryTree = this.summaryTree as SummaryTree;
-      const getY = this.getY as getYFunction;
-      const mccRef = pythia.getMcc(),
-        minDate = pythia.getBaseTreeMinDate(),
-        maxDate = pythia.maxDate;
-      chartData.minDate = minDate;
-      chartData.maxDate = maxDate;
-      const currentIndices = [rootIndex, mrcaIndex, nodeAIndex, nodeBIndex];
-      const nodeTimes: number[][] = [];
-      currentIndices.filter(index=> index !== UNSET)
-        .forEach(index=>{
-          nodeTimes[index] = pythia.getNodeTimeDistribution(index, summaryTree);
-        });
-
-      let nodes: DisplayNode[] = currentIndices.map((index, dn)=>{
-        const isInferred = index === rootIndex || index === mrcaIndex;
-        const isRoot = index === rootIndex;
-        const nd = this.getNodeDisplay(index, dn, isInferred, isRoot);
-        chartData.nodes[dn] = nd;
-        return nd;
-      });
-      const nodeClasses: DisplayNode[] = [];
-      nodes.forEach(node=>{
-        if (node.index !== UNSET) {
-          nodeClasses[node.index] = node;
-          node.times = nodeTimes[node.index];
-        }
-      });
-      if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
-        /* we clear all but the root node */
-
-        this.setSelectable(true);
-      } else {
-        let nodePair: NodePair;
-        if (mrcaIndex === UNSET) {
-          /* if there is no mrca, then we connect the root directly to the other nodes */
-          if (nodeAIndex === UNSET) {
-            if (nodeBIndex !== UNSET) {
-              nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
-              chartData.nodePairs.push(nodePair);
-            }
-            this.setSelectable(true);
-          } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
-            /* we have node 1 without node 2 */
-            nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
-            chartData.nodePairs.push(nodePair);
-            this.setSelectable(true);
-          } else {
-            /*
-              we have both node 1 and node 2, but no mrca.
-              this could mean both are descended from root,
-              or one is descended from the other.
-              We know we have two pairs, and in the first one
-              the ancestor node is root. So the questions are:
-                in the second pair, is the ancestor node root, nodeA, or nodeB?
-                  this
-
-              */
-            const mrca = this.getMRCA(nodeAIndex, nodeBIndex, summaryTree),
-              ancestor1Index = rootIndex;
-            let ancestor2Index = rootIndex,
-              descendant1Index = rootIndex,
-              descendant2Index = rootIndex,
-              rel1: NodeRelationType = NodeRelationType.singleDescendant,
-              rel2: NodeRelationType = NodeRelationType.singleDescendant;
-            if (mrca === rootIndex) {
-              descendant1Index = nodeAIndex;
-              descendant2Index = nodeBIndex;
-              const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
-              if (nodeAIsUpper) {
-                rel1 = NodeRelationType.upperDescendant;
-                rel2 = NodeRelationType.lowerDescendant;
-              } else {
-                rel1 = NodeRelationType.lowerDescendant;
-                rel2 = NodeRelationType.upperDescendant;
-              }
-            } else if (mrca === nodeAIndex) {
-              descendant1Index = nodeAIndex;
-              ancestor2Index = nodeAIndex;
-              descendant2Index = nodeBIndex;
-            } else if (mrca === nodeBIndex) {
-              descendant1Index = nodeBIndex;
-              ancestor2Index = nodeBIndex;
-              descendant2Index = nodeAIndex;
-            } else {
-              console.warn("need to revisit how node pairs are made");
-            }
-            nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], rel1, pythia, summaryTree);
-            chartData.nodePairs.push(nodePair);
-            nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], rel2, pythia, summaryTree);
-            chartData.nodePairs.push(nodePair);
-            // this.disableSelections();
-          }
-
-        } else {
-          const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
-          let relA: NodeRelationType;
-          let relB: NodeRelationType;
-          if (nodeAIsUpper) {
-            relA = NodeRelationType.upperDescendant;
-            relB = NodeRelationType.lowerDescendant;
-          } else {
-            relA = NodeRelationType.lowerDescendant;
-            relB = NodeRelationType.upperDescendant;
-          }
-          nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[mrcaIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
-          chartData.nodePairs.push(nodePair);
-          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeAIndex], relA, pythia, summaryTree);
-          chartData.nodePairs.push(nodePair);
-          nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeBIndex], relB, pythia, summaryTree);
-          chartData.nodePairs.push(nodePair);
-          // this.disableSelections();
-        }
-      }
-      chartData.nodeListData = nodeClasses;
-      nodes = nodes.filter(({index})=>index>=0);
-      const nodeIndices = nodes.map(({index})=>index),
-        nodePrevalenceData = pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree),
-        nodeDistributions = nodePrevalenceData.series;
-      chartData.nodeDisplays = nodes.slice(0);
-      chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
-        const ascendantTimes = nodeTimes[np.ancestor.index],
-          descendantTimes = nodeTimes[np.descendant.index] || [],
-          ancestorMedianDate = getMedian(ascendantTimes),
-          descendantMedianDate = getMedian(descendantTimes);
-        return new NodeMutationsData(np, ancestorMedianDate, descendantMedianDate, minDate, maxDate, isApobecEnabled)
-      });
-      chartData.nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
-      /* we want the default distribution to come first, so take it off the end and put it first */
-      nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      chartData.nodeDistributions = nodeDistributions;
-      /*
-      add an empty node before the root to represent the uninfected population
-      in the prevalence chart
-      */
-      const prevalenceNodes = nodes.slice(0);
-      prevalenceNodes.unshift(this.nullNode);
-      chartData.prevalenceNodes = prevalenceNodes;
-      mccRef.release();
-
-    }
-    return chartData;
-  }
-
-
-
-
-  assembleNodePair(ancestor: DisplayNode, descendant: DisplayNode,
-    relation: NodeRelationType, pythia: Pythia, tree: SummaryTree): NodePair {
-    const mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(ancestor.index, descendant.index, tree);
-    return new NodePair(ancestor, descendant, relation, mutTimes);
-  }
-
-
-
-  checkNewHighlight(displayNode: DisplayNode | null, date: number, mutation: Mutation | null): boolean{
-    if (displayNode === this.highlightNode && date === this.highlightDate && mutation === this.highlightMutation) {
-      return false;
-    }
-    this.highlightNode = displayNode;
-    this.highlightDate = date;
-    this.highlightMutation =  mutation;
-    return true;
-  }
-
 
   getSelectedTipIds(): string[] {
     const ids: string[] = [];
-    [this.nodeAIndex, this.nodeBIndex].forEach(index=>{
+    [].forEach(index=>{
       if (index !== UNSET) {
         const metadata = this.nodeMetadata?.getNodeMetadata(index);
         if (metadata) {
@@ -361,16 +497,17 @@ export class CoreLineagesData {
 
 
   setNodeSelection() : void {
-    const nodes = [ this.nodeAIndex, this.nodeBIndex].filter(n=>n!==UNSET);
+    const nodes: number[] = [];
     if (nodes.length > 0) {
       this.sharedState.setNodeSelection(nodes);
     }
   }
 
-  getMRCA(index1: number, index2: number, mcc: SummaryTree): number {
+  getMRCA(index1: number, index2: number): number {
     /* check for a common ancestor that is not root */
+    const summaryTree = this.summaryTree as SummaryTree;
     let mrcaIndex = UNSET;
-    const root = mcc.getRootIndex();
+    const root = summaryTree.getRootIndex();
     let i1 = index1,
       i2 = index2,
       steps = 0;
@@ -383,9 +520,9 @@ export class CoreLineagesData {
       const size1 = this.nodeChildCount[i1],
         size2 = this.nodeChildCount[i2];
       if (size1 < size2) {
-        i1 = mcc.getParentIndexOf(i1);
+        i1 = summaryTree.getParentIndexOf(i1);
       } else {
-        i2 = mcc.getParentIndexOf(i2);
+        i2 = summaryTree.getParentIndexOf(i2);
       }
       steps++;
       if (steps >= 1000) {
@@ -403,100 +540,11 @@ export class CoreLineagesData {
   }
 
 
-  handleNodeHover(nodeIndex: number, date:number, mccTreeCanvas : MccTreeCanvas): NodeHoverData {
-    const rootIndex = this.rootIndex;
-    let mrcaIndex = this.mrcaIndex,
-      nodeAIndex = this.nodeAIndex,
-      nodeBIndex = this.nodeBIndex,
-      hint: TreeHint = TreeHint.Zoom;
-    if (!this.constrainHoverByCredibility || mccTreeCanvas.creds[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
-      this.hoveredNode = nodeIndex;
-    }
-    this.hoveredDate = date;
-    let displayNode: DisplayNode|null = null;
-    if (nodeIndex === UNSET) {
-      hint = TreeHint.Zoom;
-    } else if (nodeIndex === rootIndex) {
-      /* new hover on existing node */
-      displayNode = null;
-      hint = TreeHint.HoverRoot;
-    } else if (nodeIndex === mrcaIndex) {
-      /* new hover on existing node */
-      displayNode = this.mrcaNode;
-      hint = TreeHint.HoverMrca;
-    } else if (nodeIndex === nodeAIndex) {
-      /* new hover on existing node */
-      displayNode = this.nodeANode;
-      hint = TreeHint.HoverNodeA;
-    } else if (nodeIndex === nodeBIndex) {
-      /* new hover on existing node */
-      displayNode = this.nodeBNode;
-      if (mrcaIndex === UNSET) {
-        hint = TreeHint.HoverNodeBDescendant;
-      } else {
-        hint = TreeHint.HoverNodeBCousin;
-      }
-    } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
-      /* selecting node 1 */
-      nodeAIndex = nodeIndex;
-      displayNode = this.nodeANode;
-      if (nodeBIndex !== UNSET) {
-        mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex, mccTreeCanvas.tree as SummaryTree);
-      }
-      hint = TreeHint.PreviewNodeA;
-    } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
-      /* selecting node 2 */
-      nodeBIndex = nodeIndex;
-      mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex, mccTreeCanvas.tree as SummaryTree);
-      displayNode = this.nodeBNode;
-      if (mrcaIndex === UNSET) {
-        hint = TreeHint.PreviewNodeBDescendant;
-      } else {
-        hint = TreeHint.PreviewNodeBCousin;
-      }
-    }
-
-    return { indices: [mrcaIndex, nodeAIndex, nodeBIndex], hint, displayNode} as NodeHoverData;
-
-  }
-
-  handleNodeSelect(nodeIndex: number, mcc: SummaryTree) : NodeSelectData {
-
-    if (nodeIndex === this.nodeAIndex || nodeIndex === this.nodeBIndex) {
-      /* clicking on an already selected node */
-      return {updated: false, hint: TreeHint.Hover, selectable: false}
-    }
-    let hint = TreeHint.Hover;
-    let selectable = this.selectable;
-    if (this.nodeAIndex === UNSET) {
-      this.nodeAIndex = nodeIndex;
-      hint = TreeHint.HoverNodeA;
-    } else if (this.nodeBIndex === UNSET) {
-      this.nodeBIndex = nodeIndex;
-    }
-
-    if (this.nodeAIndex !== UNSET && this.nodeBIndex !== UNSET) {
-      this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex, mcc);
-      this.setSelectable(false);
-      if (nodeIndex === this.nodeBIndex) {
-        if (this.mrcaIndex === UNSET) {
-          hint = TreeHint.HoverNodeBDescendant;
-        } else {
-          hint = TreeHint.HoverNodeBCousin;
-        }
-      }
-    } else {
-      selectable = true;
-    }
-    return {updated: true, hint, selectable}
-  }
 
 
-
-
-  checkMRCA(index1: number, index2: number, mcc: SummaryTree): number {
-    const mrca = this.getMRCA(index1, index2, mcc);
-    if (mrca === this.rootIndex || mrca === index1 || mrca === index2) {
+  checkMRCA(index1: number, index2: number): number {
+    const mrca = this.getMRCA(index1, index2);
+    if (mrca === this.rootNode.index || mrca === index1 || mrca === index2) {
       return UNSET;
     }
     return mrca;
@@ -520,7 +568,9 @@ export class CoreLineagesData {
   }
 
 
-  getNodeDisplay(index: number, dnIndex: number, isInferred: boolean, isRoot: boolean): DisplayNode {
+  getNodeDisplay(index: number, dnIndex: number, isInferred: boolean, isRoot: boolean,
+    existingNode: DisplayNode | null = null
+  ): DisplayNode {
     const summaryTree = this.summaryTree;
     let confidence = UNSET;
     let childCount = 0;
@@ -539,12 +589,28 @@ export class CoreLineagesData {
       times = (this.pythia as Pythia).getNodeTimeDistribution(index, summaryTree);
     }
     const series = new Distribution(times);
-    const dnc = new DisplayNode(dnIndex, generationsFromRoot, isInferred,
-      isRoot, confidence, childCount, series, metadata);
-    dnc.setIndex(index);
+    let dnc: DisplayNode;
+    if (existingNode !== null) {
+      existingNode.setData(index, generationsFromRoot, isInferred,
+        isRoot, confidence, childCount, series, metadata);
+      dnc = existingNode;
+    } else {
+      dnc = new DisplayNode(dnIndex, index, generationsFromRoot, isInferred,
+        isRoot, confidence, childCount, series, metadata);
+    }
     return dnc;
   }
 
+  getHighlights() : HighlightData {
+    const node = this.highlightNode;
+    const date = this.highlightDate;
+    const mutation = this.highlightMutation;
+    return { node, date, mutation };
+  }
+
+  selectionsAvailable() : boolean {
+    return this.selectable;
+  }
 
 
 }

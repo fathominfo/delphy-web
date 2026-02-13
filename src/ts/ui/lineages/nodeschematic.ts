@@ -296,8 +296,8 @@ export class NodeSchematic {
   }
 
 
-  highlightNode(node: DisplayNode|null, mutation: Mutation|null) : void {
-    if (node !== this.highlightedNode || mutation !== this.highlightedMutation) {
+  highlightNode(node: DisplayNode, mutation: Mutation|null) : void {
+    if (node.index !== this.highlightedNode?.index || mutation !== this.highlightedMutation) {
       this.highlightedNode = node;
       this.highlightedMutation = mutation;
       this.handleMutationMatch(node, mutation);
