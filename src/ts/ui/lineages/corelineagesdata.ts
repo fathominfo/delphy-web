@@ -5,7 +5,7 @@ import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
 import { UNSET } from "../common";
-import { DisplayNode } from "./displaynode";
+import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
@@ -104,10 +104,10 @@ export class CoreLineagesData {
   constructor(sharedState: SharedState, update: updateFunction) {
     this.update = update;
     this.sharedState = sharedState;
-    this.nullNode = this.getNodeDisplay(UNSET, UNSET, false, false);
+    this.nullNode = this.getNodeDisplay(NULL_NODE_CODE, false, false);
     /* create a placeholder for */
-    this.rootNode = this.getNodeDisplay(UNSET, 0, true, true);
-    this.highlightNode = this.getNodeDisplay(UNSET, 2, false, false)
+    this.rootNode = this.getNodeDisplay(UNSET, true, true);
+    this.highlightNode = this.getNodeDisplay(UNSET, false, false)
   }
 
   activate() {
@@ -146,7 +146,7 @@ export class CoreLineagesData {
       this.isApobecEnabled = isApobecEnabled;
 
       if (rootIndex !== this.rootNode.index) {
-        this.getNodeDisplay(rootIndex, 0, true, true, this.rootNode);
+        this.getNodeDisplay(rootIndex, true, true, this.rootNode);
         this.minimapData = new MiniMapData([this.rootNode], summaryTree);
       }
       if (this.sharedState.nodeList.length > 0) {
@@ -339,7 +339,7 @@ export class CoreLineagesData {
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
-      this.getNodeDisplay(UNSET, 2, false, false, this.highlightNode);
+      this.getNodeDisplay(UNSET, false, false, this.highlightNode);
     } else {
       /* do any existing nodes match?  */
       minimap.found.filter(n=>n).forEach(treeNode=>{
@@ -349,7 +349,7 @@ export class CoreLineagesData {
       });
       /* if not, set the data on the highlight node */
       if (displayNode === null) {
-        this.getNodeDisplay(nodeIndex, 2, false, false, this.highlightNode);
+        this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
       } else {
         this.highlightNode.copyFrom(displayNode);
       }
@@ -365,7 +365,7 @@ export class CoreLineagesData {
     this.highlightDate = date;
     if (nodeIndex !== this.highlightNode.index) {
       if (!this.constrainHoverByCredibility || this.nodeConfidence[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
-        this.getNodeDisplay(nodeIndex, 2, false, false, this.highlightNode);
+        this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
       }
       const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
       if (nodeIndex !== UNSET) {
@@ -459,7 +459,7 @@ export class CoreLineagesData {
     /* check for an MRCA  and add it if need be */
 
     /* prep the next hover */
-    this.highlightNode = this.getNodeDisplay(UNSET, 2, false, false);
+    this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     this.setChartData();
   }
 
@@ -570,7 +570,7 @@ export class CoreLineagesData {
   }
 
 
-  getNodeDisplay(index: number, dnIndex: number, isInferred: boolean, isRoot: boolean,
+  getNodeDisplay(index: number, isInferred: boolean, isRoot: boolean,
     existingNode: DisplayNode | null = null
   ): DisplayNode {
     const summaryTree = this.summaryTree;
@@ -597,7 +597,7 @@ export class CoreLineagesData {
         isRoot, confidence, childCount, series, metadata);
       dnc = existingNode;
     } else {
-      dnc = new DisplayNode(dnIndex, index, generationsFromRoot, isInferred,
+      dnc = new DisplayNode(index, generationsFromRoot, isInferred,
         isRoot, confidence, childCount, series, metadata);
     }
     return dnc;

@@ -241,16 +241,14 @@ export class NodeListDisplay {
     nodeDiv.setData(node);
   }
 
-  clearNode(node: DisplayNode | null) {
-    if (node !== null) {
-      const div = this.nodeDivs[node.index];
-      if (div) {
-        div.clear();
-        this.pool.releaseDiv(div);
-      }
-      this.nodeDivs[node.index] = null;
-      this.nodes[node.index] = null;
+  clearNode(index: number): void {
+    const div = this.nodeDivs[index];
+    if (div) {
+      div.clear();
+      this.pool.releaseDiv(div);
     }
+    this.nodeDivs[index] = null;
+    this.nodes[index] = null;
   }
 
 
@@ -259,11 +257,11 @@ export class NodeListDisplay {
     to a node in the tree
   */
   setNodes(nodes: DisplayNode[]) {
-    this.nodes.forEach(node=>{
-      if (node !== null) {
-        if (nodes[node.index] === undefined) {
-          this.clearNode(node);
-        }
+    const lookup: boolean[] = [];
+    nodes.forEach(n=>lookup[n.index] = true);
+    this.nodes.forEach((node, index)=>{
+      if (!lookup[index]) {
+        this.clearNode(index);
       }
     });
     nodes.forEach(node=>{

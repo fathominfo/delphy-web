@@ -23,7 +23,7 @@ export class SVGPrevalenceMeanGroup {
   constructor(node:DisplayNode) {
     this.node = node;
     this.g = TREND_TEMPLATE.cloneNode(true) as SVGGElement;
-    this.g.classList.add(node.className);
+    if (node.className) this.g.classList.add(node.className);
     this.shape = this.g.querySelector(".shape") as SVGPathElement;
     this.trend = this.g.querySelector(".trend") as SVGLineElement;
     CONTAINER.appendChild(this.g);
