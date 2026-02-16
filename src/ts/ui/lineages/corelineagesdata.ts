@@ -270,7 +270,8 @@ export class CoreLineagesData {
   hoverNode(nodeIndex: number, date:number): void {
     let hint: TreeHint = TreeHint.Zoom;
     this.highlightDate = date;
-    if (nodeIndex !== this.highlightNode.index) {
+    const prevIndex = this.highlightNode.index;
+    if (nodeIndex !== prevIndex) {
       if (this.constrainHoverByCredibility
         && nodeIndex !== UNSET
         && this.nodeConfidence[nodeIndex] < this.sharedState.mccConfig.confidenceThreshold) {
@@ -287,12 +288,20 @@ export class CoreLineagesData {
           hint = TreeHint.Zoom;
           this.getNodeDisplay(UNSET, false, false, this.highlightNode);
         } else {
-          const already = minimap.found.map(treeNode=>treeNode.node);
-          const foundIndex = already.map(n=>n.index).indexOf(nodeIndex);
-          if (foundIndex >= 0) {
-            this.highlightNode.copyFrom(already[foundIndex]);
-          } else {
-            this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
+          this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
+          /*
+          does the hovered node match an existing selection or MRCA?
+          */
+          const match = minimap.found.filter(treeNode=>treeNode)
+            .map(tn=>tn.node)
+            .filter(node=>(node.isInferred || node.isLocked) && node.index === nodeIndex)[0];
+          if (match) {
+            if (match.isInferred) {
+              // set the label from the mrca
+              this.highlightNode.label = match.name;
+            } else {
+              this.highlightNode.copyFrom(match);
+            }
           }
           toMap.push(this.highlightNode);
         }

@@ -70,8 +70,8 @@ class NodeDiv {
     const isTip = node.childCount === 1;
     div.classList.toggle("is-tip", isTip);
 
-    div.setAttribute("data-nodetype", node.label.toLowerCase());
-    this.nodeName.textContent = `${node.label}  ${node.index}`;
+    div.setAttribute("data-nodetype", node.className.toLowerCase());
+    this.nodeName.textContent = node.label;
     this.nodeSource.classList.toggle("hidden", !node.isInferred && !node.isRoot);
     this.dismiss.classList.toggle("hidden", node.isInferred);
     this.monophyletic.classList.toggle("hidden", node.isRoot);
@@ -257,7 +257,7 @@ export class NodeListDisplay {
   setNodes(nodes: DisplayNode[]) {
     const lookup: boolean[] = [];
     nodes.forEach(n=>lookup[n.index] = true);
-    this.nodes.forEach((node, index)=>{
+    this.nodes.forEach((_, index)=>{ // eslist-disable-line
       if (!lookup[index]) {
         this.clearNode(index);
       }
