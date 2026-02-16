@@ -182,15 +182,13 @@ class DivPool {
       div = new NodeDiv();
       const actualDiv = div.div;
       CONTAINER.appendChild(actualDiv);
-      div.dismiss.addEventListener('click', ()=>dismissCallback((div?.node as DisplayNode).index));
-      actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback((div?.node as DisplayNode).index, UNSET, null));
-      actualDiv.addEventListener('pointerleave', () => {
-        console.log(`
-          leaving node list
-          
-          `)
-        nodeHighlightCallback(UNSET, UNSET, null)
+      div.dismiss.addEventListener('click', (event)=>{
+        event.stopImmediatePropagation();
+        const index = (div?.node as DisplayNode).index;
+        dismissCallback(index);
       });
+      actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback((div?.node as DisplayNode).index, UNSET, null));
+      actualDiv.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
       actualDiv.addEventListener('click', () => nodeZoomCallback((div?.node as DisplayNode).index));
       this.divs.add({div, inUse: true});
     }

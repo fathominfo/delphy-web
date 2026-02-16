@@ -207,106 +207,12 @@ export class CoreLineagesData {
           chartData.nodePairs.push(nodePair);
         }
       });
-
-
-
-
-      // if (nodeAIndex === UNSET && nodeBIndex === UNSET) {
-      //   /* we clear all but the root node */
-
-      //   this.setSelectable(true);
-      // } else {
-      //   let nodePair: NodePair;
-      //   if (mrcaIndex === UNSET) {
-      //     /* if there is no mrca, then we connect the root directly to the other nodes */
-      //     if (nodeAIndex === UNSET) {
-      //       if (nodeBIndex !== UNSET) {
-      //         nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeBIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
-      //         chartData.nodePairs.push(nodePair);
-      //       }
-      //       this.setSelectable(true);
-      //     } else if (nodeBIndex === UNSET || nodeBIndex === nodeAIndex) {
-      //       /* we have node 1 without node 2 */
-      //       nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[nodeAIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
-      //       chartData.nodePairs.push(nodePair);
-      //       this.setSelectable(true);
-      //     } else {
-      //       /*
-      //         we have both node 1 and node 2, but no mrca.
-      //         this could mean both are descended from root,
-      //         or one is descended from the other.
-      //         We know we have two pairs, and in the first one
-      //         the ancestor node is root. So the questions are:
-      //           in the second pair, is the ancestor node root, nodeA, or nodeB?
-      //             this
-
-      //         */
-      //       const mrca = this.getMRCA(nodeAIndex, nodeBIndex),
-      //         ancestor1Index = rootIndex;
-      //       let ancestor2Index = rootIndex,
-      //         descendant1Index = rootIndex,
-      //         descendant2Index = rootIndex,
-      //         rel1: NodeRelationType = NodeRelationType.singleDescendant,
-      //         rel2: NodeRelationType = NodeRelationType.singleDescendant;
-      //       if (mrca === rootIndex) {
-      //         descendant1Index = nodeAIndex;
-      //         descendant2Index = nodeBIndex;
-      //         const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
-      //         if (nodeAIsUpper) {
-      //           rel1 = NodeRelationType.upperDescendant;
-      //           rel2 = NodeRelationType.lowerDescendant;
-      //         } else {
-      //           rel1 = NodeRelationType.lowerDescendant;
-      //           rel2 = NodeRelationType.upperDescendant;
-      //         }
-      //       } else if (mrca === nodeAIndex) {
-      //         descendant1Index = nodeAIndex;
-      //         ancestor2Index = nodeAIndex;
-      //         descendant2Index = nodeBIndex;
-      //       } else if (mrca === nodeBIndex) {
-      //         descendant1Index = nodeBIndex;
-      //         ancestor2Index = nodeBIndex;
-      //         descendant2Index = nodeAIndex;
-      //       } else {
-      //         console.warn("need to revisit how node pairs are made");
-      //       }
-      //       nodePair = this.assembleNodePair(nodeClasses[ancestor1Index], nodeClasses[descendant1Index], rel1, pythia, summaryTree);
-      //       chartData.nodePairs.push(nodePair);
-      //       nodePair = this.assembleNodePair(nodeClasses[ancestor2Index], nodeClasses[descendant2Index], rel2, pythia, summaryTree);
-      //       chartData.nodePairs.push(nodePair);
-      //       // this.disableSelections();
-      //     }
-
-      //   } else {
-      //     const nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
-      //     let relA: NodeRelationType;
-      //     let relB: NodeRelationType;
-      //     if (nodeAIsUpper) {
-      //       relA = NodeRelationType.upperDescendant;
-      //       relB = NodeRelationType.lowerDescendant;
-      //     } else {
-      //       relA = NodeRelationType.lowerDescendant;
-      //       relB = NodeRelationType.upperDescendant;
-      //     }
-      //     nodePair = this.assembleNodePair(nodeClasses[rootIndex], nodeClasses[mrcaIndex], NodeRelationType.singleDescendant, pythia, summaryTree);
-      //     chartData.nodePairs.push(nodePair);
-      //     nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeAIndex], relA, pythia, summaryTree);
-      //     chartData.nodePairs.push(nodePair);
-      //     nodePair = this.assembleNodePair(nodeClasses[mrcaIndex], nodeClasses[nodeBIndex], relB, pythia, summaryTree);
-      //     chartData.nodePairs.push(nodePair);
-      //     // this.disableSelections();
-      //   }
-      // }
       chartData.nodes = currentNodes;
-      chartData.nodeComparisonData = [];
-      // chartData.nodePairs.map(np=>{
-      //   const ascendantTimes = nodeTimes[np.ancestor.index],
-      //     descendantTimes = nodeTimes[np.descendant.index] || [],
-      //     ancestorMedianDate = getMedian(ascendantTimes),
-      //     descendantMedianDate = getMedian(descendantTimes);
-      //   return new NodeMutationsData(np, ancestorMedianDate, descendantMedianDate, minDate, maxDate, this.isApobecEnabled)
-      // });
-      // chartData.nodeAIsUpper = getY(nodeAIndex) < getY(nodeBIndex);
+      chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
+        const ancestorSeries: Distribution = np.ancestor.series as Distribution;
+        const descendantSeries: Distribution = np.descendant.series as Distribution;
+        return new NodeMutationsData(np, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
+      });
       /*
       add an empty node before the root to represent the uninfected population
       in the prevalence chart
@@ -470,6 +376,7 @@ export class CoreLineagesData {
     const index = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
     const node = this.selectedNodes.splice(index, 1)[0];
     node.deactivate();
+    this.hoverNode(UNSET, UNSET);
   }
 
 
