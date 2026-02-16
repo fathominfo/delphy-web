@@ -271,58 +271,73 @@ export class CoreLineagesData {
     let hint: TreeHint = TreeHint.Zoom;
     this.highlightDate = date;
     if (nodeIndex !== this.highlightNode.index) {
-      if (!this.constrainHoverByCredibility || this.nodeConfidence[nodeIndex] >= this.sharedState.mccConfig.confidenceThreshold) {
-        this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
-      }
-      const minimap = this.minimapData as MiniMapData;
-      const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
-      if (nodeIndex !== UNSET) {
-        toMap.push(this.highlightNode);
-      }
-      console.log(toMap)
-      minimap.setData(toMap);
-      if (nodeIndex === UNSET) {
-        hint = TreeHint.Zoom;
-      // } else if (nodeIndex === rootIndex) {
-      //   /* new hover on existing node */
-      //   displayNode = null;
-      //   hint = TreeHint.HoverRoot;
-      // } else if (nodeIndex === mrcaIndex) {
-      //   /* new hover on existing node */
-      //   displayNode = this.mrcaNode;
-      //   hint = TreeHint.HoverMrca;
-      // } else if (nodeIndex === nodeAIndex) {
-      //   /* new hover on existing node */
-      //   displayNode = this.nodeANode;
-      //   hint = TreeHint.HoverNodeA;
-      // } else if (nodeIndex === nodeBIndex) {
-      //   /* new hover on existing node */
-      //   displayNode = this.nodeBNode;
-      //   if (mrcaIndex === UNSET) {
-      //     hint = TreeHint.HoverNodeBDescendant;
-      //   } else {
-      //     hint = TreeHint.HoverNodeBCousin;
-      //   }
-      // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
-      //   /* selecting node 1 */
-      //   nodeAIndex = nodeIndex;
-      //   displayNode = this.nodeANode;
-      //   if (nodeBIndex !== UNSET) {
-      //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-      //   }
-      //   hint = TreeHint.PreviewNodeA;
-      // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
-      //   /* selecting node 2 */
-      //   nodeBIndex = nodeIndex;
-      //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-      //   displayNode = this.nodeBNode;
-      //   if (mrcaIndex === UNSET) {
-      //     hint = TreeHint.PreviewNodeBDescendant;
-      //   } else {
-      //     hint = TreeHint.PreviewNodeBCousin;
-      //   }
-      }
+      if (this.constrainHoverByCredibility
+        && nodeIndex !== UNSET
+        && this.nodeConfidence[nodeIndex] < this.sharedState.mccConfig.confidenceThreshold) {
+        /*
+        if we don't meet the credibility threshold, don't deselect the current selection.
+        the thinking is that the nodes are usually so dense that this would make it
+        very hard to select the node you are after.
+        */
+        return;
+      } else {
+        const minimap = this.minimapData as MiniMapData;
+        const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
+        if (nodeIndex === UNSET) {
+          hint = TreeHint.Zoom;
+          this.getNodeDisplay(UNSET, false, false, this.highlightNode);
+        } else {
+          const already = minimap.found.map(treeNode=>treeNode.node);
+          const foundIndex = already.map(n=>n.index).indexOf(nodeIndex);
+          if (foundIndex >= 0) {
+            this.highlightNode.copyFrom(already[foundIndex]);
+          } else {
+            this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
+          }
+          toMap.push(this.highlightNode);
+        }
 
+        // console.log(toMap)
+        minimap.setData(toMap);
+        // if (nodeIndex === rootIndex) {
+        //   /* new hover on existing node */
+        //   displayNode = null;
+        //   hint = TreeHint.HoverRoot;
+        // } else if (nodeIndex === mrcaIndex) {
+        //   /* new hover on existing node */
+        //   displayNode = this.mrcaNode;
+        //   hint = TreeHint.HoverMrca;
+        // } else if (nodeIndex === nodeAIndex) {
+        //   /* new hover on existing node */
+        //   displayNode = this.nodeANode;
+        //   hint = TreeHint.HoverNodeA;
+        // } else if (nodeIndex === nodeBIndex) {
+        //   /* new hover on existing node */
+        //   displayNode = this.nodeBNode;
+        //   if (mrcaIndex === UNSET) {
+        //     hint = TreeHint.HoverNodeBDescendant;
+        //   } else {
+        //     hint = TreeHint.HoverNodeBCousin;
+        //   }
+        // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
+        //   /* selecting node 1 */
+        //   nodeAIndex = nodeIndex;
+        //   displayNode = this.nodeANode;
+        //   if (nodeBIndex !== UNSET) {
+        //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+        //   }
+        //   hint = TreeHint.PreviewNodeA;
+        // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
+        //   /* selecting node 2 */
+        //   nodeBIndex = nodeIndex;
+        //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
+        //   displayNode = this.nodeBNode;
+        //   if (mrcaIndex === UNSET) {
+        //     hint = TreeHint.PreviewNodeBDescendant;
+        //   } else {
+        //     hint = TreeHint.PreviewNodeBCousin;
+        //   }
+      }
     }
 
     this.setChartData();
@@ -330,42 +345,15 @@ export class CoreLineagesData {
   }
 
   selectNode(nodeIndex: number) : void {
-
-    // if (nodeIndex === this.nodeAIndex || nodeIndex === this.nodeBIndex) {
-    //   /* clicking on an already selected node */
-    //   return {updated: false, hint: TreeHint.Hover, selectable: false}
-    // }
-    // let hint = TreeHint.Hover;
-    // let selectable = this.selectable;
-    // if (this.nodeAIndex === UNSET) {
-    //   this.nodeAIndex = nodeIndex;
-    //   hint = TreeHint.HoverNodeA;
-    // } else if (this.nodeBIndex === UNSET) {
-    //   this.nodeBIndex = nodeIndex;
-    // }
-
-    // if (this.nodeAIndex !== UNSET && this.nodeBIndex !== UNSET) {
-    //   this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex);
-    //   this.setSelectable(false);
-    //   if (nodeIndex === this.nodeBIndex) {
-    //     if (this.mrcaIndex === UNSET) {
-    //       hint = TreeHint.HoverNodeBDescendant;
-    //     } else {
-    //       hint = TreeHint.HoverNodeBCousin;
-    //     }
-    //   }
-    // } else {
-    //   selectable = true;
-    // }
-    // return {updated: true, hint, selectable}
-
-    if (this.selectedNodes.includes(this.highlightNode)) {
-      return;
+    if (nodeIndex === UNSET) return;
+    if (this.selectedNodes.concat([this.rootNode]).map(node=>node.index).indexOf(nodeIndex) >= 0) return;
+    if (nodeIndex !== this.highlightNode.index) {
+      console.log(` the developer needs to rethink their assumptions: 
+        the selected node ${nodeIndex} !== the highlight node ${this.highlightNode.index}`);
     }
-    this.highlightNode.lock();
-    this.selectedNodes.push(this.highlightNode);
-    /* check for an MRCA  and add it if need be */
-
+    const selection = this.highlightNode;
+    selection.lock();
+    this.selectedNodes.push(selection);
     /* prep the next hover */
     this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     this.setChartData();
@@ -375,7 +363,11 @@ export class CoreLineagesData {
   dismissNode(nodeIndex: number) : void {
     const index = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
     const node = this.selectedNodes.splice(index, 1)[0];
+    const minimap = this.minimapData as MiniMapData;
     node.deactivate();
+    /* reset the hover */
+    // this.highlightNode = this.getNodeDisplay(UNSET, false, false, this.highlightNode);
+
     this.hoverNode(UNSET, UNSET);
   }
 

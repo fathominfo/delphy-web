@@ -71,7 +71,7 @@ class NodeDiv {
     div.classList.toggle("is-tip", isTip);
 
     div.setAttribute("data-nodetype", node.label.toLowerCase());
-    this.nodeName.textContent = node.label;
+    this.nodeName.textContent = `${node.label}  ${node.index}`;
     this.nodeSource.classList.toggle("hidden", !node.isInferred && !node.isRoot);
     this.dismiss.classList.toggle("hidden", node.isInferred);
     this.monophyletic.classList.toggle("hidden", node.isRoot);

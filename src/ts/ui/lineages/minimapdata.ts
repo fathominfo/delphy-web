@@ -95,6 +95,7 @@ export class MiniMapData {
           collectTips(mrcaTreeNode, tips);
           tips.sort();
           mrca.name = `MRCA of ${tips.join(',')}`;
+          this.found[mrcaIndex] = mrcaTreeNode;
           console.log(mrca.name);
           ancestorTreeNode = mrcaTreeNode;
         }
