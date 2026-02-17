@@ -28,8 +28,8 @@ const mutationChartSelector = '.series-group-container',
   mutationNameSelector = '.lineages--node-comparison--mutation-name',
   mutationPrevalenceSelector = '.lineages--node-comparison--mutation-prevalence span',
   mutationContainerSelector = '.lineages--mutation-timeline',
-  ancestorNodeNameSelector = '.lineages--mutations-ancestor',
-  descendantNodeNameSelector = '.lineages--mutations-descendant',
+  ancestorNodeNameSelector = '.lineages--list-ancestor',
+  descendantNodeNameSelector = '.lineages--list-descendant',
   schematicSelector = ".schematic";
 
 
