@@ -13,10 +13,7 @@ export class TreeNode {
   parent: TreeNode | null = null;
   children: TreeNode[] = [];
   stepsFromRoot = 0;
-  /* 0 - 1 */
-  xPos = 0;
-  /* 0 - 1 */
-  yPos = 0;
+  tipPlacement = 0;
 
   constructor(node: DisplayNode) {
     this.node = node;
@@ -144,8 +141,9 @@ export class SelectionTreeData {
     });
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
     const numTips = tips.length;
+    const midTips = numTips / 2;
     tips.forEach((tn, i)=>{
-      tn.yPos = i / (numTips - 1.0);
+      tn.tipPlacement = i - midTips;
     });
 
     const q: TreeNode[] = [this.root];
@@ -168,17 +166,22 @@ export class SelectionTreeData {
     while (q.length > 0) {
       const tn = q.pop() as TreeNode;
       const childCount = tn.children.length;
-      tn.xPos = tn.stepsFromRoot / (maxSteps - 1);
       /*
       given the way the queue is built up, each child will
-      have had its `yPos` set.
+      have had its `tipPlacement` set.
        */
       if (childCount > 0) {
-        tn.children.sort((a, b)=>a.yPos - b.yPos);
-        const total = tn.children.reduce((tot, child)=>tot + child.yPos, 0);
-        tn.yPos = total / childCount;
+        tn.children.sort((a, b)=>a.tipPlacement - b.tipPlacement);
+        const total = tn.children.reduce((tot, child)=>tot + child.tipPlacement, 0);
+        tn.tipPlacement = total / childCount;
+      } else if (tn.parent === null) {
+        tn.tipPlacement = 0;
       }
     }
+
+    // console.log('selection tree data ready');
+    // this.found.forEach(tn=>console.log(`   ${tn.node.index} ${tn.node.name} ${tn.xPos} ${tn.yPos} ${tn.stepsFromRoot} `));
+
 
 
 

@@ -200,7 +200,7 @@ export class CoreLineagesData {
             if (getY(other.node.index) > getY(descendant.index)) {
               relation = NodeRelationType.upperDescendant;
             } else {
-              relation = NodeRelationType.upperDescendant;
+              relation = NodeRelationType.lowerDescendant;
             }
           }
           const nodePair: NodePair = this.assembleNodePair(ancestor.node, descendant, relation);

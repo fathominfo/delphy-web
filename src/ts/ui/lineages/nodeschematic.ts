@@ -1,133 +1,109 @@
-import { getMutationName, NUC_LOOKUP } from "../../constants";
-import { Mutation } from "../../pythia/delphy_api";
-import { MutationDistribution } from "../../pythia/mutationdistribution";
-
 import { nfc, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair } from "./lineagescommon";
+import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
-const MUTATION_LIMIT = 30;
 
-const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
-MUTATION_TEMPLATE?.remove();
+const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
+const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
+const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
+const MUTATION_COUNT_TEMPLATE = CONTAINER.querySelector(".mut-count") as SVGGElement;
+const CONNECTOR_TEMPLATE = CONTAINER.querySelector(".connector") as SVGLineElement;
 
-type MATCH_HANDLER_TYPE = (node: DisplayNode | null, mutation: Mutation | null)=>void;
+[LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE, CONNECTOR_TEMPLATE].forEach(el=>el.remove());
 
-class Track {
-  startNode: DisplayNode | null = null
-  endNode: DisplayNode | null = null;
-  line: HTMLDivElement;
-  terminus: HTMLDivElement;
-  signage: HTMLSpanElement;
-  mutationCount: number = UNSET;
-  label = "";
-  mutationList: MutationDistribution[] = [];
-  mutationDivs: HTMLDivElement[] = [];
+const MARGIN  = {
+  top: 10,
+  bottom: 10,
+  left: 40,
+  right: 10
+}
+
+const MAX_TIP_DISTANCE = 40;
+const NODE_X_SPACING = 45;
 
 
-  constructor(line: HTMLElement | null, matchHandler: MATCH_HANDLER_TYPE) {
-    this.line = line as HTMLDivElement;
-    this.terminus = this.line.querySelector(".terminus.exit") as HTMLDivElement;
-    this.signage = this.line.querySelector(".transit .signage .count") as HTMLSpanElement;
-    const stations = this.line.querySelector(".stations") as HTMLDivElement;
-    for (let i = 0; i < MUTATION_LIMIT; i++) {
-      const mutDiv = MUTATION_TEMPLATE.cloneNode(true) as HTMLDivElement;
-      this.mutationDivs.push(mutDiv);
-      stations.appendChild(mutDiv);
-      mutDiv.addEventListener("pointerenter", ()=>{
-        const mut = this.mutationList[i]?.mutation;
-        if (mut) {
-          matchHandler(this.endNode, mut);
-        } else {
-          matchHandler(this.endNode, null);}
-      });
-      // mutDiv.addEventListener("pointerleave", ()=>matchHandler(UNSET, null));
+class TreeNodeDisplay {
+  node: DisplayNode;
+  xPos: number = UNSET;
+  yPos: number = UNSET;
+  parent: TreeNodeDisplay | null = null;
+  stepsFromRoot: number;
+  tipPlacement: number;
+  mutationCount: number;
+  relation: NodeRelationType | typeof UNSET;
+  nameLabel: SVGGElement;
+  mutLabel: SVGGElement;
+  connector: SVGPathElement;
+
+  constructor(src: TreeNode, mutCount: number,
+    relation: NodeRelationType | typeof UNSET,
+    parent: TreeNodeDisplay | null
+  ) {
+    this.node = src.node;
+    this.tipPlacement = src.tipPlacement;
+    this.stepsFromRoot = src.stepsFromRoot;
+    this.mutationCount = mutCount;
+    this.relation = relation;
+    this.nameLabel = LABEL_TEMPLATE.cloneNode(true) as SVGGElement;
+    this.mutLabel = MUTATION_COUNT_TEMPLATE.cloneNode(true) as SVGGElement;
+    this.parent = parent;
+    this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
+  }
+
+  position(_width: number, height: number) {
+    this.xPos = MARGIN.left + this.stepsFromRoot * NODE_X_SPACING;
+    this.yPos = MARGIN.top + this.tipPlacement * MAX_TIP_DISTANCE + height / 2;
+    const elements = [this.nameLabel];
+    if (!this.node.isRoot) {
+      elements.push(this.mutLabel);
+      elements.push(this.connector);
     }
-    this.line.addEventListener("pointerleave", ()=>{
-      console.log('leaving line')
-      matchHandler(null, null)
+    elements.forEach(el=>{
+      el.setAttribute("transform", `translate(${ this.xPos }, ${ this.yPos })`)
     });
   }
 
-  set(startNode:DisplayNode, endNode:DisplayNode, mutations:MutationDistribution[]) {
-    this.startNode = startNode;
-    this.endNode = endNode;
-    // this.label = endNode === null ? '' : NODE_LABELS[endNode].toUpperCase();
-    this.mutationList = mutations;
-    this.mutationCount = mutations.length;
-  }
+  renderConnector() {
+    if (this.parent !== null) {
+      const parent = this.parent;
+      const xDiff = parent.xPos - this.xPos;
+      const yDiff = parent.yPos - this.yPos;
+      const d = `M0 0 L${ xDiff } 0 ${ xDiff } ${ yDiff }`;
+      this.connector.setAttribute("d", d);
 
-  render() {
-    this.line.classList.remove(MATCH_CLASS);
-    this.line.classList.remove(NO_MATCH_CLASS);
-    // this.line.setAttribute("data-from", NODE_LABELS[this.startNode]);
-    // this.line.setAttribute("data-to", NODE_LABELS[this.endNode]);
-    this.terminus.textContent = this.label;
-    this.signage.textContent = nfc(this.mutationCount);
-    if (this.mutationCount > MUTATION_LIMIT) {
-      this.mutationDivs.forEach(div=>div.classList.add("hidden"));
-    } else {
-      for (let i = 0; i < MUTATION_LIMIT; i++) {
-        const mutDiv = this.mutationDivs[i];
-        const mut = this.mutationList[i]?.mutation;
-        if (mut) {
-          (mutDiv.querySelector(".transfer.from") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.from];
-          (mutDiv.querySelector(".train") as HTMLSpanElement).textContent = `${mut.site}`;
-          (mutDiv.querySelector(".transfer.to") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.to];
-          mutDiv.classList.remove("hidden");
-          mutDiv.classList.remove(MATCH_CLASS);
-          mutDiv.classList.remove(NO_MATCH_CLASS);
-        } else {
-          mutDiv.classList.add("hidden");
-        }
-      }
+      CONTAINER.appendChild(this.connector);
+      this.connector.classList.add(this.node.className);
     }
   }
 
-  handleMatch(node: DisplayNode,mutation:Mutation | null) {
-    if (mutation === null) {
-      this.line.classList.remove(MATCH_CLASS);
-      this.line.classList.remove(NO_MATCH_CLASS);
-    } else {
-      const mutationName = getMutationName(mutation);
-      let anyMatches = false;
-      this.mutationList.forEach((mut:MutationDistribution, i)=>{
-        const name = getMutationName(mut.mutation);
-        if (name === mutationName) {
-          anyMatches = true;
-          this.mutationDivs[i].classList.add(MATCH_CLASS);
-          this.mutationDivs[i].classList.remove(NO_MATCH_CLASS);
-        } else {
-          this.mutationDivs[i].classList.remove(MATCH_CLASS);
-          this.mutationDivs[i].classList.add(NO_MATCH_CLASS);
-        }
-      });
-      if (anyMatches) {
-        this.line.classList.add(MATCH_CLASS);
-        this.line.classList.remove(NO_MATCH_CLASS);
-      } else {
-        this.line.classList.remove(MATCH_CLASS);
-        this.line.classList.add(NO_MATCH_CLASS);
-      }
-    }
+  renderLabel() {
+    const { node, nameLabel } = this;
+    const mrca = node.isInferred && !node.isRoot;
+    const textNode = nameLabel.querySelector("text") as SVGTextElement;
+    const rect = nameLabel.querySelector("rect") as SVGRectElement;
+    // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
+    // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
+
+    const label = mrca ? "M" : node.label;
+    textNode.textContent = label;
+    nameLabel.classList.add(node.className);
+    CONTAINER.appendChild(this.nameLabel);
+    const tw = textNode.getComputedTextLength();
+    rect.setAttribute("width", `${ tw + 10}`);
+    rect.setAttribute("x", `${ -(tw + 10) / 2}`);
+    // if (!this.node.isRoot) {
+    //   mutTextNode.textContent = `${this.mutationCount}`;
+    //   CONTAINER.appendChild(this.mutLabel);
+    //   this.mutLabel.classList.add(node.className);
+    //   tw = mutTextNode.getComputedTextLength();
+    //   mutRect.setAttribute("width", `${ tw + 10}`);
+    //   mutRect.setAttribute("x", `${ -45 - (tw + 10) / 2}`);
+    // }
 
   }
 
-}
-
-
-class TreeNodeDisplay extends TreeNode {
-  upstreamMutations: Mutation[];
-
-  constructor(node: DisplayNode, src: TreeNode,
-    upstreamMutations: Mutation[]) {
-    super(node);
-    this.parent = src.parent;
-    this.children = src.children;
-    this.upstreamMutations = upstreamMutations;
-  }
 
 }
 
@@ -140,27 +116,34 @@ there is only one of these.
 export class NodeSchematic {
   hasMRCA: boolean;
   highlightedNode: DisplayNode | null;
-  highlightedMutation: Mutation | null;
   nodeHighlightCallback: HoverCallback;
   rootNode: TreeNodeDisplay | null = null;
-  div: HTMLDivElement;
   nodes: TreeNodeDisplay[] = [];
   tipCount = 0;
   stepCount = 0;
+  width: number = UNSET;
+  height: number = UNSET;
 
 
   constructor(nodeHighlightCallback: HoverCallback) {
     this.hasMRCA = false;
     this.highlightedNode = null;
-    this.highlightedMutation = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    this.div = document.querySelector("#subway") as HTMLDivElement;
   }
 
 
-  handleMutationMatch(node: DisplayNode | null, mutation: Mutation | null) {
-    //
+  resize() {
+    const { offsetWidth, offsetHeight } = WRAPPER;
+    this.width = offsetWidth;
+    this.height = offsetHeight;
+    requestAnimationFrame(()=>{
+      CONTAINER.setAttribute("viewBox", `0 0 ${ this.width} ${ this.height}`);
+      CONTAINER.setAttribute("width", `${ this.width}`);
+      CONTAINER.setAttribute("height", `${ this.height}`);
+      this.requestRender();
+    });
   }
+
 
   requestRender() {
     requestAnimationFrame(()=>this.render());
@@ -168,23 +151,28 @@ export class NodeSchematic {
 
 
   render() {
-    //
+    const { width, height } = this;
+    console.log('render minimap', width, height, this.stepCount, this.tipCount);
+    CONTAINER.innerHTML = '';
+    this.nodes.forEach(display=>display.position(width, height));
+    this.nodes.forEach(display=>display.renderConnector());
+    this.nodes.forEach(display=>display.renderLabel());
   }
 
   /*
-  @param src: contains data for each track that we will display.
-  @param indexes: the node index in the MCC for root, mrca, nodeA, and nodeB. Each can be `UNSET`.
-  @param nodeAIsUpper: when both nodeA and nodeB are set, indicates whether the display of
-    node A should be the upper track or the lower track
+  @param pairs: contains mutation data for each track that we will display.
+  @param rootNode: the root node of the tree we will display.
+    We can traverse the entire tree by traversing the children of each node.
   */
   setData(pairs: NodePair[], rootNode: TreeNode | null) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
 
-    const mutations: MutationDistribution[][] = [];
+    const pairsByDescendant: NodePair[] = [];
     pairs.forEach(pair=>{
       // index the mutations by the descendent
-      mutations[pair.descendant.index] = pair.mutations;
+      pairsByDescendant[pair.descendant.index] = pair;
     });
+    const lookup: TreeNodeDisplay[] = [];
     this.tipCount = 0;
     this.stepCount = 0;
     this.nodes.length = 0;
@@ -192,25 +180,30 @@ export class NodeSchematic {
       const q = [rootNode];
       while (q.length > 0) {
         const treeNode = q.shift() as TreeNode;
+        const node = treeNode.node;
         treeNode.children.forEach(tn=>q.push(tn));
-        let muts: Mutation[] = [];
-        if (mutations[treeNode.node.index]) {
-          muts = mutations[treeNode.node.index].map(md=>md.mutation);
+        const pair = pairsByDescendant[node.index];
+        let mutationCount = 0;
+        let relationType: NodeRelationType | typeof UNSET = UNSET;
+        if (pair) {// no pair for root
+          mutationCount = pair.mutations.length;
+          relationType = pair.relation;
         }
-        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode.node, treeNode, muts);
+        let parent = null;
+        if (treeNode.parent) {
+          parent = lookup[treeNode.parent.node.index];
+        }
+        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent);
         this.nodes.push(tnd);
+        lookup[node.index] = tnd;
       }
     }
-    console.log(this.stepCount, this.tipCount, this.nodes)
-
   }
 
 
-  highlightNode(node: DisplayNode, mutation: Mutation|null) : void {
-    if (node.index !== this.highlightedNode?.index || mutation !== this.highlightedMutation) {
+  highlightNode(node: DisplayNode) : void {
+    if (node.index !== this.highlightedNode?.index) {
       this.highlightedNode = node;
-      this.highlightedMutation = mutation;
-      this.handleMutationMatch(node, mutation);
     }
   }
 

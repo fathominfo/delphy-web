@@ -158,6 +158,7 @@ export class LineagesUI extends MccUI {
     super.resize();
     this.nodeMutationCharts.resize();
     this.nodeTimelines.resize();
+    this.nodeSchematic.resize();
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
     this.nodeTimelines.requestDraw();
@@ -238,7 +239,7 @@ export class LineagesUI extends MccUI {
       const { node, date, mutation } = this.coreData.getHighlights();
       (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
       this.nodeListDisplay.highlightNode(node);
-      this.nodeSchematic.highlightNode(node, mutation);
+      this.nodeSchematic.highlightNode(node);
       this.nodePrevalenceCanvas.highlightNode(node, date);
       this.nodeMutationCharts.highlightNode(node, date, mutation);
       this.nodeTimelines.highlightNode(node, date);

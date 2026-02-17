@@ -4,69 +4,94 @@
         {{> header_common }}
       </div>
     </header>
-    <div class="main-content visualizations--container">
-      <section id="lineages--mcc">
-        {{> mcc_tree }}
-        <div class="tree-hint-container">
-          <div class="tree-hint hover">Hover to preview a node.</div>
-          <div class="tree-hint hover-root hidden">Previewing <span class="node root">Root</span>.</div>
-          <div class="tree-hint hover-mrca hidden">Previewing <span class="node mrca">MRCA of A and B</span>.</div>
-          <div class="tree-hint hover-nodeA hidden">Previewing <span class="node nodeA">Selection A</span>.</div>
-          <div class="tree-hint hover-nodeB-descendant hidden">Previewing <span class="node nodeB">Selection B</span>, a descendant of A.</div>
-          <div class="tree-hint hover-nodeB-cousin hidden">Previewing <span class="node nodeB">Selection B</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
-          <div class="tree-hint preview-nodeA hidden">Previewing <span class="node nodeA">Selection A</span> <span class="click-hint">(click to confirm selection)</span>.</div>
-          <div class="tree-hint preview-nodeB-descendant hidden">Previewing <span class="node nodeB">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
-          <div class="tree-hint preview-nodeB-cousin hidden">Previewing <span class="node nodeB">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
-          <div class="tree-hint max-selections hidden">Remove a selection to explore other nodes.</div>
-          <div class="tree-hint zoom hidden">Click and drag to zoom to a selection area.</div>
+    <section class="main-content visualizations--container">
+      <div id="lineages--upper-row">
+        <div id="lineages--mcc">
+          {{> mcc_tree }}
+          <div class="tree-hint-container">
+            <div class="tree-hint hover">Hover to preview a node.</div>
+            <div class="tree-hint hover-root hidden">Previewing <span class="node root">Root</span>.</div>
+            <div class="tree-hint hover-mrca hidden">Previewing <span class="node mrca">MRCA of A and B</span>.</div>
+            <div class="tree-hint hover-nodeA hidden">Previewing <span class="node nodeA">Selection A</span>.</div>
+            <div class="tree-hint hover-nodeB-descendant hidden">Previewing <span class="node nodeB">Selection B</span>, a descendant of A.</div>
+            <div class="tree-hint hover-nodeB-cousin hidden">Previewing <span class="node nodeB">Selection B</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+            <div class="tree-hint preview-nodeA hidden">Previewing <span class="node nodeA">Selection A</span> <span class="click-hint">(click to confirm selection)</span>.</div>
+            <div class="tree-hint preview-nodeB-descendant hidden">Previewing <span class="node nodeB">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
+            <div class="tree-hint preview-nodeB-cousin hidden">Previewing <span class="node nodeB">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+            <div class="tree-hint max-selections hidden">Remove a selection to explore other nodes.</div>
+            <div class="tree-hint zoom hidden">Click and drag to zoom to a selection area.</div>
+          </div>
+          <div class="constrain-selection">
+            <input type="checkbox" id="lineages--constrain-selection" />
+            <label id="lineages--constrain-selection--label" for="lineages--constrain-selection">Only select branches appearing in <span class="cred-threshold"></span> or more of base trees</label>
+          </div>
+          {{> mcc_opts }}
         </div>
-        <div class="constrain-selection">
-          <input type="checkbox" id="lineages--constrain-selection" />
-          <label id="lineages--constrain-selection--label" for="lineages--constrain-selection">Only select branches appearing in <span class="cred-threshold"></span> or more of base trees</label>
-        </div>
-        {{> mcc_opts }}
-      </section>
-      <section id="lineages--right" class="charts--container dual">
-        <div id="lineages--overview" class="duo">
-          <div id="lineages--node-list" class="block left">
-            <div class="header">
-              <div class="title">
-                <h3>Nodes</h3>
-              </div>
-            </div>
-            <div class="lineages--node-item" data-nodetype="">
-              <div class="node-info">
-                <div class="node-icon"><div class="shape"></div></div>
-                <div class="node-description">
-                  <div class="node-title"><span class="node-name">Name</span> <span class="node-source">(inferred)</span></div>
-                  <div class="node-stats">
-                    <span class="node--tip-count">00 tips</span>
-                    <span class="mono-hover">, monophyletic
-                    in <span class="node--confidence">00%</span> of base trees
-                  </div>
-                  <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
-                  {{> lineages_node_metadata }}
-                </div>
-              </div>
-              <button type="button" class="node-dismiss" aria-label="Dismiss node">
-                <div class="box">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
-                  </svg>
-                </div>
-              </button>
-            </div>
-
-            <div class="id-lookup">
-              <form>
-                <label for="id-lookup--input">Look up a sequence id</label>
-                <div>
-                  <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
-                </div>
-                <div class="autocomplete-suggestion"></div>
-              </form>
+        <div id="lineages--node-list" class="">
+          <div class="header">
+            <div class="title">
+              <h3>Nodes</h3>
             </div>
           </div>
+          <div class="lineages--node-item" data-nodetype="">
+            <div class="node-info">
+              <div class="node-icon"><div class="shape"></div></div>
+              <div class="node-description">
+                <div class="node-title"><span class="node-name">Name</span> <span class="node-source">(inferred)</span></div>
+                <div class="node-stats">
+                  <span class="node--tip-count">00 tips</span>
+                  <span class="mono-hover">, monophyletic
+                  in <span class="node--confidence">00%</span> of base trees
+                </div>
+                <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
+                {{> lineages_node_metadata }}
+              </div>
+            </div>
+            <button type="button" class="node-dismiss" aria-label="Dismiss node">
+              <div class="box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
+                </svg>
+              </div>
+            </button>
+          </div>
+
+          <div class="id-lookup">
+            <form>
+              <label for="id-lookup--input">Look up a sequence id</label>
+              <div>
+                <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
+              </div>
+              <div class="autocomplete-suggestion"></div>
+            </form>
+          </div>
+        </div>
+        <div id="lineages--node-layout"  class="" data-duo="left" >
+
+          <div class="header">
+            <div class="title">
+              <h4>Node diagram</h4>
+            </div>
+          </div>
+
+          <div id="subway">
+            <svg width="700" height="430" viewBox="0 0 700 430">
+              <path class="connector" d="M0 0 L-45 0 -45 -15"></path>
+              <g class="label">
+                <rect x="-11" y="-10" width="22" height="20"></rect>
+                <text x="0" y="0">A</text>
+              </g>
+              <g class="mut-count">
+                <rect x="-56" y="-10" width="22" height="20"></rect>
+                <text x="-45" y="0">15</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div id="lineages--lower-row" class="charts--container dual">
+        <div id="lineages--overview" class="duo">
           <div id="lineages--prevalence" class="block right">
 
             <div class="header">
@@ -149,91 +174,6 @@
           </div>
         </div>
         <div id="lineages--relationships" class="duo">
-          <div id="lineages--node-layout"  class="block left" data-duo="left" >
-
-            <div class="header">
-              <div class="title">
-                <h4>Node diagram</h4>
-              </div>
-            </div>
-
-            <div id="subway" data-config="root">
-              <div class="lines line1">
-                <div class="line central" data-from="root" data-to="-" data-track="center">
-                  <div class="track"></div>
-                  <div class="termini">
-                    <div class="terminus enter">Root</div>
-                    <div class="terminus exit">MRCA</div>
-                  </div>
-                  <div class="transit">
-                    <div class="stations">
-                      <div data-mutation="" class="station">
-                        <div class="platform">
-                          <div class="passenger">
-                            <span class="transfer from"></span><span class="train"></span><span class="transfer to"></span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="signage">
-                      <span class="count">4</span>&nbsp;<span>mutations</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="lines line2">
-                <div class="line upper" data-from="-" data-to="-" data-track="up">
-                  <div class="track"></div>
-                  <div class="termini">
-                    <div class="terminus exit">A</div>
-                  </div>
-                  <div class="transit">
-                    <div class="stations">
-                    </div>
-                    <div class="signage">
-                      <span class="count">4</span>&nbsp;<span>mutations</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="line end" data-from="-" data-to="-" data-track="center">
-                  <div class="track"></div>
-                  <div class="termini">
-                    <div class="terminus exit"></div>
-                  </div>
-                  <div class="transit">
-                    <div class="stations">
-                    </div>
-                    <div class="signage">
-                      <span class="count">4</span>&nbsp;<span>mutations</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="line lower" data-from="mrca" data-to="b" data-track="down">
-                  <div class="track"></div>
-                  <div class="termini">
-                    <div class="terminus exit">B</div>
-                  </div>
-                  <div class="transit">
-                    <div class="stations">
-                      <!-- <div data-mutation="C1059T" class="station mt-?C1059T mt?-C1059T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">1059</span><span class="transfer to">T</span></div></div></div>
-                      <div data-mutation="C11916T" class="station mt-?C11916T mt?-C11916T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">11916</span><span class="transfer to">T</span></div></div></div>
-                      <div data-mutation="C18998T" class="station mt-?C18998T mt?-C18998T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">18998</span><span class="transfer to">T</span></div></div></div>
-                      <div data-mutation="G29540A" class="station mt-?G29540A mt?-G29540A"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">29540</span><span class="transfer to">A</span></div></div></div>
-                      <div data-mutation="A20553G" class="station mt-?A20553G mt?-A20553G"><div class="platform"><div class="passenger"><span class="from">A</span><span class="train">20553</span><span class="transfer to">G</span></div></div></div>
-                      <div data-mutation="T9429C" class="station mt-?T9429C mt?-T9429C"><div class="platform"><div class="passenger"><span class="from">T</span><span class="train">9429</span><span class="transfer to">C</span></div></div></div>
-                      <div data-mutation="G21724C" class="station mt-?G21724C mt?-G21724C"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">21724</span><span class="transfer to">C</span></div></div></div>
-                      <div data-mutation="G19525T" class="station mt-?G19525T mt?-G19525T"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">19525</span><span class="transfer to">T</span></div></div></div>
-                      <div data-mutation="G11083T" class="station mt-?G11083T mt?-G11083T"><div class="platform"><div class="passenger"><span class="from">G</span><span class="train">11083</span><span class="transfer to">T</span></div></div></div>
-                      <div data-mutation="C21757T" class="station mt-?C21757T mt?-C21757T"><div class="platform"><div class="passenger"><span class="from">C</span><span class="train">21757</span><span class="transfer to">T</span></div></div></div> -->
-                    </div>
-                    <div class="signage">
-                      <span class="count">10</span>&nbsp;<span>mutations</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div id="lineages--node-timelines" class="block right time-based" data-duo="right" data-element="lineage-emergence">
             <div class="header">
@@ -293,7 +233,7 @@
         </div>
 
 
-        <div id="lineages--list">
+        <div id="lineages--mutations">
           <div id="list--titles" class="duo">
             <div class="block left"></div>
             <div class="block right">
@@ -336,9 +276,9 @@
                     </div>
                   </div>
                   <h4>
-                    <span class="lineages--list-ancestor"></span>
+                    <span class="lineages--mutations-ancestor"></span>
                     to
-                    <span class="lineages--list-descendant"></span>
+                    <span class="lineages--mutations-descendant"></span>
                   </h4>
 
                   <!-- <span class="lineages--node-overlap-item">
@@ -400,8 +340,8 @@
             </div>
           </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
 
 
   </div>
