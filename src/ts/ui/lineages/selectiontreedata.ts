@@ -58,7 +58,7 @@ export class SelectionTreeData {
       throw new Error("can't build a tree out of nothing");
     }
     const { tree, nodeChildCount, mrcaMaker } = this;
-    const sortByGenerations = (a: DisplayNode, b: DisplayNode)=>a.generationsFromRoot - b.generationsFromRoot;
+    // const sortByGenerations = (a: TreeNode, b: TreeNode)=>a.node.generationsFromRoot - b.node.generationsFromRoot;
     const collectDescendantSelections = (tn: TreeNode, tips: string[])=>{
       if (tn.node.isInferred) {
         tn.children.forEach(c=>collectDescendantSelections(c, tips));
@@ -67,7 +67,12 @@ export class SelectionTreeData {
       }
     };
     let maxSteps = 0;
-    nodes.sort(sortByGenerations);
+    /*
+    process the nodes closer to root first,
+    so that ancestor nodes are created before their descendants.
+    */
+
+    nodes.sort((a: DisplayNode, b: DisplayNode)=>a.generationsFromRoot - b.generationsFromRoot);
     this.found = [];
     this.root = new TreeNode(nodes.shift() as DisplayNode);
     this.found[this.root.node.index] = this.root;
@@ -82,36 +87,49 @@ export class SelectionTreeData {
       if (ancestor === UNSET) {
         throw new Error("couldn't find an ancestral node. maybe the assumption that sorting by `generationsFromRoot` is a bad one?");
       }
-      let ancestorTreeNode = this.found[ancestor];
-      /*
-      if the ancestor already has a child, there may
-      be an MRCA for the nodes that is not this particular
-      ancestor
-      */
-      if (ancestorTreeNode.children.length > 0) {
-        const other: TreeNode = ancestorTreeNode.children[0];
-        const mrcaIndex: number = getMRCA(n.index, other.node.index, tree, nodeChildCount);
-        if (mrcaIndex !== ancestor) {
-          /*
-          create a TreeNode for the MRCA
-          and update the relationships
-          */
-          const mrca: DisplayNode = mrcaMaker(mrcaIndex);
-          const mrcaTreeNode = new TreeNode(mrca);
-          ancestorTreeNode.removeChild(other);
-          ancestorTreeNode.addChild(mrcaTreeNode);
-          mrcaTreeNode.addChild(other);
-          const tips: string[] = [n.name];
-          collectDescendantSelections(mrcaTreeNode, tips);
+      const ancestorTreeNode = this.found[ancestor];
+      if (ancestorTreeNode.children.length == 0) {
+        ancestorTreeNode.addChild(tn);
+      } else {
+        /*
+        if the ancestor already has a child, there may
+        be an MRCA for the nodes that is not this particular
+        ancestor
+        */
+        const mrcas: [TreeNode, number][] = ancestorTreeNode.children.map(other=>{
+          const mrcaIndex = getMRCA(n.index, other.node.index, tree, nodeChildCount);
+          return [other, mrcaIndex];
+        });
+        mrcas.forEach(([other, mrcaIndex])=>{
+          if (mrcaIndex !== ancestor) {
+            /*
+            create a TreeNode for the MRCA
+            and update the relationships
+            */
+            const mrca: DisplayNode = mrcaMaker(mrcaIndex);
+            const mrcaTreeNode = new TreeNode(mrca);
+            ancestorTreeNode.removeChild(other);
+            ancestorTreeNode.addChild(mrcaTreeNode);
+            mrcaTreeNode.addChild(other);
+            const tips: string[] = [n.name];
+            collectDescendantSelections(mrcaTreeNode, tips);
+            tips.sort();
+            mrca.name = `MRCA of ${tips.join(',')}`;
+            this.found[mrcaIndex] = mrcaTreeNode;
+            // console.log(mrca.name);
+            mrcaTreeNode.addChild(tn);
+          }
+        });
+        /* reset the name of the original parent to include all nodes */
+        const ogAncestor = this.found[ancestor];
+        if (!ogAncestor.node.isRoot) {
+          const tips: string[] = [];
+          collectDescendantSelections(ogAncestor, tips);
           tips.sort();
-          mrca.name = `MRCA of ${tips.join(',')}`;
-          this.found[mrcaIndex] = mrcaTreeNode;
-          console.log(mrca.name);
-          ancestorTreeNode = mrcaTreeNode;
+          ogAncestor.node.name = `MRCA of ${tips.join(',')}`;
+          // console.log(ogAncestor.node.name);
         }
       }
-
-      ancestorTreeNode.addChild(tn);
       this.found[n.index] = tn;
     });
 
@@ -120,6 +138,8 @@ export class SelectionTreeData {
     this.found.forEach((treeNode: TreeNode)=>{
       if (treeNode.children.length === 0) {
         tips.push(treeNode);
+      } else if (treeNode.children.length > 2) {
+        console.warn(`the schematic tree building is not binary`, treeNode);
       }
     });
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));

@@ -357,7 +357,7 @@ export class CoreLineagesData {
     if (nodeIndex === UNSET) return;
     if (this.selectedNodes.concat([this.rootNode]).map(node=>node.index).indexOf(nodeIndex) >= 0) return;
     if (nodeIndex !== this.highlightNode.index) {
-      console.log(` the developer needs to rethink their assumptions: 
+      console.warn(` the developer needs to rethink their assumptions: 
         the selected node ${nodeIndex} !== the highlight node ${this.highlightNode.index}`);
     }
     const selection = this.highlightNode;
