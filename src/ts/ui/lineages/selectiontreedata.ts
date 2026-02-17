@@ -1,4 +1,3 @@
-import { moduleRunnerTransform } from "vite";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
@@ -13,10 +12,7 @@ export class TreeNode {
   parent: TreeNode | null = null;
   children: TreeNode[] = [];
   stepsFromRoot = 0;
-  /* 0 - 1 */
-  xPos = 0;
-  /* 0 - 1 */
-  yPos = 0;
+  tipPlacement = 0;
 
   constructor(node: DisplayNode) {
     this.node = node;
@@ -58,14 +54,6 @@ export class SelectionTreeData {
       throw new Error("can't build a tree out of nothing");
     }
     const { tree, nodeChildCount, mrcaMaker } = this;
-    // const sortByGenerations = (a: TreeNode, b: TreeNode)=>a.node.generationsFromRoot - b.node.generationsFromRoot;
-    const collectDescendantSelections = (tn: TreeNode, tips: string[])=>{
-      if (tn.node.isInferred) {
-        tn.children.forEach(c=>collectDescendantSelections(c, tips));
-      } else {
-        tips.push(tn.node.name);
-      }
-    };
     let maxSteps = 0;
     /*
     process the nodes closer to root first,
@@ -100,6 +88,7 @@ export class SelectionTreeData {
           const mrcaIndex = getMRCA(n.index, other.node.index, tree, nodeChildCount);
           return [other, mrcaIndex];
         });
+        let assigned = false;
         mrcas.forEach(([other, mrcaIndex])=>{
           if (mrcaIndex !== ancestor) {
             /*
@@ -111,23 +100,27 @@ export class SelectionTreeData {
             ancestorTreeNode.removeChild(other);
             ancestorTreeNode.addChild(mrcaTreeNode);
             mrcaTreeNode.addChild(other);
-            const tips: string[] = [n.name];
-            collectDescendantSelections(mrcaTreeNode, tips);
-            tips.sort();
-            mrca.name = `MRCA of ${tips.join(',')}`;
-            this.found[mrcaIndex] = mrcaTreeNode;
-            // console.log(mrca.name);
             mrcaTreeNode.addChild(tn);
+            mrca.mrcaName = this.getMRCAName(mrcaTreeNode)
+            if (mrca.mrcaName.indexOf("MRCA") > 4) {
+              console.log("let's try this again");
+              this.getMRCAName(mrcaTreeNode)
+            }
+            this.found[mrcaIndex] = mrcaTreeNode;
+            assigned = true;
           }
         });
+        if (!assigned) {
+          ancestorTreeNode.addChild(tn);
+        }
         /* reset the name of the original parent to include all nodes */
-        const ogAncestor = this.found[ancestor];
-        if (!ogAncestor.node.isRoot) {
-          const tips: string[] = [];
-          collectDescendantSelections(ogAncestor, tips);
-          tips.sort();
-          ogAncestor.node.name = `MRCA of ${tips.join(',')}`;
-          // console.log(ogAncestor.node.name);
+        if (!ancestorTreeNode.node.isRoot) {
+          const mrcaName = this.getMRCAName(ancestorTreeNode);
+          ancestorTreeNode.node.mrcaName = mrcaName;
+          if (ancestorTreeNode.node.mrcaName.indexOf("MRCA") > 4) {
+            console.log("let's try this again");
+            this.getMRCAName(ancestorTreeNode);
+          }
         }
       }
       this.found[n.index] = tn;
@@ -144,8 +137,9 @@ export class SelectionTreeData {
     });
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
     const numTips = tips.length;
+    const midTips = numTips / 2;
     tips.forEach((tn, i)=>{
-      tn.yPos = i / (numTips - 1.0);
+      tn.tipPlacement = i - midTips;
     });
 
     const q: TreeNode[] = [this.root];
@@ -168,20 +162,44 @@ export class SelectionTreeData {
     while (q.length > 0) {
       const tn = q.pop() as TreeNode;
       const childCount = tn.children.length;
-      tn.xPos = tn.stepsFromRoot / (maxSteps - 1);
       /*
       given the way the queue is built up, each child will
-      have had its `yPos` set.
+      have had its `tipPlacement` set.
        */
       if (childCount > 0) {
-        tn.children.sort((a, b)=>a.yPos - b.yPos);
-        const total = tn.children.reduce((tot, child)=>tot + child.yPos, 0);
-        tn.yPos = total / childCount;
+        tn.children.sort((a, b)=>a.tipPlacement - b.tipPlacement);
+        const total = tn.children.reduce((tot, child)=>tot + child.tipPlacement, 0);
+        tn.tipPlacement = total / childCount;
+      } else if (tn.parent === null) {
+        tn.tipPlacement = 0;
       }
     }
 
+    // console.log('selection tree data ready');
+    // this.found.forEach(tn=>console.log(`   ${tn.node.index} ${tn.node.name} ${tn.xPos} ${tn.yPos} ${tn.stepsFromRoot} `));
 
 
+
+
+  }
+
+
+  collectDescendantSelections(tn: TreeNode, tips: string[]): void{
+    if (tn.node.isInferred) {
+      tn.children.forEach(c=>this.collectDescendantSelections(c, tips));
+    } else {
+      tips.push(tn.node.label);
+    }
+  }
+
+
+
+  getMRCAName(tnd: TreeNode): string {
+    const tips: string[] = [];
+    this.collectDescendantSelections(tnd, tips);
+    tips.sort();
+    const mrcaName = `MRCA of ${tips.join(',')}`;
+    return mrcaName;
   }
 
 

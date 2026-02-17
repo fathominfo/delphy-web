@@ -200,7 +200,7 @@ export class CoreLineagesData {
             if (getY(other.node.index) > getY(descendant.index)) {
               relation = NodeRelationType.upperDescendant;
             } else {
-              relation = NodeRelationType.upperDescendant;
+              relation = NodeRelationType.lowerDescendant;
             }
           }
           const nodePair: NodePair = this.assembleNodePair(ancestor.node, descendant, relation);
@@ -298,7 +298,7 @@ export class CoreLineagesData {
           if (match) {
             if (match.isInferred) {
               // set the label from the mrca
-              this.highlightNode.label = match.name;
+              this.highlightNode.label = match.label;
             } else {
               this.highlightNode.copyFrom(match);
             }
