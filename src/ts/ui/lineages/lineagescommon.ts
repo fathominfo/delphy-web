@@ -206,3 +206,6 @@ export const getMRCA = (index1: number, index2: number,
   }
   return mrcaIndex;
 }
+
+export type getYFunction = (_: number) => number;
+

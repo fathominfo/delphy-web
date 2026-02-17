@@ -2,7 +2,7 @@ import { moduleRunnerTransform } from "vite";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { getMRCA } from "./lineagescommon";
+import { getMRCA, getYFunction } from "./lineagescommon";
 
 
 export type MRCANodeCreator = (nodeIndex: number  )=>DisplayNode;
@@ -12,6 +12,11 @@ export class TreeNode {
   node: DisplayNode;
   parent: TreeNode | null = null;
   children: TreeNode[] = [];
+  stepsFromRoot = 0;
+  /* 0 - 1 */
+  xPos = 0;
+  /* 0 - 1 */
+  yPos = 0;
 
   constructor(node: DisplayNode) {
     this.node = node;
@@ -38,11 +43,14 @@ export class MiniMapData {
   tree: SummaryTree;
   nodeChildCount: number[];
   mrcaMaker: MRCANodeCreator;
+  getY: getYFunction;
 
-  constructor(tree:SummaryTree, nodeChildCount: number[], mrcaMaker: MRCANodeCreator) {
+  constructor(tree:SummaryTree, nodeChildCount: number[],
+    mrcaMaker: MRCANodeCreator, getY: getYFunction) {
     this.tree = tree;
     this.nodeChildCount = nodeChildCount;
     this.mrcaMaker = mrcaMaker;
+    this.getY = getY;
   }
 
   setData(nodes:DisplayNode[]) {
@@ -51,17 +59,19 @@ export class MiniMapData {
     }
     const { tree, nodeChildCount, mrcaMaker } = this;
     const sortByGenerations = (a: DisplayNode, b: DisplayNode)=>a.generationsFromRoot - b.generationsFromRoot;
-    const collectTips = (tn: TreeNode, tips: string[])=>{
+    const collectDescendantSelections = (tn: TreeNode, tips: string[])=>{
       if (tn.node.isInferred) {
-        tn.children.forEach(c=>collectTips(c, tips));
+        tn.children.forEach(c=>collectDescendantSelections(c, tips));
       } else {
         tips.push(tn.node.name);
       }
     };
+    let maxSteps = 0;
     nodes.sort(sortByGenerations);
     this.found = [];
     this.root = new TreeNode(nodes.shift() as DisplayNode);
     this.found[this.root.node.index] = this.root;
+
     nodes.forEach(n=>{
       let ancestor = n.index;
       const tn = new TreeNode(n);
@@ -92,7 +102,7 @@ export class MiniMapData {
           ancestorTreeNode.addChild(mrcaTreeNode);
           mrcaTreeNode.addChild(other);
           const tips: string[] = [n.name];
-          collectTips(mrcaTreeNode, tips);
+          collectDescendantSelections(mrcaTreeNode, tips);
           tips.sort();
           mrca.name = `MRCA of ${tips.join(',')}`;
           this.found[mrcaIndex] = mrcaTreeNode;
@@ -100,9 +110,58 @@ export class MiniMapData {
           ancestorTreeNode = mrcaTreeNode;
         }
       }
+
       ancestorTreeNode.addChild(tn);
       this.found[n.index] = tn;
     });
+
+
+    const tips: TreeNode[] = [];
+    this.found.forEach((treeNode: TreeNode)=>{
+      if (treeNode.children.length === 0) {
+        tips.push(treeNode);
+      }
+    });
+    tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
+    const numTips = tips.length;
+    tips.forEach((tn, i)=>{
+      tn.yPos = i / (numTips - 1.0);
+    });
+
+    const q: TreeNode[] = [this.root];
+    /*
+    build a queue starting with root,
+    followed by the children of each generation
+    */
+    let i = 0;
+    while (i < q.length) {
+      const tn = q[i];
+      if (!tn.parent) {
+        tn.stepsFromRoot = 0;
+      } else {
+        tn.stepsFromRoot = tn.parent.stepsFromRoot + 1;
+      }
+      tn.children.forEach(c=>q.push(c));
+      maxSteps = Math.max(maxSteps, tn.stepsFromRoot);
+      i++;
+    }
+    while (q.length > 0) {
+      const tn = q.pop() as TreeNode;
+      const childCount = tn.children.length;
+      tn.xPos = tn.stepsFromRoot / (maxSteps - 1);
+      /*
+      given the way the queue is built up, each child will
+      have had its `yPos` set.
+       */
+      if (childCount > 0) {
+        tn.children.sort((a, b)=>a.yPos - b.yPos);
+        const total = tn.children.reduce((tot, child)=>tot + child.yPos, 0);
+        tn.yPos = total / childCount;
+      }
+    }
+
+
+
   }
 
 

@@ -9,7 +9,7 @@ import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { getMRCA, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
+import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { MiniMapData, MRCANodeCreator, TreeNode } from "./minimapdata";
 
@@ -43,10 +43,9 @@ export type ChartData = {
   maxDate: number
   nodeComparisonData: NodeMutationsData[],
   nodePairs: NodePair[],
-  nodes: DisplayNode[]
+  nodes: DisplayNode[],
+  rootNode: TreeNode | null
 }
-
-type getYFunction = (_: number) => number;
 
 export type updateFunction = (_: ChartData)=>void;
 
@@ -145,7 +144,7 @@ export class CoreLineagesData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.minimapData = new MiniMapData(summaryTree, childCounts, mrcaMaker);
+      this.minimapData = new MiniMapData(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
@@ -172,7 +171,8 @@ export class CoreLineagesData {
         maxDate: UNSET,
         nodeComparisonData: [],
         nodePairs: [],
-        nodes: []
+        nodes: [],
+        rootNode: this.minimapData?.root || null
       };
       const summaryTree = this.summaryTree as SummaryTree;
       const minimapData = this.minimapData as MiniMapData;
@@ -207,7 +207,7 @@ export class CoreLineagesData {
           chartData.nodePairs.push(nodePair);
         }
       });
-      chartData.nodes = currentNodes;
+      chartData.nodes = currentNodes.filter(n=>!n.isInferred || n.isRoot);
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
         const ancestorSeries: Distribution = np.ancestor.series as Distribution;
         const descendantSeries: Distribution = np.descendant.series as Distribution;

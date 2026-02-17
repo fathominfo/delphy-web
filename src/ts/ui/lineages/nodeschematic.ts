@@ -5,6 +5,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { nfc, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
 import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair } from "./lineagescommon";
+import { TreeNode } from "./minimapdata";
 
 
 const MUTATION_LIMIT = 30;
@@ -13,15 +14,6 @@ const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivE
 MUTATION_TEMPLATE?.remove();
 
 type MATCH_HANDLER_TYPE = (node: DisplayNode | null, mutation: Mutation | null)=>void;
-
-const NODE_LABELS: string[] = [];
-{
-  // NODE_LABELS[DisplayNode.root] = "root";
-  // NODE_LABELS[DisplayNode.mrca] = "mrca";
-  // NODE_LABELS[DisplayNode.nodeA] = "a";
-  // NODE_LABELS[DisplayNode.nodeB] = "b";
-}
-
 
 class Track {
   startNode: DisplayNode | null = null
@@ -126,6 +118,20 @@ class Track {
 }
 
 
+class TreeNodeDisplay extends TreeNode {
+  upstreamMutations: Mutation[];
+
+  constructor(node: DisplayNode, src: TreeNode,
+    upstreamMutations: Mutation[]) {
+    super(node);
+    this.parent = src.parent;
+    this.children = src.children;
+    this.upstreamMutations = upstreamMutations;
+  }
+
+}
+
+
 /*
 this draws a simple schematic to show the relations
 between nodes in the tree. The current intent is that
@@ -136,47 +142,33 @@ export class NodeSchematic {
   highlightedNode: DisplayNode | null;
   highlightedMutation: Mutation | null;
   nodeHighlightCallback: HoverCallback;
-  src: NodePair[] = [];
-  indexes: number[] = [UNSET, UNSET, UNSET, UNSET];
-  dataConfig: string;
+  rootNode: TreeNodeDisplay | null = null;
   div: HTMLDivElement;
-  // centralLine: Track;
-  // endLine: Track;
-  // upperLine: Track;
-  // lowerLine: Track;
-  nodeAisUpper = true;
+  nodes: TreeNodeDisplay[] = [];
+  tipCount = 0;
+  stepCount = 0;
+
 
   constructor(nodeHighlightCallback: HoverCallback) {
     this.hasMRCA = false;
     this.highlightedNode = null;
     this.highlightedMutation = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    this.dataConfig = "root";
     this.div = document.querySelector("#subway") as HTMLDivElement;
-    // const handleMut: MATCH_HANDLER_TYPE = (node: DisplayNode, mutation: Mutation | null)=>nodeHighlightCallback(node, UNSET, mutation);
-    // this.centralLine = new Track(this.div.querySelector(".line.central"), handleMut);
-    // this.endLine = new Track(this.div.querySelector(".line.end"), handleMut);
-    // this.upperLine = new Track(this.div.querySelector(".line.upper"), handleMut);
-    // this.lowerLine = new Track(this.div.querySelector(".line.lower"), handleMut);
   }
 
 
   handleMutationMatch(node: DisplayNode | null, mutation: Mutation | null) {
-    // [ this.centralLine,
-    //   this.endLine,
-    //   this.upperLine,
-    //   this.lowerLine
-    // ].forEach((line:Track)=>line.handleMatch(node, mutation));
+    //
   }
 
-  requestDraw() {
-    requestAnimationFrame(()=>this.requestDraw());
+  requestRender() {
+    requestAnimationFrame(()=>this.render());
   }
 
 
-  draw() {
-    this.div.setAttribute("data-config", this.dataConfig);
-    // [this.centralLine, this.endLine, this.upperLine, this.lowerLine].forEach((line:Track)=>line.render());
+  render() {
+    //
   }
 
   /*
@@ -185,113 +177,31 @@ export class NodeSchematic {
   @param nodeAIsUpper: when both nodeA and nodeB are set, indicates whether the display of
     node A should be the upper track or the lower track
   */
-  setData(src: NodePair[], indexes: number[], nodeAIsUpper: boolean) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
-    this.src = src;
-    this.indexes = indexes;
-    this.nodeAisUpper = nodeAIsUpper;
 
-    const getMutationsFor = (nodeIndex: number)=>{
-      const data = src.filter(nodePair=>nodePair.descendant.index === nodeIndex)[0],
-        muts = !data? []: data.mutations.filter(md => md.getConfidence() >= mutationPrevalenceThreshold);
-      return muts;
-    }
-    this.dataConfig = "root";
-    const centerLabel = null;
-    const endLabel = null;
-    const upperLabel = null;
-    const lowerLabel = null;
-
-    const centralMutations: MutationDistribution[] = [];
-    const endMutations: MutationDistribution[] = [];
-    const upperMutations: MutationDistribution[] = [];
-    const lowerMutations: MutationDistribution[] = [];
-
-    // if (indexes[DisplayNode.mrca] !== UNSET) {
-    //   this.dataConfig = "mrca";
-    //   centerLabel = DisplayNode.mrca;
-    //   centralMutations = getMutationsFor(indexes[DisplayNode.mrca]);
-    //   if (nodeAIsUpper) {
-    //     upperLabel = DisplayNode.nodeA;
-    //     lowerLabel = DisplayNode.nodeB;
-    //     upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-    //     lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    //   } else {
-    //     upperLabel = DisplayNode.nodeB;
-    //     lowerLabel = DisplayNode.nodeA;
-    //     upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    //     lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-    //   }
-
-
-    // } else if (indexes[DisplayNode.nodeA] !== UNSET) {
-    //   const nodeA = indexes[DisplayNode.nodeA];
-    //   if (indexes[DisplayNode.nodeB] === UNSET) {
-    //     this.dataConfig = "a";
-    //     centerLabel = DisplayNode.nodeA;
-    //     centralMutations = getMutationsFor(nodeA);
-    //   } else {
-    //     /*
-    //     are nodes 1 and 2 both descended from root,
-    //     or is one the parent of the other?
-    //     */
-    //     const root = indexes[DisplayNode.root],
-    //       nodeA = indexes[DisplayNode.nodeA],
-    //       nodeB = indexes[DisplayNode.nodeB];
-    //     let nodeAParent: number = UNSET,
-    //       nodeBParent: number = UNSET;
-    //     src.forEach((pair: NodePair)=>{
-    //       if (pair.index2 === nodeA) nodeAParent = pair.index1;
-    //       else if (pair.index2 === nodeB) nodeBParent = pair.index1;
-    //     });
-    //     if (nodeAParent === root) {
-    //       if (nodeBParent === root) {
-    //         if (nodeAIsUpper)  {
-    //           this.dataConfig = "ab";
-    //           upperLabel = DisplayNode.nodeA;
-    //           lowerLabel = DisplayNode.nodeB;
-    //           upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-    //           lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    //         } else {
-    //           this.dataConfig = "ba";
-    //           upperLabel = DisplayNode.nodeB;
-    //           lowerLabel = DisplayNode.nodeA;
-    //           upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    //           lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-    //         }
-    //       } else if (nodeBParent === nodeA) {
-    //         this.dataConfig = "a2b";
-    //         centerLabel = DisplayNode.nodeA;
-    //         endLabel = DisplayNode.nodeB;
-    //         centralMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-    //         endMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    //       } else {
-    //         console.warn('the developer has unwarranted assumptions about node relations', nodeBParent, indexes);
-    //       }
-    //     } else if (nodeAParent === nodeB && nodeBParent === root) {
-    //       this.dataConfig = "b2a";
-    //       centerLabel = DisplayNode.nodeB;
-    //       endLabel = DisplayNode.nodeA;
-    //       centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    //       endMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-    //     } else {
-    //       console.warn('the developer has unwarranted assumptions about node relations', nodeAParent, nodeBParent, indexes);
-    //     }
-    //   }
-    // } else if (indexes[DisplayNode.nodeB] !== UNSET) {
-    //   this.dataConfig = "b";
-    //   centerLabel = DisplayNode.nodeB;
-    //   centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    // }
-
-    // this.centralLine.set( DisplayNode.root, centerLabel, centralMutations);
-    // this.endLine.set(centerLabel, endLabel, endMutations);
-    // this.upperLine.set(centerLabel, upperLabel, upperMutations);
-    // this.lowerLine.set(centerLabel, lowerLabel, lowerMutations);
-
-    requestAnimationFrame(()=>{
-      this.draw();
+    const mutations: MutationDistribution[][] = [];
+    pairs.forEach(pair=>{
+      // index the mutations by the descendent
+      mutations[pair.descendant.index] = pair.mutations;
     });
+    this.tipCount = 0;
+    this.stepCount = 0;
+    this.nodes.length = 0;
+    if (rootNode) {
+      const q = [rootNode];
+      while (q.length > 0) {
+        const treeNode = q.shift() as TreeNode;
+        treeNode.children.forEach(tn=>q.push(tn));
+        let muts: Mutation[] = [];
+        if (mutations[treeNode.node.index]) {
+          muts = mutations[treeNode.node.index].map(md=>md.mutation);
+        }
+        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode.node, treeNode, muts);
+        this.nodes.push(tnd);
+      }
+    }
+    console.log(this.stepCount, this.tipCount, this.nodes)
 
   }
 
