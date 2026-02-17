@@ -298,7 +298,7 @@ export class CoreLineagesData {
           if (match) {
             if (match.isInferred) {
               // set the label from the mrca
-              this.highlightNode.label = match.name;
+              this.highlightNode.label = match.label;
             } else {
               this.highlightNode.copyFrom(match);
             }

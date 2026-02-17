@@ -11,9 +11,20 @@ export const NULL_NODE_CODE = 999;
 
 export class DisplayNode {
   index: number = UNSET;
-  name = '';
+  /*
+  the letter assigned to a selected node,
+  or 'M' for an MRCA
+  */
   label = '';
   className = '';
+  /*
+  only set when a node is an MRCA,
+  comma delimited list of the selected nodes underneath it.
+  */
+  mrcaName = '';
+  /* the node name for assigned nodes */
+  name = '';
+
   private nameIndex: number;
   generationsFromRoot: number = UNSET;
   isInferred = false;
@@ -46,15 +57,18 @@ export class DisplayNode {
     series: Distribution, metadata: NodeMetadataValues | null) {
     if (isRoot) {
       this.name = "Root";
+      this.label = "Root";
     } else if (isInferred) {
       this.name = "MRCA";
+      this.label = "M";
     } else if (index === UNSET || index === NULL_NODE_CODE) {
       this.name = '';
+      this.label = this.name;
     } else {
       this.name = String.fromCharCode(ASCII_BASE + this.nameIndex);
+      this.label = this.name;
     }
     this.index = index;
-    this.label = this.name;
     this.className = this.name.toLowerCase() || '';
     this.generationsFromRoot = generationsFromRoot;
     this.isInferred = isInferred;
