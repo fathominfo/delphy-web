@@ -36,7 +36,7 @@ export class TreeNode {
 
 }
 
-export class MiniMapData {
+export class SelectionTreeData {
 
   root: TreeNode | null = null;
   found: TreeNode[] = [];

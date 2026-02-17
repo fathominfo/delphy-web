@@ -5,7 +5,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { nfc, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
 import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair } from "./lineagescommon";
-import { TreeNode } from "./minimapdata";
+import { TreeNode } from "./selectiontreedata";
 
 
 const MUTATION_LIMIT = 30;

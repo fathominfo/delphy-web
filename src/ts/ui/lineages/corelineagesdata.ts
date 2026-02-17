@@ -11,7 +11,7 @@ import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
-import { MiniMapData, MRCANodeCreator, TreeNode } from "./minimapdata";
+import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 
 
 
@@ -84,7 +84,7 @@ export class CoreLineagesData {
     inferred nodes
     highlight node
   */
-  private minimapData: MiniMapData | null = null;
+  private seletionTreeData: SelectionTreeData | null = null;
   private selectable = true;
   private constrainHoverByCredibility = false;
 
@@ -144,11 +144,11 @@ export class CoreLineagesData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.minimapData = new MiniMapData(summaryTree, childCounts, mrcaMaker, this.getY);
+      this.seletionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
-      this.minimapData.setData([this.rootNode]);
+      this.seletionTreeData.setData([this.rootNode]);
       if (this.sharedState.nodeList.length > 0) {
         // this.nodeAIndex = this.sharedState.nodeList[0];
         // if (this.sharedState.nodeList.length > 1) {
@@ -172,10 +172,10 @@ export class CoreLineagesData {
         nodeComparisonData: [],
         nodePairs: [],
         nodes: [],
-        rootNode: this.minimapData?.root || null
+        rootNode: this.seletionTreeData?.root || null
       };
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.minimapData as MiniMapData;
+      const minimapData = this.seletionTreeData as SelectionTreeData;
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
@@ -242,7 +242,7 @@ export class CoreLineagesData {
     if (nodeIndex === this.highlightNode.index && date === this.highlightDate && mutation === this.highlightMutation) {
       return false;
     }
-    const minimap = this.minimapData as MiniMapData;
+    const minimap = this.seletionTreeData as SelectionTreeData;
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
@@ -282,7 +282,7 @@ export class CoreLineagesData {
         */
         return;
       } else {
-        const minimap = this.minimapData as MiniMapData;
+        const minimap = this.seletionTreeData as SelectionTreeData;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
           hint = TreeHint.Zoom;
@@ -372,11 +372,8 @@ export class CoreLineagesData {
   dismissNode(nodeIndex: number) : void {
     const index = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
     const node = this.selectedNodes.splice(index, 1)[0];
-    const minimap = this.minimapData as MiniMapData;
     node.deactivate();
     /* reset the hover */
-    // this.highlightNode = this.getNodeDisplay(UNSET, false, false, this.highlightNode);
-
     this.hoverNode(UNSET, UNSET);
   }
 
