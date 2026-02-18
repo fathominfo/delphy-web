@@ -48,13 +48,19 @@
                   {{> lineages_node_metadata }}
                 </div>
               </div>
-              <button type="button" class="node-dismiss" aria-label="Dismiss node">
-                <div class="box">
+              <div class="node-actions">
+                <button type="button" class="node-set-root" aria-label="set node as root">
+                    Set as root
+                </button>
+                <button type="button" class="node-reset-root" aria-label="reset root">
+                    Reset root
+                </button>
+                <button type="button" class="node-dismiss" aria-label="Dismiss node" title="Dismiss node" >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
                   </svg>
-                </div>
-              </button>
+                </button>
+              </div>
             </div>
 
             <div class="id-lookup">

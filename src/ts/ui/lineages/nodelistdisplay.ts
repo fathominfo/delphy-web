@@ -72,9 +72,9 @@ class NodeDiv {
 
     div.setAttribute("data-nodetype", node.className.toLowerCase());
     this.nodeName.textContent = node.label;
-    this.nodeSource.classList.toggle("hidden", !node.isInferred && !node.isRoot);
-    this.dismiss.classList.toggle("hidden", node.isInferred);
-    this.monophyletic.classList.toggle("hidden", node.isRoot);
+    div.classList.toggle("is-mrca", node.isInferred && !node.isRoot);
+    div.classList.toggle("is-root", node.isRoot);
+    div.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
 
 
     if (!isTip) {
@@ -169,8 +169,8 @@ class DivPool {
     this.divs = new Set();
   }
 
-  getDiv(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
-    nodeZoomCallback: NodeCallback): NodeDiv {
+  getDiv(dismissCallback: NodeCallback, nodeHighlightCallback: HoverCallback,
+    nodeZoomCallback: NodeCallback, rootSelectCallback: NodeCallback): NodeDiv {
     let div: NodeDiv | null = null;
     for (const claim of this.divs) {
       if (!claim.inUse && div === null) {
@@ -190,6 +190,10 @@ class DivPool {
       actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback((div?.node as DisplayNode).index, UNSET, null));
       actualDiv.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
       actualDiv.addEventListener('click', () => nodeZoomCallback((div?.node as DisplayNode).index));
+      const setRootButton = actualDiv.querySelector('.node-set-root') as HTMLButtonElement;
+      const resetRootButton = actualDiv.querySelector('.node-reset-root') as HTMLButtonElement;
+      setRootButton.addEventListener('click', () => rootSelectCallback((div?.node as DisplayNode).index));
+      resetRootButton.addEventListener('click', () => rootSelectCallback(UNSET));
       this.divs.add({div, inUse: true});
     }
     return div;
@@ -218,13 +222,15 @@ export class NodeListDisplay {
   private dismissCallback: DismissCallback;
   private nodeHighlightCallback: HoverCallback;
   private nodeZoomCallback: NodeCallback;
+  private rootSelectCallback: NodeCallback;
 
   constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
-    nodeZoomCallback: NodeCallback) {
+    nodeZoomCallback: NodeCallback, rootSelectCallback: NodeCallback) {
     this.pool = new DivPool();
     this.dismissCallback = dismissCallback;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.nodeZoomCallback = nodeZoomCallback;
+    this.rootSelectCallback = rootSelectCallback;
     (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
   }
 
@@ -232,7 +238,7 @@ export class NodeListDisplay {
     const index = node.index;
     let nodeDiv = this.nodeDivs[index];
     if (!nodeDiv) {
-      nodeDiv = this.pool.getDiv(this.dismissCallback, this.nodeHighlightCallback, this.nodeZoomCallback);
+      nodeDiv = this.pool.getDiv(this.dismissCallback, this.nodeHighlightCallback, this.nodeZoomCallback, this.rootSelectCallback);
       this.nodeDivs[index] = nodeDiv;
     }
     this.nodes[index] = node;

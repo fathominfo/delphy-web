@@ -396,7 +396,7 @@ details {
 
 .lineages--node-item {
   position: relative;
-  display: flex;
+  // display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: flex-start;
@@ -457,6 +457,10 @@ details {
     line-height: var(--selection-node-line-height);
   }
 
+  .node-source {
+    display: none;
+  }
+
   .node-stats, .tip-info {
     display: flex;
     flex-direction: row;
@@ -482,16 +486,36 @@ details {
     font-weight: 800;
   }
 
+  .node-actions {
+    position: absolute;
+    display: flex;
+    right: 0px;
+    top: 0px;
+  }
+
+
+  .node-set-root {
+    display: inline-block;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+  .node-reset-root {
+    display: none;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity .15s;
+  }
+
+
+
   .node-dismiss {
     flex-shrink: 0;
     width: var(--selection-remove-size);
     height: var(--selection-remove-size);
     cursor: pointer;
-
-    .box {
-      width: 100%;
-      height: 100%;
-    }
+    position: relative;
 
     path {
       fill: var(--selection-static-icon-fill-static);
@@ -504,8 +528,27 @@ details {
   }
 
 
-  &.lowlight {
-    opacity: 0.3;
+
+
+  &:hover {
+    .node-set-root {
+      pointer-events: all;
+      opacity: 1;
+    }
+  }
+
+  &.is-inferred {
+    .node-source { display: inline-block; }
+    .node-dismiss { display: none; }
+  }
+
+  &.is-root {
+    .mono-hover {display: none;}
+  }
+
+  &.is-set-root {
+    .node-set-root { display: none; }
+    .node-reset-root { display: inline-block; }
   }
 
 
@@ -523,6 +566,11 @@ details {
     opacity: var(--selection-unmatching-opacity);
   }
 
+  &.lowlight {
+    opacity: 0.3;
+  }
+
+  /* settings for each node */
 
   &[data-nodetype="root"], &[data-nodetype="mrca"] {
     .node-icon .shape {

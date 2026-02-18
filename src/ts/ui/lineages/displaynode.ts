@@ -27,6 +27,35 @@ export class DisplayNode {
 
   private nameIndex: number;
   generationsFromRoot: number = UNSET;
+  /*
+  `isInferred` applies to inner nodes that are found
+  automatically, like the root of the tree or
+  most recent common ancestors (MRCAs).
+  `isRoot` is applied to the root of the tree, which
+  by default is identified by the delphy engine.
+
+  However! The user has the option to choose a
+  different root for the tree. In that case,
+  `isRoot` will be true, but `isInferred` will be false.
+
+  If a node is neither inferred or root, it has
+  been chosen by the user. If that's just by
+  hover, then `isLocked` will be false. If it
+  is clicked, then `isLocked` will be true (until
+  it is dismissed).
+
+  Here's a truth table for isRoot and isInferred:
+
+                      not root         is root
+                   ---------------+--------------
+    is inferred   |   MRCA             actual root
+                  +
+    not inferred  |   node chosen      root chosen
+                  |   by user          by user
+
+  */
+
+
   isInferred = false;
   isRoot = false;
   isLocked = false;

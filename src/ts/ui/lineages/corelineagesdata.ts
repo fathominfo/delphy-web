@@ -84,7 +84,7 @@ export class CoreLineagesData {
     inferred nodes
     highlight node
   */
-  private seletionTreeData: SelectionTreeData | null = null;
+  private selectionTreeData: SelectionTreeData | null = null;
   private selectable = true;
   private constrainHoverByCredibility = false;
 
@@ -144,11 +144,11 @@ export class CoreLineagesData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.seletionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
+      this.selectionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
-      this.seletionTreeData.setData([this.rootNode]);
+      this.selectionTreeData.setData([this.rootNode]);
       if (this.sharedState.nodeList.length > 0) {
         // this.nodeAIndex = this.sharedState.nodeList[0];
         // if (this.sharedState.nodeList.length > 1) {
@@ -172,10 +172,10 @@ export class CoreLineagesData {
         nodeComparisonData: [],
         nodePairs: [],
         nodes: [],
-        rootNode: this.seletionTreeData?.root || null
+        rootNode: this.selectionTreeData?.root || null
       };
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.seletionTreeData as SelectionTreeData;
+      const minimapData = this.selectionTreeData as SelectionTreeData;
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
@@ -242,7 +242,7 @@ export class CoreLineagesData {
     if (nodeIndex === this.highlightNode.index && date === this.highlightDate && mutation === this.highlightMutation) {
       return false;
     }
-    const minimap = this.seletionTreeData as SelectionTreeData;
+    const minimap = this.selectionTreeData as SelectionTreeData;
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
@@ -282,7 +282,7 @@ export class CoreLineagesData {
         */
         return;
       } else {
-        const minimap = this.seletionTreeData as SelectionTreeData;
+        const minimap = this.selectionTreeData as SelectionTreeData;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
           hint = TreeHint.Zoom;
@@ -355,12 +355,23 @@ export class CoreLineagesData {
 
   selectNode(nodeIndex: number) : void {
     if (nodeIndex === UNSET) return;
-    if (this.selectedNodes.concat([this.rootNode]).map(node=>node.index).indexOf(nodeIndex) >= 0) return;
+    const currentNodes = this.selectedNodes.concat([this.rootNode]);
+    if (currentNodes.map(node=>node.index).indexOf(nodeIndex) >= 0) return;
+    let selection: DisplayNode = this.highlightNode;
     if (nodeIndex !== this.highlightNode.index) {
-      console.warn(` the developer needs to rethink their assumptions: 
-        the selected node ${nodeIndex} !== the highlight node ${this.highlightNode.index}`);
+      /* could the node be an MRCA? That would not be in currentNodes */
+      const minimap = this.selectionTreeData as SelectionTreeData;
+      const mrcaTreeNode = minimap.found.filter(treeNode=>{
+        return treeNode
+          && treeNode.node.isInferred
+          && treeNode.node.index === nodeIndex;
+      })[0];
+      if (mrcaTreeNode) {
+        selection = mrcaTreeNode.node;
+      } else {
+        selection = this.getNodeDisplay(nodeIndex, false, false);
+      }
     }
-    const selection = this.highlightNode;
     selection.lock();
     this.selectedNodes.push(selection);
     /* prep the next hover */
@@ -375,6 +386,14 @@ export class CoreLineagesData {
     node.deactivate();
     /* reset the hover */
     this.hoverNode(UNSET, UNSET);
+  }
+
+  selectRoot(nodeIndex: number) : void {
+    let rootIndex = nodeIndex;
+    if (nodeIndex === UNSET) {
+      rootIndex = (this.summaryTree as SummaryTree).getRootIndex();
+    }
+    console.log(` gonna set root to ${ rootIndex}`);
   }
 
 
