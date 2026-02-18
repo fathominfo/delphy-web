@@ -1,6 +1,4 @@
-import { YSpacing, Topology, ColorOption, Presentation,
-  Y_EVEN_SPACING, Y_GENETIC_DISTANCE, TOPOLOGY_MCC, TOPOLOGY_BEST_OF,
-  COLOR_CONF, COLOR_METADATA, PRESENTATION_ALL, PRESENTATION_UMBRELLA,
+import { ColorOption, COLOR_CONF, COLOR_METADATA,
   CONFIDENCE_DEFAULT, ColorDict, Screens, NavigateFunctionType, UNDEF,
   ZoomFnc,
   UNSET} from './common';
@@ -18,14 +16,8 @@ type returnless = ()=>void;
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 
 
-const Y_EVEN_SELECTOR = `input[name=mcc-opt--y-spacing][value=${Y_EVEN_SPACING}]`,
-  Y_GENETIC_DISTANCE_SELECTOR = `input[name=mcc-opt--y-spacing][value=${Y_GENETIC_DISTANCE}]`,
-  TOPO_MCC_SELECTOR = `input[name=mcc-opt--topology][value=${TOPOLOGY_MCC}]`,
-  TOPO_BEST_SELECTOR = `input[name=mcc-opt--topology][value=${TOPOLOGY_BEST_OF}]`,
-  COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`,
+const  COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`,
   COLOR_META_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_METADATA}]`,
-  PRESENTATION_ALL_SELECTOR = `input[name=mcc-opt--nodes][value=${PRESENTATION_ALL}]`,
-  PRESENTATION_UMBRELLA_SELECTOR = `input[name=mcc-opt--nodes][value=${PRESENTATION_UMBRELLA}]`,
   CONFIDENCE_RANGE_SELECTOR = '.mcc-opt--confidence-range',
   CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout',
   ZOOM_RESET_SELECTOR = '.mcc-zoom-button.reset';
@@ -33,15 +25,9 @@ const Y_EVEN_SELECTOR = `input[name=mcc-opt--y-spacing][value=${Y_EVEN_SPACING}]
 
 export class MccConfig {
 
-  ySpacing: YSpacing;
-  topology: Topology;
   colorOption: ColorOption;
-  presentation: Presentation;
   confidenceThreshold: number;
-  ySpacingCallback: ChangeHandler;
-  topologyCallback: ChangeHandler;
   colorCallback: ChangeHandler;
-  presentationCallback: ChangeHandler;
   confidenceCallback: (value: number) => void;
   zoomResetCallback: returnless;
 
@@ -72,10 +58,7 @@ export class MccConfig {
 
 
   constructor(goTo: NavigateFunctionType) {
-    this.ySpacing = YSpacing.even;
-    this.topology = Topology.mcc;
     this.colorOption = ColorOption.confidence;
-    this.presentation = Presentation.all;
     this.confidenceThreshold = CONFIDENCE_DEFAULT / 100;
     this.verticalZoom = 1;
     this.zoomCenterY = 0.5;
@@ -83,21 +66,6 @@ export class MccConfig {
     this.zoomCenterX = 0.5;
     this.colorChooser = new ColorChooser();
     this.metadataColorsDirty = false;
-
-    this.ySpacingCallback = event=>{
-      const target = event.target as HTMLInputElement;
-      if (target) {
-        const spacing = target.value === Y_EVEN_SPACING ? YSpacing.even : YSpacing.genetic;
-        this.setSpacing(spacing);
-      }
-    };
-    this.topologyCallback = event=>{
-      const target = event.target as HTMLInputElement;
-      if (target) {
-        const topology = target.value  === TOPOLOGY_MCC ? Topology.mcc : Topology.bestof;
-        this.setTopology(topology);
-      }
-    };
     this.colorCallback = event=>{
       const target = event.target as HTMLInputElement;
       if (target) {
@@ -108,13 +76,6 @@ export class MccConfig {
         } else {
           this.setColorSystem(color);
         }
-      }
-    };
-    this.presentationCallback = event=>{
-      const target = event.target as HTMLInputElement;
-      if (target) {
-        const pres = target.value === PRESENTATION_ALL ? Presentation.all : Presentation.umbrella;
-        this.setPresentation(pres);
       }
     };
     this.confidenceCallback = (value: number) => {
@@ -192,14 +153,8 @@ export class MccConfig {
         }
         return ele;
       };
-      addListener(Y_EVEN_SELECTOR, this.ySpacingCallback, this.ySpacing === YSpacing.even);
-      addListener(Y_GENETIC_DISTANCE_SELECTOR, this.ySpacingCallback, this.ySpacing === YSpacing.genetic);
-      addListener(TOPO_MCC_SELECTOR, this.topologyCallback, this.topology === Topology.mcc);
-      addListener(TOPO_BEST_SELECTOR, this.topologyCallback, this.topology === Topology.bestof);
       addListener(COLOR_CONF_SELECTOR, this.colorCallback, this.colorOption === ColorOption.confidence);
       addListener(COLOR_META_SELECTOR, this.colorCallback, this.colorOption === ColorOption.metadata);
-      addListener(PRESENTATION_ALL_SELECTOR, this.presentationCallback, this.presentation === Presentation.all);
-      addListener(PRESENTATION_UMBRELLA_SELECTOR, this.presentationCallback, this.presentation === Presentation.umbrella);
 
       const readout = div.querySelector(CONFIDENCE_READOUT_SELECTOR) as HTMLSpanElement;
       this.confidenceCallback = (value: number)=>{
@@ -253,21 +208,6 @@ export class MccConfig {
   }
 
 
-
-  setSpacing(spacing: YSpacing): void {
-    if (spacing !== this.ySpacing) {
-      this.ySpacing = spacing;
-      this.updateCallback();
-    }
-  }
-
-  setTopology(topology: Topology): void {
-    if (topology !== this.topology) {
-      this.topology = topology;
-      this.updateCallback();
-    }
-  }
-
   setColorSystem(option: ColorOption): void {
     // console.debug('setColorSystem', color);
     let updatingColor = option !== this.colorOption || (option === ColorOption.metadata && this.metadataColorsDirty);
@@ -281,13 +221,6 @@ export class MccConfig {
       if (option === ColorOption.metadata) {
         this.metadataColorsDirty = false;
       }
-    }
-  }
-
-  setPresentation(presentation: Presentation) : void {
-    if (presentation !== this.presentation) {
-      this.presentation = presentation;
-      this.updateCallback();
     }
   }
 
@@ -356,13 +289,8 @@ export class MccConfig {
           console.debug(`could not find "${selector}"`);
         }
       }
-      removeChangeListener(Y_EVEN_SELECTOR, this.ySpacingCallback);
-      removeChangeListener(Y_GENETIC_DISTANCE_SELECTOR, this.ySpacingCallback);
-      removeChangeListener(TOPO_MCC_SELECTOR, this.topologyCallback);
-      removeChangeListener(TOPO_BEST_SELECTOR, this.topologyCallback);
       removeChangeListener(COLOR_CONF_SELECTOR, this.colorCallback);
       removeChangeListener(COLOR_META_SELECTOR, this.colorCallback);
-      // removeChangeListener(CONFIDENCE_RANGE_SELECTOR, this.confidenceCallback);
       const removeClickListener = (selector: string, callback:returnless)=>{
         const ele = div.querySelector(selector) as HTMLInputElement;
         if (ele) {
@@ -379,9 +307,9 @@ export class MccConfig {
   exportConfig() : ConfigExport {
     const exportData: ConfigExport = {
       confidence : this.confidenceThreshold * 100,
-      topology : this.topology === Topology.mcc ? 0 : 1,
-      presentation : this.presentation === Presentation.all ? 0 : 1,
-      spacing : this.ySpacing === YSpacing.even ? 0 : 1,
+      topology : 0,
+      presentation : 0,
+      spacing : 0,
       colorBy : this.colorOption === ColorOption.confidence ? 0 : 1,
       burnin : 0,
       metadataPresent : 0,
@@ -406,22 +334,9 @@ export class MccConfig {
   }
 
 
-  // this.ySpacing = YSpacing.even;
-  //     this.topology = Topology.mcc;
-  //     this.colorOption = ColorOption.confidence;
-  //     this.presentation = Presentation.all;
-  //     this.confidenceThreshold = CONFIDENCE_DEFAULT / 100;
-  //     this.verticalZoom = 1;
-  //     this.zoomCenterY = 0.5;
-  //     this.horizontalZoom = 1;
-  //     this.zoomCenterX = 0.5;
-
 
   importConfig(config: ConfigExport): void {
     this.confidenceThreshold = config.confidence ? config.confidence / 100.0 : CONFIDENCE_DEFAULT;
-    this.topology = !config.topology ? Topology.mcc : Topology.bestof;
-    this.presentation = !config.presentation ? Presentation.all : Presentation.umbrella;
-    this.ySpacing = !config.spacing ? YSpacing.even : YSpacing.genetic;
     if (config.metadataPresent === 1) {
       this.colorOption = !config.colorBy ? ColorOption.confidence : ColorOption.metadata;
       this.metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
@@ -465,10 +380,6 @@ export class MccConfig {
   setMetadataKeyColor(field: string, key: string, color: string): void {
     if (this.metadataColors[field]?.[key]) {
       this.metadataColors[field][key].color = color;
-      // const undefColor = `#${this.colorChooser.getUndefColor()}`;
-      // if (isActive && this.metadataColors[field][key].color == undefColor) {
-      //   this.metadataColors[field][key].color =
-      // }
     }
   }
 
@@ -476,10 +387,6 @@ export class MccConfig {
   setMetadataKeyActive(field: string, key: string, isActive=false): void {
     if (this.metadataColors[field]?.[key]) {
       this.metadataColors[field][key].active = isActive;
-      // const undefColor = `#${this.colorChooser.getUndefColor()}`;
-      // if (isActive && this.metadataColors[field][key].color == undefColor) {
-      //   this.metadataColors[field][key].color =
-      // }
     }
   }
 

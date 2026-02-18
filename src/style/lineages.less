@@ -506,7 +506,7 @@ details {
   .node-reset-root {
     display: none;
     pointer-events: none;
-    opacity: 1;
+    opacity: 0;
     transition: opacity .15s;
   }
 
@@ -561,7 +561,7 @@ details {
 
 
   &:hover {
-    .node-set-root {
+    .node-set-root, .node-reset-root {
       pointer-events: all;
       opacity: 1;
     }

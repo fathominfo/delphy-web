@@ -5,7 +5,7 @@ import { HoverCallback, NodeCallback } from './lineagescommon';
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
 const NODE_DIV_TEMPLATE = document.querySelector(".lineages--node-item") as HTMLDivElement;
-const CONTAINER = document.querySelector("#lineages--node-list") as HTMLElement
+const CONTAINER = document.querySelector("#lineages--node-items") as HTMLElement
 NODE_DIV_TEMPLATE.remove();
 
 
@@ -234,6 +234,9 @@ export class NodeListDisplay {
     if (!nodeDiv) {
       nodeDiv = this.pool.getDiv(this.dismissCallback, this.nodeHighlightCallback, this.nodeZoomCallback, this.rootSelectCallback);
       this.nodeDivs[index] = nodeDiv;
+    }
+    if (node.isRoot) {
+      CONTAINER.insertBefore(nodeDiv.div, CONTAINER.firstChild);
     }
     this.nodes[index] = node;
     nodeDiv.setData(node);

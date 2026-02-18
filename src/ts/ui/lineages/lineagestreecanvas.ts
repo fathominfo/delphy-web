@@ -104,23 +104,23 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     const highlightNode = this.highlightedNode;
     const {ancestor, descendant} = pair;
     const mcc = this.tree as SummaryTree;
-    let parentIndex = descendant.index;
-    let x = this.getZoomX(mcc.getTimeOf(parentIndex)),
-      y = this.getZoomY(parentIndex);
+    let x = this.getZoomX(mcc.getTimeOf(descendant.index)),
+      y = this.getZoomY(descendant.index);
     let py, px;
     ctx.globalAlpha = highlightNode === null || descendant === highlightNode ? 1 : 0.5;
     ctx.strokeStyle = descendant.getStroke();
     ctx.lineWidth = parseFloat(getCSSValue("--lineages-tree-descent-stroke-weight"));
     ctx.beginPath();
     ctx.moveTo(x, y);
+    let parentIndex = mcc.getParentIndexOf(descendant.index);
     while (parentIndex !== ancestor.index && parentIndex !== UNSET) {
-      parentIndex = mcc.getParentIndexOf(parentIndex);
       px = this.getZoomX(mcc.getTimeOf(parentIndex));
       py = this.getZoomY(parentIndex);
       ctx.lineTo(px, y);
       ctx.lineTo(px, py);
       x = px;
       y = py;
+      parentIndex = mcc.getParentIndexOf(parentIndex);
     }
     ctx.stroke();
   }
