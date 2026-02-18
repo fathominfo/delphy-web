@@ -462,7 +462,6 @@ details {
   }
 
   .node-stats, .tip-info {
-    display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     width: 100%;
@@ -481,6 +480,9 @@ details {
     }
   }
 
+
+  .node-stats { display: flex; }
+  .tip-info { display: none; }
 
   .tip-id {
     font-weight: 800;
@@ -527,15 +529,13 @@ details {
 
   }
 
-
-
-
-  &:hover {
-    .node-set-root {
-      pointer-events: all;
-      opacity: 1;
+  &.is-tip {
+    .node-stats, .node-set-root, .node-reset-root {
+      display: none;
     }
+    .tip-info { display: flex; }
   }
+
 
   &.is-inferred {
     .node-source { display: inline-block; }
@@ -544,6 +544,9 @@ details {
 
   &.is-root {
     .mono-hover {display: none;}
+    .node-set-root, .node-reset-root {
+      display: none;
+    }
   }
 
   &.is-set-root {
@@ -555,6 +558,15 @@ details {
   &.locked .node-dismiss {
     display: block;
   }
+
+
+  &:hover {
+    .node-set-root {
+      pointer-events: all;
+      opacity: 1;
+    }
+  }
+
 
   &.matching {
     background-color: var(--selection-fill-on);

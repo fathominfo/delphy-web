@@ -150,6 +150,10 @@ export class DisplayNode {
     this.unlock();
     this.index = UNSET;
   }
+
+  isTip(): boolean {
+    return this.childCount <= 1;
+  }
 }
 
 

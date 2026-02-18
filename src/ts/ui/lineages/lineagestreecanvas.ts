@@ -3,7 +3,7 @@ import { PdfCanvas } from "../../util/pdfcanvas";
 import { getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
-import { TreeSelectCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
+import { NodeCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
 import { DateLabel } from "../datelabel";
 import { DisplayNode } from "./displaynode";
 
@@ -27,7 +27,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     highlightCanvas: HTMLCanvasElement,
     highlightCtx: CanvasRenderingContext2D,
     hoverCallback: TreeHoverCallback,
-    selectionCallback: TreeSelectCallback
+    selectionCallback: NodeCallback
   ) {
     super(canvas, ctx);
     this.highlightCanvas = highlightCanvas;

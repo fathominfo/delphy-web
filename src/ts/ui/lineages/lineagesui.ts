@@ -1,10 +1,10 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
-import { Pythia } from '../../pythia/pythia';
 import { MccUI } from '../mccui';
 import { DataResolveType, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
-import { HoverCallback, TreeHoverCallback, NodeCallback,
-  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES } from './lineagescommon';
+import { HoverCallback, NodeCallback,
+  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
+  TreeHoverCallback} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';

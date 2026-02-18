@@ -1,6 +1,6 @@
 import { UNSET, getPercentLabel } from '../common';
 import { DisplayNode } from './displaynode';
-import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
+import { HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
@@ -51,8 +51,6 @@ class NodeDiv {
       div,
       countSpan,
       confidenceSpan,
-      nodeStats,
-      nodeIsTip,
       tipIdSpan,
       mdDiv} = this;
 
@@ -65,28 +63,24 @@ class NodeDiv {
       CONTAINER.appendChild(div);
     }
 
-    div.classList.add('active');
-    div.classList.toggle('locked', node.isLocked);
-    const isTip = node.childCount === 1;
-    div.classList.toggle("is-tip", isTip);
 
+    div.classList.add('active');
     div.setAttribute("data-nodetype", node.className.toLowerCase());
     this.nodeName.textContent = node.label;
+
+    div.classList.toggle('locked', node.isLocked);
+    div.classList.toggle("is-tip", node.isTip());
     div.classList.toggle("is-mrca", node.isInferred && !node.isRoot);
-    div.classList.toggle("is-root", node.isRoot);
+    div.classList.toggle("is-root", node.isRoot && node.isInferred);
     div.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
 
 
-    if (!isTip) {
-      nodeStats.classList.remove("hidden");
-      nodeIsTip.classList.add("hidden");
-      countSpan.innerText = `${node.childCount} tip${node.childCount === 1 ? '' : 's'}`;
+    if (!node.isTip()) {
+      countSpan.innerText = `${node.childCount} tip${node.isTip() ? '' : 's'}`;
       if (confidenceSpan) {
         confidenceSpan.innerText = `${getPercentLabel(node.confidence)}%`;
       }
     } else {
-      nodeStats.classList.add("hidden");
-      nodeIsTip.classList.remove("hidden");
       if (DEBUG) {
         tipIdSpan.innerText = `${node.index} `;
       }
@@ -120,7 +114,7 @@ class NodeDiv {
           const valueCountPair = item.querySelector(".pair--value-count") as HTMLElement;
           item.querySelectorAll(".pair--value-count").forEach(el => el.remove());
 
-          if (!isTip) {
+          if (!node.isTip()) {
             const tipCounts = item.querySelector(".tip-counts") as HTMLElement;
             Object.entries(value.counts).forEach(([val, count])=>{
               const pair = valueCountPair.cloneNode(true) as HTMLElement;
@@ -219,12 +213,12 @@ export class NodeListDisplay {
   private nodeDivs: (NodeDiv | null)[] = [];
   private pool: DivPool;
   private nodes: (DisplayNode | null)[] = [];
-  private dismissCallback: DismissCallback;
+  private dismissCallback: NodeCallback;
   private nodeHighlightCallback: HoverCallback;
   private nodeZoomCallback: NodeCallback;
   private rootSelectCallback: NodeCallback;
 
-  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
+  constructor(dismissCallback: NodeCallback, nodeHighlightCallback: HoverCallback,
     nodeZoomCallback: NodeCallback, rootSelectCallback: NodeCallback) {
     this.pool = new DivPool();
     this.dismissCallback = dismissCallback;
