@@ -64,7 +64,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
   }
 
   setMatching(matchNode:DisplayNode | null) {
-    if (matchNode === null) {
+    if (matchNode === null || matchNode.index === UNSET) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         nodeGroup.setNodeClass("matching", false);
@@ -74,7 +74,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         const node = nodeGroup.node;
-        if (node === matchNode) {
+        if (node?.index === matchNode.index) {
           nodeGroup.setNodeClass("matching");
           nodeGroup.setNodeClass("unmatching", false);
         } else {

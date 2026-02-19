@@ -82,7 +82,7 @@ export class NodeTimelines {
   data: DisplayNode[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
-  highlighedtNode: DisplayNode | null = null;
+  highlighedtNodeIndex: number = UNSET;
   highlightedDate: number = UNSET;
   nodeLabels: {[className: string]: NodeLabels} = {};
   hoverCallback: HoverCallback;
@@ -131,11 +131,7 @@ export class NodeTimelines {
     /* only take the nodes that have series */
     this.data = nodes.filter(n=>n.series);
     const allSeries = this.data.map(n=>n.series);
-    this.nodeTimesCanvas.setSeries(allSeries as Distribution[]);
-    this.nodeTimesCanvas.svgGroups.forEach((svgGroup, i)=>{
-      const node = this.data[i];
-      (svgGroup as NodeSVGSeriesGroup).setNode(node);
-    });
+    this.nodeTimesCanvas.setNodeSeries(this.data);
   }
 
   requestDraw() : void {
@@ -173,20 +169,20 @@ export class NodeTimelines {
   highlightNode(node: DisplayNode, date: number) : void {
     if (!this.data) return;
 
-    if (node.index !== this.highlighedtNode?.index) {
-      nodeComparisonContainer.classList.toggle("highlighting", node !== null);
+    if (node.index !== this.highlighedtNodeIndex) {
+      nodeComparisonContainer.classList.toggle("highlighting", node.index !== UNSET);
 
       this.nodeTimesCanvas.setMatching(node);
       Object.values(this.nodeLabels).forEach(nl=>nl.unhighlight());
 
       nodeComparisonContainer.classList.remove("highlighting");
-      if (node !== null) {
+      if (node.index !== UNSET) {
         const labels = this.nodeLabels[node.className];
         if (labels !== undefined) {
           labels.highlight();
         }
       }
-      this.highlighedtNode = node;
+      this.highlighedtNodeIndex = node.index;
     }
     if (date !== this.highlightedDate) {
       this.highlightedDate = date;
