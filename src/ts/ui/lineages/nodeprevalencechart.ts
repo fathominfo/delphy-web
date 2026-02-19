@@ -26,7 +26,12 @@ export class SVGPrevalenceMeanGroup {
     if (node.className) this.g.classList.add(node.className);
     this.shape = this.g.querySelector(".shape") as SVGPathElement;
     this.trend = this.g.querySelector(".trend") as SVGLineElement;
+    this.setNode(node);
     CONTAINER.appendChild(this.g);
+  }
+
+  setNode(node: DisplayNode) : void {
+    this.g.setAttribute("data-node", `${node.index}`);
   }
 
   toggleClass(className: string, on=true) {
@@ -189,16 +194,8 @@ export class NodePrevalenceChart {
     e.preventDefault();
     const actualTarget = e.target as SVGPathElement; // either .shape or .trend
     const group = actualTarget.parentNode as SVGGElement;
-    // let displayNode: DisplayNode = DisplayNode.UNSET;
-    // if (group.classList.contains("root")) {
-    //   displayNode = DisplayNode.root;
-    // } else if (group.classList.contains("mrca")) {
-    //   displayNode = DisplayNode.mrca;
-    // } else if (group.classList.contains("nodeA")) {
-    //   displayNode = DisplayNode.nodeA;
-    // } else if (group.classList.contains("nodeB")) {
-    //   displayNode = DisplayNode.nodeB;
-    // }
+    const indexString = group.getAttribute("data-node");
+    const index = indexString ? parseInt(indexString) : UNSET;
 
     const hoverX = e.offsetX,
       xPct = hoverX / this.width,
@@ -210,14 +207,13 @@ export class NodePrevalenceChart {
       requesting = true;
     }
 
-    // if (displayNode !== this.highlightDisplayNode) {
-    //   this.highlightDisplayNode = displayNode;
-    //   requesting = true;
-    // }
+    if (index !== this.highlightDisplayNode?.index) {
+      requesting = true;
+    }
 
-    // if (requesting) {
-    //   this.nodeHighlightCallback(displayNode, date, null);
-    // }
+    if (requesting) {
+      this.nodeHighlightCallback(index, date, null);
+    }
 
 
   }
@@ -241,8 +237,8 @@ export class NodePrevalenceChart {
         });
       } else {
         Object.values(this.svgGroups).forEach((group)=>{
-          group.toggleClass("matching", node === group.node);
-          group.toggleClass("unmatching", node !== group.node);
+          group.toggleClass("matching", node.index === group.node.index);
+          group.toggleClass("unmatching", node.index !== group.node.index);
         });
       }
       if (date === UNSET) {
@@ -297,6 +293,8 @@ export class NodePrevalenceChart {
       if (svgGroup === undefined) {
         svgGroup = new SVGPrevalenceMeanGroup(nd);
         svgGroups[className] = svgGroup;
+      } else {
+        svgGroup.setNode(nd);
       }
       svgGroup.toggleClass("hidden", false);
       svgGroup.shape.setAttribute("d", fillCoords);

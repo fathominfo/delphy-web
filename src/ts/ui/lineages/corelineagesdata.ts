@@ -190,7 +190,7 @@ export class CoreLineagesData {
         selectedRootIndex: this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index
       };
 
-      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node);
+      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
       const nodeDistributions = nodePrevalenceData.series;
@@ -214,7 +214,7 @@ export class CoreLineagesData {
           chartData.nodePairs.push(nodePair);
         }
       });
-      chartData.nodes = currentNodes.filter(n=>!n.isInferred || n.isRoot);
+      chartData.nodes = currentNodes;
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
         const ancestorSeries: Distribution = np.ancestor.series as Distribution;
         const descendantSeries: Distribution = np.descendant.series as Distribution;
