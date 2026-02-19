@@ -1,6 +1,6 @@
 import { Context2d } from "jspdf";
 import { PdfCanvas } from "../../util/pdfcanvas";
-import { getCSSValue, UNSET } from "../common";
+import { getCSSValue, getTimelineIndices, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { NodeCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
@@ -62,6 +62,9 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     if (this.configuredRootNode !== configuredRootNode) {
       this.configuredRootNode = configuredRootNode;
       this.setRootNode(configuredRootNode);
+      const [ minDate, maxDate ] = this.getDateRange();
+      const timlineIndices = getTimelineIndices(minDate, maxDate);
+      this.draw(minDate, maxDate, timlineIndices);
     }
   }
 

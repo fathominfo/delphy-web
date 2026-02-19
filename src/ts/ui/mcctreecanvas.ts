@@ -52,12 +52,14 @@ class CustomSubTree {
   minDate: number;
   maxDate: number;
   verticallySortedTips: number[];
+  nodeYs: number[];
   size: number;
 
-  constructor(minDate: number, maxDate: number, verticallySortedTips: number[], size: number) {
+  constructor(minDate: number, maxDate: number, verticallySortedTips: number[], nodeYs: number[], size: number) {
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.verticallySortedTips = verticallySortedTips;
+    this.nodeYs = nodeYs;
     this.size = size;
   }
 
@@ -76,7 +78,7 @@ export class MccTreeCanvas {
   however, the user can select a root index to draw from.
   */
   rootIndex: number;
-  protected nodeYs: number[];
+  // protected nodeYs: number[];
   nodeTimes: number[];
   nodeChildren: number[][];
   nodeParents: number[];
@@ -84,8 +86,8 @@ export class MccTreeCanvas {
   /* how many tips for the node at this index */
   tipCounts: number[];
   branchWeights: number[];
-  minDate: number;
-  maxDate: number;
+  // minDate: number;
+  // maxDate: number;
   tree: Tree | null;
   creds: number[];
   paddingTop : number;
@@ -120,15 +122,15 @@ export class MccTreeCanvas {
     this.ctx = ctx;
     this.dateAxis = canvas.parentNode?.querySelector(".dates") as HTMLDivElement;
     this.tree = null;
-    this.nodeYs = [];
+    // this.nodeYs = [];
     this.nodeTimes = [];
     this.nodeChildren = [];
     this.nodeParents = [];
     this.tipCount = 0;
     this.tipCounts = [];
     this.branchWeights = [];
-    this.minDate = Number.MAX_VALUE;
-    this.maxDate = Number.MIN_VALUE;
+    // this.minDate = Number.MAX_VALUE;
+    // this.maxDate = Number.MIN_VALUE;
     this.height = 0;
     this.width = 0;
     this.creds = [];
@@ -229,7 +231,7 @@ export class MccTreeCanvas {
     this.colorsUnSet = true;
   }
 
-  setTreeNodes(tree:Tree, creds: number[]=[]): number[][] {
+  setTreeNodes(tree:Tree, creds: number[]=[]) : void {
     this.colorsUnSet = true;
     const nodeCount = tree.getSize();
     if (nodeCount > 0) {
@@ -243,7 +245,6 @@ export class MccTreeCanvas {
       }
       this.setColors(tree);
     }
-    return this.nodeYs.map(y=>[y]);
   }
 
   setRootNode(rootIndex: number) : void {
@@ -264,7 +265,10 @@ export class MccTreeCanvas {
       times: number[] = Array(nodeCount),
       nodeChildren: number[][] = Array(nodeCount),
       nodeParents: number[] =  Array(nodeCount).fill(-1),
-      tipCounts = getTipCounts(tree);
+      branchWeights: number[] = Array(nodeCount),
+      tipCounts = getTipCounts(tree),
+      tipCount = (nodeCount + 1) / 2,
+      logMaxTipCount = Math.log(tipCount);
     if (creds.length === 0) {
       creds = new Array(nodeCount);
       creds.fill(0.8)
@@ -274,7 +278,9 @@ export class MccTreeCanvas {
       actualTipCount = 0;
     for (let i = 0; i < nodeCount; i++) {
       const t = tree.getTimeOf(i),
-        kidCount = tree.getNumChildrenOf(i);
+        kidCount = tree.getNumChildrenOf(i),
+        wt = Math.log(tipCounts[i]) / logMaxTipCount;
+      branchWeights[i] = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * wt;
       times[i] = t;
       minDate = Math.min(minDate, t);
       maxDate = Math.max(maxDate, t);
@@ -310,8 +316,7 @@ export class MccTreeCanvas {
     }
     this.tipCounts = tipCounts;
     this.tipCount = actualTipCount;
-    this.minDate = minDate;
-    this.maxDate = maxDate;
+    this.branchWeights = branchWeights;
     this.tree = tree;
     this.nodeTimes = times;
     this.nodeChildren = nodeChildren;
@@ -391,7 +396,7 @@ export class MccTreeCanvas {
       nodeChildren[index].forEach(c=>queue.push(c));
       i++;
     }
-    const logMaxTipCount = Math.log(tipCount);
+
     /* now work backwards */
     while (queue.length > 0) {
       const index = queue.pop() as number;
@@ -412,12 +417,9 @@ export class MccTreeCanvas {
         //   queue.push(right);
         // } else {
         yPositions[index] = (ly + ry) / 2;
-        const wt = Math.log(tipCounts[index]) / logMaxTipCount;
-        this.branchWeights[index] = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * wt;
         // }
       }
-      this.nodeYs = yPositions;
-      this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, size);
+      this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, yPositions, size);
       requestAnimationFrame(()=>this.setAxisDates());
     }
   }
@@ -426,7 +428,8 @@ export class MccTreeCanvas {
 
   setAxisDates() {
     if (!this.dateAxis) return;
-    const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
+    const config = this.rootConfigs[this.rootIndex];
+    const { scale, entries } = getNiceDateInterval(config.minDate, config.maxDate);
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
@@ -463,13 +466,15 @@ export class MccTreeCanvas {
       */
       maxOffset = zoomedHeight - height,
       minOffset = 0,
-      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset);
-    return this.nodeYs[index] * this.verticalZoom - offset;
+      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
+      config = this.rootConfigs[this.rootIndex];
+    return config.nodeYs[index] * this.verticalZoom - offset;
   }
 
   getZoomedDateRange() : number[] {
-    const dateRange = this.maxDate - this.minDate,
-      centerDate = this.maxDate - dateRange * this.zoomCenterX,
+    const config = this.rootConfigs[this.rootIndex],
+      dateRange = config.maxDate - config.minDate,
+      centerDate = config.maxDate - dateRange * this.zoomCenterX,
       dateWindowSide = dateRange / this.horizontalZoom * 0.5,
       minDate = Math.round(centerDate - dateWindowSide),
       maxDate = Math.round(centerDate + dateWindowSide);
@@ -478,7 +483,11 @@ export class MccTreeCanvas {
 
 
   getDateRange() : number[] {
-    return [this.minDate, this.maxDate];
+    if (this.rootIndex === UNSET) {
+      return [UNSET, UNSET];
+    }
+    const config = this.rootConfigs[this.rootIndex];
+    return [config.minDate, config.maxDate];
   }
 
   // xFor(t: number): number {
@@ -498,7 +507,8 @@ export class MccTreeCanvas {
       maxOffset = zoomedWidth - width,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      pct =  (this.maxDate - t) / (this.maxDate - this.minDate),
+      config = this.rootConfigs[this.rootIndex],
+      pct =  (config.maxDate - t) / (config.maxDate - config.minDate),
       x = right - (pct * zoomedWidth - offset)
     return x;
   }
@@ -517,22 +527,24 @@ export class MccTreeCanvas {
       maxOffset = zoomedWidth - width,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
+      config = this.rootConfigs[this.rootIndex],
       pct = (right - x + offset) / zoomedWidth;
-    t = this.maxDate - pct * (this.maxDate - this.minDate);
+    t = config.maxDate - pct * (config.maxDate - config.minDate);
     // console.log(x, this.minDate, t, this.maxDate);
     return t;
   }
 
 
   zoomToTips(tips: number[]) : void {
-    const height = this.height - this.paddingBottom - this.paddingTop;
+    const height = this.height - this.paddingBottom - this.paddingTop,
+      config = this.rootConfigs[this.rootIndex];
     let index = tips[0],
-      y1 = this.nodeYs[index],
+      y1 = config.nodeYs[index],
       y2 = y1;
     for (let i = 1; i < tips.length; i++) {
       index = tips[i];
-      y1 = Math.min(y1, this.nodeYs[index]);
-      y2 = Math.max(y2, this.nodeYs[index]);
+      y1 = Math.min(y1, config.nodeYs[index]);
+      y2 = Math.max(y2, config.nodeYs[index]);
     }
     const y = (y1 + y2) / 2,
       span = y2 - y1,
@@ -561,7 +573,8 @@ export class MccTreeCanvas {
 
   sortTips():void {
     /* gather a list of node indexes by y position */
-    const nodeYs = this.nodeYs,
+
+    const nodeYs = this.rootConfigs[this.rootIndex].nodeYs,
       nodeCount = nodeYs.length,
       sortable: TipInfo[] = [];
     for (let i = 0; i < nodeCount; i++) {
@@ -578,7 +591,7 @@ export class MccTreeCanvas {
   setColors(tree:Tree): void {
     // console.debug('setColorrs');
     const mccConfig = this.mccConfig,
-      size = this.nodeYs.length;
+      size = this.rootConfigs[this.rootIndex].size;
 
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
       const confidenceThreshold = this.confidenceThreshold;
@@ -654,9 +667,11 @@ export class MccTreeCanvas {
   }
 
   draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
-    if (earliest === undefined) earliest = this.minDate;
-    if (latest === undefined) latest = this.maxDate;
-    const {ctx, width, height, nodeYs} = this,
+    const config = this.rootConfigs[this.rootIndex];
+    if (earliest === undefined) earliest = config.minDate;
+    if (latest === undefined) latest = config.maxDate;
+    const { nodeYs } = config;
+    const { ctx, width, height } = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
@@ -786,7 +801,8 @@ export class MccTreeCanvas {
   getNodeAt(x:number, y:number):number {
     let closest = -1;
     let minD2 = HOVER_DISTANCE * HOVER_DISTANCE;
-    for (let i = 0; i < this.nodeYs.length; i++) {
+    const nodeYs = this.rootConfigs[this.rootIndex].nodeYs;
+    for (let i = 0; i < nodeYs.length; i++) {
       const ny = this.getZoomY(i);
       if (Math.abs(ny-y) < 50) {
         const nx = this.getZoomX(this.nodeTimes[i]),
@@ -800,6 +816,8 @@ export class MccTreeCanvas {
     if (isNaN(closest)) closest = -1;
     return closest;
   }
+
+
 
 
   getCanvas():HTMLCanvasElement|PdfCanvas {

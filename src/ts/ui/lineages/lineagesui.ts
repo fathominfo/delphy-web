@@ -134,7 +134,7 @@ export class LineagesUI extends MccUI {
   activate() {
     super.activate();
     this.coreData.activate();
-    const {minDate, maxDate} = this.mccTreeCanvas;
+    const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
     this.nodeTimelines.setDateRange(minDate, maxDate);
   }
 
