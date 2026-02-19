@@ -23,6 +23,10 @@ const MARGIN  = {
 const MAX_TIP_DISTANCE = 40;
 const NODE_X_SPACING = 45;
 
+const TEXT_LABEL_HEIGHT = 20;
+const TEXT_LABEL_MIN_WIDTH = 20;
+const TEXT_PADDING = 5;
+
 
 class TreeNodeDisplay {
   node: DisplayNode;
@@ -36,6 +40,7 @@ class TreeNodeDisplay {
   nameLabel: SVGGElement;
   mutLabel: SVGGElement;
   connector: SVGPathElement;
+  textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
@@ -68,11 +73,14 @@ class TreeNodeDisplay {
   renderConnector() {
     if (this.parent !== null) {
       const parent = this.parent;
-      const xDiff = parent.xPos - this.xPos;
-      const yDiff = parent.yPos - this.yPos;
-      const d = `M0 0 L${ xDiff } 0 ${ xDiff } ${ yDiff }`;
+      let xEnd = parent.xPos - this.xPos;
+      const xStart = - this.textLabelWidth / 2;
+      let yEnd = parent.yPos - this.yPos;
+      if (yEnd > 0) yEnd -= TEXT_LABEL_HEIGHT / 2;
+      else if (yEnd < 0) yEnd += TEXT_LABEL_HEIGHT / 2;
+      else xEnd += parent.textLabelWidth / 2;
+      const d = `M${ xStart } 0 L${ xEnd } 0 ${ xEnd } ${ yEnd }`;
       this.connector.setAttribute("d", d);
-
       CONTAINER.appendChild(this.connector);
       this.connector.classList.add(this.node.className);
     }
@@ -91,8 +99,9 @@ class TreeNodeDisplay {
     nameLabel.classList.add(node.className);
     CONTAINER.appendChild(this.nameLabel);
     const tw = textNode.getComputedTextLength();
-    rect.setAttribute("width", `${ tw + 10}`);
-    rect.setAttribute("x", `${ -(tw + 10) / 2}`);
+    this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
+    rect.setAttribute("width", `${ this.textLabelWidth}`);
+    rect.setAttribute("x", `${ -(this.textLabelWidth) / 2}`);
     // if (!this.node.isRoot) {
     //   mutTextNode.textContent = `${this.mutationCount}`;
     //   CONTAINER.appendChild(this.mutLabel);
@@ -104,6 +113,10 @@ class TreeNodeDisplay {
 
   }
 
+  pushBack(pushIt: boolean) : void {
+    this.nameLabel.classList.toggle("back", pushIt);
+    this.connector.classList.toggle("back", pushIt);
+  }
 
 }
 
@@ -115,7 +128,7 @@ there is only one of these.
 */
 export class NodeSchematic {
   hasMRCA: boolean;
-  highlightedNode: DisplayNode | null;
+  highlightIndex: number = UNSET;
   nodeHighlightCallback: HoverCallback;
   rootNode: TreeNodeDisplay | null = null;
   nodes: TreeNodeDisplay[] = [];
@@ -125,9 +138,8 @@ export class NodeSchematic {
   height: number = UNSET;
 
 
-  constructor(nodeHighlightCallback: HoverCallback) {
+  constructor(nodeHighlightCallback: HoverCallback, highlightNode: DisplayNode) {
     this.hasMRCA = false;
-    this.highlightedNode = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
   }
 
@@ -155,8 +167,18 @@ export class NodeSchematic {
     console.log('render minimap', width, height, this.stepCount, this.tipCount);
     CONTAINER.innerHTML = '';
     this.nodes.forEach(display=>display.position(width, height));
-    this.nodes.forEach(display=>display.renderConnector());
     this.nodes.forEach(display=>display.renderLabel());
+    this.nodes.forEach(display=>display.renderConnector());
+
+  }
+
+
+  setHighlightNode() {
+    if (this.highlightIndex === UNSET) {
+      this.nodes.forEach(display=>display.pushBack(false));
+    } else {
+      this.nodes.forEach(display=>display.pushBack(display.node.index !== this.highlightIndex));
+    }
   }
 
   /*
@@ -202,8 +224,9 @@ export class NodeSchematic {
 
 
   highlightNode(node: DisplayNode) : void {
-    if (node.index !== this.highlightedNode?.index) {
-      this.highlightedNode = node;
+    if (node.index !== this.highlightIndex) {
+      this.highlightIndex = node.index;
+      requestAnimationFrame(()=>this.setHighlightNode());
     }
   }
 

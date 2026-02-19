@@ -980,6 +980,9 @@ details {
 
 
   .label, .mut-count {
+    opacity: 1;
+    transition: opacity 0.15s;
+
     rect {
       stroke: none;
       rx: 5;
@@ -991,6 +994,10 @@ details {
       alignment-baseline: central;
       font-family: var(--Inter-Tight);
       font-weight: var(--highlighting-value-font-weight);
+    }
+
+    &.back {
+      opacity: 0.3;
     }
   }
 
@@ -1031,6 +1038,10 @@ details {
   .connector {
     fill: none;
     stroke: #909090;
+    opacity: 1;
+    transition: opacity 0.15s;
+
+    &.back {opacity: 0.3;}
   }
 
 }
