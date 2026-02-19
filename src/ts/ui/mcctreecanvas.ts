@@ -254,6 +254,8 @@ export class MccTreeCanvas {
     this.rootIndex = rootIndex;
     if (this.rootConfigs[rootIndex] === undefined) {
       this.positionTreeNodes();
+    } else {
+      requestAnimationFrame(()=>this.setAxisDates());
     }
 
   }
@@ -419,9 +421,11 @@ export class MccTreeCanvas {
         yPositions[index] = (ly + ry) / 2;
         // }
       }
-      this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, yPositions, size);
-      requestAnimationFrame(()=>this.setAxisDates());
     }
+    this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, yPositions, size);
+    // console.log(` minDate: ${minDate}, maxDate: ${maxDate}`);
+    requestAnimationFrame(()=>this.setAxisDates());
+
   }
 
 
@@ -668,6 +672,7 @@ export class MccTreeCanvas {
 
   draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
     const config = this.rootConfigs[this.rootIndex];
+    if (!config) return;
     if (earliest === undefined) earliest = config.minDate;
     if (latest === undefined) latest = config.maxDate;
     const { nodeYs } = config;
