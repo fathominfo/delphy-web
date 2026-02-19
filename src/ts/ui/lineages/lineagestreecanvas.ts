@@ -6,6 +6,7 @@ import { SummaryTree } from "../../pythia/delphy_api";
 import { NodeCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
 import { DateLabel } from "../datelabel";
 import { DisplayNode } from "./displaynode";
+import { Tree } from "../../pythia/delphy_api";
 
 const INFERRED_NODE_RADIUS = 4;
 const SELECTED_NODE_RADIUS = 5.5;
@@ -20,6 +21,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   highlightedDate: number = UNSET;
   highlightCanvas: HTMLCanvasElement;
   highlightCtx: CanvasRenderingContext2D;
+  configuredRootNode: number = UNSET;
 
 
   constructor(canvas: HTMLCanvasElement | PdfCanvas,
@@ -54,11 +56,14 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  setNodes(nodes: DisplayNode [], descendants: NodePair[]) {
+  setNodes(nodes: DisplayNode [], descendants: NodePair[], configuredRootNode: number) {
     this.nodes = nodes;
     this.descendants = descendants;
+    if (this.configuredRootNode !== configuredRootNode) {
+      this.configuredRootNode = configuredRootNode;
+      this.setRootNode(configuredRootNode);
+    }
   }
-
 
   private drawSelection() {
     const ctx = this.highlightCtx;

@@ -1,4 +1,3 @@
-import { MccUmbrella } from '../pythia/mccumbrella';
 import { DateLabel } from './datelabel';
 import {
   UNSTYLED_CANVAS_WIDTH,
@@ -32,8 +31,6 @@ import { isTip } from '../util/treeutils';
 
 const HOVER_DISTANCE = 30;
 
-type DrawBranchFnc =  (i:number, ctx:CanvasRenderingContext2D | Context2d)=>void;
-
 
 class TipInfo {
   index: number;
@@ -50,6 +47,23 @@ type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
 
+
+class CustomSubTree {
+  minDate: number;
+  maxDate: number;
+  verticallySortedTips: number[];
+  size: number;
+
+  constructor(minDate: number, maxDate: number, verticallySortedTips: number[], size: number) {
+    this.minDate = minDate;
+    this.maxDate = maxDate;
+    this.verticallySortedTips = verticallySortedTips;
+    this.size = size;
+  }
+
+
+
+}
 
 export class MccTreeCanvas {
   canvas: HTMLCanvasElement | PdfCanvas;
@@ -81,14 +95,11 @@ export class MccTreeCanvas {
   zoomCenterY: number;
   horizontalZoom: number;
   zoomCenterX: number;
-  drawBranch: DrawBranchFnc;
   dateHoverDiv: HTMLDivElement | null;
   dateAxisEntries: AxisLabel[] = [];
 
   minOpacity: number;
   maxOpacity: number;
-
-
 
   mccConfig : MccConfig | null;
   verticalTips: TipInfo[];
@@ -101,6 +112,8 @@ export class MccTreeCanvas {
   totalTipMutations: number[];
 
   selectable: boolean;
+
+  rootConfigs: CustomSubTree[] = [];
 
   constructor(canvas: HTMLCanvasElement | PdfCanvas, ctx: CanvasRenderingContext2D | Context2d) {
     this.canvas = canvas;
@@ -130,7 +143,6 @@ export class MccTreeCanvas {
 
     this.minOpacity = 0.1;
     this.maxOpacity = 1.0;
-    this.drawBranch = (i:number, ctx: CanvasRenderingContext2D | Context2d)=>console.debug(`drawBranch not decided ${i}`, ctx)
     this.mccConfig = null;
     this.verticalTips = [];
     this.confidenceThreshold = DEFAULT_NODE_CONFIDENCE;
@@ -217,185 +229,199 @@ export class MccTreeCanvas {
     this.colorsUnSet = true;
   }
 
-  setTreeNodes(tree:Tree, creds: number[]=[], rootNode = UNSET): number[][] {
+  setTreeNodes(tree:Tree, creds: number[]=[]): number[][] {
     this.colorsUnSet = true;
-    this.positionTreeNodes(tree, creds);
-    this.setColors(tree);
-    if (this.mccConfig) {
-      this.confidenceThreshold = this.mccConfig.confidenceThreshold;
+    const nodeCount = tree.getSize();
+    if (nodeCount > 0) {
+      this.gatherNodeStats(tree, creds);
+      if (this.rootIndex === UNSET) {
+        this.rootIndex = (this.tree as Tree).getRootIndex();
+      }
+      this.positionTreeNodes();
+      if (this.mccConfig) {
+        this.confidenceThreshold = this.mccConfig.confidenceThreshold;
+      }
+      this.setColors(tree);
     }
     return this.nodeYs.map(y=>[y]);
   }
 
-  protected positionTreeNodes(tree:Tree, creds: number[]=[]): number[][] {
-    this.drawBranch = tree instanceof MccUmbrella ?
-      (i:number, ctx:CanvasRenderingContext2D | Context2d = this.ctx)=>this.drawUmbrellaBranch(i, ctx)
-      : (i:number, ctx:CanvasRenderingContext2D | Context2d = this.ctx) => this.drawNodeBranch(i, ctx);
+  setRootNode(rootIndex: number) : void {
+    if (rootIndex === UNSET) {
+      rootIndex = (this.tree as Tree).getRootIndex();
+    }
+    this.rootIndex = rootIndex;
+    if (this.rootConfigs[rootIndex] === undefined) {
+      this.positionTreeNodes();
+    }
 
-    const {height} = this,
-      nodeCount = tree.getSize(),
-      yPositions: number[] = Array(nodeCount),
+  }
+
+
+
+  protected gatherNodeStats(tree:Tree, creds: number[]=[]) : void {
+    const nodeCount = tree.getSize(),
       times: number[] = Array(nodeCount),
       nodeChildren: number[][] = Array(nodeCount),
-      nodeParents: number[] =  Array(nodeCount).fill(-1);
-    if (nodeCount > 0) {
-      if (creds.length === 0) {
-        creds = new Array(nodeCount);
-        creds.fill(0.8)
-      }
-      let minDate = Number.MAX_SAFE_INTEGER,
-        maxDate = Number.MIN_SAFE_INTEGER,
-        actualTipCount = 0;
-      for (let i = 0; i < nodeCount; i++) {
-        const t = tree.getTimeOf(i),
-          kidCount = tree.getNumChildrenOf(i);
-        times[i] = t;
-        minDate = Math.min(minDate, t);
-        maxDate = Math.max(maxDate, t);
-        if (kidCount === 0) {
-          actualTipCount++;
-          nodeChildren[i] = [];
-        } else if (kidCount === 2) {
-          const left = tree.getLeftChildIndexOf(i),
-            right = tree.getRightChildIndexOf(i);
+      nodeParents: number[] =  Array(nodeCount).fill(-1),
+      tipCounts = getTipCounts(tree);
+    if (creds.length === 0) {
+      creds = new Array(nodeCount);
+      creds.fill(0.8)
+    }
+    let minDate = Number.MAX_SAFE_INTEGER,
+      maxDate = Number.MIN_SAFE_INTEGER,
+      actualTipCount = 0;
+    for (let i = 0; i < nodeCount; i++) {
+      const t = tree.getTimeOf(i),
+        kidCount = tree.getNumChildrenOf(i);
+      times[i] = t;
+      minDate = Math.min(minDate, t);
+      maxDate = Math.max(maxDate, t);
+      if (kidCount === 0) {
+        actualTipCount++;
+        nodeChildren[i] = [];
+      } else if (kidCount === 2) {
+        const left = tree.getLeftChildIndexOf(i),
+          right = tree.getRightChildIndexOf(i),
+          lCount = tipCounts[left],
+          rCount = tipCounts[right];
+        nodeParents[left] = i;
+        nodeParents[right] = i;
+        /*
+        put the node with the lower count before the one with the higher count.
+        if the same count, put the earlier one first.
+        if same time, put the lower index first for predictability.
+        */
+        if (lCount < rCount) {
           nodeChildren[i] = [left, right];
-          nodeParents[left] = i;
-          nodeParents[right] = i;
+        } else if (lCount > rCount) {
+          nodeChildren[i] = [right, left];
+        } else if (times[left] < times[right]) {
+          nodeChildren[i] = [left, right];
+        } else if (times[left] > times[right]) {
+          nodeChildren[i] = [right, left];
+        } else if (left < right) {
+          nodeChildren[i] = [left, right];
         } else {
-          nodeChildren[i] = (tree as MccUmbrella).getChildren(i);
-          nodeChildren[i].forEach(c=>nodeParents[c] = i);
+          nodeChildren[i] = [right, left];
         }
       }
-      /*
-      to ladderize the tree we need to sort clades by their tip counts.
-      build a queue from the tree, filling it by traversing the tree
-      depth first, and choosing the branch with the higher tip
-      count at each node.
-      */
-      let ypos = height - this.paddingBottom;
-      const h = (ypos - this.paddingTop)/actualTipCount;
-      const tipCounts = getTipCounts(tree),
-        rootIndex = tree.getRootIndex(),
-        verticallySortedTips:number[] = [],
-        queue:number[] = [rootIndex];
-      while (queue.length > 0) {
-        const index: number = queue.shift() as number,
-          children = nodeChildren[index],
-          kidCount = children.length;
-        if (kidCount === 0) {
-          verticallySortedTips.push(index);
-          yPositions[index] = ypos;
-          ypos -= h;
-          nodeChildren[index] = [];
-        } else if (kidCount === 2) {
-          const left = children[0],
-            right = children[1],
-            lCount = tipCounts[left],
-            rCount = tipCounts[right];
-          nodeChildren[index] = [left, right];
-          /*
-          puts the node with the lower count before the one with the higher count
-          if the same count, put the earlier one first
-          */
-          if (lCount < rCount) {
-            queue.unshift(right);
-            queue.unshift(left);
-          } else if (lCount > rCount) {
-            queue.unshift(left);
-            queue.unshift(right);
-          } else if (times[left] < times[right]) {
-            queue.unshift(right);
-            queue.unshift(left);
-          } else {
-            queue.unshift(left);
-            queue.unshift(right);
-          }
-        } else {
-          const umbrella: MccUmbrella = tree as MccUmbrella,
-            kids: number[] = umbrella.getChildren(index),
-            counts = kids.map(c=>[c, tipCounts[c]]);
-          nodeChildren[index] = kids;
-          /*
-          sort the list by count desc so that the queue
-          gets the lower counts first
-          */
-          counts.sort((a,b)=>{
-            let diff = b[1] - a[1];
-            if (diff === 0) diff = times[b[0]] - times[a[0]];
-            return diff;
-          });
-          counts.forEach(item=>queue.unshift(item[0]));
-        }
-      }
+    }
+    this.tipCounts = tipCounts;
+    this.tipCount = actualTipCount;
+    this.minDate = minDate;
+    this.maxDate = maxDate;
+    this.tree = tree;
+    this.nodeTimes = times;
+    this.nodeChildren = nodeChildren;
+    this.nodeParents = nodeParents;
+    this.creds = creds;
+  }
 
-      queue.length = 0;
-      /* fill the queue from the root down, breadth first */
-      let i = 0;
-      queue.push(tree.getRootIndex());
-      while (i < queue.length) {
-        const index = queue[i];
-        nodeChildren[index].forEach(c=>queue.push(c));
-        i++;
+  protected positionTreeNodes(): void {
+    const {height, tipCounts, nodeChildren, nodeTimes, rootIndex } = this,
+      tipCount = tipCounts[rootIndex] || 0,
+      size = tipCount === 0 ? 0 : tipCount * 2 - 1,
+      yPositions: number[] = new Array(size),
+      verticallySortedTips:number[] = [],
+      queue:number[] = [rootIndex];
+    let minDate = Number.MAX_SAFE_INTEGER,
+      maxDate = Number.MIN_SAFE_INTEGER,
+      ypos = height - this.paddingBottom;
+    const h = (ypos - this.paddingTop) / tipCount;
+    /*
+    The typical tree layout is called a "ladderized" tree: the
+    branches don't cross, and there's a general cascade to the
+    tree that keeps the branches generally short. The first step
+    is to sort clades by their tip counts, and assign y-positions
+    to the tips.
+    Build a queue from the tree, filling it by traversing the tree
+    _depth_ first, and choosing the branch with the higher tip
+    count at each node.
+    When we reach a tip, set its position.
+    While we're at it, set the min and max dates.
+    Implementation note: in this queue, we process items as we go,
+    so we add things, remove them, add some more, etc.
+    At the end of it, the queue will be empty.
+    */
+    while (queue.length > 0) {
+      const index: number = queue.shift() as number,
+        children = nodeChildren[index],
+        kidCount = children.length,
+        t = nodeTimes[index];
+      minDate = Math.min(minDate, t);
+      maxDate = Math.max(maxDate, t);
+      if (kidCount === 0) {
+        verticallySortedTips.push(index);
+        yPositions[index] = ypos;
+        ypos -= h;
+      } else {
+        const [left, right] = children;
+        /*
+        the node children have already been sorted into the order we want
+        to process.
+        Implementation note: we process the queue by taking the first element
+        via `shift`. That means putting the  larger one at the front of the queue,
+        and then the smaller one before that. Thus, the order of operations below
+        does not correspond to the order they get processed. e.g.
+          queue.unshift(right);
+          queue.unshift(left);
+        results in left getting processed before right.
+        */
+        queue.unshift(right);
+        queue.unshift(left);
       }
-      const logMaxTipCount = Math.log(tipCounts[rootIndex]);
-      while (queue.length > 0) {
-        const index = queue.pop() as number;
-        if (yPositions[index] === undefined) {
-          const left = tree.getLeftChildIndexOf(index),
-            right = tree.getRightChildIndexOf(index),
-            ly = yPositions[left],
-            ry = yPositions[right];
-          if (ly === undefined || ry === undefined) {
-            /*
-            This shouldn't happen, but just in case…
-            one of the children's positions isn't defined yet,
-            so put this back on the queue to try again later
-            */
-            queue.push(index);
-            queue.push(left);
-            queue.push(right);
-          } else {
-            yPositions[index] = (ly + ry) / 2;
-            const wt = Math.log(tipCounts[index]) / logMaxTipCount;
-            this.branchWeights[index] = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * wt;
-          }
-        }
+    }
+    /*
+    Each inner node's y position is the average of its
+    immediate children. So far, only the tips have their
+    positions set. In order to build from the tips up,
+    we traverse the tree _breadth_ first to build a queue,
+    and then work from the end of the queue to the start.
+    Implementation note: this time, we fill the queue with
+    all the entries that need processing, and then work
+    from that list.
+    */
+    queue.length = 0;
+    let i = 0;
+    queue.push(rootIndex);
+    while (i < queue.length) {
+      const index = queue[i];
+      nodeChildren[index].forEach(c=>queue.push(c));
+      i++;
+    }
+    const logMaxTipCount = Math.log(tipCount);
+    /* now work backwards */
+    while (queue.length > 0) {
+      const index = queue.pop() as number;
+      /* tips will already have a y position */
+      if (yPositions[index] === undefined) {
+        const [left, right] = nodeChildren[index],
+          ly = yPositions[left],
+          ry = yPositions[right];
+        // if (ly === undefined || ry === undefined) {
+        //   console.warn(`bad assumptions lurk in positionTreeNodes`)
+        //   /*
+        //   This shouldn't happen, but just in case…
+        //   one of the children's positions isn't defined yet,
+        //   so put this back on the queue to try again later
+        //   */
+        //   queue.push(index);
+        //   queue.push(left);
+        //   queue.push(right);
+        // } else {
+        yPositions[index] = (ly + ry) / 2;
+        const wt = Math.log(tipCounts[index]) / logMaxTipCount;
+        this.branchWeights[index] = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * wt;
+        // }
       }
-      this.tipCounts = tipCounts;
-      this.tipCount = actualTipCount;
-      this.minDate = minDate;
-      this.maxDate = maxDate;
-      this.tree = tree;
       this.nodeYs = yPositions;
-      this.nodeTimes = times;
-      this.nodeChildren = nodeChildren;
-      this.nodeParents = nodeParents;
-      this.creds = creds;
-
-      // if (tree instanceof MccTree || tree instanceof MostCommonSplitTree || tree instanceof MccUmbrella) {
-      //   const summ = tree as SummaryTree,
-      //     root = summ.getRootIndex(),
-      //     count = summ.getNumBaseNodesOf(root),
-      //     times: number[] = [];
-      //   for (let t = 0; t < count; t++) {
-      //     const n1 = summ.getBaseNodeNodeIndexOf(root, t),
-      //       t1 = summ.getBaseNodeTreeIndexOf(root, t),
-      //       bt1 = summ.getBaseTree(t1),
-      //       d1 = bt1.getTimeOf(n1);
-      //     times.push(Math.round(d1));
-      //   }
-      //   times.sort((a:number, b:number)=>a-b);
-      //   console.debug(summ.getNumBaseTrees(), root, times.map(t=>`${t}`).join());
-      //   for (let i = 0; i < summ.getSize(); i++) {
-      //     console.debug(`    ${i}   ${summ.getNumBaseNodesOf(i)}`);
-      //   }
-      // }
-
-
+      this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, size);
       requestAnimationFrame(()=>this.setAxisDates());
     }
-    return yPositions.map(y=>[y]);
   }
+
 
 
   setAxisDates() {
@@ -537,7 +563,7 @@ export class MccTreeCanvas {
     /* gather a list of node indexes by y position */
     const nodeYs = this.nodeYs,
       nodeCount = nodeYs.length,
-      sortable = [];
+      sortable: TipInfo[] = [];
     for (let i = 0; i < nodeCount; i++) {
       if (this.nodeChildren[i].length === 0) {
         const y = nodeYs[i];
@@ -630,7 +656,7 @@ export class MccTreeCanvas {
   draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
-    const {ctx, width, height, nodeYs, drawBranch} = this,
+    const {ctx, width, height, nodeYs} = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
@@ -639,7 +665,7 @@ export class MccTreeCanvas {
     ctx.lineWidth = BRANCH_WEIGHT;
     ctx.globalAlpha = this.maxOpacity;
     for (let i = 0; i < nodeCount; i++) {
-      drawBranch(i, this.ctx);
+      this.drawBranch(i, this.ctx);
     }
     // Draw tips
     // ctx.fillStyle = this.tipColor;
@@ -663,7 +689,7 @@ export class MccTreeCanvas {
 
 
 
-  drawNodeBranch(index: number, ctx: CanvasRenderingContext2D | Context2d): void {
+  drawBranch(index: number, ctx: CanvasRenderingContext2D | Context2d): void {
     const children = this.nodeChildren[index],
       parent = this.nodeParents[index],
       nodeX = this.getZoomX(this.nodeTimes[index]);

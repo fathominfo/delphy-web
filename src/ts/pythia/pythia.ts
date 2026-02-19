@@ -6,9 +6,7 @@ import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
-import {MostCommonSplitTree} from './mostcommonsplittree';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
-import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
@@ -155,7 +153,7 @@ export class Pythia {
   private currentMccRef: MccRef | null;
   private delphy: Delphy;
   private run: Run | null;
-  private mcs: MostCommonSplitTree | null;
+
 
   initialTree: PhyloTree | null;    // Immutable snapshot of initial tree
   runParams: RunParamConfig | null; // Immutable once run has been initialized
@@ -215,7 +213,6 @@ export class Pythia {
     this.maxDate = UNSET;
     this.tipCounts = [];
     this.mccNodeBackLinks = [];
-    this.mcs = null;
     this.coreVersion = {
       "version" : this.delphy.getVersionString(),
       "build" : this.delphy.getBuildNumber(),
@@ -415,7 +412,6 @@ export class Pythia {
       }
       this.tipCounts.length = 0;
       this.mccNodeBackLinks.length = 0;
-      this.mcs = null;
     }
   }
 
@@ -495,34 +491,6 @@ export class Pythia {
       mccNodeBackLinks[t] = treeLinks;
     }
     return mccNodeBackLinks;
-  }
-
-
-
-  getMostCommonSplitTree() : Tree | null {
-    let bestOf = null;
-    if (this.mcs) {
-      bestOf = this.mcs;
-    } else if (this.mccRefManager) {
-      const ref = this.mccRefManager.getRef(),
-        mcc = ref.getMcc();
-      bestOf = new MostCommonSplitTree(mcc);
-      ref.release();
-      this.mcs = bestOf;
-    }
-    this.mccNodeBackLinks.length = 0;
-    return bestOf;
-  }
-
-  /*
-  TODO:
-    this assumes that the umbrella tree is getting
-    built from the MCC, not a most common split tree
-  */
-  getUmbrellaTree(mcc: SummaryTree) : MccUmbrella {
-    this.setBackLinks(mcc);
-    const umbrella = new MccUmbrella(mcc, this.mccNodeBackLinks);
-    return umbrella;
   }
 
 
@@ -812,7 +780,6 @@ export class Pythia {
 
   setKneeIndexByPct(percent:number):void {
     this.kneeIndex = Math.round(percent * this.stepsHist.length);
-    this.mcs = null;
   }
 
   getBaseTreeCount() : number {

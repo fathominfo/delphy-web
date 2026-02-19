@@ -543,14 +543,13 @@ details {
   }
 
   &.is-root {
-    .mono-hover {display: none;}
-    .node-set-root, .node-reset-root {
+    .mono-hover, .node-set-root, .node-reset-root {
       display: none;
     }
   }
 
   &.is-set-root {
-    .node-set-root { display: none; }
+    .node-dismiss, .node-set-root { display: none; }
     .node-reset-root { display: inline-block; }
   }
 
