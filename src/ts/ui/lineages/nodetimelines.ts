@@ -132,6 +132,10 @@ export class NodeTimelines {
     this.data = nodes.filter(n=>n.series);
     const allSeries = this.data.map(n=>n.series);
     this.nodeTimesCanvas.setSeries(allSeries as Distribution[]);
+    this.nodeTimesCanvas.svgGroups.forEach((svgGroup, i)=>{
+      const node = this.data[i];
+      (svgGroup as NodeSVGSeriesGroup).setNode(node);
+    });
   }
 
   requestDraw() : void {
