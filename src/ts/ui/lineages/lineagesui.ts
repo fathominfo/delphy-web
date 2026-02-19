@@ -1,14 +1,10 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
-import { Pythia } from '../../pythia/pythia';
 import { MccUI } from '../mccui';
 import { DataResolveType, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
-import { HoverCallback, DismissCallback, OpenMutationPageFncType,
-  TreeSelectCallback,
-  TreeHint,
-  TREE_HINT_CLASSES,
-  TreeHoverCallback,
-  NodeCallback} from './lineagescommon';
+import { HoverCallback, NodeCallback,
+  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
+  TreeHoverCallback} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';
@@ -18,10 +14,6 @@ import autocomplete from 'autocompleter';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
-import { BaseTreeSeriesType } from '../../constants';
-import { DisplayNode } from './displaynode';
-
-
 
 
 
@@ -56,7 +48,7 @@ export class LineagesUI extends MccUI {
     super(sharedState, divSelector, "#lineages .tree-canvas");
     const updateCallback: updateFunction = (data: ChartData)=>this.update(data);
     this.coreData = new CoreLineagesData(sharedState, updateCallback);
-    const dismissCallback: DismissCallback = nodeIndex=>this.handleNodeDismiss(nodeIndex);
+    const dismissCallback: NodeCallback = nodeIndex=>this.handleNodeDismiss(nodeIndex);
     const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
     const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.highlightCharts(nodeIndex, date, mutation);
     let previousNode = UNSET,
@@ -67,14 +59,14 @@ export class LineagesUI extends MccUI {
         previousDate = date;
         this.handleNodeHover(node, date)
       }
-
     };
-    const nodeSelectCallback: TreeSelectCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
+    const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
+    const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
-    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
+    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeMutationCharts = new NodeMutations( this.goToMutations, nodeHighlightCallback);
     this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -142,7 +134,7 @@ export class LineagesUI extends MccUI {
   activate() {
     super.activate();
     this.coreData.activate();
-    const {minDate, maxDate} = this.mccTreeCanvas;
+    const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
     this.nodeTimelines.setDateRange(minDate, maxDate);
   }
 
@@ -200,10 +192,10 @@ export class LineagesUI extends MccUI {
 
   update(chartData: ChartData): void {
     const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
-      nodeComparisonData, nodePairs, rootNode } = chartData;
+      nodeComparisonData, nodePairs, rootNode, selectedRootIndex } = chartData;
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     this.nodeListDisplay.setNodes(nodes);
-    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs);
+    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData);
@@ -248,22 +240,15 @@ export class LineagesUI extends MccUI {
 
 
   selectNode(nodeIndex: number): void {
-    // const { updated, hint, selectable } =
     this.coreData.selectNode(nodeIndex);
-    // if (updated) {
-    //   this.setHint(hint);
-    //   this.setSelectable(selectable);
-    // }
-    // this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
-    // this.requestDrawTreeHighlights(this.rootIndex, this.mrcaIndex, this.nodeAIndex, this.nodeBIndex, nodeIndex);
   }
+
+
 
   setSelectable(selectable: boolean) {
     this.coreData.setSelectable(selectable);
     const lookupInput = document.querySelector(".id-lookup--input") as HTMLInputElement;
     lookupInput.disabled = !this.coreData.selectionsAvailable();
-    // lookupInput.placeholder = selectable ? "Lookup a sequence id…" : "deselect a node below to enable search";
-    // more hints...
   }
 
   setHint(hint: TreeHint) {

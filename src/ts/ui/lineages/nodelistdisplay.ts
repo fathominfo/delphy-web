@@ -1,11 +1,11 @@
 import { UNSET, getPercentLabel } from '../common';
 import { DisplayNode } from './displaynode';
-import { DismissCallback, HoverCallback, NodeCallback } from './lineagescommon';
+import { HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
 METADATA_ITEM_TEMPLATE.remove();
 const NODE_DIV_TEMPLATE = document.querySelector(".lineages--node-item") as HTMLDivElement;
-const CONTAINER = document.querySelector("#lineages--node-list") as HTMLElement
+const CONTAINER = document.querySelector("#lineages--node-items") as HTMLElement
 NODE_DIV_TEMPLATE.remove();
 
 
@@ -51,8 +51,6 @@ class NodeDiv {
       div,
       countSpan,
       confidenceSpan,
-      nodeStats,
-      nodeIsTip,
       tipIdSpan,
       mdDiv} = this;
 
@@ -65,28 +63,24 @@ class NodeDiv {
       CONTAINER.appendChild(div);
     }
 
-    div.classList.add('active');
-    div.classList.toggle('locked', node.isLocked);
-    const isTip = node.childCount === 1;
-    div.classList.toggle("is-tip", isTip);
 
+    div.classList.add('active');
     div.setAttribute("data-nodetype", node.className.toLowerCase());
     this.nodeName.textContent = node.label;
-    this.nodeSource.classList.toggle("hidden", !node.isInferred && !node.isRoot);
-    this.dismiss.classList.toggle("hidden", node.isInferred);
-    this.monophyletic.classList.toggle("hidden", node.isRoot);
+
+    div.classList.toggle('locked', node.isLocked);
+    div.classList.toggle("is-tip", node.isTip());
+    div.classList.toggle("is-mrca", node.isInferred && !node.isRoot);
+    div.classList.toggle("is-root", node.isRoot && node.isInferred);
+    div.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
 
 
-    if (!isTip) {
-      nodeStats.classList.remove("hidden");
-      nodeIsTip.classList.add("hidden");
-      countSpan.innerText = `${node.childCount} tip${node.childCount === 1 ? '' : 's'}`;
+    if (!node.isTip()) {
+      countSpan.innerText = `${node.childCount} tip${node.isTip() ? '' : 's'}`;
       if (confidenceSpan) {
         confidenceSpan.innerText = `${getPercentLabel(node.confidence)}%`;
       }
     } else {
-      nodeStats.classList.add("hidden");
-      nodeIsTip.classList.remove("hidden");
       if (DEBUG) {
         tipIdSpan.innerText = `${node.index} `;
       }
@@ -120,7 +114,7 @@ class NodeDiv {
           const valueCountPair = item.querySelector(".pair--value-count") as HTMLElement;
           item.querySelectorAll(".pair--value-count").forEach(el => el.remove());
 
-          if (!isTip) {
+          if (!node.isTip()) {
             const tipCounts = item.querySelector(".tip-counts") as HTMLElement;
             Object.entries(value.counts).forEach(([val, count])=>{
               const pair = valueCountPair.cloneNode(true) as HTMLElement;
@@ -169,8 +163,8 @@ class DivPool {
     this.divs = new Set();
   }
 
-  getDiv(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
-    nodeZoomCallback: NodeCallback): NodeDiv {
+  getDiv(dismissCallback: NodeCallback, nodeHighlightCallback: HoverCallback,
+    nodeZoomCallback: NodeCallback, rootSelectCallback: NodeCallback): NodeDiv {
     let div: NodeDiv | null = null;
     for (const claim of this.divs) {
       if (!claim.inUse && div === null) {
@@ -190,6 +184,10 @@ class DivPool {
       actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback((div?.node as DisplayNode).index, UNSET, null));
       actualDiv.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
       actualDiv.addEventListener('click', () => nodeZoomCallback((div?.node as DisplayNode).index));
+      const setRootButton = actualDiv.querySelector('.node-set-root') as HTMLButtonElement;
+      const resetRootButton = actualDiv.querySelector('.node-reset-root') as HTMLButtonElement;
+      setRootButton.addEventListener('click', () => rootSelectCallback((div?.node as DisplayNode).index));
+      resetRootButton.addEventListener('click', () => rootSelectCallback(UNSET));
       this.divs.add({div, inUse: true});
     }
     return div;
@@ -215,16 +213,18 @@ export class NodeListDisplay {
   private nodeDivs: (NodeDiv | null)[] = [];
   private pool: DivPool;
   private nodes: (DisplayNode | null)[] = [];
-  private dismissCallback: DismissCallback;
+  private dismissCallback: NodeCallback;
   private nodeHighlightCallback: HoverCallback;
   private nodeZoomCallback: NodeCallback;
+  private rootSelectCallback: NodeCallback;
 
-  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: HoverCallback,
-    nodeZoomCallback: NodeCallback) {
+  constructor(dismissCallback: NodeCallback, nodeHighlightCallback: HoverCallback,
+    nodeZoomCallback: NodeCallback, rootSelectCallback: NodeCallback) {
     this.pool = new DivPool();
     this.dismissCallback = dismissCallback;
     this.nodeHighlightCallback = nodeHighlightCallback;
     this.nodeZoomCallback = nodeZoomCallback;
+    this.rootSelectCallback = rootSelectCallback;
     (document.querySelector("#lineages--node-list") as HTMLDivElement).addEventListener('pointerleave', ()=>nodeHighlightCallback(UNSET, UNSET, null));
   }
 
@@ -232,8 +232,11 @@ export class NodeListDisplay {
     const index = node.index;
     let nodeDiv = this.nodeDivs[index];
     if (!nodeDiv) {
-      nodeDiv = this.pool.getDiv(this.dismissCallback, this.nodeHighlightCallback, this.nodeZoomCallback);
+      nodeDiv = this.pool.getDiv(this.dismissCallback, this.nodeHighlightCallback, this.nodeZoomCallback, this.rootSelectCallback);
       this.nodeDivs[index] = nodeDiv;
+    }
+    if (node.isRoot) {
+      CONTAINER.insertBefore(nodeDiv.div, CONTAINER.firstChild);
     }
     this.nodes[index] = node;
     nodeDiv.setData(node);

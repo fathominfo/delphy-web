@@ -34,29 +34,36 @@
                 <h3>Nodes</h3>
               </div>
             </div>
-            <div class="lineages--node-item" data-nodetype="">
-              <div class="node-info">
-                <div class="node-icon"><div class="shape"></div></div>
-                <div class="node-description">
-                  <div class="node-title"><span class="node-name">Name</span> <span class="node-source">(inferred)</span></div>
-                  <div class="node-stats">
-                    <span class="node--tip-count">00 tips</span>
-                    <span class="mono-hover">, monophyletic
-                    in <span class="node--confidence">00%</span> of base trees
+            <div id="lineages--node-items">
+              <div class="lineages--node-item" data-nodetype="">
+                <div class="node-info">
+                  <div class="node-icon"><div class="shape"></div></div>
+                  <div class="node-description">
+                    <div class="node-title"><span class="node-name">Name</span> <span class="node-source">(inferred)</span></div>
+                    <div class="node-stats">
+                      <span class="node--tip-count">00 tips</span>
+                      <span class="mono-hover">, monophyletic
+                      in <span class="node--confidence">00%</span> of base trees
+                    </div>
+                    <div class="tip-info">Tip <span class="tip-id"></span></div>
+                    {{> lineages_node_metadata }}
                   </div>
-                  <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
-                  {{> lineages_node_metadata }}
+                </div>
+                <div class="node-actions">
+                  <button type="button" class="node-set-root" aria-label="set node as root">
+                      Set as root
+                  </button>
+                  <button type="button" class="node-reset-root" aria-label="reset root">
+                      Reset root
+                  </button>
+                  <button type="button" class="node-dismiss" aria-label="Dismiss node" title="Dismiss node" >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <button type="button" class="node-dismiss" aria-label="Dismiss node">
-                <div class="box">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
-                  </svg>
-                </div>
-              </button>
             </div>
-
             <div class="id-lookup">
               <form>
                 <label for="id-lookup--input">Look up a sequence id</label>

@@ -8,23 +8,14 @@ export const UNDEF = '-';
 export const UNSET = -1;
 
 
-export enum YSpacing {
-  even = 1,
-  genetic = 2
-}
-export enum Topology {
-  mcc = 1,
-  bestof = 2
-}
+// export enum Topology {
+//   mcc = 1,
+//   bestof = 2
+// }
 export enum ColorOption {
   confidence = 1,
   metadata = 2
 }
-export enum Presentation {
-  all = 1,
-  umbrella = 2
-}
-
 export enum Screens {
   run = 1,
   lineages = 2,
@@ -36,14 +27,14 @@ export enum Screens {
 /*
 these correspond to values on the HTML radio buttons
 */
-export const Y_EVEN_SPACING = "even";
-export const Y_GENETIC_DISTANCE = "genetic";
-export const TOPOLOGY_MCC = "mcc";
-export const TOPOLOGY_BEST_OF = "mcs";
+// export const Y_EVEN_SPACING = "even";
+// export const Y_GENETIC_DISTANCE = "genetic";
+// export const TOPOLOGY_MCC = "mcc";
+// export const TOPOLOGY_BEST_OF = "mcs";
 export const COLOR_CONF = "confidence";
 export const COLOR_METADATA = "metadata";
-export const PRESENTATION_ALL = "all";
-export const PRESENTATION_UMBRELLA = "mutations";
+// export const PRESENTATION_ALL = "all";
+// export const PRESENTATION_UMBRELLA = "mutations";
 
 
 export type NavigateFunctionType = (screen: Screens)=>void; // eslint-disable-line no-unused-vars

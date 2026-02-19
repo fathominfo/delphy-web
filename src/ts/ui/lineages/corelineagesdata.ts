@@ -44,7 +44,8 @@ export type ChartData = {
   nodeComparisonData: NodeMutationsData[],
   nodePairs: NodePair[],
   nodes: DisplayNode[],
-  rootNode: TreeNode | null
+  rootNode: TreeNode | null,
+  selectedRootIndex: number
 }
 
 export type updateFunction = (_: ChartData)=>void;
@@ -80,11 +81,17 @@ export class CoreLineagesData {
   private rootNode : DisplayNode;
   private selectedNodes: DisplayNode[] = [];
   /*
+  bypassed nodes happen when the user selects an inner
+  node to be the root, and there are selected nodes
+  that are not descendants of the new root.
+  */
+  private bypassedNodes: DisplayNode[] = [];
+  /*
   the minimap includes nodes that are _not_ selected:
     inferred nodes
     highlight node
   */
-  private seletionTreeData: SelectionTreeData | null = null;
+  private selectionTreeData: SelectionTreeData | null = null;
   private selectable = true;
   private constrainHoverByCredibility = false;
 
@@ -144,11 +151,11 @@ export class CoreLineagesData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.seletionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
+      this.selectionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
-      this.seletionTreeData.setData([this.rootNode]);
+      this.selectionTreeData.setData([this.rootNode]);
       if (this.sharedState.nodeList.length > 0) {
         // this.nodeAIndex = this.sharedState.nodeList[0];
         // if (this.sharedState.nodeList.length > 1) {
@@ -164,24 +171,24 @@ export class CoreLineagesData {
   setChartData() {
     const pythia = this.pythia;
     if (pythia) {
-      const chartData: ChartData = {
-        nodeDistributions: [],
-        prevalenceNodes: [],
-        minDate: UNSET,
-        maxDate: UNSET,
-        nodeComparisonData: [],
-        nodePairs: [],
-        nodes: [],
-        rootNode: this.seletionTreeData?.root || null
-      };
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.seletionTreeData as SelectionTreeData;
+      const minimapData = this.selectionTreeData as SelectionTreeData;
+      const actualRootIndex = summaryTree.getRootIndex();
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
         maxDate = pythia.maxDate;
-      chartData.minDate = minDate;
-      chartData.maxDate = maxDate;
+      const chartData: ChartData = {
+        nodeDistributions: [],
+        prevalenceNodes: [],
+        minDate: minDate,
+        maxDate: maxDate,
+        nodeComparisonData: [],
+        nodePairs: [],
+        nodes: [],
+        rootNode: this.selectionTreeData?.root || null,
+        selectedRootIndex: this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index
+      };
 
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
@@ -242,7 +249,7 @@ export class CoreLineagesData {
     if (nodeIndex === this.highlightNode.index && date === this.highlightDate && mutation === this.highlightMutation) {
       return false;
     }
-    const minimap = this.seletionTreeData as SelectionTreeData;
+    const minimap = this.selectionTreeData as SelectionTreeData;
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
@@ -282,7 +289,7 @@ export class CoreLineagesData {
         */
         return;
       } else {
-        const minimap = this.seletionTreeData as SelectionTreeData;
+        const minimap = this.selectionTreeData as SelectionTreeData;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
           hint = TreeHint.Zoom;
@@ -355,12 +362,23 @@ export class CoreLineagesData {
 
   selectNode(nodeIndex: number) : void {
     if (nodeIndex === UNSET) return;
-    if (this.selectedNodes.concat([this.rootNode]).map(node=>node.index).indexOf(nodeIndex) >= 0) return;
+    const currentNodes = this.selectedNodes.concat([this.rootNode]);
+    if (currentNodes.map(node=>node.index).indexOf(nodeIndex) >= 0) return;
+    let selection: DisplayNode = this.highlightNode;
     if (nodeIndex !== this.highlightNode.index) {
-      console.warn(` the developer needs to rethink their assumptions: 
-        the selected node ${nodeIndex} !== the highlight node ${this.highlightNode.index}`);
+      /* could the node be an MRCA? That would not be in currentNodes */
+      const minimap = this.selectionTreeData as SelectionTreeData;
+      const mrcaTreeNode = minimap.found.filter(treeNode=>{
+        return treeNode
+          && treeNode.node.isInferred
+          && treeNode.node.index === nodeIndex;
+      })[0];
+      if (mrcaTreeNode) {
+        selection = mrcaTreeNode.node;
+      } else {
+        selection = this.getNodeDisplay(nodeIndex, false, false);
+      }
     }
-    const selection = this.highlightNode;
     selection.lock();
     this.selectedNodes.push(selection);
     /* prep the next hover */
@@ -375,6 +393,57 @@ export class CoreLineagesData {
     node.deactivate();
     /* reset the hover */
     this.hoverNode(UNSET, UNSET);
+  }
+
+  selectRoot(nodeIndex: number) : void {
+    if (nodeIndex === this.rootNode.index) return;
+    const summaryTree = this.summaryTree as SummaryTree;
+    const actualRootIndex = summaryTree.getRootIndex();
+    /* restore the selected nodes*/
+    console.log(`restoring ${this.bypassedNodes.length} nodes`, this.bypassedNodes.map(n=>n.name).join(','))
+    this.bypassedNodes.forEach(node=>this.selectedNodes.push(node));
+    this.bypassedNodes.length = 0;
+    if (nodeIndex === UNSET || nodeIndex === actualRootIndex) {
+      this.rootNode.isInferred = true;
+      this.rootNode.index = actualRootIndex;
+    } else {
+      /* since this node is becoming root, remove it from the selections */
+      this.bypassNode(nodeIndex);
+      this.rootNode.isInferred = false;
+      this.rootNode.index = nodeIndex;
+      /* check that all the selected nodes fall under the root */
+      const toFind: boolean[] = [];
+      this.selectedNodes.forEach(n=>toFind[n.index] = false);
+      const q: number[] = [nodeIndex];
+      /*
+      traverse the tree from our new root, checking off the nodes
+      we need to find
+      */
+      while (q.length > 0) {
+        const index = q.pop() as number;
+        toFind[index] = true;
+        const left = summaryTree.getLeftChildIndexOf(index);
+        const right = summaryTree.getRightChildIndexOf(index);
+        if (left !== UNSET) {
+          q.push(left);
+          q.push(right); // if there's a left, there's a right
+        }
+      }
+      toFind.forEach((found, i)=>{
+        if (!found) this.bypassNode(i);
+      });
+    }
+    const minimap = this.selectionTreeData as SelectionTreeData;
+    const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
+    minimap.setData(toMap);
+    this.setChartData();
+  }
+
+  bypassNode(nodeIndex: number) : void {
+    const node = this.selectedNodes.find(n=>n.index === nodeIndex) as DisplayNode;
+    const index = this.selectedNodes.indexOf(node);
+    this.selectedNodes.splice(index, 1);
+    this.bypassedNodes.push(node);
   }
 
 
