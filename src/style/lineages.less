@@ -1697,12 +1697,12 @@ details {
   gap: var(--block-gap);
 
   &.is-apobec .lineages--node-comparison--mutation-is-apobec {
-    display: inline-block;
+    display: block;
   }
 }
 
 .lineages--node-comparison--mutation-labels {
-  // width: @chartLeftMargin;
+  position: relative;
   font-size: smaller;
 }
 .lineages--node-comparison--mutation-name {
@@ -1718,6 +1718,9 @@ details {
   font-weight: 700;
   font-size: 10px;
   color: #777;
+  position: absolute;
+  top: 4px;
+  left: -45px;
 }
 
 
