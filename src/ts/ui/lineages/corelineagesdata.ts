@@ -309,8 +309,9 @@ export class CoreLineagesData {
             } else {
               this.highlightNode.copyFrom(match);
             }
+          } else {
+            toMap.push(this.highlightNode);
           }
-          toMap.push(this.highlightNode);
         }
 
         // console.log(toMap)

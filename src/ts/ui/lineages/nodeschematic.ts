@@ -138,7 +138,7 @@ export class NodeSchematic {
   height: number = UNSET;
 
 
-  constructor(nodeHighlightCallback: HoverCallback, highlightNode: DisplayNode) {
+  constructor(nodeHighlightCallback: HoverCallback) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
   }

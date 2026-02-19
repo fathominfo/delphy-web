@@ -87,15 +87,21 @@ export class DisplayNode {
     if (isRoot) {
       this.name = "Root";
       this.label = "Root";
+      this.mrcaName = "";
     } else if (isInferred) {
+      // console.log("set data isInferred");
+      // if (this.name === "") {
       this.name = "MRCA";
       this.label = "M";
+      // }
     } else if (index === UNSET || index === NULL_NODE_CODE) {
-      this.name = '';
+      this.name = "";
       this.label = this.name;
+      this.mrcaName = "";
     } else {
       this.name = String.fromCharCode(ASCII_BASE + this.nameIndex);
       this.label = this.name;
+      this.mrcaName = "";
     }
     this.index = index;
     this.className = this.name.toLowerCase() || '';
@@ -109,6 +115,12 @@ export class DisplayNode {
     this.times = series.times;
     this.metadata = metadata;
   }
+
+
+  setMRCAName(name = "") : void {
+    this.mrcaName = name;
+  }
+
 
   copyFrom(other: DisplayNode) {
     this.index = other.index;

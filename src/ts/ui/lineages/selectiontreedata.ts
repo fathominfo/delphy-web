@@ -76,7 +76,7 @@ export class SelectionTreeData {
         throw new Error("couldn't find an ancestral node. maybe the assumption that sorting by `generationsFromRoot` is a bad one?");
       }
       const ancestorTreeNode = this.found[ancestor];
-      if (ancestorTreeNode.children.length == 0) {
+      if (ancestorTreeNode.children.length === 0) {
         ancestorTreeNode.addChild(tn);
       } else {
         /*
@@ -101,7 +101,7 @@ export class SelectionTreeData {
             ancestorTreeNode.addChild(mrcaTreeNode);
             mrcaTreeNode.addChild(other);
             mrcaTreeNode.addChild(tn);
-            mrca.mrcaName = this.getMRCAName(mrcaTreeNode)
+            mrca.setMRCAName(this.getMRCAName(mrcaTreeNode));
             if (mrca.mrcaName.indexOf("MRCA") > 4) {
               console.log("let's try this again");
               this.getMRCAName(mrcaTreeNode)
@@ -116,7 +116,7 @@ export class SelectionTreeData {
         /* reset the name of the original parent to include all nodes */
         if (!ancestorTreeNode.node.isRoot) {
           const mrcaName = this.getMRCAName(ancestorTreeNode);
-          ancestorTreeNode.node.mrcaName = mrcaName;
+          ancestorTreeNode.node.setMRCAName(mrcaName);
           if (ancestorTreeNode.node.mrcaName.indexOf("MRCA") > 4) {
             console.log("let's try this again");
             this.getMRCAName(ancestorTreeNode);
