@@ -44,7 +44,8 @@ class TreeNodeDisplay {
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
-    parent: TreeNodeDisplay | null
+    parent: TreeNodeDisplay | null,
+    nodeHighlightCallback: HoverCallback
   ) {
     this.node = src.node;
     this.tipPlacement = src.tipPlacement;
@@ -55,6 +56,10 @@ class TreeNodeDisplay {
     this.mutLabel = MUTATION_COUNT_TEMPLATE.cloneNode(true) as SVGGElement;
     this.parent = parent;
     this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
+
+    const labelBackground = this.nameLabel.querySelector("rect") as SVGRectElement;
+    labelBackground.addEventListener("pointerenter", ()=>nodeHighlightCallback(this.node.index, UNSET, null));
+    labelBackground.addEventListener("pointerleave", ()=>nodeHighlightCallback(UNSET, UNSET, null));
   }
 
   position(_width: number, height: number) {
@@ -215,7 +220,8 @@ export class NodeSchematic {
         if (treeNode.parent) {
           parent = lookup[treeNode.parent.node.index];
         }
-        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent);
+        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode,
+          mutationCount, relationType, parent, this.nodeHighlightCallback);
         this.nodes.push(tnd);
         lookup[node.index] = tnd;
       }

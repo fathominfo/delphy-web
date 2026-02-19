@@ -994,6 +994,7 @@ details {
       alignment-baseline: central;
       font-family: var(--Inter-Tight);
       font-weight: var(--highlighting-value-font-weight);
+      pointer-events: none;
     }
 
     &.back {
@@ -1031,6 +1032,10 @@ details {
     rect {
       stroke: #909090;
     }
+  }
+
+  .label.mrca rect {
+    pointer-events: none;
   }
 
 
