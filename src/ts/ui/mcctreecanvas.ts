@@ -235,10 +235,10 @@ export class MccTreeCanvas {
     this.colorsUnSet = true;
     const nodeCount = tree.getSize();
     if (nodeCount > 0) {
-      this.gatherNodeStats(tree, creds);
-      if (this.rootIndex === UNSET) {
-        this.rootIndex = (this.tree as Tree).getRootIndex();
+      if (this.rootIndex === UNSET || this.tree !== tree) {
+        this.rootIndex = (tree as Tree).getRootIndex();
       }
+      this.gatherNodeStats(tree, creds);
       this.positionTreeNodes();
       if (this.mccConfig) {
         this.confidenceThreshold = this.mccConfig.confidenceThreshold;
