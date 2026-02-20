@@ -610,13 +610,7 @@ input.stopping + #run-input--label {
 #runner--advanced {
   height: 0px;
   transition: height 0.15s;
-
-  &.active {
-    height: auto;
-  }
-
   overflow-y: hidden;
-
   width: 100%;
   background-color: var(--advanced-header-fill);
   overflow-y: hidden;
@@ -624,10 +618,19 @@ input.stopping + #run-input--label {
   justify-content: flex-start;
   min-width: var(--view-min-width);
   max-width: var(--view-max-width);
-  align-items: center;
+  align-items: baseline;
   gap: var(--advanced-header-options-gap) calc(calc(calc(8px * 4 / 3) * 3) * 4);
-
   display: flex;
+
+  &.active {
+    height: 300px;
+
+    &:has(#popmodel-selector-skygrid:checked):has(#advanced-skygrid-toggle:checked){
+      height: 600px;
+    }
+  }
+
+
 
 
   #runner--advanced--content {
@@ -664,6 +667,11 @@ input.stopping + #run-input--label {
   }
 
 
+  .radio-set {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+  }
 
 
   fieldset {
@@ -694,14 +702,8 @@ input.stopping + #run-input--label {
       }
     }
 
-  }
+    p { margin: 0; }
 
-  legend {
-    // weird styling?
-    // https://stackoverflow.com/questions/3973456/default-css-values-for-a-fieldset-legend?answertab=modifieddesc#tab-top
-    all: unset;
-    float: left;
-    width: 100%;
   }
 
   .related-inputs {
@@ -779,23 +781,26 @@ input.stopping + #run-input--label {
     color: var(--advanced-checkbox-option-text-off);
   }
 
-
   label:has(input[type="radio"]) {
-    // border: solid 1.5px @RADIO_BUTTON_BORDER;
-    padding: 3px 8px;
-    border-radius: 3px;
+    background-color: var(--advanced-input-option-fill);
+    color: var(--advanced-header-option-text-static);
+    // background-color: var(--advanced-header-option-fill-static);
+    border-color: var(--advanced-header-option-stroke-static);
+    opacity: 0.5;
   }
+
   label:has(input[type="radio"]:checked) {
-    // border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
-    // background-color: @RADIO_BUTTON_SELECTED_FILL;
+    opacity: 1.0;
   }
 
-
+  a {
+    color: white;
+  }
 
   input {
     position: relative;
     height: var(--advanced-supporting-input-height);
-    padding: 0 var(--advanced-supporting-input-padding-x);
+    // padding: 0 var(--advanced-supporting-input-padding-x);
     font-family: var(--Inter);
     font-weight: inherit;
     font-size: inherit;
@@ -840,8 +845,6 @@ input.stopping + #run-input--label {
     width: 0px;
     margin: 0;
   }
-
-
 
   .button-container {
     display: flex;
@@ -888,6 +891,11 @@ input.stopping + #run-input--label {
     color: #CD3131;
   }
 
+
+  .population-model-fieldset {
+    width: 300px;
+  }
+
   button[type="submit"].warning-button:not(:disabled) {
     // background-color: #fff2f2;
     // color: #CD3131;
@@ -917,13 +925,25 @@ input.stopping + #run-input--label {
       display: flex;
       height: 140px;
     }
+    .disclaimer {
+      opacity: 1;
+    }
+  }
+
+  .population-model-fieldset:has(#popmodel-selector-skygrid:hover) {
+    .disclaimer {
+      opacity: 1;
+    }
   }
 
 
-
   .disclaimer {
-    font-style: italic;
-    color: #888;
+    // font-style: italic;
+    color: var(--advanced-checkbox-option-text-off);
+    opacity: 0;
+    transition: opacity 0.15s;
+    display: block;
+    padding: 14px 2px 0;
   }
 }
 
@@ -958,16 +978,9 @@ label:has(#advanced-skygrid-toggle:checked) {
   }
 }
 
-#advanced-skygrid-timescale-options {
-  display: flex;
-  flex-direction: row;
-  gap: 3px;
-}
-
-
- .advanced-skygrid-param {
+.advanced-skygrid-param {
   font-weight: 600;
- }
+}
 
 #advanced-skygrid-timescale-inputs label {
   display: none;

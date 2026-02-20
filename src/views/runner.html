@@ -60,9 +60,10 @@
             </fieldset>
             <fieldset class="population-model-fieldset">
               <h4>Population model</h4>
-              <p id="#population-model-options">
+              <p id="#population-model-options" class="radio-set">
                 <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth" checked ></label>
                 <label>Skygrid<input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid" ></label>
+                <span class="disclaimer">Read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</span>
               </p>
               <div id="popmodel-exponential" class="population-model-option">
                 <div class="input-container">
@@ -88,7 +89,6 @@
                 </div>
               </div>
               <fieldset id="popmodel-skygrid" class="population-model-option">
-                <p class="disclaimer">Read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
                 <div class="input-container">
                   <label id="" class="">
                     <p>Model start date: <input type="date" id="popmodel-skygrid-k" value="2014-01-01"
@@ -113,7 +113,7 @@
                 </label>
                 <div id="advanced-skygrid-parameters">
                   <p class="advanced-skygrid-param">Population curve prior smoothness</p>
-                  <p id="advanced-skygrid-timescale-options">
+                  <p id="advanced-skygrid-timescale-options" class="radio-set">
                     <label id="advanced-skygrid-timescale-doubling">
                       <span>Set timescale</span>
                       <input type="radio" name="timescale" value="doubling" checked />
@@ -146,7 +146,7 @@
                     </label>
                   </div>
                   <p class="advanced-skygrid-param">Protection against low populations (read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>)</p>
-                  <div id="advanced-skygrid-barrier-options">
+                  <div id="advanced-skygrid-barrier-options" class="radio-set">
                     <label>
                       <span>Enabled (recommended)</span>
                       <input type="radio" name="low-pop-protection" value="on" checked />
