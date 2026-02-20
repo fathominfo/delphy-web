@@ -53,10 +53,10 @@
                   <label for="fixed-mutation-rate-toggle">Set a fixed overall mutation rate</label>
                   <div class="input-container">
                     <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
-                    <label>&times; 10<sup>&minus;5</sup> mutations / site / year</label>
+                    <label for="overall-mutation-rate-input">&times; 10<sup>&minus;5</sup> mutations / site / year</label>
                   </div>
                 </div>
-              </label>
+              </div>
             </fieldset>
             <fieldset class="population-model-fieldset">
               <h4>Population model</h4>
@@ -67,26 +67,25 @@
               <div id="popmodel-exponential" class="population-model-option">
                 <div class="input-container">
                   <input type="checkbox" id="fixed-final-pop-size-toggle" name="isFixedFinalPopSize" autocomplete="off">
-                  <label for="fixed-final-pop-size-toggle">Fix effective population size at time of latest tip</label>
-                </div>
-                <label id="overall-final-pop-size-label" class="related-inputs">
-                  <p>Set initial value of N(t)*rho at t = time of latest tip to</p>
                   <div class="inline-unit">
-                    <input type="number" id="overall-final-pop-size-input" value="3.00" step="0.01" min="0.00" name="overallFinalPopSize" autocomplete="off" />
-                    <p> years</p>
+                    <label for="fixed-final-pop-size-toggle">Set a fixed effective population size at time of latest tip</label>
+                    <div id="overall-final-pop-size-label" class="input-container">
+                      <input type="number" id="overall-final-pop-size-input" value="3.00" step="0.01" min="0.00" name="overallFinalPopSize" autocomplete="off" />
+                      <label> years</label>
+                    </div>
                   </div>
-                </label>
+                </div>
+
                 <div class="input-container">
                   <input type="checkbox" id="fixed-pop-growth-rate-toggle" name="isFixedPopGrowthRate" autocomplete="off">
-                  <label for="fixed-pop-growth-rate-toggle">Fix effective population size growth rate</label>
-                </div>
-                <label id="overall-pop-growth-rate-label" class="related-inputs">
-                  <p>Set initial effective population size growth rate to</p>
                   <div class="inline-unit">
-                    <input type="number" id="overall-pop-growth-rate-input" value="0.00" step="0.01" name="overallPopGrowthRate" autocomplete="off" />
-                    <p> e-foldings / year</p>
+                    <label for="fixed-pop-growth-rate-toggle">Set a fixed effective population size growth rate</label>
+                    <div class="input-container">
+                      <input type="number" id="overall-pop-growth-rate-input" value="0.00" step="0.01" name="overallPopGrowthRate" autocomplete="off" />
+                      <label> e-foldings / year</label>
+                    </div>
                   </div>
-                </label>
+                </div>
               </div>
               <fieldset id="popmodel-skygrid" class="population-model-option">
                 <p class="disclaimer">Read more <a href="https://github.com/broadinstitute/delphy/wiki/Flexible-population-models" target="_">here</a>.</p>
@@ -180,7 +179,7 @@
               <div class="disabled-text">
                 <p>Delphy does not support detecting <span class="small-caps">APOBEC</span> context with fixed mutation rates enabled.</p>
               </div>
-              <div class="checkbox-container">
+              <div class="input-container">
                 <input type="checkbox" id="apobec-toggle" name="isApobec" autocomplete="off">
                 <label for="apobec-toggle">Model <span class="small-caps">APOBEC</span> action (mpox)</label>
               </div>
