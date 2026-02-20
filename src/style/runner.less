@@ -606,6 +606,93 @@ input.stopping + #run-input--label {
 */
 
 
+#show-advanced {
+
+  position: relative;
+  height: var(--header-option-height);
+  padding-top: var(--header-option-padding-y);
+  padding-right: var(--header-option-padding-x);
+  padding-left: var(--header-option-symbol-spacing-1x);
+  box-sizing: content-box;
+  outline: none;
+  cursor: pointer;
+  transition: all var(--transition) ease-out;
+
+
+  input {
+    visibility: hidden;
+    width: 0;
+    opacity: 0;
+    position: absolute;
+  }
+
+}
+
+
+#option--show-advanced {
+  flex-grow: 1;
+  line-height: calc(var(--unit) * 2);
+  border-width: var(--header-option-stroke-weight);
+  color: var(--header-option-text-static);
+  background-color: var(--header-option-fill-static);
+  border: var(--header-option-stroke-weight) solid var(--header-option-stroke-static);
+  transition: all var(--transition) ease-out;
+
+
+  .pointer {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: var(--pointer-box-width);
+    height: var(--pointer-box-height);
+    transform: translate(-50%, var(--header-buffer-height));
+    overflow: hidden;
+    background-color: transparent;
+    pointer-events: none;
+
+    .shape {
+      position: absolute;
+      top: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      transition: top var(--transition) ease-out;
+      color: var(--advanced-header-fill);;
+      span {
+        transform-origin: center center;
+        transform: scale(1.25, 0.75);
+        font-size: var(--pointer-shape-size);
+        line-height: var(--pointer-shape-size);
+      }
+    }
+  }
+
+  &:hover {
+    color: var(--header-option-text-on);
+    background-color: var(--header-option-fill-on);
+    border-color: var(--header-option-stroke-on);
+  }
+
+
+  &.active {
+    background-color: var(--header-option-fill-active);
+    border-color: var(--header-option-stroke-active);
+    color: var(--header-option-text-active);
+
+    #show-advanced .icon path {
+      fill: var(--header-option-symbol-active);
+    }
+
+    .pointer .shape { top: 50%; }
+
+  }
+}
+
+
 
 #runner--advanced {
   height: 0px;

@@ -93,26 +93,16 @@ header {
 
 
 
-.header--options {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--header-options-gap);
-  font-weight: 500;
-  font-size: var(--unit);
-  line-height: calc(var(--unit) * 1.25);
-}
 
 .header--options-group {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   gap: var(--header-options-group-gap);
   flex: 1;
+  line-height: calc(var(--unit) * 1.25);
 }
 
 header .option.align-right {
@@ -159,7 +149,7 @@ header .option {
   }
 
 
-  button, select, #show-advanced {
+  button, select {
     appearance: none;
     position: relative;
     width: auto;
@@ -291,40 +281,7 @@ header .option-set {
   }
 }
 
-.header--basic .option .pointer {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  width: var(--pointer-box-width);
-  height: var(--pointer-box-height);
-  transform: translate(-50%, var(--header-buffer-height));
-  overflow: hidden;
-  background-color: transparent;
-  white-space: nowrap;
-  pointer-events: none;
-  .shape {
-    position: absolute;
-    top: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    transition: top var(--transition) ease-out;
-    span {
-      transform-origin: center center;
-      transform: scale(1.25, 0.75);
-      font-size: var(--pointer-shape-size);
-      line-height: var(--pointer-shape-size);
-    }
-  }
-}
+
 
 
 
@@ -332,42 +289,7 @@ header .option-set {
 
 /*
 
-The option to show advanced parameters is only
-displayed on the run page. The button to toggle
-the advanced parameters has a lot in common with
-other basic header elements, its css is defined
-here. To see the css for the actual advanced
-parameters (not just the toggle), look in
-`runner.less`
+Advanced parameters are available only on the run
+page. To see the css for them and the toggle
+(#show-advanced), look in `runner.less`
 */
-
-#show-advanced {
-  input {
-    visibility: hidden;
-    width: 0;
-    opacity: 0;
-    position: absolute;
-  }
-}
-
-
-#option--show-advanced {
-  flex-grow: 1;
-  &.active {
-    #show-advanced {
-      color: var(--header-option-text-active);
-      background-color: var(--header-option-fill-active);
-      border-color: var(--header-option-stroke-active);
-
-      .icon path {
-        fill: var(--header-option-symbol-active);
-      }
-    }
-
-    .pointer .shape {
-      top: 50%;
-    }
-
-  }
-}
-
