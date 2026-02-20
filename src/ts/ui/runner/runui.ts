@@ -199,9 +199,9 @@ export class RunUI extends UIScreen {
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
 
-    const openAdvancedButton = this.div.querySelector("#show-advanced") as HTMLButtonElement;
+    const openAdvancedButton = this.div.querySelector("#option--show-advanced") as HTMLDivElement;
     this.advanced = this.div.querySelector("#runner--advanced") as HTMLElement;
-    this.advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
+    this.advancedForm = document.querySelector("#runner--advanced--content") as HTMLFormElement;
 
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement;
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
@@ -269,11 +269,20 @@ export class RunUI extends UIScreen {
     });
     this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
-    openAdvancedButton.addEventListener("click", ()=>{
-      this.advanced.classList.remove("hidden");
-      this.restartWarning.classList.add("hidden");
-      this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
-      this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+    console.trace('binding advanced' , Date.now());
+    const advancedToggle = openAdvancedButton.querySelector("input") as HTMLInputElement;
+    advancedToggle.addEventListener("change", (event)=>{
+      event.stopPropagation();
+      if (advancedToggle.checked) {
+        openAdvancedButton.classList.add("active");
+        this.advanced.classList.add("active");
+        this.restartWarning.classList.add("hidden");
+        this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
+        this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+      } else {
+        this.advanced.classList.remove("active");
+        openAdvancedButton.classList.remove("active");
+      }
     });
 
     this.fixedRateToggle.addEventListener("change", () => {
@@ -308,21 +317,18 @@ export class RunUI extends UIScreen {
 
 
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
-    const advancedCloseButton = this.div.querySelector(".close-button") as HTMLButtonElement;
-    [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
-      this.advanced.classList.add("hidden");
-    }));
+    advancedCancelButton.addEventListener("click", () => this.advanced.classList.remove("active"));
     this.advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     this.advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
     this.advanced.addEventListener("click", e => {
       if (e.target === this.advanced) {
         e.preventDefault();
-        this.advanced.classList.add("hidden");
+        this.advanced.classList.remove("active");
       }
     });
     window.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !this.advanced.classList.contains("hidden")) {
-        this.advanced.classList.add("hidden");
+      if (e.key === "Escape" && this.advanced.classList.contains("active")) {
+        this.advanced.classList.remove("active");
       }
     })
   }
@@ -863,7 +869,7 @@ export class RunUI extends UIScreen {
 
 
   private confirmRestart(newParams: RunParamConfig, skipDialog=true): void {
-    this.advanced.classList.add("hidden");
+    this.advanced.classList.remove("active");
 
     const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
       currentRunWouldBeErased = currentStepCount > 1;

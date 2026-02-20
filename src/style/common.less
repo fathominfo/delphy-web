@@ -256,7 +256,7 @@
   --advanced-checkbox-option-box-stroke-weight: var(--checkbox-option-box-stroke-weight);
   --advanced-checkbox-option-gap: calc(var(--unit) * 0.75);
   --advanced-supporting-option-inset: calc(var(--advanced-checkbox-option-box-size) + var(--advanced-checkbox-option-gap));
-  --advanced-supporting-input-width: calc(var(--unit) * 3.5);
+  --advanced-supporting-input-width: calc(var(--unit) * 6);
   --advanced-supporting-input-height: calc(var(--unit) * 1.5);
   --advanced-supporting-input-padding-x: calc(var(--header-option-padding-x) / 2);
   --pointer-box-width: calc(var(--unit) * 3);
@@ -977,9 +977,6 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   background-color: var(--view-fill);
-  -webkit-transition: background-color var(--intro-transition) ease-out;
-  -moz-transition: background-color var(--intro-transition) ease-out;
-  -ms-transition: background-color var(--intro-transition) ease-out;
   transition: background-color var(--intro-transition) ease-out;
 }
 
@@ -996,9 +993,6 @@ nav {
   background-color: var(--nav-fill);
   color: var(--nav-text);
   padding: 0;
-  -webkit-transition: all var(--intro-transition) ease-out;
-  -moz-transition: all var(--intro-transition) ease-out;
-  -ms-transition: all var(--intro-transition) ease-out;
   transition: all var(--intro-transition) ease-out;
 }
 
@@ -1244,8 +1238,6 @@ nav {
 //——————————————————————————————————————————
 
 .smoothly(@attr, @time: .15s) {
-  -webkit-transition: @attr @time ease-in-out;
-  -ms-transition: @attr @time ease-in-out;
   transition: @attr @time ease-in-out;
 }
 
@@ -1534,9 +1526,6 @@ building custom inputs on top of native inputs. */
   max-height: var(--info-size);
   border-radius: var(--info-corner);
   background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-static));
-  -webkit-transition: background-color var(--transition) ease-in-out;
-  -moz-transition: background-color var(--transition) ease-in-out;
-  -ms-transition: background-color var(--transition) ease-in-out;
   transition: background-color var(--transition) ease-in-out;
 }
 
@@ -1569,9 +1558,6 @@ building custom inputs on top of native inputs. */
 .info .icon path {
   fill: var(--info-icon);
   opacity: var(--info-icon-opacity-static);
-  -webkit-transition: all var(--transition) ease-in-out;
-  -moz-transition: all var(--transition) ease-in-out;
-  -ms-transition: all var(--transition) ease-in-out;
   transition: all var(--transition) ease-in-out;
 }
 
@@ -1900,4 +1886,30 @@ building custom inputs on top of native inputs. */
   background-color: var(--guide-date-stroke);
   opacity: var(--guide-date-opacity);
   transform: translateX(-50%);
+}
+
+
+input[type="checkbox"] {
+  position: relative;
+  &:after {
+    content: "✓";
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    box-sizing: inherit;
+    text-align: center;
+    font-weight: 600;
+    font-size: calc(var(--unit) * (4 / 5));
+    transform: translateY(-0.5px);
+    white-space: nowrap;
+    transition: inherit;
+    color: var(--checkbox-option-box-glyph-off);
+    opacity: 0;
+  }
 }

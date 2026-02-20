@@ -12,7 +12,7 @@ header {
   align-items: flex-start;
   gap: 0;
   min-width: var(--header-min-width);
-  // max-width: var(--header-max-width);
+  /* max-width: var(--header-max-width); */
   margin: 0;
   padding: 0;
   opacity: 1;
@@ -22,77 +22,24 @@ header {
   color: var(--header-text);
   background-color: rgb(from var(--header-fade-fill) r g b / var(--header-fade-fill-opacity));
   overflow: hidden;
-  /* -webkit-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
-  -moz-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
-  -ms-transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay);
-  transition: all var(--intro-bumper-transition) ease-out var(--intro-bumper-delay); */
-  -webkit-transition: height var(--transition) ease-out;
-  -moz-transition: height var(--transition) ease-out;
-  -ms-transition: height var(--transition) ease-out;
   transition: height var(--transition) ease-out;
 }
 
-.header--basic,
-#header--advanced {
-  display: flex;
-  flex-direction: row;
+.header--basic, #runner--advanced {
   box-sizing: border-box;
   width: 100%;
-  padding: 0 var(--view-margin-x);
+  padding-left: var(--view-margin-x);
+  padding-right: var(--view-margin-x);
 }
 
 .header--basic {
+  display: flex;
+  flex-direction: row;
   justify-content: flex-start;
   align-items: center;
   gap: var(--header-expanded-gap);
   height: var(--header-height);
 }
-
-#header--advanced {
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: var(--advanced-header-gap);
-  background-color: var(--advanced-header-fill);
-  color: var(--advanced-header-text);
-  height: 0;
-  visibility: hidden;
-  overflow: hidden;
-  pointer-events: none;
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
-  transition: all var(--transition) ease-out;
-}
-
-main[data-show-advanced-settings="true"] #header--advanced {
-  height: auto;
-  visibility: visible;
-  pointer-events: all;
-  padding-top: var(--advanced-header-padding-top);
-  padding-bottom: var(--advanced-header-padding-bottom);
-}
-
-main[data-show-advanced-settings="true"] #option--show-advanced .pointer .shape {
-  top: 50%;
-}
-
-main[data-show-advanced-settings="true"] #show-advanced {
-  color: var(--header-option-text-on);
-  background-color: var(--header-option-fill-on);
-  border-color: var(--header-option-stroke-on);
-}
-
-main[data-show-advanced-settings="true"] #show-advanced {
-  color: var(--header-option-text-active);
-  background-color: var(--header-option-fill-active);
-  border-color: var(--header-option-stroke-active);
-}
-
-main[data-show-advanced-settings="true"] #show-advanced .icon path {
-  fill: var(--header-option-symbol-active);
-}
-
-
 
 .header--descriptor,
 .header--title,
@@ -105,10 +52,6 @@ main[data-show-advanced-settings="true"] #show-advanced .icon path {
 
 .header--descriptor {
   gap: var(--header-gap);
-}
-
-.header--option {
-  flex: 1;
 }
 
 .header--title {
@@ -142,40 +85,15 @@ main[data-show-advanced-settings="true"] #show-advanced .icon path {
   overflow: visible;
   pointer-events: all;
   visibility: visible;
+
+  p {
+    margin: unset;
+  }
 }
 
-.header--summary p {
-  margin: unset;
-}
 
-.header--summary .collection {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: baseline;
-  gap: 0.1875rem;
-  font-family: var(--Inter);
-  font-size: calc(var(--unit) * 0.875);
-  opacity: 0.75;
-}
-
-.header--summary .period {
-  display: flex;
-  flex-direction: row;
-  justify-content: inherit;
-  align-items: inherit;
-  gap: 0.025rem;
-}
-
-.header--summary .collection .value {
-  font-family: var(--Inter);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: var(--tabular-numerals-tighter-spacing-2x);
-}
 
 .header--options {
-
-  flex: 1;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -194,36 +112,25 @@ main[data-show-advanced-settings="true"] #show-advanced .icon path {
   justify-content: flex-start;
   align-items: center;
   gap: var(--header-options-group-gap);
+  flex: 1;
 }
 
 header .option.align-right {
   justify-content: center;
   min-width: var(--align-right-width);
   max-width: var(--align-right-width);
+  button {
+    margin: 0 auto;
+  }
+
 }
 
-header .option.align-right button {
-  margin: 0 auto;
-}
-
-#header--advanced .header--options {
-  min-width: var(--view-min-width);
-  max-width: var(--view-max-width);
-  align-items: center;
-  gap: var(--advanced-header-options-gap);
-}
 
 .header--basic .header--options-group {
   flex-wrap: nowrap;
   gap: var(--header-options-group-gap-y) var(--header-options-group-gap-x);
 }
 
-#header--advanced .header--options-group {
-  flex: 1;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--advanced-header-options-group-gap);
-}
 
 header .option {
   position: relative;
@@ -232,7 +139,120 @@ header .option {
   justify-content: flex-start;
   align-items: baseline;
   gap: var(--header-option-gap);
+
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: auto;
+    pointer-events: none;
+  }
+
+  label {
+    white-space: nowrap;
+
+  }
+
+  .text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+
+  button, select, #show-advanced {
+    appearance: none;
+    position: relative;
+    width: auto;
+    max-width: var(--header-option-max-width);
+    height: var(--header-option-height);
+    padding: var(--header-option-padding-y) var(--header-option-padding-x);
+    font-weight: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: var(--header-option-text-static);
+    background-color: var(--header-option-fill-static);
+    border: var(--header-option-stroke-weight) solid var(--header-option-stroke-static);
+    border-radius: var(--corner);
+    box-sizing: content-box;
+    outline: none;
+    cursor: pointer;
+    transition: all var(--transition) ease-out;
+  }
+
+  &.symbol-left, &.symbol-right {
+    .icon,  .glyph {
+      position: absolute;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      bottom: 0;
+      width: var(--header-option-symbol-size);
+      height: var(--header-option-symbol-size);
+      background-color: transparent;
+      pointer-events: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .icon path {
+      fill: var(--header-option-symbol-static);
+      transition: all var(--transition) ease-out;
+    }
+
+    .glyph span {
+      font-size: calc(var(--unit) * (3 / 4));
+      transform: scaleY(0.75);
+      color: var(--header-option-symbol-static);
+      transition: all var(--transition) ease-out;
+    }
+
+
+    button:not(:disabled) {
+      &:hover, &:focus, &:active {
+        color: var(--header-option-text-on);
+        background-color: var(--header-option-fill-on);
+        border-color: var(--header-option-stroke-on);
+        .icon path {
+          fill: var(--header-option-symbol-on);
+        }
+      }
+    }
+
+
+    select:not(:disabled) {
+      &:hover, &:focus, &:active {
+        color: var(--header-option-text-on);
+        background-color: var(--header-option-fill-on);
+        border-color: var(--header-option-stroke-on);
+        &+ .glyph span {
+          color: var(--header-option-symbol-on);
+        }
+      }
+    }
+
+  }
+
+  &.symbol-left {
+    button, select, #show-advanced {
+      padding-left: var(--header-option-symbol-spacing-1x);
+    }
+    .icon, .glyph {
+      left: 0;
+    }
+  }
+
+  &.symbol-right {
+    button, select {
+      padding-right: var(--header-option-symbol-spacing-1x);
+    }
+    .icon, .glyph {
+      right: 0;
+    }
+  }
 }
+
+
 
 header .option--selector {
   position: relative;
@@ -243,129 +263,11 @@ header .option--selector {
   width: min-content;
 }
 
-/* header .option--selector button,
-header .option--selector select {
-  max-width: 100%;
-} */
 
-header .option button,
-header .option select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  -o-appearance: none;
-  -ms-appearance: none;
-  appearance: none;
-  position: relative;
-  width: auto;
-  max-width: var(--header-option-max-width);
-  height: var(--header-option-height);
-  padding: var(--header-option-padding-y) var(--header-option-padding-x);
-  font-weight: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  color: var(--header-option-text-static);
-  background-color: var(--header-option-fill-static);
-  border: var(--header-option-stroke-weight) solid var(--header-option-stroke-static);
-  border-radius: var(--corner);
-  box-sizing: content-box;
-  outline: none;
-  cursor: pointer;
-}
-
-header .option button,
-header .option select,
-header .option[data-symbol] .icon path,
-header .option[data-symbol] .glyph span {
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
-  transition: all var(--transition) ease-out;
-}
-
-header .option[data-symbol] .icon,
-header .option[data-symbol] .glyph {
-  position: absolute;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  bottom: 0;
-  width: var(--header-option-symbol-size);
-  height: var(--header-option-symbol-size);
-  background-color: transparent;
-  pointer-events: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-header .option[data-symbol="left"] button,
-header .option[data-symbol="left"] select {
-  padding-left: var(--header-option-symbol-spacing-1x);
-}
-
-header .option[data-symbol="right"] button,
-header .option[data-symbol="right"] select {
-  padding-right: var(--header-option-symbol-spacing-1x);
-}
-
-header .option[data-symbol="left"] .icon,
-header .option[data-symbol="left"] .glyph {
-  left: 0;
-}
-
-header .option[data-symbol="right"] .icon,
-header .option[data-symbol="right"] .glyph {
-  right: 0;
-}
-
-header .option[data-symbol] .icon path {
-  fill: var(--header-option-symbol-static);
-}
-
-header .option[data-symbol] .glyph span {
-  font-size: calc(var(--unit) * (3 / 4));
-  transform: scaleY(0.75);
-  color: var(--header-option-symbol-static);
-}
-
-header .option button:not(:disabled):hover, header .option select:not(:disabled):hover,
-header .option button:not(:disabled):focus, header .option select:not(:disabled):focus,
-header .option button:not(:disabled):active, header .option select:not(:disabled):active {
-  color: var(--header-option-text-on);
-  background-color: var(--header-option-fill-on);
-  border-color: var(--header-option-stroke-on);
-}
-
-header .option[data-symbol] button:not(:disabled):hover .icon path,
-header .option[data-symbol] button:not(:disabled):focus .icon path,
-header .option[data-symbol] button:not(:disabled):active .icon path {
-  fill: var(--header-option-symbol-on);
-}
-
-header .option[data-symbol] select:not(:disabled):hover + .glyph span,
-header .option[data-symbol] select:not(:disabled):focus + .glyph span,
-header .option[data-symbol] select:not(:disabled):active + .glyph span {
-  color: var(--header-option-symbol-on);
-}
-
-header .option button:disabled {
-  opacity: 0.5;
-  cursor: auto;
-}
-
-header .option .text,
-header .option label {
-  white-space: nowrap;
-}
-
-header .option .text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-header .checkbox.option .text,
-header .checkbox.option label {
-  white-space: unset;
+header .checkbox.option {
+  .text, label {
+    white-space: unset;
+  }
 }
 
 header label em {
@@ -380,13 +282,13 @@ header .option-set {
   justify-content: flex-start;
   align-items: flex-start;
   gap: calc(var(--unit) * 2);
-}
 
-header .option-set h4 {
-  font-weight: 600;
-  font-size: calc(var(--unit) * 1.25);
-  letter-spacing: 0.0125rem;
-  white-space: nowrap;
+  h4 {
+    font-weight: 600;
+    font-size: calc(var(--unit) * 1.25);
+    letter-spacing: 0.0125rem;
+    white-space: nowrap;
+  }
 }
 
 .header--basic .option .pointer {
@@ -404,53 +306,68 @@ header .option-set h4 {
   background-color: transparent;
   white-space: nowrap;
   pointer-events: none;
+  .shape {
+    position: absolute;
+    top: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    transition: top var(--transition) ease-out;
+    span {
+      transform-origin: center center;
+      transform: scale(1.25, 0.75);
+      font-size: var(--pointer-shape-size);
+      line-height: var(--pointer-shape-size);
+    }
+  }
 }
 
-.header--basic .option .pointer .shape {
-  position: absolute;
-  top: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  -webkit-transition: top var(--transition) ease-out;
-  -moz-transition: top var(--transition) ease-out;
-  -ms-transition: top var(--transition) ease-out;
-  transition: top var(--transition) ease-out;
+
+
+
+
+/*
+
+The option to show advanced parameters is only
+displayed on the run page. The button to toggle
+the advanced parameters has a lot in common with
+other basic header elements, its css is defined
+here. To see the css for the actual advanced
+parameters (not just the toggle), look in
+`runner.less`
+*/
+
+#show-advanced {
+  input {
+    visibility: hidden;
+    width: 0;
+    opacity: 0;
+    position: absolute;
+  }
 }
 
-.header--basic .option .pointer .shape span {
-  transform-origin: center center;
-  transform: scale(1.25, 0.75);
-  font-size: var(--pointer-shape-size);
-  line-height: var(--pointer-shape-size);
+
+#option--show-advanced {
+  flex-grow: 1;
+  &.active {
+    #show-advanced {
+      color: var(--header-option-text-active);
+      background-color: var(--header-option-fill-active);
+      border-color: var(--header-option-stroke-active);
+
+      .icon path {
+        fill: var(--header-option-symbol-active);
+      }
+    }
+
+    .pointer .shape {
+      top: 50%;
+    }
+
+  }
 }
 
-#header--advanced .header--options .option button {
-  padding: var(--advanced-header-option-padding-y) var(--advanced-header-option-padding-x);
-  white-space: nowrap;
-  font-weight: 500;
-  font-size: calc(var(--unit) * 1.125);
-  letter-spacing: 0.0125rem;
-  color: var(--advanced-header-option-text-static);
-  background-color: var(--advanced-header-option-fill-static);
-  border-color: var(--advanced-header-option-stroke-static);
-  border-radius: calc(var(--corner) * 1.5);
-  opacity: 1;
-}
-
-#header--advanced .header--options .option button:not(:disabled):hover,
-#header--advanced .header--options .option button:not(:disabled):active,
-#header--advanced .header--options .option button:not(:disabled):focus {
-  color: var(--advanced-header-option-text-on);
-  background-color: var(--advanced-header-option-fill-on);
-  border-color: var(--advanced-header-option-stroke-on);
-}
-
-#header--advanced .header--options .option button:disabled {
-  opacity: 0.5;
-  cursor: auto;
-}

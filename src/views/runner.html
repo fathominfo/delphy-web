@@ -5,42 +5,41 @@
     <header>
       <div class="header--basic">
         {{> header_common }}
-        <div id="step-control" class="option">
-          <label for="step-options">Sample <span class="digit">1</span> tree per</label>
-          <select id="step-options">
-            <option value="7" >10,000,000 steps</option>
-            <option value="6" selected>1,000,000 steps</option>
-            <option value="5" >100,000 steps</option>
-            <option value="4" >10,000 steps</option>
-            <option value="3" >1,000 steps</option>
-            <option value="2" >100 steps</option>
-            <option value="1" >10 steps</option>
-            <option value="0" >1 step</option>
-          </select>
+        <div class="header--options-group">
+          <div id="step-control" class="option">
+            <label for="step-options">Sample <span class="digit">1</span> tree per</label>
+            <select id="step-options">
+              <option value="7" >10,000,000 steps</option>
+              <option value="6" selected>1,000,000 steps</option>
+              <option value="5" >100,000 steps</option>
+              <option value="4" >10,000 steps</option>
+              <option value="3" >1,000 steps</option>
+              <option value="2" >100 steps</option>
+              <option value="1" >10 steps</option>
+              <option value="0" >1 step</option>
+            </select>
+          </div>
         </div>
-        <div id="option--show-advanced" class="option align-right" data-symbol="left">
-          <button id="show-advanced">
+        <div id="option--show-advanced" class="option align-right symbol-left">
+          <label id="show-advanced">
+            <input type="checkbox" />
             <div class="icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
                 <path d="m11.84,9.18l-.94-.39c.07-.25.12-.52.12-.79s-.05-.54-.12-.79l.94-.39c.19-.08.28-.3.2-.49s-.3-.28-.49-.2l-.95.39c-.27-.47-.65-.85-1.12-1.12l.39-.95c.08-.19-.01-.41-.2-.49-.19-.08-.41.01-.49.2l-.39.94c-.25-.07-.52-.12-.79-.12s-.54.05-.79.12l-.39-.94c-.08-.19-.3-.28-.49-.2-.19.08-.28.3-.2.49l.39.95c-.47.27-.85.65-1.12,1.12l-.95-.39c-.19-.08-.41.01-.49.2s.01.41.2.49l.94.39c-.07.25-.12.52-.12.79s.05.54.12.79l-.94.39c-.19.08-.28.3-.2.49.06.14.2.23.35.23.05,0,.1,0,.14-.03l.95-.39c.27.47.65.85,1.12,1.12l-.39.95c-.08.19.01.41.2.49.05.02.1.03.14.03.15,0,.29-.09.35-.23l.39-.94c.25.07.52.12.79.12s.54-.05.79-.12l.39.94c.06.14.2.23.35.23.05,0,.1,0,.14-.03.19-.08.28-.3.2-.49l-.39-.95c.47-.27.85-.65,1.12-1.12l.95.39s.1.03.14.03c.15,0,.29-.09.35-.23.08-.19-.01-.41-.2-.49Zm-3.84,1.07c-1.24,0-2.25-1.01-2.25-2.25s1.01-2.25,2.25-2.25,2.25,1.01,2.25,2.25-1.01,2.25-2.25,2.25Z" stroke-width="0"/>
               </svg>
             </div>
             <div class="text">Advanced run options</div>
-          </button>
+          </label>
           <div class="pointer"><div class="shape"><span>▲</span></div></div>
         </div>
       </div>
 
 
-      <div id="runner--advanced" class="hidden">
-        <form class="runner--advanced--content">
-          <div class="runner--advanced--header">
-            <h2 class="runner--advanced--title">Advanced options</h2>
-            <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>
-          </div>
-          <div class="runner--advanced--section">
+      <div id="runner--advanced">
+        <form id="runner--advanced--content">
+          <div id="runner--advanced--options">
             <fieldset class="mutation-rate-fieldset">
-              <legend><h3>Mutation rate</h3></legend>
+              <h4>Mutation rate</h4>
               <div class="disabled-text">
                 <p>Delphy does not support setting the mutation rate while <span class="small-caps">APOBEC</span> context detection is enabled.</p>
               </div>
@@ -50,18 +49,17 @@
               </div>
               <div class="input-container">
                 <input type="checkbox" id="fixed-mutation-rate-toggle" name="isFixedMutationRate" autocomplete="off">
-                <label for="fixed-mutation-rate-toggle">Fix overall mutation rate</label>
-              </div>
-              <label id="overall-mutation-rate-label" class="related-inputs">
-                <p>Set initial mutation rate to</p>
                 <div class="inline-unit">
-                  <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
-                  <p">&times; 10<sup>&minus;5</sup> mutations / site / year</p>
+                  <label for="fixed-mutation-rate-toggle">Set a fixed overall mutation rate</label>
+                  <div class="input-container">
+                    <input type="number" id="overall-mutation-rate-input" value="1.000" step="0.01" min="0.000" name="overallMutationRate" autocomplete="off" />
+                    <label>&times; 10<sup>&minus;5</sup> mutations / site / year</label>
+                  </div>
                 </div>
               </label>
             </fieldset>
             <fieldset class="population-model-fieldset">
-              <legend><h3>Population model</h3></legend>
+              <h4>Population model</h4>
               <p id="#population-model-options">
                 <label>Exponential Growth<input id="popmodel-selector-expgrowth" type="radio" name="popmodel" value="exp-growth" checked ></label>
                 <label>Skygrid<input id="popmodel-selector-skygrid" type="radio" name="popmodel" value="skygrid" ></label>
@@ -177,10 +175,8 @@
 
               </fieldset>
             </fieldset>
-          </div>
-          <div class="runner--advanced--section">
             <fieldset class="apobec-fieldset">
-              <legend><h3><span class="small-caps">APOBEC</span> action</h3></legend>
+              <h4><span class="small-caps">APOBEC</span> action</h4>
               <div class="disabled-text">
                 <p>Delphy does not support detecting <span class="small-caps">APOBEC</span> context with fixed mutation rates enabled.</p>
               </div>
@@ -190,13 +186,14 @@
               </div>
             </fieldset>
           </div>
-          <div class="runner--advanced--section">
+          <div id="runner--advanced--submit">
             <p class="warning-text hidden">Updating these settings will erase your current progress and restart the run.</p>
             <div class="button-container">
               <button type="button" class="advanced--cancel-button">Cancel</button>
               <button type="submit" class="advanced--submit-button warning-button" disabled autocomplete="off">Restart with selected options</button>
             </div>
           </div>
+
         </form>
       </div>
 
