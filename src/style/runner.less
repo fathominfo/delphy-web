@@ -733,8 +733,9 @@ input.stopping + #run-input--label {
     gap: 20px;
     padding-top: var(--advanced-header-padding-top);
     padding-bottom: var(--advanced-header-padding-bottom);
-    align-items: center;
-    gap: var(--advanced-header-options-gap);
+    align-items: self-end;
+    // gap: var(--advanced-header-options-gap);
+    gap: 20px;
   }
 
 
@@ -947,8 +948,7 @@ input.stopping + #run-input--label {
     cursor: pointer;
     padding: 0;
     border-radius: 3px;
-    background: none;
-    // color: #000;
+    // background: none;
     border: none;
   }
 
@@ -972,9 +972,22 @@ input.stopping + #run-input--label {
     }
   }
 
-  .warning-text {
-    color: #CD3131;
+  &.warning {
+    .warning-text { opacity: 1; }
+    .safe-restart { display: none; }
+    .warning-restart { display: inline-block; }
   }
+
+  .warning-text {
+    font-weight: 700;
+    color: white;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .safe-restart { display: inline-block; }
+  .warning-restart { display: none; }
 
 
   .population-model-fieldset {

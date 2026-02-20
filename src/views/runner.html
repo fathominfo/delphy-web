@@ -186,10 +186,13 @@
             </fieldset>
           </div>
           <div id="runner--advanced--submit">
-            <p class="warning-text hidden">Updating these settings will erase your current progress and restart the run.</p>
+            <p class="warning-text">Updating these settings will erase your current progress and restart the run.</p>
             <div class="button-container">
               <button type="button" class="advanced--cancel-button">Cancel</button>
-              <button type="submit" class="advanced--submit-button warning-button" disabled autocomplete="off">Restart with selected options</button>
+              <button type="submit" class="advanced--submit-button warning-button" disabled autocomplete="off">
+                <span class="safe-restart">Confirm</span>
+                <span class="warning-restart">Restart with selected options</span>
+              </button>
             </div>
           </div>
 

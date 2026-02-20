@@ -114,7 +114,6 @@ export class RunUI extends UIScreen {
   minBarrierLocationInput: HTMLInputElement;
 
   submitAdvancedButton: HTMLButtonElement;
-  restartWarning: HTMLElement;
 
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
@@ -267,16 +266,21 @@ export class RunUI extends UIScreen {
       }
 
     });
-    this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
     advancedToggle.addEventListener("change", (event)=>{
       event.stopPropagation();
       if (advancedToggle.checked) {
         this.advanced.classList.add("active");
-        this.restartWarning.classList.add("hidden");
-        this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
-        this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+        this.advanced.classList.remove("warning");
+        if (this.stepCount === 0) {
+          this.submitAdvancedButton.innerText = "Confirm";
+          this.submitAdvancedButton.classList.remove("warning-button");
+        } else {
+          this.submitAdvancedButton.innerText = "Restart with selected options";
+          this.submitAdvancedButton.classList.add("warning-button");
+        }
+
       } else {
         this.advanced.classList.remove("active");
       }
@@ -342,7 +346,7 @@ export class RunUI extends UIScreen {
   enableAdvancedFormSubmit() : void {
     const willRestart = this.getWillRestart();
     if (this.stepCount > 0) {
-      this.restartWarning.classList.toggle("hidden", !willRestart);
+      this.advanced.classList.add("warning");
     }
     /* don't enable the form while waiting for samples from the delphy engine */
     const isPausedAndWaitingForSample = !this.is_running && this.timerHandle !== 0;
