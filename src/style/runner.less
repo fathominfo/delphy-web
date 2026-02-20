@@ -972,6 +972,14 @@ input.stopping + #run-input--label {
     }
   }
 
+  .advanced--cancel-button {
+    color: var(--advanced-checkbox-option-text-off);
+    transition: color 0.15s;
+    &:hover {
+      color: var(--advanced-checkbox-option-text-on);
+    }
+  }
+
   &.warning {
     .warning-text { opacity: 1; }
     .safe-restart { display: none; }

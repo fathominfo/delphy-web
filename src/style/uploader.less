@@ -609,7 +609,7 @@
   margin: 15px 20px;
 
 
-  label {
+  label:has(input[type="radio"]) {
     // color: @del;
     display: flex;
     flex-direction: column;
@@ -619,9 +619,16 @@
     font-size: 18px;
     font-weight: 700;
     transition: all 0.15s;
-    padding: 3px 15px;
+    padding: 9px 0 5px 15px;
     position: relative;
     transition: color 0.15s;
+
+    max-width: fit-content;
+    height: auto;
+    border-width: unset;
+    border-style: unset;
+    border-radius: unset;
+
 
     svg {
       position: absolute;
