@@ -23,7 +23,22 @@ header {
   background-color: rgb(from var(--header-fade-fill) r g b / var(--header-fade-fill-opacity));
   overflow: hidden;
   transition: height var(--transition) ease-out;
+
+
+  label:has(input[type="radio"]) {
+    width: auto;
+    max-width: var(--header-option-max-width);
+    height: var(--header-option-height);
+    padding: var(--header-radio-option-padding-y) var(--header-option-padding-x);
+    font-weight: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    border-width: var(--header-option-stroke-weight);
+    border-style: solid;
+    border-radius: var(--corner);
+  }
 }
+
 
 .header--basic, #runner--advanced {
   box-sizing: border-box;
