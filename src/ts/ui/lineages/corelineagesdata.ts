@@ -50,6 +50,22 @@ export type ChartData = {
 
 export type updateFunction = (_: ChartData)=>void;
 
+
+const defaultChartData : ChartData = {
+  nodeDistributions: [],
+  prevalenceNodes: [],
+  minDate: UNSET,
+  maxDate: UNSET,
+  nodeComparisonData: [],
+  nodePairs: [],
+  nodes: [],
+  rootNode: null,
+  selectedRootIndex: UNSET
+};
+
+
+
+
 export class CoreLineagesData {
 
   /* interface to push updates */
@@ -163,7 +179,6 @@ export class CoreLineagesData {
         //   this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex);
         // }
       }
-
       this.setChartData();
     }
   }
@@ -178,18 +193,15 @@ export class CoreLineagesData {
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
         maxDate = pythia.maxDate;
-      const chartData: ChartData = {
-        nodeDistributions: [],
-        prevalenceNodes: [],
-        minDate: minDate,
-        maxDate: maxDate,
-        nodeComparisonData: [],
-        nodePairs: [],
-        nodes: [],
-        rootNode: this.selectionTreeData?.root || null,
-        selectedRootIndex: this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index
-      };
-
+      const chartData: ChartData = structuredClone(defaultChartData)
+      chartData.minDate = minDate;
+      chartData.maxDate =maxDate;
+      if (this.selectionTreeData?.root) {
+        chartData.rootNode = this.selectionTreeData.root;
+      }
+      if (this.rootNode.index !== actualRootIndex) {
+        chartData.selectedRootIndex = this.rootNode.index;
+      }
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
@@ -274,9 +286,9 @@ export class CoreLineagesData {
     return true;
   }
 
-  hoverNode(nodeIndex: number, date:number): void {
-    let hint: TreeHint = TreeHint.Zoom;
-    this.highlightDate = date;
+  hoverNode(nodeIndex: number, _date:number): void {
+    let _hint: TreeHint = TreeHint.Zoom;
+    // this.highlightDate = date;
     const prevIndex = this.highlightNode.index;
     if (nodeIndex !== prevIndex) {
       if (this.constrainHoverByCredibility
@@ -292,7 +304,7 @@ export class CoreLineagesData {
         const minimap = this.selectionTreeData as SelectionTreeData;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
-          hint = TreeHint.Zoom;
+          _hint = TreeHint.Zoom;
           this.getNodeDisplay(UNSET, false, false, this.highlightNode);
         } else {
           this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);
@@ -355,10 +367,8 @@ export class CoreLineagesData {
         //     hint = TreeHint.PreviewNodeBCousin;
         //   }
       }
+      this.setChartData();
     }
-
-    this.setChartData();
-
   }
 
   selectNode(nodeIndex: number) : void {
