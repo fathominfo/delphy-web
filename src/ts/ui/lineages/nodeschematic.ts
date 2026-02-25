@@ -169,7 +169,7 @@ export class NodeSchematic {
 
   render() {
     const { width, height } = this;
-    console.log('render minimap', width, height, this.stepCount, this.tipCount);
+    // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     CONTAINER.innerHTML = '';
     this.nodes.forEach(display=>display.position(width, height));
     this.nodes.forEach(display=>display.renderLabel());

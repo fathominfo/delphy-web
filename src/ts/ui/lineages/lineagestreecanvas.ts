@@ -47,45 +47,36 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     let sendAnother = false;
     const THROTTLE_TIME = 1000 / 60;
 
-    let prev = UNSET;
-    const tmp = (timed: boolean)=>{
-      const now = Date.now();
-      if (prev !== UNSET) console.log(`it's ${ now }  ${ timed }  ${now - prev } since last`);
-      else console.log(`it's ${ now }   ${ timed }`);
-      prev = now;
-    };
-    const sendUpdate = (waiting: boolean)=>{
-      tmp(waiting);
+    const sendUpdate = ()=>{
       hoverCallback(nodeIndex, date);
       throttleTimer = setTimeout(()=>{
         if (sendAnother) {
           sendAnother = false;
-          sendUpdate(false);
+          sendUpdate();
         } else {
           throttleTimer = UNSET;
         }
       }, THROTTLE_TIME);
     }
-    eventCanvas.addEventListener("pointermove", (event)=>{
+    eventCanvas.addEventListener("pointermove", async (event)=>{
       const ni = this.getNodeAt(event.offsetX, event.offsetY);
       const d = Math.round(this.getZoomDate(event.offsetX));
-      console.log(ni, nodeIndex, d, date);
+      // console.log(ni, nodeIndex, d, date);
       sendAnother = ni !== nodeIndex || d !== date;
       nodeIndex = ni;
       date = d;
       if (sendAnother && throttleTimer === UNSET) {
-        sendUpdate(false);
+        sendUpdate();
       }
     });
     eventCanvas.addEventListener("pointerleave", ()=>{
       nodeIndex = UNSET;
       date = UNSET;
-      if (throttleTimer === UNSET) {
-        hoverCallback(nodeIndex, date);
-      } else {
+      if (throttleTimer !== UNSET) {
         clearTimeout(throttleTimer);
         throttleTimer = UNSET;
       }
+      hoverCallback(nodeIndex, date);
     });
     eventCanvas.addEventListener("click", (event)=>{
       const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
