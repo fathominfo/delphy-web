@@ -121,7 +121,9 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     ctx.beginPath();
     ctx.moveTo(x, y);
     let parentIndex = mcc.getParentIndexOf(descendant.index);
-    while (parentIndex !== ancestor.index && parentIndex !== UNSET) {
+    /* we need to draw up to the ancestor, but not beyond */
+    const limitIndex = mcc.getParentIndexOf(ancestor.index)
+    while (parentIndex !== limitIndex && parentIndex !== UNSET) {
       px = this.getZoomX(mcc.getTimeOf(parentIndex));
       py = this.getZoomY(parentIndex);
       ctx.lineTo(px, y);
