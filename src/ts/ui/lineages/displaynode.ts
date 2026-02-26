@@ -178,7 +178,7 @@ const getNextSelectionClass = ():number=>{
     alert(`Sorry, we only support up to ${ MAX_NODE_COUNT } selections`);
     throw new Error(`Sorry, we only support up to ${ MAX_NODE_COUNT } selections`);
   }
-  console.log(`getNextNameNum(${ available[0] })`);
+  // console.log(`getNextNameNum(${ available[0] })`);
   return available[0];
 }
 

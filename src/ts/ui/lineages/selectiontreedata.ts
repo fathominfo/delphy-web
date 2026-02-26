@@ -59,7 +59,7 @@ export class SelectionTreeData {
     process the nodes closer to root first,
     so that ancestor nodes are created before their descendants.
     */
-
+    // console.log('building tree', nodes.map(n=>n.index).join(','));
     nodes.sort((a: DisplayNode, b: DisplayNode)=>a.generationsFromRoot - b.generationsFromRoot);
     this.found = [];
     this.root = new TreeNode(nodes.shift() as DisplayNode);

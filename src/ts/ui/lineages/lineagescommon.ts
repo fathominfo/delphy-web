@@ -34,7 +34,11 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
   setNode(node: DisplayNode, toggle=true) {
     this.node = node;
-    this.g.classList.toggle(node.className, toggle);
+    if (node.className === '') {
+      console.log(`why an empty class here?` , node);
+    } else {
+      this.g.classList.toggle(node.className, toggle);
+    }
   }
 
   setNodeClass(className: string, toggle=true) {

@@ -41,13 +41,42 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
         date = this.getZoomDate(event.offsetX);
       hoverCallback(nodeIndex, date);
     });
-    eventCanvas.addEventListener("pointermove", (event)=>{
-      const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY),
-        date = this.getZoomDate(event.offsetX);
+    let nodeIndex: number = UNSET;
+    let date: number = UNSET;
+    let throttleTimer = UNSET;
+    let sendAnother = false;
+    const THROTTLE_TIME = 1000 / 60;
+
+    const sendUpdate = ()=>{
       hoverCallback(nodeIndex, date);
+      throttleTimer = setTimeout(()=>{
+        if (sendAnother) {
+          sendAnother = false;
+          sendUpdate();
+        } else {
+          throttleTimer = UNSET;
+        }
+      }, THROTTLE_TIME);
+    }
+    eventCanvas.addEventListener("pointermove", async (event)=>{
+      const ni = this.getNodeAt(event.offsetX, event.offsetY);
+      const d = Math.round(this.getZoomDate(event.offsetX));
+      // console.log(ni, nodeIndex, d, date);
+      sendAnother = ni !== nodeIndex || d !== date;
+      nodeIndex = ni;
+      date = d;
+      if (sendAnother && throttleTimer === UNSET) {
+        sendUpdate();
+      }
     });
     eventCanvas.addEventListener("pointerleave", ()=>{
-      hoverCallback(UNSET, UNSET);
+      nodeIndex = UNSET;
+      date = UNSET;
+      if (throttleTimer !== UNSET) {
+        clearTimeout(throttleTimer);
+        throttleTimer = UNSET;
+      }
+      hoverCallback(nodeIndex, date);
     });
     eventCanvas.addEventListener("click", (event)=>{
       const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
