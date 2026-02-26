@@ -5,24 +5,17 @@ import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
 export const UNDEF = '-';
+export const UNSET = -1;
 
-export enum YSpacing {
-  even = 1,
-  genetic = 2
-}
-export enum Topology {
-  mcc = 1,
-  bestof = 2
-}
+
+// export enum Topology {
+//   mcc = 1,
+//   bestof = 2
+// }
 export enum ColorOption {
   confidence = 1,
   metadata = 2
 }
-export enum Presentation {
-  all = 1,
-  umbrella = 2
-}
-
 export enum Screens {
   run = 1,
   lineages = 2,
@@ -34,14 +27,14 @@ export enum Screens {
 /*
 these correspond to values on the HTML radio buttons
 */
-export const Y_EVEN_SPACING = "even";
-export const Y_GENETIC_DISTANCE = "genetic";
-export const TOPOLOGY_MCC = "mcc";
-export const TOPOLOGY_BEST_OF = "mcs";
+// export const Y_EVEN_SPACING = "even";
+// export const Y_GENETIC_DISTANCE = "genetic";
+// export const TOPOLOGY_MCC = "mcc";
+// export const TOPOLOGY_BEST_OF = "mcs";
 export const COLOR_CONF = "confidence";
 export const COLOR_METADATA = "metadata";
-export const PRESENTATION_ALL = "all";
-export const PRESENTATION_UMBRELLA = "mutations";
+// export const PRESENTATION_ALL = "all";
+// export const PRESENTATION_UMBRELLA = "mutations";
 
 
 export type NavigateFunctionType = (screen: Screens)=>void; // eslint-disable-line no-unused-vars
@@ -62,7 +55,6 @@ export const TIP_COLOR = 'rgb(88,88,88)',
   BRANCH_WEIGHT = 0.5,
   BRANCH_WEIGHT_MIN = 0.25,
   BRANCH_WEIGHT_MAX = 2.0,
-  // MUTATION_COLOR = 'rgb(200,0,0)',
   MUTATION_COLOR = 'rgb(200,200,200)',
   MUTATION_RADIUS = 1;
 
@@ -70,34 +62,6 @@ export const TIP_COLOR = 'rgb(88,88,88)',
 export const UNSTYLED_CANVAS_WIDTH = 100;
 
 
-
-export const enum DisplayNode {
-  root = 0,
-  mrca = 1,
-  nodeA = 2,
-  nodeB = 3,
-  UNSET = -1
-}
-export const nodeTypeNames = ["Root", "MRCA", "A", "B"];
-export const nodeClassNames: string[] = ["root", "mrca", "nodeA", "nodeB"];
-
-
-export const getNodeTypeName = (dn: DisplayNode)=>nodeTypeNames[dn];
-export const getNodeStroke = (dn:DisplayNode)=>{
-  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-stroke`;
-  return getCSSValue(strokeProp);
-};
-export const getNodeFill = (dn:DisplayNode)=>{
-  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-fill`;
-  return getCSSValue(strokeProp);
-};
-export const getNodeTint = (dn:DisplayNode)=>{
-  const strokeProp = `--${ nodeTypeNames[dn].toLowerCase() }-tint`;
-  return getCSSValue(strokeProp);
-};
-// export const getNodeColorDark = (dn:DisplayNode)=>nodeColorsDark[dn];
-// export const getNodeColorStream = (dn:DisplayNode)=>nodeColorsStream[dn];
-export const getNodeClassName = (dn: DisplayNode)=>nodeClassNames[dn];
 
 
 export const TREE_PADDING_TOP = 10,
@@ -409,8 +373,6 @@ export function textIntersects(metrics1: MyTextMetrics, metrics2: MyTextMetrics)
 
   return true;
 }
-
-export const UNSET = -1;
 
 export type ZoomFnc = (vertZoom: number, vertScroll: number, horizZoom: number, horizScroll: number)=>void;
 
@@ -736,3 +698,5 @@ export const getMedian = (arr:number[])=>{
   }
   return median;
 }
+
+

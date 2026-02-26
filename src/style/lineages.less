@@ -394,9 +394,13 @@ details {
   gap: var(--selections-gap);
 }
 
+#lineages--node-items {
+  width: 100%;
+}
+
 .lineages--node-item {
   position: relative;
-  display: none;
+  // display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: flex-start;
@@ -407,9 +411,6 @@ details {
   border: solid var(--selection-stroke-weight) var(--selection-stroke-static);
   border-radius: var(--selection-corner);
   box-sizing: border-box;
-  -webkit-transition: all var(--transition) ease-out;
-  -moz-transition: all var(--transition) ease-out;
-  -ms-transition: all var(--transition) ease-out;
   transition: all var(--transition) ease-out;
 
   background-color: var(--selection-fill-static);
@@ -457,8 +458,11 @@ details {
     line-height: var(--selection-node-line-height);
   }
 
+  .node-source {
+    display: none;
+  }
+
   .node-stats, .tip-info {
-    display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     width: 100%;
@@ -478,20 +482,43 @@ details {
   }
 
 
+  .node-stats { display: flex; }
+  .tip-info { display: none; }
+
   .tip-id {
     font-weight: 800;
   }
+
+  .node-actions {
+    position: absolute;
+    display: flex;
+    right: 0px;
+    top: 0px;
+  }
+
+
+  .node-set-root {
+    display: inline-block;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+  .node-reset-root {
+    display: none;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+
 
   .node-dismiss {
     flex-shrink: 0;
     width: var(--selection-remove-size);
     height: var(--selection-remove-size);
     cursor: pointer;
-
-    .box {
-      width: 100%;
-      height: 100%;
-    }
+    position: relative;
 
     path {
       fill: var(--selection-static-icon-fill-static);
@@ -503,19 +530,43 @@ details {
 
   }
 
-
-  &.active {
-    display: flex;
+  &.is-tip {
+    .node-stats, .node-set-root, .node-reset-root {
+      display: none;
+    }
+    .tip-info { display: flex; }
   }
 
-  &.lowlight {
-    opacity: 0.3;
+
+  &.is-inferred {
+    .node-source { display: inline-block; }
+    .node-dismiss { display: none; }
+  }
+
+  &.is-root {
+    .node-dismiss, .mono-hover, .node-set-root, .node-reset-root {
+      display: none;
+    }
+  }
+
+  &.is-set-root {
+    .node-dismiss, .node-set-root { display: none; }
+    .node-reset-root { display: inline-block; }
   }
 
 
   &.locked .node-dismiss {
     display: block;
   }
+
+
+  &:hover {
+    .node-set-root, .node-reset-root {
+      pointer-events: all;
+      opacity: 1;
+    }
+  }
+
 
   &.matching {
     background-color: var(--selection-fill-on);
@@ -527,8 +578,13 @@ details {
     opacity: var(--selection-unmatching-opacity);
   }
 
+  &.lowlight {
+    opacity: 0.3;
+  }
 
-  &.root, &.mrca {
+  /* settings for each node */
+
+  &[data-nodetype="root"], &[data-nodetype="mrca"] {
     .node-icon .shape {
       width: var(--selection-pin-shape-size-auto);
       height: var(--selection-pin-shape-size-auto);
@@ -539,14 +595,14 @@ details {
     }
   }
 
-  &.root {
+  &[data-nodetype="root"] {
     .node-name {color: var(--selection-root-text-static);}
   	.node-icon .shape {
       background-color: var(--selection-root-fill-static);
     }
    }
 
-  &.mrca {
+  &[data-nodetype="mrca"] {
     .node-name {color: var(--selection-mrca-text-static);}
   	.node-icon .shape {
       background-color: var(--selection-mrca-fill-static);
@@ -554,21 +610,114 @@ details {
    }
 
 
-  &.nodeA {
-    .node-name {color: var(--selection-a-text-static);}
+   &[data-nodetype="a"] {
+    .node-name {color: var(--a-text);}
   	.node-icon .shape {
-      border-color: var(--selection-a-stroke-static);
-      background-color: var(--selection-a-fill-static);
+      border-color: var(--a-text);
+      background-color: var(--a-fill);
     }
    }
 
-  &.nodeB {
-    .node-name {color: var(--selection-b-text-static);}
+
+   &[data-nodetype="b"] {
+    .node-name {color: var(--b-text);}
   	.node-icon .shape {
-      border-color: var(--selection-b-stroke-static);
-      background-color: var(--selection-b-fill-static);
+      border-color: var(--b-text);
+      background-color: var(--b-fill);
     }
    }
+
+
+   &[data-nodetype="c"] {
+    .node-name {color: var(--c-text);}
+  	.node-icon .shape {
+      border-color: var(--c-text);
+      background-color: var(--c-fill);
+    }
+   }
+
+
+   &[data-nodetype="d"] {
+    .node-name {color: var(--d-text);}
+  	.node-icon .shape {
+      border-color: var(--d-text);
+      background-color: var(--d-fill);
+    }
+   }
+
+
+   &[data-nodetype="e"] {
+    .node-name {color: var(--e-text);}
+  	.node-icon .shape {
+      border-color: var(--e-text);
+      background-color: var(--e-fill);
+    }
+   }
+
+
+   &[data-nodetype="f"] {
+    .node-name {color: var(--f-text);}
+  	.node-icon .shape {
+      border-color: var(--f-text);
+      background-color: var(--f-fill);
+    }
+   }
+
+
+   &[data-nodetype="g"] {
+    .node-name {color: var(--g-text);}
+  	.node-icon .shape {
+      border-color: var(--g-text);
+      background-color: var(--g-fill);
+    }
+   }
+
+
+   &[data-nodetype="h"] {
+    .node-name {color: var(--h-text);}
+  	.node-icon .shape {
+      border-color: var(--h-text);
+      background-color: var(--h-fill);
+    }
+   }
+
+
+   &[data-nodetype="i"] {
+    .node-name {color: var(--i-text);}
+  	.node-icon .shape {
+      border-color: var(--i-text);
+      background-color: var(--i-fill);
+    }
+   }
+
+
+   &[data-nodetype="j"] {
+    .node-name {color: var(--j-text);}
+  	.node-icon .shape {
+      border-color: var(--j-text);
+      background-color: var(--j-fill);
+    }
+   }
+
+
+   &[data-nodetype="k"] {
+    .node-name {color: var(--k-text);}
+  	.node-icon .shape {
+      border-color: var(--k-text);
+      background-color: var(--k-fill);
+    }
+   }
+
+
+   &[data-nodetype="l"] {
+    .node-name {color: var(--l-text);}
+  	.node-icon .shape {
+      border-color: var(--l-text);
+      background-color: var(--l-fill);
+    }
+   }
+
+
 
 
 }
@@ -645,11 +794,13 @@ details {
   height: 100%;
 
   .shape {
-    opacity: var(--lineages-prevalence-shape-opacity);
+    fill: none;
     stroke: none;
+    opacity: var(--lineages-prevalence-shape-opacity);
   }
   .trend {
     fill: none;
+    stroke: none;
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: var(--lineages-prevalence-trend-stroke-weight);
@@ -672,13 +823,53 @@ details {
       .shape { fill: var(--mrca-timeline-fill);}
       .trend { stroke: var(--mrca-timeline-stroke); }
     }
-    &.nodeA {
-      .shape  { fill: var(--a-timeline-fill);}
+    &.a {
+      .shape { fill: var(--a-timeline-fill); }
       .trend { stroke: var(--a-timeline-stroke); }
     }
-    &.nodeB {
-      .shape  { fill: var(--b-timeline-fill);}
+    &.b {
+      .shape { fill: var(--b-timeline-fill); }
       .trend { stroke: var(--b-timeline-stroke); }
+    }
+    &.c {
+      .shape { fill: var(--c-timeline-fill); }
+      .trend { stroke: var(--c-timeline-stroke); }
+    }
+    &.d {
+      .shape { fill: var(--d-timeline-fill); }
+      .trend { stroke: var(--d-timeline-stroke); }
+    }
+    &.e {
+      .shape { fill: var(--e-timeline-fill); }
+      .trend { stroke: var(--e-timeline-stroke); }
+    }
+    &.f {
+      .shape { fill: var(--f-timeline-fill); }
+      .trend { stroke: var(--f-timeline-stroke); }
+    }
+    &.g {
+      .shape { fill: var(--g-timeline-fill); }
+      .trend { stroke: var(--g-timeline-stroke); }
+    }
+    &.h {
+      .shape { fill: var(--h-timeline-fill); }
+      .trend { stroke: var(--h-timeline-stroke); }
+    }
+    &.i {
+      .shape { fill: var(--i-timeline-fill); }
+      .trend { stroke: var(--i-timeline-stroke); }
+    }
+    &.j {
+      .shape { fill: var(--j-timeline-fill); }
+      .trend { stroke: var(--j-timeline-stroke); }
+    }
+    &.k {
+      .shape { fill: var(--k-timeline-fill); }
+      .trend { stroke: var(--k-timeline-stroke); }
+    }
+    &.l {
+      .shape { fill: var(--l-timeline-fill); }
+      .trend { stroke: var(--l-timeline-stroke); }
     }
   }
 
@@ -783,364 +974,81 @@ details {
 /* LINEAGES / Subway diagram */
 
 #subway {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 0;
-  width: auto;
-  height: var(--subway-height);
-  overflow: visible;
-  margin-left: var(--subway-margin-left);
-  margin-right: var(--subway-margin-right);
-  transform: translateY(var(--subway-offset-y));
 
-  &[data-config="root"], &[data-config="a"], &[data-config="b"] {
-    .upper, .lower {display: none;}
-    .line2 {
-      opacity: 0;
+
+  .label, .mut-count {
+    opacity: 1;
+    transition: opacity 0.15s;
+
+    rect {
+      stroke: none;
+      rx: 5;
+      ry: 5;
+    }
+
+    text {
+      text-anchor: middle;
+      alignment-baseline: central;
+      font-family: var(--Inter-Tight);
+      font-weight: var(--highlighting-value-font-weight);
       pointer-events: none;
     }
-  }
 
-  &[data-config="a2b"], &[data-config="b2a"] {
-    .upper, .lower {display: none;}
-  }
-
-  &[data-config="mrca"], &[data-config="ab"], &[data-config="ba"] {
-    .end {display: none;}
-  }
-
-
-  .lines {
-    flex: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    max-width: 50%;
-  }
-
-  .line {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: var(--subway-line-height);
-    padding: var(--subway-line-padding-y) var(--subway-line-padding-x);
-    &.unmatching{
-      .terminus {color: rgb(from var(--node-text) r g b / var(--subway-line-unmatching-opacity));}
-      .platform { background-color: var(--node-stroke-off); }
-      .station.active .platform {background-color: var(--node-stroke-off)}
-      .signage {opacity: var(--subway-line-unmatching-opacity)}
+    &.back {
+      opacity: 0.3;
     }
   }
 
-  .transit {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    max-width: 100%;
+  .label {
+    text {
+      fill: white;
+    }
+    &.a rect { fill: var(--a-fill); }
+    &.b rect { fill: var(--b-fill); }
+    &.c rect { fill: var(--c-fill); }
+    &.d rect { fill: var(--d-fill); }
+    &.e rect { fill: var(--e-fill); }
+    &.f rect { fill: var(--f-fill); }
+    &.g rect { fill: var(--g-fill); }
+    &.h rect { fill: var(--h-fill); }
+    &.i rect { fill: var(--i-fill); }
+    &.j rect { fill: var(--j-fill); }
+    &.k rect { fill: var(--k-fill); }
+    &.l rect { fill: var(--l-fill); }
   }
 
-  .stations, .signage {
-    height: var(--subway-row-height);
+  .mut-count, .label.root, .label.mrca {
+    rect {
+      fill: white;
+    }
+    text {
+      fill: #909090;
+    }
+  }
+  .label.root, .label.mrca {
+    rect {
+      stroke: #909090;
+    }
   }
 
-  .track {
-    position: absolute;
-    width: 100%;
-    top: 50%;
-    left: 0;
-    margin-top: var(--subway-track-offset-y);
-    border-top: var(--subway-track-stroke-weight) solid;
-    border-left: var(--subway-track-stroke-weight) solid;
-    border-radius: var(--subway-track-corner) 0 0 0;
-    height: var(--subway-track-height);
-    border-color: var(--node-stroke);
-    -webkit-transition: all var(--transition) ease-out;
-    -moz-transition: all var(--transition) ease-out;
-    -ms-transition: all var(--transition) ease-out;
-    transition: all var(--transition) ease-out;
+  .label.mrca rect {
     pointer-events: none;
-    &.unmatching {
-      border-color: var(--node-stroke-off);
-    }
-  }
-
-  .line[data-track="center"] .track {
-    border-left: 0;
-    border-radius: 0;
-    height: 0;
-  }
-
-  .line[data-track="down"] .track {
-    transform: scaleY(-1) translateY(var(--subway-track-height));
-  }
-
-  .stations {
-    position: relative;
-    z-index: var(--subway-stations-zindex);
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-    gap: 0;
-    width: auto;
-    max-width: 100%;
-    margin: var(--subway-stations-margin-top) auto 0;
-  }
-
-  .station {
-    flex: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: var(--subway-station-width);
-    height: 100%;
-    overflow: visible;
-    box-sizing: border-box;
-    cursor: default;
-
-    &.matching {
-      .platform {
-        opacity: 1;
-        width: var(--subway-platform-width-on);
-        height: var(--subway-platform-height-on);
-        .passenger {
-          opacity: 1;
-        }
-      }
-    }
-
-    &.inactive .platform {
-      opacity: 1;
-      width: var(--subway-platform-width-present);
-      height: var(--subway-platform-height-present);
-    }
-
-    &.active .platform {
-      opacity: 1;
-      width: var(--subway-platform-width-matched);
-      height: var(--subway-platform-height-matched);
-      background-color: var(--node-stroke-on);
-    }
-
-    // &:hover {
-    //   .platform { background-color: var(--node-stroke-on); }
-    // }
-  }
-
-  .platform {
-    position: absolute;
-    width: var(--subway-platform-width-static);
-    height: var(--subway-platform-height-static);
-    pointer-events: none;
-    background-color: var(--node-stroke);
-    -webkit-transition: opacity var(--transition) ease-out;
-    -moz-transition: opacity var(--transition) ease-out;
-    -ms-transition: opacity var(--transition) ease-out;
-    transition: opacity var(--transition) ease-out;
-  }
-
-  .passenger {
-    position: absolute;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: baseline;
-    gap: var(--subway-location-gap);
-    left: 50%;
-    bottom: 100%;
-    font-family: var(--Inter);
-    font-weight: 700;
-    font-size: calc(var(--unit) * 0.75);
-    transform: translate(-50%, var(--subway-location-offset-y));
-    color: var(--node-mutation-text);
-    opacity: 0;
-    .train {
-      font-variant-numeric: tabular-nums;
-      color: var(--node-position-text);
-    }
   }
 
 
-  .signage {
-    font-family: var(--Inter);
-    font-weight: 600;
-    font-size: calc(var(--unit) * 0.875);
-    line-height: unset;
-    letter-spacing: 0.001rem;
-    cursor: default;
-    color: var(--node-text);
-    -webkit-transition: all var(--transition) ease-out;
-    -moz-transition: all var(--transition) ease-out;
-    -ms-transition: all var(--transition) ease-out;
-    transition: all var(--transition) ease-out;
+
+  .connector {
+    fill: none;
+    stroke: #909090;
+    opacity: 1;
+    transition: opacity 0.15s;
+
+    &.back {opacity: 0.3;}
   }
 
-  .termini {
-    position: absolute;
-    z-index: var(--subway-termini-zindex);
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: var(--subway-termini-height);
-    transform: translate(-50%, -50%);
-    overflow: visible;
-  }
-
-  .terminus {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: auto;
-    height: var(--subway-terminus-height);
-    padding: var(--subway-terminus-padding-y) var(--subway-terminus-padding-x);
-    white-space: nowrap;
-    background-color: var(--view-fill);
-    font-weight: var(--lineage-label-font-weight);
-    font-size: var(--lineage-label-font-size);
-    letter-spacing: var(--lineage-label-letter-spacing);
-    line-height: unset;
-    cursor: default;
-    color: var(--node-text);
-    -webkit-transition: all var(--transition) ease-out;
-    -moz-transition: all var(--transition) ease-out;
-    -ms-transition: all var(--transition) ease-out;
-    transition: all var(--transition) ease-out;
-    &.enter, &.exit {
-      position: absolute;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-    &.enter {
-      left: 0;
-    }
-
-    &.exit {
-      left: 100%;
-    }
-  }
-
-
-  .line[data-from="-"] .terminus.enter:after,
-  .line[data-to="-"] .terminus.exit:after {
-    content: "";
-    position: relative;
-    width: var(--subway-unknown-terminus-size);
-    height: var(--subway-unknown-terminus-size);
-    border-radius: var(--subway-unknown-terminus-size);
-    background-color: var(--node-text);
-    vertical-align: baseline;
-
-    &.unmatching {
-      background-color: rgb(from var(--node-text) r g b / var(--subway-line-unmatching-opacity));
-    }
-  }
-
-
-  .line[data-from="root"] {
-    .track {border-color: var(--root-stroke)}
-    .platform {background-color: var(--root-stroke)}
-    .signage {color: var(--root-text)}
-    .terminus.enter {color: var(--root-text)}
-    .passenger {color: var(--root-mutation-text)}
-    .passenger .train {color: var(--root-position-text)}
-    .station {
-      &:hover, &.active {
-        .platform {background-color: var(--root-stroke-on)}
-      }
-    }
-    &.unmatching {
-      .track {border-color: var(--root-stroke-off)}
-      .terminus.enter {color: rgb(from var(--root-text) r g b / var(--subway-line-unmatching-opacity))}
-      .transit {
-        .platform {background-color: var(--root-stroke-off)}
-        .station.active .platform {background-color: var(--root-stroke-off)}
-      }
-    }
-  }
-
-  .line[data-to="mrca"] {
-    .track      {border-color: var(--mrca-stroke)}
-    .platform      {background-color: var(--mrca-stroke)}
-    .signage      {color: var(--mrca-text)}
-    .terminus.exit       {color: var(--mrca-text)}
-    .passenger      {color: var(--mrca-mutation-text)}
-    .passenger .train      {color: var(--mrca-position-text)}
-    .station {
-      &:hover, &.active {
-        .platform {background-color: var(--mrca-stroke-on)}
-      }
-    }
-    &.unmatching {
-      .track      {border-color: var(--mrca-stroke-off)}
-      .terminus.exit       {color: rgb(from var(--mrca-text) r g b / var(--subway-line-unmatching-opacity))}
-      .transit {
-        .platform      {background-color: var(--mrca-stroke-off)}
-        .station.active .platform      {background-color: var(--mrca-stroke-off)}
-      }
-    }
-
-    .terminus.exit    {
-      color: var(--mrca-text);
-      &.unmatching {
-        color: rgb(from var(--mrca-text) r g b / var(--subway-line-unmatching-opacity));
-      }
-    }
-  }
-
-  .line[data-to="a"] {
-    .track      {border-color: var(--a-stroke)}
-    .platform      {background-color: var(--a-stroke)}
-    .signage      {color: var(--a-text)}
-    .terminus.exit       {color: var(--a-text)}
-    .passenger      {color: var(--a-mutation-text)}
-    .passenger .train      {color: var(--a-position-text)}
-    .station {
-      &:hover, &.active {
-        .platform {background-color: var(--a-stroke-on)}
-      }
-    }
-    &.unmatching {
-      .track      {border-color: var(--a-stroke-off)}
-      .terminus.exit       {color: rgb(from var(--a-text) r g b / var(--subway-line-unmatching-opacity))}
-      .transit {
-        .platform      {background-color: var(--a-stroke-off)}
-        .station.active .platform      {background-color: var(--a-stroke-off)}
-      }
-    }
-  }
-
-  .line[data-to="b"] {
-    .track      {border-color: var(--b-stroke)}
-    .platform      {background-color: var(--b-stroke)}
-    .signage      {color: var(--b-text)}
-    .terminus.exit       {color: var(--b-text)}
-    .passenger      {color: var(--b-mutation-text)}
-    .passenger .train      {color: var(--b-position-text)}
-    .station{
-      &:hover, &.active {
-        .platform {background-color: var(--b-stroke-on)}
-      }
-    }
-    &.unmatching {
-      .track      {border-color: var(--b-stroke-off)}
-      .terminus.exit       {color: rgb(from var(--b-text) r g b / var(--subway-line-unmatching-opacity))}
-      .transit {
-        .platform      {background-color: var(--b-stroke-off)}
-        .station.active .platform      {background-color: var(--b-stroke-off)}
-      }
-    }
-  }
 }
+
+
 
 
 
@@ -1259,14 +1167,37 @@ details {
 
     }
 
-    #lineages-nt-root-date-label {color: var(--root-timeline-text)}
-    #lineages-nt-mrca-date-label {color: var(--mrca-timeline-text)}
-    #lineages-nt-a-date-label    {color: var(--a-timeline-text)}
-    #lineages-nt-b-date-label    {color: var(--b-timeline-text)}
-    #lineages-nt-root-label      {color: var(--root-text)}
-    #lineages-nt-mrca-label      {color: var(--mrca-text)}
-    #lineages-nt-a-label         {color: var(--a-text)}
-    #lineages-nt-b-label         {color: var(--b-text)}
+    .label.date.root      {color: var(--root-text)}
+    .label.date.mrca      {color: var(--mrca-text)}
+    .label.date.a    {color: var(--a-text)}
+    .label.date.b    {color: var(--b-text)}
+    .label.date.c    {color: var(--c-text)}
+    .label.date.d    {color: var(--d-text)}
+    .label.date.e    {color: var(--e-text)}
+    .label.date.f    {color: var(--f-text)}
+    .label.date.g    {color: var(--g-text)}
+    .label.date.h    {color: var(--h-text)}
+    .label.date.i    {color: var(--i-text)}
+    .label.date.j    {color: var(--j-text)}
+    .label.date.k    {color: var(--k-text)}
+    .label.date.l    {color: var(--l-text)}
+    .label.date.m    {color: var(--m-text)}
+
+    .tag.root     {color: var(--root-timeline-text)}
+    .tag.mrca     {color: var(--mrca-timeline-text)}
+    .tag.a        {color: var(--a-timeline-text)}
+    .tag.b        {color: var(--b-timeline-text)}
+    .tag.c        {color: var(--c-timeline-text)}
+    .tag.d        {color: var(--d-timeline-text)}
+    .tag.e        {color: var(--e-timeline-text)}
+    .tag.f        {color: var(--f-timeline-text)}
+    .tag.g        {color: var(--g-timeline-text)}
+    .tag.h        {color: var(--h-timeline-text)}
+    .tag.i        {color: var(--i-timeline-text)}
+    .tag.j        {color: var(--j-timeline-text)}
+    .tag.k        {color: var(--k-timeline-text)}
+    .tag.l        {color: var(--l-timeline-text)}
+    .tag.m        {color: var(--m-timeline-text)}
 
   }
 
@@ -1346,13 +1277,53 @@ details {
     path { fill: var(--mrca-timeline-fill); }
     line { stroke: var(--mrca-timeline-stroke); }
   }
-  .nodeA {
+  .a {
     path { fill: var(--a-timeline-fill); }
-    line { stroke: var(--a-timeline-stroke); }
+    stroke  { stroke: var(--a-timeline-stroke); }
   }
-  .nodeB {
+  .b {
     path { fill: var(--b-timeline-fill); }
-    line { stroke: var(--b-timeline-stroke); }
+    stroke  { stroke: var(--b-timeline-stroke); }
+  }
+  .c {
+    path { fill: var(--c-timeline-fill); }
+    stroke  { stroke: var(--c-timeline-stroke); }
+  }
+  .d {
+    path { fill: var(--d-timeline-fill); }
+    stroke  { stroke: var(--d-timeline-stroke); }
+  }
+  .e {
+    path { fill: var(--e-timeline-fill); }
+    stroke  { stroke: var(--e-timeline-stroke); }
+  }
+  .f {
+    path { fill: var(--f-timeline-fill); }
+    stroke  { stroke: var(--f-timeline-stroke); }
+  }
+  .g {
+    path { fill: var(--g-timeline-fill); }
+    stroke  { stroke: var(--g-timeline-stroke); }
+  }
+  .h {
+    path { fill: var(--h-timeline-fill); }
+    stroke  { stroke: var(--h-timeline-stroke); }
+  }
+  .i {
+    path { fill: var(--i-timeline-fill); }
+    stroke  { stroke: var(--i-timeline-stroke); }
+  }
+  .j {
+    path { fill: var(--j-timeline-fill); }
+    stroke  { stroke: var(--j-timeline-stroke); }
+  }
+  .k {
+    path { fill: var(--k-timeline-fill); }
+    stroke  { stroke: var(--k-timeline-stroke); }
+  }
+  .l {
+    path { fill: var(--l-timeline-fill); }
+    stroke  { stroke: var(--l-timeline-stroke); }
   }
 }
 
@@ -1739,12 +1710,12 @@ details {
   gap: var(--block-gap);
 
   &.is-apobec .lineages--node-comparison--mutation-is-apobec {
-    display: inline-block;
+    display: block;
   }
 }
 
 .lineages--node-comparison--mutation-labels {
-  // width: @chartLeftMargin;
+  position: relative;
   font-size: smaller;
 }
 .lineages--node-comparison--mutation-name {
@@ -1760,6 +1731,9 @@ details {
   font-weight: 700;
   font-size: 10px;
   color: #777;
+  position: absolute;
+  top: 4px;
+  left: -45px;
 }
 
 

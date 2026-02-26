@@ -65,7 +65,7 @@ const activateProgressBar = (showit=true)=>{
 }
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
-  configCallback = (config: ConfigExport, _:string)=>console.debug('configCallback not assigned', config);
+  configCallback = (config: ConfigExport, _:string)=>console.debug('configCallback not assigned', config); // eslint-disable-line @typescript-eslint/no-unused-vars
 
 
 const warningsLabelAddendum = () => {

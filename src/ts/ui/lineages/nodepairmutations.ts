@@ -1,15 +1,15 @@
 import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
-  NodeSVGSeriesGroup, NodeDistribution, MATCH_CLASS, NO_MATCH_CLASS
+  NodeSVGSeriesGroup, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
-import { DisplayNode, getPercentLabel, getNodeTypeName, UNSET, getNodeClassName,
-  numericSort, getNiceDateInterval, DateScale,
+import { getPercentLabel, UNSET,
+  getNiceDateInterval, DateScale,
   sameMutation} from '../common';
 // import { mutationPrevalenceThreshold, MutationTimelineData, NodeComparisonChartData } from './nodecomparisonchartdata';
-import { MutationTimelineData, NodeMutationsData } from './nodecomparisonchartdata';
+import { MutationTimelineData, NodeMutationsData } from './nodemutationsdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
-import { Distribution } from '../distribution';
+import { DisplayNode } from './displaynode';
 
 
 
@@ -27,8 +27,8 @@ const mutationChartSelector = '.series-group-container',
   mutationNameSelector = '.lineages--node-comparison--mutation-name',
   mutationPrevalenceSelector = '.lineages--node-comparison--mutation-prevalence span',
   mutationContainerSelector = '.lineages--mutation-timeline',
-  ancestorNodeNameSelector = '.lineages--list-ancestor',
-  descendantNodeNameSelector = '.lineages--list-descendant',
+  ancestorNodeNameSelector = '.lineages--mutations-ancestor',
+  descendantNodeNameSelector = '.lineages--mutations-descendant',
   schematicSelector = ".schematic";
 
 
@@ -72,7 +72,7 @@ class MutationTimeline {
 
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
-    this.timeChart.setSeries([series] as NodeDistribution[]);
+    this.timeChart.setSeries([series]);
     this.median = series.median;
     const dateLabel = toFullDateString(this.median);
     this.dateReadout.textContent = dateLabel;
@@ -133,8 +133,8 @@ class MutationTimeline {
 
 export class NodePairMutationList {
   div: HTMLDivElement;
-  nodeASpan: HTMLSpanElement;
-  nodeBSpan: HTMLSpanElement;
+  ancestorSpan: HTMLSpanElement;
+  descendantSpan: HTMLSpanElement;
   // mutationCountSpan: HTMLSpanElement;
   // mutationThresholdSpan: HTMLSpanElement;
   schematic: HTMLDivElement;
@@ -165,8 +165,8 @@ export class NodePairMutationList {
     if (!mutationContainer || !ancestorSpan || !descendantSpan || !schematic) {
       throw new Error("html is missing elements needed for mutation list");
     }
-    this.nodeASpan = ancestorSpan;
-    this.nodeBSpan = descendantSpan;
+    this.ancestorSpan = ancestorSpan;
+    this.descendantSpan = descendantSpan;
     this.schematic = schematic;
 
     // this.mutationCountSpan = mutationCountSpan;
@@ -174,21 +174,21 @@ export class NodePairMutationList {
     this.mutationContainer = mutationContainer;
     this.goToMutations = goToMutations;
 
-    const fromType = getNodeTypeName(this.data.ancestorType).toLowerCase();
-    let toType = getNodeTypeName(this.data.descendantType);
+    const fromType = this.data.ancestorType.name.toLowerCase();
+    let toType = this.data.descendantType?.name;
     if (toType) toType = toType.toLowerCase();
     this.div.setAttribute("data-from", fromType);
-    this.div.setAttribute("data-to", toType);
+    this.div.setAttribute("data-to", toType || '');
 
-    let trailAlignment = "center";
-    if (this.data.ancestorType === DisplayNode.mrca) {
-      trailAlignment = this.data.descendantType === DisplayNode.nodeA ? "up" : "down";
-    }
+    const trailAlignment = "center";
+    // if (this.data.ancestorType === DisplayNodeClass.mrca) {
+    //   trailAlignment = this.data.descendantType === DisplayNodeClass.nodeA ? "up" : "down";
+    // }
     this.schematic.setAttribute("data-trail-alignment", trailAlignment);
 
 
 
-    if (this.data.descendantType === UNSET) {
+    if (this.data.descendantType === null) {
       this.div.classList.add('single');
     }
     this.setLabel(this.data.ancestorType, this.data.descendantType);
@@ -223,12 +223,14 @@ export class NodePairMutationList {
 
   setLabel(ancestorType: DisplayNode, descendantType: DisplayNode): void {
     /* set title for the ancestor node */
-    this.nodeASpan.innerText = getNodeTypeName(ancestorType);
-    this.nodeASpan.classList.add(getNodeClassName(ancestorType));
+    this.ancestorSpan.innerText = ancestorType.name;
+    this.ancestorSpan.classList.add(ancestorType.className);
 
-    /* set title for the descendant node */
-    this.nodeBSpan.innerText = getNodeTypeName(descendantType);
-    this.nodeBSpan.classList.add(getNodeClassName(descendantType));
+    // /* set title for the descendant node */
+    if (descendantType !== null) {
+      this.descendantSpan.innerText = descendantType.name;
+      this.descendantSpan.classList.add(descendantType.className);
+    }
   }
 
 
@@ -236,11 +238,8 @@ export class NodePairMutationList {
   setDateRange() {
     const { minDate, maxDate, ancestorMedianDate, descendantMedianDate } = this.data;
     const dateContainerDiv = this.div.querySelector(".date-container .dates") as HTMLDivElement;
-    // get the medians of the nodes at either end
-    const rangeMin = ancestorMedianDate;
-    const rangeMax = descendantMedianDate;
-    const rangeMinPct = (rangeMin - minDate)/(maxDate - minDate) * 100;
-    const rangeMaxPct = (rangeMax - minDate)/(maxDate - minDate) * 100;
+    const rangeMinPct = (ancestorMedianDate - minDate)/(maxDate - minDate) * 100;
+    const rangeMaxPct = (descendantMedianDate - minDate)/(maxDate - minDate) * 100;
     const rangeWidthPct = rangeMaxPct - rangeMinPct;
     const rangeDiv = dateContainerDiv.querySelector(".range") as HTMLDivElement;
     rangeDiv.style.left = `${rangeMinPct}%`;
@@ -269,8 +268,8 @@ export class NodePairMutationList {
     // const {mutationTimelineData, mutationCount, minDate, maxDate} = this.data;
     const {descendantType, mutationTimelineData, minDate, maxDate} = this.data;
     this.mutationTimelines = mutationTimelineData.map((md:MutationTimelineData)=>{
-      const seriesCallback = (_series: Distribution | null, date: number)=>{
-        this.nodeHighlightCallback(descendantType, date, md.mutation.mutation);
+      const seriesCallback = (_seriesIndex: number, date: number)=>{
+        this.nodeHighlightCallback(descendantType.index, date, md.mutation.mutation);
       };
       const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, seriesCallback);
       mt.appendTo(this.mutationContainer);
@@ -297,7 +296,7 @@ export class NodePairMutationList {
     this.mutationTimelines.forEach(mt=>{
       matched = mt.checkMutationMatch(mutation, date) || matched;
     });
-    if (node === UNSET) {
+    if (node.index === UNSET) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
     } else if (matched) {
@@ -352,36 +351,21 @@ export class NodeMutations {
   setData(nodeComparisonData: NodeMutationsData[]): NodePairMutationList[] {
     nodeComparisonContainer.innerHTML = '';
     const sorted = nodeComparisonData.sort((a, b)=>{
-    /* node A goes at the start of the list */
-      if (a.descendantType === DisplayNode.nodeA) {
-        return -1;
+      let diff = a.ancestorType.generationsFromRoot - b.ancestorType.generationsFromRoot;
+      if (diff === 0) {
+        if (a.descendantType === null) {
+          diff = 1;
+        } else if (b.descendantType === null) {
+          diff = -1;
+        } else {
+          diff = a.descendantType.generationsFromRoot - b.descendantType.generationsFromRoot;
+        }
       }
-      if (b.descendantType === DisplayNode.nodeA) {
-        return 1;
-      }
-      /* node B comes next */
-      if (a.descendantType === DisplayNode.nodeB) {
-        return -1;
-      }
-      if (b.descendantType === DisplayNode.nodeB) {
-        return 1;
-      }
-      /* then the MRCA */
-      if (a.descendantType === DisplayNode.mrca) {
-        return -1;
-      }
-      if (b.descendantType === DisplayNode.mrca) {
-        return 1;
-      }
-      /*
-    if we have gotten this far, then the only path
-    is the one where root is the ancestor and there
-    is no descendant.
-    */
-      return 0;
+      return diff;
     });
     this.charts.length = 0;
     sorted.filter(pair=>pair.mutationCount > 0).forEach(chartData=>{
+      // console.log('NodePairMutationList', chartData)
       const nc = new NodePairMutationList(chartData, this.goToMutations, this.nodeHighlightCallback);
       nc.requestDraw();
       this.charts.push(nc);

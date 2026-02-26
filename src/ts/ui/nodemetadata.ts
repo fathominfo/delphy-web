@@ -2,7 +2,6 @@ import { Tree, PhyloTree } from '../pythia/delphy_api';
 import { Metadata} from './metadata';
 import { isTip } from '../util/treeutils';
 import { UNDEF } from './common';
-import { MccUmbrella } from '../pythia/mccumbrella';
 
 export type FieldTipCount = {[name: string]: number};
 export type NodeFieldData = {value: string, counts: FieldTipCount};
@@ -87,24 +86,16 @@ export class NodeMetadata {
     /* a breadth first traversal of the tree */
     const indicesRootToTip : number[] = [tree.getRootIndex()];
     let i = 0;
-    if (tree instanceof MccUmbrella) {
-      const umbrella = tree as MccUmbrella;
-      while (i < indicesRootToTip.length) {
-        const index = indicesRootToTip[i];
-        umbrella.getChildren(index).forEach(kindex=>indicesRootToTip.push(kindex));
-        i++;
+
+    while (i < indicesRootToTip.length) {
+      const index = indicesRootToTip[i],
+        left = tree.getLeftChildIndexOf(index),
+        right = tree.getRightChildIndexOf(index);
+      if (left >= 0) {
+        indicesRootToTip.push(left);
+        indicesRootToTip.push(right);
       }
-    } else {
-      while (i < indicesRootToTip.length) {
-        const index = indicesRootToTip[i],
-          left = tree.getLeftChildIndexOf(index),
-          right = tree.getRightChildIndexOf(index);
-        if (left >= 0) {
-          indicesRootToTip.push(left);
-          indicesRootToTip.push(right);
-        }
-        i++;
-      }
+      i++;
     }
     this.indicesRootToTip = indicesRootToTip;
     /* reset the values for the inner nodes */
@@ -126,24 +117,15 @@ export class NodeMetadata {
     We use this arrow function to isolate the differences
     between the implementations.
     */
-    let getIndexOptions: IndexOptionsFnc;
-    if (tree instanceof MccUmbrella) {
-      const umbrella = tree as MccUmbrella;
-      getIndexOptions = (index:number, options: string[][])=>{
-        let withDupes: string[] = [];
-        umbrella.getChildren(index).forEach(cIndex=>withDupes = withDupes.concat(options[cIndex]))
-        return withDupes;
-      }
-    } else {
-      getIndexOptions = (index:number, options: string[][])=>{
-        const leftIndex = tree.getLeftChildIndexOf(index),
-          rightIndex = tree.getRightChildIndexOf(index),
-          leftOpts = options[leftIndex] || [],
-          rightOpts = options[rightIndex] || [],
-          withDupes = leftOpts.concat(rightOpts);
-        return withDupes;
-      };
-    }
+    const getIndexOptions: IndexOptionsFnc = (index:number, options: string[][])=>{
+      const leftIndex = tree.getLeftChildIndexOf(index),
+        rightIndex = tree.getRightChildIndexOf(index),
+        leftOpts = options[leftIndex] || [],
+        rightOpts = options[rightIndex] || [],
+        withDupes = leftOpts.concat(rightOpts);
+      return withDupes;
+    };
+
 
     header.forEach((_, i)=>{
       if (i !== idCol) {

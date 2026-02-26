@@ -1,126 +1,126 @@
-import { getMutationName, NUC_LOOKUP } from "../../constants";
-import { Mutation } from "../../pythia/delphy_api";
-import { MutationDistribution } from "../../pythia/mutationdistribution";
-
-import { DisplayNode, nfc, UNSET } from "../common";
-import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, NodePair } from "./lineagescommon";
-import { mutationPrevalenceThreshold } from "./nodecomparisonchartdata";
+import { UNSET } from "../common";
+import { DisplayNode } from "./displaynode";
+import { HoverCallback, NodePair, NodeRelationType } from "./lineagescommon";
+import { TreeNode } from "./selectiontreedata";
 
 
-const MUTATION_LIMIT = 30;
 
-const MUTATION_TEMPLATE = document.querySelector("#subway .station") as HTMLDivElement;
-MUTATION_TEMPLATE?.remove();
+const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
+const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
+const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
+const MUTATION_COUNT_TEMPLATE = CONTAINER.querySelector(".mut-count") as SVGGElement;
+const CONNECTOR_TEMPLATE = CONTAINER.querySelector(".connector") as SVGLineElement;
 
-type MATCH_HANDLER_TYPE = (node: DisplayNode, mutation: Mutation | null)=>void;
+[LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE, CONNECTOR_TEMPLATE].forEach(el=>el.remove());
 
-const NODE_LABELS: string[] = [];
-{
-  NODE_LABELS[DisplayNode.root] = "root";
-  NODE_LABELS[DisplayNode.mrca] = "mrca";
-  NODE_LABELS[DisplayNode.nodeA] = "a";
-  NODE_LABELS[DisplayNode.nodeB] = "b";
+const MARGIN  = {
+  top: 10,
+  bottom: 10,
+  left: 40,
+  right: 10
 }
 
+const MAX_TIP_DISTANCE = 40;
+const NODE_X_SPACING = 45;
 
-class Track {
-  startNode: DisplayNode = DisplayNode.UNSET;
-  endNode: DisplayNode = DisplayNode.UNSET;
-  line: HTMLDivElement;
-  terminus: HTMLDivElement;
-  signage: HTMLSpanElement;
-  mutationCount: number = UNSET;
-  label = "";
-  mutationList: MutationDistribution[] = [];
-  mutationDivs: HTMLDivElement[] = [];
+const TEXT_LABEL_HEIGHT = 20;
+const TEXT_LABEL_MIN_WIDTH = 20;
+const TEXT_PADDING = 5;
 
 
-  constructor(line: HTMLElement | null, matchHandler: MATCH_HANDLER_TYPE) {
-    this.line = line as HTMLDivElement;
-    this.terminus = this.line.querySelector(".terminus.exit") as HTMLDivElement;
-    this.signage = this.line.querySelector(".transit .signage .count") as HTMLSpanElement;
-    const stations = this.line.querySelector(".stations") as HTMLDivElement;
-    for (let i = 0; i < MUTATION_LIMIT; i++) {
-      const mutDiv = MUTATION_TEMPLATE.cloneNode(true) as HTMLDivElement;
-      this.mutationDivs.push(mutDiv);
-      stations.appendChild(mutDiv);
-      mutDiv.addEventListener("pointerenter", ()=>{
-        const mut = this.mutationList[i]?.mutation;
-        if (mut) {
-          matchHandler(this.endNode, mut);
-        } else {
-          matchHandler(this.endNode, null);}
-      });
-      // mutDiv.addEventListener("pointerleave", ()=>matchHandler(UNSET, null));
+class TreeNodeDisplay {
+  node: DisplayNode;
+  xPos: number = UNSET;
+  yPos: number = UNSET;
+  parent: TreeNodeDisplay | null = null;
+  stepsFromRoot: number;
+  tipPlacement: number;
+  mutationCount: number;
+  relation: NodeRelationType | typeof UNSET;
+  nameLabel: SVGGElement;
+  mutLabel: SVGGElement;
+  connector: SVGPathElement;
+  textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
+
+  constructor(src: TreeNode, mutCount: number,
+    relation: NodeRelationType | typeof UNSET,
+    parent: TreeNodeDisplay | null,
+    nodeHighlightCallback: HoverCallback
+  ) {
+    this.node = src.node;
+    this.tipPlacement = src.tipPlacement;
+    this.stepsFromRoot = src.stepsFromRoot;
+    this.mutationCount = mutCount;
+    this.relation = relation;
+    this.nameLabel = LABEL_TEMPLATE.cloneNode(true) as SVGGElement;
+    this.mutLabel = MUTATION_COUNT_TEMPLATE.cloneNode(true) as SVGGElement;
+    this.parent = parent;
+    this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
+
+    const labelBackground = this.nameLabel.querySelector("rect") as SVGRectElement;
+    labelBackground.addEventListener("pointerenter", ()=>nodeHighlightCallback(this.node.index, UNSET, null));
+    labelBackground.addEventListener("pointerleave", ()=>nodeHighlightCallback(UNSET, UNSET, null));
+  }
+
+  position(_width: number, height: number) {
+    this.xPos = MARGIN.left + this.stepsFromRoot * NODE_X_SPACING;
+    this.yPos = MARGIN.top + this.tipPlacement * MAX_TIP_DISTANCE + height / 2;
+    const elements = [this.nameLabel];
+    if (!this.node.isRoot) {
+      elements.push(this.mutLabel);
+      elements.push(this.connector);
     }
-    this.line.addEventListener("pointerleave", ()=>{
-      console.log('leaving line')
-      matchHandler(UNSET, null)
+    elements.forEach(el=>{
+      el.setAttribute("transform", `translate(${ this.xPos }, ${ this.yPos })`)
     });
   }
 
-  set(startNode:DisplayNode, endNode:DisplayNode, mutations:MutationDistribution[]) {
-    this.startNode = startNode;
-    this.endNode = endNode;
-    this.label = endNode === DisplayNode.UNSET ? '' : NODE_LABELS[endNode].toUpperCase();
-    this.mutationList = mutations;
-    this.mutationCount = mutations.length;
-  }
-
-  render() {
-    this.line.classList.remove(MATCH_CLASS);
-    this.line.classList.remove(NO_MATCH_CLASS);
-    this.line.setAttribute("data-from", NODE_LABELS[this.startNode]);
-    this.line.setAttribute("data-to", NODE_LABELS[this.endNode]);
-    this.terminus.textContent = this.label;
-    this.signage.textContent = nfc(this.mutationCount);
-    if (this.mutationCount > MUTATION_LIMIT) {
-      this.mutationDivs.forEach(div=>div.classList.add("hidden"));
-    } else {
-      for (let i = 0; i < MUTATION_LIMIT; i++) {
-        const mutDiv = this.mutationDivs[i];
-        const mut = this.mutationList[i]?.mutation;
-        if (mut) {
-          (mutDiv.querySelector(".transfer.from") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.from];
-          (mutDiv.querySelector(".train") as HTMLSpanElement).textContent = `${mut.site}`;
-          (mutDiv.querySelector(".transfer.to") as HTMLSpanElement).textContent = NUC_LOOKUP[mut.to];
-          mutDiv.classList.remove("hidden");
-          mutDiv.classList.remove(MATCH_CLASS);
-          mutDiv.classList.remove(NO_MATCH_CLASS);
-        } else {
-          mutDiv.classList.add("hidden");
-        }
-      }
+  renderConnector() {
+    if (this.parent !== null) {
+      const parent = this.parent;
+      let xEnd = parent.xPos - this.xPos;
+      const xStart = - this.textLabelWidth / 2;
+      let yEnd = parent.yPos - this.yPos;
+      if (yEnd > 0) yEnd -= TEXT_LABEL_HEIGHT / 2;
+      else if (yEnd < 0) yEnd += TEXT_LABEL_HEIGHT / 2;
+      else xEnd += parent.textLabelWidth / 2;
+      const d = `M${ xStart } 0 L${ xEnd } 0 ${ xEnd } ${ yEnd }`;
+      this.connector.setAttribute("d", d);
+      CONTAINER.appendChild(this.connector);
+      this.connector.classList.add(this.node.className);
     }
   }
 
-  handleMatch(node: DisplayNode,mutation:Mutation | null) {
-    if (mutation === null) {
-      this.line.classList.remove(MATCH_CLASS);
-      this.line.classList.remove(NO_MATCH_CLASS);
-    } else {
-      const mutationName = getMutationName(mutation);
-      let anyMatches = false;
-      this.mutationList.forEach((mut:MutationDistribution, i)=>{
-        const name = getMutationName(mut.mutation);
-        if (name === mutationName) {
-          anyMatches = true;
-          this.mutationDivs[i].classList.add(MATCH_CLASS);
-          this.mutationDivs[i].classList.remove(NO_MATCH_CLASS);
-        } else {
-          this.mutationDivs[i].classList.remove(MATCH_CLASS);
-          this.mutationDivs[i].classList.add(NO_MATCH_CLASS);
-        }
-      });
-      if (anyMatches) {
-        this.line.classList.add(MATCH_CLASS);
-        this.line.classList.remove(NO_MATCH_CLASS);
-      } else {
-        this.line.classList.remove(MATCH_CLASS);
-        this.line.classList.add(NO_MATCH_CLASS);
-      }
-    }
+  renderLabel() {
+    const { node, nameLabel } = this;
+    const mrca = node.isInferred && !node.isRoot;
+    const textNode = nameLabel.querySelector("text") as SVGTextElement;
+    const rect = nameLabel.querySelector("rect") as SVGRectElement;
+    // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
+    // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
 
+    const label = mrca ? "M" : node.label;
+    textNode.textContent = label;
+    nameLabel.classList.add(node.className);
+    CONTAINER.appendChild(this.nameLabel);
+    const tw = textNode.getComputedTextLength();
+    this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
+    rect.setAttribute("width", `${ this.textLabelWidth}`);
+    rect.setAttribute("x", `${ -(this.textLabelWidth) / 2}`);
+    // if (!this.node.isRoot) {
+    //   mutTextNode.textContent = `${this.mutationCount}`;
+    //   CONTAINER.appendChild(this.mutLabel);
+    //   this.mutLabel.classList.add(node.className);
+    //   tw = mutTextNode.getComputedTextLength();
+    //   mutRect.setAttribute("width", `${ tw + 10}`);
+    //   mutRect.setAttribute("x", `${ -45 - (tw + 10) / 2}`);
+    // }
+
+  }
+
+  pushBack(pushIt: boolean) : void {
+    this.nameLabel.classList.toggle("back", pushIt);
+    this.connector.classList.toggle("back", pushIt);
   }
 
 }
@@ -133,174 +133,106 @@ there is only one of these.
 */
 export class NodeSchematic {
   hasMRCA: boolean;
-  highlightedNode: DisplayNode | typeof UNSET;
-  highlightedMutation: Mutation | null;
+  highlightIndex: number = UNSET;
   nodeHighlightCallback: HoverCallback;
-  src: NodePair[] = [];
-  indexes: [number, number, number, number] = [UNSET, UNSET, UNSET, UNSET];
-  dataConfig: string;
-  div: HTMLDivElement;
-  centralLine: Track;
-  endLine: Track;
-  upperLine: Track;
-  lowerLine: Track;
-  nodeAisUpper = true;
+  rootNode: TreeNodeDisplay | null = null;
+  nodes: TreeNodeDisplay[] = [];
+  tipCount = 0;
+  stepCount = 0;
+  width: number = UNSET;
+  height: number = UNSET;
+
 
   constructor(nodeHighlightCallback: HoverCallback) {
     this.hasMRCA = false;
-    this.highlightedNode = UNSET;
-    this.highlightedMutation = null;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    this.dataConfig = "root";
-    this.div = document.querySelector("#subway") as HTMLDivElement;
-    const handleMut: MATCH_HANDLER_TYPE = (node: DisplayNode, mutation: Mutation | null)=>nodeHighlightCallback(node, UNSET, mutation);
-    this.centralLine = new Track(this.div.querySelector(".line.central"), handleMut);
-    this.endLine = new Track(this.div.querySelector(".line.end"), handleMut);
-    this.upperLine = new Track(this.div.querySelector(".line.upper"), handleMut);
-    this.lowerLine = new Track(this.div.querySelector(".line.lower"), handleMut);
   }
 
 
-  handleMutationMatch(node: DisplayNode, mutation: Mutation | null) {
-    [ this.centralLine,
-      this.endLine,
-      this.upperLine,
-      this.lowerLine
-    ].forEach((line:Track)=>line.handleMatch(node, mutation));
+  resize() {
+    const { offsetWidth, offsetHeight } = WRAPPER;
+    this.width = offsetWidth;
+    this.height = offsetHeight;
+    requestAnimationFrame(()=>{
+      CONTAINER.setAttribute("viewBox", `0 0 ${ this.width} ${ this.height}`);
+      CONTAINER.setAttribute("width", `${ this.width}`);
+      CONTAINER.setAttribute("height", `${ this.height}`);
+      this.requestRender();
+    });
   }
 
-  requestDraw() {
-    requestAnimationFrame(()=>this.requestDraw());
+
+  requestRender() {
+    requestAnimationFrame(()=>this.render());
   }
 
 
-  draw() {
-    this.div.setAttribute("data-config", this.dataConfig);
-    [this.centralLine, this.endLine, this.upperLine, this.lowerLine].forEach((line:Track)=>line.render());
+  render() {
+    const { width, height } = this;
+    // console.log('render minimap', width, height, this.stepCount, this.tipCount);
+    CONTAINER.innerHTML = '';
+    this.nodes.forEach(display=>display.position(width, height));
+    this.nodes.forEach(display=>display.renderLabel());
+    this.nodes.forEach(display=>display.renderConnector());
+
+  }
+
+
+  setHighlightNode() {
+    if (this.highlightIndex === UNSET) {
+      this.nodes.forEach(display=>display.pushBack(false));
+    } else {
+      this.nodes.forEach(display=>display.pushBack(display.node.index !== this.highlightIndex));
+    }
   }
 
   /*
-  @param src: contains data for each track that we will display.
-  @param indexes: the node index in the MCC for root, mrca, nodeA, and nodeB. Each can be `UNSET`.
-  @param nodeAIsUpper: when both nodeA and nodeB are set, indicates whether the display of
-    node A should be the upper track or the lower track
+  @param pairs: contains mutation data for each track that we will display.
+  @param rootNode: the root node of the tree we will display.
+    We can traverse the entire tree by traversing the children of each node.
   */
-  setData(src: NodePair[], indexes: [number, number, number, number], nodeAIsUpper: boolean) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
-    this.src = src;
-    this.indexes = indexes;
-    this.nodeAisUpper = nodeAIsUpper;
 
-    const getMutationsFor = (nodeIndex: number)=>{
-      const data = src.filter(nodePair=>nodePair.index2 === nodeIndex)[0],
-        muts = !data? []: data.mutations.filter(md => md.getConfidence() >= mutationPrevalenceThreshold);
-      return muts;
-    }
-    this.dataConfig = "root";
-    let centerLabel = DisplayNode.UNSET;
-    let endLabel = DisplayNode.UNSET;
-    let upperLabel = DisplayNode.UNSET;
-    let lowerLabel = DisplayNode.UNSET;
-
-    let centralMutations: MutationDistribution[] = [];
-    let endMutations: MutationDistribution[] = [];
-    let upperMutations: MutationDistribution[] = [];
-    let lowerMutations: MutationDistribution[] = [];
-
-    if (indexes[DisplayNode.mrca] !== UNSET) {
-      this.dataConfig = "mrca";
-      centerLabel = DisplayNode.mrca;
-      centralMutations = getMutationsFor(indexes[DisplayNode.mrca]);
-      if (nodeAIsUpper) {
-        upperLabel = DisplayNode.nodeA;
-        lowerLabel = DisplayNode.nodeB;
-        upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-        lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-      } else {
-        upperLabel = DisplayNode.nodeB;
-        lowerLabel = DisplayNode.nodeA;
-        upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-        lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-      }
-
-
-    } else if (indexes[DisplayNode.nodeA] !== UNSET) {
-      const nodeA = indexes[DisplayNode.nodeA];
-      if (indexes[DisplayNode.nodeB] === UNSET) {
-        this.dataConfig = "a";
-        centerLabel = DisplayNode.nodeA;
-        centralMutations = getMutationsFor(nodeA);
-      } else {
-        /*
-        are nodes 1 and 2 both descended from root,
-        or is one the parent of the other?
-        */
-        const root = indexes[DisplayNode.root],
-          nodeA = indexes[DisplayNode.nodeA],
-          nodeB = indexes[DisplayNode.nodeB];
-        let nodeAParent: number = UNSET,
-          nodeBParent: number = UNSET;
-        src.forEach((pair: NodePair)=>{
-          if (pair.index2 === nodeA) nodeAParent = pair.index1;
-          else if (pair.index2 === nodeB) nodeBParent = pair.index1;
-        });
-        if (nodeAParent === root) {
-          if (nodeBParent === root) {
-            if (nodeAIsUpper)  {
-              this.dataConfig = "ab";
-              upperLabel = DisplayNode.nodeA;
-              lowerLabel = DisplayNode.nodeB;
-              upperMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-              lowerMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-            } else {
-              this.dataConfig = "ba";
-              upperLabel = DisplayNode.nodeB;
-              lowerLabel = DisplayNode.nodeA;
-              upperMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-              lowerMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-            }
-          } else if (nodeBParent === nodeA) {
-            this.dataConfig = "a2b";
-            centerLabel = DisplayNode.nodeA;
-            endLabel = DisplayNode.nodeB;
-            centralMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-            endMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-          } else {
-            console.warn('the developer has unwarranted assumptions about node relations', nodeBParent, indexes);
-          }
-        } else if (nodeAParent === nodeB && nodeBParent === root) {
-          this.dataConfig = "b2a";
-          centerLabel = DisplayNode.nodeB;
-          endLabel = DisplayNode.nodeA;
-          centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-          endMutations = getMutationsFor(indexes[DisplayNode.nodeA]);
-        } else {
-          console.warn('the developer has unwarranted assumptions about node relations', nodeAParent, nodeBParent, indexes);
-        }
-      }
-    } else if (indexes[DisplayNode.nodeB] !== UNSET) {
-      this.dataConfig = "b";
-      centerLabel = DisplayNode.nodeB;
-      centralMutations = getMutationsFor(indexes[DisplayNode.nodeB]);
-    }
-
-    this.centralLine.set( DisplayNode.root, centerLabel, centralMutations);
-    this.endLine.set(centerLabel, endLabel, endMutations);
-    this.upperLine.set(centerLabel, upperLabel, upperMutations);
-    this.lowerLine.set(centerLabel, lowerLabel, lowerMutations);
-
-    requestAnimationFrame(()=>{
-      this.draw();
+    const pairsByDescendant: NodePair[] = [];
+    pairs.forEach(pair=>{
+      // index the mutations by the descendent
+      pairsByDescendant[pair.descendant.index] = pair;
     });
-
+    const lookup: TreeNodeDisplay[] = [];
+    this.tipCount = 0;
+    this.stepCount = 0;
+    this.nodes.length = 0;
+    if (rootNode) {
+      const q = [rootNode];
+      while (q.length > 0) {
+        const treeNode = q.shift() as TreeNode;
+        const node = treeNode.node;
+        treeNode.children.forEach(tn=>q.push(tn));
+        const pair = pairsByDescendant[node.index];
+        let mutationCount = 0;
+        let relationType: NodeRelationType | typeof UNSET = UNSET;
+        if (pair) {// no pair for root
+          mutationCount = pair.mutations.length;
+          relationType = pair.relation;
+        }
+        let parent = null;
+        if (treeNode.parent) {
+          parent = lookup[treeNode.parent.node.index];
+        }
+        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode,
+          mutationCount, relationType, parent, this.nodeHighlightCallback);
+        this.nodes.push(tnd);
+        lookup[node.index] = tnd;
+      }
+    }
   }
 
 
-  highlightNode(node: DisplayNode, mutation: Mutation|null) : void {
-    if (node !== this.highlightedNode || mutation !== this.highlightedMutation) {
-      this.highlightedNode = node;
-      this.highlightedMutation = mutation;
-      this.handleMutationMatch(node, mutation);
+  highlightNode(node: DisplayNode) : void {
+    if (node.index !== this.highlightIndex) {
+      this.highlightIndex = node.index;
+      requestAnimationFrame(()=>this.setHighlightNode());
     }
   }
 

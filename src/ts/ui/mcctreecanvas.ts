@@ -1,4 +1,3 @@
-import { MccUmbrella } from '../pythia/mccumbrella';
 import { DateLabel } from './datelabel';
 import {
   UNSTYLED_CANVAS_WIDTH,
@@ -20,8 +19,8 @@ import { PdfCanvas } from '../util/pdfcanvas';
 import { Context2d } from "jspdf";
 
 
-import { Tree, PhyloTree, Mutation, SummaryTree } from '../pythia/delphy_api';
-import { YSpacing, ColorOption, DEFAULT_NODE_CONFIDENCE } from './common';
+import { Tree } from '../pythia/delphy_api';
+import { ColorOption, DEFAULT_NODE_CONFIDENCE } from './common';
 import { MccConfig } from "./mccconfig";
 import { isTip } from '../util/treeutils';
 
@@ -32,36 +31,6 @@ import { isTip } from '../util/treeutils';
 
 const HOVER_DISTANCE = 30;
 
-type DrawBranchFnc =  (i:number, ctx:CanvasRenderingContext2D | Context2d)=>void;
-
-{
-  /* ensure fonts that we use in canvas are added to the document before we need them */
-  const success = (font:FontFace)=>document.fonts.add(font),
-    failure = ()=>{
-      throw new Error('could not load a font');
-    };
-  const promises = Promise.all([
-    (new FontFace("MDSystem", "url('./assets/fonts/MDSystemStandard/MDSystem-Bold.woff2')", {weight: '700', style: 'normal'})).load().then(success, failure),
-    (new FontFace("MDSystem", "url('./assets/fonts/MDSystemStandard/MDSystem-Medium.woff2')", {weight: '500', style: 'normal'})).load().then(success, failure),
-  ]).catch(()=>{}); // eslint-disable-line @typescript-eslint/no-empty-function
-  promises.then(fonts => {
-    if (!fonts) {
-      console.debug("Could not load MD fonts, using Roboto fallbacks");
-      const backupPromises = Promise.all([
-        (new FontFace("Roboto", "url('./assets/fonts/roboto/roboto-bold.ttf')", {weight: '700', style: 'normal'})).load(),
-        (new FontFace("Roboto", "url('./assets/fonts/roboto/roboto-medium.ttf')", {weight: '500', style: 'normal'})).load(),
-      ]);
-      backupPromises.then(fonts => {
-        fonts.forEach(font => document.fonts.add(font));
-      });
-    }
-  });
-
-
-}
-
-
-const GENETIC_DISTANCE_MIN_DIST = 1;
 
 class TipInfo {
   index: number;
@@ -79,13 +48,37 @@ type OptionCount = {[name: string]: number};
 const FADE_OPACITY = 0.3;
 
 
+class CustomSubTree {
+  minDate: number;
+  maxDate: number;
+  verticallySortedTips: number[];
+  nodeYs: number[];
+  size: number;
+
+  constructor(minDate: number, maxDate: number, verticallySortedTips: number[], nodeYs: number[], size: number) {
+    this.minDate = minDate;
+    this.maxDate = maxDate;
+    this.verticallySortedTips = verticallySortedTips;
+    this.nodeYs = nodeYs;
+    this.size = size;
+  }
+
+
+
+}
+
 export class MccTreeCanvas {
   canvas: HTMLCanvasElement | PdfCanvas;
   ctx: CanvasRenderingContext2D | Context2d;
   dateAxis: HTMLDivElement;
   height: number;
   width: number;
-  protected nodeYs: number[];
+  /*
+  by default, we draw the entire tree.
+  however, the user can select a root index to draw from.
+  */
+  rootIndex: number;
+  // protected nodeYs: number[];
   nodeTimes: number[];
   nodeChildren: number[][];
   nodeParents: number[];
@@ -93,8 +86,8 @@ export class MccTreeCanvas {
   /* how many tips for the node at this index */
   tipCounts: number[];
   branchWeights: number[];
-  minDate: number;
-  maxDate: number;
+  // minDate: number;
+  // maxDate: number;
   tree: Tree | null;
   creds: number[];
   paddingTop : number;
@@ -104,14 +97,11 @@ export class MccTreeCanvas {
   zoomCenterY: number;
   horizontalZoom: number;
   zoomCenterX: number;
-  drawBranch: DrawBranchFnc;
   dateHoverDiv: HTMLDivElement | null;
   dateAxisEntries: AxisLabel[] = [];
 
   minOpacity: number;
   maxOpacity: number;
-
-
 
   mccConfig : MccConfig | null;
   verticalTips: TipInfo[];
@@ -125,20 +115,22 @@ export class MccTreeCanvas {
 
   selectable: boolean;
 
+  rootConfigs: CustomSubTree[] = [];
+
   constructor(canvas: HTMLCanvasElement | PdfCanvas, ctx: CanvasRenderingContext2D | Context2d) {
     this.canvas = canvas;
     this.ctx = ctx;
     this.dateAxis = canvas.parentNode?.querySelector(".dates") as HTMLDivElement;
     this.tree = null;
-    this.nodeYs = [];
+    // this.nodeYs = [];
     this.nodeTimes = [];
     this.nodeChildren = [];
     this.nodeParents = [];
     this.tipCount = 0;
     this.tipCounts = [];
     this.branchWeights = [];
-    this.minDate = Number.MAX_VALUE;
-    this.maxDate = Number.MIN_VALUE;
+    // this.minDate = Number.MAX_VALUE;
+    // this.maxDate = Number.MIN_VALUE;
     this.height = 0;
     this.width = 0;
     this.creds = [];
@@ -153,7 +145,6 @@ export class MccTreeCanvas {
 
     this.minOpacity = 0.1;
     this.maxOpacity = 1.0;
-    this.drawBranch = (i:number, ctx: CanvasRenderingContext2D | Context2d)=>console.debug(`drawBranch not decided ${i}`, ctx)
     this.mccConfig = null;
     this.verticalTips = [];
     this.confidenceThreshold = DEFAULT_NODE_CONFIDENCE;
@@ -165,6 +156,8 @@ export class MccTreeCanvas {
     this.totalTipMutations = [];
 
     this.selectable = true;
+
+    this.rootIndex = UNSET;
   }
 
 
@@ -186,40 +179,40 @@ export class MccTreeCanvas {
     }
   }
 
-  setAspectRatio(aspectRatio: number) {
-    const canvas = this.canvas as HTMLCanvasElement;
-    try {
-      // ugh, forced reflow…
-      canvas.style.width = '';
-      canvas.style.height = '';
-      const {width, height} = resizeCanvas(canvas),
-        currentAspectRatio = width / height;
-      let targetWidth = height * aspectRatio,
-        targetHeight = width / aspectRatio;
-      if (currentAspectRatio >= aspectRatio || targetHeight > height) {
-        targetHeight = height;
-      } else {
-        targetWidth = width;
-      }
-      canvas.style.width = `${targetWidth}px`;
-      canvas.style.height = `${targetHeight}px`;
-      if (window.devicePixelRatio > 1) {
-        canvas.width = Math.round(targetWidth * window.devicePixelRatio);
-        canvas.height = Math.round(targetHeight * window.devicePixelRatio);
-        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      } else {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-      }
-      this.width = targetWidth;
-      this.height = targetHeight;
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'top';
-      this.ctx.font = TREE_TEXT_FONT;
-    } catch (typeError) {
-      // this happens if the canvas is a PdfCanvas
-    }
-  }
+  // setAspectRatio(aspectRatio: number) {
+  //   const canvas = this.canvas as HTMLCanvasElement;
+  //   try {
+  //     // ugh, forced reflow…
+  //     canvas.style.width = '';
+  //     canvas.style.height = '';
+  //     const {width, height} = resizeCanvas(canvas),
+  //       currentAspectRatio = width / height;
+  //     let targetWidth = height * aspectRatio,
+  //       targetHeight = width / aspectRatio;
+  //     if (currentAspectRatio >= aspectRatio || targetHeight > height) {
+  //       targetHeight = height;
+  //     } else {
+  //       targetWidth = width;
+  //     }
+  //     canvas.style.width = `${targetWidth}px`;
+  //     canvas.style.height = `${targetHeight}px`;
+  //     if (window.devicePixelRatio > 1) {
+  //       canvas.width = Math.round(targetWidth * window.devicePixelRatio);
+  //       canvas.height = Math.round(targetHeight * window.devicePixelRatio);
+  //       this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  //     } else {
+  //       canvas.width = targetWidth;
+  //       canvas.height = targetHeight;
+  //     }
+  //     this.width = targetWidth;
+  //     this.height = targetHeight;
+  //     this.ctx.textAlign = 'center';
+  //     this.ctx.textBaseline = 'top';
+  //     this.ctx.font = TREE_TEXT_FONT;
+  //   } catch (typeError) {
+  //     // this happens if the canvas is a PdfCanvas
+  //   }
+  // }
 
   clear() {
     this.ctx.clearRect(0, 0, this.width, this.height);
@@ -238,193 +231,209 @@ export class MccTreeCanvas {
     this.colorsUnSet = true;
   }
 
-  setTreeNodes(tree:Tree, creds: number[]=[], mccIndex = 0): number[][] {
+  setTreeNodes(tree:Tree, creds: number[]=[]) : void {
     this.colorsUnSet = true;
-    this.positionTreeNodes(tree, creds);
-    this.setColors(tree);
-    if (this.mccConfig) {
-      if (this.mccConfig.ySpacing === YSpacing.genetic) {
-        this.rescaleGeneticDistance(tree as SummaryTree, mccIndex);
+    const nodeCount = tree.getSize();
+    if (nodeCount > 0) {
+      if (this.rootIndex === UNSET || this.tree !== tree) {
+        this.rootIndex = (tree as Tree).getRootIndex();
       }
-      this.confidenceThreshold = this.mccConfig.confidenceThreshold;
+      this.gatherNodeStats(tree, creds);
+      this.positionTreeNodes();
+      if (this.mccConfig) {
+        this.confidenceThreshold = this.mccConfig.confidenceThreshold;
+      }
+      this.setColors(tree);
     }
-    return this.nodeYs.map(y=>[y]);
   }
 
-  positionTreeNodes(tree:Tree, creds: number[]=[]): number[][] {
-    this.drawBranch = tree instanceof MccUmbrella ?
-      (i:number, ctx:CanvasRenderingContext2D | Context2d = this.ctx)=>this.drawUmbrellaBranch(i, ctx)
-      : (i:number, ctx:CanvasRenderingContext2D | Context2d = this.ctx) => this.drawNodeBranch(i, ctx);
-
-    const {height} = this,
-      nodeCount = tree.getSize(),
-      yPositions: number[] = Array(nodeCount),
-      times: number[] = Array(nodeCount),
-      nodeChildren: number[][] = Array(nodeCount),
-      nodeParents: number[] =  Array(nodeCount).fill(-1);
-    if (nodeCount > 0) {
-      if (creds.length === 0) {
-        creds = new Array(nodeCount);
-        creds.fill(0.8)
-      }
-      let minDate = Number.MAX_SAFE_INTEGER,
-        maxDate = Number.MIN_SAFE_INTEGER,
-        actualTipCount = 0;
-      for (let i = 0; i < nodeCount; i++) {
-        const t = tree.getTimeOf(i),
-          kidCount = tree.getNumChildrenOf(i);
-        times[i] = t;
-        minDate = Math.min(minDate, t);
-        maxDate = Math.max(maxDate, t);
-        if (kidCount === 0) {
-          actualTipCount++;
-          nodeChildren[i] = [];
-        } else if (kidCount === 2) {
-          const left = tree.getLeftChildIndexOf(i),
-            right = tree.getRightChildIndexOf(i);
-          nodeChildren[i] = [left, right];
-          nodeParents[left] = i;
-          nodeParents[right] = i;
-        } else {
-          nodeChildren[i] = (tree as MccUmbrella).getChildren(i);
-          nodeChildren[i].forEach(c=>nodeParents[c] = i);
-        }
-      }
-      /*
-      to ladderize the tree we need to sort clades by their tip counts.
-      build a queue from the tree, filling it by traversing the tree
-      depth first, and choosing the branch with the higher tip
-      count at each node.
-      */
-      let ypos = height - this.paddingBottom;
-      const h = (ypos - this.paddingTop)/actualTipCount;
-      const tipCounts = getTipCounts(tree),
-        rootIndex = tree.getRootIndex(),
-        verticallySortedTips:number[] = [],
-        queue:number[] = [rootIndex];
-      while (queue.length > 0) {
-        const index: number = queue.shift() as number,
-          children = nodeChildren[index],
-          kidCount = children.length;
-        if (kidCount === 0) {
-          verticallySortedTips.push(index);
-          yPositions[index] = ypos;
-          ypos -= h;
-          nodeChildren[index] = [];
-        } else if (kidCount === 2) {
-          const left = children[0],
-            right = children[1],
-            lCount = tipCounts[left],
-            rCount = tipCounts[right];
-          nodeChildren[index] = [left, right];
-          /*
-          puts the node with the lower count before the one with the higher count
-          if the same count, put the earlier one first
-          */
-          if (lCount < rCount) {
-            queue.unshift(right);
-            queue.unshift(left);
-          } else if (lCount > rCount) {
-            queue.unshift(left);
-            queue.unshift(right);
-          } else if (times[left] < times[right]) {
-            queue.unshift(right);
-            queue.unshift(left);
-          } else {
-            queue.unshift(left);
-            queue.unshift(right);
-          }
-        } else {
-          const umbrella: MccUmbrella = tree as MccUmbrella,
-            kids: number[] = umbrella.getChildren(index),
-            counts = kids.map(c=>[c, tipCounts[c]]);
-          nodeChildren[index] = kids;
-          /*
-          sort the list by count desc so that the queue
-          gets the lower counts first
-          */
-          counts.sort((a,b)=>{
-            let diff = b[1] - a[1];
-            if (diff === 0) diff = times[b[0]] - times[a[0]];
-            return diff;
-          });
-          counts.forEach(item=>queue.unshift(item[0]));
-        }
-      }
-
-      queue.length = 0;
-      /* fill the queue from the root down, breadth first */
-      let i = 0;
-      queue.push(tree.getRootIndex());
-      while (i < queue.length) {
-        const index = queue[i];
-        nodeChildren[index].forEach(c=>queue.push(c));
-        i++;
-      }
-      const logMaxTipCount = Math.log(tipCounts[rootIndex]);
-      while (queue.length > 0) {
-        const index = queue.pop() as number;
-        if (yPositions[index] === undefined) {
-          const left = tree.getLeftChildIndexOf(index),
-            right = tree.getRightChildIndexOf(index),
-            ly = yPositions[left],
-            ry = yPositions[right];
-          if (ly === undefined || ry === undefined) {
-            /*
-            This shouldn't happen, but just in case…
-            one of the children's positions isn't defined yet,
-            so put this back on the queue to try again later
-            */
-            queue.push(index);
-            queue.push(left);
-            queue.push(right);
-          } else {
-            yPositions[index] = (ly + ry) / 2;
-            const wt = Math.log(tipCounts[index]) / logMaxTipCount;
-            this.branchWeights[index] = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * wt;
-          }
-        }
-      }
-      this.tipCounts = tipCounts;
-      this.tipCount = actualTipCount;
-      this.minDate = minDate;
-      this.maxDate = maxDate;
-      this.tree = tree;
-      this.nodeYs = yPositions;
-      this.nodeTimes = times;
-      this.nodeChildren = nodeChildren;
-      this.nodeParents = nodeParents;
-      this.creds = creds;
-
-      // if (tree instanceof MccTree || tree instanceof MostCommonSplitTree || tree instanceof MccUmbrella) {
-      //   const summ = tree as SummaryTree,
-      //     root = summ.getRootIndex(),
-      //     count = summ.getNumBaseNodesOf(root),
-      //     times: number[] = [];
-      //   for (let t = 0; t < count; t++) {
-      //     const n1 = summ.getBaseNodeNodeIndexOf(root, t),
-      //       t1 = summ.getBaseNodeTreeIndexOf(root, t),
-      //       bt1 = summ.getBaseTree(t1),
-      //       d1 = bt1.getTimeOf(n1);
-      //     times.push(Math.round(d1));
-      //   }
-      //   times.sort((a:number, b:number)=>a-b);
-      //   console.debug(summ.getNumBaseTrees(), root, times.map(t=>`${t}`).join());
-      //   for (let i = 0; i < summ.getSize(); i++) {
-      //     console.debug(`    ${i}   ${summ.getNumBaseNodesOf(i)}`);
-      //   }
-      // }
-
-
+  setRootNode(rootIndex: number) : void {
+    if (rootIndex === UNSET) {
+      rootIndex = (this.tree as Tree).getRootIndex();
+    }
+    this.rootIndex = rootIndex;
+    if (this.rootConfigs[rootIndex] === undefined) {
+      this.positionTreeNodes();
+    } else {
       requestAnimationFrame(()=>this.setAxisDates());
     }
-    return yPositions.map(y=>[y]);
+
   }
+
+
+
+  protected gatherNodeStats(tree:Tree, creds: number[]=[]) : void {
+    const nodeCount = tree.getSize(),
+      times: number[] = Array(nodeCount),
+      nodeChildren: number[][] = Array(nodeCount),
+      nodeParents: number[] =  Array(nodeCount).fill(-1),
+      branchWeights: number[] = Array(nodeCount),
+      tipCounts = getTipCounts(tree),
+      tipCount = (nodeCount + 1) / 2,
+      logMaxTipCount = Math.log(tipCount);
+    if (creds.length === 0) {
+      creds = new Array(nodeCount);
+      creds.fill(0.8)
+    }
+    let minDate = Number.MAX_SAFE_INTEGER,
+      maxDate = Number.MIN_SAFE_INTEGER,
+      actualTipCount = 0;
+    for (let i = 0; i < nodeCount; i++) {
+      const t = tree.getTimeOf(i),
+        kidCount = tree.getNumChildrenOf(i),
+        wt = Math.log(tipCounts[i]) / logMaxTipCount;
+      branchWeights[i] = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * wt;
+      times[i] = t;
+      minDate = Math.min(minDate, t);
+      maxDate = Math.max(maxDate, t);
+      if (kidCount === 0) {
+        actualTipCount++;
+        nodeChildren[i] = [];
+      } else if (kidCount === 2) {
+        const left = tree.getLeftChildIndexOf(i),
+          right = tree.getRightChildIndexOf(i),
+          lCount = tipCounts[left],
+          rCount = tipCounts[right];
+        nodeParents[left] = i;
+        nodeParents[right] = i;
+        /*
+        put the node with the lower count before the one with the higher count.
+        if the same count, put the earlier one first.
+        if same time, put the lower index first for predictability.
+        */
+        if (lCount < rCount) {
+          nodeChildren[i] = [left, right];
+        } else if (lCount > rCount) {
+          nodeChildren[i] = [right, left];
+        } else if (times[left] < times[right]) {
+          nodeChildren[i] = [left, right];
+        } else if (times[left] > times[right]) {
+          nodeChildren[i] = [right, left];
+        } else if (left < right) {
+          nodeChildren[i] = [left, right];
+        } else {
+          nodeChildren[i] = [right, left];
+        }
+      }
+    }
+    this.tipCounts = tipCounts;
+    this.tipCount = actualTipCount;
+    this.branchWeights = branchWeights;
+    this.tree = tree;
+    this.nodeTimes = times;
+    this.nodeChildren = nodeChildren;
+    this.nodeParents = nodeParents;
+    this.creds = creds;
+  }
+
+  protected positionTreeNodes(): void {
+    const {height, tipCounts, nodeChildren, nodeTimes, rootIndex } = this,
+      tipCount = tipCounts[rootIndex] || 0,
+      size = tipCount === 0 ? 0 : tipCount * 2 - 1,
+      yPositions: number[] = new Array(size),
+      verticallySortedTips:number[] = [],
+      queue:number[] = [rootIndex];
+    let minDate = Number.MAX_SAFE_INTEGER,
+      maxDate = Number.MIN_SAFE_INTEGER,
+      ypos = height - this.paddingBottom;
+    const h = (ypos - this.paddingTop) / tipCount;
+    /*
+    The typical tree layout is called a "ladderized" tree: the
+    branches don't cross, and there's a general cascade to the
+    tree that keeps the branches generally short. The first step
+    is to sort clades by their tip counts, and assign y-positions
+    to the tips.
+    Build a queue from the tree, filling it by traversing the tree
+    _depth_ first, and choosing the branch with the higher tip
+    count at each node.
+    When we reach a tip, set its position.
+    While we're at it, set the min and max dates.
+    Implementation note: in this queue, we process items as we go,
+    so we add things, remove them, add some more, etc.
+    At the end of it, the queue will be empty.
+    */
+    while (queue.length > 0) {
+      const index: number = queue.shift() as number,
+        children = nodeChildren[index],
+        kidCount = children.length,
+        t = nodeTimes[index];
+      minDate = Math.min(minDate, t);
+      maxDate = Math.max(maxDate, t);
+      if (kidCount === 0) {
+        verticallySortedTips.push(index);
+        yPositions[index] = ypos;
+        ypos -= h;
+      } else {
+        const [left, right] = children;
+        /*
+        the node children have already been sorted into the order we want
+        to process.
+        Implementation note: we process the queue by taking the first element
+        via `shift`. That means putting the  larger one at the front of the queue,
+        and then the smaller one before that. Thus, the order of operations below
+        does not correspond to the order they get processed. e.g.
+          queue.unshift(right);
+          queue.unshift(left);
+        results in left getting processed before right.
+        */
+        queue.unshift(right);
+        queue.unshift(left);
+      }
+    }
+    /*
+    Each inner node's y position is the average of its
+    immediate children. So far, only the tips have their
+    positions set. In order to build from the tips up,
+    we traverse the tree _breadth_ first to build a queue,
+    and then work from the end of the queue to the start.
+    Implementation note: this time, we fill the queue with
+    all the entries that need processing, and then work
+    from that list.
+    */
+    queue.length = 0;
+    let i = 0;
+    queue.push(rootIndex);
+    while (i < queue.length) {
+      const index = queue[i];
+      nodeChildren[index].forEach(c=>queue.push(c));
+      i++;
+    }
+
+    /* now work backwards */
+    while (queue.length > 0) {
+      const index = queue.pop() as number;
+      /* tips will already have a y position */
+      if (yPositions[index] === undefined) {
+        const [left, right] = nodeChildren[index],
+          ly = yPositions[left],
+          ry = yPositions[right];
+        // if (ly === undefined || ry === undefined) {
+        //   console.warn(`bad assumptions lurk in positionTreeNodes`)
+        //   /*
+        //   This shouldn't happen, but just in case…
+        //   one of the children's positions isn't defined yet,
+        //   so put this back on the queue to try again later
+        //   */
+        //   queue.push(index);
+        //   queue.push(left);
+        //   queue.push(right);
+        // } else {
+        yPositions[index] = (ly + ry) / 2;
+        // }
+      }
+    }
+    this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, yPositions, size);
+    // console.log(` minDate: ${minDate}, maxDate: ${maxDate}`);
+    requestAnimationFrame(()=>this.setAxisDates());
+
+  }
+
 
 
   setAxisDates() {
     if (!this.dateAxis) return;
-    const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
+    const config = this.rootConfigs[this.rootIndex];
+    const { scale, entries } = getNiceDateInterval(config.minDate, config.maxDate);
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
@@ -461,13 +470,15 @@ export class MccTreeCanvas {
       */
       maxOffset = zoomedHeight - height,
       minOffset = 0,
-      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset);
-    return this.nodeYs[index] * this.verticalZoom - offset;
+      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
+      config = this.rootConfigs[this.rootIndex];
+    return config.nodeYs[index] * this.verticalZoom - offset;
   }
 
   getZoomedDateRange() : number[] {
-    const dateRange = this.maxDate - this.minDate,
-      centerDate = this.maxDate - dateRange * this.zoomCenterX,
+    const config = this.rootConfigs[this.rootIndex],
+      dateRange = config.maxDate - config.minDate,
+      centerDate = config.maxDate - dateRange * this.zoomCenterX,
       dateWindowSide = dateRange / this.horizontalZoom * 0.5,
       minDate = Math.round(centerDate - dateWindowSide),
       maxDate = Math.round(centerDate + dateWindowSide);
@@ -476,7 +487,11 @@ export class MccTreeCanvas {
 
 
   getDateRange() : number[] {
-    return [this.minDate, this.maxDate];
+    if (this.rootIndex === UNSET) {
+      return [UNSET, UNSET];
+    }
+    const config = this.rootConfigs[this.rootIndex];
+    return [config.minDate, config.maxDate];
   }
 
   // xFor(t: number): number {
@@ -496,7 +511,8 @@ export class MccTreeCanvas {
       maxOffset = zoomedWidth - width,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      pct =  (this.maxDate - t) / (this.maxDate - this.minDate),
+      config = this.rootConfigs[this.rootIndex],
+      pct =  (config.maxDate - t) / (config.maxDate - config.minDate),
       x = right - (pct * zoomedWidth - offset)
     return x;
   }
@@ -515,22 +531,24 @@ export class MccTreeCanvas {
       maxOffset = zoomedWidth - width,
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
+      config = this.rootConfigs[this.rootIndex],
       pct = (right - x + offset) / zoomedWidth;
-    t = this.maxDate - pct * (this.maxDate - this.minDate);
+    t = config.maxDate - pct * (config.maxDate - config.minDate);
     // console.log(x, this.minDate, t, this.maxDate);
     return t;
   }
 
 
   zoomToTips(tips: number[]) : void {
-    const height = this.height - this.paddingBottom - this.paddingTop;
+    const height = this.height - this.paddingBottom - this.paddingTop,
+      config = this.rootConfigs[this.rootIndex];
     let index = tips[0],
-      y1 = this.nodeYs[index],
+      y1 = config.nodeYs[index],
       y2 = y1;
     for (let i = 1; i < tips.length; i++) {
       index = tips[i];
-      y1 = Math.min(y1, this.nodeYs[index]);
-      y2 = Math.max(y2, this.nodeYs[index]);
+      y1 = Math.min(y1, config.nodeYs[index]);
+      y2 = Math.max(y2, config.nodeYs[index]);
     }
     const y = (y1 + y2) / 2,
       span = y2 - y1,
@@ -559,9 +577,10 @@ export class MccTreeCanvas {
 
   sortTips():void {
     /* gather a list of node indexes by y position */
-    const nodeYs = this.nodeYs,
+
+    const nodeYs = this.rootConfigs[this.rootIndex].nodeYs,
       nodeCount = nodeYs.length,
-      sortable = [];
+      sortable: TipInfo[] = [];
     for (let i = 0; i < nodeCount; i++) {
       if (this.nodeChildren[i].length === 0) {
         const y = nodeYs[i];
@@ -573,173 +592,10 @@ export class MccTreeCanvas {
   }
 
 
-
-  rescaleGeneticDistance(mcc: SummaryTree, mccIndex: number):void {
-
-    /*
-    what is the genetic distance between one tip and another?
-
-    we are only concerned with those that are next to each other
-    in the current MCC topology, so we won't compare everything
-
-    choose an abitrary base tree, as tips are the same in each tree.
-      we will use the tree on which the MCC topology is based.
-    for each tip pair,
-        remove any shared mutations (due to multiple introductions)
-        add the number of remaining mutations to the total for the pair
-
-
-    gather total number of all mutation differences
-      scale that to the vertical space we have
-      traverse the tips in vertical order,
-        assigning the scaled vertical space as you go
-
-    */
-    this.sortTips();
-    const verticalTips = this.verticalTips,
-      tipCount = verticalTips.length,
-      totalTipMutations: number[] = new Array(tipCount),
-      // treeCount = mcc.getNumBaseTrees(),
-      n1Muts: Mutation[] = [],
-      n2Muts: Mutation[] = [],
-      tree: PhyloTree = mcc.getBaseTree(mccIndex),
-      rootSequence = tree.getRootSequence(),
-      addMut = (m:Mutation, arr:Mutation[])=>{
-        /*
-        since we are traversing back from the tips,
-        if we already have a mutation at the same site as mutation m,
-        then m has been overwritten and we can ignore it.
-        */
-        if (arr.filter(m2=>m2.site === m.site).length === 0) {
-          arr.push(m);
-        }
-      },
-      addN1Mut = (m:Mutation)=>addMut(m, n1Muts),
-      addN2Mut = (m:Mutation)=>addMut(m, n2Muts),
-      sortMuts = (a:Mutation, b:Mutation)=>a.site - b.site,
-      tallyDifferences = (muts1: Mutation[], muts2: Mutation[]):number =>{
-        muts1.sort(sortMuts);
-        muts2.sort(sortMuts);
-        /*
-        go through the lists looking for differences
-        only counts ones that are different from the root
-        */
-        let i1 = 0,
-          i2 = 0,
-          m1: Mutation,
-          m2: Mutation,
-          diffs = 0;
-        while (i1 < muts1.length || i2 < muts2.length) {
-          m1 = muts1[i1];
-          m2 = muts2[i2];
-          if (!m2) {
-            if (m1.to !== rootSequence[m1.site]) {
-              diffs++;
-            }
-            i1++;
-          } else if (!m1) {
-            if (m2.to !== rootSequence[m2.site]) {
-              diffs++;
-            }
-            i2++;
-          } else if (m1.site < m2.site) {
-            if (m1.to !== rootSequence[m1.site]) {
-              diffs++;
-            }
-            i1++;
-          } else if (m1.site > m2.site) {
-            if (m2.to !== rootSequence[m2.site]) {
-              diffs++;
-            }
-            i2++;
-          } else {
-            if (m1.to !== m2.to) {
-              diffs++;
-            }
-            i1++;
-            i2++;
-          }
-        }
-        return diffs;
-      };
-    let totalMutations = 0;
-    /* the first tip is distance 0 from the non-existant tip before it */
-    totalTipMutations[0] = GENETIC_DISTANCE_MIN_DIST;
-    for (let i = 1; i < tipCount; i++) {
-      totalTipMutations[i] = 0;
-      const mccNodeAIndex = verticalTips[i-1].index,
-        mccNodeBIndex = verticalTips[i].index;
-      n1Muts.length = 0;
-      n2Muts.length = 0;
-      let n1 = mccNodeAIndex,
-        n2 = mccNodeBIndex,
-        t1 = tree.getTimeOf(n1),
-        t2 = tree.getTimeOf(n2);
-      tree.forEachMutationOf(n1, addN1Mut);
-      tree.forEachMutationOf(n2, addN2Mut);
-      while (n1 !== n2 && n1 >= 0 && n2 >= 0) {
-        if (t1 > t2) {
-          n1 = tree.getParentIndexOf(n1);
-          t1 = tree.getTimeOf(n1);
-          tree.forEachMutationOf(n1, addN1Mut);
-        } else {
-          n2 = tree.getParentIndexOf(n2);
-          t2 = tree.getTimeOf(n2);
-          tree.forEachMutationOf(n2, addN2Mut);
-        }
-      }
-      /* sanity check */
-      if (n1 < 0 || n2 < 0) {
-        throw new Error('our tips never met at an MRCA');
-      }
-      const mCount = tallyDifferences(n1Muts, n2Muts) + GENETIC_DISTANCE_MIN_DIST;
-      totalTipMutations[i] += mCount;
-      totalMutations += mCount;
-    }
-
-    /* adjust distance based on genetic distance */
-    const yRange = this.height - this.paddingTop - this.paddingBottom,
-      tipDiffDist = totalTipMutations.map(mutCount=>mutCount / totalMutations * yRange);
-    /*
-    set positions of the tips, accumulating references to the inner nodes as we go
-    */
-    const innerIndices: number[] = [],
-      nodeYs: number[] = new Array(this.nodeYs.length);
-    let totalY = 0;
-    verticalTips.forEach((tipInfo, vertIndex)=>{
-      const nodeIndex = tipInfo.index,
-        dist = tipDiffDist[vertIndex],
-        parent = mcc.getParentIndexOf(nodeIndex);
-      totalY += dist;
-      nodeYs[nodeIndex] = totalY;
-      if (parent >= 0) {
-        innerIndices.push(parent);
-      }
-    });
-    while (innerIndices.length > 0) {
-      const index = innerIndices.shift();
-      if (index !== undefined) {
-        const left = nodeYs[mcc.getLeftChildIndexOf(index)],
-          right = nodeYs[mcc.getRightChildIndexOf(index)],
-          y = (left + right) / 2,
-          parent = mcc.getParentIndexOf(index);
-        if (y) {
-          nodeYs[index] = y;
-          if (parent >= 0) {
-            innerIndices.push(parent);
-          }
-        }
-      }
-    }
-    this.nodeYs = nodeYs;
-    this.totalTipMutations = totalTipMutations;
-  }
-
-
   setColors(tree:Tree): void {
     // console.debug('setColorrs');
     const mccConfig = this.mccConfig,
-      size = this.nodeYs.length;
+      size = this.rootConfigs[this.rootIndex].size;
 
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
       const confidenceThreshold = this.confidenceThreshold;
@@ -815,9 +671,12 @@ export class MccTreeCanvas {
   }
 
   draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
-    if (earliest === undefined) earliest = this.minDate;
-    if (latest === undefined) latest = this.maxDate;
-    const {ctx, width, height, nodeYs, drawBranch} = this,
+    const config = this.rootConfigs[this.rootIndex];
+    if (!config) return;
+    if (earliest === undefined) earliest = config.minDate;
+    if (latest === undefined) latest = config.maxDate;
+    const { nodeYs } = config;
+    const { ctx, width, height } = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
@@ -826,7 +685,7 @@ export class MccTreeCanvas {
     ctx.lineWidth = BRANCH_WEIGHT;
     ctx.globalAlpha = this.maxOpacity;
     for (let i = 0; i < nodeCount; i++) {
-      drawBranch(i, this.ctx);
+      this.drawBranch(i, this.ctx);
     }
     // Draw tips
     // ctx.fillStyle = this.tipColor;
@@ -850,7 +709,7 @@ export class MccTreeCanvas {
 
 
 
-  drawNodeBranch(index: number, ctx: CanvasRenderingContext2D | Context2d): void {
+  drawBranch(index: number, ctx: CanvasRenderingContext2D | Context2d): void {
     const children = this.nodeChildren[index],
       parent = this.nodeParents[index],
       nodeX = this.getZoomX(this.nodeTimes[index]);
@@ -947,7 +806,8 @@ export class MccTreeCanvas {
   getNodeAt(x:number, y:number):number {
     let closest = -1;
     let minD2 = HOVER_DISTANCE * HOVER_DISTANCE;
-    for (let i = 0; i < this.nodeYs.length; i++) {
+    const nodeYs = this.rootConfigs[this.rootIndex].nodeYs;
+    for (let i = 0; i < nodeYs.length; i++) {
       const ny = this.getZoomY(i);
       if (Math.abs(ny-y) < 50) {
         const nx = this.getZoomX(this.nodeTimes[i]),
@@ -961,6 +821,8 @@ export class MccTreeCanvas {
     if (isNaN(closest)) closest = -1;
     return closest;
   }
+
+
 
 
   getCanvas():HTMLCanvasElement|PdfCanvas {

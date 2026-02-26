@@ -1,13 +1,11 @@
 import {SummaryTree} from '../pythia/delphy_api';
 import {Pythia} from '../pythia/pythia';
-import {MostCommonSplitTree} from '../pythia/mostcommonsplittree';
 import {DateLabel} from './datelabel';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from './mcctreecanvas';
-import {ColorOption, DataResolveType, getPercentLabel, getTimelineIndices, Presentation, Topology} from './common';
+import {ColorOption, DataResolveType, getPercentLabel, getTimelineIndices} from './common';
 import {UIScreen} from './uiscreen';
 import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
-import { MccUmbrella } from '../pythia/mccumbrella';
 import { Metadata } from './metadata';
 
 
@@ -113,22 +111,12 @@ export class MccUI extends UIScreen {
         let summary: SummaryTree,
           nodeConfidence: number[];
         const mccConfig = this.sharedState.mccConfig;
-        if (mccConfig && mccConfig.topology === Topology.bestof) {
-          const mcs = pythia.getMostCommonSplitTree() as MostCommonSplitTree;
-          summary = mcs;
-          nodeConfidence = mcs.getNodeConfidence();
-        } else {
-          summary = mccRef.getMcc();
-          nodeConfidence = mccRef.getNodeConfidence();
-        }
-        if (mccConfig && mccConfig.presentation === Presentation.umbrella) {
-          summary = pythia.getUmbrellaTree(summary);
-          nodeConfidence = (summary as MccUmbrella).getConfidence();
-        }
+        summary = mccRef.getMcc();
+        nodeConfidence = mccRef.getNodeConfidence();
         if (mccConfig) {
           mccConfig.updateInnerNodeMetadata(summary);
         }
-        this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence, pythia.getMccIndex());
+        this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence);
         requestAnimationFrame(()=>document.body.classList.remove("summarizing"));
         this.requestTreeDraw();
         resolve(summary);

@@ -1,28 +1,16 @@
-import { Mutation } from '../../pythia/delphy_api';
+import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNode, getNodeClassName, UNSET } from '../common';
+import { DisplayNode } from './displaynode';
+
 import { Distribution } from '../distribution';
 import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
+import { UNSET } from '../common';
 
-export enum NodePairType {
-  rootToNodeA = 0,
-  mrcaToNodeA = 1,
-  nodeBToNodeA = 2,
-
-  rootToNodeB = 3,
-  mrcaToNodeB = 4,
-  nodeAToNodeB = 5,
-
-  rootToMrca = 6,
-
-  rootOnly = 7
-
+export enum NodeRelationType {
+  singleDescendant = 1,
+  upperDescendant = 2,
+  lowerDescendant = 3
 }
-
-
-
-
-
 
 /*
 
@@ -31,16 +19,27 @@ Extensions to the classes that make up a TimeDistributionChart
 */
 
 
-export class NodeDistribution extends Distribution {
-  nodeType: DisplayNode;
+// export class NodeDistribution extends Distribution {
+//   nodeClass: DisplayNode;
 
-  constructor(type: DisplayNode, times: number[]) {
-    super(times);
-    this.nodeType = type;
-  }
-}
+//   constructor(type: DisplayNode, times: number[]) {
+//     super(times);
+//     this.nodeClass = type;
+//   }
+// }
 
 export class NodeSVGSeriesGroup extends SVGSeriesGroup {
+
+  node: DisplayNode | null = null;
+
+  setNode(node: DisplayNode, toggle=true) {
+    this.node = node;
+    if (node.className === '') {
+      console.log(`why an empty class here?` , node);
+    } else {
+      this.g.classList.toggle(node.className, toggle);
+    }
+  }
 
   setNodeClass(className: string, toggle=true) {
     this.g.classList.toggle(className, toggle);
@@ -50,19 +49,26 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
 export class NodeTimeDistributionChart extends TimeDistributionChart {
 
-  setSeries(series: NodeDistribution[]) {
-    super.setSeries(series);
+  setNodeSeries(nodes: DisplayNode[]) {
+    const serieses: Distribution[] = [];
+    const correspondingNodes: DisplayNode[] = [];
+    nodes.forEach(node=>{
+      if (node.series !== null) {
+        correspondingNodes.push(node);
+        serieses.push(node.series);
+      }
+    });
+    super.setSeries(serieses);
     this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
       const nodeGroup = (group as NodeSVGSeriesGroup);
-      const series = this.series[i] as NodeDistribution;
-      const className = getNodeClassName(series.nodeType);
-      nodeGroup.setNodeClass(className);
-      nodeGroup.setNodeClass("tip", series.range === 0);
+      const node = correspondingNodes[i];
+      nodeGroup.setNode(node);
+      nodeGroup.setNodeClass("tip", node.series === null || node.series.range === 0);
     });
   }
 
-  setMatching(node:DisplayNode) {
-    if (node === UNSET) {
+  setMatching(matchNode:DisplayNode | null) {
+    if (matchNode === null || matchNode.index === UNSET) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         nodeGroup.setNodeClass("matching", false);
@@ -71,8 +77,8 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     } else {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
-        const series = this.series[i] as NodeDistribution;
-        if (series.nodeType === node) {
+        const node = nodeGroup.node;
+        if (node?.index === matchNode.index) {
           nodeGroup.setNodeClass("matching");
           nodeGroup.setNodeClass("unmatching", false);
         } else {
@@ -92,74 +98,32 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
 
 
 
-export type NodeDisplay = {
-  index: number,
-  label: string,
-  type: DisplayNode,
-  className: string,
-  times: number[],
-  series: NodeDistribution | null
-};
-
-export const getAncestorType = (npt: NodePairType): DisplayNode => {
-  // incorrectly gives ancestor=nodeB for nodeAToNodeB?
-
-  // const mod = npt % 3;
-  // const nodeType: DisplayNode = mod === 0 ? DisplayNode.root
-  //   : mod === 1 ? DisplayNode.mrca
-  //     : npt < NodePairType.rootToNodeB ? DisplayNode.nodeA : DisplayNode.nodeB;
-
-  switch (npt) {
-  case NodePairType.rootToMrca:
-  case NodePairType.rootToNodeA:
-  case NodePairType.rootToNodeB:
-  case NodePairType.rootOnly:
-    return DisplayNode.root;
-  case NodePairType.mrcaToNodeA:
-  case NodePairType.mrcaToNodeB:
-    return DisplayNode.mrca;
-  case NodePairType.nodeAToNodeB:
-    return DisplayNode.nodeA;
-  case NodePairType.nodeBToNodeA:
-    return DisplayNode.nodeB;
-  default:
-    return DisplayNode.nodeB;
-  }
-
-  // return nodeType;
-}
-
-
-const descendantTypes:DisplayNode[] = [DisplayNode.nodeA, DisplayNode.nodeB, DisplayNode.mrca]
-
-export const getDescendantType = (npt: NodePairType)=>{
-  if (npt === NodePairType.rootOnly) return UNSET;
-  const index = Math.floor(npt / 3);
-  return descendantTypes[index];
-}
-
 export class NodePair {
-  index1: number;
-  index2: number;
-  pairType : NodePairType;
+  ancestor: DisplayNode;
+  descendant: DisplayNode;
+  relation: NodeRelationType;
   mutations : MutationDistribution[]
 
-  constructor(index1: number, index2: number,  pairType : NodePairType, mutations: MutationDistribution[]) {
-    this.index1 = index1;
-    this.index2 = index2;
-    this.pairType = pairType;
+  constructor(ancestor: DisplayNode, descendant: DisplayNode,
+    relation: NodeRelationType, mutations: MutationDistribution[]) {
+    this.ancestor = ancestor;
+    this.descendant = descendant;
+    this.relation = relation;
     this.mutations = mutations;
+  }
+
+  getDescendant(): DisplayNode {
+    return this.descendant;
+  }
+
+  getAncestor(): DisplayNode {
+    return this.ancestor;
   }
 }
 
-
-
-
-export type HoverCallback = (node:DisplayNode, dateIndex: number, mutation: Mutation|null)=>void;
-export type TreeHoverCallback = (nodeIndex:number, dateIndex: number)=>void;
-export type TreeSelectCallback = (nodeIndex: number)=>void;
-export type DismissCallback = (node:DisplayNode)=>void;
-export type NodeCallback = (displayNode: DisplayNode)=>void;
+export type HoverCallback = (nodeIndex: number, dateIndex: number, mutation: Mutation|null)=>void;
+export type TreeHoverCallback = (nodeIndex: number, dateIndex: number)=>void;
+export type NodeCallback = (nodeIndex: number)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 export type KeyEventHandler = (event: KeyboardEvent)=>void;
 
@@ -202,3 +166,48 @@ export const TREE_HINT_CLASSES = [
   "zoom"
 ]
 export type SetHintType = (hint:TreeHint) => void;
+
+
+/* should we provide an interface to this ? [mark 230524]*/
+/* adding it for now! [katherine 230608] */
+export const mutationPrevalenceThreshold = 0.5;
+
+
+export const getMRCA = (index1: number, index2: number,
+  summaryTree: SummaryTree, nodeChildCount: number[]): number => {
+  /* check for a common ancestor that is not root */
+  let mrcaIndex = UNSET;
+  const root = summaryTree.getRootIndex();
+  let i1 = index1,
+    i2 = index2,
+    steps = 0;
+  while (i1 !== i2 && i1 !== root && i2 !== root) {
+    /*
+    the mrca will always have more tips
+    so if we aren't matched yet, then take the
+    parent of the node that has fewer tips.
+    */
+    const size1 = nodeChildCount[i1],
+      size2 = nodeChildCount[i2];
+    if (size1 < size2) {
+      i1 = summaryTree.getParentIndexOf(i1);
+    } else {
+      i2 = summaryTree.getParentIndexOf(i2);
+    }
+    steps++;
+    if (steps >= 1000) {
+      console.warn(`we had a problem on ${index1} and ${index2}, setting mrca to root`)
+      mrcaIndex = root;
+      break;
+    }
+  }
+  if (i1 === i2) {
+    mrcaIndex = i1;
+  } else if (i1 === root || i2 === root) {
+    mrcaIndex = root;
+  }
+  return mrcaIndex;
+}
+
+export type getYFunction = (_: number) => number;
+

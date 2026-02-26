@@ -1,5 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
-import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+// import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+import {SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -19,7 +20,7 @@ import { TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
 
 const DAYS_PER_YEAR = 365;
-const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
+// const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
 const EPSILON = 1e-7;
 
@@ -94,7 +95,7 @@ export class RunUI extends UIScreen {
   mccIndex: number;
   private drawHandle: number;
 
-
+  openAdvancedButton: HTMLDivElement;
   advanced: HTMLElement;
   advancedForm: HTMLFormElement;
 
@@ -113,7 +114,6 @@ export class RunUI extends UIScreen {
   minBarrierLocationInput: HTMLInputElement;
 
   submitAdvancedButton: HTMLButtonElement;
-  restartWarning: HTMLElement;
 
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
@@ -198,9 +198,9 @@ export class RunUI extends UIScreen {
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
 
-    const openAdvancedButton = this.div.querySelector("#show-advanced") as HTMLButtonElement;
+    this.openAdvancedButton = this.div.querySelector("#option--show-advanced") as HTMLDivElement;
     this.advanced = this.div.querySelector("#runner--advanced") as HTMLElement;
-    this.advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
+    this.advancedForm = document.querySelector("#runner--advanced--content") as HTMLFormElement;
 
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement;
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
@@ -266,13 +266,24 @@ export class RunUI extends UIScreen {
       }
 
     });
-    this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
-    openAdvancedButton.addEventListener("click", ()=>{
-      this.advanced.classList.remove("hidden");
-      this.restartWarning.classList.add("hidden");
-      this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
-      this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+    const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
+    advancedToggle.addEventListener("change", (event)=>{
+      event.stopPropagation();
+      if (advancedToggle.checked) {
+        this.advanced.classList.add("active");
+        this.advanced.classList.remove("warning");
+        if (this.stepCount === 0) {
+          this.submitAdvancedButton.innerText = "Confirm";
+          this.submitAdvancedButton.classList.remove("warning-button");
+        } else {
+          this.submitAdvancedButton.innerText = "Restart with selected options";
+          this.submitAdvancedButton.classList.add("warning-button");
+        }
+
+      } else {
+        this.advanced.classList.remove("active");
+      }
     });
 
     this.fixedRateToggle.addEventListener("change", () => {
@@ -307,21 +318,26 @@ export class RunUI extends UIScreen {
 
 
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
-    const advancedCloseButton = this.div.querySelector(".close-button") as HTMLButtonElement;
-    [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
-      this.advanced.classList.add("hidden");
-    }));
+    advancedCancelButton.addEventListener("click", () => {
+      this.advanced.classList.remove("active");
+      const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
+      advancedToggle.checked = false;
+    });
     this.advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     this.advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
-    this.advanced.addEventListener("click", e => {
-      if (e.target === this.advanced) {
-        e.preventDefault();
-        this.advanced.classList.add("hidden");
-      }
-    });
+    // this.advanced.addEventListener("click", e => {
+    //   if (e.target === this.advanced) {
+    //     e.preventDefault();
+    //     this.advanced.classList.remove("active");
+    //     const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
+    //     advancedToggle.checked = false;
+    //   }
+    // });
     window.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !this.advanced.classList.contains("hidden")) {
-        this.advanced.classList.add("hidden");
+      if (e.key === "Escape" && this.advanced.classList.contains("active")) {
+        this.advanced.classList.remove("active");
+        const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
+        advancedToggle.checked = false;
       }
     })
   }
@@ -330,7 +346,7 @@ export class RunUI extends UIScreen {
   enableAdvancedFormSubmit() : void {
     const willRestart = this.getWillRestart();
     if (this.stepCount > 0) {
-      this.restartWarning.classList.toggle("hidden", !willRestart);
+      this.advanced.classList.add("warning");
     }
     /* don't enable the form while waiting for samples from the delphy engine */
     const isPausedAndWaitingForSample = !this.is_running && this.timerHandle !== 0;
@@ -862,7 +878,10 @@ export class RunUI extends UIScreen {
 
 
   private confirmRestart(newParams: RunParamConfig, skipDialog=true): void {
-    this.advanced.classList.add("hidden");
+    this.advanced.classList.remove("active");
+    const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
+    advancedToggle.checked = false;
+
 
     const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
       currentRunWouldBeErased = currentStepCount > 1;

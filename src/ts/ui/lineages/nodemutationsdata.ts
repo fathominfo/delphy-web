@@ -1,14 +1,9 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { NodePair, getAncestorType, getDescendantType } from './lineagescommon';
+import { NodePair, mutationPrevalenceThreshold } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getPercentLabel, UNSET } from '../common';
+import { getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
-
-
-/* should we provide an interface to this ? [mark 230524]*/
-/* adding it for now! [katherine 230608] */
-export const mutationPrevalenceThreshold = 0.5;
-
+import { DisplayNode } from './displaynode';
 
 
 
@@ -46,21 +41,20 @@ export class NodeMutationsData {
   descendantMedianDate: number = UNSET;
   thresholdLabel = "";
 
-
-
   constructor(nodePair: NodePair, ancestorMedianDate: number,
-    descendantMedianDate: number, minDate: number, maxDate: number,
-    isApobecRun: boolean) {
+    descendantMedianDate: number, minDate: number, maxDate: number, isApobecRun: boolean) {
     this.nodePair = nodePair;
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.isApobecRun = isApobecRun;
     this.mutationTimelineData = [];
-    this.ancestorType = getAncestorType(this.nodePair.pairType);
-    this.descendantType = getDescendantType(this.nodePair.pairType);
+    this.ancestorType = this.nodePair.getAncestor();
+    this.descendantType = this.nodePair.getDescendant();
     this.ancestorMedianDate = ancestorMedianDate;
     this.descendantMedianDate = descendantMedianDate;
+
     this.setMutations(isApobecRun);
+
   }
 
 

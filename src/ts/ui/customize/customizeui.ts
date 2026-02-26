@@ -1,6 +1,4 @@
-import { YSpacing, Topology, ColorOption, Presentation,
-  Y_EVEN_SPACING, Y_GENETIC_DISTANCE, TOPOLOGY_MCC, TOPOLOGY_BEST_OF,
-  COLOR_CONF, COLOR_METADATA, PRESENTATION_ALL, PRESENTATION_UMBRELLA,
+import { ColorOption, COLOR_CONF, COLOR_METADATA,
   CONFIDENCE_DEFAULT, ColorDict, getTimestampString, MetadataColorOption } from '../common';
 import {noop} from '../../constants';
 import {MccUI} from '../mccui';
@@ -58,11 +56,11 @@ export class CustomizeUI extends MccUI {
   colorSystem: ColorOption = ColorOption.confidence;
   minConfidence: number = CONFIDENCE_DEFAULT;
 
-  topology: Topology = Topology.mcc;
+  // topology: Topology = Topology.mcc;
 
-  presentation: Presentation = Presentation.all;
+  // presentation: Presentation = Presentation.all;
 
-  spacing: YSpacing = YSpacing.even;
+  // spacing: YSpacing = YSpacing.even;
 
   colorChooser: ColorChooser = new ColorChooser();
 
@@ -120,7 +118,7 @@ export class CustomizeUI extends MccUI {
         imgTreeCanvas.setConfig(mccConfig);
         mccConfig.updateInnerNodeMetadata(tree);
       }
-      imgTreeCanvas.setTreeNodes(tree, conf, this.pythia?.getMccIndex());
+      imgTreeCanvas.setTreeNodes(tree, conf);
       // const mcccc = this.mccTreeCanvas.canvas;
       // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
       imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices);
@@ -160,7 +158,7 @@ export class CustomizeUI extends MccUI {
           imgTreeCanvas.setConfig(mccConfig);
           mccConfig.updateInnerNodeMetadata(tree);
         }
-        imgTreeCanvas.setTreeNodes(tree, conf, this.pythia?.getMccIndex());
+        imgTreeCanvas.setTreeNodes(tree, conf);
         // const mcccc = this.mccTreeCanvas.canvas;
         // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
         imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices, canvas);
@@ -336,33 +334,33 @@ export class CustomizeUI extends MccUI {
       }
     });
 
-    // topology
-    (this.div.querySelectorAll("#customize--tree-topology .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-      const topology = el.value === TOPOLOGY_MCC ? Topology.mcc : Topology.bestof;
-      el.addEventListener("input", () => this.setTopology(topology));
-    });
+    // // topology
+    // (this.div.querySelectorAll("#customize--tree-topology .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
+    //   const topology = el.value === TOPOLOGY_MCC ? Topology.mcc : Topology.bestof;
+    //   el.addEventListener("input", () => this.setTopology(topology));
+    // });
 
-    // presentation
-    (this.div.querySelectorAll("#customize--tree-presentation .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-      const presentation = el.value === PRESENTATION_ALL ? Presentation.all : Presentation.umbrella;
-      el.addEventListener("input", () => this.setPresentation(presentation));
-    });
+    // // presentation
+    // (this.div.querySelectorAll("#customize--tree-presentation .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
+    //   const presentation = el.value === PRESENTATION_ALL ? Presentation.all : Presentation.umbrella;
+    //   el.addEventListener("input", () => this.setPresentation(presentation));
+    // });
 
-    // spacing
-    (this.div.querySelectorAll("#customize--tree-spacing .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-      const spacing = el.value === Y_EVEN_SPACING ? YSpacing.even : YSpacing.genetic;
-      el.addEventListener("input", () => this.setSpacing(spacing));
-    });
+    // // spacing
+    // (this.div.querySelectorAll("#customize--tree-spacing .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
+    //   const spacing = el.value === Y_EVEN_SPACING ? YSpacing.even : YSpacing.genetic;
+    //   el.addEventListener("input", () => this.setSpacing(spacing));
+    // });
   }
 
 
   activate() {
     super.activate();
-    this.setTopology(this.sharedState.mccConfig.topology);
+    // this.setTopology(this.sharedState.mccConfig.topology);
     this.setColorSystem(this.sharedState.mccConfig.colorOption);
     this.setMinConfidence(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.setSpacing(this.sharedState.mccConfig.ySpacing);
-    this.setPresentation(this.sharedState.mccConfig.presentation);
+    // this.setSpacing(this.sharedState.mccConfig.ySpacing);
+    // this.setPresentation(this.sharedState.mccConfig.presentation);
     if (this.sharedState.mccConfig.nodeMetadata) {
       this.endMetadataLoading();
       const conf = this.sharedState.mccConfig;
@@ -566,35 +564,35 @@ export class CustomizeUI extends MccUI {
 
 
 
-  setTopology(topology: Topology) {
-    this.topology = topology;
-    const selectedValue = topology === Topology.mcc ? TOPOLOGY_MCC : TOPOLOGY_BEST_OF;
-    (this.div.querySelectorAll("#customize--tree-topology .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-      const checked = el.value === selectedValue;
-      el.checked = checked;
-    });
-    this.sharedState.mccConfig.setTopology(topology)
-  }
+  // setTopology(topology: Topology) {
+  //   this.topology = topology;
+  //   const selectedValue = topology === Topology.mcc ? TOPOLOGY_MCC : TOPOLOGY_BEST_OF;
+  //   (this.div.querySelectorAll("#customize--tree-topology .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
+  //     const checked = el.value === selectedValue;
+  //     el.checked = checked;
+  //   });
+  //   this.sharedState.mccConfig.setTopology(topology)
+  // }
 
-  setPresentation(presentation: Presentation) {
-    this.presentation = presentation;
-    const selectedValue = presentation === Presentation.all ? PRESENTATION_ALL : PRESENTATION_UMBRELLA;
-    (this.div.querySelectorAll("#customize--tree-presentation .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-      const checked = el.value === selectedValue;
-      el.checked = checked;
-    });
-    this.sharedState.mccConfig.setPresentation(presentation);
-  }
+  // setPresentation(presentation: Presentation) {
+  //   this.presentation = presentation;
+  //   const selectedValue = presentation === Presentation.all ? PRESENTATION_ALL : PRESENTATION_UMBRELLA;
+  //   (this.div.querySelectorAll("#customize--tree-presentation .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
+  //     const checked = el.value === selectedValue;
+  //     el.checked = checked;
+  //   });
+  //   this.sharedState.mccConfig.setPresentation(presentation);
+  // }
 
-  setSpacing(spacing: YSpacing) {
-    this.spacing = spacing;
-    const selectedValue = spacing === YSpacing.even ? Y_EVEN_SPACING : Y_GENETIC_DISTANCE;
-    (this.div.querySelectorAll("#customize--tree-spacing .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-      const checked = el.value === selectedValue;
-      el.checked = checked;
-    });
-    this.sharedState.mccConfig.setSpacing(spacing);
-  }
+  // setSpacing(spacing: YSpacing) {
+  //   this.spacing = spacing;
+  //   const selectedValue = spacing === YSpacing.even ? Y_EVEN_SPACING : Y_GENETIC_DISTANCE;
+  //   (this.div.querySelectorAll("#customize--tree-spacing .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
+  //     const checked = el.value === selectedValue;
+  //     el.checked = checked;
+  //   });
+  //   this.sharedState.mccConfig.setSpacing(spacing);
+  // }
 }
 
 
