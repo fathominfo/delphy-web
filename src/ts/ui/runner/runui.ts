@@ -16,7 +16,7 @@ import { setStage } from '../../errors';
 import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, Pythia, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
-import { TraceCanvas } from './tracecanvas';
+import { chartContainer, TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
 
 const DAYS_PER_YEAR = 365;
@@ -93,9 +93,9 @@ export class RunUI extends UIScreen {
 
   private mccTreeCanvas: MccTreeCanvas;
 
-  private histCanvases: TraceCanvas[] = [];
+  private traceCanvases: TraceCanvas[] = [];
   private essCandidates: TraceCanvas[] = [];
-  private availableCanvases: TraceCanvas[] = [];
+
 
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
@@ -196,7 +196,7 @@ export class RunUI extends UIScreen {
     }
 
     this.hoverHandler = (treeIndex:number)=>{
-      this.histCanvases.forEach(hc=>{
+      this.traceCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
         }
@@ -221,11 +221,11 @@ export class RunUI extends UIScreen {
 
 
 
-    this.traceChartConfig[TraceChart.numMutations] = {name: "Number of Mutations", unit: '', dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: true };
+    this.traceChartConfig[TraceChart.numMutations] = {name: "Number of Mutations", unit: '', dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true};
+    this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
-    this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: true};
+    this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
     this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
 
@@ -234,7 +234,7 @@ export class RunUI extends UIScreen {
 
 
 
-    this.setTraceCharts();
+    this.decideTraceCharts();
     this.hideBurnIn = false;
     this.mccTimelineIndices = [];
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
@@ -381,15 +381,15 @@ export class RunUI extends UIScreen {
     })
   }
 
-  setTraceCharts() : void {
-    this.histCanvases.length = 0;
+  decideTraceCharts() : void {
+    this.traceCanvases.length = 0;
     this.essCandidates.length = 0;
-    this.availableCanvases.length = 0
+    chartContainer.innerHTML = '';
 
     try {
       const params = this.getRunParams();
 
-      const hists = [TraceChart.numMutations, TraceChart.logPosterior];
+      const toShow = [TraceChart.numMutations];
       const gammas = [];
       const availables = [TraceChart.numMutations, TraceChart.logPosterior, TraceChart.evolutionaryTime];
       const esses = ESSSeries.slice(0);
@@ -397,13 +397,15 @@ export class RunUI extends UIScreen {
       if (!params.mutationRateIsFixed) {
         availables.push(TraceChart.mu);
         if (params.apobecEnabled) {
-          hists.push(TraceChart.muStar);
-          availables.push(TraceChart.mu);
-          esses.push(TraceChart.mu);
+          toShow.push(TraceChart.muStar);
+          esses.push(TraceChart.muStar);
+          availables.push(TraceChart.muStar);
         } else {
-          hists.push(TraceChart.mu);
+          toShow.push(TraceChart.mu);
         }
       }
+      toShow.push(TraceChart.logPosterior);
+      console.log(toShow.map(i=>TraceChart[i]));
 
       if (params.popModelIsSkygrid) {
         gammas.push(TraceChart.gamma);
@@ -413,13 +415,11 @@ export class RunUI extends UIScreen {
         const config : HistChartConfig = this.traceChartConfig[tc] as HistChartConfig;
         const { name, unit, dataFnc, isDiscrete } = config;
         const canvas = new HistCanvas(name, unit, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler);
-        this.availableCanvases.push(canvas);
+        this.traceCanvases.push(canvas);
         if (esses.includes(tc)) {
           this.essCandidates.push(canvas);
         }
-        if (hists.includes(tc)) {
-          this.histCanvases.push(canvas);
-        } else {
+        if (!toShow.includes(tc)) {
           canvas.setVisible(false);
         }
       });
@@ -427,8 +427,7 @@ export class RunUI extends UIScreen {
         const config : PopChartConfig = this.traceChartConfig[tc] as PopChartConfig;
         const { name, dataFnc } = config;
         const canvas = new GammaHistCanvas(name, dataFnc);
-        this.availableCanvases.push(canvas);
-        this.histCanvases.push(canvas);
+        this.traceCanvases.push(canvas);
       });
 
     } catch (err) {
@@ -580,7 +579,7 @@ export class RunUI extends UIScreen {
     const popGrowthRateFixed = (params.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
     this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
 
-    this.setTraceCharts();
+    this.decideTraceCharts();
 
     const treeCount = pythia.treeHist.length;
     if (treeCount > 1) {
@@ -648,7 +647,7 @@ export class RunUI extends UIScreen {
     this.mccTreeCanvas.sizeCanvas();
 
 
-    this.histCanvases.forEach(hc => {
+    this.traceCanvases.forEach(hc => {
       if (hc.isVisible) {
         hc.sizeCanvas();
       }
@@ -709,7 +708,7 @@ export class RunUI extends UIScreen {
       sampleIndex = UNSET,
       kneeIndex = this.pythia.kneeIndex;
 
-    this.availableCanvases.forEach(canvas=>{
+    this.traceCanvases.forEach(canvas=>{
       if (canvas instanceof HistCanvas) {
         canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       } else if (canvas instanceof GammaHistCanvas) {
@@ -769,7 +768,7 @@ export class RunUI extends UIScreen {
       } else {
         // console.debug('no mcc ref available')
       }
-      this.histCanvases.forEach(canvas=>canvas.draw());
+      this.traceCanvases.forEach(canvas=>canvas.draw());
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       // this.treeCountText.innerHTML = `${nfc(treeCount)}`;
       // this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
