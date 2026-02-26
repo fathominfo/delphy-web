@@ -1,7 +1,7 @@
 import { PhyloTree, MccTree, Mutation } from './delphy_api';
 import { getMutationName } from '../constants';
 import { isTip } from '../util/treeutils';
-import { checkApobecCtx } from './pythia';
+import { checkApobecCtx } from './omphalos';
 
 export const enum FeatureOfInterest {
   Reversals = "reversals",

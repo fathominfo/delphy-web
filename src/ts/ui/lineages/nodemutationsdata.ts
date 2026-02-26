@@ -1,4 +1,4 @@
-import { MutationDistribution } from '../../pythia/mutationdistribution';
+import { getMutationConfidence, MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, mutationPrevalenceThreshold } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
 import { getPercentLabel, UNSET } from '../common';
@@ -59,7 +59,7 @@ export class NodeMutationsData {
 
 
   setMutations(isApobecRun: boolean):void {
-    const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
+    const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>getMutationConfidence(md) >= mutationPrevalenceThreshold);
     this.mutationCount = shownMutations.length;
     this.mutationTimelineData = shownMutations.map((md:MutationDistribution)=>new MutationTimelineData(md, isApobecRun));
     this.thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;

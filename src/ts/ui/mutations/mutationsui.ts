@@ -271,7 +271,7 @@ export class MutationsUI extends MccUI {
               }
             }
             this.populateMutationsOfInterestLists();
-            this.maxDate = this.pythia.maxDate;
+            this.maxDate = this.pythia.getMaxDate();
           }
 
           if (this.autofill) {

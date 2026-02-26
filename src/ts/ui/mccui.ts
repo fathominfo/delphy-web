@@ -1,5 +1,5 @@
 import {SummaryTree} from '../pythia/delphy_api';
-import {Pythia} from '../pythia/pythia';
+import {Omphalos} from '../pythia/omphalos';
 import {DateLabel} from './datelabel';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from './mcctreecanvas';
 import {ColorOption, DataResolveType, getPercentLabel, getTimelineIndices} from './common';
@@ -7,6 +7,7 @@ import {UIScreen} from './uiscreen';
 import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
 import { Metadata } from './metadata';
+import { Pythia } from '../pythia/pythia';
 
 
 export class MccUI extends UIScreen {
@@ -147,7 +148,7 @@ export class MccUI extends UIScreen {
           .then((mccTree:SummaryTree)=>{
             const rootIndex = mccTree.getRootIndex();
             this.minDate = mccTree.getTimeOf(rootIndex);
-            this.maxDate = pythia.maxDate;
+            this.maxDate = pythia.getMaxDate();
             this.baseTreeMinDate = pythia.getBaseTreeMinDate();
             this.timelineIndices = getTimelineIndices(this.minDate, this.maxDate);
             if (oldRef) {

@@ -13,7 +13,7 @@ import { hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
+import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/omphalos';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
@@ -129,7 +129,7 @@ export class RunUI extends UIScreen {
     this.kneeHandler = (pct:number)=>{
       this.burnInToggle.disabled = pct <= 0;
       if (this.pythia) {
-        const currentKnee = this.pythia.kneeIndex;
+        const currentKnee = this.pythia.getKneeIndex();
         if (pct > 0 && this.sharedState.kneeIsCurated) {
           requestAnimationFrame(()=>this.burnInWrapper.classList.remove("unset"));
         }
@@ -140,7 +140,7 @@ export class RunUI extends UIScreen {
           if (this.pythia && pct === lastRequestedBurnInPct) {
             this.pythia.setKneeIndexByPct(pct);
             this.pythia.recalcMccTree().then(()=>{
-              if (currentKnee !== this.pythia?.kneeIndex) {
+              if (currentKnee !== this.pythia?.getKneeIndex()) {
                 this.updateRunData();
               }
             });
@@ -361,7 +361,7 @@ export class RunUI extends UIScreen {
       this.hideBurnIn = this.sharedState.hideBurnIn;
       this.burnInToggle.checked = this.sharedState.hideBurnIn;
     }
-    if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
+    if (this.pythia && this.pythia.getKneeIndex() > 0) this.burnInToggle.disabled = false;
     this.runControl.addEventListener("change", this.runControlHandler);
     this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.updateParamsUI();
@@ -370,7 +370,7 @@ export class RunUI extends UIScreen {
 
   getRunParams(): RunParamConfig {
     const pythia = this.sharedState.pythia;
-    const params = pythia.runParams;
+    const params = pythia.getRunParams();
     if (!params) {
       throw new Error(`this.runParams needed before it's set?`);
     }
@@ -393,7 +393,7 @@ export class RunUI extends UIScreen {
     const skygridLogLinearInterpolationInput = this.div.querySelector("#popmodel-skygrid-interpolate-loglinear") as HTMLInputElement;
     const apobecToggle = this.div.querySelector("#apobec-toggle") as HTMLInputElement;
     const advancedSkygridToggle = this.div.querySelector("#advanced-skygrid-toggle") as HTMLInputElement;
-    const defaultParams = makeDefaultRunParamConfig(pythia.treeHist[0]);
+    const defaultParams = makeDefaultRunParamConfig(pythia.getTreeHist()[0]);
     let advancedOptionsAreDefaults = true;
     if (defaultParams.skygridTauConfig !== params.skygridTauConfig) advancedOptionsAreDefaults = false;
     if (defaultParams.skygridLowPopBarrierEnabled !== params.skygridLowPopBarrierEnabled) advancedOptionsAreDefaults = false;
@@ -488,9 +488,9 @@ export class RunUI extends UIScreen {
     this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
     this.toggleHistCanvasVisibility(this.gammaCanvas, params.popModelIsSkygrid)
 
-    const treeCount = pythia.treeHist.length;
+    const treeCount = pythia.getTreeHist().length;
     if (treeCount > 1) {
-      const kneeIndex = pythia.kneeIndex;
+      const kneeIndex = this.pythia?.getKneeIndex() || 0;
       if (kneeIndex > 0) {
         this.sharedState.kneeIsCurated = true;
         this.burnInWrapper.classList.remove("pre");
@@ -505,7 +505,7 @@ export class RunUI extends UIScreen {
   setImpliedTau(doubleHalfTime: number, skygridStartDate: number,  skygridNumIntervals: number):void {
     if (this.pythia) {
       const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-tau") as HTMLSpanElement;
-      const tau = convertSkygridDaysToTau(doubleHalfTime, skygridStartDate, this.pythia.maxDate, skygridNumIntervals);
+      const tau = convertSkygridDaysToTau(doubleHalfTime, skygridStartDate, this.pythia.getMaxDate(), skygridNumIntervals);
       span.textContent = `${tau.toFixed(2)}`
     }
   }
@@ -513,7 +513,7 @@ export class RunUI extends UIScreen {
   setImpliedDays(skygridTau: number, skygridStartDate: number,  skygridNumIntervals: number):void {
     if (this.pythia) {
       const span = this.div.querySelector("#advanced-skygrid-timescale-inputs .implied-days") as HTMLSpanElement;
-      const days = convertSkygridTauToDays(skygridTau, skygridStartDate, this.pythia.maxDate, skygridNumIntervals);
+      const days = convertSkygridTauToDays(skygridTau, skygridStartDate, this.pythia.getMaxDate(), skygridNumIntervals);
       span.textContent = `${days.toFixed(2)}`;
     }
   }
@@ -572,7 +572,7 @@ export class RunUI extends UIScreen {
 
   pingPythiaForUpdate(): void {
     if (!this.pythia) return;
-    const stepsHist = this.pythia.stepsHist,
+    const stepsHist = this.pythia.getStepsHist(),
       last = stepsHist.length - 1;
     if (this.stepCount === stepsHist[last]) return;
     this.updateRunData();
@@ -590,7 +590,7 @@ export class RunUI extends UIScreen {
 
   updateRunData():void {
     if (!this.pythia) return;
-    const stepsHist = this.pythia.stepsHist,
+    const stepsHist = this.pythia.getStepsHist(),
       last = stepsHist.length - 1;
 
     const mccRef = this.pythia.getMcc();
@@ -618,11 +618,18 @@ export class RunUI extends UIScreen {
 
     this.mccMinDate.update();
 
-    this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
+    this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.getMaxDate());
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
       sampleIndex = UNSET,
-      {muHist, logPosteriorHist, numMutationsHist, popModelHist, totalBranchLengthHist, kneeIndex} = this.pythia;
+      // {muHist, logPosteriorHist, numMutationsHist, popModelHist, totalBranchLengthHist, kneeIndex} = this.pythia;
+      muHist= this.pythia.getMuHist(),
+      logPosteriorHist= this.pythia.getLogPosteriorHist(),
+      numMutationsHist= this.pythia.getNumMutationsHist(),
+      popModelHist= this.pythia.getPopModelHist(),
+      totalBranchLengthHist= this.pythia.getTotalBranchLengthHist(),
+      kneeIndex= this.pythia.getKneeIndex();
+
     const muud = muHist.map(n=>n*MU_FACTOR);
     const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
     const serieses = [
@@ -693,7 +700,7 @@ export class RunUI extends UIScreen {
   private draw():void {
     if (this.pythia) {
       const {stepCount, ess}  = this;
-      const {maxDate} = this.pythia;
+      const maxDate = this.pythia.getMaxDate();
       let treeCount = 0;
       // let mccCount = 0;
       if (this.mccRef) {
@@ -883,7 +890,7 @@ export class RunUI extends UIScreen {
     advancedToggle.checked = false;
 
 
-    const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
+    const currentStepCount: number = this.pythia ? this.pythia.getStepsHist().length  : 0,
       currentRunWouldBeErased = currentStepCount > 1;
     if (currentRunWouldBeErased) {
       if (!this.pythia) {

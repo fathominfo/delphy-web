@@ -700,4 +700,3 @@ export const getMedian = (arr:number[])=>{
   return median;
 }
 
-

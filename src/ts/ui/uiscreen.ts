@@ -1,4 +1,4 @@
-import {Pythia} from '../pythia/pythia';
+import { Pythia } from '../pythia/pythia';
 import {SharedState} from '../sharedstate';
 import { ZoomFnc, getPercentLabel } from './common';
 
@@ -31,7 +31,7 @@ export class UIScreen {
 
   activate() {
     this.pythia = this.sharedState.pythia;
-    this.isApobecEnabled = this.pythia.runParams?.apobecEnabled || false;
+    this.isApobecEnabled = this.pythia.getApobecEnabled();
     // this.worker.onmessage = (message:any)=>this.handleMessage(message.data);
     window.addEventListener('resize', this.resizeHandler);
     setTimeout(()=>this.resize(), 10);

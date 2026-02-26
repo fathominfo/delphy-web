@@ -1,4 +1,3 @@
-import { Pythia, setReadyCallback } from './pythia/pythia';
 import { bindUpload, configCallbackType, hideUpload } from './ui/uploadui';
 import { NavLabel, bindNav, activateView } from  "./ui/nav";
 import { UIScreen } from './ui/uiscreen';
@@ -12,6 +11,7 @@ import { ConfigExport } from './ui/mccconfig';
 import { initErrors, setStage } from './errors';
 import { STAGES } from './constants';
 import { setQCPanel } from './ui/qcpanel';
+import { Pythia, setReadyCallback } from './pythia/pythia';
 
 
 
@@ -93,9 +93,9 @@ function onReady(p:Pythia):void {
     iterate through properties that are defined at run time to look for differences.
     Apparently, we need a qeneric `any` type for that.
     */
-    const current = p.coreVersion as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-    if (p.saveVersion !== null) {
-      const saved = p.saveVersion as any;  // eslint-disable-line @typescript-eslint/no-explicit-any
+    const current = p.getCoreVersion() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (p.getSaveVersion() !== null) {
+      const saved = p.getSaveVersion() as any;  // eslint-disable-line @typescript-eslint/no-explicit-any
       let matched = true;
       Object.keys(current).forEach(prop=>{
         matched = matched && (current[prop] === saved[prop]);

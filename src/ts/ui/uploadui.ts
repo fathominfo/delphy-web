@@ -1,11 +1,12 @@
 import { noop, STAGES } from '../constants';
 import { isBadSafari, setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
-import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';
+import {getEmptyRunParamConfig, Omphalos, RunParamConfig} from '../pythia/omphalos';
 import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 import { parse_iso_date } from '../pythia/dates';
+import { Pythia } from '../pythia/pythia';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -302,7 +303,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   });
 
   document.querySelectorAll('.version-info').forEach((domElement)=>{
-    const coreVersion = p.coreVersion;
+    const coreVersion = p.getCoreVersion();
     const versionEle = (domElement.querySelector('.core-version') as HTMLElement);
     const buildEle = (domElement.querySelector('.core-build') as HTMLElement);
     const commitEle = (domElement.querySelector('.core-commit') as HTMLElement);

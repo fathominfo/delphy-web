@@ -1,7 +1,7 @@
 import { BaseTreeSeriesType } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
-import { Pythia } from "../../pythia/pythia";
+import { Omphalos } from "../../pythia/omphalos";
 import { SharedState } from "../../sharedstate";
 import { isTip } from "../../util/treeutils";
 import { UNSET } from "../common";
@@ -12,6 +12,7 @@ import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata
 import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
+import { Pythia } from "../../pythia/pythia";
 
 
 
@@ -177,7 +178,7 @@ export class CoreLineagesData {
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
-        maxDate = pythia.maxDate;
+        maxDate = pythia.getMaxDate();
       const chartData: ChartData = {
         nodeDistributions: [],
         prevalenceNodes: [],

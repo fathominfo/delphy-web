@@ -289,7 +289,7 @@ export class CustomizeUI extends MccUI {
           4) restore the knee index
         */
         const exportKnee = this.sharedState.kneeIsCurated;
-        const pythiaKnee = this.pythia.kneeIndex;
+        const pythiaKnee = this.pythia.getKneeIndex();
         if (!exportKnee) {
           this.pythia.setKneeIndexByPct(0);
         }

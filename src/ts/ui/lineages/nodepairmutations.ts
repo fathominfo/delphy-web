@@ -11,6 +11,7 @@ import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { Distribution } from '../distribution';
 import { DisplayNode } from './displaynode';
+import { getMutationConfidence } from '../../pythia/mutationdistribution';
 
 
 
@@ -71,7 +72,7 @@ class MutationTimeline {
       goToMutations(mutation.mutation);
     });
 
-    prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
+    prevalenceLabel.innerText = `${ getPercentLabel(getMutationConfidence(mutation)) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series]);
     this.median = series.median;
