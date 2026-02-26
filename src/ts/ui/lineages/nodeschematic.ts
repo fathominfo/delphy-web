@@ -1,6 +1,6 @@
-import { nfc, UNSET } from "../common";
+import { UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { MATCH_CLASS, NO_MATCH_CLASS, HoverCallback, mutationPrevalenceThreshold, NodePair, NodeRelationType } from "./lineagescommon";
+import { HoverCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 

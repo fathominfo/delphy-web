@@ -9,7 +9,6 @@ import { MutationTimelineData, NodeMutationsData } from './nodemutationsdata';
 import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
-import { Distribution } from '../distribution';
 import { DisplayNode } from './displaynode';
 
 

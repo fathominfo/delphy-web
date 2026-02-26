@@ -686,7 +686,6 @@ export const sameMutation = (m1: Mutation | null, m2: Mutation | null) : boolean
   return m1 !== null && m2 !== null && getMutationName(m1) === getMutationName(m2);
 };
 
-
 export const getMedian = (arr:number[])=>{
   let median = 0;
   if (arr.length > 0) {
