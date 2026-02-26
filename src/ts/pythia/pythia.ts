@@ -1,6 +1,6 @@
 import { BaseTreeSeriesType, CoreVersionInfo, MutationDistInfo, NodeDistributionType } from "../constants.js";
 import { ConfigExport } from "../ui/mccconfig.js";
-import { Mutation, PhyloTree, PopModel, SequenceWarningCode, SummaryTree } from "./delphy_api.js";
+import { MccTree, Mutation, PhyloTree, PopModel, SequenceWarningCode, SummaryTree } from "./delphy_api.js";
 import { MutationDistribution } from "./mutationdistribution.js";
 import { Omphalos, returnless, RunParamConfig, setPythiaReadyCallback } from "./omphalos.js";
 
@@ -33,8 +33,11 @@ export class Pythia {
     });
   }
 
-  getBaseTreeMinDate() {
-    return this.pythia.getBaseTreeMinDate();
+  getBaseTreeMinDate() : Promise<number> {
+    return new Promise(resolve=>{
+      const md = this.pythia.getBaseTreeMinDate();
+      resolve(md);
+    });
   }
 
   getBeastOutputs(version:string) : Promise<TreeExport> {
@@ -48,8 +51,11 @@ export class Pythia {
     return this.pythia.getMcc();
   }
 
-  getMccIndex() {
-    return this.pythia.getMccIndex();
+  getMccIndex() : Promise<number> {
+    return new Promise(resolve=>{
+      const index = this.pythia.getMccIndex();
+      resolve(index);
+    });
   }
 
   getMccMutationsBetween(upstreamMccNodeIndex: number,
@@ -85,8 +91,11 @@ export class Pythia {
     });
   }
 
-  getSaveBuffer(config: ConfigExport):Uint8Array {
-    return this.pythia.getSaveBuffer(config);
+  getSaveBuffer(config: ConfigExport) : Promise<Uint8Array> {
+    return new Promise(resolve=>{
+      const buf = this.pythia.getSaveBuffer(config)
+      resolve(buf);
+    });
   }
 
   initRunFromMaple(mapleBytesJs:ArrayBuffer,
@@ -97,7 +106,7 @@ export class Pythia {
     initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void, // eslint-disable-line @typescript-eslint/no-explicit-any
     config: RunParamConfig | null
-  ):Promise<void> {
+  ): Promise<void> {
     return this.pythia.initRunFromMaple(
       mapleBytesJs, runReadyCallback, errCallback, stageCallback, parseProgressCallback,
       initTreeProgressCallback, warningCallback,
@@ -132,15 +141,18 @@ export class Pythia {
     return this.pythia.maxDate;
   }
 
-  pauseRun() {
-    return this.pythia.pauseRun();
+  pauseRun() : Promise<void>{
+    return new Promise(resolve=>{
+      this.pythia.pauseRun();
+      resolve();
+    });
   }
 
-  recalcMccTree() {
+  recalcMccTree() : Promise<MccTree> {
     return this.pythia.recalcMccTree();
   }
 
-  async reset(newRunParams: RunParamConfig): Promise<void> {
+  reset(newRunParams: RunParamConfig): Promise<void> {
     return this.pythia.reset(newRunParams);
   }
 

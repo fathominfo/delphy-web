@@ -6,11 +6,11 @@ let mrm = 0;
 
 
 export interface MccRef {
-  getMcc():MccTree;
-  getNodeConfidence():number[];
-  getManager(): MccRefManager;
-  release(): void;
-  isReleased(): boolean;
+  getMcc() : MccTree;
+  getNodeConfidence() : number[];
+  getManager() : MccRefManager;
+  release() : void;
+  isReleased() : boolean;
 }
 
 

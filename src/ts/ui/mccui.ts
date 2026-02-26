@@ -144,12 +144,16 @@ export class MccUI extends UIScreen {
             config.setMetadataField(config.metadataField, config.metadataColors[config.metadataField]);
           }
         }
-        this.setTreeFromConfig(this.mccRef, this.pythia)
-          .then((mccTree:SummaryTree)=>{
+        const promises = [];
+        promises.push(this.setTreeFromConfig(this.mccRef, this.pythia));
+        promises.push(pythia.getBaseTreeMinDate());
+        Promise.all(promises)
+          .then(([mccTree, minDate])=>{
+            mccTree = mccTree as SummaryTree;
             const rootIndex = mccTree.getRootIndex();
             this.minDate = mccTree.getTimeOf(rootIndex);
             this.maxDate = pythia.getMaxDate();
-            this.baseTreeMinDate = pythia.getBaseTreeMinDate();
+            this.baseTreeMinDate = minDate as number;
             this.timelineIndices = getTimelineIndices(this.minDate, this.maxDate);
             if (oldRef) {
               oldRef.release();

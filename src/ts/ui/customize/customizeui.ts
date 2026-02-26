@@ -296,20 +296,22 @@ export class CustomizeUI extends MccUI {
         if (!exportKnee) {
           this.pythia.setKneeIndexByPct(0);
         }
-        const config = this.sharedState.exportConfig(),
-          outBuffer = this.pythia.getSaveBuffer(config),
-          file = new Blob([outBuffer], {type: "application/octet-binary;charset=utf-8"}),
-          a = document.createElement("a"),
-          url = URL.createObjectURL(file),
-          title = `delphy-${getTimestampString()}.dphy`;
-        a.href = url;
-        a.download = title;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(()=>a.remove(), 10000);
-        if (!exportKnee) {
-          this.pythia.setKneeIndex(pythiaKnee);
-        }
+        const config = this.sharedState.exportConfig();
+
+        this.pythia.getSaveBuffer(config).then((outBuffer:Uint8Array)=>{
+          const file = new Blob([outBuffer], {type: "application/octet-binary;charset=utf-8"}),
+            a = document.createElement("a"),
+            url = URL.createObjectURL(file),
+            title = `delphy-${getTimestampString()}.dphy`;
+          a.href = url;
+          a.download = title;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(()=>a.remove(), 10000);
+          if (!exportKnee) {
+            this.pythia?.setKneeIndex(pythiaKnee);
+          }
+        });
       }
     });
 

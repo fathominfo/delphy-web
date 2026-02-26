@@ -13,6 +13,7 @@ import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback,
 
 import autocomplete from 'autocompleter';
 import { ParameterSetter } from './parametersetter';
+import { Pythia } from '../../pythia/pythia';
 
 
 type SortOptions = "site" | "tips" | "trees";
@@ -256,46 +257,52 @@ export class MutationsUI extends MccUI {
     const prom = new Promise((resolve: DataResolveType)=>{
       super.updateData()
         .then((summary:SummaryTree)=>{
+          const pythia = this.pythia as Pythia;
+          const promises = [];
+          promises.push(pythia.getBaseTreeMinDate());
+          Promise.all(promises).then(([baseTreeMinDate])=>{
 
-          if (this.pythia) {
             const oldRef = this.mccRef,
-              mccRef = this.pythia.getMcc();
+              mccRef = pythia.getMcc();
             if (mccRef) {
               const mccTree = mccRef.getMcc();
               this.tipCount = (mccTree.getSize() + 1) / 2;
               this.minDate = mccTree.getTimeOf(mccTree.getRootIndex());
-              this.earliestDate = this.pythia.getBaseTreeMinDate();
+              this.earliestDate = baseTreeMinDate;
               this.mccRef = mccRef;
               if (oldRef) {
                 oldRef.release();
               }
             }
             this.populateMutationsOfInterestLists();
-            this.maxDate = this.pythia.getMaxDate();
-          }
+            this.maxDate = pythia.getMaxDate();
 
-          if (this.autofill) {
-            this.clearRows();
-            if (this.sharedState.mutationList.length > 0) {
-              this.autofill = false;
-              const mutation = this.sharedState.mutationList[0];
-              this.lookupMutation(mutation);
+
+            if (this.autofill) {
+              this.clearRows();
+              if (this.sharedState.mutationList.length > 0) {
+                this.autofill = false;
+                const mutation = this.sharedState.mutationList[0];
+                this.lookupMutation(mutation);
+              }
             }
-          }
 
-          const mutationsFilter = this.div.querySelector(".mutations-filter--form") as HTMLFormElement;
-          mutationsFilter.querySelectorAll("input").forEach(radio => {
-            const value = radio.value as FeatureOfInterest;
-            radio.checked = value === this.interestCat;
+            const mutationsFilter = this.div.querySelector(".mutations-filter--form") as HTMLFormElement;
+            mutationsFilter.querySelectorAll("input").forEach(radio => {
+              const value = radio.value as FeatureOfInterest;
+              radio.checked = value === this.interestCat;
+            });
+            this.setInterest(this.autofill);
+            this.autofill = false;
+
+            this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
+
+            (this.div.querySelector("#moi-list-tips") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTipsPercent)}`;
+            (this.div.querySelector("#moi-list-trees") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTreesPercent)}`;
+            resolve(summary);
+
           });
-          this.setInterest(this.autofill);
-          this.autofill = false;
 
-          this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
-
-          (this.div.querySelector("#moi-list-tips") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTipsPercent)}`;
-          (this.div.querySelector("#moi-list-trees") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTreesPercent)}`;
-          resolve(summary);
         })
     });
     return prom;

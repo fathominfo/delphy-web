@@ -18,6 +18,7 @@ import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
+import { Pythia } from '../../pythia/pythia';
 
 const DAYS_PER_YEAR = 365;
 // const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -593,107 +594,113 @@ export class RunUI extends UIScreen {
 
   updateRunData():void {
     if (!this.pythia) return;
-    const stepsHist = this.pythia.getStepsHist(),
-      last = stepsHist.length - 1;
+    const pythia = this.pythia as Pythia;
+    const promises = [];
+    promises.push(this.pythia.getStepsHist());
+    promises.push(pythia.getMccIndex());
+    Promise.all(promises).then(([stepsHist, mccIndex])=>{
+      stepsHist = stepsHist as number[];
+      mccIndex = mccIndex as number;
+      const last = stepsHist.length - 1;
 
-    const mccRef = this.pythia.getMcc();
-    this.stepCount = stepsHist[last] || 0;
-    if (mccRef) {
-      const oldRef = this.mccRef;
-      this.mccRef = mccRef;
-      this.mccIndex = this.pythia.getMccIndex();
-      // console.log(`this.mccIndex`, this.mccIndex)
-      const mccTree = mccRef.getMcc(),
-        nodeConfidence = mccRef.getNodeConfidence();
-      if (mccTree !== this.mccTreeCanvas.tree) {
-        this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
-        this.sharedState.resetSelections();
+      const mccRef = pythia.getMcc();
+      this.stepCount = stepsHist[last] || 0;
+      if (mccRef) {
+        const oldRef = this.mccRef;
+        this.mccRef = mccRef;
+        this.mccIndex = mccIndex;
+        // console.log(`this.mccIndex`, this.mccIndex)
+        const mccTree = mccRef.getMcc(),
+          nodeConfidence = mccRef.getNodeConfidence();
+        if (mccTree !== this.mccTreeCanvas.tree) {
+          this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
+          this.sharedState.resetSelections();
+        }
+        const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
+        this.mccMinDate.setTarget(earliestMCCDate);
+        if (oldRef) {
+          oldRef.release();
+        }
       }
-      const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
-      this.mccMinDate.setTarget(earliestMCCDate);
-      if (oldRef) {
-        oldRef.release();
+
+
+      this.mccMinDate.update();
+
+      this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, pythia.getMaxDate());
+      const hideBurnIn = this.sharedState.hideBurnIn,
+        sampleIndex = UNSET,
+        // {muHist, logPosteriorHist, numMutationsHist, popModelHist, totalBranchLengthHist, kneeIndex} = this.pythia;
+        muHist = pythia.getMuHist(),
+        logPosteriorHist = pythia.getLogPosteriorHist(),
+        numMutationsHist = pythia.getNumMutationsHist(),
+        popModelHist = pythia.getPopModelHist(),
+        totalBranchLengthHist = pythia.getTotalBranchLengthHist(),
+        kneeIndex = pythia.getKneeIndex();
+
+      const muud = muHist.map(n=>n*MU_FACTOR);
+      const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
+      const serieses = [
+        logPosteriorHist,
+        muud,
+        totalLengthYear,
+        //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
+        //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
+      ];
+
+
+      const totalLengthData = new HistData("", "year");
+      totalLengthData.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+
+
+      this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      const essCandidates: number[] = [
+        (this.logPosteriorCanvas.traceData as HistData).ess,
+        (this.muCanvas.traceData as HistData).ess,
+        totalLengthData.ess,
+        // this.mutCountCanvas.ess,
+        // this.popGrowthCanvas.ess
+      ];
+
+      // if (this.getRunParams().apobecEnabled) {
+      //   const muudStar = muStarHist.map(n=>n*MU_FACTOR);
+      //   this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      //   serieses.push(muudStar);
+      //   essCandidates.push((this.muStarCanvas.traceData as HistData).ess);
+      // }
+      if (this.getRunParams().popModelIsSkygrid) {
+        const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
+        console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
+        const xHist = (popModelHist[0] as SkygridPopModel).x;
+        const isLogLinear = (popModelHist[0] as SkygridPopModel).type === SkygridPopModelType.LogLinear;
+        this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
+      // } else {
+      //   const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
+      //   this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
       }
-    }
-
-
-
-
-    this.mccMinDate.update();
-
-    this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.getMaxDate());
-    const hideBurnIn = this.sharedState.hideBurnIn,
-      mccIndex = this.mccIndex,
-      sampleIndex = UNSET,
-      // {muHist, logPosteriorHist, numMutationsHist, popModelHist, totalBranchLengthHist, kneeIndex} = this.pythia;
-      muHist= this.pythia.getMuHist(),
-      logPosteriorHist= this.pythia.getLogPosteriorHist(),
-      numMutationsHist= this.pythia.getNumMutationsHist(),
-      popModelHist= this.pythia.getPopModelHist(),
-      totalBranchLengthHist= this.pythia.getTotalBranchLengthHist(),
-      kneeIndex= this.pythia.getKneeIndex();
-
-    const muud = muHist.map(n=>n*MU_FACTOR);
-    const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-    const serieses = [
-      logPosteriorHist,
-      muud,
-      totalLengthYear,
-      //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
-      //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
-    ];
-
-
-    const totalLengthData = new HistData("", "year");
-    totalLengthData.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-
-
-    this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    const essCandidates: number[] = [
-      (this.logPosteriorCanvas.traceData as HistData).ess,
-      (this.muCanvas.traceData as HistData).ess,
-      totalLengthData.ess,
-      // this.mutCountCanvas.ess,
-      // this.popGrowthCanvas.ess
-    ];
-
-    // if (this.getRunParams().apobecEnabled) {
-    //   const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-    //   this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    //   serieses.push(muudStar);
-    //   essCandidates.push((this.muStarCanvas.traceData as HistData).ess);
-    // }
-    if (this.getRunParams().popModelIsSkygrid) {
-      const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
-      console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
-      const xHist = (popModelHist[0] as SkygridPopModel).x;
-      const isLogLinear = (popModelHist[0] as SkygridPopModel).type === SkygridPopModelType.LogLinear;
-      this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
-    // } else {
-    //   const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
-    //   this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    }
-    this.ess = Math.min.apply(null, essCandidates);
-    if (!this.sharedState.kneeIsCurated) {
-      const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
-      if (candidateIndex > 0) {
-        /* calculate the pct */
-        const pct = 1.0 * candidateIndex / last;
-        this.kneeHandler(pct);
-        // this.announceAutoKnee(candidateIndex, pct);
+      this.ess = Math.min.apply(null, essCandidates);
+      if (!this.sharedState.kneeIsCurated) {
+        const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
+        if (candidateIndex > 0) {
+          /* calculate the pct */
+          const pct = 1.0 * candidateIndex / last;
+          this.kneeHandler(pct);
+          // this.announceAutoKnee(candidateIndex, pct);
+        }
       }
-    }
-    this.requestDraw();
-    if (this.disableAnimation || this.mccMinDate.atTarget()) {
-      if (this.drawHandle !== 0) {
-        clearInterval(this.drawHandle);
-        this.drawHandle = 0;
+      this.requestDraw();
+      if (this.disableAnimation || this.mccMinDate.atTarget()) {
+        if (this.drawHandle !== 0) {
+          clearInterval(this.drawHandle);
+          this.drawHandle = 0;
+        }
+      // } else if (this.drawHandle === 0) {
+      //   this.drawHandle = window.setInterval(()=> this.pingPythiaForUpdate(), 30);
       }
-    // } else if (this.drawHandle === 0) {
-    //   this.drawHandle = window.setInterval(()=> this.pingPythiaForUpdate(), 30);
-    }
+
+    });
+
   }
 
   private requestDraw():void {
