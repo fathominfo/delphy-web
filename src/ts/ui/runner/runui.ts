@@ -26,6 +26,8 @@ const EPSILON = 1e-7;
 
 type ESS_THRESHOLD = {threshold: number, className: string};
 
+const BEAST_OUTPUT_VERSION = "X-10.5.0";  // hard-code BEAST X export
+
 const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
   {threshold: 0, className: "converging"},
   {threshold: 10, className: "stable"},
@@ -253,18 +255,19 @@ export class RunUI extends UIScreen {
     });
     exportButton.addEventListener("click", ()=>{
       if (this.pythia) {
-        const {log} = this.pythia.getBeastOutputs("X-10.5.0"),  // hard-code BEAST X export
-          blob = new Blob([log], { type: 'text/csv;charset=utf-8;' }),
-          url = URL.createObjectURL(blob),
-          a = document.createElement("a"),
-          title = `delphy-parameters-${getTimestampString()}.tsv`;
-        a.href = url;
-        a.download = title;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(()=>a.remove(), 10000);
+        this.pythia.getBeastOutputs(BEAST_OUTPUT_VERSION).then((treeExp)=>{
+          const {log} = treeExp,
+            blob = new Blob([log], { type: 'text/csv;charset=utf-8;' }),
+            url = URL.createObjectURL(blob),
+            a = document.createElement("a"),
+            title = `delphy-parameters-${getTimestampString()}.tsv`;
+          a.href = url;
+          a.download = title;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(()=>a.remove(), 10000);
+        })
       }
-
     });
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
@@ -701,7 +704,6 @@ export class RunUI extends UIScreen {
     if (this.pythia) {
       const {stepCount, ess}  = this;
       const maxDate = this.pythia.getMaxDate();
-      let treeCount = 0;
       // let mccCount = 0;
       if (this.mccRef) {
         /* for safety, add extra ref while drawing */
@@ -712,7 +714,6 @@ export class RunUI extends UIScreen {
         } catch (ex) {
           console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
         }
-        treeCount = this.pythia.getBaseTreeCount();
         // mccCount = mcc.getNumBaseTrees();
         drawRef.release();
         this.mccRef.release();
@@ -753,8 +754,13 @@ export class RunUI extends UIScreen {
         }
       });
       this.essMeter.setAttribute("data-stage", essClass);
-      if (treeCount > 1) {
-        this.burnInWrapper.classList.remove("pre");
+      if (this.mccRef) {
+        this.pythia.getBaseTreeCount().then(treeCount=>{
+          if (treeCount > 1) {
+            this.burnInWrapper.classList.remove("pre");
+          }
+        });
+
       }
       this.stepCountPluralText.innerHTML = stepCountPlural;
 

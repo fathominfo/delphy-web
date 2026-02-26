@@ -778,6 +778,10 @@ export class Omphalos {
     return result;
   }
 
+  setKneeIndex(index: number):void {
+    this.kneeIndex = index;
+  }
+
   setKneeIndexByPct(percent:number):void {
     this.kneeIndex = Math.round(percent * this.stepsHist.length);
   }

@@ -5,6 +5,10 @@ import { MutationDistribution } from "./mutationdistribution.js";
 import { Omphalos, returnless, RunParamConfig, setPythiaReadyCallback } from "./omphalos.js";
 
 
+export type TreeExport = {
+  log: ArrayBuffer,
+  trees: ArrayBuffer
+};
 
 export class Pythia {
 
@@ -15,20 +19,29 @@ export class Pythia {
   }
 
 
-  exportBeastInput(version:string): ArrayBuffer {
-    return this.pythia.exportBeastInput(version);
+  exportBeastInput(version:string): Promise<ArrayBuffer> {
+    return new Promise((resolve)=>{
+      const buffer = this.pythia.exportBeastInput(version);
+      resolve(buffer);
+    })
   }
 
-  getBaseTreeCount() {
-    return this.pythia.getBaseTreeCount();
+  getBaseTreeCount() : Promise<number> {
+    return new Promise((resolve)=>{
+      const count = this.pythia.getBaseTreeCount();
+      resolve(count);
+    });
   }
 
   getBaseTreeMinDate() {
     return this.pythia.getBaseTreeMinDate();
   }
 
-  getBeastOutputs(version:string) : {log: ArrayBuffer, trees: ArrayBuffer}{
-    return this.pythia.getBeastOutputs(version);
+  getBeastOutputs(version:string) : Promise<TreeExport> {
+    return new Promise((resolve)=>{
+      const treeExp = this.pythia.getBeastOutputs(version);
+      resolve(treeExp);
+    });
   }
 
   getMcc() {
@@ -64,8 +77,12 @@ export class Pythia {
     return this.pythia.getPopulationAlleleDistribution(site, minDate, maxDate,  summaryTree);
   }
 
-  getPopulationNodeDistribution(nodeIndices: number[], minDate: number, maxDate: number, summaryTree: SummaryTree): NodeDistributionType {
-    return this.pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree);
+  getPopulationNodeDistribution(nodeIndices: number[], minDate: number, maxDate: number,
+    summaryTree: SummaryTree): Promise<NodeDistributionType> {
+    return new Promise(resolve=>{
+      const dist = this.pythia.getPopulationNodeDistribution(nodeIndices, minDate, maxDate, summaryTree);
+      resolve(dist);
+    });
   }
 
   getSaveBuffer(config: ConfigExport):Uint8Array {
@@ -132,7 +149,11 @@ export class Pythia {
   }
 
   setKneeIndexByPct(percent:number):void {
-    return this.pythia.setKneeIndexByPct(percent);
+    this.pythia.setKneeIndexByPct(percent);
+  }
+
+  setKneeIndex(index: number) : void {
+    this.pythia.setKneeIndex(index);
   }
 
   startRun(callback:(null|returnless)):void {

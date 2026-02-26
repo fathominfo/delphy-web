@@ -222,16 +222,17 @@ export class CustomizeUI extends MccUI {
       getBeastVersion("Input")
         .then((version:string)=>{
           if (this.pythia) {
-            const outBuffer = this.pythia.exportBeastInput(version);
-            const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
-              a = document.createElement("a"),
-              url = URL.createObjectURL(file),
-              title = `beast-input-${getTimestampString()}.xml`;
-            a.href = url;
-            a.download = title;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(()=>a.remove(), 10000);
+            this.pythia.exportBeastInput(version).then(outBuffer=>{
+              const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
+                a = document.createElement("a"),
+                url = URL.createObjectURL(file),
+                title = `beast-input-${getTimestampString()}.xml`;
+              a.href = url;
+              a.download = title;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(()=>a.remove(), 10000);
+            });
           }
         })
         .catch(noop);
@@ -242,36 +243,38 @@ export class CustomizeUI extends MccUI {
       getBeastVersion("Output")
         .then(version=>{
           if (this.pythia) {
-            const {log, trees} = this.pythia.getBeastOutputs(version),
-              timestamp = getTimestampString();
+            this.pythia.getBeastOutputs(version).then((treeExp)=>{
+              const {log, trees} = treeExp;
+              const timestamp = getTimestampString();
 
-            const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
-              titleLog = `beast.log`;
+              const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
+                titleLog = `beast.log`;
 
-            const fileTrees = new Blob([trees], {type: "application/text;charset=utf-8"}),
-              titleTrees = `beast.trees`;
+              const fileTrees = new Blob([trees], {type: "application/text;charset=utf-8"}),
+                titleTrees = `beast.trees`;
 
-            let zip: JSZip;
-            try {
-            // @ts-expect-error: JSZip doesn't import the same way after transpilation
-              zip = new JSZip.default(); // eslint-disable-line new-cap
-            } catch (err) {
-              zip = new JSZip();
-            }
-            zip.file(titleLog, fileLog);
-            zip.file(titleTrees, fileTrees);
+              let zip: JSZip;
+              try {
+              // @ts-expect-error: JSZip doesn't import the same way after transpilation
+                zip = new JSZip.default(); // eslint-disable-line new-cap
+              } catch (err) {
+                zip = new JSZip();
+              }
+              zip.file(titleLog, fileLog);
+              zip.file(titleTrees, fileTrees);
 
-            zip.generateAsync({type:"blob"}) // 1) generate the zip file
-              .then((blob)=>{
-                const a = document.createElement("a"),
-                  url = URL.createObjectURL(blob),
-                  title = `delphy-${timestamp}_beast.zip`;
-                a.href = url;
-                a.download = title;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(()=>a.remove(), 10000);
-              });
+              zip.generateAsync({type:"blob"}) // 1) generate the zip file
+                .then((blob)=>{
+                  const a = document.createElement("a"),
+                    url = URL.createObjectURL(blob),
+                    title = `delphy-${timestamp}_beast.zip`;
+                  a.href = url;
+                  a.download = title;
+                  document.body.appendChild(a);
+                  a.click();
+                  setTimeout(()=>a.remove(), 10000);
+                });
+            });
           }
         })
         .catch(noop);
@@ -305,7 +308,7 @@ export class CustomizeUI extends MccUI {
         a.click();
         setTimeout(()=>a.remove(), 10000);
         if (!exportKnee) {
-          this.pythia.setKneeIndexByPct(pythiaKnee / this.pythia.getBaseTreeCount());
+          this.pythia.setKneeIndex(pythiaKnee);
         }
       }
     });

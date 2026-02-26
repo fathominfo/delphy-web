@@ -1,4 +1,4 @@
-import { BaseTreeSeriesType } from "../../constants";
+import { BaseTreeSeriesType, NodeDistributionType } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Omphalos } from "../../pythia/omphalos";
@@ -176,62 +176,67 @@ export class CoreLineagesData {
       const minimapData = this.selectionTreeData as SelectionTreeData;
       const actualRootIndex = summaryTree.getRootIndex();
       const getY = this.getY as getYFunction;
+      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
+      const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
+      const promises : Promise<any>[] = [];
       const mccRef = pythia.getMcc(),
         minDate = pythia.getBaseTreeMinDate(),
         maxDate = pythia.getMaxDate();
-      const chartData: ChartData = {
-        nodeDistributions: [],
-        prevalenceNodes: [],
-        minDate: minDate,
-        maxDate: maxDate,
-        nodeComparisonData: [],
-        nodePairs: [],
-        nodes: [],
-        rootNode: this.selectionTreeData?.root || null,
-        selectedRootIndex: this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index
-      };
+      promises.push(pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree));
+      Promise.all(promises).then(([nodePrevalenceData])=>{
 
-      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
-      const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
-      const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
-      const nodeDistributions = nodePrevalenceData.series;
-      /* we want the default distribution to come first, so take it off the end and put it first */
-      nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      chartData.nodeDistributions = nodeDistributions;
-      minimapData.found.forEach(treeNode=>{
-        const ancestor = treeNode.parent;
-        if (ancestor) {
-          const descendant = treeNode.node;
-          let relation: NodeRelationType = NodeRelationType.singleDescendant;
-          if (ancestor.children.length > 1) {
-            const other: TreeNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
-            if (getY(other.node.index) > getY(descendant.index)) {
-              relation = NodeRelationType.upperDescendant;
-            } else {
-              relation = NodeRelationType.lowerDescendant;
+        const chartData: ChartData = {
+          nodeDistributions: [],
+          prevalenceNodes: [],
+          minDate: minDate,
+          maxDate: maxDate,
+          nodeComparisonData: [],
+          nodePairs: [],
+          nodes: [],
+          rootNode: this.selectionTreeData?.root || null,
+          selectedRootIndex: this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index
+        };
+        const nodeDistributions = nodePrevalenceData.series as BaseTreeSeriesType;
+        /* we want the default distribution to come first, so take it off the end and put it first */
+        nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+        chartData.nodeDistributions = nodeDistributions;
+        minimapData.found.forEach(treeNode=>{
+          const ancestor = treeNode.parent;
+          if (ancestor) {
+            const descendant = treeNode.node;
+            let relation: NodeRelationType = NodeRelationType.singleDescendant;
+            if (ancestor.children.length > 1) {
+              const other: TreeNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
+              if (getY(other.node.index) > getY(descendant.index)) {
+                relation = NodeRelationType.upperDescendant;
+              } else {
+                relation = NodeRelationType.lowerDescendant;
+              }
             }
+            const nodePair: NodePair = this.assembleNodePair(ancestor.node, descendant, relation);
+            chartData.nodePairs.push(nodePair);
           }
-          const nodePair: NodePair = this.assembleNodePair(ancestor.node, descendant, relation);
-          chartData.nodePairs.push(nodePair);
-        }
-      });
-      chartData.nodes = currentNodes;
-      chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
-        const ancestorSeries: Distribution = np.ancestor.series as Distribution;
-        const descendantSeries: Distribution = np.descendant.series as Distribution;
-        return new NodeMutationsData(np, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
-      });
-      /*
-      add an empty node before the root to represent the uninfected population
-      in the prevalence chart
-      */
-      const prevalenceNodes = currentNodes.slice(0);
-      prevalenceNodes.unshift(this.nullNode);
-      chartData.prevalenceNodes = prevalenceNodes;
-      mccRef.release();
-      this.update(chartData);
-    }
+        });
+        chartData.nodes = currentNodes;
+        chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
+          const ancestorSeries: Distribution = np.ancestor.series as Distribution;
+          const descendantSeries: Distribution = np.descendant.series as Distribution;
+          return new NodeMutationsData(np, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
+        });
+        /*
+        add an empty node before the root to represent the uninfected population
+        in the prevalence chart
+        */
+        const prevalenceNodes = currentNodes.slice(0);
+        prevalenceNodes.unshift(this.nullNode);
+        chartData.prevalenceNodes = prevalenceNodes;
+        mccRef.release();
+        this.update(chartData);
 
+
+
+      });
+    }
   }
 
 
