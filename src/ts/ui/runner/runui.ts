@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
-import {SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+import {SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -9,11 +9,11 @@ import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} fro
 import {SoftFloat} from '../../util/softfloat.js';
 import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
-import { hoverListenerType, kneeHoverListenerType } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
+import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, Pythia, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { TraceCanvas } from './tracecanvas';
@@ -24,6 +24,47 @@ const DAYS_PER_YEAR = 365;
 
 const EPSILON = 1e-7;
 
+const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
+
+
+// const enum restartOption {
+//   CANCEL = 2,
+//   RESTART_AND_REFRESH = 1,
+//   RESTART_ONLY = 3
+// }
+
+
+type HistChartConfig = {
+  name: string,
+  unit: string, // can be valid html
+  dataFnc: HistDataFunction,
+  isDiscrete: boolean
+}
+
+type PopChartConfig = {
+  name: string,
+  dataFnc: GammaDataFunction
+}
+
+enum TraceChart {
+  logPosterior,
+  mu,
+  muStar,
+  numMutations,
+  evolutionaryTime,
+  gamma
+}
+
+
+/*
+Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
+Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
+*/
+const ESSSeries : TraceChart[] = [
+  TraceChart.logPosterior,
+  TraceChart.mu,
+  TraceChart.evolutionaryTime];
+
 type ESS_THRESHOLD = {threshold: number, className: string};
 
 const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
@@ -33,14 +74,10 @@ const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
   {threshold: 200, className: "publish"}
 ];
 
-const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
 
-// const enum restartOption {
-//   CANCEL = 2,
-//   RESTART_AND_REFRESH = 1,
-//   RESTART_ONLY = 3
-// }
+
+
 
 export class RunUI extends UIScreen {
   mccRef: MccRef | null;
@@ -56,11 +93,9 @@ export class RunUI extends UIScreen {
 
   private mccTreeCanvas: MccTreeCanvas;
 
-  private mutCountCanvas: HistCanvas;
-  private muCanvas: HistCanvas;
-  private logPosteriorCanvas: HistCanvas;
-  private gammaCanvas: GammaHistCanvas;
-  private histCanvases: TraceCanvas[];
+  private histCanvases: TraceCanvas[] = [];
+  private essCandidates: TraceCanvas[] = [];
+  private availableCanvases: TraceCanvas[] = [];
 
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
@@ -119,6 +154,11 @@ export class RunUI extends UIScreen {
   disableAnimation: boolean;
 
   kneeHandler : kneeHoverListenerType;
+  curatedKneeHandler : (pct:number)=>void;
+  hoverHandler: hoverListenerType;
+
+  traceChartConfig: {[_: string] : HistChartConfig | PopChartConfig} = {};
+
 
 
   constructor(sharedState: SharedState, divSelector: string) {
@@ -149,15 +189,13 @@ export class RunUI extends UIScreen {
       }
     };
 
-    const curatedKneeHandler = (pct:number)=>{
+
+    this.curatedKneeHandler = (pct:number)=>{
       this.sharedState.kneeIsCurated = true;
       this.kneeHandler(pct);
     }
 
-    const hoverHandler: hoverListenerType = (treeIndex:number)=>{
-      // if (treeIndex === UNSET) {
-      //   console.log(`hoverHandler(${treeIndex})`);
-      // }
+    this.hoverHandler = (treeIndex:number)=>{
       this.histCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
@@ -182,12 +220,21 @@ export class RunUI extends UIScreen {
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
 
 
-    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler, hoverHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler, hoverHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler, hoverHandler);
-    this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
-    this.histCanvases = [this.mutCountCanvas, this.muCanvas, this.logPosteriorCanvas, this.gammaCanvas];
-    (this.mutCountCanvas.traceData as HistData).isDiscrete = true;
+
+    this.traceChartConfig[TraceChart.numMutations] = {name: "Number of Mutations", unit: '', dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: true };
+    this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
+    this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: true};
+    const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
+    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
+
+
+
+
+
+
+    this.setTraceCharts();
     this.hideBurnIn = false;
     this.mccTimelineIndices = [];
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
@@ -325,14 +372,6 @@ export class RunUI extends UIScreen {
     });
     this.advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     this.advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
-    // this.advanced.addEventListener("click", e => {
-    //   if (e.target === this.advanced) {
-    //     e.preventDefault();
-    //     this.advanced.classList.remove("active");
-    //     const advancedToggle = this.openAdvancedButton.querySelector("input") as HTMLInputElement;
-    //     advancedToggle.checked = false;
-    //   }
-    // });
     window.addEventListener("keydown", e => {
       if (e.key === "Escape" && this.advanced.classList.contains("active")) {
         this.advanced.classList.remove("active");
@@ -340,6 +379,63 @@ export class RunUI extends UIScreen {
         advancedToggle.checked = false;
       }
     })
+  }
+
+  setTraceCharts() : void {
+    this.histCanvases.length = 0;
+    this.essCandidates.length = 0;
+    this.availableCanvases.length = 0
+
+    try {
+      const params = this.getRunParams();
+
+      const hists = [TraceChart.numMutations, TraceChart.logPosterior];
+      const gammas = [];
+      const availables = [TraceChart.numMutations, TraceChart.logPosterior, TraceChart.evolutionaryTime];
+      const esses = ESSSeries.slice(0);
+
+      if (!params.mutationRateIsFixed) {
+        availables.push(TraceChart.mu);
+        if (params.apobecEnabled) {
+          hists.push(TraceChart.muStar);
+          availables.push(TraceChart.mu);
+          esses.push(TraceChart.mu);
+        } else {
+          hists.push(TraceChart.mu);
+        }
+      }
+
+      if (params.popModelIsSkygrid) {
+        gammas.push(TraceChart.gamma);
+      }
+
+      availables.forEach((tc: TraceChart)=>{
+        const config : HistChartConfig = this.traceChartConfig[tc] as HistChartConfig;
+        const { name, unit, dataFnc, isDiscrete } = config;
+        const canvas = new HistCanvas(name, unit, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler);
+        this.availableCanvases.push(canvas);
+        if (esses.includes(tc)) {
+          this.essCandidates.push(canvas);
+        }
+        if (hists.includes(tc)) {
+          this.histCanvases.push(canvas);
+        } else {
+          canvas.setVisible(false);
+        }
+      });
+      gammas.forEach((tc: TraceChart)=>{
+        const config : PopChartConfig = this.traceChartConfig[tc] as PopChartConfig;
+        const { name, dataFnc } = config;
+        const canvas = new GammaHistCanvas(name, dataFnc);
+        this.availableCanvases.push(canvas);
+        this.histCanvases.push(canvas);
+      });
+
+    } catch (err) {
+      // ignore
+    }
+
+
   }
 
 
@@ -484,9 +580,7 @@ export class RunUI extends UIScreen {
     const popGrowthRateFixed = (params.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
     this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
 
-    // toggle canvases
-    this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
-    this.toggleHistCanvasVisibility(this.gammaCanvas, params.popModelIsSkygrid)
+    this.setTraceCharts();
 
     const treeCount = pythia.treeHist.length;
     if (treeCount > 1) {
@@ -559,11 +653,6 @@ export class RunUI extends UIScreen {
         hc.sizeCanvas();
       }
     });
-    // this.logPosteriorCanvas.sizeCanvas();
-    // this.muCanvas.sizeCanvas();
-    // this.muStarCanvas.sizeCanvas();
-    // this.TCanvas.sizeCanvas();
-    // this.mutCountCanvas.sizeCanvas();
 
     if (!this.is_running) {
       this.updateRunData();
@@ -599,7 +688,6 @@ export class RunUI extends UIScreen {
       const oldRef = this.mccRef;
       this.mccRef = mccRef;
       this.mccIndex = this.pythia.getMccIndex();
-      // console.log(`this.mccIndex`, this.mccIndex)
       const mccTree = mccRef.getMcc(),
         nodeConfidence = mccRef.getNodeConfidence();
       if (mccTree !== this.mccTreeCanvas.tree) {
@@ -613,61 +701,30 @@ export class RunUI extends UIScreen {
       }
     }
 
-
-
-
     this.mccMinDate.update();
 
     this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
       sampleIndex = UNSET,
-      {muHist, logPosteriorHist, numMutationsHist, popModelHist, totalBranchLengthHist, kneeIndex} = this.pythia;
-    const muud = muHist.map(n=>n*MU_FACTOR);
-    const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-    const serieses = [
-      logPosteriorHist,
-      muud,
-      totalLengthYear,
-      //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
-      //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
-    ];
+      kneeIndex = this.pythia.kneeIndex;
+
+    this.availableCanvases.forEach(canvas=>{
+      if (canvas instanceof HistCanvas) {
+        canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+      } else if (canvas instanceof GammaHistCanvas) {
+        canvas.setRangeData(kneeIndex, sampleIndex);
+      }
+    });
 
 
-    const totalLengthData = new HistData("", "year");
-    totalLengthData.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    const essData: HistData[] = this.essCandidates.map(canvas=>(canvas.traceData as HistData));
+    const essSeries: number[][] = essData.map(histData=>histData.data);
+    const essCandidates: number[] = essData.map(histData=>histData.ess);
 
-
-    this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    const essCandidates: number[] = [
-      (this.logPosteriorCanvas.traceData as HistData).ess,
-      (this.muCanvas.traceData as HistData).ess,
-      totalLengthData.ess,
-      // this.mutCountCanvas.ess,
-      // this.popGrowthCanvas.ess
-    ];
-
-    // if (this.getRunParams().apobecEnabled) {
-    //   const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-    //   this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    //   serieses.push(muudStar);
-    //   essCandidates.push((this.muStarCanvas.traceData as HistData).ess);
-    // }
-    if (this.getRunParams().popModelIsSkygrid) {
-      const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
-      console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
-      const xHist = (popModelHist[0] as SkygridPopModel).x;
-      const isLogLinear = (popModelHist[0] as SkygridPopModel).type === SkygridPopModelType.LogLinear;
-      this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
-    // } else {
-    //   const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
-    //   this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    }
     this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
-      const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
+      const candidateIndex = this.burninPrompt.evalAllSeries(essSeries);
       if (candidateIndex > 0) {
         /* calculate the pct */
         const pct = 1.0 * candidateIndex / last;
@@ -712,17 +769,7 @@ export class RunUI extends UIScreen {
       } else {
         // console.debug('no mcc ref available')
       }
-      this.logPosteriorCanvas.draw();
-      this.muCanvas.draw();
-      // if (this.getRunParams().apobecEnabled) {
-      //   this.muStarCanvas.draw();
-      // }
-      this.mutCountCanvas.draw();
-      if (this.getRunParams().popModelIsSkygrid) {
-        this.gammaCanvas.draw();
-      // } else {
-      //   this.popGrowthCanvas.draw();
-      }
+      this.histCanvases.forEach(canvas=>canvas.draw());
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       // this.treeCountText.innerHTML = `${nfc(treeCount)}`;
       // this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
@@ -785,16 +832,16 @@ export class RunUI extends UIScreen {
   }
 
 
-  private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
-    canvas.setVisible(showIt);
+  // private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
+  //   canvas.setVisible(showIt);
 
-    this.histCanvases.forEach(hc => {
-      if (hc.isVisible) {
-        hc.sizeCanvas();
-        hc.draw();
-      }
-    });
-  }
+  //   this.histCanvases.forEach(hc => {
+  //     if (hc.isVisible) {
+  //       hc.sizeCanvas();
+  //       hc.draw();
+  //     }
+  //   });
+  // }
 
 
 
