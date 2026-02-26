@@ -4,6 +4,16 @@ import {MccTree} from './delphy_api';
 let mrm = 0;
 
 
+/*
+can we replace this with a more generic
+  getMccRef => a tree id / pointer that we can check before deleting the tree from memory
+  getNodeConfidence(treeId)
+  release(treeId)
+  isReleased(treeIde)
+
+  and then replace the MccTree instance methods with versions that take an extra treeId parameter?
+
+*/
 
 export interface MccRef {
   getMcc() : MccTree;
