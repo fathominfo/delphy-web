@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
-import {SkygridPopModel} from '../../pythia/delphy_api';
+import {ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
@@ -20,7 +20,7 @@ import { chartContainer, TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
 
 const DAYS_PER_YEAR = 365;
-// const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
+const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
 const EPSILON = 1e-7;
 
@@ -52,6 +52,7 @@ enum TraceChart {
   muStar,
   numMutations,
   evolutionaryTime,
+  popGrowth,
   gamma
 }
 
@@ -94,6 +95,7 @@ export class RunUI extends UIScreen {
   private mccTreeCanvas: MccTreeCanvas;
 
   private traceCanvases: TraceCanvas[] = [];
+  private shownCanvases: TraceCanvas[] = [];
   private essCandidates: TraceCanvas[] = [];
 
 
@@ -226,6 +228,8 @@ export class RunUI extends UIScreen {
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
     this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
+    const popGrowthDataFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g)
+    this.traceChartConfig[TraceChart.popGrowth] = { name: "Doubling time", unit: "years", dataFnc: popGrowthDataFnc, isDiscrete: false};
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
     this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
 
@@ -281,6 +285,26 @@ export class RunUI extends UIScreen {
     this.ess = UNSET;
 
     this.disableAnimation = false;
+
+    const allChartsToggle = this.div.querySelector("#all-traces-toggle") as HTMLInputElement;
+    allChartsToggle.addEventListener('change', ()=>{
+      if (allChartsToggle.checked) {
+        this.traceCanvases.forEach(canvas=>{
+          canvas.setVisible(true);
+          canvas.sizeCanvas();
+        });
+        requestAnimationFrame(()=>{
+          this.traceCanvases.forEach(canvas=>canvas.draw());
+        });
+      } else {
+        this.traceCanvases.forEach(canvas=>{
+          if (this.shownCanvases.indexOf(canvas) < 0){
+            canvas.setVisible(false);
+          }
+        });
+
+      }
+    })
 
     this.burnInToggle.addEventListener('change', ()=>{
       this.hideBurnIn = this.burnInToggle.checked;
@@ -383,6 +407,7 @@ export class RunUI extends UIScreen {
 
   decideTraceCharts() : void {
     this.traceCanvases.length = 0;
+    this.shownCanvases.length = 0;
     this.essCandidates.length = 0;
     chartContainer.innerHTML = '';
 
@@ -405,10 +430,11 @@ export class RunUI extends UIScreen {
         }
       }
       toShow.push(TraceChart.logPosterior);
-      console.log(toShow.map(i=>TraceChart[i]));
 
       if (params.popModelIsSkygrid) {
         gammas.push(TraceChart.gamma);
+      } else {
+        availables.push(TraceChart.popGrowth);
       }
 
       availables.forEach((tc: TraceChart)=>{
@@ -421,6 +447,8 @@ export class RunUI extends UIScreen {
         }
         if (!toShow.includes(tc)) {
           canvas.setVisible(false);
+        } else {
+          this.shownCanvases.push(canvas);
         }
       });
       gammas.forEach((tc: TraceChart)=>{
@@ -428,6 +456,7 @@ export class RunUI extends UIScreen {
         const { name, dataFnc } = config;
         const canvas = new GammaHistCanvas(name, dataFnc);
         this.traceCanvases.push(canvas);
+        this.shownCanvases.push(canvas);
       });
 
     } catch (err) {
