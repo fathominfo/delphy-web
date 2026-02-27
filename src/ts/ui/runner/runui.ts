@@ -51,9 +51,19 @@ enum TraceChart {
   mu,
   muStar,
   numMutations,
+  gamma,
   evolutionaryTime,
   popGrowth,
-  gamma
+  logG,
+  alpha,
+  logCoalescentPrior,
+  logOtherPriors,
+  hkyKappa,
+  hkyPiA,
+  hkyPiC,
+  hkyPiG,
+  hkyPiT,
+  minDate
 }
 
 
@@ -230,6 +240,19 @@ export class RunUI extends UIScreen {
     this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     const popGrowthDataFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g)
     this.traceChartConfig[TraceChart.popGrowth] = { name: "Doubling time", unit: "years", dataFnc: popGrowthDataFnc, isDiscrete: false};
+
+    this.traceChartConfig[TraceChart.logG] = {name: "logG", unit: '', dataFnc: ()=>(this.pythia as Pythia).logGHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.alpha] = {name: "alpha", unit: '', dataFnc: ()=>(this.pythia as Pythia).alphaHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.logCoalescentPrior] = {name: "logCoalescentPrior", unit: '', dataFnc: ()=>(this.pythia as Pythia).logCoalescentPriorHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.logOtherPriors] = {name: "logOtherPriors", unit: '', dataFnc: ()=>(this.pythia as Pythia).logOtherPriorsHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.hkyKappa] = {name: "hkyKappa", unit: '', dataFnc: ()=>(this.pythia as Pythia).hkyKappaHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.hkyPiA] = {name: "hkyPiA", unit: '', dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.hkyPiC] = {name: "hkyPiC", unit: '', dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.hkyPiG] = {name: "hkyPiG", unit: '', dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.hkyPiT] = {name: "hkyPiT", unit: '', dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.minDate] = {name: "minDate", unit: '', dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false};
+
+
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
     this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
 
@@ -416,7 +439,11 @@ export class RunUI extends UIScreen {
 
       const toShow = [TraceChart.numMutations];
       const gammas = [];
-      const availables = [TraceChart.numMutations, TraceChart.logPosterior, TraceChart.evolutionaryTime];
+      const availables = [ TraceChart.numMutations, TraceChart.logPosterior,
+        TraceChart.evolutionaryTime, TraceChart.logG, TraceChart.alpha,
+        TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
+        TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
+        TraceChart.hkyPiG, TraceChart.hkyPiT, TraceChart.minDate];
       const esses = ESSSeries.slice(0);
 
       if (!params.mutationRateIsFixed) {
