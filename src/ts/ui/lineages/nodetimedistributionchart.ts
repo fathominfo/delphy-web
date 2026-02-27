@@ -121,6 +121,7 @@ export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart
     this.groupLookup.forEach((group, nodeIndex)=> {
       if (!incomingNodes[nodeIndex]) {
         group.remove();
+        delete this.groupLookup[nodeIndex];
       }
     });
 
