@@ -99,50 +99,44 @@ To avoid flickering, we want to preserve paths as much as we can.
 export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart {
 
   seriesMax: SoftFloat = new SoftFloat(0);
+  groupLookup: NodeSVGSeriesGroup[] = [];
 
   setNodeSeries(nodes: DisplayNode[]) {
     const serieses: Distribution[] = [];
     const correspondingNodes: DisplayNode[] = [];
-    const incomingNodeIndexes: boolean[] = [];
+    const incomingNodes: boolean[] = [];
+    let newSeriesBandMax = 0;
     nodes.forEach(node=>{
       if (node.series !== null) {
         correspondingNodes.push(node);
         serieses.push(node.series);
-        incomingNodeIndexes[node.index] = true;
+        incomingNodes[node.index] = true;
+        const distribution = node.series;
+        if (distribution.range > 0 && distribution.bandMax > newSeriesBandMax) {
+          newSeriesBandMax = distribution.bandMax;
+        }
       }
     });
 
-    let i = this.svgGroups.length - 1;
-    const currentNodes: NodeSVGSeriesGroup[] = [];
-    while (i >= 0) {
-      const nodeGroup = this.svgGroups[i] as NodeSVGSeriesGroup;
-      const node = nodeGroup.node as DisplayNode;
-      if (!incomingNodeIndexes[node.index]) {
-        nodeGroup.remove();
-        this.svgGroups.splice(i, 1);
-      } else {
-        currentNodes[node.index] = nodeGroup;
+    this.groupLookup.forEach((group, nodeIndex)=> {
+      if (!incomingNodes[nodeIndex]) {
+        group.remove();
       }
-      i--;
-    }
+    });
 
     this.series = serieses;
     this.svgGroups.length = 0;
 
     correspondingNodes.forEach((node)=>{
-      let group = currentNodes[node.index];
+      let group = this.groupLookup[node.index];
       if (!group) {
         group = new this.groupType(this.svg) as NodeSVGSeriesGroup; // eslint-disable-line new-cap
         group.setNode(node);
+        this.groupLookup[node.index] = group;
       }
       group.setNodeClass("tip", node.series === null || node.series.range === 0);
       this.svgGroups.push(group);
     });
-    const newSeriesBandMax = Math.max(...this.series.map(distribution=>{
-      let seriesMax = 0;
-      if (distribution.range > 0 && distribution.bandMax) seriesMax = distribution.bandMax;
-      return seriesMax;
-    }));
     this.seriesMax.setTarget(newSeriesBandMax);
   }
 

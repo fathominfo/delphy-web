@@ -226,6 +226,7 @@ export class CoreLineagesData {
           chartData.nodePairs.push(nodePair);
         }
       });
+      // console.log(`${currentNodes.length} nodes`, currentIndices)
       chartData.nodes = currentNodes;
       chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
         const ancestorSeries: Distribution = np.ancestor.series as Distribution;
