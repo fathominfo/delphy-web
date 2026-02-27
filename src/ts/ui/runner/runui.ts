@@ -309,7 +309,7 @@ export class RunUI extends UIScreen {
 
     this.disableAnimation = false;
 
-    const allChartsToggle = this.div.querySelector("#all-traces-toggle") as HTMLInputElement;
+    const allChartsToggle = this.div.querySelector("#runner--all-traces-toggle") as HTMLInputElement;
     allChartsToggle.addEventListener('change', ()=>{
       if (allChartsToggle.checked) {
         this.traceCanvases.forEach(canvas=>{

@@ -1464,23 +1464,6 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 }
 
-#burn-in-wrapper {
-  height: 1.5em;
-  label .hint {color: #aaa}
-}
-
-
-#burn-in-wrapper {
-  p {
-    display: block;
-    margin: 0;
-  }
-  &.unset {
-    input, label {display: none;}
-    &.pre {opacity: 0.3;}
-  }
-}
-
 #ess-wrapper {
   flex-shrink: 1;
   // display: flex;
@@ -1614,6 +1597,25 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 
+#burn-in-wrapper {
+  height: 1.5em;
+  label .hint {color: #aaa}
+  p {
+    display: block;
+    margin: 0;
+  }
+  &.unset {
+    input, label {display: none;}
+    &.pre {opacity: 0.3;}
+  }
+}
+
+
+#runner--show-traces:has(input:checked) {
+  #runner--all-traces { display: none; }
+  #runner--some-traces { display: inline; }
+}
+#runner--some-traces { display: none; }
 
 
 
