@@ -12,16 +12,21 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
   setNode(node: DisplayNode, toggle=true) {
     this.node = node;
-    if (node.className === '') {
-      console.log(`why an empty class here?` , node);
+    this.setNodeType(node.className);
+  }
+
+  setNodeType(className: string) {
+    if (className === '') {
+      console.log(`why an empty class here?`);
     } else {
-      this.g.classList.toggle(node.className, toggle);
+      this.g.setAttribute("data-node", className);
     }
   }
 
-  setNodeClass(className: string, toggle=true) {
+  toggleClass(className: string, toggle: boolean) {
     this.g.classList.toggle(className, toggle);
   }
+
 
   remove() {
     this.g.remove();
@@ -60,7 +65,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
       const nodeGroup = (group as NodeSVGSeriesGroup);
       const node = correspondingNodes[i];
       nodeGroup.setNode(node);
-      nodeGroup.setNodeClass("tip", node.series === null || node.series.range === 0);
+      nodeGroup.toggleClass("tip", node.series === null || node.series.range === 0);
     });
   }
 
@@ -68,19 +73,19 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     if (matchNode === null || matchNode.index === UNSET) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
-        nodeGroup.setNodeClass("matching", false);
-        nodeGroup.setNodeClass("unmatching", false);
+        nodeGroup.toggleClass("matching", false);
+        nodeGroup.toggleClass("unmatching", false);
       });
     } else {
       this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         const node = nodeGroup.node;
         if (node?.index === matchNode.index) {
-          nodeGroup.setNodeClass("matching");
-          nodeGroup.setNodeClass("unmatching", false);
+          nodeGroup.toggleClass("matching", true);
+          nodeGroup.toggleClass("unmatching", false);
         } else {
-          nodeGroup.setNodeClass("matching", false);
-          nodeGroup.setNodeClass("unmatching");
+          nodeGroup.toggleClass("matching", false);
+          nodeGroup.toggleClass("unmatching", true);
         }
       });
     }
@@ -136,7 +141,8 @@ export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart
         group.setNode(node);
         this.groupLookup[node.index] = group;
       }
-      group.setNodeClass("tip", node.series === null || node.series.range === 0);
+      group.setNodeType(node.className);
+      group.toggleClass("tip", node.series === null || node.series.range === 0);
       this.svgGroups.push(group);
     });
     this.seriesMax.setTarget(newSeriesBandMax);
