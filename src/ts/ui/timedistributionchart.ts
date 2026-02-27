@@ -105,6 +105,7 @@ export class TimeDistributionChart {
       const group = new this.groupType(this.svg); // eslint-disable-line new-cap
       this.svgGroups.push(group);
     });
+
   }
 
   drawDistribution(distribution: Distribution, svg: SVGSeriesGroup) {

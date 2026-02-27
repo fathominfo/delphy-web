@@ -1250,7 +1250,11 @@ details {
 
 .series-group-container {
 
-  * { transition: all var(--transition) ease-out; }
+  * {
+    transition-property: fill, stroke, opacity, transform;
+    transition-duration: var(--transition);
+    transition-timing-function: ease-out;
+  }
 
   .series.group.matching {
     path {

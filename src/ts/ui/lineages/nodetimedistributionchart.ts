@@ -100,6 +100,7 @@ export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart
 
   seriesMax: SoftFloat = new SoftFloat(0);
   groupLookup: NodeSVGSeriesGroup[] = [];
+  timer: number = UNSET;
 
   setNodeSeries(nodes: DisplayNode[]) {
     const serieses: Distribution[] = [];
@@ -144,11 +145,16 @@ export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart
   requestDraw(): void {
     // update the max
     this.seriesMax.update();
-    this.allSeriesBandMax = this.seriesMax.value;
-    requestAnimationFrame(()=>this.draw());
-    if (this.seriesMax.isTargeting()) {
-      setTimeout(()=>this.requestDraw(), 15);
-    }
+    requestAnimationFrame(()=>{
+      this.allSeriesBandMax = this.seriesMax.value;
+      this.draw();
+      if (this.seriesMax.isTargeting()) {
+        if (this.timer === UNSET) clearTimeout(this.timer);
+        this.timer = setTimeout(()=>this.requestDraw(), 500);
+      } else {
+        this.timer = UNSET;
+      }
+    });
   }
 
 
