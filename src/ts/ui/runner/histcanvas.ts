@@ -237,8 +237,8 @@ export class HistCanvas extends TraceCanvas {
       */
       const plotSize = Math.min(height, displayCount * stepSize);
       const leftover = height - plotSize;
-      burnInHeight = hideBurnIn ? 0 : kneeIndex * stepSize + leftover;
-      activeHeight = height - burnInHeight;
+      burnInHeight = hideBurnIn ? 0 : Math.max(0, kneeIndex * stepSize + leftover);
+      activeHeight = Math.max(0, height - burnInHeight);
 
       if (displayMax === displayMin) {
         activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
@@ -329,7 +329,7 @@ export class HistCanvas extends TraceCanvas {
     const lastValue = values[values.length-1] + step;
     const histoValueRange = lastValue - firstValue;
     const histoSize = histoValueRange / valRange * histoWidth;
-    let bucketSize = histoSize / buckets.length;
+    let bucketSize = Math.max(0, histoSize / buckets.length);
 
     if (isDiscrete && histoValueRange < MAX_COUNT_FOR_DISCRETE) {
       valRange += step;
@@ -341,7 +341,7 @@ export class HistCanvas extends TraceCanvas {
       const value = values[i];
       let nextValue = values[i + 1];
       if (nextValue === undefined) nextValue = value + step;
-      const size = n / maxBucketValue * histoHeight;
+      const size = Math.max(0, n / maxBucketValue * histoHeight);
       const top = histoHeight - size;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
       const x = (value - displayMin) / valRange * this.histoWidth;
