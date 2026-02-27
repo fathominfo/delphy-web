@@ -1,6 +1,8 @@
 import { toFullDateString } from "../../pythia/dates";
+import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
 import { safeLabel, UNSET } from "../common";
 import { GammaData, LogLabelType } from "./gammadata";
+import { GammaDataFunction } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 
 
@@ -35,9 +37,9 @@ export class GammaHistCanvas extends TraceCanvas {
   yAxisWidth: number = UNSET;
   yAxisHeight: number = UNSET;
 
-  constructor(label:string) {
-    super(label, '', POP_TEMPLATE);
-    this.traceData = new GammaData(label);
+  constructor(label:string, getDataFnc: GammaDataFunction) {
+    super(label, '', getDataFnc, POP_TEMPLATE);
+    this.traceData = new GammaData(label, '', getDataFnc);
     this.minSpan = this.container.querySelector(".support .axis.x .min-date") as HTMLDivElement;
     this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as HTMLDivElement;
     this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
@@ -66,8 +68,16 @@ export class GammaHistCanvas extends TraceCanvas {
     this.labelContainer.style.marginTop = `-${Y_AXIS_OVERFLOW - 1}px`;
   }
 
-  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
-    (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
+  // setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
+  //   (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
+  // }
+
+  setRangeData(kneeIndex: number, sampleIndex: number):void {
+    const popModelHist : SkygridPopModel[] = (this.traceData.getDataFnc as GammaDataFunction)();
+    const gamma = popModelHist.map(popModel=>popModel.gamma);
+    const xHist = popModelHist[0].x;
+    const isLogLinear = popModelHist[0].type === SkygridPopModelType.LogLinear;
+    (this.traceData as GammaData).setRangeData(gamma, xHist, isLogLinear, kneeIndex, sampleIndex);
   }
 
   handleTreeHighlight(treeIndex: number): void {

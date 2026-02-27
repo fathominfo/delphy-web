@@ -2,6 +2,7 @@ import { log10, UNSET } from '../common';
 import { TraceData } from './tracedata';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { KernelDensityEstimate } from '../../pythia/kde';
+import { HistDataFunction } from './runcommon';
 
 
 
@@ -28,9 +29,12 @@ export class HistData extends TraceData {
   displayCount = 0;
   dataMean: number = UNSET;
   bucketConfig: BucketConfig;
+  isDiscrete: boolean;
 
-  constructor(label:string, unit='') {
-    super(label, unit);
+
+  constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean) {
+    super(label, unit, getDataFnc);
+    this.isDiscrete = isDiscrete;
     this.bucketConfig = { buckets: [], values : [], positions: [], maxBucketValue: 0, step: 0 };
   }
 

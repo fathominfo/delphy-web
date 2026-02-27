@@ -1,6 +1,6 @@
 import { nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { hoverListenerType, kneeHoverListenerType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
@@ -33,9 +33,10 @@ export class HistCanvas extends TraceCanvas {
   isDragging = false;
 
 
-  constructor(label:string, unit='', kneeListener: kneeHoverListenerType, hoverListener: hoverListenerType) {
-    super(label, unit, TRACE_TEMPLATE);
-    this.traceData = new HistData(label, unit)
+  constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean, kneeListener: kneeHoverListenerType,
+    hoverListener: hoverListenerType) {
+    super(label, unit, getDataFnc, TRACE_TEMPLATE);
+    this.traceData = new HistData(label, unit, getDataFnc, isDiscrete);
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
     this.isVisible = true;
@@ -158,7 +159,8 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setData(sourceData:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+    const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     // requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));

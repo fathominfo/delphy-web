@@ -1,8 +1,8 @@
 import { UNSET } from '../common';
+import { GammaDataFunction, HistDataFunction } from './runcommon';
 
 export class TraceData {
 
-  isDiscrete: boolean;
 
   sampleIndex: number;
   sampleCount: number;
@@ -29,17 +29,18 @@ export class TraceData {
   currentKneeIndex: number;
   settingKnee: boolean;
 
+  getDataFnc : HistDataFunction | GammaDataFunction;
 
-  constructor(label:string, unit='') {
+
+  constructor(label:string, unit='', getDataFnc : HistDataFunction | GammaDataFunction) {
     this.label = label;
     this.unit = unit;
+    this.getDataFnc = getDataFnc;
     this.sampleCount = UNSET;
     this.displayMin = UNSET;
     this.displayMax = UNSET;
     this.dataMin = UNSET;
     this.dataMax = UNSET;
-
-    this.isDiscrete = false;
 
     this.sampleIndex = UNSET;
     this.count = 0;

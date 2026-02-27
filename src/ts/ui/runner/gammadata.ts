@@ -1,5 +1,6 @@
 import { log10, numericSort, UNSET } from '../common';
 import { calcHPD } from '../distribution';
+import { GammaDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
 
 
@@ -27,8 +28,8 @@ export class GammaData extends TraceData {
   logRange: number = UNSET;
   logLabels: LogLabelType[] = [];
 
-  constructor(label:string, unit='') {
-    super(label, unit);
+  constructor(label:string, unit='', getDataFnc: GammaDataFunction) {
+    super(label, unit, getDataFnc);
   }
 
   setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
