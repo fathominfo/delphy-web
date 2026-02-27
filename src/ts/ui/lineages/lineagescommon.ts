@@ -2,8 +2,6 @@ import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { DisplayNode } from './displaynode';
 
-import { Distribution } from '../distribution';
-import { SVGSeriesGroup, TimeDistributionChart } from '../timedistributionchart';
 import { UNSET } from '../common';
 
 export enum NodeRelationType {
@@ -11,87 +9,6 @@ export enum NodeRelationType {
   upperDescendant = 2,
   lowerDescendant = 3
 }
-
-/*
-
-Extensions to the classes that make up a TimeDistributionChart
-
-*/
-
-
-// export class NodeDistribution extends Distribution {
-//   nodeClass: DisplayNode;
-
-//   constructor(type: DisplayNode, times: number[]) {
-//     super(times);
-//     this.nodeClass = type;
-//   }
-// }
-
-export class NodeSVGSeriesGroup extends SVGSeriesGroup {
-
-  node: DisplayNode | null = null;
-
-  setNode(node: DisplayNode, toggle=true) {
-    this.node = node;
-    if (node.className === '') {
-      console.log(`why an empty class here?` , node);
-    } else {
-      this.g.classList.toggle(node.className, toggle);
-    }
-  }
-
-  setNodeClass(className: string, toggle=true) {
-    this.g.classList.toggle(className, toggle);
-  }
-}
-
-
-export class NodeTimeDistributionChart extends TimeDistributionChart {
-
-  setNodeSeries(nodes: DisplayNode[]) {
-    const serieses: Distribution[] = [];
-    const correspondingNodes: DisplayNode[] = [];
-    nodes.forEach(node=>{
-      if (node.series !== null) {
-        correspondingNodes.push(node);
-        serieses.push(node.series);
-      }
-    });
-    super.setSeries(serieses);
-    this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
-      const nodeGroup = (group as NodeSVGSeriesGroup);
-      const node = correspondingNodes[i];
-      nodeGroup.setNode(node);
-      nodeGroup.setNodeClass("tip", node.series === null || node.series.range === 0);
-    });
-  }
-
-  setMatching(matchNode:DisplayNode | null) {
-    if (matchNode === null || matchNode.index === UNSET) {
-      this.svgGroups.forEach((group: SVGSeriesGroup)=>{
-        const nodeGroup = (group as NodeSVGSeriesGroup);
-        nodeGroup.setNodeClass("matching", false);
-        nodeGroup.setNodeClass("unmatching", false);
-      });
-    } else {
-      this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
-        const nodeGroup = (group as NodeSVGSeriesGroup);
-        const node = nodeGroup.node;
-        if (node?.index === matchNode.index) {
-          nodeGroup.setNodeClass("matching");
-          nodeGroup.setNodeClass("unmatching", false);
-        } else {
-          nodeGroup.setNodeClass("matching", false);
-          nodeGroup.setNodeClass("unmatching");
-        }
-      });
-    }
-  }
-}
-
-
-
 
 
 

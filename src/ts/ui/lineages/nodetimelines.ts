@@ -1,9 +1,9 @@
-import { HoverCallback, NodeSVGSeriesGroup, NodeTimeDistributionChart } from './lineagescommon';
+import { HoverCallback } from './lineagescommon';
 import { DateScale, getNiceDateInterval, UNSET } from '../common';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { toFullDateString } from '../../pythia/dates';
-import { Distribution } from '../distribution';
 import { DisplayNode } from './displaynode';
+import { AnimatedNodeTimeDistributionChart, NodeSVGSeriesGroup } from './nodetimedistributionchart';
 
 const nodeComparisonContainer = document.querySelector("#lineages--node-timelines") as HTMLDivElement;
 
@@ -78,7 +78,7 @@ class NodeLabels {
 
 
 export class NodeTimelines {
-  nodeTimesCanvas: NodeTimeDistributionChart;
+  nodeTimesCanvas: AnimatedNodeTimeDistributionChart;
   data: DisplayNode[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
@@ -98,7 +98,7 @@ export class NodeTimelines {
       nodeHighlightCallback(nodeIndex, date, null);
     };
 
-    this.nodeTimesCanvas = new NodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
+    this.nodeTimesCanvas = new AnimatedNodeTimeDistributionChart([], this.minDate, this.maxDate, svg, seriesHoverHandler, NodeSVGSeriesGroup);
     this.hoverCallback = nodeHighlightCallback;
   }
 
@@ -130,7 +130,7 @@ export class NodeTimelines {
   setData(nodes: DisplayNode[]) {
     /* only take the nodes that have series */
     this.data = nodes.filter(n=>n.series);
-    const allSeries = this.data.map(n=>n.series);
+    // const allSeries = this.data.map(n=>n.series);
     this.nodeTimesCanvas.setNodeSeries(this.data);
   }
 
@@ -158,9 +158,7 @@ export class NodeTimelines {
         if (displaying[labels.className] === undefined) {
           labels.hide();
         }
-      })
-      const max = this.nodeTimesCanvas.allSeriesBandMax;
-      maxProbDiv.textContent = `${max}%`;
+      });
       this.nodeTimesCanvas.requestDraw();
     });
   }

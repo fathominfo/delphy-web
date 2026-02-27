@@ -1,5 +1,4 @@
-import { HoverCallback, OpenMutationPageFncType, NodeTimeDistributionChart,
-  NodeSVGSeriesGroup, MATCH_CLASS, NO_MATCH_CLASS
+import { HoverCallback, OpenMutationPageFncType, MATCH_CLASS, NO_MATCH_CLASS
 } from './lineagescommon';
 import { getPercentLabel, UNSET,
   getNiceDateInterval, DateScale,
@@ -10,6 +9,7 @@ import { toFullDateString } from '../../pythia/dates';
 import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { DisplayNode } from './displaynode';
+import { NodeTimeDistributionChart, NodeSVGSeriesGroup } from './nodetimedistributionchart';
 
 
 
