@@ -91,9 +91,9 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     if (this.configuredRootNode !== configuredRootNode) {
       this.configuredRootNode = configuredRootNode;
       this.setRootNode(configuredRootNode);
-      const [ minDate, maxDate ] = this.getDateRange();
-      const timlineIndices = getTimelineIndices(minDate, maxDate);
-      this.draw(minDate, maxDate, timlineIndices);
+      // const [ minDate, maxDate ] = this.getDateRange();
+      // const timlineIndices = getTimelineIndices(minDate, maxDate);
+      this.draw();
     }
   }
 
@@ -109,8 +109,8 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     requestAnimationFrame(()=>this.drawSelection());
   }
 
-  draw(minDate : number, maxDate: number, timelineIndices: DateLabel[]) {
-    super.draw(minDate, maxDate, timelineIndices);
+  draw() {
+    super.draw();
     this.drawSelection();
   }
 

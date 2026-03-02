@@ -1,6 +1,5 @@
 import { ColorOption, COLOR_CONF, COLOR_METADATA,
   CONFIDENCE_DEFAULT, ColorDict, Screens, NavigateFunctionType, UNDEF,
-  ZoomFnc,
   UNSET} from './common';
 import { ColumnSummary, Metadata} from './metadata';
 import { ColorChooser, UNDEF_COLOR } from './colorchooser';
@@ -19,8 +18,7 @@ export type LISTENER_CALLBACK_TYPE = ()=>void;
 const  COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`,
   COLOR_META_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_METADATA}]`,
   CONFIDENCE_RANGE_SELECTOR = '.mcc-opt--confidence-range',
-  CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout',
-  ZOOM_RESET_SELECTOR = '.mcc-zoom-button.reset';
+  CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout';
 
 
 export class MccConfig {
@@ -29,18 +27,12 @@ export class MccConfig {
   confidenceThreshold: number;
   colorCallback: ChangeHandler;
   confidenceCallback: (value: number) => void;
-  zoomResetCallback: returnless;
 
   div: HTMLDivElement | null;
   metadata: Metadata | null;
   nodeMetadata: NodeMetadata | null;
   metadataField: string | null;
   metadataColors: {[field: string]: ColorDict};
-  verticalZoom: number;
-  zoomCenterY: number;
-  horizontalZoom: number;
-  zoomCenterX: number;
-  zoomFnc: returnless;
 
   confidenceSlider!: BlockSlider;
   colorChooser: ColorChooser;
@@ -60,10 +52,6 @@ export class MccConfig {
   constructor(goTo: NavigateFunctionType) {
     this.colorOption = ColorOption.confidence;
     this.confidenceThreshold = CONFIDENCE_DEFAULT / 100;
-    this.verticalZoom = 1;
-    this.zoomCenterY = 0.5;
-    this.horizontalZoom = 1;
-    this.zoomCenterX = 0.5;
     this.colorChooser = new ColorChooser();
     this.metadataColorsDirty = false;
     this.colorCallback = event=>{
@@ -83,9 +71,7 @@ export class MccConfig {
       this.setConfidence(confidenceThreshold);
     };
 
-    this.zoomResetCallback = ()=>console.debug('mccconfig.zoomResetCallback is unassigned');
     this.updateCallback = ()=>console.debug('mccConfig.updateCallback is unassigned');
-    this.zoomFnc = ()=>console.debug('mccConfig.zoomFnc is unassigned');
     this.div = null;
     this.metadata = null;
     this.nodeMetadata = null;
@@ -139,7 +125,7 @@ export class MccConfig {
   }
 
 
-  bind(div:HTMLDivElement | null, zoomFnc: ZoomFnc) : void {
+  bind(div:HTMLDivElement | null) : void {
     if (div) {
       this.div = div;
       /* convenience function for binding the radio button options */
@@ -166,46 +152,19 @@ export class MccConfig {
       this.confidenceSlider.set(this.confidenceThreshold * 100);
       readout.innerHTML = `${Math.round(this.confidenceThreshold * 100)}`;
 
-      this.zoomFnc = ()=>{
-        zoomFnc(this.verticalZoom, this.zoomCenterY, this.horizontalZoom, this.zoomCenterX);
-      };
-      this.zoomResetCallback = ()=>{
-        this.resetZoom();
-      };
+      // const addClickListener = (selector: string, callback:returnless)=>{
+      //   const ele = document.querySelector(selector) as HTMLInputElement;
+      //   if (ele) {
+      //     ele.addEventListener('click', callback);
+      //   } else {
+      //     console.debug(`could not find "${selector}"`);
+      //   }
+      // }
 
-      const addClickListener = (selector: string, callback:returnless)=>{
-        const ele = document.querySelector(selector) as HTMLInputElement;
-        if (ele) {
-          ele.addEventListener('click', callback);
-        } else {
-          console.debug(`could not find "${selector}"`);
-        }
-      }
-
-      addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
     }
   }
 
-  resetZoom() : void {
-    this.verticalZoom = 1;
-    this.zoomCenterY = 0.5;
-    this.horizontalZoom = 1;
-    this.zoomCenterX = 0.5;
-    // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = true;
-    this.zoomFnc();
-  }
 
-
-  setZoom(zoomX: number, zoomY: number, zoomCenterX: number, zoomCenterY: number): void {
-    this.horizontalZoom = zoomX;
-    const halfZoomX = 0.5 / zoomX;
-    this.zoomCenterX = Math.min(1-halfZoomX, Math.max(halfZoomX, zoomCenterX));
-    this.verticalZoom = zoomY;
-    const halfZoomY = 0.5 / zoomY;
-    this.zoomCenterY = Math.min(1-halfZoomY, Math.max(halfZoomY, zoomCenterY));
-    // (document.querySelector(ZOOM_RESET_SELECTOR) as HTMLButtonElement).disabled = false;
-    this.zoomFnc();
-  }
 
 
   setColorSystem(option: ColorOption): void {
@@ -291,16 +250,14 @@ export class MccConfig {
       }
       removeChangeListener(COLOR_CONF_SELECTOR, this.colorCallback);
       removeChangeListener(COLOR_META_SELECTOR, this.colorCallback);
-      const removeClickListener = (selector: string, callback:returnless)=>{
-        const ele = div.querySelector(selector) as HTMLInputElement;
-        if (ele) {
-          ele.removeEventListener('click', callback);
-        } else {
-          // console.debug(`could not find "${selector}"`);
-        }
-      };
-      removeClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
-
+      // const removeClickListener = (selector: string, callback:returnless)=>{
+      //   const ele = div.querySelector(selector) as HTMLInputElement;
+      //   if (ele) {
+      //     ele.removeEventListener('click', callback);
+      //   } else {
+      //     // console.debug(`could not find "${selector}"`);
+      //   }
+      // };
     }
   }
 

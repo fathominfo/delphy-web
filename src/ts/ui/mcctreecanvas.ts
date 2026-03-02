@@ -1,4 +1,3 @@
-import { DateLabel } from './datelabel';
 import {
   UNSTYLED_CANVAS_WIDTH,
   BRANCH_WEIGHT, BRANCH_WEIGHT_MIN, BRANCH_WEIGHT_MAX,
@@ -25,6 +24,8 @@ import { MccConfig } from "./mccconfig";
 import { isTip } from '../util/treeutils';
 
 
+
+
 // const PDF_TYPEFACE = 'Roboto',
 //   PDF_700_WT = '700',
 //   PDF_500_WT = '500';
@@ -47,6 +48,7 @@ type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
 
+const ZOOM_PER_CLICK = 1.5;
 
 class CustomSubTree {
   minDate: number;
@@ -93,9 +95,8 @@ export class MccTreeCanvas {
   paddingTop : number;
   paddingBottom: number;
   /* we don't want this to be less than 1, but typescript can't enforce that for us */
-  verticalZoom: number;
+  zoomAmount = 1;
   zoomCenterY: number;
-  horizontalZoom: number;
   zoomCenterX: number;
   dateHoverDiv: HTMLDivElement | null;
   dateAxisEntries: AxisLabel[] = [];
@@ -137,9 +138,8 @@ export class MccTreeCanvas {
     this.sizeCanvas();
     this.paddingTop = TREE_PADDING_TOP;
     this.paddingBottom = TREE_PADDING_BOTTOM;
-    this.verticalZoom = 1;
+    this.zoomAmount = 1;
     this.zoomCenterY = 0.5;
-    this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
     this.dateHoverDiv = null;
 
@@ -461,7 +461,7 @@ export class MccTreeCanvas {
 
   getZoomY(index: number) : number {
     const height = this.height - this.paddingBottom - this.paddingTop,
-      zoomedHeight = this.verticalZoom * height,
+      zoomedHeight = this.zoomAmount * height,
       unzoomedCenter = height * 0.5,
       zoomCenter = this.zoomCenterY * zoomedHeight,
       /*
@@ -472,14 +472,14 @@ export class MccTreeCanvas {
       minOffset = 0,
       offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
       config = this.rootConfigs[this.rootIndex];
-    return config.nodeYs[index] * this.verticalZoom - offset;
+    return config.nodeYs[index] * this.zoomAmount - offset;
   }
 
   getZoomedDateRange() : number[] {
     const config = this.rootConfigs[this.rootIndex],
       dateRange = config.maxDate - config.minDate,
       centerDate = config.maxDate - dateRange * this.zoomCenterX,
-      dateWindowSide = dateRange / this.horizontalZoom * 0.5,
+      dateWindowSide = dateRange / this.zoomAmount * 0.5,
       minDate = Math.round(centerDate - dateWindowSide),
       maxDate = Math.round(centerDate + dateWindowSide);
     return [minDate, maxDate];
@@ -501,7 +501,7 @@ export class MccTreeCanvas {
   getZoomX(t: number): number {
     const right = this.width - TREE_PADDING_RIGHT - 0.5,
       width = right - TREE_PADDING_LEFT,
-      zoomedWidth = this.horizontalZoom * width,
+      zoomedWidth = this.zoomAmount * width,
       unzoomedCenter = width * 0.5,
       zoomCenter = this.zoomCenterX * zoomedWidth,
       /*
@@ -521,7 +521,7 @@ export class MccTreeCanvas {
     let t = UNSET;
     const right = this.width - TREE_PADDING_RIGHT - 0.5,
       width = right - TREE_PADDING_LEFT,
-      zoomedWidth = this.horizontalZoom * width,
+      zoomedWidth = this.zoomAmount * width,
       unzoomedCenter = width * 0.5,
       zoomCenter = this.zoomCenterX * zoomedWidth,
       /*
@@ -539,37 +539,43 @@ export class MccTreeCanvas {
   }
 
 
-  zoomToTips(tips: number[]) : void {
-    const height = this.height - this.paddingBottom - this.paddingTop,
-      config = this.rootConfigs[this.rootIndex];
-    let index = tips[0],
-      y1 = config.nodeYs[index],
-      y2 = y1;
-    for (let i = 1; i < tips.length; i++) {
-      index = tips[i];
-      y1 = Math.min(y1, config.nodeYs[index]);
-      y2 = Math.max(y2, config.nodeYs[index]);
-    }
-    const y = (y1 + y2) / 2,
-      span = y2 - y1,
-      zoom = height / span;
-    this.zoomCenterY = y / height;
-    this.verticalZoom = zoom;
-    console.debug(`zoom: ${tips.length} tips at y ${y1} - ${y2} => ${zoom}, ${this.zoomCenterY}`);
-  }
+  // zoomToTips(tips: number[]) : void {
+  //   const height = this.height - this.paddingBottom - this.paddingTop,
+  //     config = this.rootConfigs[this.rootIndex];
+  //   let index = tips[0],
+  //     y1 = config.nodeYs[index],
+  //     y2 = y1;
+  //   for (let i = 1; i < tips.length; i++) {
+  //     index = tips[i];
+  //     y1 = Math.min(y1, config.nodeYs[index]);
+  //     y2 = Math.max(y2, config.nodeYs[index]);
+  //   }
+  //   const y = (y1 + y2) / 2,
+  //     span = y2 - y1,
+  //     zoom = height / span;
+  //   this.zoomCenterY = y / height;
+  //   this.zoomAmount = zoom;
+  //   console.debug(`zoom: ${tips.length} tips at y ${y1} - ${y2} => ${zoom}, ${this.zoomCenterY}`);
+  // }
 
   resetZoom(): void {
-    this.verticalZoom = 1.0;
-    this.zoomCenterY = 0.5
-    this.horizontalZoom = 1;
-    this.zoomCenterX = 0.5;
+    this.setZoom(1, 0.5, 0.5);
   }
 
-  setZoom(vZoom: number, vScroll: number, hZoom: number, hScroll: number) : void {
-    this.verticalZoom = vZoom;
-    this.zoomCenterY = vScroll;
-    this.horizontalZoom = hZoom;
-    this.zoomCenterX = hScroll;
+  setZoom(zoomAmount: number, centerX: number, centerY: number) : void {
+    this.zoomAmount = Math.max(1, zoomAmount);
+    this.zoomCenterX = centerX;
+    this.zoomCenterY = centerY;
+    requestAnimationFrame(()=>this.draw());
+  }
+
+
+  zoomIn() : void {
+    this.setZoom(this.zoomAmount * ZOOM_PER_CLICK, this.zoomCenterX, this.zoomCenterY);
+  }
+
+  zoomOut() : void {
+    this.setZoom(this.zoomAmount / ZOOM_PER_CLICK, this.zoomCenterX, this.zoomCenterY);
   }
 
 
@@ -670,11 +676,9 @@ export class MccTreeCanvas {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
-  draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  draw(_pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
     const config = this.rootConfigs[this.rootIndex];
     if (!config) return;
-    if (earliest === undefined) earliest = config.minDate;
-    if (latest === undefined) latest = config.maxDate;
     const { nodeYs } = config;
     const { ctx, width, height } = this,
       nodeCount = nodeYs.length;

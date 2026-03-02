@@ -121,7 +121,7 @@ export class CustomizeUI extends MccUI {
       imgTreeCanvas.setTreeNodes(tree, conf);
       // const mcccc = this.mccTreeCanvas.canvas;
       // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
-      imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices);
+      imgTreeCanvas.draw();
       const a = document.createElement("a"),
         url = canvas.toDataURL('image/png', 1.0),
         title = `delphy-${getTimestampString()}.png`;
@@ -161,7 +161,7 @@ export class CustomizeUI extends MccUI {
         imgTreeCanvas.setTreeNodes(tree, conf);
         // const mcccc = this.mccTreeCanvas.canvas;
         // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
-        imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices, canvas);
+        imgTreeCanvas.draw(canvas);
         canvas.save(`delphy-${getTimestampString()}.pdf`);
       });
     });

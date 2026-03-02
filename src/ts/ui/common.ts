@@ -374,8 +374,6 @@ export function textIntersects(metrics1: MyTextMetrics, metrics2: MyTextMetrics)
   return true;
 }
 
-export type ZoomFnc = (vertZoom: number, vertScroll: number, horizZoom: number, horizScroll: number)=>void;
-
 export type DataResolveType = (tree:SummaryTree)=>void;
 
 export const pad = (n:number)=>`${(n < 10 ? '0' : '')}${n}`;
