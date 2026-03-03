@@ -480,7 +480,7 @@ export class MccTreeCanvas {
   getZoomX(t: number): number {
     const config = this.rootConfigs[this.rootIndex],
       pct =  (t - config.minDate) / (config.maxDate - config.minDate),
-      x = pct * this.width * this.zoomAmount + this.zoomOffset.x;
+      x = pct * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT) * this.zoomAmount + this.zoomOffset.x;
     // console.log(pct, x, this.zoomOffset.x, this.width, this.zoomAmount);
     return x;
   }
@@ -517,7 +517,7 @@ export class MccTreeCanvas {
 
   setZoom(zoomAmount: number, centerX: number, centerY: number) : void {
     // this.zoomAmount = Math.max(1, zoomAmount);
-    console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
+    // console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
     this.zoomAmount = zoomAmount;
     this.zoomCenterX = centerX;
     this.zoomCenterY = centerY;
@@ -533,9 +533,13 @@ export class MccTreeCanvas {
       /* how far apart are they */
       unzoomedDx = unzoomedCenterPx_X - viewBoxX,
       unzoomedDy = unzoomedCenterPx_Y - viewBoxY,
+      /* if we were zooming into the center, what would the offset be? */
+      zoomCenterDx = (this.zoomAmount - 1) * 0.5 * width,
+      zoomCenterDy = (this.zoomAmount - 1) * 0.5 * height,
       /* how much do we have to move the zoomed canvas to align the centers? */
-      dx = unzoomedDx * this.zoomAmount,
-      dy = unzoomedDy * this.zoomAmount;
+      dx = unzoomedDx * this.zoomAmount - zoomCenterDx,
+      dy = unzoomedDy * this.zoomAmount - zoomCenterDy;
+    // console.log(width, width * this.zoomAmount, (this.zoomAmount - 1) * 0.5 * width);
     this.zoomOffset.x = dx;
     this.zoomOffset.y = dy;
     requestAnimationFrame(()=>this.draw());
