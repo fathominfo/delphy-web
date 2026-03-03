@@ -1,5 +1,5 @@
 import { UNSET, getPercentLabel } from '../common';
-import { DisplayNode } from './displaynode';
+import { DisplayNode, NULL_NODE_CODE } from './displaynode';
 import { HoverCallback, NodeCallback } from './lineagescommon';
 
 const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
@@ -275,7 +275,7 @@ export class NodeListDisplay {
   }
 
   highlightNode(node: DisplayNode) : void {
-    if (node.index === UNSET) {
+    if (node.index === UNSET || node.index === NULL_NODE_CODE) {
       this.nodeDivs.forEach(div=>div?.restore());
     } else {
       this.nodeDivs.forEach(div=>div?.pushback());

@@ -7,7 +7,7 @@ const NUMS_IN_USE: boolean[] = new Array(MAX_NODE_COUNT);
 NUMS_IN_USE.fill(false);
 
 /* hack alert: we need special handling for the null node */
-export const NULL_NODE_CODE = 999;
+export const NULL_NODE_CODE = -999;
 
 export class DisplayNode {
   index: number = UNSET;

@@ -3,8 +3,7 @@ import { MccUI } from '../mccui';
 import { DataResolveType, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
-  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
-  TreeHoverCallback} from './lineagescommon';
+  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES } from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 import { NodeTimelines } from './nodetimelines';
 import { NodeMutations } from './nodepairmutations';
@@ -50,12 +49,12 @@ export class LineagesUI extends MccUI {
     this.coreData = new CoreLineagesData(sharedState, updateCallback);
     const dismissCallback: NodeCallback = nodeIndex=>this.handleNodeDismiss(nodeIndex);
     const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
-    const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.highlightCharts(nodeIndex, date, mutation);
+    const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.updateHighlight(nodeIndex, date, mutation);
     let previousNode = UNSET
-    const treeHoverCallback: TreeHoverCallback = (node, _date)=>{
-      if (node !== previousNode) {
-        previousNode = node;
-        this.handleNodeHover(node, UNSET);
+    const treeHoverCallback: NodeCallback = (nodeIndex: number)=>{
+      if (nodeIndex !== previousNode) {
+        previousNode = nodeIndex;
+        this.handleNodeHover(nodeIndex, UNSET);
       }
     };
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
@@ -220,21 +219,33 @@ export class LineagesUI extends MccUI {
     // this.setChartData([this.coreData.rootIndex].concat(indices));
     // this.setHint(hint);
     // this.highlightCharts(displayNode, date, null);
+
+    /* if this is a node that we have selected, highlight it */
+    const selected = this.coreData.getSelection(nodeIndex);
+    if (selected && selected.isLocked) {
+      this.nodeListDisplay.highlightNode(selected);
+    } else {
+      this.nodeListDisplay.highlightNode(this.coreData.nullNode);
+    }
+
   }
 
 
-  highlightCharts(nodeIndex: number, date: number, mutation: Mutation | null) {
+  updateHighlight(nodeIndex: number, date: number, mutation: Mutation | null) {
     if (this.coreData.checkNewHighlight(nodeIndex, date, mutation)) {
-      const { node, date, mutation } = this.coreData.getHighlights();
-      (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
-      this.nodeListDisplay.highlightNode(node);
-      this.nodeSchematic.highlightNode(node);
-      this.nodePrevalenceCanvas.highlightNode(node, date);
-      this.nodeMutationCharts.highlightNode(node, date, mutation);
-      this.nodeTimelines.highlightNode(node, date);
+      this.highlightCharts();
     }
   }
 
+  highlightCharts() {
+    const { node, date, mutation } = this.coreData.getHighlights();
+    (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
+    this.nodeListDisplay.highlightNode(node);
+    this.nodeSchematic.highlightNode(node);
+    this.nodePrevalenceCanvas.highlightNode(node, date);
+    this.nodeMutationCharts.highlightNode(node, date, mutation);
+    this.nodeTimelines.highlightNode(node, date);
+  }
 
   selectNode(nodeIndex: number): void {
     this.coreData.selectNode(nodeIndex);
