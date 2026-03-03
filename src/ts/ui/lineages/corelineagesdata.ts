@@ -373,28 +373,33 @@ export class CoreLineagesData {
   }
 
   selectNode(nodeIndex: number) : void {
-    if (nodeIndex === UNSET) return;
-    const currentNodes = this.selectedNodes.concat([this.rootNode]);
-    if (currentNodes.map(node=>node.index).indexOf(nodeIndex) >= 0) return;
-    let selection: DisplayNode = this.highlightNode;
-    if (nodeIndex !== this.highlightNode.index) {
-      /* could the node be an MRCA? That would not be in currentNodes */
-      const minimap = this.selectionTreeData as SelectionTreeData;
-      const mrcaTreeNode = minimap.found.filter(treeNode=>{
-        return treeNode
-          && treeNode.node.isInferred
-          && treeNode.node.index === nodeIndex;
-      })[0];
-      if (mrcaTreeNode) {
-        selection = mrcaTreeNode.node;
-      } else {
-        selection = this.getNodeDisplay(nodeIndex, false, false);
+    if (nodeIndex === UNSET || nodeIndex === this.rootNode.index) return;
+    const alreadyThereIndex = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
+    if (alreadyThereIndex >= 0) {
+      /* clicking on a node that's already there removes it */
+      const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
+      selection.unlock();
+    } else {
+      let selection: DisplayNode = this.highlightNode;
+      if (nodeIndex !== this.highlightNode.index) {
+        /* could the node be an MRCA? That would not be in currentNodes */
+        const minimap = this.selectionTreeData as SelectionTreeData;
+        const mrcaTreeNode = minimap.found.filter(treeNode=>{
+          return treeNode
+            && treeNode.node.isInferred
+            && treeNode.node.index === nodeIndex;
+        })[0];
+        if (mrcaTreeNode) {
+          selection = mrcaTreeNode.node;
+        } else {
+          selection = this.getNodeDisplay(nodeIndex, false, false);
+        }
       }
+      selection.lock();
+      this.selectedNodes.push(selection);
+      /* prep the next hover */
+      this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     }
-    selection.lock();
-    this.selectedNodes.push(selection);
-    /* prep the next hover */
-    this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     this.setChartData();
   }
 
