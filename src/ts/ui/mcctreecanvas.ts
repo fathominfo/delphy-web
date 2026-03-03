@@ -177,7 +177,7 @@ export class MccTreeCanvas {
     if (this.canvas instanceof HTMLCanvasElement) {
       this.canvas.addEventListener("pointerdown", (event:PointerEvent)=>this.handlePointerDown(event));
       this.canvas.addEventListener("pointermove", (event:PointerEvent)=>this.handlePointerMove(event));
-      this.canvas.addEventListener("pointerup", ()=>this.handlePointerUp());
+      this.canvas.addEventListener("pointerup", (event:PointerEvent)=>this.handlePointerUp(event));
       this.canvas.addEventListener("dblclick", (event:MouseEvent)=>this.handleDoubleClick(event));
     }
 
@@ -590,6 +590,9 @@ export class MccTreeCanvas {
     this.dragMouseStart.y = event.offsetY;
     this.dragCanvasStart.x = this.zoomCenterX;
     this.dragCanvasStart.y = this.zoomCenterY;
+    if (this.canvas instanceof HTMLCanvasElement) {
+      this.canvas.setPointerCapture(event.pointerId);
+    }
   }
 
   handlePointerMove(event: PointerEvent | null) : void {
@@ -644,12 +647,15 @@ export class MccTreeCanvas {
     }
   }
 
-  handlePointerUp() : void {
+  handlePointerUp(event: PointerEvent) : void {
     this.isDragging = false;
     if (this.throttleTimer !== UNSET) {
       clearTimeout(this.throttleTimer);
       this.throttleTimer = UNSET;
       this.handlePointerMove(this.mostRecentEvent);
+    }
+    if (this.canvas instanceof HTMLCanvasElement) {
+      this.canvas.releasePointerCapture(event.pointerId);
     }
   }
 
