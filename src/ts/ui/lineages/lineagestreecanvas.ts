@@ -59,14 +59,18 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       }, THROTTLE_TIME);
     }
     eventCanvas.addEventListener("pointermove", async (event)=>{
-      const ni = this.getNodeAt(event.offsetX, event.offsetY);
-      const d = Math.round(this.getZoomDate(event.offsetX));
-      // console.log(ni, nodeIndex, d, date);
-      sendAnother = ni !== nodeIndex || d !== date;
-      nodeIndex = ni;
-      date = d;
-      if (sendAnother && throttleTimer === UNSET) {
-        sendUpdate();
+      if (this.isDragging) {
+        this.handlePointerMove(event);
+      } else {
+        const ni = this.getNodeAt(event.offsetX, event.offsetY);
+        const d = Math.round(this.getZoomDate(event.offsetX));
+        // console.log(ni, nodeIndex, d, date);
+        sendAnother = ni !== nodeIndex || d !== date;
+        nodeIndex = ni;
+        date = d;
+        if (sendAnother && throttleTimer === UNSET) {
+          sendUpdate();
+        }
       }
     });
     eventCanvas.addEventListener("pointerleave", ()=>{

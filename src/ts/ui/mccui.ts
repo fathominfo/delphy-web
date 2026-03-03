@@ -46,13 +46,13 @@ export class MccUI extends UIScreen {
 
     if (zoomInBtn) { // if we have one, we have all
       const setEnabled = ()=>{
-        if (this.mccTreeCanvas.zoomAmount > 1) {
-          zoomOutBtn.disabled = false;
-          zoomResetBtn.disabled = false;
-        } else {
-          zoomOutBtn.disabled = true;
-          zoomResetBtn.disabled = true;
-        }
+        // if (this.mccTreeCanvas.zoomAmount > 1) {
+        zoomOutBtn.disabled = false;
+        zoomResetBtn.disabled = false;
+        // } else {
+        //   zoomOutBtn.disabled = true;
+        //   zoomResetBtn.disabled = true;
+        // }
       };
       zoomInBtn?.addEventListener("click", ()=>{
         this.mccTreeCanvas.zoomIn();
@@ -66,6 +66,7 @@ export class MccUI extends UIScreen {
         this.mccTreeCanvas.resetZoom();
         setEnabled();
       });
+      setEnabled();
     }
 
 
