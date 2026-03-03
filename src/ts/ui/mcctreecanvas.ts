@@ -47,8 +47,7 @@ type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
 
-// const ZOOM_PER_CLICK = Math.pow(2,0.25);
-const ZOOM_PER_CLICK = 1.1;
+const ZOOM_PER_CLICK = Math.pow(2,0.25);
 const THROTTLE_TIME = 1000 / 10;
 
 
@@ -627,23 +626,28 @@ export class MccTreeCanvas {
   handleDoubleClick(event: MouseEvent) : void {
 
     /* where is the click, expressed as a pct of the width and height */
-    const mx = event.offsetX,
+    const width = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
+      height = this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM,
+      mx = event.offsetX,
       my = event.offsetY,
-      xPct = (TREE_PADDING_LEFT - mx - this.zoomOffset.x) / this.width / this.zoomAmount,
-      yPct = (TREE_PADDING_TOP - my - this.zoomOffset.y) / this.width / this.zoomAmount;
-    /* how far from the center is it */
-
-    /* after zooming, how far from the center will it be? */
-
-    /* what's the difference before and after? */
-
-    /*
-    that's how much the center needs to move in order for the
-    clicked point to be the center of the zoom
-    */
-
-
-    console.log(`dblclick:  raw: ${mx}, ${my}  pct:  ${xPct}, ${yPct}%`);
+      xPct = (mx - this.zoomOffset.x - TREE_PADDING_LEFT) / width / this.zoomAmount,
+      yPct = (my - this.zoomOffset.y - TREE_PADDING_TOP) / height / this.zoomAmount;
+    /* how far from the center is it in pixels */
+    const unzoomedCx = width / 2,
+      unzoomedCy = height / 2;
+    let dxPix = mx - TREE_PADDING_LEFT - unzoomedCx,
+      dyPix = my - TREE_PADDING_TOP - unzoomedCy;
+    /* comparing that to what the distance will be after zooming, what's the difference? */
+    dxPix *= (ZOOM_PER_CLICK - 1);
+    dyPix *= (ZOOM_PER_CLICK - 1);
+    /* what is that value expressed as a percent of the new zoom size? */
+    const newZoom = this.zoomAmount * ZOOM_PER_CLICK,
+      newWidth = width * newZoom,
+      newHeight = height * newZoom,
+      zoomXPct = dxPix / newWidth,
+      zoomYPct = dyPix / newHeight;
+    // console.log(`dblclick:  raw: ${mx}, ${my}  pct:  ${xPct}, ${yPct}%`);
+    this.setZoom(newZoom, this.zoomCenterX - zoomXPct, this.zoomCenterY - zoomYPct);
 
   }
 
