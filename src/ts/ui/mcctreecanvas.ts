@@ -515,11 +515,13 @@ export class MccTreeCanvas {
   }
 
   setZoom(zoomAmount: number, centerX: number, centerY: number) : void {
-    console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
+    // console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
 
-
-    /* don't allow being scrolled off the page */
-
+    /*
+    don't allow dragging so that no part of the tree is visible.
+    Well, really, it's making sure that at least some of the tree's
+    bounding box is visible.
+    */
     if (zoomAmount <= 1) {
       zoomAmount = 1;
       centerX = 0.5;
@@ -546,9 +548,9 @@ export class MccTreeCanvas {
     this.zoomCenterX = centerX;
     this.zoomCenterY = centerY;
 
-    /* where's the center of the viewbox? */
     const width = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
       height = this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM,
+      /* where's the center of the viewbox? */
       viewBoxX = width * 0.5,
       viewBoxY = height * 0.5,
       /* where's the center of the unzoomed canvas? */
@@ -559,10 +561,13 @@ export class MccTreeCanvas {
       unzoomedDy = unzoomedCenterPx_Y - viewBoxY,
       /* if we were zooming into the center, what would the offset be? */
       zoomCenterDx = (this.zoomAmount - 1) * 0.5 * width,
-      zoomCenterDy = (this.zoomAmount - 1) * 0.5 * height,
-      /* how much do we have to move the zoomed canvas to align the centers? */
-      dx = unzoomedDx * this.zoomAmount - zoomCenterDx,
+      zoomCenterDy = (this.zoomAmount - 1) * 0.5 * height;
+    /* how much do we have to move the zoomed canvas to align the centers? */
+    let dx = unzoomedDx * this.zoomAmount - zoomCenterDx,
       dy = unzoomedDy * this.zoomAmount - zoomCenterDy;
+    /* fix it so that we aren't scaling up the padding  */
+    dx -= TREE_PADDING_LEFT * (this.zoomAmount - 1);
+    dy -= TREE_PADDING_TOP * (this.zoomAmount - 1);
     // console.log(width, width * this.zoomAmount, (this.zoomAmount - 1) * 0.5 * width);
     this.zoomOffset.x = dx;
     this.zoomOffset.y = dy;
