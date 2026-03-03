@@ -58,6 +58,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
         }
       }, THROTTLE_TIME);
     }
+
     eventCanvas.addEventListener("pointermove", async (event)=>{
       if (this.isDragging) {
         this.handlePointerMove(event);
@@ -83,9 +84,13 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       hoverCallback(nodeIndex, date);
     });
     eventCanvas.addEventListener("click", (event)=>{
-      const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
-      selectionCallback(nodeIndex);
+      if (!this.hasDragged) {
+        const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
+        selectionCallback(nodeIndex);
+      }
     });
+
+
   }
 
 

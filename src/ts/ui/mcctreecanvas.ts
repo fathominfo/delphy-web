@@ -28,7 +28,10 @@ import { isTip } from '../util/treeutils';
 //   PDF_700_WT = '700',
 //   PDF_500_WT = '500';
 
-const HOVER_DISTANCE = 30;
+const HOVER_DISTANCE = 20;
+
+/* how far does the mouse need to move before it's no longer a click? */
+const DRAG_PX_THRESHOLD = 8;
 
 type coord = {x: number, y: number};
 
@@ -121,6 +124,7 @@ export class MccTreeCanvas {
   rootConfigs: CustomSubTree[] = [];
 
   isDragging = false;
+  hasDragged = false;
   dragMouseStart: coord = {x: UNSET, y: UNSET};
   dragCanvasStart: coord = {x: UNSET, y: UNSET};
   zoomOffset: coord = {x: TREE_PADDING_LEFT, y: TREE_PADDING_TOP};
@@ -586,6 +590,7 @@ export class MccTreeCanvas {
 
   handlePointerDown(event: PointerEvent) : void {
     this.isDragging = true;
+    this.hasDragged = false;
     this.dragMouseStart.x = event.offsetX;
     this.dragMouseStart.y = event.offsetY;
     this.dragCanvasStart.x = this.zoomCenterX;
@@ -602,6 +607,10 @@ export class MccTreeCanvas {
         this.throttleTimer = UNSET;
       }
     } else if (this.isDragging) {
+      const d2 = Math.pow(event.offsetX - this.dragMouseStart.x, 2) + Math.pow(event.offsetY - this.dragMouseStart.y, 2);
+      if (d2 >= Math.pow(DRAG_PX_THRESHOLD, 2)) {
+        this.hasDragged = true;
+      }
       /*
       Note: lastMove only gets set when we set the zoom. Don't confuse it with lastEvent
       */
