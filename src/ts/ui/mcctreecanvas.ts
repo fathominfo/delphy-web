@@ -515,15 +515,40 @@ export class MccTreeCanvas {
   }
 
   setZoom(zoomAmount: number, centerX: number, centerY: number) : void {
-    // this.zoomAmount = Math.max(1, zoomAmount);
-    // console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
+    console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
+
+
+    /* don't allow being scrolled off the page */
+
+    if (zoomAmount <= 1) {
+      zoomAmount = 1;
+      centerX = 0.5;
+      centerY = 0.5;
+    } else {
+      /*
+      this gives us the percent of the zoomed canvas
+      that lies inside the view box.
+      */
+      const viewablePct = 1 / this.zoomAmount;
+      /*
+      if the viewable area is right at the edge of the
+      zoomed canvas, how close is the center ?
+      */
+      const viewableCenterDist = viewablePct / 2;
+      if (centerX < viewableCenterDist) centerX = viewableCenterDist;
+      else if (centerX > 1 - viewableCenterDist) centerX = 1 - viewableCenterDist;
+      if (centerY < viewableCenterDist) centerY = viewableCenterDist;
+      else if (centerY > 1 - viewableCenterDist) centerY = 1 - viewableCenterDist;
+    }
+
+
     this.zoomAmount = zoomAmount;
     this.zoomCenterX = centerX;
     this.zoomCenterY = centerY;
 
+    /* where's the center of the viewbox? */
     const width = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
       height = this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM,
-      /* where's the center of the viewbox? */
       viewBoxX = width * 0.5,
       viewBoxY = height * 0.5,
       /* where's the center of the unzoomed canvas? */
