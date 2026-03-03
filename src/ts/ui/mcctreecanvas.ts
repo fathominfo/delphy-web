@@ -47,7 +47,7 @@ type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
 
-const ZOOM_PER_CLICK = Math.pow(2,0.25);
+const ZOOM_PER_CLICK = Math.pow(2,0.5);
 const THROTTLE_TIME = 1000 / 10;
 
 
