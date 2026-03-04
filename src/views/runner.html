@@ -19,25 +19,36 @@
             </label>
             <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
           </div>
+          <div class="controls menu-group">
+            <div id="step-control" class="">
+              <label for="step-options">Sample <span class="digit">1</span> tree per</label>
+              <select id="step-options">
+                <option value="7" >10,000,000 steps</option>
+                <option value="6" selected>1,000,000 steps</option>
+                <option value="5" >100,000 steps</option>
+                <option value="4" >10,000 steps</option>
+                <option value="3" >1,000 steps</option>
+                <option value="2" >100 steps</option>
+                <option value="1" >10 steps</option>
+                <option value="0" >1 step</option>
+              </select>
+            </div>
+
+            <div id="runner--advanced-container">
+              <label id="runner--advanced--toggle">
+                <input type="checkbox" />
+                <div class="icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                    <path d="m11.84,9.18l-.94-.39c.07-.25.12-.52.12-.79s-.05-.54-.12-.79l.94-.39c.19-.08.28-.3.2-.49s-.3-.28-.49-.2l-.95.39c-.27-.47-.65-.85-1.12-1.12l.39-.95c.08-.19-.01-.41-.2-.49-.19-.08-.41.01-.49.2l-.39.94c-.25-.07-.52-.12-.79-.12s-.54.05-.79.12l-.39-.94c-.08-.19-.3-.28-.49-.2-.19.08-.28.3-.2.49l.39.95c-.47.27-.85.65-1.12,1.12l-.95-.39c-.19-.08-.41.01-.49.2s.01.41.2.49l.94.39c-.07.25-.12.52-.12.79s.05.54.12.79l-.94.39c-.19.08-.28.3-.2.49.06.14.2.23.35.23.05,0,.1,0,.14-.03l.95-.39c.27.47.65.85,1.12,1.12l-.39.95c-.08.19.01.41.2.49.05.02.1.03.14.03.15,0,.29-.09.35-.23l.39-.94c.25.07.52.12.79.12s.54-.05.79-.12l.39.94c.06.14.2.23.35.23.05,0,.1,0,.14-.03.19-.08.28-.3.2-.49l-.39-.95c.47-.27.85-.65,1.12-1.12l.95.39s.1.03.14.03c.15,0,.29-.09.35-.23.08-.19-.01-.41-.2-.49Zm-3.84,1.07c-1.24,0-2.25-1.01-2.25-2.25s1.01-2.25,2.25-2.25,2.25,1.01,2.25,2.25-1.01,2.25-2.25,2.25Z" stroke-width="0"></path>
+                  </svg>
+                </div>
+                <span>Advanced options</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div id="step-control" class="controls">
-          <label for="step-options">Sample <span class="digit">1</span> tree per</label>
-          <select id="step-options">
-            <option value="7" >10,000,000 steps</option>
-            <option value="6" selected>1,000,000 steps</option>
-            <option value="5" >100,000 steps</option>
-            <option value="4" >10,000 steps</option>
-            <option value="3" >1,000 steps</option>
-            <option value="2" >100 steps</option>
-            <option value="1" >10 steps</option>
-            <option value="0" >1 step</option>
-          </select>
-        </div>
 
-        <div id="runner--advanced-container">
-          <button type="button" id="runner--advanced--toggle"><div class="box"><div class="glyph"></div></div>Advanced options</button>
-        </div>
 
         <div id="ess-wrapper" class="pre menu-group">
           <div id="ess-readout" class="toolbar" data-element="sample_size">
@@ -260,8 +271,8 @@
 
     </section>
 
-    <div id="runner--advanced" class="hidden">
-      <form class="runner--advanced--content">
+    <div id="runner--advanced">
+      <form id="runner--advanced--content">
         <div class="runner--advanced--header">
           <h2 class="runner--advanced--title">Advanced options</h2>
           <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>

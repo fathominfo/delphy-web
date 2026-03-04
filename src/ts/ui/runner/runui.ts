@@ -143,6 +143,7 @@ export class RunUI extends MccUI {
 
   advancedToggle: HTMLInputElement;
   advancedForm: HTMLFormElement;
+  advancedFormContainer: HTMLDivElement;
 
   fixedRateToggle: HTMLInputElement;
   mutationRateInput: HTMLInputElement;
@@ -269,8 +270,9 @@ export class RunUI extends MccUI {
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
 
-    this.advancedToggle = this.div.querySelector("#runner--advanced--toggle") as HTMLInputElement;
-    this.advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
+    this.advancedToggle = this.div.querySelector("#runner--advanced--toggle input") as HTMLInputElement;
+    this.advancedFormContainer = document.querySelector("#runner--advanced") as HTMLDivElement;
+    this.advancedForm = this.advancedFormContainer.querySelector("#runner--advanced--content") as HTMLFormElement;
 
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement;
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
@@ -360,8 +362,8 @@ export class RunUI extends MccUI {
     this.advancedToggle.addEventListener("change", (event)=>{
       event.stopPropagation();
       if (this.advancedToggle.checked) {
-        this.advancedToggle.classList.add("active");
-        this.advancedToggle.classList.remove("warning");
+        this.advancedFormContainer.classList.add("active");
+        this.advancedForm.classList.remove("warning");
         if (this.stepCount === 0) {
           this.submitAdvancedButton.innerText = "Confirm";
           this.submitAdvancedButton.classList.remove("warning-button");
@@ -371,7 +373,7 @@ export class RunUI extends MccUI {
         }
 
       } else {
-        this.advancedToggle.classList.remove("active");
+        this.advancedFormContainer.classList.remove("active");
       }
     });
 
@@ -406,17 +408,30 @@ export class RunUI extends MccUI {
 
 
 
+    const advancedCloseButton = this.advancedFormContainer.querySelector(".close-button") as HTMLButtonElement;
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
-    advancedCancelButton.addEventListener("click", () => {
-      this.advancedToggle.classList.remove("active");
-      this.advancedToggle.checked = false;
+    [advancedCloseButton, advancedCancelButton].forEach(button=>{
+      button.addEventListener("click", () => {
+        this.advancedToggle.classList.remove("active");
+        this.advancedToggle.checked = false;
+        this.advancedFormContainer.classList.remove("active");
+      });
     });
+
     this.advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     this.advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
+    this.advancedFormContainer.addEventListener("click", e => {
+      if (e.target === this.advancedFormContainer) {
+        e.preventDefault();
+        this.advancedFormContainer.classList.add("hidden");
+      }
+    });
+
     window.addEventListener("keydown", e => {
       if (e.key === "Escape" && this.advancedToggle.classList.contains("active")) {
         this.advancedToggle.classList.remove("active");
         this.advancedToggle.checked = false;
+        this.advancedFormContainer.classList.remove("active");
       }
     })
   }
@@ -977,6 +992,7 @@ export class RunUI extends MccUI {
   private confirmRestart(newParams: RunParamConfig, skipDialog=true): void {
     this.advancedToggle.classList.remove("active");
     this.advancedToggle.checked = false;
+    this.advancedFormContainer.classList.remove("active");
 
 
     const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
