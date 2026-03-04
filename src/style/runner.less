@@ -380,8 +380,21 @@
           background-color: transparent;
           box-sizing: border-box;
 
+          .values {
+            position: relative;
+            display: flex;
+            background-color: transparent;
+            width: 100%;
+            height: 100%;
+          }
 
           &.x {
+
+            height: var(--chart-xaxis-height);
+            // margin-left: var(--chart-yaxis-width);
+            // margin-right: var(--chart-histogram-width);
+            padding: 0 0 0 var(--chart-stroke-weight);
+
             margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
             margin-right: unset;
             width: var(--trace-chart-width);
@@ -389,6 +402,10 @@
             flex-direction: column;
             position: relative;
             .tick {
+              width: var(--chart-tick-stroke-weight);
+              height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+              margin-top: var(--chart-tick-offset);
+
               position: absolute;
               background-color: var(--chart-xaxis-hover-text);
             }
@@ -428,6 +445,47 @@
 
             margin-top: calc(var(--chart-histogram-height) + 1px);
             height: var(--trace-chart-height);
+
+            .values {
+              flex-direction: column-reverse;
+              justify-content: space-between;
+              align-items: flex-end;
+              position: relative;
+            }
+
+            .value {
+              display: flex;
+              gap: var(--chart-axis-gap);
+              overflow: visible;
+              opacity: 1;
+              transition: opacity var(--axis-transition) ease-out;
+
+              flex-direction: row;
+              justify-content: flex-end;
+              align-items: center;
+              width: auto;
+              height: 0;
+              position: absolute;
+              right: 0;
+
+              &.hover {
+                top: calc(100% * var(--py));
+                font-weight: var(--chart-yaxis-hover-text-font-weight);
+                font-size: var(--chart-yaxis-hover-text-font-size);
+                letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+                color: var(--chart-yaxis-hover-text);
+              }
+            }
+
+            .tick {
+              display: block;
+              width: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+              height: var(--chart-tick-stroke-weight);
+              margin-right: var(--chart-tick-offset);
+
+              background-color: var(--chart-yaxis-hover-text);
+            }
+
           }
         }
         .divider {
@@ -475,6 +533,8 @@
           background-color: transparent;
           mix-blend-mode: multiply;
           opacity: 0;
+
+          &.active {opacity: 1;}
         }
 
 
@@ -508,6 +568,11 @@
 
 
       }
+
+      .support {
+        z-index: 1;
+      }
+
 
     }
 
@@ -562,6 +627,15 @@
     }
   }
 
+
+  .module .header .readout, .chart .axis .value, .kit .axis .value {
+    // font-family: var(--Inter);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--chart-axis-text-font-weight);
+    font-size: var(--chart-axis-text-font-size);
+    line-height: var(--chart-axis-text-line-height);
+    color: var(--chart-axis-text);
+  }
 
 }
 
