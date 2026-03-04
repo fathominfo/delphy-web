@@ -1,11 +1,17 @@
 import { toFullDateString } from "../../pythia/dates";
-import { minimalDecimalLabel, numericSort, UNSET } from "../common";
-import { calcHPD } from "../distribution";
-import { TRACE_COLOR, CURRENT_POP_CURVE_COLOR } from "./runcommon";
-import { TraceCanvas, TICK_LENGTH, BORDER_WEIGHT, BORDER_COLOR, log10, HALF_BORDER } from "./tracecanvas";
+import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
+import { safeLabel, UNSET } from "../common";
+import { GammaData, LogLabelType } from "./gammadata";
+import { GammaDataFunction } from "./runcommon";
+import { chartContainer, TraceCanvas } from "./tracecanvas";
 
 
-const HPD_COLOR = 'rgb(184, 208, 238)';
+
+const POP_TEMPLATE = chartContainer.querySelector('.module.population') as HTMLDivElement;
+POP_TEMPLATE.remove();
+
+/* labels for the y-axis can extend above and below the range of the chart */
+const Y_AXIS_OVERFLOW = 10;
 
 const LABEL_HEIGHT = 14;
 
@@ -14,292 +20,224 @@ const MAX_HPD_INDEX = 1;
 const MEDIAN_INDEX = 3;
 
 
+const LOWER_OOM = -2;
+const UPPER_OOM = 3;
+
+
 export class GammaHistCanvas extends TraceCanvas {
 
-  rangeData: number[][] = [];
-  converted: number[][] = [];
-  dates: number[] = [];
-  minSpan: HTMLSpanElement;
-  maxSpan: HTMLSpanElement;
-  isLogLinear = false;
-  readoutIndex: number;
-  midLabels: HTMLLIElement[];
-  labelContainer: HTMLUListElement;
+  minSpan: HTMLDivElement;
+  maxSpan: HTMLDivElement;
+  trendRange: SVGPathElement;
+  medianTrend: SVGPathElement;
+  sampleTrend: SVGPathElement;
+  labelContainer: SVGElement;
+  labelTextTemplate: SVGTextElement;
+  labelTickTemplate: SVGLineElement;
+  yAxisWidth: number = UNSET;
+  yAxisHeight: number = UNSET;
 
-  constructor(label:string) {
-    super(label, '');
-    this.minSpan = document.createElement('span');
-    this.maxSpan = document.createElement('span');
-    this.readout.textContent = '';
-    this.readout.appendChild(this.minSpan);
-    this.readout.appendChild(this.maxSpan);
-    this.readout.classList.add('range');
-    this.midLabels = [];
-    this.readoutIndex = UNSET;
-    this.labelContainer = this.avgLabel.parentNode as HTMLUListElement;
-    // use the avgLabel as a cloning template
-    this.avgLabel.textContent = '';
-    this.avgLabel.style.position = 'absolute';
+  constructor(label:string, getDataFnc: GammaDataFunction) {
+    super(label, '', getDataFnc, POP_TEMPLATE);
+    this.traceData = new GammaData(label, '', getDataFnc);
+    this.minSpan = this.container.querySelector(".support .axis.x .min-date") as HTMLDivElement;
+    this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as HTMLDivElement;
+    this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
+    this.medianTrend = this.svg.querySelector(".trend.median") as SVGPathElement;
+    this.sampleTrend = this.svg.querySelector(".trend.sample") as SVGPathElement;
+    this.labelContainer = this.container.querySelector(".chart .feature .axis.y svg.log-scale-ticks") as SVGElement;
+    this.labelTextTemplate = this.labelContainer.querySelector("text") as SVGTextElement;
+    this.labelTickTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
   }
 
-  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, readoutIndex: number):void {
+  sizeCanvas() {
+    super.sizeCanvas();
+    const wrapper = this.labelContainer.parentElement as HTMLDivElement;
+    this.yAxisWidth = wrapper.offsetWidth;
+    this.yAxisHeight = wrapper.offsetHeight;
+    requestAnimationFrame(()=>this.setSizes());
+  }
 
-    this.rangeData = data;
-    this.dates = dates;
-    this.isLogLinear = isLogLinear;
-    this.setKneeIndex(data.length, kneeIndex);
-    this.readoutIndex = readoutIndex;
-    const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
-    /* pivot the data to make arrays for every knot */
-    const byKnots:number[][] = shown[0].map(()=>new Array(shown.length));
-    shown.forEach((gamma, i)=>{
-      gamma.forEach((g, k)=>byKnots[k][i] = g);
-    });
-    this.converted = byKnots.map(hpdeify);
-    const safe = this.converted.flat().filter(n=>Number.isFinite(n));
+  protected setSizes(): void {
+    super.setSizes();
+    const svgHeight = this.yAxisHeight + (Y_AXIS_OVERFLOW * 2);
+    const viewBox = `0 -${Y_AXIS_OVERFLOW -1 } ${this.yAxisWidth} ${svgHeight + 4}`;
+    this.labelContainer.setAttribute("width", `${this.yAxisWidth}`);
+    this.labelContainer.setAttribute("height", `${svgHeight}`);
+    this.labelContainer.setAttribute("viewBox", viewBox);
+    this.labelContainer.style.marginTop = `-${Y_AXIS_OVERFLOW - 1}px`;
+  }
 
-    this.dataMin = Math.min(...safe);
-    this.dataMax = Math.max(...safe);
-    if (this.dataMax === this.dataMin) {
-      this.displayMin = this.dataMin;
-      this.displayMax = this.dataMax;
-    } else {
-      /*
-      the data coming back from delphy is the gamma value,
-      but we want to convert that to years (where 1 year === 365 days)
-      */
-      const dataMinYears = gammaToYears(this.dataMin);
-      const dataMaxYears = gammaToYears(this.dataMax);
-      const minLog = Math.log10(dataMinYears);
-      const maxLog = Math.log10(dataMaxYears);
-      const minMagnitude = Math.floor(minLog);
-      const maxMagnitude = Math.ceil(maxLog);
-      const displayMinYears = Math.exp(minMagnitude * log10);
-      const displayMaxYears = Math.exp(maxMagnitude * log10);
-      this.displayMin = yearsToGamma(displayMinYears);
-      this.displayMax = yearsToGamma(displayMaxYears);
-    }
+  // setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
+  //   (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
+  // }
 
-    requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
+  setRangeData(kneeIndex: number, sampleIndex: number):void {
+    const popModelHist : SkygridPopModel[] = (this.traceData.getDataFnc as GammaDataFunction)();
+    const gamma = popModelHist.map(popModel=>popModel.gamma);
+    const xHist = popModelHist[0].x;
+    const isLogLinear = popModelHist[0].type === SkygridPopModelType.LogLinear;
+    (this.traceData as GammaData).setRangeData(gamma, xHist, isLogLinear, kneeIndex, sampleIndex);
   }
 
   handleTreeHighlight(treeIndex: number): void {
-    const readoutIndex = treeIndex === this.rangeData.length - 1 ? UNSET : treeIndex;
-    this.readoutIndex = readoutIndex;
+    this.traceData.handleTreeHighlight(treeIndex);
   }
 
-
   draw():void {
-    const {converted} = this;
-    const {ctx, width, height} = this;
-    ctx.clearRect(0, 0, width + 1, height + 1);
-    this.drawField();
-    this.drawRangeSeries(converted);
+    this.drawRangeSeriesSVG();
     this.drawLabels();
   }
 
 
-  drawRangeSeries(data:number[][]):void {
+  drawRangeSeriesSVG():void {
+    const data:number[][] = (this.traceData as GammaData).converted;
     if (data.length === 0) return;
-    const {chartHeight, ctx, traceWidth} = this;
-    const {displayMin, displayMax} = this;
+    const {height, width} = this;
+    const {displayMin, displayMax} = this.traceData;
     const valRange = displayMax - displayMin;
-    const verticalScale = chartHeight / (valRange || 1);
+    const verticalScale = height / (valRange || 1);
     const kCount = data.length;
-    const kWidth = traceWidth / (kCount - 1);
+    const kWidth = width / (kCount - 1);
     let i = 0;
     let hpd = data[i][MIN_HPD_INDEX];
-    const firstY = chartHeight-(hpd-displayMin) * verticalScale;
-    let x = TICK_LENGTH;
+    const firstY = height-(hpd-displayMin) * verticalScale;
+    let x = 0;
     let y = firstY;
-    ctx.lineWidth = 1;
-    ctx.fillStyle = HPD_COLOR;
 
-    const drawingStaircase = !this.isLogLinear;
+    const drawingStaircase = !(this.traceData as GammaData).isLogLinear;
 
     // console.log(this.dataMin, this.dataMax, this.displayMin, this.displayMax);
+    let rangeD: string;
+    let sampleD = "";
+    let medianD = "";
 
     // draw the 95% HPD area
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    rangeD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
       hpd = data[i][MIN_HPD_INDEX];
-      y = chartHeight-(hpd-displayMin) * verticalScale;
+      y = height-(hpd-displayMin) * verticalScale;
       if (drawingStaircase) {
-        ctx.lineTo(x, y);
+        rangeD += `${x} ${y} `;
       }
-      x = TICK_LENGTH + i * kWidth;
-      ctx.lineTo(x, y);
+      x = i * kWidth;
+      rangeD += `${x} ${y} `;
     }
     for (i = kCount - 1; i > 0; i--) {
-      x = TICK_LENGTH + i * kWidth;
+      x = i * kWidth;
       hpd = data[i][MAX_HPD_INDEX];
-      y = chartHeight-(hpd-displayMin) * verticalScale;
-      ctx.lineTo(x, y);
+      y = height-(hpd-displayMin) * verticalScale;
+      rangeD += `${x} ${y} `;
       if (drawingStaircase) {
-        x = TICK_LENGTH + (i-1) * kWidth;
-        ctx.lineTo(x, y);
+        x = (i-1) * kWidth;
+        rangeD += `${x} ${y} `;
       }
     }
     if (!drawingStaircase) {
-      x = TICK_LENGTH;
+      x = 0;
       hpd = data[0][MAX_HPD_INDEX];
-      y = chartHeight-(hpd-displayMin) * verticalScale;
-      ctx.lineTo(x, y);
+      y = height-(hpd-displayMin) * verticalScale;
+      rangeD += `${x} ${y} `;
     }
-
-    ctx.lineTo(TICK_LENGTH, firstY);
-    ctx.fill();
+    rangeD += `${0} ${firstY} `;
 
     // draw the population curve for the current sample
-    const drawnSampleIndex = this.readoutIndex === UNSET ? this.rangeData.length - 1 : this.readoutIndex;
-    if (0 <= drawnSampleIndex && drawnSampleIndex < this.rangeData.length) {
-      const sampleData = this.rangeData[drawnSampleIndex];
+    const {rangeData, highlightIndex: sampleIndex } = (this.traceData as GammaData);
+    if (sampleIndex !== UNSET) {
+      const sampleData = rangeData[sampleIndex];
       console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
-
-      ctx.beginPath();
-      ctx.strokeStyle = CURRENT_POP_CURVE_COLOR;
-      x = TICK_LENGTH;
-      y = chartHeight-(sampleData[0]-displayMin) * verticalScale;
-      if (!drawingStaircase)  ctx.moveTo(x, y);
-      for (i = 1; i < kCount; i++) {
-        y = chartHeight-(sampleData[i]-displayMin) * verticalScale;
-        if (drawingStaircase) {
-          ctx.moveTo(x, y);
-        }
-        x = TICK_LENGTH + i * kWidth;
-        ctx.lineTo(x, y);
+      x = 0;
+      y = height-(sampleData[0]-displayMin) * verticalScale;
+      if (!drawingStaircase) {
+        sampleD = `M${x} ${y} L`;
       }
-      ctx.stroke();
+      for (i = 1; i < kCount; i++) {
+        y = height-(sampleData[i]-displayMin) * verticalScale;
+        if (drawingStaircase) {
+          sampleD = `M${x} ${y} L`;
+        }
+        x = i * kWidth;
+        sampleD += `${x} ${y} `;
+      }
+      this.sampleTrend.classList.remove("hidden");
+      this.sampleTrend.setAttribute("d", sampleD);
+    } else {
+      this.sampleTrend.classList.add("hidden");
     }
 
     // draw the median
-    ctx.beginPath();
-    ctx.strokeStyle = TRACE_COLOR;
     let median = data[0][MEDIAN_INDEX];
-    x = TICK_LENGTH;
-    y = chartHeight-(median-displayMin) * verticalScale;
-    ctx.moveTo(x, y);
+    x = 0;
+    y = height-(median-displayMin) * verticalScale;
+    medianD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
       median = data[i][MEDIAN_INDEX];
-      y = chartHeight-(median-displayMin) * verticalScale;
+      y = height-(median-displayMin) * verticalScale;
       if (drawingStaircase) {
-        ctx.moveTo(x, y);
+        medianD = `M${x} ${y} L`;
       }
-      x = TICK_LENGTH + i * kWidth;
-      ctx.lineTo(x, y);
+      x = i * kWidth;
+      medianD += `${x} ${y} `;
     }
-    ctx.stroke();
+
+    this.trendRange.setAttribute("d", rangeD);
+    this.medianTrend.setAttribute("d", medianD);
   }
+
 
   drawLabels():void {
-    let {chartHeight} = this;
-    const {ctx,
-      avgLabel, midLabels, maxLabel, minLabel,
-      labelContainer, minSpan, maxSpan,
-      displayMin, displayMax} = this;
-    chartHeight -= HALF_BORDER * 2;
-    let yearsMin = gammaToYears(displayMin);
-    let yearsMax = gammaToYears(displayMax);
-    const minMagnitude = Math.round(Math.log10(yearsMin));
-    const maxMagnitude = Math.round(Math.log10(yearsMax));
-    yearsMin = defractionalize(yearsMin, minMagnitude);
-    yearsMax = defractionalize(yearsMax, maxMagnitude);
-    const logRange = maxMagnitude - minMagnitude;
-    maxLabel.textContent = minimalDecimalLabel(yearsMax);
-    minLabel.textContent = minimalDecimalLabel(yearsMin);
-    /* clear the mid labels */
-    midLabels.forEach(ele=>ele.remove());
-    midLabels.length = 0;
-    minSpan.textContent = toFullDateString(this.dates[0])
-    maxSpan.textContent = toFullDateString(this.dates[this.dates.length - 1]);
-    const magSpan = maxMagnitude - minMagnitude;
-    const labelHeight = LABEL_HEIGHT * magSpan;
-    const labelsOK = chartHeight >= labelHeight;
-    // const step = Math.pow(10, minMagnitude);
-    ctx.strokeStyle = BORDER_COLOR;
-    ctx.lineWidth = BORDER_WEIGHT;
-    ctx.beginPath();
-    let mag = minMagnitude;
-    let tens = Math.pow(10, mag);
-    let tickLength = 0;
-    while (mag < maxMagnitude) {
-      for (let i = 1; i <10; i++) {
-        const n = i * tens;
-        const nLog = Math.log10(n);
-        const pct = (nLog - minMagnitude) / logRange;
-        const y = HALF_BORDER + chartHeight - pct * chartHeight;
-        if (i === 1) {
-          ctx.stroke();
-          ctx.beginPath();
-          tickLength = TICK_LENGTH;
-          ctx.lineWidth = BORDER_WEIGHT;
-          ctx.globalAlpha = 1;
-          if (labelsOK && mag !== minMagnitude && mag !== maxMagnitude) {
-            const label = avgLabel.cloneNode(true) as HTMLLIElement;
-            label.style.top = `${y-2}px`;
-            label.textContent = minimalDecimalLabel(n);
-            this.midLabels.push(label);
-            labelContainer.appendChild(label);
-          }
-        } else if (labelsOK || i % 3 === 2) {
-          tickLength = TICK_LENGTH * (4 + i * i) / 104.0; // 10 * 10 + 4
-          // tickLength = TICK_LENGTH / 2;
-        }
-        ctx.moveTo(TICK_LENGTH, y);
-        ctx.lineTo(TICK_LENGTH - tickLength, y);
-        if (i === 1) {
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.globalAlpha = 0.7;
-          if (!labelsOK) {
-            ctx.lineWidth = BORDER_WEIGHT / 2;
+    const { yAxisWidth, yAxisHeight, minSpan, maxSpan} = this;
+    const {dates, logRange, maxMagnitude} = this.traceData as GammaData;
+    this.labelContainer.innerHTML = '';
+    minSpan.textContent = toFullDateString(dates[0])
+    maxSpan.textContent = toFullDateString(dates[dates.length - 1]);
+    const labelHeight = LABEL_HEIGHT * logRange;
+    const labelsOK = yAxisHeight >= labelHeight;
+    // ctx.strokeStyle = 'black';
+    // ctx.lineWidth = 0;
+    // ctx.beginPath();
+
+    this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
+    const logLabels = (this.traceData as GammaData).logLabels;
+    logLabels.forEach((ll:LogLabelType)=>{
+      const { ticks, value } = ll;
+      ticks.forEach(([pct, tickLength], i)=>{
+        const y = yAxisHeight - pct * yAxisHeight;
+        const x2 = yAxisWidth - tickLength;
+        /* we don't want the tics to be so dense that they become a single shape */
+        if (labelsOK || i === 0 || i % 3 === 1) {
+          const tic = this.addTick(y, x2);
+          if (i === 0) {
+            tic.classList.add("on-mag");
+            this.addText(safeLabel(value), y);
           }
         }
-      }
-      mag++;
-      tens *= 10;
-    }
-    /* the top tick */
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.lineWidth = BORDER_WEIGHT;
-    ctx.globalAlpha = 1;
-    ctx.moveTo(0, HALF_BORDER);
-    ctx.lineTo(TICK_LENGTH, HALF_BORDER);
-    ctx.stroke();
+      });
+
+    });
+    /* label the top tick */
+    this.addTick(0, (this.traceData as GammaData).getTickLength(9));
+    this.addText(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM), 0);
+  }
+
+  addTick(y: number, x2: number) : SVGLineElement {
+    const tick = this.labelTickTemplate.cloneNode(true) as SVGLineElement;
+    tick.setAttribute("x1", `${ this.yAxisWidth }`);
+    tick.setAttribute("y1", `${ y }`);
+    tick.setAttribute("x2", `${ x2 }`);
+    tick.setAttribute("y2", `${ y }`);
+    this.labelContainer.appendChild(tick);
+    return tick;
+  }
+
+  addText(text: string, y: number): SVGTextElement {
+    const textEle = this.labelTextTemplate.cloneNode(true) as SVGTextElement;
+    textEle.textContent = text;
+    textEle.setAttribute("x", `${ this.yAxisWidth - 12 }`);
+    textEle.setAttribute("y", `${y}`);
+    this.labelContainer.appendChild(textEle);
+    return textEle;
   }
 
 }
 
-
-/*
-take an array of numbers, and return a 3 element array
-of the 95% hpd and the mean
-*/
-const hpdeify = (arr:number[]):number[]=>{
-  const sorted = arr.filter(n=>Number.isFinite(n)).sort(numericSort);
-  const [hpdMin, hpdMax] = calcHPD(sorted);
-  const sum = sorted.reduce((tot, n)=>tot+n, 0);
-  const mean = sum / sorted.length;
-  const midpoint = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 === 0 && sorted.length >= 2 ? ((sorted[midpoint - 1] + sorted[midpoint])/2) : sorted[midpoint];
-  // console.log(hpdMin, hpdMax, mean)
-  return [hpdMin, hpdMax, mean, median];
-}
-
-
-const gammaToYears = (n:number):number => {
-  return Math.exp(n)/365;
-}
-
-const yearsToGamma = (n:number):number => {
-  return Math.log(n * 365);
-}
-
-const defractionalize = (n:number, mag:number):number => {
-  const tensy = Math.pow(10, mag);
-  let nn = Math.round(n/tensy) * tensy;
-  if (nn > 1) nn = Math.round(nn);
-  return nn;
-}

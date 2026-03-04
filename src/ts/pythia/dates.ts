@@ -45,6 +45,15 @@ export function parse_iso_date(date_str: string): number {
 
 const pad = (n:number)=>(n<10 ? '0' : '') + n;
 
+export function toDate(dayCount:number) : Date {
+  return new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
+}
+
+export function toDateNumber(d: Date): number {
+  const ms_since_epoch = d.getTime() - EPOCH_MILLIS;
+  return Math.round(ms_since_epoch / MILLIS_PER_DAY);
+}
+
 export function toDateString(dayCount:number) : string {
   const d = new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
   return `${ d.getUTCFullYear() }-${pad(d.getUTCMonth() + 1)}-${ pad(d.getUTCDate()) }`;
@@ -61,9 +70,55 @@ export function toFullDateString(dayCount: number): string {
   return '';
 }
 
+export enum DateTokenIndex {
+  year = 0,
+  month = 1,
+  day = 2
+}
+
 export function toDateTokens(dayCount:number) : [number, number, number] {
-  const d = new Date(dayCount * MILLIS_PER_DAY + EPOCH_MILLIS);
+  const d = toDate(dayCount);
   return [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()];
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addDays(d:Date, numDays = 1) : number {
+  d.setUTCDate(d.getUTCDate() + numDays);
+  return toDateNumber(d);
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addWeeks(d:Date, numWeeks = 1) : number {
+  d.setUTCDate(d.getUTCDate() + numWeeks * 7);
+  return toDateNumber(d);
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addMonths(d:Date, numMonths = 1) : number {
+  d.setUTCMonth(d.getUTCMonth() + numMonths);
+  return toDateNumber(d);
+}
+
+/*
+note: the `d` parameter will be updated by this function.
+if you need to preserve its value, make a copy before
+passing it into this function. [mark 260121]
+*/
+export function addYears(d:Date, numYears = 1) : number {
+  d.setUTCFullYear(d.getUTCFullYear() + numYears);
+  return toDateNumber(d);
 }
 
 export const MONTHS_SHORT = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
