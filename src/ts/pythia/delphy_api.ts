@@ -611,6 +611,10 @@ export class Delphy {
     run_set_num_parts: (ctx: DelphyContextPtr, run: RunPtr, numParts: number) => void,
     run_get_mu: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_mu: (ctx: DelphyContextPtr, run: RunPtr, mu: number) => void,
+    run_get_mu_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_mu_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr, mu_prior_alpha: number) => void,
+    run_get_mu_prior_beta: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_mu_prior_beta: (ctx: DelphyContextPtr, run: RunPtr, mu_prior_beta: number) => void,
     run_get_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_alpha: (ctx: DelphyContextPtr, run: RunPtr, alpha: number) => void,
     run_get_hky_kappa: (ctx: DelphyContextPtr, run: RunPtr) => number,
@@ -855,6 +859,10 @@ export class Delphy {
       run_set_num_parts: Module['_delphy_run_set_num_parts'],
       run_get_mu: Module['_delphy_run_get_mu'],
       run_set_mu: Module['_delphy_run_set_mu'],
+      run_get_mu_prior_alpha: Module['_delphy_run_get_mu_prior_alpha'],
+      run_set_mu_prior_alpha: Module['_delphy_run_set_mu_prior_alpha'],
+      run_get_mu_prior_beta: Module['_delphy_run_get_mu_prior_beta'],
+      run_set_mu_prior_beta: Module['_delphy_run_set_mu_prior_beta'],
       run_get_alpha: Module['_delphy_run_get_alpha'],
       run_set_alpha: Module['_delphy_run_set_alpha'],
       run_get_hky_kappa: Module['_delphy_run_get_hky_kappa'],
@@ -1416,6 +1424,22 @@ export class Run {
 
   setMu(mu: number): void {
     Delphy.delphyCoreRaw.run_set_mu(this.delphy.ctx, this.run, mu);
+  }
+
+  getMuPriorAlpha(): number {
+    return Delphy.delphyCoreRaw.run_get_mu_prior_alpha(this.delphy.ctx, this.run);
+  }
+
+  setMuPriorAlpha(mu_prior_alpha: number): void {
+    Delphy.delphyCoreRaw.run_set_mu_prior_alpha(this.delphy.ctx, this.run, mu_prior_alpha);
+  }
+
+  getMuPriorBeta(): number {
+    return Delphy.delphyCoreRaw.run_get_mu_prior_beta(this.delphy.ctx, this.run);
+  }
+
+  setMuPriorBeta(mu_prior_beta: number): void {
+    Delphy.delphyCoreRaw.run_set_mu_prior_beta(this.delphy.ctx, this.run, mu_prior_beta);
   }
 
   getAlpha(): number {
