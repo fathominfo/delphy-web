@@ -219,6 +219,7 @@ export class HistCanvas extends TraceCanvas {
     let hoverY = UNSET;
     let left = 0;
     let dataScale = 1;
+    let trendWeight = 1;
 
     if (displayCount === 1) {
       activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
@@ -239,6 +240,8 @@ export class HistCanvas extends TraceCanvas {
       const leftover = height - plotSize;
       burnInHeight = hideBurnIn ? 0 : Math.max(0, kneeIndex * stepSize + leftover);
       activeHeight = Math.max(0, height - burnInHeight);
+
+      trendWeight = Math.min(1, Math.sqrt(height / data.length));
 
       if (displayMax === displayMin) {
         activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
@@ -305,11 +308,15 @@ export class HistCanvas extends TraceCanvas {
       yDiv.style.top = `${hoverY}px`;
     }
 
-    burnInField.setAttribute("height", `${burnInHeight}`);
-    burnInField.setAttribute("y", `${activeHeight}`);
-    activeField.setAttribute("height", `${activeHeight}`);
+    // burnInField.setAttribute("height", `${burnInHeight}`);
+    // burnInField.setAttribute("y", `${activeHeight}`);
+    burnInField.setAttribute("y1", `${activeHeight}`);
+    burnInField.setAttribute("y2", `${activeHeight}`);
+    // activeField.setAttribute("height", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
+    burnInTrend.style.strokeWidth = `${trendWeight}`;
+    activeInTrend.style.strokeWidth = `${trendWeight}`;
     this.hoverX = hoverX;
     this.hoverY = hoverY;
   }

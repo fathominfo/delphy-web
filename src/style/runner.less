@@ -266,7 +266,7 @@
   min-width: var(--tree-container-min-width);
   max-width: var(--tree-container-max-width);
   .tree-container {
-    height: calc(100% - 30px);
+    height: calc(100% - 75px);
   }
 }
 
@@ -293,14 +293,16 @@
       // font-family: var(--Inter);
       font-variant-numeric: tabular-nums;
       font-weight: var(--chart-axis-text-font-weight);
-      font-size: var(--chart-axis-text-font-size);
+      // font-size: var(--chart-axis-text-font-size);
       line-height: var(--chart-axis-text-line-height);
       color: var(--chart-axis-text);
       fill: var(--chart-axis-text);
     }
 
     &.trace {
-      max-width: var(--indicator-trace-module-width);
+      min-width: 160px;
+      max-width: 160px; // var(--indicator-trace-module-width);
+      overflow-x: visible;
       .chart {
         * { box-sizing: content-box; }
 
@@ -321,26 +323,31 @@
         }
         .burn-in {
           .trend {
-            stroke: var(--chart-graph-burn-in-trend-stroke);
+            stroke: rgb(45, 126, 207); // rgb(150, 181, 212); // var(--chart-graph-burn-in-trend-stroke);
             stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
+            // export const BORDER_COLOR = '#cbcbcb';
           }
           .period {
-            fill: var(--chart-graph-burn-in-period-fill);
+            // fill: var(--chart-graph-burn-in-period-fill);
+            fill: none;
+            stroke: rgb(104,104,104);
           }
         }
         .run {
           .period {
-            fill: var(--chart-graph-run-period-fill);
+            fill: none; // var(--chart-graph-run-period-fill);
+
           }
           .trend {
-            stroke: var(--chart-graph-run-trend-stroke);
+            stroke: rgb(45, 126, 207); // var(--chart-graph-run-trend-stroke);
           }
         }
 
         .graph {
-          background-color: white;
+          background-color: #f5f5f5;
           height: var(--trace-chart-height);
           z-index: 1;
+          border: solid 1px var(--chart-stroke);
 
           .trend  {
             fill: none;
@@ -349,24 +356,25 @@
           }
         }
         .histogram {
-          background-color: var(--chart-histogram-fill);
-
-
+          // background-color: var(--chart-histogram-fill);
+          background-color: #f5f5f5;
           z-index: 0;
           height: var(--chart-histogram-height);
           border-radius: 0 var(--chart-inner-corner) var(--chart-inner-corner) 0;
           overflow: hidden;
+          border: solid 1px var(--chart-stroke);
         }
         .bars {
-          opacity: 0.75;
+          // opacity: 0.75;
           .distribution {
             // opacity: 0.375;
           }
           rect {
-            fill: var(--chart-histogram-bar-fill);
-            opacity: 0.375;
+            fill: #aaaaaa; //var(--chart-histogram-bar-fill);
+            // opacity: 0.375;
             &.highlight {
-              opacity: 1.0;
+              fill: rgb(52, 107, 190);
+              // opacity: 1.0;
             }
           }
         }
@@ -421,12 +429,13 @@
             .readout-unit {
               white-space: nowrap;
               display: block;
+              font-size: var(--chart-axis-text-font-size);
             }
             .readout-value {
               font-size: var(--chart-xaxis-hover-text-font-size);
               font-weight: var(--chart-xaxis-hover-text-font-weight);
               letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-              color: var(--chart-yaxis-hover-text);
+              color: #004f9e; // var(--chart-yaxis-hover-text);
             }
             .mean-label {display: none;}
             .tree-label {display: inline-block;}
@@ -513,9 +522,9 @@
           z-index: 0;
           display: flex;
           flex-direction: row;
-          gap: 0;
+          gap: 8px;
           padding: var(--chart-displays-timeline-inset-x);
-          background-color: var(--chart-stroke);
+          // background-color: var(--chart-stroke);
           border-radius: var(--chart-outer-corner);
           box-sizing: border-box;
 
@@ -639,6 +648,12 @@
 
 }
 
+
+
+#runner--panel--modules {
+  overflow: auto;
+  height: calc(100% - 45px);
+}
 
 #runner--panel--other-modules {
   display: none;
@@ -865,7 +880,9 @@ input.stopping + #run-input--label {
 
   p {
     margin: 0;
-    &.unit { display: inline-block;}
+    &.unit {
+      display: inline-block;
+    }
   }
 
   fieldset {

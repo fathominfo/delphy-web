@@ -173,11 +173,12 @@
                       <div class="graph display">
                         <svg xmlns="svgXMLNS" viewBox="0 0 96 149">
                           <g class="run">
-                            <rect class="period" x="0" y="0" height="96" width="149"></rect>
+                            <rect class="period" x="0" y="0" height="149" width="46"></rect>
                             <path class="trend" d=""></path>
                           </g>
                           <g class="burn-in">
-                            <rect class="period" x="0" y="96" height="0" width="149"></rect>
+                            <!-- <rect class="period" x="0" y="96" height="0" width="149"></rect> -->
+                            <line class="period" x1="0" y1="96" x2="149" y2="96" ></line>
                             <path class="trend" d=""></path>
                           </g>
                         </svg>
@@ -249,23 +250,24 @@
 
           </div>
 
+          <div id="run--indicator--controls" class="menu-group">
 
-          <div id="burn-in-wrapper" class="pre">
-            <input type="checkbox" id="burn-in-toggle" disabled />
-            <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
+            <div id="burn-in-wrapper" class="pre">
+              <input type="checkbox" id="burn-in-toggle" disabled />
+              <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
+            </div>
+
+            <label id="runner--show-traces">
+              <span id="runner--all-traces">Show all traces</span>
+              <span id="runner--some-traces">Show limited traces</span>
+              <input id="runner--all-traces-toggle" type="checkbox" />
+            </label>
+
+
+            <div id="runner--export-list">
+              <button id="runner--export-csv">Export Traces to TSV</button>
+            </div>
           </div>
-
-          <label id="runner--show-traces">
-            <span id="runner--all-traces">Show all traces</span>
-            <span id="runner--some-traces">Show limited traces</span>
-            <input id="runner--all-traces-toggle" type="checkbox" />
-          </label>
-
-
-          <div id="runner--export-list">
-            <button id="runner--export-csv">Export Traces to TSV</button>
-          </div>
-
         </div>
       </div>
 
