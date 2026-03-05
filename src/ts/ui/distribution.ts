@@ -2,8 +2,10 @@ import {KernelDensityEstimate} from "../pythia/kde";
 import { numericSort } from "./common";
 
 
-
-const cred_mass = .95
+export const HPD_MIN_INDEX = 0;
+export const HPD_MAX_INDEX = 1;
+export const MEDIAN_INDEX = 2;
+export const cred_mass = .95
 
 export class Distribution {
 
@@ -88,6 +90,7 @@ export class Distribution {
             proxToMedian = dMedian;
           }
         }
+        if (this.range === 0) this.bandMax = 100;
         this.median = medianDate;
       }
       catch(err) {
@@ -155,5 +158,18 @@ export const calcHPD = (arr: number[])=>{
     minIndex = intervalWidths.indexOf(minWidth);
   const hpdMin = sorted[minIndex];
   const hpdMax = sorted[minIndex + intervalIdxInc];
-  return [hpdMin, hpdMax];
+  // let's throw the median on there for fun [mark 260121]
+  const medianIndex = Math.floor(lenn/2);
+  let median = sorted[medianIndex];
+  if (lenn % 2 === 0 && lenn > 0) {
+    median = (median + sorted[medianIndex - 1]) / 2;
+  }
+  /*
+  order must correspond to
+    HPD_MIN_INDEX,
+    HPD_MAX_INDEX,
+    MEDIAN_INDEX
+  declared above
+  */
+  return [hpdMin, hpdMax, median];
 }

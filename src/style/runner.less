@@ -278,6 +278,93 @@
   display: flex;
   flex-direction: column;
 
+
+  .chart {
+    .display {
+      position: relative;
+      overflow: visible;
+    }
+
+    .displays {
+      position: relative;
+      z-index: 0;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      padding: var(--chart-displays-timeline-inset-x);
+      // background-color: var(--chart-stroke);
+      border-radius: var(--chart-outer-corner);
+      box-sizing: border-box;
+    }
+
+
+    .axis {
+
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      background-color: transparent;
+      box-sizing: border-box;
+
+      &.y {
+        z-index: 1;
+        width: var(--chart-yaxis-width);
+        // height: var(--chart-yaxis-height);
+        padding: var(--chart-stroke-weight) 0;
+      }
+
+    }
+
+    .position {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      mix-blend-mode: multiply;
+      opacity: 0;
+
+      &.active {opacity: 1;}
+    }
+
+    .feature, .support {
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 0;
+      width: 100%;
+    }
+
+    .support {
+      z-index: 1;
+    }
+
+    .p {
+      background-color: var(--chart-position-axis-stroke);
+    }
+    .p, .pos {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .pos {
+      background-color: var(--chart-position-locus-fill);
+      top: calc(100% * var(--py));
+      left: calc(100% * var(--px));
+      width: var(--chart-position-locus-size);
+      height: var(--chart-position-locus-size);
+      border-radius: calc(var(--chart-position-locus-size) / 2);
+      transform: translate(-50%, -50%);
+    }
+  }
+
+
   .module {
     display: flex;
     flex-direction: column;
@@ -293,11 +380,39 @@
       // font-family: var(--Inter);
       font-variant-numeric: tabular-nums;
       font-weight: var(--chart-axis-text-font-weight);
-      // font-size: var(--chart-axis-text-font-size);
       line-height: var(--chart-axis-text-line-height);
       color: var(--chart-axis-text);
       fill: var(--chart-axis-text);
+
+      &.y {
+        font-size: var(--chart-axis-text-font-size);
+      }
     }
+
+
+    .chart {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 0;
+      background-color: transparent;
+
+      .graph {
+        z-index: 1;
+        border: solid 1px var(--chart-stroke);
+        border-radius: var(--chart-inner-corner) 0 0 var(--chart-inner-corner);
+      }
+
+
+      .display {
+        height: var(--chart-height);
+      }
+
+    }
+
+
 
     &.trace {
       min-width: 160px;
@@ -306,20 +421,9 @@
       .chart {
         * { box-sizing: content-box; }
 
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        gap: 0;
-        background-color: transparent;
-
-
         width: fit-content;
         .display {
           width: var(--trace-chart-width);
-          position: relative;
-          overflow: visible;
         }
         .burn-in {
           .trend {
@@ -346,8 +450,6 @@
         .graph {
           background-color: #f5f5f5;
           height: var(--trace-chart-height);
-          z-index: 1;
-          border: solid 1px var(--chart-stroke);
 
           .trend  {
             fill: none;
@@ -380,13 +482,6 @@
         }
         .axis {
 
-          position: relative;
-          display: flex;
-          flex-direction: row;
-          justify-content: flex-start;
-          align-items: flex-start;
-          background-color: transparent;
-          box-sizing: border-box;
 
           .values {
             position: relative;
@@ -447,10 +542,6 @@
 
          }
           &.y {
-            z-index: 1;
-            width: var(--chart-yaxis-width);
-            // height: var(--chart-yaxis-height);
-            padding: var(--chart-stroke-weight) 0;
 
             margin-top: calc(var(--chart-histogram-height) + 1px);
             height: var(--trace-chart-height);
@@ -518,62 +609,9 @@
 
 
         .displays {
-          position: relative;
-          z-index: 0;
-          display: flex;
-          flex-direction: row;
-          gap: 8px;
-          padding: var(--chart-displays-timeline-inset-x);
-          // background-color: var(--chart-stroke);
-          border-radius: var(--chart-outer-corner);
-          box-sizing: border-box;
-
           flex-direction: column;
         }
 
-
-        .position {
-          position: absolute;
-          z-index: 1;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: transparent;
-          mix-blend-mode: multiply;
-          opacity: 0;
-
-          &.active {opacity: 1;}
-        }
-
-
-        .p {
-          background-color: var(--chart-position-axis-stroke);
-        }
-        .p, .pos {
-          position: absolute;
-          pointer-events: none;
-        }
-
-        .pos {
-          background-color: var(--chart-position-locus-fill);
-          top: calc(100% * var(--py));
-          left: calc(100% * var(--px));
-          width: var(--chart-position-locus-size);
-          height: var(--chart-position-locus-size);
-          border-radius: calc(var(--chart-position-locus-size) / 2);
-          transform: translate(-50%, -50%);
-        }
-      }
-
-      .feature, .support {
-        position: relative;
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: flex-start;
-        gap: 0;
-        width: 100%;
 
 
       }
@@ -593,7 +631,8 @@
         // background-color: yellow;
         .graph {
           background-color: white;
-          width: var(--pop-chart-graph-width);
+          min-width: var(--pop-chart-graph-width);
+          max-width: var(--pop-chart-graph-width);
         }
 
         .trend {
@@ -614,9 +653,11 @@
 
 
         .axis.y {
+          width: 37px;
+          height: var(--chart-yaxis-height);
           line {
             stroke-width: 0.5;
-            stroke: var(--chart-graph-run-trend-stroke);
+            // stroke: var(--chart-graph-run-trend-stroke);
             opacity: 0.3;
             &.mag {opacity: 1;}
           }
@@ -627,8 +668,9 @@
         }
 
         .axis.x {
-          margin-left: var(--chart-yaxis-width);
+          margin-left: 37px; // var(--chart-yaxis-width);
           margin-right: unset;
+          margin-top: 3px;
           width: var(--pop-chart-graph-width);
           .min-date {flex-grow: 1;}
         }
