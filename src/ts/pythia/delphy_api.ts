@@ -713,6 +713,10 @@ export class Delphy {
     exp_pop_model_get_t0: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
     exp_pop_model_get_n0: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
     exp_pop_model_get_g: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
+    run_get_pop_inv_n0_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_pop_inv_n0_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr, alpha: number) => void,
+    run_get_pop_inv_n0_prior_beta: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_pop_inv_n0_prior_beta: (ctx: DelphyContextPtr, run: RunPtr, beta: number) => void,
 
     skygrid_pop_model_new:
       (ctx: DelphyContextPtr,
@@ -947,6 +951,10 @@ export class Delphy {
       exp_pop_model_get_t0: Module['_delphy_exp_pop_model_get_t0'],
       exp_pop_model_get_n0: Module['_delphy_exp_pop_model_get_n0'],
       exp_pop_model_get_g: Module['_delphy_exp_pop_model_get_g'],
+      run_get_pop_inv_n0_prior_alpha: Module['_delphy_run_get_pop_inv_n0_prior_alpha'],
+      run_set_pop_inv_n0_prior_alpha: Module['_delphy_run_set_pop_inv_n0_prior_alpha'],
+      run_get_pop_inv_n0_prior_beta: Module['_delphy_run_get_pop_inv_n0_prior_beta'],
+      run_set_pop_inv_n0_prior_beta: Module['_delphy_run_set_pop_inv_n0_prior_beta'],
 
       skygrid_pop_model_new: Module['_delphy_skygrid_pop_model_new'],
       skygrid_pop_model_get_type: Module['_delphy_skygrid_pop_model_get_type'],
@@ -1540,6 +1548,22 @@ export class Run {
     // newRawPopModel is a new object whose ownership is transferred to the Delphy core at the end
     const newRawPopModel = newPopModel.toPopModelPtr(this.delphy.ctx);
     Delphy.delphyCoreRaw.run_set_pop_model(this.delphy.ctx, this.run, newRawPopModel);
+  }
+
+  getPopInvN0PriorAlpha(): number {
+    return Delphy.delphyCoreRaw.run_get_pop_inv_n0_prior_alpha(this.delphy.ctx, this.run);
+  }
+
+  setPopInvN0PriorAlpha(alpha: number): void {
+    Delphy.delphyCoreRaw.run_set_pop_inv_n0_prior_alpha(this.delphy.ctx, this.run, alpha);
+  }
+
+  getPopInvN0PriorBeta(): number {
+    return Delphy.delphyCoreRaw.run_get_pop_inv_n0_prior_beta(this.delphy.ctx, this.run);
+  }
+
+  setPopInvN0PriorBeta(beta: number): void {
+    Delphy.delphyCoreRaw.run_set_pop_inv_n0_prior_beta(this.delphy.ctx, this.run, beta);
   }
 
   getLogG(): number {
