@@ -121,7 +121,7 @@ export class HistCanvas extends TraceCanvas {
       }
     } else {
       const treeIndex = this.getTreeAtY(event);
-      console.log('handlePointerMove', treeIndex);
+      // console.log('handlePointerMove', treeIndex);
       this.hoverListener(treeIndex);
     }
   }
@@ -204,7 +204,7 @@ export class HistCanvas extends TraceCanvas {
     const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
     const burnInTrend = burnInContainer.querySelector(".trend") as SVGPathElement;
     const activeContainer = this.svg.querySelector(".run") as SVGGElement;
-    const activeField = activeContainer.querySelector(".period") as SVGRectElement;
+    // const activeField = activeContainer.querySelector(".period") as SVGRectElement;
     const activeInTrend = activeContainer.querySelector(".trend") as SVGPathElement;
 
 
@@ -244,8 +244,12 @@ export class HistCanvas extends TraceCanvas {
       trendWeight = Math.min(1, Math.sqrt(height / data.length));
 
       if (displayMax === displayMin) {
-        activePath = `M${width * 0.5} ${0} L${width * 0.5} ${burnInHeight} `;
-        burnInPath = `M${width * 0.5} ${burnInHeight} L${width * 0.5} ${height * 0.5} `;
+        activePath = `M${width * 0.5} ${0} L${width * 0.5} ${activeHeight} `;
+        burnInPath = `M${width * 0.5} ${activeHeight} L${width * 0.5} ${plotSize} `;
+        if (highlightIndex >= 0) {
+          hoverX = width * 0.5;
+          hoverY = plotSize - highlightIndex * stepSize;
+        }
       } else {
         dataScale = width / (valRange || 1);
         const bottom = Math.min(height, (displayCount - 1) * stepSize);
