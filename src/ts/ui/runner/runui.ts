@@ -312,10 +312,9 @@ export class RunUI extends UIScreen {
     const allChartsToggle = this.div.querySelector("#runner--all-traces-toggle") as HTMLInputElement;
     allChartsToggle.addEventListener('change', ()=>{
       if (allChartsToggle.checked) {
-        this.traceCanvases.forEach(canvas=>{
-          canvas.setVisible(true);
-          canvas.sizeCanvas();
-        });
+        this.traceCanvases.forEach(canvas=>canvas.setVisible(true));
+        this.setTraceCanvasData();
+        this.traceCanvases.forEach(canvas=>canvas.sizeCanvas());
         requestAnimationFrame(()=>{
           this.traceCanvases.forEach(canvas=>canvas.draw());
         });
@@ -770,20 +769,8 @@ export class RunUI extends UIScreen {
     this.mccMinDate.update();
 
     this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
-    const hideBurnIn = this.sharedState.hideBurnIn,
-      mccIndex = this.mccIndex,
-      sampleIndex = UNSET,
-      kneeIndex = this.pythia.kneeIndex;
 
-    this.traceCanvases.forEach(canvas=>{
-      if (canvas.isVisible || this.essCandidates.includes(canvas)) {
-        if (canvas instanceof HistCanvas) {
-          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-        } else if (canvas instanceof GammaHistCanvas) {
-          canvas.setRangeData(kneeIndex, sampleIndex);
-        }
-      }
-    });
+    this.setTraceCanvasData();
 
 
     const essData: HistData[] = this.essCandidates.map(canvas=>(canvas.traceData as HistData));
@@ -810,6 +797,26 @@ export class RunUI extends UIScreen {
     //   this.drawHandle = window.setInterval(()=> this.pingPythiaForUpdate(), 30);
     }
   }
+
+
+  private setTraceCanvasData() : void {
+    if (!this.pythia) return;
+    const hideBurnIn = this.sharedState.hideBurnIn,
+      mccIndex = this.mccIndex,
+      sampleIndex = UNSET,
+      kneeIndex = this.pythia.kneeIndex;
+    this.traceCanvases.forEach(canvas=>{
+      if (canvas.isVisible || this.essCandidates.includes(canvas)) {
+        if (canvas instanceof HistCanvas) {
+          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+        } else if (canvas instanceof GammaHistCanvas) {
+          canvas.setRangeData(kneeIndex, sampleIndex);
+        }
+      }
+    });
+
+  }
+
 
   private requestDraw():void {
     requestAnimationFrame(()=>this.draw());
