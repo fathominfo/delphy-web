@@ -774,7 +774,7 @@ export class RunUI extends MccUI {
       kneeIndex = this.pythia.kneeIndex;
 
     this.traceCanvases.forEach(canvas=>{
-      if (canvas.isVisible) {
+      if (canvas.isVisible || this.essCandidates.includes(canvas)) {
         if (canvas instanceof HistCanvas) {
           canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex);
         } else if (canvas instanceof GammaHistCanvas) {
