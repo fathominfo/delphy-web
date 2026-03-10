@@ -97,8 +97,6 @@ export class MccTreeCanvas {
   // maxDate: number;
   tree: Tree | null;
   creds: number[];
-  paddingTop : number;
-  paddingBottom: number;
   /* we don't want this to be less than 1, but typescript can't enforce that for us */
   zoomAmount = 1;
   zoomCenterY: number;
@@ -155,8 +153,6 @@ export class MccTreeCanvas {
     this.width = 0;
     this.creds = [];
     this.sizeCanvas();
-    this.paddingTop = TREE_PADDING_TOP;
-    this.paddingBottom = TREE_PADDING_BOTTOM;
     this.zoomAmount = 1;
     this.zoomCenterY = 0.5;
     this.zoomCenterX = 0.5;
@@ -184,6 +180,7 @@ export class MccTreeCanvas {
       this.canvas.addEventListener("pointerup", (event:PointerEvent)=>this.handlePointerUp(event));
       this.canvas.addEventListener("dblclick", (event:MouseEvent)=>this.handleDoubleClick(event));
     }
+    this.resetZoom();
 
   }
 
@@ -325,11 +322,13 @@ export class MccTreeCanvas {
       size = tipCount === 0 ? 0 : tipCount * 2 - 1,
       yPositions: number[] = new Array(size),
       verticallySortedTips:number[] = [],
-      queue:number[] = [rootIndex];
+      queue:number[] = [rootIndex],
+      bottom = height - TREE_PADDING_BOTTOM,
+      yRange = bottom - TREE_PADDING_TOP,
+      h = yRange / (tipCount - 1);
     let minDate = Number.MAX_SAFE_INTEGER,
       maxDate = Number.MIN_SAFE_INTEGER,
-      ypos = height - this.paddingBottom;
-    const h = (ypos - this.paddingTop) / tipCount;
+      ypos = bottom;
     /*
     The typical tree layout is called a "ladderized" tree: the
     branches don't cross, and there's a general cascade to the
@@ -452,6 +451,14 @@ export class MccTreeCanvas {
 
 
 
+  getZoomX(t: number): number {
+    const config = this.rootConfigs[this.rootIndex],
+      pct =  (t - config.minDate) / (config.maxDate - config.minDate),
+      x = pct * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT) * this.zoomAmount + this.zoomOffset.x;
+    // console.log(pct, x, this.zoomOffset.x, this.width, this.zoomAmount);
+    return x;
+  }
+
   getZoomY(index: number) : number {
     const config = this.rootConfigs[this.rootIndex];
     return config.nodeYs[index] * this.zoomAmount + this.zoomOffset.y;
@@ -479,14 +486,6 @@ export class MccTreeCanvas {
   // xFor(t: number): number {
   //   return this.width - TREE_PADDING_RIGHT - 0.5 - (this.maxDate - t) / (this.maxDate - this.minDate) * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT);
   // }
-
-  getZoomX(t: number): number {
-    const config = this.rootConfigs[this.rootIndex],
-      pct =  (t - config.minDate) / (config.maxDate - config.minDate),
-      x = pct * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT) * this.zoomAmount + this.zoomOffset.x;
-    // console.log(pct, x, this.zoomOffset.x, this.width, this.zoomAmount);
-    return x;
-  }
 
   getZoomDate(x: number) : number {
     let t = UNSET;
@@ -535,7 +534,7 @@ export class MccTreeCanvas {
       this gives us the percent of the zoomed canvas
       that lies inside the view box.
       */
-      const viewablePct = 1 / this.zoomAmount;
+      const viewablePct = 1 / zoomAmount;
       /*
       if the viewable area is right at the edge of the
       zoomed canvas, how close is the center ?
@@ -571,10 +570,10 @@ export class MccTreeCanvas {
       dy = unzoomedDy * this.zoomAmount - zoomCenterDy;
     /* fix it so that we aren't scaling up the padding  */
     dx -= TREE_PADDING_LEFT * (this.zoomAmount - 1);
-    dy -= TREE_PADDING_TOP * (this.zoomAmount - 1);
+    dy -= TREE_PADDING_TOP * (2 * this.zoomAmount - 1);
     // console.log(width, width * this.zoomAmount, (this.zoomAmount - 1) * 0.5 * width);
     this.zoomOffset.x = dx;
-    this.zoomOffset.y = dy;
+    this.zoomOffset.y = dy ;
     requestAnimationFrame(()=>this.draw());
   }
 
@@ -792,6 +791,44 @@ export class MccTreeCanvas {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
+  // private drawGuides() {
+  //   const { ctx, width, height } = this;
+  //   ctx.strokeStyle = 'rgb(200, 255, 255)';
+  //   ctx.lineWidth = TREE_PADDING_LEFT;
+  //   ctx.beginPath();
+  //   ctx.moveTo(TREE_PADDING_LEFT*0.5, 0);
+  //   ctx.lineTo(TREE_PADDING_LEFT*0.5, height);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_RIGHT;
+  //   ctx.beginPath();
+  //   ctx.moveTo(width - TREE_PADDING_RIGHT*0.5, 0);
+  //   ctx.lineTo(width - TREE_PADDING_RIGHT*0.5, height);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_TOP;
+  //   ctx.beginPath();
+  //   ctx.moveTo(0, TREE_PADDING_TOP*0.5);
+  //   ctx.lineTo(width, TREE_PADDING_TOP*0.5);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_BOTTOM;
+  //   ctx.beginPath();
+  //   ctx.moveTo(0, height - TREE_PADDING_BOTTOM*0.5);
+  //   ctx.lineTo(width, height - TREE_PADDING_BOTTOM*0.5);
+  //   ctx.stroke();
+  //   ctx.strokeStyle = 'blue';
+  //   ctx.lineWidth = 1;
+  //   ctx.beginPath();
+  //   ctx.moveTo(width / 2, 0);
+  //   ctx.lineTo(width / 2, height);
+  //   ctx.moveTo(0, height / 2);
+  //   ctx.lineTo(width,  height / 2);
+  //   ctx.stroke();
+  //   ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+  //   ctx.fillStyle = 'green';
+  //   ctx.textAlign = 'left';
+  //   ctx.fillText(`${this.zoomAmount}`, TREE_PADDING_LEFT * 3, TREE_PADDING_TOP * 2);
+  // }
+
+
   draw(_pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
 
     // console.log(`draw ${this.zoomCenterX}  ${this.zoomCenterY}`)
@@ -802,6 +839,8 @@ export class MccTreeCanvas {
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
+    // this.drawGuides();
+
     // ctx.strokeStyle = this.branchColor;
     ctx.lineCap = 'round';
     ctx.lineWidth = BRANCH_WEIGHT;
