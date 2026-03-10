@@ -230,8 +230,14 @@ export class HistCanvas extends TraceCanvas {
         left = bucketSize * 0.5;
         width -= bucketSize;
       }
-
-      const stepSize = Math.min(MAX_STEP_SIZE, height / (displayCount - 1) || 1);
+      /*
+      if we span the entire chart with the values we have,
+      how big does each step need to be?
+      */
+      const fullSpanningStepSize = height / (displayCount - 1) || 1;
+      /* steps that are too big look pretty goofy, so cap them if needed */
+      const forceSmallerSteps = fullSpanningStepSize > MAX_STEP_SIZE;
+      const stepSize = forceSmallerSteps ? MAX_STEP_SIZE : fullSpanningStepSize;
       /*
       in early stages of the run, there might not be enough samples to cover
       the whole chart. So how much of the chart are we covering?
@@ -239,6 +245,9 @@ export class HistCanvas extends TraceCanvas {
       const plotSize = Math.min(height, displayCount * stepSize);
       const leftover = height - plotSize;
       burnInHeight = hideBurnIn ? 0 : Math.max(0, kneeIndex * stepSize + leftover);
+      if (kneeIndex === 0) {
+        burnInHeight = 0;
+      }
       activeHeight = Math.max(0, height - burnInHeight);
 
       trendWeight = Math.min(1, Math.sqrt(height / data.length));
@@ -312,11 +321,8 @@ export class HistCanvas extends TraceCanvas {
       yDiv.style.top = `${hoverY}px`;
     }
 
-    // burnInField.setAttribute("height", `${burnInHeight}`);
-    // burnInField.setAttribute("y", `${activeHeight}`);
     burnInField.setAttribute("y1", `${activeHeight}`);
     burnInField.setAttribute("y2", `${activeHeight}`);
-    // activeField.setAttribute("height", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
     burnInTrend.style.strokeWidth = `${trendWeight}`;
