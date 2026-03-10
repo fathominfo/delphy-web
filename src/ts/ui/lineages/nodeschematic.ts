@@ -41,6 +41,7 @@ class TreeNodeDisplay {
   mutLabel: SVGGElement;
   connector: SVGPathElement;
   textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
+  textLabelHeight: number = TEXT_LABEL_HEIGHT;
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
@@ -81,8 +82,8 @@ class TreeNodeDisplay {
       let xEnd = parent.xPos - this.xPos;
       const xStart = - this.textLabelWidth / 2;
       let yEnd = parent.yPos - this.yPos;
-      if (yEnd > 0) yEnd -= TEXT_LABEL_HEIGHT / 2;
-      else if (yEnd < 0) yEnd += TEXT_LABEL_HEIGHT / 2;
+      if (yEnd > 0) yEnd -= parent.textLabelHeight / 2;
+      else if (yEnd < 0) yEnd += parent.textLabelHeight / 2;
       else xEnd += parent.textLabelWidth / 2;
       const d = `M${ xStart } 0 L${ xEnd } 0 ${ xEnd } ${ yEnd }`;
       this.connector.setAttribute("d", d);
@@ -99,12 +100,18 @@ class TreeNodeDisplay {
     // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
     // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
 
-    const label = mrca ? "M" : node.label;
+    const label = mrca ? "" : node.label;
     textNode.textContent = label;
     nameLabel.classList.add(node.className);
     CONTAINER.appendChild(this.nameLabel);
-    const tw = textNode.getComputedTextLength();
-    this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
+    if (mrca) {
+      this.textLabelWidth = 0;
+      this.textLabelHeight = 0;
+    } else {
+      const tw = textNode.getComputedTextLength();
+      this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
+      this.textLabelHeight = TEXT_LABEL_HEIGHT;
+    }
     rect.setAttribute("width", `${ this.textLabelWidth}`);
     rect.setAttribute("x", `${ -(this.textLabelWidth) / 2}`);
     // if (!this.node.isRoot) {
