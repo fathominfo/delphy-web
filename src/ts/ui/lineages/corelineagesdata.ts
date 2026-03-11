@@ -121,7 +121,7 @@ export class CoreLineagesData {
   for the prevalence chart, we need a node like object
   to represent the uninfected population.
   */
-  private nullNode: DisplayNode;
+  nullNode: DisplayNode;
 
   constructor(sharedState: SharedState, update: updateFunction) {
     this.update = update;
@@ -262,6 +262,7 @@ export class CoreLineagesData {
     if (nodeIndex === this.highlightNode.index && date === this.highlightDate && mutation === this.highlightMutation) {
       return false;
     }
+    console.log(`setting highlight node to ${nodeIndex}`)
     const minimap = this.selectionTreeData as SelectionTreeData;
 
     let displayNode: DisplayNode | null = null;
@@ -373,28 +374,33 @@ export class CoreLineagesData {
   }
 
   selectNode(nodeIndex: number) : void {
-    if (nodeIndex === UNSET) return;
-    const currentNodes = this.selectedNodes.concat([this.rootNode]);
-    if (currentNodes.map(node=>node.index).indexOf(nodeIndex) >= 0) return;
-    let selection: DisplayNode = this.highlightNode;
-    if (nodeIndex !== this.highlightNode.index) {
-      /* could the node be an MRCA? That would not be in currentNodes */
-      const minimap = this.selectionTreeData as SelectionTreeData;
-      const mrcaTreeNode = minimap.found.filter(treeNode=>{
-        return treeNode
-          && treeNode.node.isInferred
-          && treeNode.node.index === nodeIndex;
-      })[0];
-      if (mrcaTreeNode) {
-        selection = mrcaTreeNode.node;
-      } else {
-        selection = this.getNodeDisplay(nodeIndex, false, false);
+    if (nodeIndex === UNSET || nodeIndex === this.rootNode.index) return;
+    const alreadyThereIndex = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
+    if (alreadyThereIndex >= 0) {
+      /* clicking on a node that's already there removes it */
+      const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
+      selection.unlock();
+    } else {
+      let selection: DisplayNode = this.highlightNode;
+      if (nodeIndex !== this.highlightNode.index) {
+        /* could the node be an MRCA? That would not be in currentNodes */
+        const minimap = this.selectionTreeData as SelectionTreeData;
+        const mrcaTreeNode = minimap.found.filter(treeNode=>{
+          return treeNode
+            && treeNode.node.isInferred
+            && treeNode.node.index === nodeIndex;
+        })[0];
+        if (mrcaTreeNode) {
+          selection = mrcaTreeNode.node;
+        } else {
+          selection = this.getNodeDisplay(nodeIndex, false, false);
+        }
       }
+      selection.lock();
+      this.selectedNodes.push(selection);
+      /* prep the next hover */
+      this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     }
-    selection.lock();
-    this.selectedNodes.push(selection);
-    /* prep the next hover */
-    this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     this.setChartData();
   }
 
@@ -456,6 +462,26 @@ export class CoreLineagesData {
     const index = this.selectedNodes.indexOf(node);
     this.selectedNodes.splice(index, 1);
     this.bypassedNodes.push(node);
+  }
+
+
+  isASelectedNode(nodeIndex: number) : boolean {
+    return this.rootNode.index === nodeIndex || this.selectedNodes.map(n=>n.index).includes(nodeIndex);
+  }
+
+
+  /* returns a display node only if it's among the current selections */
+  getSelection(nodeIndex: number) : DisplayNode | null {
+    let node : DisplayNode | null = null;
+    if (this.rootNode.index === nodeIndex) {
+      node = this.rootNode;
+    } else {
+      const arrIndex = this.selectedNodes.map(n=>n.index).indexOf(nodeIndex);
+      if (arrIndex >= 0) {
+        node = this.selectedNodes[arrIndex];
+      }
+    }
+    return node;
   }
 
 

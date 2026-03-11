@@ -40,11 +40,35 @@ export class MccUI extends UIScreen {
     const canvas = this.mccTreeCanvas.getCanvas();
     canvas.parentNode?.appendChild(this.highlightCanvas);
 
-    this.zoomHandler = (vZoom:number, vZoomScroll: number, hZoom: number, hZoomScroll: number)=>{
-      // console.debug(zoom, zoomScroll);
-      this.mccTreeCanvas.setZoom(vZoom, vZoomScroll, hZoom, hZoomScroll);
-      this.requestTreeDraw();
-    };
+    const zoomInBtn = this.div.querySelector(".mcc-zoom-button.zoom-in") as HTMLButtonElement;
+    const zoomOutBtn = this.div.querySelector(".mcc-zoom-button.zoom-out") as HTMLButtonElement;
+    const zoomResetBtn = this.div.querySelector(".mcc-zoom-button.reset") as HTMLButtonElement;
+
+    if (zoomInBtn) { // if we have one, we have all
+      const setEnabled = ()=>{
+        // if (this.mccTreeCanvas.zoomAmount > 1) {
+        zoomOutBtn.disabled = false;
+        zoomResetBtn.disabled = false;
+        // } else {
+        //   zoomOutBtn.disabled = true;
+        //   zoomResetBtn.disabled = true;
+        // }
+      };
+      zoomInBtn?.addEventListener("click", ()=>{
+        this.mccTreeCanvas.zoomIn();
+        setEnabled();
+      });
+      zoomOutBtn?.addEventListener("click", ()=>{
+        this.mccTreeCanvas.zoomOut();
+        setEnabled();
+      });
+      zoomResetBtn?.addEventListener("click", ()=>{
+        this.mccTreeCanvas.resetZoom();
+        setEnabled();
+      });
+      setEnabled();
+    }
+
 
   }
 
@@ -104,15 +128,13 @@ export class MccUI extends UIScreen {
     }
   }
 
-  async setTreeFromConfig(mccRef: MccRef, pythia: Pythia): Promise<SummaryTree> {
+  async setTreeFromConfig(mccRef: MccRef, _pythia: Pythia): Promise<SummaryTree> { // eslint-disable-line @typescript-eslint/no-unused-vars
     requestAnimationFrame(()=>document.body.classList.add("summarizing"));
     const prom = new Promise((resolve: DataResolveType)=>{
       setTimeout(()=>{
-        let summary: SummaryTree,
-          nodeConfidence: number[];
+        const summary: SummaryTree = mccRef.getMcc();
+        const nodeConfidence: number[] = mccRef.getNodeConfidence();
         const mccConfig = this.sharedState.mccConfig;
-        summary = mccRef.getMcc();
-        nodeConfidence = mccRef.getNodeConfidence();
         if (mccConfig) {
           mccConfig.updateInnerNodeMetadata(summary);
         }
@@ -169,7 +191,7 @@ export class MccUI extends UIScreen {
     // console.debug('drawing tree')
     if (this.pythia) {
       const drawRef = this.pythia.getMcc();
-      this.mccTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices);
+      this.mccTreeCanvas.draw();
       drawRef.release();
     }
   }

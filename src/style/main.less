@@ -462,24 +462,23 @@ canvas {
   gap: var(--controls-position-gap);
 
 
-  &.anchor-center {
-    top: 50%;
-    transform: translateY(calc(-50% - var(--tree-inset)));
-    bottom: unset;
-  }
-  &.anchor-left {
-    left: 0;
-    align-items: flex-start;
+  top: 0%;
+  // transform: translateY(calc(-50% - var(--tree-inset)));
+  bottom: unset;
 
-    .control {
-      justify-content: flex-start;
-      margin-right: auto;
 
-      &:hover .label {
-        padding-right: var(--control-padding);
-      }
+  left: 0;
+  align-items: flex-start;
+
+  .control {
+    justify-content: flex-start;
+    margin-right: auto;
+
+    &:hover .label {
+      padding-right: var(--control-padding);
     }
   }
+
 }
 
 .controls {
@@ -527,6 +526,7 @@ canvas {
   transition: all var(--transition) ease-in-out;
 
   .icon {
+    pointer-events: none;
     width: var(--control-size);
     height: var(--control-size);
     path {
@@ -540,6 +540,7 @@ canvas {
   }
 
   .label {
+    pointer-events: none;
     width: 0;
     overflow: hidden;
     font-family: var(--Inter);

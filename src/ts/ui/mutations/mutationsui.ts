@@ -76,7 +76,7 @@ export class MutationsUI extends MccUI {
 
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector, "#mutations--mcc-canvas")
+    super(sharedState, divSelector, "#mutations .tree-canvas")
     this.minDate = 0;
     this.earliestDate = 0;
     this.maxDate = 0;

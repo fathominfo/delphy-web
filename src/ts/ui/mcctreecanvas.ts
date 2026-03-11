@@ -1,4 +1,3 @@
-import { DateLabel } from './datelabel';
 import {
   UNSTYLED_CANVAS_WIDTH,
   BRANCH_WEIGHT, BRANCH_WEIGHT_MIN, BRANCH_WEIGHT_MAX,
@@ -29,8 +28,12 @@ import { isTip } from '../util/treeutils';
 //   PDF_700_WT = '700',
 //   PDF_500_WT = '500';
 
-const HOVER_DISTANCE = 30;
+const HOVER_DISTANCE = 20;
 
+/* how far does the mouse need to move before it's no longer a click? */
+const DRAG_PX_THRESHOLD = 8;
+
+type coord = {x: number, y: number};
 
 class TipInfo {
   index: number;
@@ -46,6 +49,10 @@ class TipInfo {
 type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
+
+const ZOOM_PER_CLICK = Math.pow(2,0.5);
+const THROTTLE_TIME = 1000 / 10;
+
 
 
 class CustomSubTree {
@@ -90,12 +97,9 @@ export class MccTreeCanvas {
   // maxDate: number;
   tree: Tree | null;
   creds: number[];
-  paddingTop : number;
-  paddingBottom: number;
   /* we don't want this to be less than 1, but typescript can't enforce that for us */
-  verticalZoom: number;
+  zoomAmount = 1;
   zoomCenterY: number;
-  horizontalZoom: number;
   zoomCenterX: number;
   dateHoverDiv: HTMLDivElement | null;
   dateAxisEntries: AxisLabel[] = [];
@@ -117,6 +121,20 @@ export class MccTreeCanvas {
 
   rootConfigs: CustomSubTree[] = [];
 
+  isDragging = false;
+  hasDragged = false;
+  dragMouseStart: coord = {x: UNSET, y: UNSET};
+  dragCanvasStart: coord = {x: UNSET, y: UNSET};
+  zoomOffset: coord = {x: TREE_PADDING_LEFT, y: TREE_PADDING_TOP};
+
+  throttleTimer = UNSET;
+  mostRecentEvent: PointerEvent | null = null;
+  lastDragUpdate: coord = {x: 0, y: 0};
+
+
+
+
+
   constructor(canvas: HTMLCanvasElement | PdfCanvas, ctx: CanvasRenderingContext2D | Context2d) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -135,11 +153,8 @@ export class MccTreeCanvas {
     this.width = 0;
     this.creds = [];
     this.sizeCanvas();
-    this.paddingTop = TREE_PADDING_TOP;
-    this.paddingBottom = TREE_PADDING_BOTTOM;
-    this.verticalZoom = 1;
+    this.zoomAmount = 1;
     this.zoomCenterY = 0.5;
-    this.horizontalZoom = 1;
     this.zoomCenterX = 0.5;
     this.dateHoverDiv = null;
 
@@ -158,6 +173,15 @@ export class MccTreeCanvas {
     this.selectable = true;
 
     this.rootIndex = UNSET;
+
+    if (this.canvas instanceof HTMLCanvasElement) {
+      this.canvas.addEventListener("pointerdown", (event:PointerEvent)=>this.handlePointerDown(event));
+      this.canvas.addEventListener("pointermove", (event:PointerEvent)=>this.handlePointerMove(event));
+      this.canvas.addEventListener("pointerup", (event:PointerEvent)=>this.handlePointerUp(event));
+      this.canvas.addEventListener("dblclick", (event:MouseEvent)=>this.handleDoubleClick(event));
+    }
+    this.resetZoom();
+
   }
 
 
@@ -179,47 +203,13 @@ export class MccTreeCanvas {
     }
   }
 
-  // setAspectRatio(aspectRatio: number) {
-  //   const canvas = this.canvas as HTMLCanvasElement;
-  //   try {
-  //     // ugh, forced reflow…
-  //     canvas.style.width = '';
-  //     canvas.style.height = '';
-  //     const {width, height} = resizeCanvas(canvas),
-  //       currentAspectRatio = width / height;
-  //     let targetWidth = height * aspectRatio,
-  //       targetHeight = width / aspectRatio;
-  //     if (currentAspectRatio >= aspectRatio || targetHeight > height) {
-  //       targetHeight = height;
-  //     } else {
-  //       targetWidth = width;
-  //     }
-  //     canvas.style.width = `${targetWidth}px`;
-  //     canvas.style.height = `${targetHeight}px`;
-  //     if (window.devicePixelRatio > 1) {
-  //       canvas.width = Math.round(targetWidth * window.devicePixelRatio);
-  //       canvas.height = Math.round(targetHeight * window.devicePixelRatio);
-  //       this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  //     } else {
-  //       canvas.width = targetWidth;
-  //       canvas.height = targetHeight;
-  //     }
-  //     this.width = targetWidth;
-  //     this.height = targetHeight;
-  //     this.ctx.textAlign = 'center';
-  //     this.ctx.textBaseline = 'top';
-  //     this.ctx.font = TREE_TEXT_FONT;
-  //   } catch (typeError) {
-  //     // this happens if the canvas is a PdfCanvas
-  //   }
-  // }
+
 
   clear() {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
 
   setBranchWeight(index:number, ctx = this.ctx) {
-    // const wt = this.nodeChildren[index].length === 0 ? 1 : (0.1 + 0.9 * this.creds[index]);
     ctx.lineWidth = this.branchWeights[index];
   }
 
@@ -326,17 +316,24 @@ export class MccTreeCanvas {
     this.creds = creds;
   }
 
+  /*
+  find vertical position of every node in the tree, scaled 0-1.
+  we do this in a preprocessing step since it requires a couple
+  traversals of the entire tree.
+  calculating the horizontal position is independent of other nodes,
+  and can be calculated without preprocessing.
+  */
   protected positionTreeNodes(): void {
-    const {height, tipCounts, nodeChildren, nodeTimes, rootIndex } = this,
+    const {tipCounts, nodeChildren, nodeTimes, rootIndex } = this,
       tipCount = tipCounts[rootIndex] || 0,
       size = tipCount === 0 ? 0 : tipCount * 2 - 1,
       yPositions: number[] = new Array(size),
       verticallySortedTips:number[] = [],
-      queue:number[] = [rootIndex];
+      queue:number[] = [rootIndex],
+      h = 1 / (tipCount - 1);
     let minDate = Number.MAX_SAFE_INTEGER,
       maxDate = Number.MIN_SAFE_INTEGER,
-      ypos = height - this.paddingBottom;
-    const h = (ypos - this.paddingTop) / tipCount;
+      ypos = 1;
     /*
     The typical tree layout is called a "ladderized" tree: the
     branches don't cross, and there's a general cascade to the
@@ -433,7 +430,12 @@ export class MccTreeCanvas {
   setAxisDates() {
     if (!this.dateAxis) return;
     const config = this.rootConfigs[this.rootIndex];
-    const { scale, entries } = getNiceDateInterval(config.minDate, config.maxDate);
+    if (!config) return;
+    let {minDate, maxDate} = config;
+    minDate = this.getZoomDate(TREE_PADDING_LEFT);
+    maxDate = this.getZoomDate(this.width - TREE_PADDING_RIGHT);
+    // console.log("setAxisDates", this.zoomAmount, "min", config.minDate, minDate, "max", config.maxDate, maxDate);
+    const { scale, entries } = getNiceDateInterval(minDate, maxDate);
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
@@ -459,27 +461,26 @@ export class MccTreeCanvas {
 
 
 
+  getZoomX(t: number): number {
+    const config = this.rootConfigs[this.rootIndex],
+      baseWidth = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
+      pct = (t - config.minDate) / (config.maxDate - config.minDate),
+      x = baseWidth * pct * this.zoomAmount + baseWidth * this.zoomOffset.x + TREE_PADDING_LEFT;
+    // console.log(pct, x, this.zoomOffset.x, this.width, this.zoomAmount);
+    return x;
+  }
+
   getZoomY(index: number) : number {
-    const height = this.height - this.paddingBottom - this.paddingTop,
-      zoomedHeight = this.verticalZoom * height,
-      unzoomedCenter = height * 0.5,
-      zoomCenter = this.zoomCenterY * zoomedHeight,
-      /*
-      constrain the offset so we don't have empty space at the top or bottom,
-      where does this offset put the bottom of the zoomed tree?
-      */
-      maxOffset = zoomedHeight - height,
-      minOffset = 0,
-      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      config = this.rootConfigs[this.rootIndex];
-    return config.nodeYs[index] * this.verticalZoom - offset;
+    const config = this.rootConfigs[this.rootIndex];
+    const unzoomedY = config.nodeYs[index] * this.zoomAmount + this.zoomOffset.y
+    return TREE_PADDING_TOP + unzoomedY * (this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM);
   }
 
   getZoomedDateRange() : number[] {
     const config = this.rootConfigs[this.rootIndex],
       dateRange = config.maxDate - config.minDate,
       centerDate = config.maxDate - dateRange * this.zoomCenterX,
-      dateWindowSide = dateRange / this.horizontalZoom * 0.5,
+      dateWindowSide = dateRange / this.zoomAmount * 0.5,
       minDate = Math.round(centerDate - dateWindowSide),
       maxDate = Math.round(centerDate + dateWindowSide);
     return [minDate, maxDate];
@@ -494,85 +495,204 @@ export class MccTreeCanvas {
     return [config.minDate, config.maxDate];
   }
 
-  // xFor(t: number): number {
-  //   return this.width - TREE_PADDING_RIGHT - 0.5 - (this.maxDate - t) / (this.maxDate - this.minDate) * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT);
-  // }
-
-  getZoomX(t: number): number {
-    const right = this.width - TREE_PADDING_RIGHT - 0.5,
-      width = right - TREE_PADDING_LEFT,
-      zoomedWidth = this.horizontalZoom * width,
-      unzoomedCenter = width * 0.5,
-      zoomCenter = this.zoomCenterX * zoomedWidth,
-      /*
-      constrain the offset so we don't have empty space at the top or bottom,
-      where does this offset put the bottom of the zoomed tree?
-      */
-      maxOffset = zoomedWidth - width,
-      minOffset = 0,
-      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      config = this.rootConfigs[this.rootIndex],
-      pct =  (config.maxDate - t) / (config.maxDate - config.minDate),
-      x = right - (pct * zoomedWidth - offset)
-    return x;
-  }
-
   getZoomDate(x: number) : number {
     let t = UNSET;
-    const right = this.width - TREE_PADDING_RIGHT - 0.5,
-      width = right - TREE_PADDING_LEFT,
-      zoomedWidth = this.horizontalZoom * width,
-      unzoomedCenter = width * 0.5,
-      zoomCenter = this.zoomCenterX * zoomedWidth,
-      /*
-      constrain the offset so we don't have empty space at the top or bottom,
-      where does this offset put the bottom of the zoomed tree?
-      */
-      maxOffset = zoomedWidth - width,
-      minOffset = 0,
-      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      config = this.rootConfigs[this.rootIndex],
-      pct = (right - x + offset) / zoomedWidth;
-    t = config.maxDate - pct * (config.maxDate - config.minDate);
-    // console.log(x, this.minDate, t, this.maxDate);
+    const config = this.rootConfigs[this.rootIndex],
+      {minDate, maxDate} = config,
+      baseWidth = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
+      pct = ((x - TREE_PADDING_LEFT) / baseWidth - this.zoomOffset.x) / this.zoomAmount;
+    t  = pct * (maxDate - minDate) + minDate;
     return t;
   }
 
 
-  zoomToTips(tips: number[]) : void {
-    const height = this.height - this.paddingBottom - this.paddingTop,
-      config = this.rootConfigs[this.rootIndex];
-    let index = tips[0],
-      y1 = config.nodeYs[index],
-      y2 = y1;
-    for (let i = 1; i < tips.length; i++) {
-      index = tips[i];
-      y1 = Math.min(y1, config.nodeYs[index]);
-      y2 = Math.max(y2, config.nodeYs[index]);
-    }
-    const y = (y1 + y2) / 2,
-      span = y2 - y1,
-      zoom = height / span;
-    this.zoomCenterY = y / height;
-    this.verticalZoom = zoom;
-    console.debug(`zoom: ${tips.length} tips at y ${y1} - ${y2} => ${zoom}, ${this.zoomCenterY}`);
-  }
-
   resetZoom(): void {
-    this.verticalZoom = 1.0;
-    this.zoomCenterY = 0.5
-    this.horizontalZoom = 1;
-    this.zoomCenterX = 0.5;
+    if (this.throttleTimer !== UNSET) {
+      clearTimeout(this.throttleTimer);
+      this.throttleTimer = UNSET;
+    }
+    this.setZoom(1, 0.5, 0.5);
   }
 
-  setZoom(vZoom: number, vScroll: number, hZoom: number, hScroll: number) : void {
-    this.verticalZoom = vZoom;
-    this.zoomCenterY = vScroll;
-    this.horizontalZoom = hZoom;
-    this.zoomCenterX = hScroll;
+  setZoom(zoomAmount: number, centerX: number, centerY: number) : void {
+    // console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
+
+    /*
+    constrain dragging so that the entire viewbox is covered by the
+    zoomed bounding box. In other words, don't allow the user to drag
+    the tree out of the tree panel.
+    */
+    if (zoomAmount <= 1) {
+      zoomAmount = 1;
+      centerX = 0.5;
+      centerY = 0.5;
+    } else {
+      /*
+      this gives us the percent of the zoomed canvas
+      that lies inside the view box.
+      */
+      const viewablePct = 1 / zoomAmount;
+      /*
+      if the viewable area is right at the edge of the
+      zoomed canvas, how close is the center ?
+      */
+      const viewableCenterDist = viewablePct / 2;
+      if (centerX < viewableCenterDist) centerX = viewableCenterDist;
+      else if (centerX > 1 - viewableCenterDist) centerX = 1 - viewableCenterDist;
+      if (centerY < viewableCenterDist) centerY = viewableCenterDist;
+      else if (centerY > 1 - viewableCenterDist) centerY = 1 - viewableCenterDist;
+    }
+
+
+    this.zoomAmount = zoomAmount;
+    this.zoomCenterX = centerX;
+    this.zoomCenterY = centerY;
+
+
+    /* how much biggeer is the zoomed canvas? */
+    const dZoom = this.zoomAmount - 1,
+      halfDZoom = dZoom * 0.5,
+      /*
+      since the unscaled width of the data is plotted from 0-1 for both x and y,
+      0.5 is the unzoomed center.
+      */
+      UNZOOMED_CENTER = 0.5,
+      /*
+      how far from the actual center is the center of the zoomed in view?
+      since the unscaled width of the data is plotted from 0-1 for both x and y,
+      0.5 is the unzoomed center.
+      */
+      unzoomedDx = this.zoomCenterX - UNZOOMED_CENTER,
+      unzoomedDy = this.zoomCenterY - UNZOOMED_CENTER,
+      /* how much do we have to move the zoomed canvas to align the centers? */
+      dx = unzoomedDx * this.zoomAmount - halfDZoom,
+      dy = unzoomedDy * this.zoomAmount - halfDZoom;
+    this.zoomOffset.x = dx;
+    this.zoomOffset.y = dy ;
+    requestAnimationFrame(()=>{
+      this.setAxisDates();
+      this.draw();
+    });
   }
 
 
+  zoomIn() : void {
+    this.setZoom(this.zoomAmount * ZOOM_PER_CLICK, this.zoomCenterX, this.zoomCenterY);
+  }
+
+  zoomOut() : void {
+    this.setZoom(this.zoomAmount / ZOOM_PER_CLICK, this.zoomCenterX, this.zoomCenterY);
+  }
+
+
+  handlePointerDown(event: PointerEvent) : void {
+    this.isDragging = true;
+    this.hasDragged = false;
+    this.dragMouseStart.x = event.offsetX;
+    this.dragMouseStart.y = event.offsetY;
+    this.dragCanvasStart.x = this.zoomCenterX;
+    this.dragCanvasStart.y = this.zoomCenterY;
+    if (this.canvas instanceof HTMLCanvasElement) {
+      this.canvas.setPointerCapture(event.pointerId);
+    }
+  }
+
+  handlePointerMove(event: PointerEvent | null) : void {
+    if (!event) {
+      if (this.throttleTimer !== UNSET) {
+        clearTimeout(this.throttleTimer);
+        this.throttleTimer = UNSET;
+      }
+    } else if (this.isDragging) {
+      const d2 = Math.pow(event.offsetX - this.dragMouseStart.x, 2) + Math.pow(event.offsetY - this.dragMouseStart.y, 2);
+      if (d2 >= Math.pow(DRAG_PX_THRESHOLD, 2)) {
+        this.hasDragged = true;
+      }
+      /*
+      Note: lastMove only gets set when we set the zoom. Don't confuse it with lastEvent
+      */
+      this.mostRecentEvent = event;
+      if (this.throttleTimer === UNSET) {
+        const updateSinceLastZoom = event.offsetX !== this.lastDragUpdate.x || event.offsetY !== this.lastDragUpdate.y;
+        if (!updateSinceLastZoom) {
+          if (this.throttleTimer!== UNSET) {
+            clearTimeout(this.throttleTimer);
+            this.throttleTimer = UNSET;
+          }
+        } else {
+          /*
+          We are throttling the event handling, so we don't process the move
+          immediately. We set a timer, store these values, and when the
+          timer fires it will read the latest versions of these values.
+          And in the pointerup handler, we process the most recent
+          version of these values.
+          */
+          this.lastDragUpdate.x = this.mostRecentEvent.offsetX;
+          this.lastDragUpdate.y = this.mostRecentEvent.offsetY;
+          /* how much did we move?  */
+          const dx = event.offsetX - this.dragMouseStart.x;
+          const dy = event.offsetY - this.dragMouseStart.y;
+          // if (dx > 10) {
+          //   console.log('yev gun fair enuwf')
+          // }
+
+          const zoomDx = dx / this.zoomAmount;
+          const zoomDy = dy / this.zoomAmount;
+          /* what's the size of the canvas? */
+          const width = (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT);
+          const height = (this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM);
+          /* how far did we move as a percent?  */
+          const xPct = zoomDx / width;
+          const yPct = zoomDy / height;
+          const newX = this.dragCanvasStart.x + xPct;
+          const newY = this.dragCanvasStart.y + yPct;
+          // console.log('dragging pix: ', event.offsetX, "dx", dx, "zoomed", zoomDx, "w", width, "pct", xPct, "startX", this.dragCanvasStart.x, "new", newX);
+          this.setZoom(this.zoomAmount, newX, newY);
+          this.throttleTimer = setTimeout(()=>{
+            this.throttleTimer = UNSET;
+            this.handlePointerMove(this.mostRecentEvent);
+          }, THROTTLE_TIME);
+        }
+      }
+    }
+  }
+
+  handlePointerUp(event: PointerEvent) : void {
+    this.isDragging = false;
+    if (this.throttleTimer !== UNSET) {
+      clearTimeout(this.throttleTimer);
+      this.throttleTimer = UNSET;
+      this.handlePointerMove(this.mostRecentEvent);
+    }
+    if (this.canvas instanceof HTMLCanvasElement) {
+      this.canvas.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  handleDoubleClick(event: MouseEvent) : void {
+
+    const width = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
+      height = this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM,
+      mx = event.offsetX,
+      my = event.offsetY,
+      unzoomedCx = width / 2,
+      unzoomedCy = height / 2;
+    /* how far from the center is the click in pixels? */
+    let dxPix = mx - TREE_PADDING_LEFT - unzoomedCx,
+      dyPix = my - TREE_PADDING_TOP - unzoomedCy;
+    /* how far will that be after zooming? */
+    dxPix *= (ZOOM_PER_CLICK - 1);
+    dyPix *= (ZOOM_PER_CLICK - 1);
+    /* what is that value expressed as a percent of the new zoom size? */
+    const newZoom = this.zoomAmount * ZOOM_PER_CLICK,
+      newWidth = width * newZoom,
+      newHeight = height * newZoom,
+      zoomXPct = dxPix / newWidth,
+      zoomYPct = dyPix / newHeight;
+    // console.log(`dblclick:  raw: ${mx}, ${my}  pct:  ${xPct}, ${yPct}%`);
+    this.setZoom(newZoom, this.zoomCenterX - zoomXPct, this.zoomCenterY - zoomYPct);
+
+  }
 
 
   sortTips():void {
@@ -670,16 +790,60 @@ export class MccTreeCanvas {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
-  draw(earliest:number, latest:number, _dates:DateLabel[], _pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  /*
+  draw the padding areas in light blue
+  used to debug zooming and panning.
+  */
+  // private drawGuides() {
+  //   const { ctx, width, height } = this;
+  //   ctx.strokeStyle = 'rgb(200, 255, 255)';
+  //   ctx.lineWidth = TREE_PADDING_LEFT;
+  //   ctx.beginPath();
+  //   ctx.moveTo(TREE_PADDING_LEFT*0.5, 0);
+  //   ctx.lineTo(TREE_PADDING_LEFT*0.5, height);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_RIGHT;
+  //   ctx.beginPath();
+  //   ctx.moveTo(width - TREE_PADDING_RIGHT*0.5, 0);
+  //   ctx.lineTo(width - TREE_PADDING_RIGHT*0.5, height);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_TOP;
+  //   ctx.beginPath();
+  //   ctx.moveTo(0, TREE_PADDING_TOP*0.5);
+  //   ctx.lineTo(width, TREE_PADDING_TOP*0.5);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_BOTTOM;
+  //   ctx.beginPath();
+  //   ctx.moveTo(0, height - TREE_PADDING_BOTTOM*0.5);
+  //   ctx.lineTo(width, height - TREE_PADDING_BOTTOM*0.5);
+  //   ctx.stroke();
+  //   ctx.strokeStyle = 'blue';
+  //   ctx.lineWidth = 1;
+  //   ctx.beginPath();
+  //   ctx.moveTo(width / 2, 0);
+  //   ctx.lineTo(width / 2, height);
+  //   ctx.moveTo(0, height / 2);
+  //   ctx.lineTo(width,  height / 2);
+  //   ctx.stroke();
+  //   ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+  //   ctx.fillStyle = 'green';
+  //   ctx.textAlign = 'left';
+  //   ctx.fillText(`${this.zoomAmount}`, TREE_PADDING_LEFT * 3, TREE_PADDING_TOP * 2);
+  // }
+
+
+  draw(_pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
+
+    // console.log(`draw ${this.zoomCenterX}  ${this.zoomCenterY}`)
     const config = this.rootConfigs[this.rootIndex];
     if (!config) return;
-    if (earliest === undefined) earliest = config.minDate;
-    if (latest === undefined) latest = config.maxDate;
     const { nodeYs } = config;
     const { ctx, width, height } = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
+    // this.drawGuides();
+
     // ctx.strokeStyle = this.branchColor;
     ctx.lineCap = 'round';
     ctx.lineWidth = BRANCH_WEIGHT;
@@ -731,34 +895,6 @@ export class MccTreeCanvas {
       ctx.lineTo(nodeX, rightY);
     }
     ctx.stroke();
-  }
-
-  drawUmbrellaBranch(index: number, ctx: CanvasRenderingContext2D | Context2d): void {
-    const children = this.nodeChildren[index],
-      count = children.length;
-    if (count > 0) {
-      const nodeX = this.getZoomX(this.nodeTimes[index]),
-        nodeY = this.getZoomY(index),
-        childTimes = children.map(c=>this.nodeTimes[c]),
-        earliestChildTime = Math.min(...childTimes),
-        ex = Math.max(this.getZoomX(earliestChildTime), nodeX) + 3;
-      this.setBranchColor(index);
-      // this.setBranchWeight(tree, index);
-      ctx.lineWidth = BRANCH_WEIGHT_MIN + (BRANCH_WEIGHT_MAX - BRANCH_WEIGHT_MIN) * 2 / Math.sqrt(children.length);
-      ctx.beginPath();
-      children.forEach((c,i)=>{
-        const cx = this.getZoomX(childTimes[i]),
-          cy = this.getZoomY(c);
-        ctx.moveTo(cx, cy);
-        // if (cx > ex) {
-        ctx.lineTo(ex, cy);
-        ctx.quadraticCurveTo(nodeX, cy, nodeX, nodeY);
-        // } else {
-        //   this.ctx.quadraticCurveTo(cx, nodeY, nodeX, nodeY);
-        // }
-      });
-      ctx.stroke();
-    }
   }
 
   /*

@@ -1,12 +1,10 @@
 import { Context2d } from "jspdf";
 import { PdfCanvas } from "../../util/pdfcanvas";
-import { getCSSValue, getTimelineIndices, UNSET } from "../common";
+import { getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
-import { NodeCallback, NodePair, TreeHoverCallback, } from "./lineagescommon";
-import { DateLabel } from "../datelabel";
+import { NodeCallback, NodePair } from "./lineagescommon";
 import { DisplayNode } from "./displaynode";
-import { Tree } from "../../pythia/delphy_api";
 
 const INFERRED_NODE_RADIUS = 4;
 const SELECTED_NODE_RADIUS = 5.5;
@@ -28,7 +26,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     ctx: CanvasRenderingContext2D | Context2d,
     highlightCanvas: HTMLCanvasElement,
     highlightCtx: CanvasRenderingContext2D,
-    hoverCallback: TreeHoverCallback,
+    hoverCallback: NodeCallback,
     selectionCallback: NodeCallback
   ) {
     super(canvas, ctx);
@@ -37,18 +35,16 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     const eventCanvas = this.canvas as HTMLCanvasElement;
     // need to handle dragging when zoomed
     eventCanvas.addEventListener("pointerenter", (event)=>{
-      const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY),
-        date = this.getZoomDate(event.offsetX);
-      hoverCallback(nodeIndex, date);
+      const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
+      hoverCallback(nodeIndex);
     });
     let nodeIndex: number = UNSET;
-    let date: number = UNSET;
     let throttleTimer = UNSET;
     let sendAnother = false;
     const THROTTLE_TIME = 1000 / 60;
 
     const sendUpdate = ()=>{
-      hoverCallback(nodeIndex, date);
+      hoverCallback(nodeIndex);
       throttleTimer = setTimeout(()=>{
         if (sendAnother) {
           sendAnother = false;
@@ -58,30 +54,35 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
         }
       }, THROTTLE_TIME);
     }
+
     eventCanvas.addEventListener("pointermove", async (event)=>{
-      const ni = this.getNodeAt(event.offsetX, event.offsetY);
-      const d = Math.round(this.getZoomDate(event.offsetX));
-      // console.log(ni, nodeIndex, d, date);
-      sendAnother = ni !== nodeIndex || d !== date;
-      nodeIndex = ni;
-      date = d;
-      if (sendAnother && throttleTimer === UNSET) {
-        sendUpdate();
+      if (this.isDragging) {
+        this.handlePointerMove(event);
+      } else {
+        const ni = this.getNodeAt(event.offsetX, event.offsetY);
+        sendAnother = ni !== nodeIndex;
+        nodeIndex = ni;
+        if (sendAnother && throttleTimer === UNSET) {
+          sendUpdate();
+        }
       }
     });
     eventCanvas.addEventListener("pointerleave", ()=>{
       nodeIndex = UNSET;
-      date = UNSET;
       if (throttleTimer !== UNSET) {
         clearTimeout(throttleTimer);
         throttleTimer = UNSET;
       }
-      hoverCallback(nodeIndex, date);
+      hoverCallback(nodeIndex);
     });
     eventCanvas.addEventListener("click", (event)=>{
-      const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
-      selectionCallback(nodeIndex);
+      if (!this.hasDragged) {
+        const nodeIndex:number = this.getNodeAt(event.offsetX, event.offsetY);
+        selectionCallback(nodeIndex);
+      }
     });
+
+
   }
 
 
@@ -91,9 +92,9 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     if (this.configuredRootNode !== configuredRootNode) {
       this.configuredRootNode = configuredRootNode;
       this.setRootNode(configuredRootNode);
-      const [ minDate, maxDate ] = this.getDateRange();
-      const timlineIndices = getTimelineIndices(minDate, maxDate);
-      this.draw(minDate, maxDate, timlineIndices);
+      // const [ minDate, maxDate ] = this.getDateRange();
+      // const timlineIndices = getTimelineIndices(minDate, maxDate);
+      this.draw();
     }
   }
 
@@ -109,8 +110,8 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     requestAnimationFrame(()=>this.drawSelection());
   }
 
-  draw(minDate : number, maxDate: number, timelineIndices: DateLabel[]) {
-    super.draw(minDate, maxDate, timelineIndices);
+  draw() {
+    super.draw();
     this.drawSelection();
   }
 

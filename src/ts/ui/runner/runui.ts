@@ -2,12 +2,10 @@ import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
-import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
 import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
-import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
 import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
@@ -18,6 +16,7 @@ import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { chartContainer, TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
+import { MccUI } from '../mccui';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -90,7 +89,7 @@ const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
 
 
 
-export class RunUI extends UIScreen {
+export class RunUI extends MccUI {
   mccRef: MccRef | null;
 
   private runControl: HTMLInputElement;
@@ -102,7 +101,7 @@ export class RunUI extends UIScreen {
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
 
-  private mccTreeCanvas: MccTreeCanvas;
+  // private mccTreeCanvas: MccTreeCanvas;
 
   private traceCanvases: TraceCanvas[] = [];
   private shownCanvases: TraceCanvas[] = [];
@@ -174,7 +173,7 @@ export class RunUI extends UIScreen {
 
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector);
+    super(sharedState, divSelector, "#runner--mcc .tree-canvas" );
     const DEBOUNCE_TIME = 100; // ms
     let lastRequestedBurnInPct = -1;
 
@@ -217,7 +216,6 @@ export class RunUI extends UIScreen {
     };
 
     this.mccRef = null;
-    this.mccTreeCanvas = instantiateMccTreeCanvas("#runner--mcc .tree-canvas");
     this.runControl = document.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
@@ -805,7 +803,7 @@ export class RunUI extends UIScreen {
   private draw():void {
     if (this.pythia) {
       const {stepCount, ess}  = this;
-      const {maxDate} = this.pythia;
+      // const {maxDate} = this.pythia;
       let treeCount = 0;
       // let mccCount = 0;
       if (this.mccRef) {
@@ -813,7 +811,7 @@ export class RunUI extends UIScreen {
         const drawRef = this.pythia.getMcc();
         // const mcc = drawRef.getMcc();
         try {
-          this.mccTreeCanvas.draw(this.mccMinDate.value, maxDate, this.mccTimelineIndices);
+          this.mccTreeCanvas.draw();
         } catch (ex) {
           console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
         }
