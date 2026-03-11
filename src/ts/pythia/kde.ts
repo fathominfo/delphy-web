@@ -48,8 +48,8 @@ export class KernelDensityEstimate {
     const sigma_hat = Math.sqrt(data_variance);
     const iqr = interquartile_range(this.samples_);
     this.bandwidth_ =
-+      Math.max(0.9 * Math.min(sigma_hat, iqr / 1.34) * Math.pow(N, -1/5),
-  +        (this.max_sample_ - this.min_sample_) / 200);  // Avoid too few bins
+      + Math.max(0.9 * Math.min(sigma_hat, iqr / 1.34) * Math.pow(N, -1/5),
+        + (this.max_sample_ - this.min_sample_) / 200);  // Avoid too few bins
     const bandwidth_2: number = 2 * this.bandwidth_ * this.bandwidth_;
     // Precalculate factors in Gaussian kernel
     const factor_in_exp = 1 / bandwidth_2;
