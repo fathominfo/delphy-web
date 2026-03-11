@@ -800,42 +800,46 @@ export class MccTreeCanvas {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
-  private drawGuides() {
-    const { ctx, width, height } = this;
-    ctx.strokeStyle = 'rgb(200, 255, 255)';
-    ctx.lineWidth = TREE_PADDING_LEFT;
-    ctx.beginPath();
-    ctx.moveTo(TREE_PADDING_LEFT*0.5, 0);
-    ctx.lineTo(TREE_PADDING_LEFT*0.5, height);
-    ctx.stroke();
-    ctx.lineWidth = TREE_PADDING_RIGHT;
-    ctx.beginPath();
-    ctx.moveTo(width - TREE_PADDING_RIGHT*0.5, 0);
-    ctx.lineTo(width - TREE_PADDING_RIGHT*0.5, height);
-    ctx.stroke();
-    ctx.lineWidth = TREE_PADDING_TOP;
-    ctx.beginPath();
-    ctx.moveTo(0, TREE_PADDING_TOP*0.5);
-    ctx.lineTo(width, TREE_PADDING_TOP*0.5);
-    ctx.stroke();
-    ctx.lineWidth = TREE_PADDING_BOTTOM;
-    ctx.beginPath();
-    ctx.moveTo(0, height - TREE_PADDING_BOTTOM*0.5);
-    ctx.lineTo(width, height - TREE_PADDING_BOTTOM*0.5);
-    ctx.stroke();
-    ctx.strokeStyle = 'blue';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(width / 2, 0);
-    ctx.lineTo(width / 2, height);
-    ctx.moveTo(0, height / 2);
-    ctx.lineTo(width,  height / 2);
-    ctx.stroke();
-    ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
-    ctx.fillStyle = 'green';
-    ctx.textAlign = 'left';
-    ctx.fillText(`${this.zoomAmount}`, TREE_PADDING_LEFT * 3, TREE_PADDING_TOP * 2);
-  }
+  /*
+  draw the padding areas in light blue
+  used to debug zooming and panning.
+  */
+  // private drawGuides() {
+  //   const { ctx, width, height } = this;
+  //   ctx.strokeStyle = 'rgb(200, 255, 255)';
+  //   ctx.lineWidth = TREE_PADDING_LEFT;
+  //   ctx.beginPath();
+  //   ctx.moveTo(TREE_PADDING_LEFT*0.5, 0);
+  //   ctx.lineTo(TREE_PADDING_LEFT*0.5, height);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_RIGHT;
+  //   ctx.beginPath();
+  //   ctx.moveTo(width - TREE_PADDING_RIGHT*0.5, 0);
+  //   ctx.lineTo(width - TREE_PADDING_RIGHT*0.5, height);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_TOP;
+  //   ctx.beginPath();
+  //   ctx.moveTo(0, TREE_PADDING_TOP*0.5);
+  //   ctx.lineTo(width, TREE_PADDING_TOP*0.5);
+  //   ctx.stroke();
+  //   ctx.lineWidth = TREE_PADDING_BOTTOM;
+  //   ctx.beginPath();
+  //   ctx.moveTo(0, height - TREE_PADDING_BOTTOM*0.5);
+  //   ctx.lineTo(width, height - TREE_PADDING_BOTTOM*0.5);
+  //   ctx.stroke();
+  //   ctx.strokeStyle = 'blue';
+  //   ctx.lineWidth = 1;
+  //   ctx.beginPath();
+  //   ctx.moveTo(width / 2, 0);
+  //   ctx.lineTo(width / 2, height);
+  //   ctx.moveTo(0, height / 2);
+  //   ctx.lineTo(width,  height / 2);
+  //   ctx.stroke();
+  //   ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+  //   ctx.fillStyle = 'green';
+  //   ctx.textAlign = 'left';
+  //   ctx.fillText(`${this.zoomAmount}`, TREE_PADDING_LEFT * 3, TREE_PADDING_TOP * 2);
+  // }
 
 
   draw(_pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -848,7 +852,7 @@ export class MccTreeCanvas {
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
-    this.drawGuides();
+    // this.drawGuides();
 
     // ctx.strokeStyle = this.branchColor;
     ctx.lineCap = 'round';
