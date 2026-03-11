@@ -671,19 +671,16 @@ export class MccTreeCanvas {
 
   handleDoubleClick(event: MouseEvent) : void {
 
-    /* where is the click, expressed as a pct of the width and height */
     const width = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
       height = this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM,
       mx = event.offsetX,
       my = event.offsetY,
-      xPct = (mx - this.zoomOffset.x - TREE_PADDING_LEFT) / width / this.zoomAmount,
-      yPct = (my - this.zoomOffset.y - TREE_PADDING_TOP) / height / this.zoomAmount;
-    /* how far from the center is it in pixels */
-    const unzoomedCx = width / 2,
+      unzoomedCx = width / 2,
       unzoomedCy = height / 2;
+    /* how far from the center is the click in pixels? */
     let dxPix = mx - TREE_PADDING_LEFT - unzoomedCx,
       dyPix = my - TREE_PADDING_TOP - unzoomedCy;
-    /* comparing that to what the distance will be after zooming, what's the difference? */
+    /* how far will that be after zooming? */
     dxPix *= (ZOOM_PER_CLICK - 1);
     dyPix *= (ZOOM_PER_CLICK - 1);
     /* what is that value expressed as a percent of the new zoom size? */
