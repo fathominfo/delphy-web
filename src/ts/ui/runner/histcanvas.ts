@@ -130,7 +130,7 @@ export class HistCanvas extends TraceCanvas {
   handleTreeHighlight(treeIndex: number): void {
     const isMean = treeIndex === UNSET;
     const traceData = this.traceData as HistData;
-    const readoutValue = isMean ? traceData.dataMean: traceData.data[treeIndex];
+    const readoutValue = isMean ? traceData.mean: traceData.data[treeIndex];
     traceData.highlightIndex = treeIndex;
     this.setReadoutLabel(isMean, readoutValue, traceData.unit);
   }
@@ -178,7 +178,7 @@ export class HistCanvas extends TraceCanvas {
     const traceData = this.traceData as HistData;
     let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
-    const { dataMean, hideBurnIn, savedKneeIndex } = traceData;
+    const { mean: dataMean, hideBurnIn, savedKneeIndex } = traceData;
     const isMean = highlightIndex === UNSET;
     const readoutValue = isMean ? dataMean: data[highlightIndex];
     if (hideBurnIn && savedKneeIndex > 0) {
@@ -198,7 +198,7 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
-    const { displayCount, hideBurnIn, dataMean, displayMin,
+    const { displayCount, hideBurnIn, mean: dataMean, displayMin,
       displayMax, isDiscrete } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;

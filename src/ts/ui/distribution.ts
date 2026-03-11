@@ -9,8 +9,7 @@ export const cred_mass = .95
 
 export class Distribution {
 
-  name: string;
-  times: number[];
+  data: number[];
   kde: KernelDensityEstimate | null;
   min: number;
   max: number;
@@ -22,18 +21,17 @@ export class Distribution {
   hpdMax: number;
   range: number;
   bandwidth:number;
-  bandTimes: number[];
+  bandValues: number[];
   bands: number[];
   bandMax:number;
   total: number;
   median: number;
-  timeOfMax: number;
+  valueAtMax: number;
   distributed: boolean;
 
-  constructor(name: string, times: number[]) {
-    this.name = name;
-    this.times = times;
-    this.bandTimes = [];
+  constructor(times: number[]) {
+    this.data = times;
+    this.bandValues = [];
     this.bands = [];
     this.distributed = false;
     const sorted = times.slice(0).sort(numericSort);
@@ -42,7 +40,7 @@ export class Distribution {
     // else this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
 
     this.bandMax = 0;
-    this.timeOfMax = 0;
+    this.valueAtMax = 0;
     this.total = 0;
     this.bandwidth = 0;
     this.range = 0;
@@ -66,15 +64,15 @@ export class Distribution {
         this.range = this.max - this.min;
         let n = this.min;
         this.bandMax = 0;
-        this.timeOfMax = 0;
+        this.valueAtMax = 0;
         while (n <= this.max && this.bandwidth > 0) {
           const gaust = this.kde.value_at(n);
           this.bands.push(gaust);
-          this.bandTimes.push(n);
+          this.bandValues.push(n);
           this.total += gaust;
           if (gaust > this.bandMax) {
             this.bandMax = gaust;
-            this.timeOfMax = n;
+            this.valueAtMax = n;
           }
           n += this.bandwidth;
         }
@@ -105,7 +103,7 @@ export class Distribution {
       if (sorted.length % 2 === 1) this.median = sorted[Math.floor(sorted.length/2)];
       else if (sorted.length > 0) this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
       this.bandMax = 0.0;
-      this.timeOfMax = this.min;
+      this.valueAtMax = this.min;
       this.kde = null;
     }
   }

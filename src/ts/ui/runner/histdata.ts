@@ -1,8 +1,9 @@
-import { log10, UNSET } from '../common';
+import { getStdDev, log10, UNSET } from '../common';
 import { TraceData } from './tracedata';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { KernelDensityEstimate } from '../../pythia/kde';
 import { HistDataFunction } from './runcommon';
+import { Distribution } from '../distribution';
 
 
 
@@ -22,12 +23,14 @@ export class HistData extends TraceData {
 
   hideBurnIn = false;
   data:number[] = [];
+  postBurnIn: number[] = [];
   mccIndex: number = UNSET;
   highlightIndex: number = UNSET;
-  sampleCount = 0;
+  mean = 0;
   ess: number = UNSET;
+  act: number = UNSET;
   displayCount = 0;
-  dataMean: number = UNSET;
+  distribution: Distribution;
   bucketConfig: BucketConfig;
   isDiscrete: boolean;
 
@@ -36,20 +39,26 @@ export class HistData extends TraceData {
     super(label, unit, getDataFnc);
     this.isDiscrete = isDiscrete;
     this.bucketConfig = { buckets: [], values : [], positions: [], maxBucketValue: 0, step: 0 };
+    this.distribution = new Distribution([]);
   }
 
   setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
 
     this.data = data;
     this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
+    const postBurnIn = kneeIndex > 0 ? data.slice(kneeIndex) : data;
+    this.postBurnIn = postBurnIn.filter(n=>Number.isFinite(n));
+    this.ess = calcEffectiveSampleSize(this.postBurnIn);
+    const N = this.postBurnIn.length;
+    this.act = N / this.ess;
+    const dataSum = this.postBurnIn.reduce((tot, n)=>tot+n, 0);
+    this.mean = dataSum / N;
+
     const shown = hideBurnIn && this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     const safe = shown.filter(n=>!isNaN(n) && isFinite(n));
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
-    const dataSum = safe.reduce((tot, n)=>tot+n, 0);
-    this.dataMean = dataSum / safe.length;
     /* what scale is the range in? */
     const range = this.dataMax - this.dataMin;
 
@@ -69,21 +78,21 @@ export class HistData extends TraceData {
   }
 
   setBucketData() {
-    const {data } = this,
-      kneeIndex = this.currentKneeIndex;
-    if (data.length > 1) {
-      let estimateData = kneeIndex > 0 ? data.slice(kneeIndex) : data.slice(0);
-      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
-      if (estimateData.length >= MIN_COUNT_FOR_HISTO) {
-        const histoMinVal = Math.min(...estimateData);
-        const histoMaxVal = Math.max(...estimateData);
+    const { postBurnIn } = this;
+    if (postBurnIn.length > 1) {
+      this.distribution = new Distribution(postBurnIn);
+      if (postBurnIn.length >= MIN_COUNT_FOR_HISTO) {
+        const histoMinVal = Math.min(...postBurnIn);
+        const histoMaxVal = Math.max(...postBurnIn);
         const histoRange = histoMaxVal - histoMinVal;
-        if (this.isDiscrete && histoRange < 20) {
-          this.bucketConfig = this.getDiscreteHistoData(estimateData, histoRange, histoMinVal);
+        if (this.distribution.kde === null || this.isDiscrete && histoRange < 20) {
+          this.bucketConfig = this.getDiscreteHistoData(postBurnIn, histoRange, histoMinVal);
         } else {
-          this.bucketConfig = this.getKDEHistoData(estimateData);
+          this.bucketConfig = this.getKDEHistoData(this.distribution.kde);
         }
       }
+    } else {
+      this.distribution = new Distribution(this.data);
     }
   }
 
@@ -96,9 +105,8 @@ export class HistData extends TraceData {
     return {buckets, values, maxBucketValue, positions: [], step: 1 };
   }
 
-  getKDEHistoData(estimateData: number[]) : BucketConfig {
-    const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
-      buckets: number[] = [],
+  getKDEHistoData(kde:KernelDensityEstimate) : BucketConfig {
+    const buckets: number[] = [],
       values: number[] = [],
       min = kde.min_sample,
       max = kde.max_sample,
@@ -116,19 +124,17 @@ export class HistData extends TraceData {
         buckets.push(gaust);
         maxBucketValue = Math.max(maxBucketValue, gaust);
       }
-      // if (this.label === "Total Evolutionary Time") {
-      //   const minE = Math.min(...estimateData);
-      //   const maxE = Math.max(...estimateData);
-      //   console.log("KDE", this.label, min, max, min===minE, max===maxE, values.length, values.length - bucketCount,
-      //     "display", this.displayMin, this.displayMax, bandwidth, halfBandwidth,
-      //     "n vs. max", n, n-max);
-      // }
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }
 
-
-
+  getStats() : {} {
+    const {ess, act, mean } = this;
+    const { median, hpdMin, hpdMax, data } = this.distribution;
+    const stdDev = getStdDev(data);
+    const stdErrOnMean = stdDev / Math.sqrt(ess);
+    return { mean, median, hpdMin, hpdMax, ess, stdDev, stdErrOnMean, act };
+  }
 
 
 

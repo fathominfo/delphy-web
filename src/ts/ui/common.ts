@@ -744,3 +744,14 @@ export const getMedian = (arr:number[])=>{
 }
 
 
+export const getStdDev = (data: number[])=>{
+  const safe = data.filter(n=>Number.isFinite(n));
+  const sum = safe.reduce((tot, c)=>tot+(c||0), 0);
+  const avg = sum / safe.length;
+  const sumDeltaSq = safe.reduce((tot, c)=>{
+    const d = c - avg;
+    return tot + d * d;
+  }, 0);
+  const stdDev = Math.sqrt(sumDeltaSq/safe.length);
+  return stdDev;
+}

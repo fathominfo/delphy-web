@@ -1,6 +1,6 @@
-import {Distribution} from './distribution';
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
 import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
+import { TimeDistribution } from './timedistribution';
 
 const margin = {
   top: 5,
@@ -19,13 +19,13 @@ const LINE_COLOR = 'rgba(156, 156, 156, ';
 let READOUT_SERIES_TEMPLATE: HTMLElement;
 
 export class DistributionSeries {
-  distribution: Distribution;
+  distribution: TimeDistribution;
   color: string;
   name: string;
   className: string;
 
   constructor(name: string, times:number[], className: string, color?: string) {
-    this.distribution = new Distribution(name, times);
+    this.distribution = new TimeDistribution(name, times);
     this.name = name;
     if (color) {
       this.color = color;
@@ -132,7 +132,7 @@ export class TimeDistributionCanvas {
     const {ctx, drawWidth, xheight, allSeriesBandMax} = this;
     // const {ctx, width, xheight} = this;
     const {distribution, color} = ds;
-    const {bands, bandwidth, bandTimes, kde} = distribution;
+    const {bands, bandwidth, bandValues: bandTimes, kde} = distribution;
     // const {bands, bandTimes, bandMax, bandwidth, kde} = distribution;
     ctx.fillStyle = color;
     ctx.strokeStyle = "none";
@@ -522,7 +522,7 @@ export class TimeDistributionCanvas {
     const dist: DistributionSeries | undefined = this.series.length === 2 ? this.series[1] : this.series[0];
     if (dist) {
       const { name, distribution } = dist;
-      const times = distribution.times;
+      const times = distribution.data;
       const dates = times.map(t=>toDateString(t));
       dates.sort();
       const txt = dates.join('\n'),
