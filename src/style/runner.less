@@ -63,6 +63,10 @@
           white-space: nowrap;
           text-overflow: ellipsis;
         }
+        sub {
+          display: inline-block;
+          margin-top: 3px;
+        }
       }
     }
   }
@@ -531,6 +535,13 @@
               font-weight: var(--chart-xaxis-hover-text-font-weight);
               letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
               color: #004f9e; // var(--chart-yaxis-hover-text);
+              .pct {
+                display: inline-block;
+                margin-left: 2px;
+                color: var(--chart-axis-text);
+                // font-size: 10px;
+                font-weight: 500;
+              }
             }
             .mean-label {display: none;}
             .tree-label {display: inline-block;}

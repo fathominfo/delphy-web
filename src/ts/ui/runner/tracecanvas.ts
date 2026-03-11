@@ -29,14 +29,14 @@ export class TraceCanvas {
 
 
 
-  constructor(label:string, unit='', getDataFnc: HistDataFunction | GammaDataFunction, template: HTMLDivElement) {
+  constructor(label:string, unit='', className: string, getDataFnc: HistDataFunction | GammaDataFunction, template: HTMLDivElement) {
     this.traceData = new TraceData(label, unit, getDataFnc);
     this.container = template.cloneNode(true) as HTMLDivElement;
-    this.className = label.toLowerCase().replace(/ /g, '-').replace(/[()]/g, '');
+    this.className = className;
     this.container.classList.add(this.className);
     chartContainer.appendChild(this.container);
     const header = this.container.querySelector('h3.title') as HTMLHeadingElement;
-    header.textContent = label;
+    header.innerHTML = label;
     this.svg = this.container.querySelector(".graph svg") as SVGElement;
     this.height = UNSET;
     this.width = UNSET;

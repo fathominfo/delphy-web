@@ -38,7 +38,8 @@ export class GammaHistCanvas extends TraceCanvas {
   yAxisHeight: number = UNSET;
 
   constructor(label:string, getDataFnc: GammaDataFunction) {
-    super(label, '', getDataFnc, POP_TEMPLATE);
+    const className = label.toLowerCase().replace(/ /g, '-').replace(/[()<>]/g, '');
+    super(label, '', className, getDataFnc, POP_TEMPLATE);
     this.traceData = new GammaData(label, '', getDataFnc);
     this.minSpan = this.container.querySelector(".support .axis.x .min-date") as HTMLDivElement;
     this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as HTMLDivElement;

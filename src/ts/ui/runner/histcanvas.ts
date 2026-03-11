@@ -31,11 +31,12 @@ export class HistCanvas extends TraceCanvas {
   hoverX: number = UNSET;
   hoverY: number = UNSET;
   isDragging = false;
+  formatLabel = safeLabel;
 
 
-  constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean, kneeListener: kneeHoverListenerType,
-    hoverListener: hoverListenerType) {
-    super(label, unit, getDataFnc, TRACE_TEMPLATE);
+  constructor(label:string, unit='', className='', getDataFnc: HistDataFunction, isDiscrete: boolean,
+    kneeListener: kneeHoverListenerType, hoverListener: hoverListenerType) {
+    super(label, unit, className, getDataFnc, TRACE_TEMPLATE);
     this.traceData = new HistData(label, unit, getDataFnc, isDiscrete);
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
@@ -452,7 +453,7 @@ export class HistCanvas extends TraceCanvas {
     } else {
       this.xAxisDiv.classList.remove("meaning");
     }
-    (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+    (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = this.formatLabel(value);
     if (unit) {
       this.xAxisDiv.classList.remove("unitless");
       (this.xAxisDiv.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
