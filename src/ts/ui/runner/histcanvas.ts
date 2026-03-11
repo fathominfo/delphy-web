@@ -178,9 +178,9 @@ export class HistCanvas extends TraceCanvas {
     const traceData = this.traceData as HistData;
     let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
-    const { mean: dataMean, hideBurnIn, savedKneeIndex } = traceData;
+    const { mean, hideBurnIn, savedKneeIndex } = traceData;
     const isMean = highlightIndex === UNSET;
-    const readoutValue = isMean ? dataMean: data[highlightIndex];
+    const readoutValue = isMean ? mean: data[highlightIndex];
     if (hideBurnIn && savedKneeIndex > 0) {
       data = data.slice(savedKneeIndex);
       kneeIndex -= savedKneeIndex;
