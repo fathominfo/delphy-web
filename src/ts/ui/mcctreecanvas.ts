@@ -430,7 +430,12 @@ export class MccTreeCanvas {
   setAxisDates() {
     if (!this.dateAxis) return;
     const config = this.rootConfigs[this.rootIndex];
-    const { scale, entries } = getNiceDateInterval(config.minDate, config.maxDate);
+    if (!config) return;
+    let {minDate, maxDate} = config;
+    minDate = this.getZoomDate(TREE_PADDING_LEFT);
+    maxDate = this.getZoomDate(this.width - TREE_PADDING_RIGHT);
+    // console.log("setAxisDates", this.zoomAmount, "min", config.minDate, minDate, "max", config.maxDate, maxDate);
+    const { scale, entries } = getNiceDateInterval(minDate, maxDate);
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
@@ -459,7 +464,7 @@ export class MccTreeCanvas {
   getZoomX(t: number): number {
     const config = this.rootConfigs[this.rootIndex],
       baseWidth = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
-      pct =  (t - config.minDate) / (config.maxDate - config.minDate),
+      pct = (t - config.minDate) / (config.maxDate - config.minDate),
       x = baseWidth * pct * this.zoomAmount + baseWidth * this.zoomOffset.x + TREE_PADDING_LEFT;
     // console.log(pct, x, this.zoomOffset.x, this.width, this.zoomAmount);
     return x;
@@ -490,28 +495,13 @@ export class MccTreeCanvas {
     return [config.minDate, config.maxDate];
   }
 
-  // xFor(t: number): number {
-  //   return this.width - TREE_PADDING_RIGHT - 0.5 - (this.maxDate - t) / (this.maxDate - this.minDate) * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT);
-  // }
-
   getZoomDate(x: number) : number {
     let t = UNSET;
-    const right = this.width - TREE_PADDING_RIGHT - 0.5,
-      width = right - TREE_PADDING_LEFT,
-      zoomedWidth = this.zoomAmount * width,
-      unzoomedCenter = width * 0.5,
-      zoomCenter = this.zoomCenterX * zoomedWidth,
-      /*
-      constrain the offset so we don't have empty space at the top or bottom,
-      where does this offset put the bottom of the zoomed tree?
-      */
-      maxOffset = zoomedWidth - width,
-      minOffset = 0,
-      offset = Math.max(Math.min(zoomCenter - unzoomedCenter, maxOffset), minOffset),
-      config = this.rootConfigs[this.rootIndex],
-      pct = (right - x + offset) / zoomedWidth;
-    t = config.maxDate - pct * (config.maxDate - config.minDate);
-    // console.log(x, this.minDate, t, this.maxDate);
+    const config = this.rootConfigs[this.rootIndex],
+      {minDate, maxDate} = config,
+      baseWidth = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
+      pct = ((x - TREE_PADDING_LEFT) / baseWidth - this.zoomOffset.x) / this.zoomAmount;
+    t  = pct * (maxDate - minDate) + minDate;
     return t;
   }
 
@@ -528,9 +518,9 @@ export class MccTreeCanvas {
     // console.log(`setZoom from  ${this.zoomAmount}, ${this.zoomCenterX}, ${this.zoomCenterY} to ${zoomAmount} ${centerX} ${centerY}`)
 
     /*
-    don't allow dragging so that no part of the tree is visible.
-    Well, really, it's making sure that at least some of the tree's
-    bounding box is visible.
+    constrain dragging so that the entire viewbox is covered by the
+    zoomed bounding box. In other words, don't allow the user to drag
+    the tree out of the tree panel.
     */
     if (zoomAmount <= 1) {
       zoomAmount = 1;
@@ -579,7 +569,10 @@ export class MccTreeCanvas {
       dy = unzoomedDy * this.zoomAmount - halfDZoom;
     this.zoomOffset.x = dx;
     this.zoomOffset.y = dy ;
-    requestAnimationFrame(()=>this.draw());
+    requestAnimationFrame(()=>{
+      this.setAxisDates();
+      this.draw();
+    });
   }
 
 
