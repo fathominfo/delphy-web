@@ -316,19 +316,24 @@ export class MccTreeCanvas {
     this.creds = creds;
   }
 
+  /*
+  find vertical position of every node in the tree, scaled 0-1.
+  we do this in a preprocessing step since it requires a couple
+  traversals of the entire tree.
+  calculating the horizontal position is independent of other nodes,
+  and can be calculated without preprocessing.
+  */
   protected positionTreeNodes(): void {
-    const {height, tipCounts, nodeChildren, nodeTimes, rootIndex } = this,
+    const {tipCounts, nodeChildren, nodeTimes, rootIndex } = this,
       tipCount = tipCounts[rootIndex] || 0,
       size = tipCount === 0 ? 0 : tipCount * 2 - 1,
       yPositions: number[] = new Array(size),
       verticallySortedTips:number[] = [],
       queue:number[] = [rootIndex],
-      bottom = height - TREE_PADDING_BOTTOM,
-      yRange = bottom - TREE_PADDING_TOP,
-      h = yRange / (tipCount - 1);
+      h = 1 / (tipCount - 1);
     let minDate = Number.MAX_SAFE_INTEGER,
       maxDate = Number.MIN_SAFE_INTEGER,
-      ypos = bottom;
+      ypos = 1;
     /*
     The typical tree layout is called a "ladderized" tree: the
     branches don't cross, and there's a general cascade to the
@@ -453,15 +458,17 @@ export class MccTreeCanvas {
 
   getZoomX(t: number): number {
     const config = this.rootConfigs[this.rootIndex],
+      baseWidth = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
       pct =  (t - config.minDate) / (config.maxDate - config.minDate),
-      x = pct * (this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT) * this.zoomAmount + this.zoomOffset.x;
+      x = baseWidth * pct * this.zoomAmount + baseWidth * this.zoomOffset.x + TREE_PADDING_LEFT;
     // console.log(pct, x, this.zoomOffset.x, this.width, this.zoomAmount);
     return x;
   }
 
   getZoomY(index: number) : number {
     const config = this.rootConfigs[this.rootIndex];
-    return config.nodeYs[index] * this.zoomAmount + this.zoomOffset.y;
+    const unzoomedY = config.nodeYs[index] * this.zoomAmount + this.zoomOffset.y
+    return TREE_PADDING_TOP + unzoomedY * (this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM);
   }
 
   getZoomedDateRange() : number[] {
@@ -551,27 +558,25 @@ export class MccTreeCanvas {
     this.zoomCenterX = centerX;
     this.zoomCenterY = centerY;
 
-    const width = this.width - TREE_PADDING_LEFT - TREE_PADDING_RIGHT,
-      height = this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM,
-      /* where's the center of the viewbox? */
-      viewBoxX = width * 0.5,
-      viewBoxY = height * 0.5,
-      /* where's the center of the unzoomed canvas? */
-      unzoomedCenterPx_X = this.zoomCenterX * width + TREE_PADDING_LEFT,
-      unzoomedCenterPx_Y = this.zoomCenterY * height + TREE_PADDING_TOP,
-      /* how far apart are they */
-      unzoomedDx = unzoomedCenterPx_X - viewBoxX,
-      unzoomedDy = unzoomedCenterPx_Y - viewBoxY,
-      /* if we were zooming into the center, what would the offset be? */
-      zoomCenterDx = (this.zoomAmount - 1) * 0.5 * width,
-      zoomCenterDy = (this.zoomAmount - 1) * 0.5 * height;
-    /* how much do we have to move the zoomed canvas to align the centers? */
-    let dx = unzoomedDx * this.zoomAmount - zoomCenterDx,
-      dy = unzoomedDy * this.zoomAmount - zoomCenterDy;
-    /* fix it so that we aren't scaling up the padding  */
-    dx -= TREE_PADDING_LEFT * (this.zoomAmount - 1);
-    dy -= TREE_PADDING_TOP * (2 * this.zoomAmount - 1);
-    // console.log(width, width * this.zoomAmount, (this.zoomAmount - 1) * 0.5 * width);
+
+    /* how much biggeer is the zoomed canvas? */
+    const dZoom = this.zoomAmount - 1,
+      halfDZoom = dZoom * 0.5,
+      /*
+      since the unscaled width of the data is plotted from 0-1 for both x and y,
+      0.5 is the unzoomed center.
+      */
+      UNZOOMED_CENTER = 0.5,
+      /*
+      how far from the actual center is the center of the zoomed in view?
+      since the unscaled width of the data is plotted from 0-1 for both x and y,
+      0.5 is the unzoomed center.
+      */
+      unzoomedDx = this.zoomCenterX - UNZOOMED_CENTER,
+      unzoomedDy = this.zoomCenterY - UNZOOMED_CENTER,
+      /* how much do we have to move the zoomed canvas to align the centers? */
+      dx = unzoomedDx * this.zoomAmount - halfDZoom,
+      dy = unzoomedDy * this.zoomAmount - halfDZoom;
     this.zoomOffset.x = dx;
     this.zoomOffset.y = dy ;
     requestAnimationFrame(()=>this.draw());
@@ -623,7 +628,11 @@ export class MccTreeCanvas {
           }
         } else {
           /*
-          store the value to compare later; if we stop moving, we'll stop the animation loop
+          We are throttling the event handling, so we don't process the move
+          immediately. We set a timer, store these values, and when the
+          timer fires it will read the latest versions of these values.
+          And in the pointerup handler, we process the most recent
+          version of these values.
           */
           this.lastDragUpdate.x = this.mostRecentEvent.offsetX;
           this.lastDragUpdate.y = this.mostRecentEvent.offsetY;
@@ -791,42 +800,42 @@ export class MccTreeCanvas {
     this.maxOpacity = fade ? FADE_OPACITY : 1.0;
   }
 
-  // private drawGuides() {
-  //   const { ctx, width, height } = this;
-  //   ctx.strokeStyle = 'rgb(200, 255, 255)';
-  //   ctx.lineWidth = TREE_PADDING_LEFT;
-  //   ctx.beginPath();
-  //   ctx.moveTo(TREE_PADDING_LEFT*0.5, 0);
-  //   ctx.lineTo(TREE_PADDING_LEFT*0.5, height);
-  //   ctx.stroke();
-  //   ctx.lineWidth = TREE_PADDING_RIGHT;
-  //   ctx.beginPath();
-  //   ctx.moveTo(width - TREE_PADDING_RIGHT*0.5, 0);
-  //   ctx.lineTo(width - TREE_PADDING_RIGHT*0.5, height);
-  //   ctx.stroke();
-  //   ctx.lineWidth = TREE_PADDING_TOP;
-  //   ctx.beginPath();
-  //   ctx.moveTo(0, TREE_PADDING_TOP*0.5);
-  //   ctx.lineTo(width, TREE_PADDING_TOP*0.5);
-  //   ctx.stroke();
-  //   ctx.lineWidth = TREE_PADDING_BOTTOM;
-  //   ctx.beginPath();
-  //   ctx.moveTo(0, height - TREE_PADDING_BOTTOM*0.5);
-  //   ctx.lineTo(width, height - TREE_PADDING_BOTTOM*0.5);
-  //   ctx.stroke();
-  //   ctx.strokeStyle = 'blue';
-  //   ctx.lineWidth = 1;
-  //   ctx.beginPath();
-  //   ctx.moveTo(width / 2, 0);
-  //   ctx.lineTo(width / 2, height);
-  //   ctx.moveTo(0, height / 2);
-  //   ctx.lineTo(width,  height / 2);
-  //   ctx.stroke();
-  //   ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
-  //   ctx.fillStyle = 'green';
-  //   ctx.textAlign = 'left';
-  //   ctx.fillText(`${this.zoomAmount}`, TREE_PADDING_LEFT * 3, TREE_PADDING_TOP * 2);
-  // }
+  private drawGuides() {
+    const { ctx, width, height } = this;
+    ctx.strokeStyle = 'rgb(200, 255, 255)';
+    ctx.lineWidth = TREE_PADDING_LEFT;
+    ctx.beginPath();
+    ctx.moveTo(TREE_PADDING_LEFT*0.5, 0);
+    ctx.lineTo(TREE_PADDING_LEFT*0.5, height);
+    ctx.stroke();
+    ctx.lineWidth = TREE_PADDING_RIGHT;
+    ctx.beginPath();
+    ctx.moveTo(width - TREE_PADDING_RIGHT*0.5, 0);
+    ctx.lineTo(width - TREE_PADDING_RIGHT*0.5, height);
+    ctx.stroke();
+    ctx.lineWidth = TREE_PADDING_TOP;
+    ctx.beginPath();
+    ctx.moveTo(0, TREE_PADDING_TOP*0.5);
+    ctx.lineTo(width, TREE_PADDING_TOP*0.5);
+    ctx.stroke();
+    ctx.lineWidth = TREE_PADDING_BOTTOM;
+    ctx.beginPath();
+    ctx.moveTo(0, height - TREE_PADDING_BOTTOM*0.5);
+    ctx.lineTo(width, height - TREE_PADDING_BOTTOM*0.5);
+    ctx.stroke();
+    ctx.strokeStyle = 'blue';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0);
+    ctx.lineTo(width / 2, height);
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width,  height / 2);
+    ctx.stroke();
+    ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+    ctx.fillStyle = 'green';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${this.zoomAmount}`, TREE_PADDING_LEFT * 3, TREE_PADDING_TOP * 2);
+  }
 
 
   draw(_pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -839,7 +848,7 @@ export class MccTreeCanvas {
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, width, height);
-    // this.drawGuides();
+    this.drawGuides();
 
     // ctx.strokeStyle = this.branchColor;
     ctx.lineCap = 'round';
