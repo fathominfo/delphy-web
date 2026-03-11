@@ -58,10 +58,10 @@ type PopChartConfig = {
 }
 
 enum TraceChart {
+  numMutations,
   logPosterior,
   mu,
   muStar,
-  numMutations,
   gamma,
   evolutionaryTime,
   popGrowth,
@@ -464,11 +464,7 @@ export class RunUI extends UIScreen {
 
       const toShow = [TraceChart.numMutations];
       const gammas = [];
-      const availables = [ TraceChart.numMutations, TraceChart.logPosterior,
-        TraceChart.evolutionaryTime, TraceChart.logG, TraceChart.alpha,
-        TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
-        TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
-        TraceChart.hkyPiG, TraceChart.hkyPiT, TraceChart.minDate];
+      let availables = [ TraceChart.numMutations];
       const esses = ESSSeries.slice(0);
 
       if (!params.mutationRateIsFixed) {
@@ -482,6 +478,13 @@ export class RunUI extends UIScreen {
         }
       }
       toShow.push(TraceChart.logPosterior);
+
+      availables = availables.concat([
+        TraceChart.logPosterior,
+        TraceChart.logG, TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
+        TraceChart.evolutionaryTime, TraceChart.alpha, TraceChart.minDate,
+        TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
+        TraceChart.hkyPiG, TraceChart.hkyPiT]);
 
       if (params.popModelIsSkygrid) {
         gammas.push(TraceChart.gamma);
