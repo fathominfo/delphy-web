@@ -32,6 +32,7 @@ export class HistCanvas extends TraceCanvas {
   xAxisTick: HTMLSpanElement;
   hoverX: number = UNSET;
   hoverY: number = UNSET;
+  stepSize: number = MAX_STEP_SIZE;
   isDragging = false;
   formatLabel = safeLabel;
   highlightStat: SummaryStat | null = null;
@@ -178,8 +179,8 @@ export class HistCanvas extends TraceCanvas {
 
   sizeCanvas(): void {
     const wrapper = this.histoSVG.parentElement as HTMLDivElement;
-    this.histoWidth = wrapper.offsetWidth;
-    this.histoHeight = wrapper.offsetHeight;
+    this.histoWidth = wrapper.clientWidth;
+    this.histoHeight = wrapper.clientHeight;
     super.sizeCanvas();
   }
 
@@ -270,6 +271,7 @@ export class HistCanvas extends TraceCanvas {
     let left = 0;
     let dataScale = 1;
     let trendWeight = 1;
+    let stepSize = MAX_STEP_SIZE;
 
     if (displayCount === 1) {
       activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
@@ -287,7 +289,7 @@ export class HistCanvas extends TraceCanvas {
       const fullSpanningStepSize = height / (displayCount - 1) || 1;
       /* steps that are too big look pretty goofy, so cap them if needed */
       const forceSmallerSteps = fullSpanningStepSize > MAX_STEP_SIZE;
-      const stepSize = forceSmallerSteps ? MAX_STEP_SIZE : fullSpanningStepSize;
+      stepSize = forceSmallerSteps ? MAX_STEP_SIZE : fullSpanningStepSize;
       /*
       in early stages of the run, there might not be enough samples to cover
       the whole chart. So how much of the chart are we covering?
@@ -378,6 +380,7 @@ export class HistCanvas extends TraceCanvas {
       yDiv.style.top = `${hoverY}px`;
     }
 
+    burnInField.classList.toggle("hidden", burnInHeight === 0);
     burnInField.setAttribute("y1", `${activeHeight}`);
     burnInField.setAttribute("y2", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
@@ -386,6 +389,7 @@ export class HistCanvas extends TraceCanvas {
     activeInTrend.style.strokeWidth = `${trendWeight}`;
     this.hoverX = hoverX;
     this.hoverY = hoverY;
+    this.stepSize = stepSize;
   }
 
 
@@ -433,50 +437,50 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawYAxisLabels(hideBurnIn: boolean, highlightIndex: number) {
-    const { height, traceData, hoverY } = this;
+    const { traceData, hoverY, stepSize } = this;
     const { count, savedKneeIndex, displayCount } = traceData as HistData;
     this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
-    if (count === 0) return;
-    let sampleCount = count;
-    if (hideBurnIn && savedKneeIndex > 0) {
-      sampleCount = sampleCount - savedKneeIndex + 1;
-    }
-
-    /*
-    how much space does the charting take?
-    during the early parts of the run, the chart does not
-    stretch over the whole height.
-    */
-    let activeHeight = height;
-    if (displayCount <= 1) {
-      activeHeight = MAX_STEP_SIZE;
-    } else {
-      activeHeight = Math.min(height, MAX_STEP_SIZE * displayCount);
-    }
+    const activeHeight = (displayCount-1) * stepSize;
     const targetTickCount = Math.ceil(activeHeight / TARGET_LABEL_SPACING);
-
-    const tickInterval = Math.max(10, nicenum(sampleCount / targetTickCount));
-    const intervalSize = tickInterval / sampleCount * activeHeight;
+    const tickInterval = Math.max(10, nicenum(displayCount / targetTickCount));
+    // const tickInterval = 2; // Math.max(10, nicenum(displayCount / targetTickCount));
+    const intervalSize = tickInterval * stepSize;
     let tickStart = 0;
 
 
 
     let startY = activeHeight;
     if (hideBurnIn && savedKneeIndex > 0) {
-      /* what's the first nice num after the start point? */
+      /*
+      what's the first nice num after the start point?
+      the `- 1` is for index spacing, for example the start label should
+      be 20, but that's position 19.
+      */
       tickStart = Math.ceil(savedKneeIndex / tickInterval) * tickInterval - 1;
-      startY = (sampleCount - tickStart + savedKneeIndex) / sampleCount * activeHeight;
+      /*
+      where does the first tick land?
+      the first onscreen sample is at the knee, so how far from the knee is the
+      first tick?
+      */
+      const knee2Tick = tickStart - savedKneeIndex;
+      startY = activeHeight - knee2Tick * stepSize;
     }
     let tick = tickStart;
     let y = startY;
-    while (tick < sampleCount) {
+    while (tick < count) {
       /* make sure this doesn't overlap with the hover */
       if (hoverY === UNSET || Math.abs(hoverY - y) >= TARGET_LABEL_SPACING / 2) {
         this.addYTick(y, tick + 1);
       }
-      if (tick === 0) tick += tickInterval - 1;
-      else tick += tickInterval;
-      y -= intervalSize;
+      if (tick === 0) {
+        tick += tickInterval - 1;
+        const ratio = (tickInterval - 1) / tickInterval;
+        y -= intervalSize * ratio;
+      } else {
+        tick += tickInterval;
+        y -= intervalSize;
+      }
+
     }
     if (highlightIndex === UNSET) {
       this.yAxisHoverDiv.classList.add("hidden");

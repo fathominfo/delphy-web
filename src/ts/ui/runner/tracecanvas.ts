@@ -48,8 +48,8 @@ export class TraceCanvas {
     // hack to get the right height in the flex container:
     // set width and height to zero, then recalculate
     const wrapper = this.svg.parentElement as HTMLDivElement;
-    this.width = wrapper.offsetWidth;
-    this.height = wrapper.offsetHeight;
+    this.width = wrapper.clientWidth;
+    this.height = wrapper.clientHeight;
     requestAnimationFrame(()=>this.setSizes());
   }
 
