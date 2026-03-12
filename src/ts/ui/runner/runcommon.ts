@@ -33,7 +33,7 @@ export enum SummaryStat {
 }
 
 
-type SummaryStatLookupType = {[_:string]: SummaryStat}
+type SummaryStatLookupType = {[_:string]: SummaryStat};
 
 export const SummaryStatLookup: SummaryStatLookupType = {
   "mean" : SummaryStat.mean,
@@ -45,6 +45,12 @@ export const SummaryStatLookup: SummaryStatLookupType = {
   "stderr" : SummaryStat.stdErrOnMean,
   "act" : SummaryStat.act
 }
+
+export const PlottableSummaryStats = [
+  SummaryStat.mean, SummaryStat.median,
+  SummaryStat.hpdMin, SummaryStat.hpdMax
+];
+
 
 
 

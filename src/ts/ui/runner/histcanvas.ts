@@ -1,6 +1,6 @@
 import { nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat, SummaryStatLookup, SummaryStatsType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
@@ -205,7 +205,6 @@ export class HistCanvas extends TraceCanvas {
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
-    // requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
 
@@ -219,17 +218,16 @@ export class HistCanvas extends TraceCanvas {
     const traceData = this.traceData as HistData;
     let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
-    const { mean, hideBurnIn, savedKneeIndex } = traceData;
+    const { hideBurnIn, savedKneeIndex } = traceData;
     let readoutValue = Number.MAX_VALUE;
-    let isMean = true;
+    let isHighlight = false;
     if (highlightIndex !== UNSET) {
       readoutValue = data[highlightIndex];
-      isMean = false;
-    } else if (this.highlightStat !== null) {
+      isHighlight = true;
+    } else if (this.highlightStat !== null && PlottableSummaryStats[this.highlightStat]) {
       const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
       const stats = (this.traceData as HistData).getStats();
       readoutValue = stats[attribute];
-      isMean = true;
     }
     if (hideBurnIn && savedKneeIndex > 0) {
       data = data.slice(savedKneeIndex);
@@ -238,12 +236,13 @@ export class HistCanvas extends TraceCanvas {
     }
     /*
     order matters here, since the location of the hovered
-    sample is set in `drawTrace` and read in `drawLabels`
+    sample is set in `drawTrace` and read in `drawYAxisLabels`
     */
     this.drawTrace(data, kneeIndex, highlightIndex);
     this.drawHistogramSVG(readoutValue);
     this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
-    this.setReadoutLabel(isMean, readoutValue);
+    this.setReadoutLabel(isHighlight, readoutValue);
+    this.setStatsReadouts();
   }
 
 
@@ -503,14 +502,18 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setReadoutLabel(isMean: boolean, value: number) {
+  setReadoutLabel(isHighlight: boolean, value: number) {
+    this.xAxisTick.classList.toggle("hidden", value === Number.MAX_VALUE);
     this.xAxisTick.style.left = `${ this.hoverX }px`;
-    if (isMean) {
-      this.xAxisDiv.classList.add("meaning");
-    } else {
+    if (isHighlight) {
       this.xAxisDiv.classList.remove("meaning");
+    } else {
+      this.xAxisDiv.classList.add("meaning");
     }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = this.formatLabel(value);
+  }
+
+  setStatsReadouts() : void {
     const stats = (this.traceData as HistData).getStats();
     setTextContent(this.statsList, ".mean", stats.mean);
     setTextContent(this.statsList, ".hpd-min", stats.hpdMin);
@@ -520,14 +523,8 @@ export class HistCanvas extends TraceCanvas {
     setTextContent(this.statsList, ".stderr", stats.stdErrOnMean);
     setTextContent(this.statsList, ".ess", stats.ess);
     setTextContent(this.statsList, ".act", stats.act);
-
-    // if (unit) {
-    //   this.xAxisDiv.classList.remove("unitless");
-    //   (this.xAxisDiv.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
-    // } else {
-    //   this.xAxisDiv.classList.add("unitless");
-    // }
   }
+
 
   handleStatHighlight(statType: SummaryStat | null) : void {
     this.highlightStat = statType;
