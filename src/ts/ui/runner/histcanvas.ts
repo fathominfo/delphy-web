@@ -1,6 +1,6 @@
 import { nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat, SummaryStatLookup } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
@@ -34,6 +34,7 @@ export class HistCanvas extends TraceCanvas {
   hoverY: number = UNSET;
   isDragging = false;
   formatLabel = safeLabel;
+  highlightStat: SummaryStat | null = null;
 
 
   constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
@@ -109,7 +110,6 @@ export class HistCanvas extends TraceCanvas {
       announceStat(event);
     });
     this.statsList.addEventListener('pointermove', event=>{
-      console.log(event.target)
       announceStat(event);
     });
     this.statsList.addEventListener('pointerleave', ()=>{
@@ -219,8 +219,17 @@ export class HistCanvas extends TraceCanvas {
     let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const { mean, hideBurnIn, savedKneeIndex } = traceData;
-    const isMean = highlightIndex === UNSET;
-    const readoutValue = isMean ? mean: data[highlightIndex];
+    let readoutValue = Number.MAX_VALUE;
+    let isMean = true;
+    if (highlightIndex !== UNSET) {
+      readoutValue = data[highlightIndex];
+      isMean = false;
+    } else if (this.highlightStat !== null) {
+      const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+      const stats = (this.traceData as HistData).getStats();
+      readoutValue = stats[attribute];
+      isMean = true;
+    }
     if (hideBurnIn && savedKneeIndex > 0) {
       data = data.slice(savedKneeIndex);
       kneeIndex -= savedKneeIndex;
@@ -238,7 +247,7 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
-    const { displayCount, hideBurnIn, mean: dataMean, displayMin,
+    const { displayCount, hideBurnIn, displayMin,
       displayMax, isDiscrete } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
@@ -345,11 +354,18 @@ export class HistCanvas extends TraceCanvas {
 
     if (hoverX === UNSET) {
       this.highlightDiv.classList.remove("active");
-      /* set the x value for the mean */
-      if (displayCount > 1) {
-        hoverX = left + (dataMean - displayMin) * dataScale;
+      /* set the x value for the highlight stat */
+      if (this.highlightStat !== null) {
+        if (displayCount > 1) {
+          const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+          const stats = (this.traceData as HistData).getStats();
+          const value = stats[attribute];
+          hoverX = left + (value - displayMin) * dataScale;
+        } else {
+          hoverX = width / 2;
+        }
       } else {
-        hoverX = width / 2;
+        hoverX = UNSET;
       }
     } else {
       this.highlightDiv.classList.add("active");
@@ -512,49 +528,65 @@ export class HistCanvas extends TraceCanvas {
     // }
   }
 
-
   handleStatHighlight(statType: SummaryStat | null) : void {
-    console.log(`handleStatHighlight ${this.traceData.label} ${statType}`)
+    this.highlightStat = statType;
+    requestAnimationFrame(()=>{
+      this.highlightStatSpans();
+      const traceData = this.traceData as HistData;
+      let { data, highlightIndex } = traceData,
+        kneeIndex = traceData.currentKneeIndex;
+      const { hideBurnIn, savedKneeIndex } = traceData;
+      if (hideBurnIn && savedKneeIndex > 0) {
+        data = data.slice(savedKneeIndex);
+        kneeIndex -= savedKneeIndex;
+        highlightIndex -= savedKneeIndex;
+      }
+      let readoutValue = traceData.displayMin - 1_000_000;
+      if (this.highlightStat !== null) {
+        const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+        const stats = (this.traceData as HistData).getStats();
+        readoutValue = stats[attribute];
+      }
+      /*
+      order matters here, since the location of the hovered
+      sample is set in `drawTrace` and read in `drawLabels`
+      */
+      this.drawTrace(data, kneeIndex, highlightIndex);
+      this.drawHistogramSVG(readoutValue);
+    });
+  }
 
-    const stats = (this.traceData as HistData).getStats();
+  highlightStatSpans() : void {
+    const statType = this.highlightStat;
     if (statType === null) {
       this.statsList.querySelectorAll(".back").forEach(dt=>dt.classList.remove("back"));
     } else {
       this.statsList.querySelectorAll("dt, .value").forEach(dt=>dt.classList.add("back"));
       let valueEle: HTMLElement;
-      let value: number = UNSET;
       switch (statType) {
       case SummaryStat.mean:
         valueEle = this.statsList.querySelector(".mean") as HTMLElement;
-        value = stats.mean;
         break;
       case SummaryStat.hpdMin:
         valueEle = this.statsList.querySelector(".hpd-min") as HTMLElement;
-        value = stats.hpdMin;
         break;
       case SummaryStat.hpdMax:
         valueEle = this.statsList.querySelector(".hpd-max") as HTMLElement;
-        value = stats.hpdMax;
         break;
       case SummaryStat.median:
         valueEle = this.statsList.querySelector(".median") as HTMLElement;
-        value = stats.median;
         break;
       case SummaryStat.stdDev:
         valueEle = this.statsList.querySelector(".stddev") as HTMLElement;
-        value = stats.stdDev;
         break;
       case SummaryStat.stdErrOnMean:
         valueEle = this.statsList.querySelector(".stderr") as HTMLElement;
-        value = stats.stdErrOnMean;
         break;
       case SummaryStat.ess:
         valueEle = this.statsList.querySelector(".ess") as HTMLElement;
-        value = stats.ess;
         break;
       case SummaryStat.act:
         valueEle = this.statsList.querySelector(".act") as HTMLElement;
-        value = stats.act;
         break;
       }
       if (valueEle) {
@@ -571,6 +603,8 @@ export class HistCanvas extends TraceCanvas {
       }
     }
   }
+
+
 
 
 
