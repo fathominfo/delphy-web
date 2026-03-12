@@ -637,6 +637,10 @@ export class Delphy {
     run_set_skygrid_low_gamma_barrier_loc: (ctx: DelphyContextPtr, run: RunPtr, skygrid_low_gamma_barrier_loc: number) => void,
     run_get_skygrid_low_gamma_barrier_scale: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_skygrid_low_gamma_barrier_scale: (ctx: DelphyContextPtr, run: RunPtr, skygrid_low_gamma_barrier_scale: number) => void,
+    run_get_skygrid_inv_nbar_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_inv_nbar_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr, skygrid_inv_nbar_prior_alpha: number) => void,
+    run_get_skygrid_inv_nbar_prior_beta: (ctx: DelphyContextPtr, run: RunPtr) => number,
+    run_set_skygrid_inv_nbar_prior_beta: (ctx: DelphyContextPtr, run: RunPtr, skygrid_inv_nbar_prior_beta: number) => void,
     run_get_pop_model: (ctx: DelphyContextPtr, run: RunPtr) => PopModelPtr,
     run_set_pop_model: (ctx: DelphyContextPtr, run: RunPtr, popModel: PopModelPtr) => void,
     run_get_log_G: (ctx: DelphyContextPtr, run: RunPtr) => number,
@@ -897,6 +901,10 @@ export class Delphy {
       run_set_skygrid_low_gamma_barrier_loc: Module['_delphy_run_set_skygrid_low_gamma_barrier_loc'],
       run_get_skygrid_low_gamma_barrier_scale: Module['_delphy_run_get_skygrid_low_gamma_barrier_scale'],
       run_set_skygrid_low_gamma_barrier_scale: Module['_delphy_run_set_skygrid_low_gamma_barrier_scale'],
+      run_get_skygrid_inv_nbar_prior_alpha: Module['_delphy_run_get_skygrid_inv_nbar_prior_alpha'],
+      run_set_skygrid_inv_nbar_prior_alpha: Module['_delphy_run_set_skygrid_inv_nbar_prior_alpha'],
+      run_get_skygrid_inv_nbar_prior_beta: Module['_delphy_run_get_skygrid_inv_nbar_prior_beta'],
+      run_set_skygrid_inv_nbar_prior_beta: Module['_delphy_run_set_skygrid_inv_nbar_prior_beta'],
       run_get_pop_model: Module['_delphy_run_get_pop_model'],
       run_set_pop_model: Module['_delphy_run_set_pop_model'],
       run_get_log_G: Module['_delphy_run_get_log_G'],
@@ -1552,6 +1560,22 @@ export class Run {
 
   setSkygridLowGammaBarrierScale(skygrid_low_gamma_barrier_scale: number): void {
     Delphy.delphyCoreRaw.run_set_skygrid_low_gamma_barrier_scale(this.delphy.ctx, this.run, skygrid_low_gamma_barrier_scale);
+  }
+
+  getSkygridInvNbarPriorAlpha(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_inv_nbar_prior_alpha(this.delphy.ctx, this.run);
+  }
+
+  setSkygridInvNbarPriorAlpha(skygrid_inv_nbar_prior_alpha: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_inv_nbar_prior_alpha(this.delphy.ctx, this.run, skygrid_inv_nbar_prior_alpha);
+  }
+
+  getSkygridInvNbarPriorBeta(): number {
+    return Delphy.delphyCoreRaw.run_get_skygrid_inv_nbar_prior_beta(this.delphy.ctx, this.run);
+  }
+
+  setSkygridInvNbarPriorBeta(skygrid_inv_nbar_prior_beta: number): void {
+    Delphy.delphyCoreRaw.run_set_skygrid_inv_nbar_prior_beta(this.delphy.ctx, this.run, skygrid_inv_nbar_prior_beta);
   }
 
   getPopModel(): PopModel {
