@@ -553,12 +553,13 @@
             flex-direction: column;
             position: relative;
             .tick {
-              width: var(--chart-tick-stroke-weight);
+              // width: var(--chart-tick-stroke-weight);
               height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
               margin-top: var(--chart-tick-offset);
-
               position: absolute;
-              background-color: var(--chart-xaxis-hover-text);
+              color: var(--chart-xaxis-hover-text);
+              font-size: 10px;
+              transform: translate(-50%, 0);
             }
             p {
               display: flex;
