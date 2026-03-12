@@ -32,6 +32,7 @@ export class HistData extends TraceData {
   distribution: Distribution;
   bucketConfig: BucketConfig;
   isDiscrete: boolean;
+  summaryStats: SummaryStatsType;
 
 
   constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean) {
@@ -39,6 +40,7 @@ export class HistData extends TraceData {
     this.isDiscrete = isDiscrete;
     this.bucketConfig = { buckets: [], values : [], positions: [], maxBucketValue: 0, step: 0 };
     this.distribution = new Distribution([]);
+    this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET, ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
   }
 
   setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
@@ -93,6 +95,7 @@ export class HistData extends TraceData {
     } else {
       this.distribution = new Distribution(this.data);
     }
+    this.setSummaryStats();
   }
 
 
@@ -127,12 +130,16 @@ export class HistData extends TraceData {
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }
 
-  getStats() : SummaryStatsType {
+  setSummaryStats() : void {
     const {ess, act, mean } = this;
     const { median, hpdMin, hpdMax, data } = this.distribution;
     const stdDev = getStdDev(data);
     const stdErrOnMean = stdDev / Math.sqrt(ess);
-    return { mean, median, hpdMin, hpdMax, ess, stdDev, stdErrOnMean, act };
+    this.summaryStats = { mean, median, hpdMin, hpdMax, ess, stdDev, stdErrOnMean, act };
+  }
+
+  getStats() : SummaryStatsType {
+    return this.summaryStats;
   }
 
 

@@ -1,6 +1,6 @@
 import { nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat, SummaryStatLookup } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
@@ -27,6 +27,7 @@ export class HistCanvas extends TraceCanvas {
   yAxisTickTemplate: HTMLDivElement;
   yAxisHoverDiv: HTMLDivElement;
   supportDiv: HTMLDivElement;
+  statsList: HTMLDListElement;
   xAxisDiv: HTMLDivElement;
   xAxisTick: HTMLSpanElement;
   hoverX: number = UNSET;
@@ -35,8 +36,10 @@ export class HistCanvas extends TraceCanvas {
   formatLabel = safeLabel;
 
 
-  constructor(label:string, unit='', className='', getDataFnc: HistDataFunction, isDiscrete: boolean,
-    kneeListener: kneeHoverListenerType, hoverListener: hoverListenerType) {
+  constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
+    isDiscrete: boolean, kneeListener: kneeHoverListenerType,
+    hoverListener: hoverListenerType, statHoverListener: statHoverListenerType
+  ) {
     super(label, unit, className, getDataFnc, TRACE_TEMPLATE);
     this.traceData = new HistData(label, unit, getDataFnc, isDiscrete);
     this.kneeListener = kneeListener;
@@ -53,6 +56,7 @@ export class HistCanvas extends TraceCanvas {
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
     this.supportDiv = this.container.querySelector(".chart .support") as HTMLDivElement;
+    this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
     this.xAxisDiv = this.container.querySelector(".chart .support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
@@ -77,8 +81,41 @@ export class HistCanvas extends TraceCanvas {
       // requestDraw();
       this.hoverListener(UNSET);
     });
-
-
+    let prevStat = '';
+    const announceStat = (event: PointerEvent) => {
+      let ele = event.target as HTMLElement;
+      while (ele !== this.statsList && ele.nodeName !== "DT" && ele.nodeName !== "DD") {
+        ele = ele.parentNode as HTMLElement;
+      }
+      let statName = ele.getAttribute("data-stat") || '';
+      if (statName === "hpd") {
+        if ((event.target as HTMLElement).classList.contains("hpd-max")) {
+          statName = "hpdMax";
+        } else {
+          statName = "hpdMin";
+        }
+      }
+      if (statName !== prevStat) {
+        prevStat = statName || '';
+        let stat: SummaryStat | null = null;
+        if (statName) {
+          stat = SummaryStatLookup[statName];
+          if (stat === undefined) stat = null;
+        }
+        statHoverListener(stat);
+      }
+    };
+    this.statsList.addEventListener('pointerenter', event=>{
+      announceStat(event);
+    });
+    this.statsList.addEventListener('pointermove', event=>{
+      console.log(event.target)
+      announceStat(event);
+    });
+    this.statsList.addEventListener('pointerleave', ()=>{
+      prevStat = '';
+      statHoverListener(null);
+    });
   }
 
 
@@ -135,7 +172,7 @@ export class HistCanvas extends TraceCanvas {
     const traceData = this.traceData as HistData;
     const readoutValue = isMean ? traceData.mean: traceData.data[treeIndex];
     traceData.highlightIndex = treeIndex;
-    this.setReadoutLabel(isMean, readoutValue, traceData.unit);
+    this.setReadoutLabel(isMean, readoutValue);
   }
 
 
@@ -196,7 +233,7 @@ export class HistCanvas extends TraceCanvas {
     this.drawTrace(data, kneeIndex, highlightIndex);
     this.drawHistogramSVG(readoutValue);
     this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
-    this.setReadoutLabel(isMean, readoutValue, traceData.unit);
+    this.setReadoutLabel(isMean, readoutValue);
   }
 
 
@@ -449,7 +486,7 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setReadoutLabel(isMean: boolean, value: number, unit: string) {
+  setReadoutLabel(isMean: boolean, value: number) {
     this.xAxisTick.style.left = `${ this.hoverX }px`;
     if (isMean) {
       this.xAxisDiv.classList.add("meaning");
@@ -458,15 +495,14 @@ export class HistCanvas extends TraceCanvas {
     }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = this.formatLabel(value);
     const stats = (this.traceData as HistData).getStats();
-    const statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
-    setTextContent(statsList, ".mean", stats.mean);
-    setTextContent(statsList, ".hpd-min", stats.hpdMin);
-    setTextContent(statsList, ".hpd-max", stats.hpdMax);
-    setTextContent(statsList, ".median", stats.median);
-    setTextContent(statsList, ".stddev", stats.stdDev);
-    setTextContent(statsList, ".stderr", stats.stdErrOnMean);
-    setTextContent(statsList, ".ess", stats.ess);
-    setTextContent(statsList, ".act", stats.act);
+    setTextContent(this.statsList, ".mean", stats.mean);
+    setTextContent(this.statsList, ".hpd-min", stats.hpdMin);
+    setTextContent(this.statsList, ".hpd-max", stats.hpdMax);
+    setTextContent(this.statsList, ".median", stats.median);
+    setTextContent(this.statsList, ".stddev", stats.stdDev);
+    setTextContent(this.statsList, ".stderr", stats.stdErrOnMean);
+    setTextContent(this.statsList, ".ess", stats.ess);
+    setTextContent(this.statsList, ".act", stats.act);
 
     // if (unit) {
     //   this.xAxisDiv.classList.remove("unitless");
@@ -476,6 +512,65 @@ export class HistCanvas extends TraceCanvas {
     // }
   }
 
+
+  handleStatHighlight(statType: SummaryStat | null) : void {
+    console.log(`handleStatHighlight ${this.traceData.label} ${statType}`)
+
+    const stats = (this.traceData as HistData).getStats();
+    if (statType === null) {
+      this.statsList.querySelectorAll(".back").forEach(dt=>dt.classList.remove("back"));
+    } else {
+      this.statsList.querySelectorAll("dt, .value").forEach(dt=>dt.classList.add("back"));
+      let valueEle: HTMLElement;
+      let value: number = UNSET;
+      switch (statType) {
+      case SummaryStat.mean:
+        valueEle = this.statsList.querySelector(".mean") as HTMLElement;
+        value = stats.mean;
+        break;
+      case SummaryStat.hpdMin:
+        valueEle = this.statsList.querySelector(".hpd-min") as HTMLElement;
+        value = stats.hpdMin;
+        break;
+      case SummaryStat.hpdMax:
+        valueEle = this.statsList.querySelector(".hpd-max") as HTMLElement;
+        value = stats.hpdMax;
+        break;
+      case SummaryStat.median:
+        valueEle = this.statsList.querySelector(".median") as HTMLElement;
+        value = stats.median;
+        break;
+      case SummaryStat.stdDev:
+        valueEle = this.statsList.querySelector(".stddev") as HTMLElement;
+        value = stats.stdDev;
+        break;
+      case SummaryStat.stdErrOnMean:
+        valueEle = this.statsList.querySelector(".stderr") as HTMLElement;
+        value = stats.stdErrOnMean;
+        break;
+      case SummaryStat.ess:
+        valueEle = this.statsList.querySelector(".ess") as HTMLElement;
+        value = stats.ess;
+        break;
+      case SummaryStat.act:
+        valueEle = this.statsList.querySelector(".act") as HTMLElement;
+        value = stats.act;
+        break;
+      }
+      if (valueEle) {
+        valueEle.classList.remove("back");
+        /*
+        find the corresponding dt element:
+        the HTML is something like
+          <dt>mean</dt><dd><span class="value mean"></span></dd>
+        so find the parent dd element, and then it's prior sibling
+        */
+        const dd = valueEle.parentNode as HTMLElement;
+        const dt = dd.previousElementSibling as HTMLElement;
+        dt.classList.remove("back");
+      }
+    }
+  }
 
 
 

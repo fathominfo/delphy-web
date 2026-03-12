@@ -8,7 +8,7 @@ import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
-import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -178,6 +178,7 @@ export class RunUI extends UIScreen {
   kneeHandler : kneeHoverListenerType;
   curatedKneeHandler : (pct:number)=>void;
   hoverHandler: hoverListenerType;
+  statHoverHandler: statHoverListenerType;
 
   traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | PopChartConfig} = {};
 
@@ -221,6 +222,15 @@ export class RunUI extends UIScreen {
       this.traceCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
+        }
+      });
+      this.requestDraw();
+    };
+
+    this.statHoverHandler = (statType: SummaryStat | null)=>{
+      this.traceCanvases.forEach(hc=>{
+        if (hc.isVisible && hc instanceof HistCanvas) {
+          hc.handleStatHighlight(statType);
         }
       });
       this.requestDraw();
@@ -496,7 +506,7 @@ export class RunUI extends UIScreen {
         let canvas: HistCanvas;
         const config: HistChartConfig | HistChartCustomLabelConfig = this.traceChartConfig[tc] as HistChartCustomLabelConfig;
         const { name, unit, className, dataFnc, isDiscrete } = config;
-        canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler);
+        canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
         if (config && (config as HistChartCustomLabelConfig).labelFunction !== undefined) {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
         }

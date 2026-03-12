@@ -10,16 +10,6 @@ export const TRACE_COLOR_PRE_KNEE = 'rgb(150, 181, 212)';
 export const CURRENT_POP_CURVE_COLOR = 'rgb(150, 181, 212)';
 
 
-export type kneeHoverListenerType = (pct:number)=>void;
-export type hoverListenerType = (treeIndex:number)=>void;
-export type requestDrawFnc = ()=>void;
-
-
-export type HistDataFunction = ()=>number[];
-export type GammaDataFunction = ()=>SkygridPopModel[];
-
-
-
 export type SummaryStatsType = {
   mean : number,
   median : number,
@@ -30,3 +20,42 @@ export type SummaryStatsType = {
   stdErrOnMean : number,
   act : number
 };
+
+export enum SummaryStat {
+  mean,
+  median,
+  hpdMin,
+  hpdMax,
+  ess,
+  stdDev,
+  stdErrOnMean,
+  act
+}
+
+
+type SummaryStatLookupType = {[_:string]: SummaryStat}
+
+export const SummaryStatLookup: SummaryStatLookupType = {
+  "mean" : SummaryStat.mean,
+  "median" : SummaryStat.median,
+  "hpdMin" : SummaryStat.hpdMin,
+  "hpdMax" : SummaryStat.hpdMax,
+  "ess" : SummaryStat.ess,
+  "stddev" : SummaryStat.stdDev,
+  "stderr" : SummaryStat.stdErrOnMean,
+  "act" : SummaryStat.act
+}
+
+
+
+export type kneeHoverListenerType = (pct:number)=>void;
+export type hoverListenerType = (treeIndex:number)=>void;
+export type statHoverListenerType = (statName:SummaryStat | null)=>void;
+export type requestDrawFnc = ()=>void;
+
+
+export type HistDataFunction = ()=>number[];
+export type GammaDataFunction = ()=>SkygridPopModel[];
+
+
+
