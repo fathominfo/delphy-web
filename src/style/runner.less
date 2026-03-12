@@ -69,26 +69,6 @@
         }
       }
 
-      .summary-stats {
-        display: grid;
-        grid-gap: 4px 16px;
-        grid-template-columns: max-content;
-        max-width: 170px;
-
-        dt {
-          font-weight: bold;
-          color: var(--chart-axis-text);
-        }
-        dt::after {
-          content: ": ";
-        }
-        dd {
-          display: inline-block;
-          margin: 0;
-          grid-column-start: 2;
-          text-align: right;
-        }
-      }
     }
   }
 
@@ -356,7 +336,7 @@
       &.active {opacity: 1;}
     }
 
-    .feature, .support {
+    .feature {
       position: relative;
       display: flex;
       flex-direction: row;
@@ -367,7 +347,9 @@
     }
 
     .support {
-      z-index: 1;
+      position: relative;
+      align-items: flex-start;
+      width: 100%;
     }
 
     .p {
@@ -395,6 +377,16 @@
     flex-direction: column;
     gap: var(--module-gap);
     flex: 1;
+
+    .readout-unit {
+      white-space: nowrap;
+      display: block;
+      font-size: 10px; //var(--chart-axis-text-font-size);
+      color: var(--chart-axis-text);
+      margin: 0;
+      height: 15px;
+    }
+
 
     .axis {
       // font-family: var(--Inter);
@@ -432,6 +424,34 @@
 
     }
 
+    .summary-stats {
+      display: grid;
+      grid-gap: 4px 16px;
+      grid-template-columns: max-content;
+      max-width: 170px;
+      margin: 0;
+
+      dt {
+        font-size: var(--chart-xaxis-hover-text-font-size);
+        color: var(--chart-axis-text);
+      }
+      dt::after {
+        content: ": ";
+      }
+      dd {
+        display: inline-block;
+        margin: 0;
+        grid-column-start: 2;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .value {
+        font-size: var(--chart-xaxis-hover-text-font-size);
+        font-weight: var(--chart-xaxis-hover-text-font-weight);
+        letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+        color: var(--chart-axis-text);
+      }
+    }
 
 
     &.trace {
@@ -513,7 +533,8 @@
 
           &.x {
 
-            height: var(--chart-xaxis-height);
+            // height: var(--chart-xaxis-height);
+            height: calc(var(--unit) * 2.5);
             // margin-left: var(--chart-yaxis-width);
             // margin-right: var(--chart-histogram-width);
             padding: 0 0 0 var(--chart-stroke-weight);
@@ -541,11 +562,6 @@
             .mean-label, .tree-label {
               margin-right: 0.25em;
             }
-            .readout-unit {
-              white-space: nowrap;
-              display: block;
-              font-size: 10px; //var(--chart-axis-text-font-size);
-            }
             .readout-value {
               font-size: var(--chart-xaxis-hover-text-font-size);
               font-weight: var(--chart-xaxis-hover-text-font-weight);
@@ -563,10 +579,10 @@
             .mean-label {display: none;}
             .tree-label {display: inline-block;}
             &.meaning {
-              .mean-label {display: inline-block;}
+              // .mean-label {display: inline-block;}
               .tree-label {display: none;}
+              .readout-value {display: none;}
             }
-            &.unitless .readout-unit {display: none;}
 
          }
           &.y {

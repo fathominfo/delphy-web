@@ -17,3 +17,16 @@ export type requestDrawFnc = ()=>void;
 
 export type HistDataFunction = ()=>number[];
 export type GammaDataFunction = ()=>SkygridPopModel[];
+
+
+
+export type SummaryStatsType = {
+  mean : number,
+  median : number,
+  hpdMin : number,
+  hpdMax : number,
+  ess : number,
+  stdDev : number,
+  stdErrOnMean : number,
+  act : number
+};

@@ -26,6 +26,7 @@ export class HistCanvas extends TraceCanvas {
   yAxisDiv: HTMLDivElement;
   yAxisTickTemplate: HTMLDivElement;
   yAxisHoverDiv: HTMLDivElement;
+  supportDiv: HTMLDivElement;
   xAxisDiv: HTMLDivElement;
   xAxisTick: HTMLSpanElement;
   hoverX: number = UNSET;
@@ -41,7 +42,8 @@ export class HistCanvas extends TraceCanvas {
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
     this.isVisible = true;
-
+    const unitDiv = this.container.querySelector(".header .readout-unit") as HTMLParagraphElement;
+    unitDiv.innerHTML = unit;
     this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
     this.histoWidth = UNSET;
@@ -50,6 +52,7 @@ export class HistCanvas extends TraceCanvas {
     this.yAxisDiv = this.container.querySelector(".chart .feature .axis.y .values") as HTMLDivElement;
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
+    this.supportDiv = this.container.querySelector(".chart .support") as HTMLDivElement;
     this.xAxisDiv = this.container.querySelector(".chart .support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
@@ -454,15 +457,30 @@ export class HistCanvas extends TraceCanvas {
       this.xAxisDiv.classList.remove("meaning");
     }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = this.formatLabel(value);
-    if (unit) {
-      this.xAxisDiv.classList.remove("unitless");
-      (this.xAxisDiv.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
-    } else {
-      this.xAxisDiv.classList.add("unitless");
-    }
+    const stats = (this.traceData as HistData).getStats();
+    const statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
+    setTextContent(statsList, ".mean", stats.mean);
+    setTextContent(statsList, ".hpd-min", stats.hpdMin);
+    setTextContent(statsList, ".hpd-max", stats.hpdMax);
+    setTextContent(statsList, ".median", stats.median);
+    setTextContent(statsList, ".stddev", stats.stdDev);
+    setTextContent(statsList, ".stderr", stats.stdErrOnMean);
+    setTextContent(statsList, ".ess", stats.ess);
+    setTextContent(statsList, ".act", stats.act);
+
+    // if (unit) {
+    //   this.xAxisDiv.classList.remove("unitless");
+    //   (this.xAxisDiv.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
+    // } else {
+    //   this.xAxisDiv.classList.add("unitless");
+    // }
   }
+
 
 
 
 }
 
+const setTextContent = (el: HTMLElement, selector: string, value: number) => {
+  (el.querySelector(selector) as HTMLSpanElement).textContent = safeLabel(value);
+}

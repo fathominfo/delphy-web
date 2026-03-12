@@ -2,7 +2,7 @@ import { getStdDev, log10, UNSET } from '../common';
 import { TraceData } from './tracedata';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { KernelDensityEstimate } from '../../pythia/kde';
-import { HistDataFunction } from './runcommon';
+import { HistDataFunction, SummaryStatsType } from './runcommon';
 import { Distribution } from '../distribution';
 
 
@@ -17,7 +17,6 @@ type BucketConfig = {
 
 const MIN_COUNT_FOR_HISTO = 10;
 export const MAX_COUNT_FOR_DISCRETE = 20;
-
 
 export class HistData extends TraceData {
 
@@ -128,7 +127,7 @@ export class HistData extends TraceData {
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }
 
-  getStats() : {} {
+  getStats() : SummaryStatsType {
     const {ess, act, mean } = this;
     const { median, hpdMin, hpdMax, data } = this.distribution;
     const stdDev = getStdDev(data);
