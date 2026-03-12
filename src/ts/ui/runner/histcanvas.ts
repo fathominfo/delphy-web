@@ -200,10 +200,10 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number) {
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
-    histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+    histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
     // requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
@@ -439,9 +439,6 @@ export class HistCanvas extends TraceCanvas {
     if (count === 0) return;
     let sampleCount = count;
     if (hideBurnIn && savedKneeIndex > 0) {
-      if (savedKneeIndex === 20) {
-        console.log("qu'est-ce que ce passe?")
-      }
       sampleCount = sampleCount - savedKneeIndex + 1;
     }
 

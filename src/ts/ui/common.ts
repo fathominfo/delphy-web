@@ -149,7 +149,7 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   const magnitude = Math.log10(x);
   let label = '';
   if (magnitude < lowerOOM || magnitude > upperOOM) {
-    label = x.toExponential();
+    label = x.toExponential(2);
   } else if (Math.abs(x) >= 100) {
     label = nfc(Math.round(x));
   } else if (Math.abs(x) >= 10) {

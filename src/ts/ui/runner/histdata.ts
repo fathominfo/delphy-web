@@ -43,7 +43,7 @@ export class HistData extends TraceData {
     this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET, ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
   }
 
-  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number) {
 
     this.data = data;
     this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
@@ -51,7 +51,7 @@ export class HistData extends TraceData {
     this.postBurnIn = postBurnIn.filter(n=>Number.isFinite(n));
     this.ess = calcEffectiveSampleSize(this.postBurnIn);
     const N = this.postBurnIn.length;
-    this.act = N / this.ess;
+    this.act = N / this.ess * stepsPerSample;
     const dataSum = this.postBurnIn.reduce((tot, n)=>tot+n, 0);
     this.mean = dataSum / N;
 
