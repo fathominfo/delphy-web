@@ -350,6 +350,54 @@
       position: relative;
       align-items: flex-start;
       width: 100%;
+      z-index: 1;
+
+
+      &:hover {
+        .copy-cell-button {
+          pointer-events: all;
+          opacity: 1;
+        }
+      }
+
+      .copy-cell-button {
+        pointer-events: none;
+        opacity: 0;
+        position: absolute;
+        top: 5px;
+        left: 2px;
+        height: 19px;
+        aspect-ratio: 1 / 1;
+        width: auto;
+        display: flex;
+        gap: 4px;
+        z-index: 1;
+        transition: opacity 0.15s;
+
+        .copy-glyph {
+          width: 14px;
+          background-color: var(--chart-axis-text);
+          .masked(url("./assets/icons/copy.svg"));
+        }
+
+        .tooltip {
+          opacity: 0;
+          transition: opacity 0.15s;
+          white-space: nowrap;
+        }
+
+        &:hover .tooltip { opacity: 1; }
+        .completed {display: none;}
+
+        &.copied {
+          .description{display: none;}
+          .completed {display: unset;}
+        }
+
+
+      }
+
+
     }
 
     .p {
@@ -666,10 +714,6 @@
 
 
 
-      }
-
-      .support {
-        z-index: 1;
       }
 
 

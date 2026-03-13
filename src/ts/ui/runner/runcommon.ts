@@ -33,9 +33,9 @@ export enum SummaryStat {
 }
 
 
-type SummaryStatLookupType = {[_:string]: SummaryStat};
 
-export const SummaryStatLookup: SummaryStatLookupType = {
+
+export const SummaryStatLookup: {[_:string]: SummaryStat} = {
   "mean" : SummaryStat.mean,
   "median" : SummaryStat.median,
   "hpdMin" : SummaryStat.hpdMin,
@@ -51,6 +51,16 @@ export const PlottableSummaryStats = [
   SummaryStat.hpdMin, SummaryStat.hpdMax
 ];
 
+export const SummaryStatLongLabels: {[_:string]: string} = {
+  "mean" : "Mean",
+  "median" : "Median",
+  "hpdMin" : "95% HPD min",
+  "hpdMax" : "95% HPD max",
+  "ess" : "Effective sample size",
+  "stdDev" : "Standard deviation",
+  "stdErrOnMean" : "Standard error on the mean",
+  "act" : "Autocorrelation time"
+};
 
 
 

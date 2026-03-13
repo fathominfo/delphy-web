@@ -1,6 +1,6 @@
 import { nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLookup, SummaryStatsType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 
@@ -36,6 +36,7 @@ export class HistCanvas extends TraceCanvas {
   isDragging = false;
   formatLabel = safeLabel;
   highlightStat: SummaryStat | null = null;
+  copyButton: HTMLButtonElement;
 
 
   constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
@@ -61,6 +62,7 @@ export class HistCanvas extends TraceCanvas {
     this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
     this.xAxisDiv = this.container.querySelector(".chart .support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
+    this.copyButton = this.supportDiv.querySelector(".copy-cell-button") as HTMLButtonElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
@@ -117,6 +119,17 @@ export class HistCanvas extends TraceCanvas {
       prevStat = '';
       statHoverListener(null);
     });
+    this.copyButton.addEventListener('click', ()=>{
+      const stats = (this.traceData as HistData).getStats();
+      let data = '';
+      Object.entries(stats).forEach(([key, value])=>{
+        const label = SummaryStatLongLabels[key];
+        console.log(key, label)
+        data += `${label}\t${value}\n`}
+      );
+      navigator.clipboard.writeText(data).then(()=>this.copyButton.classList.add("copied"));
+    });
+    this.copyButton.addEventListener('pointerenter', ()=>this.copyButton.classList.remove("copied"));
   }
 
 
@@ -205,6 +218,7 @@ export class HistCanvas extends TraceCanvas {
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
+    requestAnimationFrame(()=>{})
   }
 
 
