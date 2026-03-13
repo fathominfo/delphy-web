@@ -66,14 +66,16 @@ export class HistCanvas extends TraceCanvas {
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
+      this.highlightDiv.setPointerCapture(event.pointerId);
       this.handlePointerMove(event);
     });
     this.highlightDiv.addEventListener('pointermove', event=>{
       this.handlePointerMove(event);
     });
-    this.highlightDiv.addEventListener('pointerup', ()=>{
+    this.highlightDiv.addEventListener('pointerup', event=>{
       this.svg.classList.remove('dragging');
       this.isDragging = false;
+      this.highlightDiv.releasePointerCapture(event.pointerId);
     });
     // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
     // this.canvas.addEventListener('pointerover', ()=>{
