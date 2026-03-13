@@ -218,7 +218,6 @@ export class HistCanvas extends TraceCanvas {
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
-    requestAnimationFrame(()=>{})
   }
 
 

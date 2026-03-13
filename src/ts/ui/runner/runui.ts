@@ -503,10 +503,9 @@ export class RunUI extends UIScreen {
       }
 
       availables.forEach((tc: TraceChart)=>{
-        let canvas: HistCanvas;
         const config: HistChartConfig | HistChartCustomLabelConfig = this.traceChartConfig[tc] as HistChartCustomLabelConfig;
         const { name, unit, className, dataFnc, isDiscrete } = config;
-        canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
+        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
         if (config && (config as HistChartCustomLabelConfig).labelFunction !== undefined) {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
         }
