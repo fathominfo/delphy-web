@@ -1,7 +1,8 @@
-import { nfc, nicenum, safeLabel, UNSET } from '../common';
+import { nfc, nicenum, pad, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
+import { toDateString } from '../../pythia/dates';
 
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
@@ -36,7 +37,6 @@ export class HistCanvas extends TraceCanvas {
   isDragging = false;
   formatLabel = safeLabel;
   highlightStat: SummaryStat | null = null;
-  copyButton: HTMLButtonElement;
 
 
   constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
@@ -62,7 +62,6 @@ export class HistCanvas extends TraceCanvas {
     this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
     this.xAxisDiv = this.container.querySelector(".support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
-    this.copyButton = this.supportDiv.querySelector(".copy-cell-button") as HTMLButtonElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
@@ -121,7 +120,11 @@ export class HistCanvas extends TraceCanvas {
       prevStat = '';
       statHoverListener(null);
     });
-    this.copyButton.addEventListener('click', ()=>{
+
+    const copyButton = this.supportDiv.querySelector(".copy-cell-button") as HTMLButtonElement;
+    const histoCopyButton = this.container.querySelector(".display-wrapper:has(.histogram) .copy-cell-button") as HTMLButtonElement;
+    const traceCopyButton = this.container.querySelector(".display-wrapper:has(.graph) .copy-cell-button") as HTMLButtonElement;
+    copyButton.addEventListener('click', ()=>{
       const stats = (this.traceData as HistData).getStats();
       let data = '';
       Object.entries(stats).forEach(([key, value])=>{
@@ -129,9 +132,31 @@ export class HistCanvas extends TraceCanvas {
         console.log(key, label)
         data += `${label}\t${value}\n`}
       );
-      navigator.clipboard.writeText(data).then(()=>this.copyButton.classList.add("copied"));
+      navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("copied"));
     });
-    this.copyButton.addEventListener('pointerenter', ()=>this.copyButton.classList.remove("copied"));
+    histoCopyButton.addEventListener('click', ()=>{
+      const stats = (this.traceData as HistData).getStats();
+      let data = '';
+      Object.entries(stats).forEach(([key, value])=>{
+        const label = SummaryStatLongLabels[key];
+        console.log(key, label)
+        data += `${label}\t${value}\n`}
+      );
+      navigator.clipboard.writeText(data).then(()=>histoCopyButton.classList.add("copied"));
+    });
+    traceCopyButton.addEventListener('click', ()=>{
+      const data = (this.traceData as HistData).data,
+        // label = this.traceData.label;
+        label = this.className,
+        d = new Date(),
+        dateLabel =  `${ d.getUTCFullYear() }-${pad(d.getUTCMonth() + 1)}-${ pad(d.getUTCDate()) }`,
+        txt = data.join('\n');
+        // title = `delphy-${label.toLowerCase().replace(/ /g, '_')}-${ dateLabel }.txt`;
+      navigator.clipboard.writeText(txt).then(()=>traceCopyButton.classList.add("copied"));
+    });
+    copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("copied"));
+    histoCopyButton.addEventListener('pointerenter', ()=>histoCopyButton.classList.remove("copied"));
+    traceCopyButton.addEventListener('pointerenter', ()=>traceCopyButton.classList.remove("copied"));
   }
 
 
