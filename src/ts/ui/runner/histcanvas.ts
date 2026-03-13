@@ -6,7 +6,7 @@ import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
 TRACE_TEMPLATE.remove();
-const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".chart .histogram .bars .distribution rect") as SVGRectElement;
+const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution rect") as SVGRectElement;
 BAR_TEMPLATE.remove();
 
 const MAX_STEP_SIZE = 3;
@@ -55,12 +55,12 @@ export class HistCanvas extends TraceCanvas {
     this.histoWidth = UNSET;
     this.histoHeight = UNSET;
     this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
-    this.yAxisDiv = this.container.querySelector(".chart .feature .axis.y .values") as HTMLDivElement;
+    this.yAxisDiv = this.container.querySelector(".axis.y .values") as HTMLDivElement;
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
-    this.supportDiv = this.container.querySelector(".chart .support") as HTMLDivElement;
+    this.supportDiv = this.container.querySelector(".support") as HTMLDivElement;
     this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
-    this.xAxisDiv = this.container.querySelector(".chart .support .axis.x") as HTMLDivElement;
+    this.xAxisDiv = this.container.querySelector(".support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
     this.copyButton = this.supportDiv.querySelector(".copy-cell-button") as HTMLButtonElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{

@@ -130,8 +130,30 @@
                   <h3 class="title"></h3>
                   <p class="readout-unit"></p>
                 </div>
-                <div class="chart">
-                  <div class="feature">
+
+
+                <div class="displays">
+                  <div class="display-wrapper">
+                    <div class="spacer"></div>
+                    <div class="histogram display">
+                      <svg xmlns="svgXMLNS" viewBox="0 0 96 37.33">
+                        <g class="bars">
+                          <g class="distribution">
+                            <rect x="48" y="0" height="3.73" width="2"></rect>
+                          </g>
+                        </g>
+                      </svg>
+                    </div>
+                    <button class="copy-cell-button">
+                      <div class="copy-glyph"></div>
+                      <span class="tooltip">
+                        <span class="description">Copy histogram data</span>
+                        <span class="completed">Copied</span>
+                      </span>
+                    </button>
+
+                  </div>
+                  <div class="display-wrapper">
                     <div class="y axis">
                       <div class="values">
                         <span class="value">
@@ -151,71 +173,64 @@
                         </span>
                       </div>
                     </div>
-                    <div class="displays">
-                      <div class="histogram display">
-                        <svg xmlns="svgXMLNS" viewBox="0 0 96 37.33">
-                          <g class="bars">
-                            <g class="distribution">
-                              <rect x="48" y="0" height="3.73" width="2"></rect>
-                            </g>
-                            <!-- <g class="mean-value">
-                              <rect x="73" height="37.33" width="2"></rect>
-                            </g> -->
-                          </g>
-                        </svg>
+                    <div class="graph display">
+                      <svg xmlns="svgXMLNS" viewBox="0 0 96 149">
+                        <g class="run">
+                          <rect class="period" x="0" y="0" height="149" width="46"></rect>
+                          <path class="trend" d=""></path>
+                        </g>
+                        <g class="burn-in">
+                          <line class="period" x1="0" y1="96" x2="149" y2="96" ></line>
+                          <path class="trend" d=""></path>
+                        </g>
+                      </svg>
+                      <div class="position">
+                        <div class="x p"></div>
+                        <div class="y p"><div class="pos"></div></div>
                       </div>
-                      <div class="graph display">
-                        <svg xmlns="svgXMLNS" viewBox="0 0 96 149">
-                          <g class="run">
-                            <rect class="period" x="0" y="0" height="149" width="46"></rect>
-                            <path class="trend" d=""></path>
-                          </g>
-                          <g class="burn-in">
-                            <!-- <rect class="period" x="0" y="96" height="0" width="149"></rect> -->
-                            <line class="period" x1="0" y1="96" x2="149" y2="96" ></line>
-                            <path class="trend" d=""></path>
-                          </g>
-                        </svg>
-                        <div class="position">
-                          <div class="x p"></div>
-                          <div class="y p"><div class="pos"></div></div>
-                        </div>
+                    </div>
+                    <button class="copy-cell-button">
+                      <div class="copy-glyph"></div>
+                      <span class="tooltip">
+                        <span class="description">Copy trace data</span>
+                        <span class="completed">Copied</span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
 
-                      </div>
-                    </div>
+
+                <div class="support">
+                  <div class="x axis meaning unitless">
+                    <span class="tick">▲</span>
+                    <p>
+                      <span class="tree-label">Sample:</span>
+                      <span class="readout-value"></span>
+                    </p>
                   </div>
-                  <div class="support">
-                    <div class="x axis meaning unitless">
-                      <span class="tick">▲</span>
-                      <p>
-                        <span class="tree-label">Sample:</span>
-                        <span class="readout-value"></span>
-                      </p>
-                    </div>
-                    <dl class="summary-stats">
-                      <button class="copy-cell-button">
-                        <div class="copy-glyph"></div>
-                        <span class="tooltip">
-                          <span class="description">Copy <span class="trace-name"></span> summary stats</span>
-                          <span class="completed">Copied</span>
-                        </span>
-                      </button>
-                      <dt data-stat="mean">Mean</dt>
-                        <dd data-stat="mean"><span class="value mean"></span></dd>
-                      <dt data-stat="hpd">95% HPD</dt>
-                        <dd data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</dd>
-                      <dt data-stat="median">Median</dt>
-                        <dd data-stat="median"><span class="value median"></span></dd>
-                      <dt data-stat="stddev">Std dev</dt>
-                        <dd data-stat="stddev"><span class="value stddev"></span></dd>
-                      <dt data-stat="stderr">Std err</dt>
-                        <dd data-stat="stderr"><span class="value stderr"></span></dd>
-                      <dt data-stat="ess">ESS</dt>
-                        <dd data-stat="ess"><span class="value ess"></span></dd>
-                      <dt data-stat="act">ACT</dt>
-                        <dd data-stat="act"><span class="value act"></span></dd>
-                    </dl>
-                  </div>
+                  <dl class="summary-stats">
+                    <button class="copy-cell-button">
+                      <div class="copy-glyph"></div>
+                      <span class="tooltip">
+                        <span class="description">Copy summary stats</span>
+                        <span class="completed">Copied</span>
+                      </span>
+                    </button>
+                    <dt data-stat="mean">Mean</dt>
+                      <dd data-stat="mean"><span class="value mean"></span></dd>
+                    <dt data-stat="hpd">95% HPD</dt>
+                      <dd data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</dd>
+                    <dt data-stat="median">Median</dt>
+                      <dd data-stat="median"><span class="value median"></span></dd>
+                    <dt data-stat="stddev">Std dev</dt>
+                      <dd data-stat="stddev"><span class="value stddev"></span></dd>
+                    <dt data-stat="stderr">Std err</dt>
+                      <dd data-stat="stderr"><span class="value stderr"></span></dd>
+                    <dt data-stat="ess">ESS</dt>
+                      <dd data-stat="ess"><span class="value ess"></span></dd>
+                    <dt data-stat="act">ACT</dt>
+                      <dd data-stat="act"><span class="value act"></span></dd>
+                  </dl>
                 </div>
               </div>
 

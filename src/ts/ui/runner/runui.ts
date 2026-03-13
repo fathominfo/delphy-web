@@ -489,10 +489,13 @@ export class RunUI extends UIScreen {
       }
       toShow.push(TraceChart.logPosterior);
 
+      if (params.siteRateHeterogeneityEnabled) {
+        availables.push(TraceChart.alpha);
+      }
       availables = availables.concat([
         TraceChart.logPosterior,
         TraceChart.logG, TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
-        TraceChart.evolutionaryTime, TraceChart.alpha, TraceChart.minDate,
+        TraceChart.evolutionaryTime, TraceChart.minDate,
         TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
         TraceChart.hkyPiG, TraceChart.hkyPiT]);
 
