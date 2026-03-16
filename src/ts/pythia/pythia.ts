@@ -590,6 +590,37 @@ export class Pythia {
 
   sampleCurrentTree():void {
     if (this.run) {
+      const step = this.run.getStep();
+      /*
+      some save files mistakenly save multiple records of the initial tree.
+      */
+      const isDuplicate = step === this.stepsHist[this.stepsHist.length - 1];
+      if (isDuplicate) {
+        this.stepsHist.pop();
+        if (this.run.isMpoxHackEnabled()) {
+          this.muHist.pop();
+          this.muStarHist.pop();
+        } else {
+          this.muHist.pop();
+        }
+        this.totalBranchLengthHist.pop();
+        this.logPosteriorHist.pop();
+        this.logGHist.pop();
+        this.numMutationsHist.pop();
+        this.alphaHist.pop();
+        this.logCoalescentPriorHist.pop();
+        this.logOtherPriorsHist.pop();
+        this.hkyKappaHist.pop();
+        this.hkyPiAHist.pop();
+        this.hkyPiCHist.pop();
+        this.hkyPiGHist.pop();
+        this.hkyPiTHist.pop();
+        this.popModelHist.pop();
+        this.paramsHist.pop();
+        this.treeHist.pop();
+        this.minDateHist.pop();
+      }
+      this.stepsHist.push(step);
       if (this.run.isMpoxHackEnabled()) {
         this.muHist.push(this.run.getMpoxMu());
         this.muStarHist.push(this.run.getMpoxMuStar());
@@ -609,7 +640,6 @@ export class Pythia {
       this.hkyPiGHist.push(this.run.getHkyPiG());
       this.hkyPiTHist.push(this.run.getHkyPiT());
       this.popModelHist.push(this.run.getPopModel());
-      this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);
     }
@@ -1345,6 +1375,8 @@ export class Pythia {
     const treeEndLocation = read64();
     console.debug(`using save format version ${saveFormatVersion}, read ${pos} of ${actualSize} bytes. Trees end at position ${treeEndLocation}`);
 
+    this.resetHist();
+
     // Create a tiny temporary run so that we can read off the run parameters
     let runParams: RunParamConfig;
     {
@@ -1366,7 +1398,7 @@ export class Pythia {
 
     this.run = await this.instantiateRun(firstTree, runParams);
 
-    for (let i = 0; i < treeCount; i++) {
+    for (let i = 1; i < treeCount; i++) {
       progressCallback(i, treeCount);
 
       const tree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[i], treeInfo);
