@@ -1,8 +1,7 @@
-import { nfc, nicenum, pad, safeLabel, UNSET } from '../common';
+import { getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
-import { toDateString } from '../../pythia/dates';
 
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
@@ -37,6 +36,23 @@ export class HistCanvas extends TraceCanvas {
   isDragging = false;
   formatLabel = safeLabel;
   highlightStat: SummaryStat | null = null;
+  /*
+  only needed for downloads of trace data.
+  Feels inelegant to have this here for just that one potential need,
+  but other options don't really feel any better:
+    pass in a callback from runui to get the steps hist
+      which is better, a pointer to a function or a pointer to an array
+        at least the function doesn't change, whereas the arry needs updating
+        every time we get fresh data. but meh.
+    pass in the last step, and calculate backwards from there
+      more complicated than just passing an array, and isn't really more
+      efficient
+    manage the download in runui, and pass in everything that's needed from here
+      but really, the bulk of the work and data is here, so that feel needlessly
+      complex
+  open to other solutions, but for the moment this is the simplest [mark 260316]
+  */
+  steps: number[] = [];
 
 
   constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
@@ -121,9 +137,11 @@ export class HistCanvas extends TraceCanvas {
       statHoverListener(null);
     });
 
-    const copyButton = this.supportDiv.querySelector(".copy-cell-button") as HTMLButtonElement;
-    const histoCopyButton = this.container.querySelector(".display-wrapper:has(.histogram) .copy-cell-button") as HTMLButtonElement;
-    const traceCopyButton = this.container.querySelector(".display-wrapper:has(.graph) .copy-cell-button") as HTMLButtonElement;
+    const copyButton = this.supportDiv.querySelector(".copy-button") as HTMLButtonElement;
+    const histoDownloadDataButton = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLButtonElement;
+    const traceDownloadDataButton = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLButtonElement;
+    const histoDownloadChartButton = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLButtonElement;
+    const traceDownloadChartButton = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLButtonElement;
     copyButton.addEventListener('click', ()=>{
       const stats = (this.traceData as HistData).getStats();
       let data = '';
@@ -132,31 +150,59 @@ export class HistCanvas extends TraceCanvas {
         console.log(key, label)
         data += `${label}\t${value}\n`}
       );
-      navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("copied"));
+      navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
     });
-    histoCopyButton.addEventListener('click', ()=>{
-      const stats = (this.traceData as HistData).getStats();
-      let data = '';
-      Object.entries(stats).forEach(([key, value])=>{
-        const label = SummaryStatLongLabels[key];
-        console.log(key, label)
-        data += `${label}\t${value}\n`}
-      );
-      navigator.clipboard.writeText(data).then(()=>histoCopyButton.classList.add("copied"));
+    histoDownloadDataButton.addEventListener('click', ()=>{
+      const { bucketConfig } = this.traceData as HistData;
+      const { buckets, values } = bucketConfig;
+
+      let text = `bucket min\tvalue\n`;
+      buckets.forEach((value, i)=>{
+        const bucketMin = values[i];
+        text += `${bucketMin}\t${value}\n`;
+      });
+      const label = this.className,
+        blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
+        url = URL.createObjectURL(blob),
+        a = document.createElement("a"),
+        title = `delphy-${label.toLowerCase()}-${getTimestampString()}.tsv`;
+      a.href = url;
+      a.download = title;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{
+        const parent = histoDownloadDataButton.parentElement as HTMLDivElement;
+        parent.classList.add("completed");
+        a.remove();
+      }, 10000);
     });
-    traceCopyButton.addEventListener('click', ()=>{
-      const data = (this.traceData as HistData).data,
-        // label = this.traceData.label;
-        label = this.className,
-        d = new Date(),
-        dateLabel =  `${ d.getUTCFullYear() }-${pad(d.getUTCMonth() + 1)}-${ pad(d.getUTCDate()) }`,
-        txt = data.join('\n');
-        // title = `delphy-${label.toLowerCase().replace(/ /g, '_')}-${ dateLabel }.txt`;
-      navigator.clipboard.writeText(txt).then(()=>traceCopyButton.classList.add("copied"));
+    traceDownloadDataButton.addEventListener('click', ()=>{
+      const traces = (this.traceData as HistData).data,
+        steps = this.steps,
+        label = this.className.toLowerCase();
+      let text = `step\t${label}\n`;
+      console.assert(traces.length === steps.length);
+      traces.forEach((trace, i)=>text += `${steps[i]}\t${trace}\n`);
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
+        url = URL.createObjectURL(blob),
+        a = document.createElement("a"),
+        title = `delphy-${label.toLowerCase()}-${getTimestampString()}.tsv`;
+      a.href = url;
+      a.download = title;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{
+        const parent = traceDownloadDataButton.parentElement as HTMLDivElement;
+        parent.classList.add("completed");
+        a.remove();
+      }, 10000);
+
     });
-    copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("copied"));
-    histoCopyButton.addEventListener('pointerenter', ()=>histoCopyButton.classList.remove("copied"));
-    traceCopyButton.addEventListener('pointerenter', ()=>traceCopyButton.classList.remove("copied"));
+    copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
+    histoDownloadDataButton.addEventListener('pointerenter', ()=>histoDownloadDataButton.classList.remove("completed"));
+    traceDownloadDataButton.addEventListener('pointerenter', ()=>traceDownloadDataButton.classList.remove("completed"));
+    histoDownloadChartButton.addEventListener('pointerenter', ()=>histoDownloadChartButton.classList.remove("completed"));
+    traceDownloadChartButton.addEventListener('pointerenter', ()=>traceDownloadChartButton.classList.remove("completed"));
   }
 
 
@@ -241,9 +287,10 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number) {
+  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number, steps: number[]) {
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
+    this.steps = steps;
     histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
   }
 

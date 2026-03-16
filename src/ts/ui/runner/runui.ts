@@ -840,11 +840,12 @@ export class RunUI extends UIScreen {
       mccIndex = this.mccIndex,
       sampleIndex = UNSET,
       kneeIndex = this.pythia.kneeIndex,
-      stepsPerSample = this.getRunParams().stepsPerSample;
+      stepsPerSample = this.getRunParams().stepsPerSample,
+      steps = this.pythia.stepsHist;
     this.traceCanvases.forEach(canvas=>{
       if (canvas.isVisible || this.essCandidates.includes(canvas)) {
         if (canvas instanceof HistCanvas) {
-          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
+          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample, steps);
         } else if (canvas instanceof GammaHistCanvas) {
           canvas.setRangeData(kneeIndex, sampleIndex);
         }

@@ -345,7 +345,7 @@
 
 
     &:hover {
-      .copy-cell-button {
+      .copy-button {
         pointer-events: all;
         opacity: 0.65;
       }
@@ -384,17 +384,21 @@
       width: 100%;
       position: relative;
 
-      .copy-cell-button {
+      .download-button {
         left: unset;
         right: 30px;
         transform: translate(100%, 0);
         top: 0;
         flex-direction: column;
         height: auto;
+
+        .download-chart {
+          display: none;
+        }
       }
 
       &:hover {
-        .copy-cell-button {
+        .download-button {
           pointer-events: all;
           opacity: 0.65;
         }
@@ -462,15 +466,13 @@
       dt {
         font-size: var(--chart-xaxis-hover-text-font-size);
         color: var(--chart-axis-text);
-      }
-      dt::after {
-        content: ": ";
+        text-align: right;
+        padding-left: 8px;
       }
       dd {
         display: inline-block;
         margin: 0;
         grid-column-start: 2;
-        text-align: right;
         white-space: nowrap;
         color: var(--chart-axis-text);
       }
