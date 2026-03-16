@@ -153,19 +153,26 @@ export class HistCanvas extends TraceCanvas {
       navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
     });
     histoDownloadDataButton.addEventListener('click', ()=>{
-      const { bucketConfig } = this.traceData as HistData;
+      const { bucketConfig, distribution } = this.traceData as HistData;
       const { buckets, values } = bucketConfig;
-
-      let text = `bucket min\tvalue\n`;
-      buckets.forEach((value, i)=>{
+      const bandwidth = distribution.bandwidth;
+      console.log(distribution)
+      const label = this.className;
+      let text = `bucket min\tbucket max\tprobability\tpdf\n`;
+      let totProb = 0;
+      buckets.forEach((pdf, i)=>{
         const bucketMin = values[i];
-        text += `${bucketMin}\t${value}\n`;
+        const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
+        const buck = bucketMax - bucketMin
+        const prob = pdf * buck;
+        totProb += prob;
+        text += `${bucketMin}\t${bucketMax}\t${prob}\t${pdf}\n`;
       });
-      const label = this.className,
-        blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
+      console.log("total prob", totProb)
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
         url = URL.createObjectURL(blob),
         a = document.createElement("a"),
-        title = `delphy-${label.toLowerCase()}-${getTimestampString()}.tsv`;
+        title = `delphy-${label.toLowerCase()}-distribution-${getTimestampString()}.tsv`;
       a.href = url;
       a.download = title;
       document.body.appendChild(a);
@@ -179,14 +186,14 @@ export class HistCanvas extends TraceCanvas {
     traceDownloadDataButton.addEventListener('click', ()=>{
       const traces = (this.traceData as HistData).data,
         steps = this.steps,
-        label = this.className.toLowerCase();
+        label = this.className;
       let text = `step\t${label}\n`;
       console.assert(traces.length === steps.length);
       traces.forEach((trace, i)=>text += `${steps[i]}\t${trace}\n`);
       const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
         url = URL.createObjectURL(blob),
         a = document.createElement("a"),
-        title = `delphy-${label.toLowerCase()}-${getTimestampString()}.tsv`;
+        title = `delphy-${label}-traces-${getTimestampString()}.tsv`;
       a.href = url;
       a.download = title;
       document.body.appendChild(a);

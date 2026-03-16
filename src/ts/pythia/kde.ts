@@ -1,3 +1,5 @@
+import { numericSort } from "../ui/common";
+
 function estimate_data_variance(xs: number[]): number {
   const N = xs.length;
   if (N < 2) {
@@ -34,10 +36,11 @@ export class KernelDensityEstimate {
   private bandwidth_: number;
 
   public constructor(samples: number[]) {
-    samples.sort((a,b)=>a-b);
-    this.samples_ = samples.filter(n=>isFinite(n) && !isNaN(n));
-    this.min_sample_ = Math.min(...this.samples_);
-    this.max_sample_ = Math.max(...this.samples_);
+    this.samples_ = samples.filter(n=>Number.isFinite(n));
+    this.samples_.sort(numericSort);
+    this.min_sample_ = this.samples_[0];
+    this.max_sample_ = this.samples_[this.samples_.length - 1];
+
 
     // Estimated KDE bandwidth (from https://en.wikipedia.org/wiki/Kernel_density_estimation)
     const N = this.samples_.length;
