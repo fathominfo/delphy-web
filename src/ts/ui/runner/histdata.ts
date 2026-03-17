@@ -130,7 +130,7 @@ export class HistData extends TraceData {
     if (bandwidth > 0) {
       let previous = 0;
       let i = 0;
-      while (i <= max) {
+      while (i <= bucketCount) {
         const n = min + i * bandwidth;
         const cumulative = kde.cumulative(n);
         const gaust = cumulative - previous;
