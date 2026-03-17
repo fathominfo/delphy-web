@@ -405,7 +405,6 @@ nav button:not(:disabled):hover {
   top: 2px;
   left: 2px;
   height: 19px;
-  aspect-ratio: 1 / 1;
   width: auto;
   display: flex;
   gap: 4px;
@@ -413,6 +412,10 @@ nav button:not(:disabled):hover {
   transition: opacity 0.15s;
   background-color: rgba(255,255,255,0.9);
   box-shadow: 0px 0px 2px 5px rgba(255,255,255,0.9);
+
+  .glyph {
+    aspect-ratio: 1 / 1;
+  }
 
   .tooltip {
     opacity: 0;
@@ -425,7 +428,7 @@ nav button:not(:disabled):hover {
   }
 
   &:hover {
-    opacity: 1;
+    opacity: 1 !important;
     .tooltip { opacity: 1; }
   }
   .completed {display: none;}
@@ -435,23 +438,25 @@ nav button:not(:disabled):hover {
     .completed {display: unset;}
   }
 
+  .button-glyph {
+    width: 14px;
+    aspect-ratio: 1 / 1;
+    transition: all 0.15s;
+  }
+
 
 }
 
 
 
-.copy-button .copy-glyph {
-  width: 14px;
-  height: 14px;
+.copy-button .button-glyph {
   background-color: var(--chart-axis-text);
   .masked(url("./assets/icons/copy.svg"));
 }
 
-.download-button .download-glyph {
-    width: 14px;
-    height: 14px;
-    background-color: var(--chart-axis-text);
-    .masked(url("./assets/icons/export.svg"));
+.download-button .button-glyph {
+  background-color: black;
+  .masked(url("./assets/icons/export.svg"));
 }
 
 
