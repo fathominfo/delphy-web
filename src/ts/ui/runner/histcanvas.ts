@@ -2,6 +2,7 @@ import { getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
+import { getElementsAndStyles } from '../../util/exportutils';
 
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
@@ -182,6 +183,10 @@ export class HistCanvas extends TraceCanvas {
         parent.classList.add("completed");
         a.remove();
       }, 10000);
+    });
+    histoDownloadChartButton.addEventListener('click', ()=>{
+      const result = getElementsAndStyles(this.histoSVG);
+      console.log(result);
     });
     traceDownloadDataButton.addEventListener('click', ()=>{
       const traces = (this.traceData as HistData).data,
