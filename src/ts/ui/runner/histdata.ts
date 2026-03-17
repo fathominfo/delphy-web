@@ -110,22 +110,39 @@ export class HistData extends TraceData {
   getKDEHistoData(kde:KernelDensityEstimate) : BucketConfig {
     const buckets: number[] = [],
       values: number[] = [],
-      min = kde.min_sample,
-      max = kde.max_sample,
-      range = max - min,
       bandwidth = kde.bandwidth,
-      halfBandwidth = bandwidth / 2,
-      bucketCount = Math.floor(range / bandwidth + 1);
+      halfBandwidth = 0.5 * bandwidth;
+    let min = kde.min_sample - halfBandwidth,
+      max = kde.max_sample + halfBandwidth;
+    /*
+    since the bandwidth is not necessarily an even divisor of the data range,
+    calculate buckets based on evenly sized buckets,
+    and adjust min and max to accommodate them.
+    */
+    const range = max - min,
+      bucketCount = Math.ceil(range / bandwidth),
+      bucketMax = min + bucketCount * bandwidth;
+    const delta = bucketMax - max;
+    console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
+    min -= delta / 2;
+    max += delta / 2;
     let maxBucketValue = 0;
     if (bandwidth > 0) {
-      let n = min;
-      for (let i = 0; i < bucketCount; i++) {
-        n = min + i / bucketCount * range;
-        const gaust = kde.value_at(n + halfBandwidth);
+      let previous = 0;
+      let i = 0;
+      while (i <= max) {
+        const n = min + i * bandwidth;
+        const cumulative = kde.cumulative(n);
+        const gaust = cumulative - previous;
         values.push(n);
         buckets.push(gaust);
         maxBucketValue = Math.max(maxBucketValue, gaust);
+        previous = cumulative;
+        i++;
       }
+      const cmin = kde.cumulative(min);
+      const cmax = kde.cumulative(max);
+      console.debug(`            probs:   min ${cmin},     max ${cmax}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }

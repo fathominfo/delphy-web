@@ -161,15 +161,17 @@ export class HistCanvas extends TraceCanvas {
       const label = this.className;
       let text = `bucket min\tbucket max\tprobability\tpdf\n`;
       let totProb = 0;
-      buckets.forEach((pdf, i)=>{
+      let totPdf = 0;
+      buckets.forEach((probability, i)=>{
         const bucketMin = values[i];
         const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
-        const buck = bucketMax - bucketMin
-        const prob = pdf * buck;
-        totProb += prob;
-        text += `${bucketMin}\t${bucketMax}\t${prob}\t${pdf}\n`;
+        const bucketRange = bucketMax - bucketMin
+        const pdf = probability / bucketRange;
+        totProb += probability;
+        totPdf += pdf;
+        text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
       });
-      console.log("total prob", totProb)
+      console.debug("total prob", totProb, totPdf);
       const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
         url = URL.createObjectURL(blob),
         a = document.createElement("a"),
