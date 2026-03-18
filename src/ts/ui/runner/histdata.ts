@@ -105,6 +105,7 @@ export class HistData extends TraceData {
   getDiscreteHistoData(estimateData: number[], valRange: number, displayMin: number) : BucketConfig {
     const buckets: number[] = Array(valRange + 1).fill(0);
     estimateData.forEach(n=>buckets[n-displayMin]++);
+    // buckets = buckets.map(n=>n/estimateData.length);
     const values = buckets.map((_n, i)=>i+displayMin);
     const maxBucketValue = Math.max(...buckets);
     return {buckets, values, maxBucketValue, positions: [], step: 1 };
@@ -131,22 +132,27 @@ export class HistData extends TraceData {
       // console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
       min -= delta / 2;
       let cdf_n = kde.cdf(min);
+
       while (cdf_n > MIN_PROB) {
         min -= bandwidth;
         cdf_n = kde.cdf(min);
       }
-      let previous = 0;
+      buckets.push(cdf_n);
+      values.push(min)
+      const cumulatives: number[] = [cdf_n];
+      let previous = cdf_n;
       let n = min;
       while (cdf_n <= MAX_PROB) {
+        n += bandwidth;
+        cdf_n = kde.cdf(n);
         const gaust = cdf_n - previous;
         values.push(n);
         buckets.push(gaust);
+        cumulatives.push(cdf_n);
         maxBucketValue = Math.max(maxBucketValue, gaust);
         previous = cdf_n;
-        n += bandwidth;
-        cdf_n = kde.cdf(n);
       }
-      console.debug(`            probs:   min ${buckets[0]},     max ${cdf_n}`);
+      console.debug(`            probs:   min ${cumulatives[0]},     max ${cumulatives[cumulatives.length - 1]}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }

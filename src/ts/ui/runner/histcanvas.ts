@@ -783,24 +783,38 @@ export class HistCanvas extends TraceCanvas {
 
 
   createHistogramDataExport() : string {
-    const { bucketConfig, distribution } = this.traceData as HistData;
+    const { bucketConfig, distribution, isDiscrete } = this.traceData as HistData;
     const { buckets, values } = bucketConfig;
     const bandwidth = distribution.bandwidth;
     // console.log(distribution)
     const label = this.className;
-    let text = `bucket min\tbucket max\tprobability\tpdf\n`;
-    let totProb = 0;
-    let totPdf = 0;
-    buckets.forEach((probability, i)=>{
-      const bucketMin = values[i];
-      const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
-      const bucketRange = bucketMax - bucketMin
-      const pdf = probability / bucketRange;
-      totProb += probability;
-      totPdf += pdf;
-      text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
-    });
-    console.debug("total prob", totProb, totPdf);
+    let text = `delphy ${label} `;
+    // let totProb = 0;
+    // let totPdf = 0;
+    if (isDiscrete) {
+      text += 'discrete values\n';
+      text += `bucket\tprobability\ttally\n`;
+      const total = buckets.reduce((tot, n)=>tot + n, 0);
+      buckets.forEach((tally, i)=>{
+        const bucket = values[i];
+        const probability = tally / total;
+        // totProb += probability;
+        text += `${bucket}\t${probability}\t${tally}\n`;
+      });
+    } else {
+      text += 'distribution\n';
+      text = `bucket min\tbucket max\tprobability\tpdf\n`;
+      buckets.forEach((probability, i)=>{
+        const bucketMin = values[i];
+        const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
+        const bucketRange = bucketMax - bucketMin;
+        const pdf = probability / bucketRange;
+        // totProb += probability;
+        // totPdf += pdf;
+        text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
+      });
+    }
+    // console.debug("total prob", totProb, totPdf);
     return text;
   }
 
