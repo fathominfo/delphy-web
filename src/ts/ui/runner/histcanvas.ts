@@ -1,4 +1,4 @@
-import { getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
@@ -141,10 +141,12 @@ export class HistCanvas extends TraceCanvas {
     });
 
     const copyButton = this.supportDiv.querySelector(".copy-button") as HTMLButtonElement;
-    const histoDownloadDataButton = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLButtonElement;
-    const traceDownloadDataButton = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLButtonElement;
-    const histoDownloadChartButton = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLButtonElement;
-    const traceDownloadChartButton = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLButtonElement;
+    const histoDownloadsDiv = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLDivElement;
+    const traceDownloadsDiv = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLDivElement;
+    const histoDownloadDataButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-text") as HTMLButtonElement;
+    const traceDownloadDataButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-text") as HTMLButtonElement;
+    const histoDownloadChartButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-chart") as HTMLButtonElement;
+    const traceDownloadChartButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-chart") as HTMLButtonElement;
     copyButton.addEventListener('click', ()=>{
       const stats = (this.traceData as HistData).getStats();
       let data = '';
@@ -156,92 +158,36 @@ export class HistCanvas extends TraceCanvas {
       navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
     });
     histoDownloadDataButton.addEventListener('click', ()=>{
-      const { bucketConfig, distribution } = this.traceData as HistData;
-      const { buckets, values } = bucketConfig;
-      const bandwidth = distribution.bandwidth;
-      console.log(distribution)
-      const label = this.className;
-      let text = `bucket min\tbucket max\tprobability\tpdf\n`;
-      let totProb = 0;
-      let totPdf = 0;
-      buckets.forEach((probability, i)=>{
-        const bucketMin = values[i];
-        const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
-        const bucketRange = bucketMax - bucketMin
-        const pdf = probability / bucketRange;
-        totProb += probability;
-        totPdf += pdf;
-        text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
-      });
-      console.debug("total prob", totProb, totPdf);
-      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
-        url = URL.createObjectURL(blob),
-        a = document.createElement("a"),
+      const text = this.createHistogramDataExport(),
         title = `delphy-${label.toLowerCase()}-distribution-${getTimestampString()}.tsv`;
-      a.href = url;
-      a.download = title;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{
-        const parent = histoDownloadDataButton.parentElement as HTMLDivElement;
-        parent.classList.add("completed");
-        a.remove();
-      }, 10000);
+      downloadTextFile(title, text).then(()=>{
+        histoDownloadsDiv.classList.add("completed");
+      })
     });
     histoDownloadChartButton.addEventListener('click', ()=>{
-      // this.createTraceExport().then((pdfBytes: ArrayBuffer)=>{
-      //   const blob = new Blob([pdfBytes], { type: 'application/pdf;' }),
-      //     url = URL.createObjectURL(blob),
-      //     a = document.createElement("a"),
-      //     title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
-      //   a.href = url;
-      //   a.download = title;
-      //   document.body.appendChild(a);
-      //   a.click();
-      //   setTimeout(()=>{
-      //     const parent = histoDownloadDataButton.parentElement as HTMLDivElement;
-      //     parent.classList.add("completed");
-      //     a.remove();
-      //   }, 10000);
-
-      // })
-      this.createHistogramExport().then((pdfDoc: jsPDF)=>{
+      this.createHistogramChartExport().then((pdfDoc: jsPDF)=>{
         const title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
         pdfDoc.save(title);
+        histoDownloadsDiv.classList.add("completed");
       });
     });
     traceDownloadDataButton.addEventListener('click', ()=>{
-      const traces = (this.traceData as HistData).data,
-        steps = this.steps,
-        label = this.className;
-      let text = `step\t${label}\n`;
-      console.assert(traces.length === steps.length);
-      traces.forEach((trace, i)=>text += `${steps[i]}\t${trace}\n`);
-      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
-        url = URL.createObjectURL(blob),
-        a = document.createElement("a"),
+      const text = this.createTraceDataExport(),
         title = `delphy-${label}-traces-${getTimestampString()}.tsv`;
-      a.href = url;
-      a.download = title;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{
-        const parent = traceDownloadDataButton.parentElement as HTMLDivElement;
-        parent.classList.add("completed");
-        a.remove();
-      }, 10000);
-
-
-      this.createTraceExport().then((pdfDoc: jsPDF)=>{
-        const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
-        pdfDoc.save(title);
+      downloadTextFile(title, text).then(()=>{
+        traceDownloadsDiv.classList.add("completed");
       });
     });
+    traceDownloadChartButton.addEventListener('click', ()=>{
+      this.createTraceChartExport().then((pdfDoc: jsPDF)=>{
+        const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
+        pdfDoc.save(title);
+        traceDownloadsDiv.classList.add("completed");
+      });
+    })
     copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
-    histoDownloadDataButton.addEventListener('pointerenter', ()=>histoDownloadDataButton.classList.remove("completed"));
-    traceDownloadDataButton.addEventListener('pointerenter', ()=>traceDownloadDataButton.classList.remove("completed"));
-    histoDownloadChartButton.addEventListener('pointerenter', ()=>histoDownloadChartButton.classList.remove("completed"));
-    traceDownloadChartButton.addEventListener('pointerenter', ()=>traceDownloadChartButton.classList.remove("completed"));
+    histoDownloadsDiv.addEventListener('pointerenter', ()=>histoDownloadsDiv.classList.remove("completed"));
+    traceDownloadsDiv.addEventListener('pointerenter', ()=>traceDownloadsDiv.classList.remove("completed"));
   }
 
 
@@ -728,7 +674,18 @@ export class HistCanvas extends TraceCanvas {
     }
   }
 
-  createTraceExport() : Promise<jsPDF> {
+  createTraceDataExport() : string {
+    const traces = (this.traceData as HistData).data,
+      steps = this.steps,
+      label = this.className;
+    let text = `step\t${label}\n`;
+    console.assert(traces.length === steps.length);
+    traces.forEach((trace, i)=>text += `${steps[i]}\t${trace}\n`);
+    return text;
+  }
+
+
+  createTraceChartExport() : Promise<jsPDF> {
     const result = getElementsAndStyles(this.svg);
     return new Promise((resolve)=>{
 
@@ -825,7 +782,30 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  createHistogramExport() : Promise<jsPDF> {
+  createHistogramDataExport() : string {
+    const { bucketConfig, distribution } = this.traceData as HistData;
+    const { buckets, values } = bucketConfig;
+    const bandwidth = distribution.bandwidth;
+    // console.log(distribution)
+    const label = this.className;
+    let text = `bucket min\tbucket max\tprobability\tpdf\n`;
+    let totProb = 0;
+    let totPdf = 0;
+    buckets.forEach((probability, i)=>{
+      const bucketMin = values[i];
+      const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
+      const bucketRange = bucketMax - bucketMin
+      const pdf = probability / bucketRange;
+      totProb += probability;
+      totPdf += pdf;
+      text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
+    });
+    console.debug("total prob", totProb, totPdf);
+    return text;
+  }
+
+
+  createHistogramChartExport() : Promise<jsPDF> {
     const result = getElementsAndStyles(this.histoSVG);
     return new Promise((resolve)=>{
 

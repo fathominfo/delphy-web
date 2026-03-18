@@ -431,11 +431,14 @@ nav button:not(:disabled):hover {
     opacity: 1 !important;
     .tooltip { opacity: 1; }
   }
-  .completed {display: none;}
+  .completed {
+    display: none;
+    height: 32px;
+  }
 
   &.completed {
     .action{display: none;}
-    .completed {display: unset;}
+    .completed {display: block;}
   }
 
   .button-glyph {
