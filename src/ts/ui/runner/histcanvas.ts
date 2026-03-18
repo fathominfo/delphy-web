@@ -143,10 +143,10 @@ export class HistCanvas extends TraceCanvas {
     const copyButton = this.supportDiv.querySelector(".copy-button") as HTMLButtonElement;
     const histoDownloadsDiv = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLDivElement;
     const traceDownloadsDiv = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLDivElement;
-    const histoDownloadDataButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-text") as HTMLButtonElement;
-    const traceDownloadDataButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-text") as HTMLButtonElement;
-    const histoDownloadChartButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-chart") as HTMLButtonElement;
-    const traceDownloadChartButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-chart") as HTMLButtonElement;
+    // const histoDownloadDataButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-text") as HTMLButtonElement;
+    // const traceDownloadDataButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-text") as HTMLButtonElement;
+    // const histoDownloadChartButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-chart") as HTMLButtonElement;
+    // const traceDownloadChartButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-chart") as HTMLButtonElement;
     copyButton.addEventListener('click', ()=>{
       const stats = (this.traceData as HistData).getStats();
       let data = '';
@@ -157,34 +157,36 @@ export class HistCanvas extends TraceCanvas {
       );
       navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
     });
-    histoDownloadDataButton.addEventListener('click', ()=>{
+    // histoDownloadDataButton.addEventListener('click', ()=>{
+    histoDownloadsDiv.addEventListener('click', ()=>{
       const text = this.createHistogramDataExport(),
         title = `delphy-${label.toLowerCase()}-distribution-${getTimestampString()}.tsv`;
       downloadTextFile(title, text).then(()=>{
         histoDownloadsDiv.classList.add("completed");
       })
     });
-    histoDownloadChartButton.addEventListener('click', ()=>{
-      this.createHistogramChartExport().then((pdfDoc: jsPDF)=>{
-        const title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
-        pdfDoc.save(title);
-        histoDownloadsDiv.classList.add("completed");
-      });
-    });
-    traceDownloadDataButton.addEventListener('click', ()=>{
+    // histoDownloadChartButton.addEventListener('click', ()=>{
+    //   this.createHistogramChartExport().then((pdfDoc: jsPDF)=>{
+    //     const title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
+    //     pdfDoc.save(title);
+    //     histoDownloadsDiv.classList.add("completed");
+    //   });
+    // });
+    // traceDownloadDataButton.addEventListener('click', ()=>{
+    traceDownloadsDiv.addEventListener('click', ()=>{
       const text = this.createTraceDataExport(),
         title = `delphy-${label}-traces-${getTimestampString()}.tsv`;
       downloadTextFile(title, text).then(()=>{
         traceDownloadsDiv.classList.add("completed");
       });
     });
-    traceDownloadChartButton.addEventListener('click', ()=>{
-      this.createTraceChartExport().then((pdfDoc: jsPDF)=>{
-        const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
-        pdfDoc.save(title);
-        traceDownloadsDiv.classList.add("completed");
-      });
-    })
+    // traceDownloadChartButton.addEventListener('click', ()=>{
+    //   this.createTraceChartExport().then((pdfDoc: jsPDF)=>{
+    //     const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
+    //     pdfDoc.save(title);
+    //     traceDownloadsDiv.classList.add("completed");
+    //   });
+    // })
     copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
     histoDownloadsDiv.addEventListener('pointerenter', ()=>histoDownloadsDiv.classList.remove("completed"));
     traceDownloadsDiv.addEventListener('pointerenter', ()=>traceDownloadsDiv.classList.remove("completed"));
