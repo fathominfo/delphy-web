@@ -155,7 +155,7 @@ export class TimeDistributionCanvas {
       while (val > THRESHOLD) {
         t += bandwidth;
         x = this.xFor(t, drawWidth);
-        val = kde.value_at(t);
+        val = kde.pdf(t);
         const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
         // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
         ctx.lineTo(x, y);

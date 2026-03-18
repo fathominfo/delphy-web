@@ -132,7 +132,7 @@ export class HistData extends TraceData {
       let i = 0;
       while (i <= bucketCount) {
         const n = min + i * bandwidth;
-        const cumulative = kde.cumulative(n);
+        const cumulative = kde.cdf(n);
         const gaust = cumulative - previous;
         values.push(n);
         buckets.push(gaust);
@@ -140,9 +140,9 @@ export class HistData extends TraceData {
         previous = cumulative;
         i++;
       }
-      // const cmin = kde.cumulative(min);
-      // const cmax = kde.cumulative(max);
-      // console.debug(`            probs:   min ${cmin},     max ${cmax}`);
+      const cmin = kde.cdf(min);
+      const cmax = kde.cdf(max);
+      console.debug(`            probs:   min ${cmin},     max ${cmax}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }

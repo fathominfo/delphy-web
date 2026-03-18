@@ -34,7 +34,7 @@ export class KernelDensityEstimate {
   private min_sample_: number;
   private max_sample_: number;
   /*
-  aka probability density function (pdf)
+  aka probability density function (pdf_1)
   */
   private kernel_: (x: number, xi: number) => number;
   private bandwidth_: number;
@@ -59,15 +59,15 @@ export class KernelDensityEstimate {
         + (this.max_sample_ - this.min_sample_) / 200);  // Avoid too few bins
     const bandwidth_2: number = 2 * this.bandwidth_ * this.bandwidth_;
     // Precalculate factors in Gaussian kernel
-    // const factor_in_exp = 1 / bandwidth_2;
-    // const normalization = 1 / Math.sqrt(bandwidth_2 * Math.PI);
-    // // this.kernel_ = (x: number, xi: number) => {
-    //   return Math.exp(-Math.pow(x - xi, 2) * factor_in_exp) * normalization;
-    // }
-    const normalization = 1 / Math.sqrt(2 * bandwidth_2);
-    this.kernel_ = (x: number, mu: number)=> {
-      return normalization * Math.exp(-Math.pow(x - mu, 2)/ bandwidth_2);
-    };
+    const factor_in_exp = 1 / bandwidth_2;
+    const normalization = 1 / Math.sqrt(bandwidth_2 * Math.PI);
+    this.kernel_ = (x: number, xi: number) => {
+      return Math.exp(-Math.pow(x - xi, 2) * factor_in_exp) * normalization;
+    }
+    // const normalization = 1 / Math.sqrt(2 * bandwidth_2);
+    // this.kernel_ = (x: number, mu: number)=> {
+    //   return normalization * Math.exp(-Math.pow(x - mu, 2)/ bandwidth_2);
+    // };
   }
 
   get min_sample(): number {
@@ -84,14 +84,12 @@ export class KernelDensityEstimate {
 
 
   /*
-  value_at(x)
-  = sum_{i=1}^N (1/sqrt(2 * bandwidth^2)) exp[ -(x - x_i)^2 / (2 * bandwidth^2) ]
-  = sum_{i=1}^N pdf_1(x; mu=x_i, sigma=bandwidth)
+  probability density function
   */
-
-  value_at(x: number) {
+  pdf(x: number) {
+    const N = this.samples_.length;
     const sum = this.samples_.reduce((total, xi)=>total + this.kernel_(x, xi), 0);
-    return sum;
+    return sum / N;
   }
 
   /*
@@ -100,18 +98,17 @@ export class KernelDensityEstimate {
   for example, a and b could be the min and max values in a histogram bucket
   */
   integrated_value(a: number, b: number) : number {
-    const { samples_, bandwidth_} = this;
-    const N = samples_.length;
-    const k = 1.0 / (Math.SQRT2 * bandwidth_);
-    const result = samples_.reduce((tot, mu)=> tot + 0.5 * (erf(k * (b - mu)) - erf(k * (a - mu))), 0);
-    return result / N;
+    return this.cdf(b) - this.cdf(a);
   }
 
-  cumulative(x: number) : number {
+  /*
+  cumulative density function: the probability that the
+  */
+  cdf(x: number) : number {
     const { samples_, bandwidth_} = this;
     const N = samples_.length;
     const k = 1.0 / (Math.SQRT2 * bandwidth_);
-    const result = samples_.reduce((tot, mu)=> tot + erf((x - mu) * k), 0);
+    const result = samples_.reduce((tot, mu)=> tot + 0.5 + 0.5 * erf((x - mu) * k), 0);
     return result / N;
   }
 }
