@@ -123,7 +123,7 @@ export class HistData extends TraceData {
       bucketCount = Math.ceil(range / bandwidth),
       bucketMax = min + bucketCount * bandwidth;
     const delta = bucketMax - max;
-    console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
+    // console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
     min -= delta / 2;
     max += delta / 2;
     let maxBucketValue = 0;
@@ -142,7 +142,7 @@ export class HistData extends TraceData {
       }
       const cmin = kde.cumulative(min);
       const cmax = kde.cumulative(max);
-      console.debug(`            probs:   min ${cmin},     max ${cmax}`);
+      // console.debug(`            probs:   min ${cmin},     max ${cmax}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }

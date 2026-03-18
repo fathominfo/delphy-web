@@ -15,5 +15,5 @@ export const getElementsAndStyles = (
   elements.push(el);
   styles.push(style);
   el.childNodes.forEach( element=>getElementsAndStyles(element as HTMLElement, elements, styles));
-  return {els: elements, styles}
+  return {elements, styles}
 };

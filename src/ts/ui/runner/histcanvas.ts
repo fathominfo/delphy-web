@@ -3,6 +3,8 @@ import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
 import { getElementsAndStyles } from '../../util/exportutils';
+// import { PDFDocument, rgb } from 'pdf-lib';
+import { jsPDF } from "jspdf";
 
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
@@ -187,8 +189,26 @@ export class HistCanvas extends TraceCanvas {
       }, 10000);
     });
     histoDownloadChartButton.addEventListener('click', ()=>{
-      const result = getElementsAndStyles(this.histoSVG);
-      console.log(result);
+      // this.createTraceExport().then((pdfBytes: ArrayBuffer)=>{
+      //   const blob = new Blob([pdfBytes], { type: 'application/pdf;' }),
+      //     url = URL.createObjectURL(blob),
+      //     a = document.createElement("a"),
+      //     title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
+      //   a.href = url;
+      //   a.download = title;
+      //   document.body.appendChild(a);
+      //   a.click();
+      //   setTimeout(()=>{
+      //     const parent = histoDownloadDataButton.parentElement as HTMLDivElement;
+      //     parent.classList.add("completed");
+      //     a.remove();
+      //   }, 10000);
+
+      // })
+      this.createHistogramExport().then((pdfDoc: jsPDF)=>{
+        const title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
+        pdfDoc.save(title);
+      });
     });
     traceDownloadDataButton.addEventListener('click', ()=>{
       const traces = (this.traceData as HistData).data,
@@ -211,6 +231,11 @@ export class HistCanvas extends TraceCanvas {
         a.remove();
       }, 10000);
 
+
+      this.createTraceExport().then((pdfDoc: jsPDF)=>{
+        const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
+        pdfDoc.save(title);
+      });
     });
     copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
     histoDownloadDataButton.addEventListener('pointerenter', ()=>histoDownloadDataButton.classList.remove("completed"));
@@ -703,9 +728,176 @@ export class HistCanvas extends TraceCanvas {
     }
   }
 
+  createTraceExport() : Promise<jsPDF> {
+    const result = getElementsAndStyles(this.svg);
+    return new Promise((resolve)=>{
+
+      const height = this.height;
+      const width = this.width;
+      const doc = new jsPDF({
+        unit: "px",
+        orientation: "portrait",
+        format: [width, height]
+      });
+      console.log('        createTraceExport', width, height);
+      if (result) {
+        const {elements, styles } = result;
+        elements.forEach((element, i)=>{
+          if (element.nodeName === "rect" || element.nodeName === "path") {
+            const style = styles[i];
+            const fill = style.fill;
+            const stroke = style.stroke;
+            let drawInstructions: string | null = null;
+            if (fill !== "none") {
+              doc.setFillColor(fill);
+              drawInstructions = 'F';
+            }
+            if (stroke !== "none") {
+              doc.setDrawColor(stroke);
+              const strokeWidth = style.strokeWidth;
+              doc.setLineWidth(parseFloat(strokeWidth));
+              if (drawInstructions !== null) drawInstructions += 'D';
+              else drawInstructions = 'S';
+            }
+            if (element.nodeName === "rect") {
+              if (drawInstructions) {
+                const rect = element as SVGRectElement;
+                console.log(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+                doc.rect(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+              }
+            } else if (element.nodeName === "path") {
+              const d = (element as SVGPathElement).getAttribute("d") as string;
+              console.log(d)
+              const tokens = d.split(' ');
+              /* our traces have only M and L commands */
+              // type lineType = {operator: string, coordinates: number[]};
+              // const lines: lineType[] = [];
+              let lines: number[][] = [];
+              let command = '';
+              let line: number[];
+              let n;
+              tokens.forEach(t=>{
+                n = parseFloat(t);
+                const isNumber = !isNaN(n);
+                if (!isNumber) {
+                  command = t.charAt(0).toLowerCase();
+                  // line = {operator: command, coordinates: []};
+                  line = [];
+                  lines.push(line);
+                  if (t.length > 1) {
+                    n = parseFloat(t.substring(1));
+                    // line.coordinates.push(n)
+                    line.push(n)
+                  }
+                } else if (line.length < 2) {
+                  // line.coordinates.push(n);
+                  line.push(n)
+                } else {
+                  // line = {operator: command, coordinates: []};
+                  line = [n];
+                  lines.push(line);
+                }
+              });
+              console.log(lines.map(arr=>arr.join()));
+              // doc.path(lines);
+              lines = lines.filter(coords=>coords.length === 2);
+              /*
+              jsPDF lines takes relative coordinates,
+              so start at the end of the array,
+              and find the delta from the previous coordinate
+              */
+              for (let i = lines.length - 1; i > 0; i--) {
+                const coord = lines[i];
+                const prev = lines[i-1];
+                coord[0] -= prev[0];
+                coord[1] -= prev[1];
+              }
+
+              if (lines.length > 0) {
+                const [x, y] = lines.shift() as number[];
+                const scale = [1.0, 1.0];
+                const closed = false;
+                let t2 = lines;
+                let e2 = x;
+                let r2 = y;
+                let n2 = scale;
+                const i2 = drawInstructions;
+                let a3 = closed;
+
+                let v3 = UNSET;
+                const to = typeof t2;
+                const Re = (rr:string|null|undefined)=>{
+                  try {
+                    const ind = [void 0, null, "S", "D", "F", "DF", "FD", "f", "f*", "B", "B*", "n"].indexOf(rr);
+                    return -1 !== ind;
+                  } catch (err) {
+
+                    console.log(err);
+                    return true
+                  }
+
+                }
+                if ("number" === typeof t2 && (v3 = r2,
+                r2 = e2,
+                e2 = t2,
+                t2 = [[v3]]),
+                n2 = n2 || [1, 1],
+                a3 = a3 || false,
+                isNaN(e2) || isNaN(r2) || !Array.isArray(t2) || !Array.isArray(n2) || !Re(i2) || "boolean" !== typeof a3) throw new Error("Invalid arguments passed to jsPDF.lines");
+                console.log(lines.map(arr=>arr.join()));
+                doc.lines(lines, x, y, scale, drawInstructions, false);
+              }
+            }
+          }
+
+        })
+      }
+      resolve(doc);
+    });
+  }
 
 
+  createHistogramExport() : Promise<jsPDF> {
+    const result = getElementsAndStyles(this.histoSVG);
+    return new Promise((resolve)=>{
 
+      const width = this.histoWidth * 2;
+      const height = this.histoHeight * 2;
+      const doc = new jsPDF({
+        unit: "px",
+        orientation: "landscape",
+        format: [width, height]
+      });
+
+      // console.log(`pdf ${width} ${height}`);
+      if (result) {
+        const {elements, styles } = result;
+        elements.forEach((element, i)=>{
+          if (element.nodeName === "rect") {
+            const rect = element as SVGRectElement;
+            const style = styles[i];
+            const fill = style.fill;
+            let drawInstructions = '';
+            if (fill !== "none") {
+              doc.setFillColor(fill);
+              drawInstructions = 'F';
+            }
+            const stroke = style.stroke;
+            if (stroke !== "none") {
+              doc.setDrawColor(stroke);
+              const strokeWidth = style.strokeWidth;
+              doc.setLineWidth(parseFloat(strokeWidth));
+              drawInstructions += 'D';
+            }
+            doc.rect(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+            // console.log(element, style);
+            // console.log(rect.x.baseVal.value, rect.y.baseVal.value, rect.width.baseVal.value, rect.height.baseVal.value, fill, stroke);
+          }
+        })
+      }
+      resolve(doc);
+    });
+  }
 
 }
 

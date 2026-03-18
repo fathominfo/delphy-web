@@ -24,9 +24,10 @@
   },
   "dependencies": {
     "autocompleter": "^8.0.4",
-    "jspdf": "^3.0.1",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "math.js": "^1.1.46",
+    "npm": "^11.11.1",
     "path": "^0.12.7",
     "vite-plugin-checker": "^0.11.0",
     "vite-plugin-handlebars": "^2.0.0"
