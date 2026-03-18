@@ -734,7 +734,7 @@ export class HistCanvas extends TraceCanvas {
 
       const height = this.height;
       const width = this.width;
-      const doc = new jsPDF({
+      const doc = new jsPDF({ // eslint-disable-line new-cap
         unit: "px",
         orientation: "portrait",
         format: [width, height]
@@ -817,35 +817,8 @@ export class HistCanvas extends TraceCanvas {
                 const [x, y] = lines.shift() as number[];
                 const scale = [1.0, 1.0];
                 const closed = false;
-                let t2 = lines;
-                let e2 = x;
-                let r2 = y;
-                let n2 = scale;
-                const i2 = drawInstructions;
-                let a3 = closed;
-
-                let v3 = UNSET;
-                const to = typeof t2;
-                const Re = (rr:string|null|undefined)=>{
-                  try {
-                    const ind = [void 0, null, "S", "D", "F", "DF", "FD", "f", "f*", "B", "B*", "n"].indexOf(rr);
-                    return -1 !== ind;
-                  } catch (err) {
-
-                    console.log(err);
-                    return true
-                  }
-
-                }
-                if ("number" === typeof t2 && (v3 = r2,
-                r2 = e2,
-                e2 = t2,
-                t2 = [[v3]]),
-                n2 = n2 || [1, 1],
-                a3 = a3 || false,
-                isNaN(e2) || isNaN(r2) || !Array.isArray(t2) || !Array.isArray(n2) || !Re(i2) || "boolean" !== typeof a3) throw new Error("Invalid arguments passed to jsPDF.lines");
-                console.log(lines.map(arr=>arr.join()));
-                doc.lines(lines, x, y, scale, drawInstructions, false);
+                // console.log(lines.map(arr=>arr.join()));
+                doc.lines(lines, x, y, scale, drawInstructions, closed);
               }
             }
           }
@@ -863,7 +836,7 @@ export class HistCanvas extends TraceCanvas {
 
       const width = this.histoWidth * 2;
       const height = this.histoHeight * 2;
-      const doc = new jsPDF({
+      const doc = new jsPDF({ // eslint-disable-line new-cap
         unit: "px",
         orientation: "landscape",
         format: [width, height]

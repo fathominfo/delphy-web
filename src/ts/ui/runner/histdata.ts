@@ -140,8 +140,8 @@ export class HistData extends TraceData {
         previous = cumulative;
         i++;
       }
-      const cmin = kde.cumulative(min);
-      const cmax = kde.cumulative(max);
+      // const cmin = kde.cumulative(min);
+      // const cmax = kde.cumulative(max);
       // console.debug(`            probs:   min ${cmin},     max ${cmax}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
