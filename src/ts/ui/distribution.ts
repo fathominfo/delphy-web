@@ -66,7 +66,7 @@ export class Distribution {
         this.bandMax = 0;
         this.valueAtMax = 0;
         while (n <= this.max && this.bandwidth > 0) {
-          const gaust = this.kde.value_at(n);
+          const gaust = this.kde.pdf(n);
           this.bands.push(gaust);
           this.bandValues.push(n);
           this.total += gaust;
@@ -117,7 +117,7 @@ export class Distribution {
 
   getValueAt(hoverDate: number) : number {
     if (!this.kde) return 0;
-    const val = this.kde.value_at(hoverDate);
+    const val = this.kde.pdf(hoverDate);
     if (val < this.getMinBand()) return 0;
     return val;
   }

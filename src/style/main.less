@@ -396,6 +396,74 @@ nav button:not(:disabled):hover {
   }
 }
 
+
+
+.copy-button, .download-button {
+  pointer-events: none;
+  opacity: 0;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 19px;
+  width: auto;
+  display: flex;
+  gap: 4px;
+  z-index: 1;
+  transition: opacity 0.15s;
+  background-color: rgba(255,255,255,0.9);
+  box-shadow: 0px 0px 2px 5px rgba(255,255,255,0.9);
+
+  .glyph {
+    aspect-ratio: 1 / 1;
+  }
+
+  .tooltip {
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .action {
+    display: block;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    .tooltip { opacity: 1; }
+  }
+  .completed {
+    display: none;
+    height: 32px;
+  }
+
+  &.completed {
+    .action{display: none;}
+    .completed {display: block;}
+  }
+
+  .button-glyph {
+    width: 14px;
+    aspect-ratio: 1 / 1;
+    transition: all 0.15s;
+  }
+
+
+}
+
+
+
+.copy-button .button-glyph {
+  background-color: var(--chart-axis-text);
+  .masked(url("./assets/icons/copy.svg"));
+}
+
+.download-button .button-glyph {
+  background-color: black;
+  .masked(url("./assets/icons/export.svg"));
+}
+
+
+
 ////////////////////////////////////////////
 // PRIVACY, TOS
 ////////////////////////////////////////////

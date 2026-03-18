@@ -8,7 +8,7 @@ import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
-import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -178,6 +178,7 @@ export class RunUI extends UIScreen {
   kneeHandler : kneeHoverListenerType;
   curatedKneeHandler : (pct:number)=>void;
   hoverHandler: hoverListenerType;
+  statHoverHandler: statHoverListenerType;
 
   traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | PopChartConfig} = {};
 
@@ -221,6 +222,15 @@ export class RunUI extends UIScreen {
       this.traceCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
+        }
+      });
+      this.requestDraw();
+    };
+
+    this.statHoverHandler = (statType: SummaryStat | null)=>{
+      this.traceCanvases.forEach(hc=>{
+        if (hc.isVisible && hc instanceof HistCanvas) {
+          hc.handleStatHighlight(statType);
         }
       });
       this.requestDraw();
@@ -479,10 +489,13 @@ export class RunUI extends UIScreen {
       }
       toShow.push(TraceChart.logPosterior);
 
+      if (params.siteRateHeterogeneityEnabled) {
+        availables.push(TraceChart.alpha);
+      }
       availables = availables.concat([
         TraceChart.logPosterior,
         TraceChart.logG, TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
-        TraceChart.evolutionaryTime, TraceChart.alpha, TraceChart.minDate,
+        TraceChart.evolutionaryTime, TraceChart.minDate,
         TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
         TraceChart.hkyPiG, TraceChart.hkyPiT]);
 
@@ -493,10 +506,9 @@ export class RunUI extends UIScreen {
       }
 
       availables.forEach((tc: TraceChart)=>{
-        let canvas: HistCanvas;
         const config: HistChartConfig | HistChartCustomLabelConfig = this.traceChartConfig[tc] as HistChartCustomLabelConfig;
         const { name, unit, className, dataFnc, isDiscrete } = config;
-        canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler);
+        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
         if (config && (config as HistChartCustomLabelConfig).labelFunction !== undefined) {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
         }
@@ -827,11 +839,13 @@ export class RunUI extends UIScreen {
     const hideBurnIn = this.sharedState.hideBurnIn,
       mccIndex = this.mccIndex,
       sampleIndex = UNSET,
-      kneeIndex = this.pythia.kneeIndex;
+      kneeIndex = this.pythia.kneeIndex,
+      stepsPerSample = this.getRunParams().stepsPerSample,
+      steps = this.pythia.stepsHist;
     this.traceCanvases.forEach(canvas=>{
       if (canvas.isVisible || this.essCandidates.includes(canvas)) {
         if (canvas instanceof HistCanvas) {
-          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex);
+          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample, steps);
         } else if (canvas instanceof GammaHistCanvas) {
           canvas.setRangeData(kneeIndex, sampleIndex);
         }

@@ -1,12 +1,15 @@
-import { nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
+import { getElementsAndStyles } from '../../util/exportutils';
+// import { PDFDocument, rgb } from 'pdf-lib';
+import { jsPDF } from "jspdf";
 
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
 TRACE_TEMPLATE.remove();
-const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".chart .histogram .bars .distribution rect") as SVGRectElement;
+const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution rect") as SVGRectElement;
 BAR_TEMPLATE.remove();
 
 const MAX_STEP_SIZE = 3;
@@ -26,43 +29,71 @@ export class HistCanvas extends TraceCanvas {
   yAxisDiv: HTMLDivElement;
   yAxisTickTemplate: HTMLDivElement;
   yAxisHoverDiv: HTMLDivElement;
+  supportDiv: HTMLDivElement;
+  statsList: HTMLDListElement;
   xAxisDiv: HTMLDivElement;
   xAxisTick: HTMLSpanElement;
   hoverX: number = UNSET;
   hoverY: number = UNSET;
+  stepSize: number = MAX_STEP_SIZE;
   isDragging = false;
   formatLabel = safeLabel;
+  highlightStat: SummaryStat | null = null;
+  /*
+  only needed for downloads of trace data.
+  Feels inelegant to have this here for just that one potential need,
+  but other options don't really feel any better:
+    pass in a callback from runui to get the steps hist
+      which is better, a pointer to a function or a pointer to an array
+        at least the function doesn't change, whereas the arry needs updating
+        every time we get fresh data. but meh.
+    pass in the last step, and calculate backwards from there
+      more complicated than just passing an array, and isn't really more
+      efficient
+    manage the download in runui, and pass in everything that's needed from here
+      but really, the bulk of the work and data is here, so that feel needlessly
+      complex
+  open to other solutions, but for the moment this is the simplest [mark 260316]
+  */
+  steps: number[] = [];
 
 
-  constructor(label:string, unit='', className='', getDataFnc: HistDataFunction, isDiscrete: boolean,
-    kneeListener: kneeHoverListenerType, hoverListener: hoverListenerType) {
+  constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
+    isDiscrete: boolean, kneeListener: kneeHoverListenerType,
+    hoverListener: hoverListenerType, statHoverListener: statHoverListenerType
+  ) {
     super(label, unit, className, getDataFnc, TRACE_TEMPLATE);
     this.traceData = new HistData(label, unit, getDataFnc, isDiscrete);
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
     this.isVisible = true;
-
+    const unitDiv = this.container.querySelector(".header .readout-unit") as HTMLParagraphElement;
+    unitDiv.innerHTML = unit;
     this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
     this.histoWidth = UNSET;
     this.histoHeight = UNSET;
     this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
-    this.yAxisDiv = this.container.querySelector(".chart .feature .axis.y .values") as HTMLDivElement;
+    this.yAxisDiv = this.container.querySelector(".axis.y .values") as HTMLDivElement;
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
-    this.xAxisDiv = this.container.querySelector(".chart .support .axis.x") as HTMLDivElement;
+    this.supportDiv = this.container.querySelector(".support") as HTMLDivElement;
+    this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
+    this.xAxisDiv = this.container.querySelector(".support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
+      this.highlightDiv.setPointerCapture(event.pointerId);
       this.handlePointerMove(event);
     });
     this.highlightDiv.addEventListener('pointermove', event=>{
       this.handlePointerMove(event);
     });
-    this.highlightDiv.addEventListener('pointerup', ()=>{
+    this.highlightDiv.addEventListener('pointerup', event=>{
       this.svg.classList.remove('dragging');
       this.isDragging = false;
+      this.highlightDiv.releasePointerCapture(event.pointerId);
     });
     // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
     // this.canvas.addEventListener('pointerover', ()=>{
@@ -74,8 +105,89 @@ export class HistCanvas extends TraceCanvas {
       // requestDraw();
       this.hoverListener(UNSET);
     });
+    let prevStat = '';
+    const announceStat = (event: PointerEvent) => {
+      let ele = event.target as HTMLElement;
+      while (ele !== this.statsList && ele.nodeName !== "DT" && ele.nodeName !== "DD") {
+        ele = ele.parentNode as HTMLElement;
+      }
+      let statName = ele.getAttribute("data-stat") || '';
+      if (statName === "hpd") {
+        if ((event.target as HTMLElement).classList.contains("hpd-max")) {
+          statName = "hpdMax";
+        } else {
+          statName = "hpdMin";
+        }
+      }
+      if (statName !== prevStat) {
+        prevStat = statName || '';
+        let stat: SummaryStat | null = null;
+        if (statName) {
+          stat = SummaryStatLookup[statName];
+          if (stat === undefined) stat = null;
+        }
+        statHoverListener(stat);
+      }
+    };
+    this.statsList.addEventListener('pointerenter', event=>{
+      announceStat(event);
+    });
+    this.statsList.addEventListener('pointermove', event=>{
+      announceStat(event);
+    });
+    this.statsList.addEventListener('pointerleave', ()=>{
+      prevStat = '';
+      statHoverListener(null);
+    });
 
-
+    const copyButton = this.supportDiv.querySelector(".copy-button") as HTMLButtonElement;
+    const histoDownloadsDiv = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLDivElement;
+    const traceDownloadsDiv = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLDivElement;
+    const histoDownloadDataButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-text") as HTMLButtonElement;
+    const traceDownloadDataButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-text") as HTMLButtonElement;
+    const histoDownloadChartButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-chart") as HTMLButtonElement;
+    const traceDownloadChartButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-chart") as HTMLButtonElement;
+    copyButton.addEventListener('click', ()=>{
+      const stats = (this.traceData as HistData).getStats();
+      let data = '';
+      Object.entries(stats).forEach(([key, value])=>{
+        const label = SummaryStatLongLabels[key];
+        console.log(key, label)
+        data += `${label}\t${value}\n`}
+      );
+      navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
+    });
+    histoDownloadDataButton.addEventListener('click', ()=>{
+      const text = this.createHistogramDataExport(),
+        title = `delphy-${label.toLowerCase()}-distribution-${getTimestampString()}.tsv`;
+      downloadTextFile(title, text).then(()=>{
+        histoDownloadsDiv.classList.add("completed");
+      })
+    });
+    histoDownloadChartButton.addEventListener('click', ()=>{
+      this.createHistogramChartExport().then((pdfDoc: jsPDF)=>{
+        const title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
+        pdfDoc.save(title);
+        histoDownloadsDiv.classList.add("completed");
+      });
+    });
+    traceDownloadDataButton.addEventListener('click', ()=>{
+      const text = this.createTraceDataExport(),
+        title = `delphy-${label}-traces-${getTimestampString()}.tsv`;
+      downloadTextFile(title, text).then(()=>{
+        traceDownloadsDiv.classList.add("completed");
+      });
+    });
+    traceDownloadChartButton.addEventListener('click', ()=>{
+      this.createTraceChartExport().then((pdfDoc: jsPDF)=>{
+        const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
+        pdfDoc.save(title);
+        traceDownloadsDiv.classList.add("completed");
+      });
+    })
+    copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
+    histoDownloadsDiv.addEventListener('pointerenter', ()=>histoDownloadsDiv.classList.remove("completed"));
+    traceDownloadsDiv.addEventListener('pointerenter', ()=>traceDownloadsDiv.classList.remove("completed"));
   }
 
 
@@ -132,14 +244,14 @@ export class HistCanvas extends TraceCanvas {
     const traceData = this.traceData as HistData;
     const readoutValue = isMean ? traceData.mean: traceData.data[treeIndex];
     traceData.highlightIndex = treeIndex;
-    this.setReadoutLabel(isMean, readoutValue, traceData.unit);
+    this.setReadoutLabel(isMean, readoutValue);
   }
 
 
   sizeCanvas(): void {
     const wrapper = this.histoSVG.parentElement as HTMLDivElement;
-    this.histoWidth = wrapper.offsetWidth;
-    this.histoHeight = wrapper.offsetHeight;
+    this.histoWidth = wrapper.clientWidth;
+    this.histoHeight = wrapper.clientHeight;
     super.sizeCanvas();
   }
 
@@ -160,11 +272,11 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number, steps: number[]) {
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
-    histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    // requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
+    this.steps = steps;
+    histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
   }
 
 
@@ -178,9 +290,17 @@ export class HistCanvas extends TraceCanvas {
     const traceData = this.traceData as HistData;
     let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
-    const { mean, hideBurnIn, savedKneeIndex } = traceData;
-    const isMean = highlightIndex === UNSET;
-    const readoutValue = isMean ? mean: data[highlightIndex];
+    const { hideBurnIn, savedKneeIndex } = traceData;
+    let readoutValue = Number.MAX_VALUE;
+    let isHighlight = false;
+    if (highlightIndex !== UNSET) {
+      readoutValue = data[highlightIndex];
+      isHighlight = true;
+    } else if (this.highlightStat !== null && PlottableSummaryStats[this.highlightStat]) {
+      const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+      const stats = (this.traceData as HistData).getStats();
+      readoutValue = stats[attribute];
+    }
     if (hideBurnIn && savedKneeIndex > 0) {
       data = data.slice(savedKneeIndex);
       kneeIndex -= savedKneeIndex;
@@ -188,17 +308,18 @@ export class HistCanvas extends TraceCanvas {
     }
     /*
     order matters here, since the location of the hovered
-    sample is set in `drawTrace` and read in `drawLabels`
+    sample is set in `drawTrace` and read in `drawYAxisLabels`
     */
     this.drawTrace(data, kneeIndex, highlightIndex);
     this.drawHistogramSVG(readoutValue);
     this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
-    this.setReadoutLabel(isMean, readoutValue, traceData.unit);
+    this.setReadoutLabel(isHighlight, readoutValue);
+    this.setStatsReadouts();
   }
 
 
   drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
-    const { displayCount, hideBurnIn, mean: dataMean, displayMin,
+    const { displayCount, hideBurnIn, displayMin,
       displayMax, isDiscrete } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
@@ -221,6 +342,7 @@ export class HistCanvas extends TraceCanvas {
     let left = 0;
     let dataScale = 1;
     let trendWeight = 1;
+    let stepSize = MAX_STEP_SIZE;
 
     if (displayCount === 1) {
       activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
@@ -238,7 +360,7 @@ export class HistCanvas extends TraceCanvas {
       const fullSpanningStepSize = height / (displayCount - 1) || 1;
       /* steps that are too big look pretty goofy, so cap them if needed */
       const forceSmallerSteps = fullSpanningStepSize > MAX_STEP_SIZE;
-      const stepSize = forceSmallerSteps ? MAX_STEP_SIZE : fullSpanningStepSize;
+      stepSize = forceSmallerSteps ? MAX_STEP_SIZE : fullSpanningStepSize;
       /*
       in early stages of the run, there might not be enough samples to cover
       the whole chart. So how much of the chart are we covering?
@@ -305,11 +427,18 @@ export class HistCanvas extends TraceCanvas {
 
     if (hoverX === UNSET) {
       this.highlightDiv.classList.remove("active");
-      /* set the x value for the mean */
-      if (displayCount > 1) {
-        hoverX = left + (dataMean - displayMin) * dataScale;
+      /* set the x value for the highlight stat */
+      if (this.highlightStat !== null) {
+        if (displayCount > 1) {
+          const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+          const stats = (this.traceData as HistData).getStats();
+          const value = stats[attribute];
+          hoverX = left + (value - displayMin) * dataScale;
+        } else {
+          hoverX = width / 2;
+        }
       } else {
-        hoverX = width / 2;
+        hoverX = UNSET;
       }
     } else {
       this.highlightDiv.classList.add("active");
@@ -322,6 +451,7 @@ export class HistCanvas extends TraceCanvas {
       yDiv.style.top = `${hoverY}px`;
     }
 
+    burnInField.classList.toggle("hidden", burnInHeight === 0);
     burnInField.setAttribute("y1", `${activeHeight}`);
     burnInField.setAttribute("y2", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
@@ -330,6 +460,7 @@ export class HistCanvas extends TraceCanvas {
     activeInTrend.style.strokeWidth = `${trendWeight}`;
     this.hoverX = hoverX;
     this.hoverY = hoverY;
+    this.stepSize = stepSize;
   }
 
 
@@ -377,53 +508,50 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawYAxisLabels(hideBurnIn: boolean, highlightIndex: number) {
-    const { height, traceData, hoverY } = this;
+    const { traceData, hoverY, stepSize } = this;
     const { count, savedKneeIndex, displayCount } = traceData as HistData;
     this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
-    if (count === 0) return;
-    let sampleCount = count;
-    if (hideBurnIn && savedKneeIndex > 0) {
-      if (savedKneeIndex === 20) {
-        console.log("qu'est-ce que ce passe?")
-      }
-      sampleCount = sampleCount - savedKneeIndex + 1;
-    }
-
-    /*
-    how much space does the charting take?
-    during the early parts of the run, the chart does not
-    stretch over the whole height.
-    */
-    let activeHeight = height;
-    if (displayCount <= 1) {
-      activeHeight = MAX_STEP_SIZE;
-    } else {
-      activeHeight = Math.min(height, MAX_STEP_SIZE * displayCount);
-    }
+    const activeHeight = (displayCount-1) * stepSize;
     const targetTickCount = Math.ceil(activeHeight / TARGET_LABEL_SPACING);
-
-    const tickInterval = Math.max(10, nicenum(sampleCount / targetTickCount));
-    const intervalSize = tickInterval / sampleCount * activeHeight;
+    const tickInterval = Math.max(10, nicenum(displayCount / targetTickCount));
+    // const tickInterval = 2; // Math.max(10, nicenum(displayCount / targetTickCount));
+    const intervalSize = tickInterval * stepSize;
     let tickStart = 0;
 
 
 
     let startY = activeHeight;
     if (hideBurnIn && savedKneeIndex > 0) {
-      /* what's the first nice num after the start point? */
+      /*
+      what's the first nice num after the start point?
+      the `- 1` is for index spacing, for example the start label should
+      be 20, but that's position 19.
+      */
       tickStart = Math.ceil(savedKneeIndex / tickInterval) * tickInterval - 1;
-      startY = (sampleCount - tickStart + savedKneeIndex) / sampleCount * activeHeight;
+      /*
+      where does the first tick land?
+      the first onscreen sample is at the knee, so how far from the knee is the
+      first tick?
+      */
+      const knee2Tick = tickStart - savedKneeIndex;
+      startY = activeHeight - knee2Tick * stepSize;
     }
     let tick = tickStart;
     let y = startY;
-    while (tick < sampleCount) {
+    while (tick < count) {
       /* make sure this doesn't overlap with the hover */
       if (hoverY === UNSET || Math.abs(hoverY - y) >= TARGET_LABEL_SPACING / 2) {
         this.addYTick(y, tick + 1);
       }
-      if (tick === 0) tick += tickInterval - 1;
-      else tick += tickInterval;
-      y -= intervalSize;
+      if (tick === 0) {
+        tick += tickInterval - 1;
+        const ratio = (tickInterval - 1) / tickInterval;
+        y -= intervalSize * ratio;
+      } else {
+        tick += tickInterval;
+        y -= intervalSize;
+      }
+
     }
     if (highlightIndex === UNSET) {
       this.yAxisHoverDiv.classList.add("hidden");
@@ -446,23 +574,281 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setReadoutLabel(isMean: boolean, value: number, unit: string) {
+  setReadoutLabel(isHighlight: boolean, value: number) {
+    this.xAxisTick.classList.toggle("hidden", value === Number.MAX_VALUE);
     this.xAxisTick.style.left = `${ this.hoverX }px`;
-    if (isMean) {
-      this.xAxisDiv.classList.add("meaning");
-    } else {
+    if (isHighlight) {
       this.xAxisDiv.classList.remove("meaning");
+    } else {
+      this.xAxisDiv.classList.add("meaning");
     }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = this.formatLabel(value);
-    if (unit) {
-      this.xAxisDiv.classList.remove("unitless");
-      (this.xAxisDiv.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
-    } else {
-      this.xAxisDiv.classList.add("unitless");
-    }
+  }
+
+  setStatsReadouts() : void {
+    const stats = (this.traceData as HistData).getStats();
+    setTextContent(this.statsList, ".mean", stats.mean);
+    setTextContent(this.statsList, ".hpd-min", stats.hpdMin);
+    setTextContent(this.statsList, ".hpd-max", stats.hpdMax);
+    setTextContent(this.statsList, ".median", stats.median);
+    setTextContent(this.statsList, ".stddev", stats.stdDev);
+    setTextContent(this.statsList, ".stderr", stats.stdErrOnMean);
+    setTextContent(this.statsList, ".ess", stats.ess);
+    setTextContent(this.statsList, ".act", stats.act);
   }
 
 
+  handleStatHighlight(statType: SummaryStat | null) : void {
+    this.highlightStat = statType;
+    requestAnimationFrame(()=>{
+      this.highlightStatSpans();
+      const traceData = this.traceData as HistData;
+      let { data, highlightIndex } = traceData,
+        kneeIndex = traceData.currentKneeIndex;
+      const { hideBurnIn, savedKneeIndex } = traceData;
+      if (hideBurnIn && savedKneeIndex > 0) {
+        data = data.slice(savedKneeIndex);
+        kneeIndex -= savedKneeIndex;
+        highlightIndex -= savedKneeIndex;
+      }
+      let readoutValue = traceData.displayMin - 1_000_000;
+      if (this.highlightStat !== null) {
+        const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+        const stats = (this.traceData as HistData).getStats();
+        readoutValue = stats[attribute];
+      }
+      /*
+      order matters here, since the location of the hovered
+      sample is set in `drawTrace` and read in `drawLabels`
+      */
+      this.drawTrace(data, kneeIndex, highlightIndex);
+      this.drawHistogramSVG(readoutValue);
+    });
+  }
+
+  highlightStatSpans() : void {
+    const statType = this.highlightStat;
+    if (statType === null) {
+      this.statsList.querySelectorAll(".back").forEach(dt=>dt.classList.remove("back"));
+    } else {
+      this.statsList.querySelectorAll("dt, .value").forEach(dt=>dt.classList.add("back"));
+      let valueEle: HTMLElement;
+      switch (statType) {
+      case SummaryStat.mean:
+        valueEle = this.statsList.querySelector(".mean") as HTMLElement;
+        break;
+      case SummaryStat.hpdMin:
+        valueEle = this.statsList.querySelector(".hpd-min") as HTMLElement;
+        break;
+      case SummaryStat.hpdMax:
+        valueEle = this.statsList.querySelector(".hpd-max") as HTMLElement;
+        break;
+      case SummaryStat.median:
+        valueEle = this.statsList.querySelector(".median") as HTMLElement;
+        break;
+      case SummaryStat.stdDev:
+        valueEle = this.statsList.querySelector(".stddev") as HTMLElement;
+        break;
+      case SummaryStat.stdErrOnMean:
+        valueEle = this.statsList.querySelector(".stderr") as HTMLElement;
+        break;
+      case SummaryStat.ess:
+        valueEle = this.statsList.querySelector(".ess") as HTMLElement;
+        break;
+      case SummaryStat.act:
+        valueEle = this.statsList.querySelector(".act") as HTMLElement;
+        break;
+      }
+      if (valueEle) {
+        valueEle.classList.remove("back");
+        /*
+        find the corresponding dt element:
+        the HTML is something like
+          <dt>mean</dt><dd><span class="value mean"></span></dd>
+        so find the parent dd element, and then it's prior sibling
+        */
+        const dd = valueEle.parentNode as HTMLElement;
+        const dt = dd.previousElementSibling as HTMLElement;
+        dt.classList.remove("back");
+      }
+    }
+  }
+
+  createTraceDataExport() : string {
+    const traces = (this.traceData as HistData).data,
+      steps = this.steps,
+      label = this.className;
+    let text = `step\t${label}\n`;
+    console.assert(traces.length === steps.length);
+    traces.forEach((trace, i)=>text += `${steps[i]}\t${trace}\n`);
+    return text;
+  }
+
+
+  createTraceChartExport() : Promise<jsPDF> {
+    const result = getElementsAndStyles(this.svg);
+    return new Promise((resolve)=>{
+
+      const height = this.height;
+      const width = this.width;
+      const doc = new jsPDF({ // eslint-disable-line new-cap
+        unit: "px",
+        orientation: "portrait",
+        format: [width, height]
+      });
+      console.log('        createTraceExport', width, height);
+      if (result) {
+        const {elements, styles } = result;
+        elements.forEach((element, i)=>{
+          if (element.nodeName === "rect" || element.nodeName === "path") {
+            const style = styles[i];
+            const fill = style.fill;
+            const stroke = style.stroke;
+            let drawInstructions: string | null = null;
+            if (fill !== "none") {
+              doc.setFillColor(fill);
+              drawInstructions = 'F';
+            }
+            if (stroke !== "none") {
+              doc.setDrawColor(stroke);
+              const strokeWidth = style.strokeWidth;
+              doc.setLineWidth(parseFloat(strokeWidth));
+              if (drawInstructions !== null) drawInstructions += 'D';
+              else drawInstructions = 'S';
+            }
+            if (element.nodeName === "rect") {
+              if (drawInstructions) {
+                const rect = element as SVGRectElement;
+                console.log(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+                doc.rect(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+              }
+            } else if (element.nodeName === "path") {
+              const d = (element as SVGPathElement).getAttribute("d") as string;
+              console.log(d)
+              const tokens = d.split(' ');
+              /*
+              would prefer to use the jsPdf path command https://artskydj.github.io/jsPDF/docs/jsPDF.html#path,
+              since it uses absolute coordinates, but it does not seem to render.
+              Instead using lines.
+              */
+              let lines: number[][] = [];
+              let line: number[];
+              let n;
+              tokens.forEach(t=>{
+                n = parseFloat(t);
+                const isNumber = !isNaN(n);
+                if (!isNumber) {
+                  line = [];
+                  lines.push(line);
+                  if (t.length > 1) {
+                    n = parseFloat(t.substring(1));
+                    line.push(n)
+                  }
+                } else if (line.length < 2) {
+                  line.push(n)
+                } else {
+                  line = [n];
+                  lines.push(line);
+                }
+              });
+              // console.log(lines.map(arr=>arr.join()));
+              lines = lines.filter(coords=>coords.length === 2);
+              /*
+              jsPDF lines takes relative coordinates,
+              so start at the end of the array,
+              and find the delta from the previous coordinate
+              */
+              for (let i = lines.length - 1; i > 0; i--) {
+                const coord = lines[i];
+                const prev = lines[i-1];
+                coord[0] -= prev[0];
+                coord[1] -= prev[1];
+              }
+
+              if (lines.length > 0) {
+                const [x, y] = lines.shift() as number[];
+                const scale = [1.0, 1.0];
+                const closed = false;
+                // console.log(lines.map(arr=>arr.join()));
+                doc.lines(lines, x, y, scale, drawInstructions, closed);
+              }
+            }
+          }
+
+        })
+      }
+      resolve(doc);
+    });
+  }
+
+
+  createHistogramDataExport() : string {
+    const { bucketConfig, distribution } = this.traceData as HistData;
+    const { buckets, values } = bucketConfig;
+    const bandwidth = distribution.bandwidth;
+    // console.log(distribution)
+    const label = this.className;
+    let text = `bucket min\tbucket max\tprobability\tpdf\n`;
+    let totProb = 0;
+    let totPdf = 0;
+    buckets.forEach((probability, i)=>{
+      const bucketMin = values[i];
+      const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
+      const bucketRange = bucketMax - bucketMin
+      const pdf = probability / bucketRange;
+      totProb += probability;
+      totPdf += pdf;
+      text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
+    });
+    console.debug("total prob", totProb, totPdf);
+    return text;
+  }
+
+
+  createHistogramChartExport() : Promise<jsPDF> {
+    const result = getElementsAndStyles(this.histoSVG);
+    return new Promise((resolve)=>{
+
+      const width = this.histoWidth * 2;
+      const height = this.histoHeight * 2;
+      const doc = new jsPDF({ // eslint-disable-line new-cap
+        unit: "px",
+        orientation: "landscape",
+        format: [width, height]
+      });
+
+      // console.log(`pdf ${width} ${height}`);
+      if (result) {
+        const {elements, styles } = result;
+        elements.forEach((element, i)=>{
+          if (element.nodeName === "rect") {
+            const rect = element as SVGRectElement;
+            const style = styles[i];
+            const fill = style.fill;
+            let drawInstructions = '';
+            if (fill !== "none") {
+              doc.setFillColor(fill);
+              drawInstructions = 'F';
+            }
+            const stroke = style.stroke;
+            if (stroke !== "none") {
+              doc.setDrawColor(stroke);
+              const strokeWidth = style.strokeWidth;
+              doc.setLineWidth(parseFloat(strokeWidth));
+              drawInstructions += 'D';
+            }
+            doc.rect(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+            // console.log(element, style);
+            // console.log(rect.x.baseVal.value, rect.y.baseVal.value, rect.width.baseVal.value, rect.height.baseVal.value, fill, stroke);
+          }
+        })
+      }
+      resolve(doc);
+    });
+  }
 
 }
 
+const setTextContent = (el: HTMLElement, selector: string, value: number) => {
+  (el.querySelector(selector) as HTMLSpanElement).textContent = safeLabel(value);
+}

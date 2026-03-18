@@ -31,13 +31,13 @@
 
     .header {
       position: relative;
-      display: flex;
-      flex-direction: row;
+      // display: flex;
+      // flex-direction: row;
       justify-content: space-between;
       align-items: baseline;
       gap: var(--view-header-gap);
-      min-height: var(--view-header-height);
-      max-height: var(--view-header-height);
+      // min-height: var(--view-header-height);
+      // max-height: var(--view-header-height);
       overflow: visible;
 
 
@@ -48,7 +48,7 @@
         flex-direction: row;
         flex-wrap: nowrap;
         gap: var(--info-margin);
-        height: 100%;
+        // height: 100%;
         white-space: nowrap;
         overflow: visible;
         &h3 {
@@ -68,6 +68,7 @@
           margin-top: 3px;
         }
       }
+
     }
   }
 
@@ -283,90 +284,92 @@
   flex-direction: column;
 
 
-  .chart {
-    .display {
-      position: relative;
-      overflow: visible;
+
+  .display {
+    position: relative;
+    overflow: visible;
+  }
+
+  .displays {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    padding: var(--chart-displays-timeline-inset-x);
+    // background-color: var(--chart-stroke);
+    border-radius: var(--chart-outer-corner);
+    box-sizing: border-box;
+  }
+
+
+  .axis {
+
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    background-color: transparent;
+    box-sizing: border-box;
+
+    &.y {
+      z-index: 1;
+      width: var(--chart-yaxis-width);
+      // height: var(--chart-yaxis-height);
+      padding: var(--chart-stroke-weight) 0;
     }
 
-    .displays {
-      position: relative;
-      z-index: 0;
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-      padding: var(--chart-displays-timeline-inset-x);
-      // background-color: var(--chart-stroke);
-      border-radius: var(--chart-outer-corner);
-      box-sizing: border-box;
-    }
+  }
+
+  .position {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    mix-blend-mode: multiply;
+    opacity: 0;
+
+    &.active {opacity: 1;}
+  }
 
 
-    .axis {
+  .support {
+    position: relative;
+    align-items: flex-start;
+    width: 100%;
+    z-index: 1;
 
-      position: relative;
-      display: flex;
-      flex-direction: row;
-      justify-content: flex-start;
-      align-items: flex-start;
-      background-color: transparent;
-      box-sizing: border-box;
 
-      &.y {
-        z-index: 1;
-        width: var(--chart-yaxis-width);
-        // height: var(--chart-yaxis-height);
-        padding: var(--chart-stroke-weight) 0;
+    &:hover {
+      .copy-button {
+        pointer-events: all;
+        opacity: 0.65;
       }
-
-    }
-
-    .position {
-      position: absolute;
-      z-index: 1;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: transparent;
-      mix-blend-mode: multiply;
-      opacity: 0;
-
-      &.active {opacity: 1;}
-    }
-
-    .feature, .support {
-      position: relative;
-      display: flex;
-      flex-direction: row;
-      justify-content: flex-start;
-      align-items: flex-start;
-      gap: 0;
-      width: 100%;
-    }
-
-    .support {
-      z-index: 1;
-    }
-
-    .p {
-      background-color: var(--chart-position-axis-stroke);
-    }
-    .p, .pos {
-      position: absolute;
-      pointer-events: none;
-    }
-
-    .pos {
-      background-color: var(--chart-position-locus-fill);
-      top: calc(100% * var(--py));
-      left: calc(100% * var(--px));
-      width: var(--chart-position-locus-size);
-      height: var(--chart-position-locus-size);
-      border-radius: calc(var(--chart-position-locus-size) / 2);
-      transform: translate(-50%, -50%);
     }
   }
+
+  .p {
+    background-color: var(--chart-position-axis-stroke);
+  }
+  .p, .pos {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .pos {
+    background-color: var(--chart-position-locus-fill);
+    top: calc(100% * var(--py));
+    left: calc(100% * var(--px));
+    width: var(--chart-position-locus-size);
+    height: var(--chart-position-locus-size);
+    border-radius: calc(var(--chart-position-locus-size) / 2);
+    transform: translate(-50%, -50%);
+  }
+
 
 
   .module {
@@ -375,8 +378,47 @@
     gap: var(--module-gap);
     flex: 1;
 
-    .header .readout {
-      display: none;
+
+    .display-wrapper {
+      display: flex;
+      width: 100%;
+      position: relative;
+
+      .download-button {
+        left: unset;
+        right: 30px;
+        transform: translate(100%, 0);
+        top: 0;
+        flex-direction: column;
+        height: auto;
+        cursor: pointer;
+
+        .download-chart {
+          display: none;
+        }
+      }
+
+      &:hover {
+        .download-button {
+          pointer-events: all;
+          opacity: 0.65;
+        }
+      }
+    }
+
+    .spacer {
+      width: var(--chart-yaxis-width);
+      padding: var(--chart-stroke-weight) 0;
+    }
+
+
+    .readout-unit {
+      white-space: nowrap;
+      display: block;
+      font-size: 10px; //var(--chart-axis-text-font-size);
+      color: var(--chart-axis-text);
+      margin: 0;
+      height: 15px;
     }
 
 
@@ -394,243 +436,267 @@
     }
 
 
-    .chart {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: flex-start;
-      gap: 0;
-      background-color: transparent;
 
-      .graph {
-        z-index: 1;
-        border: solid 1px var(--chart-stroke);
-        border-radius: var(--chart-inner-corner) 0 0 var(--chart-inner-corner);
+    // position: relative;
+    // display: flex;
+    // flex-direction: column;
+    // justify-content: flex-start;
+    // align-items: flex-start;
+    // gap: 0;
+    // background-color: transparent;
+
+    .graph.display {
+      z-index: 1;
+      border: solid 1px var(--chart-stroke);
+      border-radius: var(--chart-inner-corner) 0 0 var(--chart-inner-corner);
+    }
+
+
+    .display {
+      height: var(--chart-height);
+    }
+
+
+    .summary-stats {
+      display: grid;
+      grid-gap: 4px 16px;
+      grid-template-columns: max-content;
+      max-width: 170px;
+      margin: 0;
+
+      dt {
+        font-size: var(--chart-xaxis-hover-text-font-size);
+        color: var(--chart-axis-text);
+        text-align: right;
+        padding-left: 8px;
+      }
+      dd {
+        display: inline-block;
+        margin: 0;
+        grid-column-start: 2;
+        white-space: nowrap;
+        color: var(--chart-axis-text);
+      }
+      .value {
+        font-size: var(--chart-xaxis-hover-text-font-size);
+        font-weight: var(--chart-xaxis-hover-text-font-weight);
+        letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+        color: var(--chart-axis-text);
       }
 
-
-      .display {
-        height: var(--chart-height);
+      dt, .value {
+        transition: opacity 0.15s;
+        &.back { opacity: 0.25; }
       }
 
     }
-
 
 
     &.trace {
       min-width: 160px;
       max-width: 160px; // var(--indicator-trace-module-width);
       overflow-x: visible;
-      .chart {
-        * { box-sizing: content-box; }
+      * { box-sizing: content-box; }
 
-        width: fit-content;
-        .display {
+      width: fit-content;
+      .display {
+        width: var(--trace-chart-width);
+      }
+      .burn-in {
+        .trend {
+          stroke: rgb(45, 126, 207); // rgb(150, 181, 212); // var(--chart-graph-burn-in-trend-stroke);
+          stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
+          // export const BORDER_COLOR = '#cbcbcb';
+        }
+        .period {
+          // fill: var(--chart-graph-burn-in-period-fill);
+          fill: none;
+          stroke: rgb(104,104,104);
+        }
+      }
+      .run {
+        .period {
+          fill: none; // var(--chart-graph-run-period-fill);
+
+        }
+        .trend {
+          stroke: rgb(45, 126, 207); // var(--chart-graph-run-trend-stroke);
+        }
+      }
+
+      .graph.display {
+        background-color: #f5f5f5;
+        height: var(--trace-chart-height);
+
+        .trend  {
+          fill: none;
+          stroke-width: var(--chart-graph-trend-stroke-weight);
+          pointer-events: none;
+        }
+      }
+      .histogram.display {
+        // background-color: var(--chart-histogram-fill);
+        background-color: #f5f5f5;
+        z-index: 0;
+        height: var(--chart-histogram-height);
+        border-radius: 0 var(--chart-inner-corner) var(--chart-inner-corner) 0;
+        overflow: hidden;
+        border: solid 1px var(--chart-stroke);
+      }
+      .bars {
+        // opacity: 0.75;
+        .distribution {
+          // opacity: 0.375;
+        }
+        rect {
+          fill: #aaaaaa; //var(--chart-histogram-bar-fill);
+          // opacity: 0.375;
+          &.highlight {
+            fill: rgb(52, 107, 190);
+            // opacity: 1.0;
+          }
+        }
+      }
+      .axis {
+
+
+        .values {
+          position: relative;
+          display: flex;
+          background-color: transparent;
+          width: 100%;
+          height: 100%;
+        }
+
+        &.x {
+
+          // height: var(--chart-xaxis-height);
+          height: calc(var(--unit) * 2.5);
+          // margin-left: var(--chart-yaxis-width);
+          // margin-right: var(--chart-histogram-width);
+          padding: 0 0 0 var(--chart-stroke-weight);
+
+          margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
+          margin-right: unset;
           width: var(--trace-chart-width);
-        }
-        .burn-in {
-          .trend {
-            stroke: rgb(45, 126, 207); // rgb(150, 181, 212); // var(--chart-graph-burn-in-trend-stroke);
-            stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
-            // export const BORDER_COLOR = '#cbcbcb';
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          .tick {
+            // width: var(--chart-tick-stroke-weight);
+            height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+            margin-top: var(--chart-tick-offset);
+            position: absolute;
+            color: var(--chart-xaxis-hover-text);
+            font-size: 10px;
+            transform: translate(-50%, 0);
           }
-          .period {
-            // fill: var(--chart-graph-burn-in-period-fill);
-            fill: none;
-            stroke: rgb(104,104,104);
+          p {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            :first-child {flex-grow: 1;}
           }
-        }
-        .run {
-          .period {
-            fill: none; // var(--chart-graph-run-period-fill);
-
+          .mean-label, .tree-label {
+            margin-right: 0.25em;
           }
-          .trend {
-            stroke: rgb(45, 126, 207); // var(--chart-graph-run-trend-stroke);
-          }
-        }
-
-        .graph {
-          background-color: #f5f5f5;
-          height: var(--trace-chart-height);
-
-          .trend  {
-            fill: none;
-            stroke-width: var(--chart-graph-trend-stroke-weight);
-            pointer-events: none;
-          }
-        }
-        .histogram {
-          // background-color: var(--chart-histogram-fill);
-          background-color: #f5f5f5;
-          z-index: 0;
-          height: var(--chart-histogram-height);
-          border-radius: 0 var(--chart-inner-corner) var(--chart-inner-corner) 0;
-          overflow: hidden;
-          border: solid 1px var(--chart-stroke);
-        }
-        .bars {
-          // opacity: 0.75;
-          .distribution {
-            // opacity: 0.375;
-          }
-          rect {
-            fill: #aaaaaa; //var(--chart-histogram-bar-fill);
-            // opacity: 0.375;
-            &.highlight {
-              fill: rgb(52, 107, 190);
-              // opacity: 1.0;
+          .readout-value {
+            font-size: var(--chart-xaxis-hover-text-font-size);
+            font-weight: var(--chart-xaxis-hover-text-font-weight);
+            letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+            color: #004f9e; // var(--chart-yaxis-hover-text);
+            white-space: nowrap;
+            .pct {
+              display: inline-block;
+              margin-left: 2px;
+              color: var(--chart-axis-text);
+              // font-size: 10px;
+              font-weight: 500;
             }
           }
-        }
-        .axis {
+          .mean-label {display: none;}
+          .tree-label {display: inline-block;}
+          &.meaning {
+            // .mean-label {display: inline-block;}
+            .tree-label {display: none;}
+            .readout-value {display: none;}
+          }
 
+        }
+        &.y {
+
+          // margin-top: calc(var(--chart-histogram-height) + 11px);
+          margin: 0;
+          height: var(--trace-chart-height);
+          padding: var(--chart-stroke-weight) 0;
 
           .values {
+            flex-direction: column-reverse;
+            justify-content: space-between;
+            align-items: flex-end;
             position: relative;
-            display: flex;
-            background-color: transparent;
-            width: 100%;
-            height: 100%;
           }
 
-          &.x {
-
-            height: var(--chart-xaxis-height);
-            // margin-left: var(--chart-yaxis-width);
-            // margin-right: var(--chart-histogram-width);
-            padding: 0 0 0 var(--chart-stroke-weight);
-
-            margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
-            margin-right: unset;
-            width: var(--trace-chart-width);
+          .value {
             display: flex;
-            flex-direction: column;
-            position: relative;
-            .tick {
-              width: var(--chart-tick-stroke-weight);
-              height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
-              margin-top: var(--chart-tick-offset);
+            gap: var(--chart-axis-gap);
+            overflow: visible;
+            opacity: 1;
+            transition: opacity var(--axis-transition) ease-out;
 
-              position: absolute;
-              background-color: var(--chart-xaxis-hover-text);
-            }
-            p {
-              display: flex;
-              flex-direction: row;
-              width: 100%;
-              :first-child {flex-grow: 1;}
-            }
-            .mean-label, .tree-label {
-              margin-right: 0.25em;
-            }
-            .readout-unit {
-              white-space: nowrap;
-              display: block;
-              font-size: 10px; //var(--chart-axis-text-font-size);
-            }
-            .readout-value {
-              font-size: var(--chart-xaxis-hover-text-font-size);
-              font-weight: var(--chart-xaxis-hover-text-font-weight);
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+            width: auto;
+            height: 0;
+            position: absolute;
+            right: 0;
+
+            &.hover {
+              top: calc(100% * var(--py));
+              font-weight: var(--chart-yaxis-hover-text-font-weight);
+              font-size: var(--chart-yaxis-hover-text-font-size);
               letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-              color: #004f9e; // var(--chart-yaxis-hover-text);
-              white-space: nowrap;
-              .pct {
-                display: inline-block;
-                margin-left: 2px;
-                color: var(--chart-axis-text);
-                // font-size: 10px;
-                font-weight: 500;
-              }
+              color: var(--chart-yaxis-hover-text);
             }
-            .mean-label {display: none;}
-            .tree-label {display: inline-block;}
-            &.meaning {
-              .mean-label {display: inline-block;}
-              .tree-label {display: none;}
-            }
-            &.unitless .readout-unit {display: none;}
-
-         }
-          &.y {
-
-            margin-top: calc(var(--chart-histogram-height) + 1px);
-            height: var(--trace-chart-height);
-
-            .values {
-              flex-direction: column-reverse;
-              justify-content: space-between;
-              align-items: flex-end;
-              position: relative;
-            }
-
-            .value {
-              display: flex;
-              gap: var(--chart-axis-gap);
-              overflow: visible;
-              opacity: 1;
-              transition: opacity var(--axis-transition) ease-out;
-
-              flex-direction: row;
-              justify-content: flex-end;
-              align-items: center;
-              width: auto;
-              height: 0;
-              position: absolute;
-              right: 0;
-
-              &.hover {
-                top: calc(100% * var(--py));
-                font-weight: var(--chart-yaxis-hover-text-font-weight);
-                font-size: var(--chart-yaxis-hover-text-font-size);
-                letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-                color: var(--chart-yaxis-hover-text);
-              }
-            }
-
-            .tick {
-              display: block;
-              width: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
-              height: var(--chart-tick-stroke-weight);
-              margin-right: var(--chart-tick-offset);
-
-              background-color: var(--chart-yaxis-hover-text);
-            }
-
           }
-        }
-        .divider {
 
-          position: absolute;
-          z-index: 0;
-          pointer-events: none;
-          background-color: var(--chart-stroke);
+          .tick {
+            display: block;
+            width: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+            height: var(--chart-tick-stroke-weight);
+            margin-right: var(--chart-tick-offset);
 
-          height: var(--chart-divider-stroke-weight);
-          width: 100%;
-          right: unset;
-          left: 0;
-          top: unset;
-          bottom: 0;
-          transform: translateY(50%);
-
-
+            background-color: var(--chart-yaxis-hover-text);
+          }
 
         }
+      }
+      .divider {
 
+        position: absolute;
+        z-index: 0;
+        pointer-events: none;
+        background-color: var(--chart-stroke);
 
-        .displays {
-          flex-direction: column;
-        }
+        height: var(--chart-divider-stroke-weight);
+        width: 100%;
+        right: unset;
+        left: 0;
+        top: unset;
+        bottom: 0;
+        transform: translateY(50%);
 
 
 
       }
 
-      .support {
-        z-index: 1;
+
+      .displays {
+        flex-direction: column;
       }
+
+
 
 
     }
@@ -641,7 +707,7 @@
       max-width: var(--indicator-pop-module-width);
       .chart {
         // background-color: yellow;
-        .graph {
+        .graph.display {
           background-color: white;
           min-width: var(--pop-chart-graph-width);
           max-width: var(--pop-chart-graph-width);
@@ -691,7 +757,7 @@
   }
 
 
-  .module .header .readout, .chart .axis .value, .kit .axis .value {
+  .module .header .readout, .axis .value, .kit .axis .value {
     // font-family: var(--Inter);
     font-variant-numeric: tabular-nums;
     font-weight: var(--chart-axis-text-font-weight);

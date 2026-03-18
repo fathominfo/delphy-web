@@ -128,15 +128,32 @@
               <div class="module trace">
                 <div class="header">
                   <h3 class="title"></h3>
-                  <div class="readout">
-                    <div class="mean">
-                      <span class="value"><span class="abbrev">M</span><span class="text">668</span></span>
-                      <span class="units">mutations</span>
-                    </div>
-                    <div class="pointer"><div class="shape"><span>▲</span></div></div></div>
+                  <p class="readout-unit"></p>
                 </div>
-                <div class="chart">
-                  <div class="feature">
+
+
+                <div class="displays">
+                  <div class="display-wrapper">
+                    <div class="spacer"></div>
+                    <div class="histogram display">
+                      <svg xmlns="svgXMLNS" viewBox="0 0 96 37.33">
+                        <g class="bars">
+                          <g class="distribution">
+                            <rect x="48" y="0" height="3.73" width="2"></rect>
+                          </g>
+                        </g>
+                      </svg>
+                    </div>
+                    <div class="download-button">
+                      <div class="button-glyph"></div>
+                      <span class="tooltip">
+                        <button class="download-text action">Download data</button>
+                        <button class="download-chart action">Download chart</button>
+                        <span class="completed">Downloaded</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="display-wrapper">
                     <div class="y axis">
                       <div class="values">
                         <span class="value">
@@ -156,53 +173,65 @@
                         </span>
                       </div>
                     </div>
-                    <div class="displays">
-                      <div class="histogram display">
-                        <svg xmlns="svgXMLNS" viewBox="0 0 96 37.33">
-                          <g class="bars">
-                            <g class="distribution">
-                              <rect x="48" y="0" height="3.73" width="2"></rect>
-                            </g>
-                            <!-- <g class="mean-value">
-                              <rect x="73" height="37.33" width="2"></rect>
-                            </g> -->
-                          </g>
-                        </svg>
-                        <div class="divider"></div>
+                    <div class="graph display">
+                      <svg xmlns="svgXMLNS" viewBox="0 0 96 149">
+                        <g class="run">
+                          <rect class="period" x="0" y="0" height="149" width="46"></rect>
+                          <path class="trend" d=""></path>
+                        </g>
+                        <g class="burn-in">
+                          <line class="period" x1="0" y1="96" x2="149" y2="96" ></line>
+                          <path class="trend" d=""></path>
+                        </g>
+                      </svg>
+                      <div class="position">
+                        <div class="x p"></div>
+                        <div class="y p"><div class="pos"></div></div>
                       </div>
-                      <div class="graph display">
-                        <svg xmlns="svgXMLNS" viewBox="0 0 96 149">
-                          <g class="run">
-                            <rect class="period" x="0" y="0" height="149" width="46"></rect>
-                            <path class="trend" d=""></path>
-                          </g>
-                          <g class="burn-in">
-                            <!-- <rect class="period" x="0" y="96" height="0" width="149"></rect> -->
-                            <line class="period" x1="0" y1="96" x2="149" y2="96" ></line>
-                            <path class="trend" d=""></path>
-                          </g>
-                        </svg>
-                        <div class="position">
-                          <div class="x p"></div>
-                          <div class="y p"><div class="pos"></div></div>
-                        </div>
+                    </div>
+                    <div class="download-button">
+                      <div class="button-glyph"></div>
+                      <span class="tooltip">
+                        <button class="download-text action">Download data</button>
+                        <button class="download-chart action">Download chart</button>
+                        <span class="completed">Downloaded</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                      </div>
-                    </div>
+
+                <div class="support">
+                  <div class="x axis meaning unitless">
+                    <span class="tick">▲</span>
+                    <p>
+                      <span class="tree-label">Sample:</span>
+                      <span class="readout-value"></span>
+                    </p>
                   </div>
-                  <div class="support">
-                    <div class="x axis meaning unitless">
-                      <span class="tick"></span>
-                      <p>
-                        <span>
-                          <span class="mean-label">Mean:</span>
-                          <span class="tree-label">Sample:</span>
-                        </span>
-                        <span class="readout-value"></span>
-                      </p>
-                      <span class="readout-unit"></span>
-                    </div>
-                  </div>
+                  <button class="copy-button">
+                    <div class="button-glyph"></div>
+                    <span class="tooltip">
+                      <span class="action">Copy summary stats</span>
+                      <span class="completed">Copied</span>
+                    </span>
+                  </button>
+                  <dl class="summary-stats">
+                    <dt data-stat="mean">Mean</dt>
+                      <dd data-stat="mean"><span class="value mean"></span></dd>
+                    <dt data-stat="hpd">95% HPD</dt>
+                      <dd data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</dd>
+                    <dt data-stat="median">Median</dt>
+                      <dd data-stat="median"><span class="value median"></span></dd>
+                    <dt data-stat="stddev">Std dev</dt>
+                      <dd data-stat="stddev"><span class="value stddev"></span></dd>
+                    <dt data-stat="stderr">Std err</dt>
+                      <dd data-stat="stderr"><span class="value stderr"></span></dd>
+                    <dt data-stat="ess">ESS</dt>
+                      <dd data-stat="ess"><span class="value ess"></span></dd>
+                    <dt data-stat="act">ACT</dt>
+                      <dd data-stat="act"><span class="value act"></span></dd>
+                  </dl>
                 </div>
               </div>
 

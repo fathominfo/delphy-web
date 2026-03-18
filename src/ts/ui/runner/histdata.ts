@@ -2,10 +2,13 @@ import { getStdDev, log10, UNSET } from '../common';
 import { TraceData } from './tracedata';
 import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { KernelDensityEstimate } from '../../pythia/kde';
-import { HistDataFunction } from './runcommon';
+import { HistDataFunction, SummaryStatsType } from './runcommon';
 import { Distribution } from '../distribution';
 
 
+
+const MIN_PROB = 0.001;
+const MAX_PROB = 0.999;
 
 type BucketConfig = {
   buckets: number[],
@@ -17,7 +20,6 @@ type BucketConfig = {
 
 const MIN_COUNT_FOR_HISTO = 10;
 export const MAX_COUNT_FOR_DISCRETE = 20;
-
 
 export class HistData extends TraceData {
 
@@ -33,6 +35,7 @@ export class HistData extends TraceData {
   distribution: Distribution;
   bucketConfig: BucketConfig;
   isDiscrete: boolean;
+  summaryStats: SummaryStatsType;
 
 
   constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean) {
@@ -40,9 +43,10 @@ export class HistData extends TraceData {
     this.isDiscrete = isDiscrete;
     this.bucketConfig = { buckets: [], values : [], positions: [], maxBucketValue: 0, step: 0 };
     this.distribution = new Distribution([]);
+    this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET, ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
   }
 
-  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
+  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number) {
 
     this.data = data;
     this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
@@ -50,7 +54,7 @@ export class HistData extends TraceData {
     this.postBurnIn = postBurnIn.filter(n=>Number.isFinite(n));
     this.ess = calcEffectiveSampleSize(this.postBurnIn);
     const N = this.postBurnIn.length;
-    this.act = N / this.ess;
+    this.act = N / this.ess * stepsPerSample;
     const dataSum = this.postBurnIn.reduce((tot, n)=>tot+n, 0);
     this.mean = dataSum / N;
 
@@ -94,6 +98,7 @@ export class HistData extends TraceData {
     } else {
       this.distribution = new Distribution(this.data);
     }
+    this.setSummaryStats();
   }
 
 
@@ -108,32 +113,54 @@ export class HistData extends TraceData {
   getKDEHistoData(kde:KernelDensityEstimate) : BucketConfig {
     const buckets: number[] = [],
       values: number[] = [],
-      min = kde.min_sample,
-      max = kde.max_sample,
-      range = max - min,
       bandwidth = kde.bandwidth,
-      halfBandwidth = bandwidth / 2,
-      bucketCount = Math.floor(range / bandwidth + 1);
+      halfBandwidth = 0.5 * bandwidth;
     let maxBucketValue = 0;
     if (bandwidth > 0) {
+      let min = kde.min_sample - halfBandwidth;
+      const max = kde.max_sample + halfBandwidth;
+      /*
+      since the bandwidth is not necessarily an even divisor of the data range,
+      calculate buckets based on evenly sized buckets,
+      and adjust min and max to accommodate them.
+      */
+      const range = max - min;
+      const bucketCount = Math.ceil(range / bandwidth);
+      const bucketMax = min + bucketCount * bandwidth;
+      const delta = bucketMax - max;
+      // console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
+      min -= delta / 2;
+      let cdf_n = kde.cdf(min);
+      while (cdf_n > MIN_PROB) {
+        min -= bandwidth;
+        cdf_n = kde.cdf(min);
+      }
+      let previous = 0;
       let n = min;
-      for (let i = 0; i < bucketCount; i++) {
-        n = min + i / bucketCount * range;
-        const gaust = kde.value_at(n + halfBandwidth);
+      while (cdf_n <= MAX_PROB) {
+        const gaust = cdf_n - previous;
         values.push(n);
         buckets.push(gaust);
         maxBucketValue = Math.max(maxBucketValue, gaust);
+        previous = cdf_n;
+        n += bandwidth;
+        cdf_n = kde.cdf(n);
       }
+      console.debug(`            probs:   min ${buckets[0]},     max ${cdf_n}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }
 
-  getStats() : {} {
+  setSummaryStats() : void {
     const {ess, act, mean } = this;
     const { median, hpdMin, hpdMax, data } = this.distribution;
     const stdDev = getStdDev(data);
     const stdErrOnMean = stdDev / Math.sqrt(ess);
-    return { mean, median, hpdMin, hpdMax, ess, stdDev, stdErrOnMean, act };
+    this.summaryStats = { mean, median, hpdMin, hpdMax, ess, stdDev, stdErrOnMean, act };
+  }
+
+  getStats() : SummaryStatsType {
+    return this.summaryStats;
   }
 
 

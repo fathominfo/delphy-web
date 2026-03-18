@@ -149,7 +149,7 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   const magnitude = Math.log10(x);
   let label = '';
   if (magnitude < lowerOOM || magnitude > upperOOM) {
-    label = x.toExponential();
+    label = x.toExponential(2);
   } else if (Math.abs(x) >= 100) {
     label = nfc(Math.round(x));
   } else if (Math.abs(x) >= 10) {
@@ -755,3 +755,21 @@ export const getStdDev = (data: number[])=>{
   const stdDev = Math.sqrt(sumDeltaSq/safe.length);
   return stdDev;
 }
+
+
+
+export const downloadTextFile = (filename: string, text: string ) : Promise<void>=>{
+  return new Promise(resolve=>{
+    const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
+      url = URL.createObjectURL(blob),
+      a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{
+      a.remove();
+    }, 1000);
+    resolve();
+  })
+};
