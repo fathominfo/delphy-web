@@ -769,37 +769,32 @@ export class HistCanvas extends TraceCanvas {
               const d = (element as SVGPathElement).getAttribute("d") as string;
               console.log(d)
               const tokens = d.split(' ');
-              /* our traces have only M and L commands */
-              // type lineType = {operator: string, coordinates: number[]};
-              // const lines: lineType[] = [];
+              /*
+              would prefer to use the jsPdf path command https://artskydj.github.io/jsPDF/docs/jsPDF.html#path,
+              since it uses absolute coordinates, but it does not seem to render.
+              Instead using lines.
+              */
               let lines: number[][] = [];
-              let command = '';
               let line: number[];
               let n;
               tokens.forEach(t=>{
                 n = parseFloat(t);
                 const isNumber = !isNaN(n);
                 if (!isNumber) {
-                  command = t.charAt(0).toLowerCase();
-                  // line = {operator: command, coordinates: []};
                   line = [];
                   lines.push(line);
                   if (t.length > 1) {
                     n = parseFloat(t.substring(1));
-                    // line.coordinates.push(n)
                     line.push(n)
                   }
                 } else if (line.length < 2) {
-                  // line.coordinates.push(n);
                   line.push(n)
                 } else {
-                  // line = {operator: command, coordinates: []};
                   line = [n];
                   lines.push(line);
                 }
               });
-              console.log(lines.map(arr=>arr.join()));
-              // doc.path(lines);
+              // console.log(lines.map(arr=>arr.join()));
               lines = lines.filter(coords=>coords.length === 2);
               /*
               jsPDF lines takes relative coordinates,
