@@ -7,6 +7,9 @@ import { Distribution } from '../distribution';
 
 
 
+const MIN_PROB = 0.001;
+const MAX_PROB = 0.999;
+
 type BucketConfig = {
   buckets: number[],
   values: number[],
@@ -112,37 +115,39 @@ export class HistData extends TraceData {
       values: number[] = [],
       bandwidth = kde.bandwidth,
       halfBandwidth = 0.5 * bandwidth;
-    let min = kde.min_sample - halfBandwidth,
-      max = kde.max_sample + halfBandwidth;
-    /*
-    since the bandwidth is not necessarily an even divisor of the data range,
-    calculate buckets based on evenly sized buckets,
-    and adjust min and max to accommodate them.
-    */
-    const range = max - min,
-      bucketCount = Math.ceil(range / bandwidth),
-      bucketMax = min + bucketCount * bandwidth;
-    const delta = bucketMax - max;
-    console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
-    min -= delta / 2;
-    max += delta / 2;
     let maxBucketValue = 0;
     if (bandwidth > 0) {
+      let min = kde.min_sample - halfBandwidth;
+      const max = kde.max_sample + halfBandwidth;
+      /*
+      since the bandwidth is not necessarily an even divisor of the data range,
+      calculate buckets based on evenly sized buckets,
+      and adjust min and max to accommodate them.
+      */
+      const range = max - min;
+      const bucketCount = Math.ceil(range / bandwidth);
+      const bucketMax = min + bucketCount * bandwidth;
+      const delta = bucketMax - max;
+      // console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
+      min -= delta / 2;
+      let cdf_n = kde.cdf(min);
+      while (cdf_n > MIN_PROB) {
+        min -= bandwidth;
+        cdf_n = kde.cdf(min);
+      }
       let previous = 0;
-      let i = 0;
-      while (i <= bucketCount) {
-        const n = min + i * bandwidth;
-        const cumulative = kde.cdf(n);
-        const gaust = cumulative - previous;
+      let n = min;
+      while (cdf_n <= MAX_PROB) {
+        const gaust = cdf_n - previous;
         values.push(n);
         buckets.push(gaust);
         maxBucketValue = Math.max(maxBucketValue, gaust);
-        previous = cumulative;
-        i++;
+        previous = cdf_n;
+        n += bandwidth;
+        cdf_n = kde.cdf(n);
       }
-      // const cmin = kde.cdf(min);
-      // const cmax = kde.cdf(max);
-      // console.debug(`            probs:   min ${cmin},     max ${cmax}`);
+
+      console.debug(`            probs:   min ${buckets[0]},     max ${cdf_n}`);
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
   }
