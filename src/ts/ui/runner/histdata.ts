@@ -10,16 +10,19 @@ import { Distribution } from '../distribution';
 const MIN_PROB = 0.001;
 const MAX_PROB = 0.999;
 
-type BucketConfig = {
-  buckets: number[],
-  values: number[],
+const MIN_COUNT_FOR_HISTO = 10;
+export const MAX_COUNT_FOR_DISCRETE = 20;
+
+type BinConfig = {
+  bins: number[],
+  edges: number[], // the min value for each bin
+  counts: number[],
   positions: number[],
   maxBucketValue: number,
   step: number
 };
 
-const MIN_COUNT_FOR_HISTO = 10;
-export const MAX_COUNT_FOR_DISCRETE = 20;
+
 
 export class HistData extends TraceData {
 
@@ -33,7 +36,7 @@ export class HistData extends TraceData {
   act: number = UNSET;
   displayCount = 0;
   distribution: Distribution;
-  bucketConfig: BucketConfig;
+  binConfig: BinConfig;
   isDiscrete: boolean;
   summaryStats: SummaryStatsType;
 
@@ -41,7 +44,7 @@ export class HistData extends TraceData {
   constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean) {
     super(label, unit, getDataFnc);
     this.isDiscrete = isDiscrete;
-    this.bucketConfig = { buckets: [], values : [], positions: [], maxBucketValue: 0, step: 0 };
+    this.binConfig = { bins: [], edges : [], counts: [], positions: [], maxBucketValue: 0, step: 0 };
     this.distribution = new Distribution([]);
     this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET, ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
   }
@@ -82,6 +85,9 @@ export class HistData extends TraceData {
   }
 
   setBucketData() {
+    // if (this.label === 'Mutation Rate μ') {
+    //   console.log('setting', this.label);
+    // }
     const { postBurnIn } = this;
     if (postBurnIn.length > 1) {
       this.distribution = new Distribution(postBurnIn);
@@ -90,9 +96,9 @@ export class HistData extends TraceData {
         const histoMaxVal = Math.max(...postBurnIn);
         const histoRange = histoMaxVal - histoMinVal;
         if (this.distribution.kde === null || this.isDiscrete && histoRange < 20) {
-          this.bucketConfig = this.getDiscreteHistoData(postBurnIn, histoRange, histoMinVal);
+          this.binConfig = this.getDiscreteHistoData(postBurnIn, histoRange, histoMinVal);
         } else {
-          this.bucketConfig = this.getKDEHistoData(this.distribution.kde);
+          this.binConfig = this.getKDEHistoData(this.distribution.kde);
         }
       }
     } else {
@@ -102,59 +108,87 @@ export class HistData extends TraceData {
   }
 
 
-  getDiscreteHistoData(estimateData: number[], valRange: number, displayMin: number) : BucketConfig {
-    const buckets: number[] = Array(valRange + 1).fill(0);
-    estimateData.forEach(n=>buckets[n-displayMin]++);
-    // buckets = buckets.map(n=>n/estimateData.length);
-    const values = buckets.map((_n, i)=>i+displayMin);
-    const maxBucketValue = Math.max(...buckets);
-    return {buckets, values, maxBucketValue, positions: [], step: 1 };
+  getDiscreteHistoData(estimateData: number[], valRange: number, displayMin: number) : BinConfig {
+    const bins: number[] = Array(valRange + 1).fill(0);
+    estimateData.forEach(n=>bins[n-displayMin]++);
+    const counts = bins.slice(0);
+    const edges = bins.map((_n, i)=>i+displayMin);
+    const maxBucketValue = Math.max(...bins);
+    return {bins, counts, edges, maxBucketValue, positions: [], step: 1 };
   }
 
-  getKDEHistoData(kde:KernelDensityEstimate) : BucketConfig {
-    const buckets: number[] = [],
-      values: number[] = [],
+  getKDEHistoData(kde:KernelDensityEstimate) : BinConfig {
+    const bins: number[] = [],
+      edges: number[] = [],
+      counts: number[] = [],
       bandwidth = kde.bandwidth,
       halfBandwidth = 0.5 * bandwidth;
     let maxBucketValue = 0;
     if (bandwidth > 0) {
       let min = kde.min_sample - halfBandwidth;
-      const max = kde.max_sample + halfBandwidth;
+      let max = kde.max_sample + halfBandwidth;
       /*
       since the bandwidth is not necessarily an even divisor of the data range,
       calculate buckets based on evenly sized buckets,
       and adjust min and max to accommodate them.
       */
-      const range = max - min;
-      const bucketCount = Math.ceil(range / bandwidth);
+      let range = max - min;
+      let bucketCount = Math.ceil(range / bandwidth);
       const bucketMax = min + bucketCount * bandwidth;
       const delta = bucketMax - max;
       // console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
       min -= delta / 2;
-      let cdf_n = kde.cdf(min);
-
+      max += delta / 2;
+      let cdf_n = kde.cdf(max);
+      while (cdf_n < MAX_PROB) {
+        max += bandwidth;
+        cdf_n = kde.cdf(max);
+      }
+      cdf_n = kde.cdf(min);
       while (cdf_n > MIN_PROB) {
         min -= bandwidth;
         cdf_n = kde.cdf(min);
       }
-      buckets.push(cdf_n);
-      values.push(min)
-      const cumulatives: number[] = [cdf_n];
-      let previous = cdf_n;
-      let n = min;
-      while (cdf_n <= MAX_PROB) {
-        n += bandwidth;
+      /*
+      recalc the range and count.
+      We do this, because calculating the bin with
+      `min + i * bandwidth` is less likely to accumulate
+      rounding errors than iteratively adding `bandwidth` to `min`
+      */
+      range = max - min;
+      bucketCount = Math.ceil(range / bandwidth);
+      const cumulatives: number[] = [];
+      let previous = 0;
+      let i = 0;
+      while (i <= bucketCount) {
+        const n = min + i * bandwidth;
         cdf_n = kde.cdf(n);
-        const gaust = cdf_n - previous;
-        values.push(n);
-        buckets.push(gaust);
-        cumulatives.push(cdf_n);
-        maxBucketValue = Math.max(maxBucketValue, gaust);
+        if (cdf_n > 0) {
+          const gaust = cdf_n - previous;
+          edges.push(n);
+          bins.push(gaust);
+          cumulatives.push(cdf_n);
+          maxBucketValue = Math.max(maxBucketValue, gaust);
+        }
         previous = cdf_n;
+        i++;
       }
-      console.debug(`            probs:   min ${cumulatives[0]},     max ${cumulatives[cumulatives.length - 1]}`);
+      // console.debug(`            probs:   min ${cumulatives[0]},     max ${cumulatives[cumulatives.length - 1]}`);
+      /* with the buckets decided, tally the samples into the buckets */
+      counts.length = bins.length;
+      counts.fill(0);
+      kde.samples.forEach((n:number)=>{
+        const bindex = Math.floor((n - min) / bandwidth);
+        /* verify this is the right bin */
+        if (edges[bindex] <= n && n < edges[bindex + 1]) {
+          counts[bindex]++;
+        } else {
+          console.debug(this.label, n, bindex, edges[bindex], edges[bindex + 1], bins.length);
+        }
+      });
+
     }
-    return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
+    return {bins, edges, counts, maxBucketValue, positions: [], step: bandwidth };
   }
 
   setSummaryStats() : void {

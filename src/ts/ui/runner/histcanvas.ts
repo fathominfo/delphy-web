@@ -468,8 +468,8 @@ export class HistCanvas extends TraceCanvas {
 
   drawHistogramSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
-    const { bucketConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
-    const { buckets, values, maxBucketValue, positions, step } = bucketConfig;
+    const { binConfig: bucketConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
+    const { bins: buckets, edges: values, maxBucketValue, positions, step } = bucketConfig;
     let valRange = displayMax - displayMin;
 
     /*
@@ -785,8 +785,8 @@ export class HistCanvas extends TraceCanvas {
 
 
   createHistogramDataExport() : string {
-    const { bucketConfig, distribution, isDiscrete } = this.traceData as HistData;
-    const { buckets, values } = bucketConfig;
+    const { binConfig, distribution, isDiscrete } = this.traceData as HistData;
+    const { bins, edges, counts } = binConfig;
     const bandwidth = distribution.bandwidth;
     // console.log(distribution)
     const label = this.className;
@@ -795,25 +795,28 @@ export class HistCanvas extends TraceCanvas {
     // let totPdf = 0;
     if (isDiscrete) {
       text += 'discrete values\n';
-      text += `bucket\tprobability\ttally\n`;
-      const total = buckets.reduce((tot, n)=>tot + n, 0);
-      buckets.forEach((tally, i)=>{
-        const bucket = values[i];
-        const probability = tally / total;
+      text += `bin\tprobability\tcount\n`;
+      const total = bins.reduce((tot, n)=>tot + n, 0);
+      bins.forEach((count, i)=>{
+        const bin = edges[i];
+        const probability = count / total;
         // totProb += probability;
-        text += `${bucket}\t${probability}\t${tally}\n`;
+        text += `${bin}\t${probability}\t${count}\n`;
       });
     } else {
       text += 'distribution\n';
-      text = `bucket min\tbucket max\tprobability\tpdf\n`;
-      buckets.forEach((probability, i)=>{
-        const bucketMin = values[i];
-        const bucketMax = values[i+ 1] || (bucketMin + bandwidth);
-        const bucketRange = bucketMax - bucketMin;
-        const pdf = probability / bucketRange;
+      text = `bin min\tbin max\tcount\tpercent of total\tsmoothed probability (KDE)\tsmoothed pdf (KDE)\n`;
+      const total = counts.reduce((tot, n)=>tot + n, 0);
+      bins.forEach((probability, i)=>{
+        const binMin = edges[i];
+        const binMax = edges[i+ 1] || (binMin + bandwidth);
+        const count = counts[i];
+        const pct = 100 * count / total;
+        const binRange = binMax - binMin;
+        const pdf = probability / binRange;
         // totProb += probability;
         // totPdf += pdf;
-        text += `${bucketMin}\t${bucketMax}\t${probability}\t${pdf}\n`;
+        text += `${binMin}\t${binMax}\t${count}\t${pct}\t${probability}\t${pdf}\n`;
       });
     }
     // console.debug("total prob", totProb, totPdf);

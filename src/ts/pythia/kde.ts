@@ -82,6 +82,10 @@ export class KernelDensityEstimate {
     return this.bandwidth_;
   }
 
+  get samples(): number[] {
+    return this.samples_.slice(0);
+  }
+
 
   /*
   probability density function
