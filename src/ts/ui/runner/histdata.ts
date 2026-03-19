@@ -49,15 +49,14 @@ export class HistData extends TraceData {
     this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET, ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
   }
 
-  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number) {
+  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean,
+    sampleIndex: number, stepsPerSample: number) {
 
     this.data = data;
     this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
     const postBurnIn = kneeIndex > 0 ? data.slice(kneeIndex) : data;
     this.postBurnIn = postBurnIn.filter(n=>Number.isFinite(n));
-    this.ess = calcEffectiveSampleSize(this.postBurnIn);
     const N = this.postBurnIn.length;
-    this.act = N / this.ess * stepsPerSample;
     const dataSum = this.postBurnIn.reduce((tot, n)=>tot+n, 0);
     this.mean = dataSum / N;
 
@@ -80,17 +79,19 @@ export class HistData extends TraceData {
       this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
     }
 
-    this.setBucketData();
+    this.setBucketData(stepsPerSample);
 
   }
 
-  setBucketData() {
+  setBucketData(stepsPerSample: number) {
     // if (this.label === 'Mutation Rate μ') {
     //   console.log('setting', this.label);
     // }
     const { postBurnIn } = this;
-    if (postBurnIn.length > 1) {
+    const N = postBurnIn.length;
+    if (N > 1) {
       this.distribution = new Distribution(postBurnIn);
+      this.ess = this.distribution.ess;
       if (postBurnIn.length >= MIN_COUNT_FOR_HISTO) {
         const histoMinVal = Math.min(...postBurnIn);
         const histoMaxVal = Math.max(...postBurnIn);
@@ -103,7 +104,9 @@ export class HistData extends TraceData {
       }
     } else {
       this.distribution = new Distribution(this.data);
+      this.ess = calcEffectiveSampleSize(this.postBurnIn);
     }
+    this.act = N / this.ess * stepsPerSample;
     this.setSummaryStats();
   }
 

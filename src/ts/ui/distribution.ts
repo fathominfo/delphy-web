@@ -1,5 +1,6 @@
 import {KernelDensityEstimate} from "../pythia/kde";
 import { numericSort } from "./common";
+import { calcEffectiveSampleSize } from "./runner/effectivesamplesize";
 
 
 export const HPD_MIN_INDEX = 0;
@@ -10,6 +11,7 @@ export const cred_mass = .95
 export class Distribution {
 
   data: number[];
+  ess: number;
   kde: KernelDensityEstimate | null;
   min: number;
   max: number;
@@ -46,6 +48,7 @@ export class Distribution {
     this.range = 0;
     this.max = 0;
     this.min = 0;
+    this.ess = calcEffectiveSampleSize(times);
     this.kde = null;
 
     this.median = 0;
@@ -57,7 +60,7 @@ export class Distribution {
 
     if (sorted.length >= 3) {
       try {
-        this.kde = new KernelDensityEstimate(sorted);
+        this.kde = new KernelDensityEstimate(sorted, this.ess);
         this.min = this.kde.min_sample;
         this.max = this.kde.max_sample;
         this.bandwidth = this.kde.bandwidth;

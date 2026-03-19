@@ -39,7 +39,7 @@ export class KernelDensityEstimate {
   private kernel_: (x: number, xi: number) => number;
   private bandwidth_: number;
 
-  public constructor(samples: number[]) {
+  public constructor(samples: number[], ess: number) {
     this.samples_ = samples.filter(n=>Number.isFinite(n));
     this.samples_.sort(numericSort);
     this.min_sample_ = this.samples_[0];
@@ -47,15 +47,14 @@ export class KernelDensityEstimate {
 
 
     // Estimated KDE bandwidth (from https://en.wikipedia.org/wiki/Kernel_density_estimation)
-    const N = this.samples_.length;
-    if (N <= 2) {
+    if (this.samples_.length <= 2) {
       throw new Error(`Cannot build a Kernel Density Estimator from fewer than three samples`);
     }
     const data_variance = estimate_data_variance(this.samples_);
     const sigma_hat = Math.sqrt(data_variance);
     const iqr = interquartile_range(this.samples_);
     this.bandwidth_ =
-      + Math.max(0.9 * Math.min(sigma_hat, iqr / 1.34) * Math.pow(N, -1/5),
+      + Math.max(0.9 * Math.min(sigma_hat, iqr / 1.34) * Math.pow(ess, -1/5),
         + (this.max_sample_ - this.min_sample_) / 200);  // Avoid too few bins
     const bandwidth_2: number = 2 * this.bandwidth_ * this.bandwidth_;
     // Precalculate factors in Gaussian kernel
