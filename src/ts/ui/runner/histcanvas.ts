@@ -552,16 +552,17 @@ export class HistCanvas extends TraceCanvas {
     this.histoBarParent.appendChild(path);
     if (highlightValue >= displayMin && highlightValue <= displayMax) {
       const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
-      const prob = kde.pdf(highlightValue);
-      const size = Math.max(0, prob / maxBinValue * histoHeight);
-      const top = histoHeight - size;
-      console.log(prob, maxBinValue, size );
-      const x = (highlightValue - displayMin) / valRange * histoWidth;
-      const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
-      line.setAttribute("x1", `${x}`);
-      line.setAttribute("x2", `${x}`);
-      line.setAttribute("y2", `${top}`);
-      this.histoBarParent.appendChild(line);
+      if (kde) {
+        const prob = kde.pdf(highlightValue);
+        const size = Math.max(0, prob / maxBinValue * histoHeight);
+        const top = histoHeight - size;
+        const x = (highlightValue - displayMin) / valRange * histoWidth;
+        const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
+        line.setAttribute("x1", `${x}`);
+        line.setAttribute("x2", `${x}`);
+        line.setAttribute("y2", `${top}`);
+        this.histoBarParent.appendChild(line);
+      }
     }
   }
 
