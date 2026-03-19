@@ -1,16 +1,21 @@
 import { downloadTextFile, getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
-import { HistData, MAX_COUNT_FOR_DISCRETE } from "./histdata";
+import { HistData } from "./histdata";
 import { getElementsAndStyles } from '../../util/exportutils';
 // import { PDFDocument, rgb } from 'pdf-lib';
 import { jsPDF } from "jspdf";
+import { KernelDensityEstimate } from '../../pythia/kde';
 
 
 export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
 TRACE_TEMPLATE.remove();
 const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution rect") as SVGRectElement;
 BAR_TEMPLATE.remove();
+const DISTRIBUTION_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution path") as SVGPathElement;
+DISTRIBUTION_TEMPLATE.remove();
+const HIGHLIGHT_LINE_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution line") as SVGLineElement;
+HIGHLIGHT_LINE_TEMPLATE.remove();
 
 const MAX_STEP_SIZE = 3;
 const TARGET_LABEL_SPACING = 25; // in px
@@ -290,7 +295,7 @@ export class HistCanvas extends TraceCanvas {
 
   draw() {
     const traceData = this.traceData as HistData;
-    let { data, highlightIndex } = traceData,
+    let { data, highlightIndex, binConfig } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const { hideBurnIn, savedKneeIndex } = traceData;
     let readoutValue = Number.MAX_VALUE;
@@ -313,7 +318,11 @@ export class HistCanvas extends TraceCanvas {
     sample is set in `drawTrace` and read in `drawYAxisLabels`
     */
     this.drawTrace(data, kneeIndex, highlightIndex);
-    this.drawHistogramSVG(readoutValue);
+    if (binConfig.isHistogram) {
+      this.drawHistogramSVG(readoutValue);
+    } else {
+      this.drawDistributionSVG(readoutValue);
+    }
     this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
     this.setReadoutLabel(isHighlight, readoutValue);
     this.setStatsReadouts();
@@ -322,7 +331,7 @@ export class HistCanvas extends TraceCanvas {
 
   drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
     const { displayCount, hideBurnIn, displayMin,
-      displayMax, isDiscrete } = this.traceData as HistData;
+      displayMax, binConfig } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
     const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
@@ -350,7 +359,7 @@ export class HistCanvas extends TraceCanvas {
       activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
     } else if (displayCount > 1) {
       const valRange = displayMax - displayMin;
-      if (isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
+      if (binConfig.isHistogram) {
         const bucketSize = width / (valRange + 1);
         left = bucketSize * 0.5;
         width -= bucketSize;
@@ -410,7 +419,7 @@ export class HistCanvas extends TraceCanvas {
           if (first) {
             currentPath = `M${x} ${y} L`;
           } else {
-            if (isDiscrete) {
+            if (binConfig.isHistogram) {
               currentPath += `${prevX} ${y} `;
             }
             currentPath += `${x} ${y} `;
@@ -468,8 +477,8 @@ export class HistCanvas extends TraceCanvas {
 
   drawHistogramSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
-    const { binConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
-    const { bins, edges, counts, maxBucketValue, positions, step } = binConfig;
+    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { edges, counts, maxBinValue, positions, step, isHistogram } = binConfig;
     let valRange = displayMax - displayMin;
 
     /*
@@ -480,9 +489,9 @@ export class HistCanvas extends TraceCanvas {
     const lastValue = edges[edges.length-1] + step;
     const histoValueRange = lastValue - firstValue;
     const histoSize = histoValueRange / valRange * histoWidth;
-    let bucketSize = Math.max(0, histoSize / bins.length);
+    let bucketSize = Math.max(0, histoSize / counts.length);
 
-    if (isDiscrete && histoValueRange < MAX_COUNT_FOR_DISCRETE) {
+    if (isHistogram) {
       valRange += step;
       bucketSize = histoWidth / (valRange);
     }
@@ -492,7 +501,7 @@ export class HistCanvas extends TraceCanvas {
       const value = edges[i];
       let nextValue = edges[i + 1];
       if (nextValue === undefined) nextValue = value + step;
-      const size = Math.max(0, n / maxBucketValue * histoHeight);
+      const size = Math.max(0, n / maxBinValue * histoHeight);
       const top = histoHeight - size;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
       const x = (value - displayMin) / valRange * this.histoWidth;
@@ -505,6 +514,58 @@ export class HistCanvas extends TraceCanvas {
       positions[i] = x;
     });
   }
+
+
+  drawDistributionSVG(highlightValue: number) {
+    const { traceData, histoWidth, histoHeight } = this;
+    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { bins, edges, maxBinValue, positions, step } = binConfig;
+    const valRange = displayMax - displayMin;
+
+    /*
+    since burnin might be visible, and the histogram does not include burn-in values,
+    we need to calculate how much room the histogram takes.
+    */
+    this.histoBarParent.innerHTML = '';
+    let d = '';
+    let firstX = Number.MIN_SAFE_INTEGER;
+    bins.forEach((n, i)=>{
+      const value = edges[i];
+      let nextValue = edges[i + 1];
+      if (nextValue === undefined) nextValue = value + step;
+      const size = Math.max(0, n / maxBinValue * histoHeight);
+      const top = histoHeight - size;
+      const x = (value - displayMin) / valRange * histoWidth;
+      if (d === '') {
+        d = `M${x} ${top} L `;
+        firstX = x;
+      } else {
+        d += `${x} ${top} `;
+      }
+      positions[i] = x;
+    });
+    if (firstX !== Number.MIN_SAFE_INTEGER) {
+      d += `${firstX} ${histoHeight}`;
+    }
+    const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
+    path.setAttribute('d', d);
+    this.histoBarParent.appendChild(path);
+    if (highlightValue >= displayMin && highlightValue <= displayMax) {
+      const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
+      const prob = kde.pdf(highlightValue);
+      const size = Math.max(0, prob / maxBinValue * histoHeight);
+      const top = histoHeight - size;
+      console.log(prob, maxBinValue, size );
+      const x = (highlightValue - displayMin) / valRange * histoWidth;
+      const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
+      line.setAttribute("x1", `${x}`);
+      line.setAttribute("x2", `${x}`);
+      line.setAttribute("y2", `${top}`);
+      this.histoBarParent.appendChild(line);
+    }
+  }
+
+
 
 
 
@@ -624,7 +685,13 @@ export class HistCanvas extends TraceCanvas {
       sample is set in `drawTrace` and read in `drawLabels`
       */
       this.drawTrace(data, kneeIndex, highlightIndex);
-      this.drawHistogramSVG(readoutValue);
+      const { binConfig } = traceData as HistData;
+
+      if (binConfig.isHistogram) {
+        this.drawHistogramSVG(readoutValue);
+      } else {
+        this.drawDistributionSVG(readoutValue);
+      }
     });
   }
 

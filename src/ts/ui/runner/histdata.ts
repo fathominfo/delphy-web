@@ -11,15 +11,16 @@ const MIN_PROB = 0.001;
 const MAX_PROB = 0.999;
 
 const MIN_COUNT_FOR_HISTO = 10;
-export const MAX_COUNT_FOR_DISCRETE = 20;
+export const MAX_COUNT_FOR_DISCRETE = 50;
 
 export type BinConfig = {
   bins: number[],
   edges: number[], // the min value for each bin
   counts: number[],
   positions: number[],
-  maxBucketValue: number,
-  step: number
+  maxBinValue: number,
+  step: number,
+  isHistogram: boolean
 };
 
 
@@ -44,9 +45,11 @@ export class HistData extends TraceData {
   constructor(label:string, unit='', getDataFnc: HistDataFunction, isDiscrete: boolean) {
     super(label, unit, getDataFnc);
     this.isDiscrete = isDiscrete;
-    this.binConfig = { bins: [], edges : [], counts: [], positions: [], maxBucketValue: 0, step: 0 };
+    this.binConfig = { bins: [], edges : [], counts: [], positions: [],
+      maxBinValue: 0, step: 0, isHistogram: false };
     this.distribution = new Distribution([]);
-    this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET, ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
+    this.summaryStats = { mean: UNSET, median: UNSET, hpdMin: UNSET, hpdMax: UNSET,
+      ess: UNSET, stdDev: UNSET, stdErrOnMean: UNSET, act: UNSET };
   }
 
   setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean,
@@ -79,11 +82,11 @@ export class HistData extends TraceData {
       this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
     }
 
-    this.setBucketData(stepsPerSample);
+    this.setBinData(stepsPerSample);
 
   }
 
-  setBucketData(stepsPerSample: number) {
+  setBinData(stepsPerSample: number) {
     // if (this.label === 'Mutation Rate μ') {
     //   console.log('setting', this.label);
     // }
@@ -116,8 +119,8 @@ export class HistData extends TraceData {
     estimateData.forEach(n=>bins[n-displayMin]++);
     const counts = bins.slice(0);
     const edges = bins.map((_n, i)=>i+displayMin);
-    const maxBucketValue = Math.max(...bins);
-    return {bins, counts, edges, maxBucketValue, positions: [], step: 1 };
+    const maxBinValue = Math.max(...bins);
+    return {bins, counts, edges, maxBinValue, positions: [], step: 1, isHistogram: true };
   }
 
   getKDEHistoData(kde:KernelDensityEstimate) : BinConfig {
@@ -126,7 +129,7 @@ export class HistData extends TraceData {
       counts: number[] = [],
       bandwidth = kde.bandwidth,
       halfBandwidth = 0.5 * bandwidth;
-    let maxBucketValue = 0;
+    let maxBinValue = 0;
     if (bandwidth > 0) {
       let min = kde.min_sample - halfBandwidth;
       let max = kde.max_sample + halfBandwidth;
@@ -136,9 +139,9 @@ export class HistData extends TraceData {
       and adjust min and max to accommodate them.
       */
       let range = max - min;
-      let bucketCount = Math.ceil(range / bandwidth);
-      const bucketMax = min + bucketCount * bandwidth;
-      const delta = bucketMax - max;
+      let binCount = Math.ceil(range / bandwidth);
+      const binMax = min + binCount * bandwidth;
+      const delta = binMax - max;
       // console.debug(`delta of the actual distribution max ${max} from bucket max ${bucketMax} for ${bucketCount} buckets = ${delta}`);
       min -= delta / 2;
       max += delta / 2;
@@ -159,21 +162,14 @@ export class HistData extends TraceData {
       rounding errors than iteratively adding `bandwidth` to `min`
       */
       range = max - min;
-      bucketCount = Math.ceil(range / bandwidth);
-      const cumulatives: number[] = [];
-      let previous = 0;
+      binCount = Math.ceil(range / bandwidth);
       let i = 0;
-      while (i <= bucketCount) {
+      while (i <= binCount) {
         const n = min + i * bandwidth;
-        cdf_n = kde.cdf(n);
-        if (cdf_n > 0) {
-          const gaust = cdf_n - previous;
-          edges.push(n);
-          bins.push(gaust);
-          cumulatives.push(cdf_n);
-          // maxBucketValue = Math.max(maxBucketValue, gaust);
-        }
-        previous = cdf_n;
+        const gaust = kde.pdf(n);
+        edges.push(n);
+        bins.push(gaust);
+        maxBinValue = Math.max(maxBinValue, gaust);
         i++;
       }
       // console.debug(`            probs:   min ${cumulatives[0]},     max ${cumulatives[cumulatives.length - 1]}`);
@@ -189,9 +185,11 @@ export class HistData extends TraceData {
           console.debug(this.label, n, bindex, edges[bindex], edges[bindex + 1], bins.length);
         }
       });
-      maxBucketValue = Math.max.apply(null, counts);
+      // const maxPct = Math.max.apply(null, counts) / kde.samples.length;
+      // console.log('bin data', maxBinValue, maxPct, maxPct > maxBinValue ? maxPct / maxBinValue: maxBinValue / maxPct);
+      // maxBucketValue = Math.max(maxCount, maxBucketValue);
     }
-    return {bins, edges, counts, maxBucketValue, positions: [], step: bandwidth };
+    return {bins, edges, counts, maxBinValue, positions: [], step: bandwidth, isHistogram: false };
   }
 
   setSummaryStats() : void {
