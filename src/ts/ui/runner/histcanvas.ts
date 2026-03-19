@@ -468,19 +468,19 @@ export class HistCanvas extends TraceCanvas {
 
   drawHistogramSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
-    const { binConfig: bucketConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
-    const { bins: buckets, edges: values, maxBucketValue, positions, step } = bucketConfig;
+    const { binConfig, isDiscrete, displayMin, displayMax } = traceData as HistData;
+    const { bins, edges, counts, maxBucketValue, positions, step } = binConfig;
     let valRange = displayMax - displayMin;
 
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
     we need to calculate how much room the histogram takes.
     */
-    const firstValue = values[0];
-    const lastValue = values[values.length-1] + step;
+    const firstValue = edges[0];
+    const lastValue = edges[edges.length-1] + step;
     const histoValueRange = lastValue - firstValue;
     const histoSize = histoValueRange / valRange * histoWidth;
-    let bucketSize = Math.max(0, histoSize / buckets.length);
+    let bucketSize = Math.max(0, histoSize / bins.length);
 
     if (isDiscrete && histoValueRange < MAX_COUNT_FOR_DISCRETE) {
       valRange += step;
@@ -488,9 +488,9 @@ export class HistCanvas extends TraceCanvas {
     }
 
     this.histoBarParent.innerHTML = '';
-    buckets.forEach((n, i)=>{
-      const value = values[i];
-      let nextValue = values[i + 1];
+    counts.forEach((n, i)=>{
+      const value = edges[i];
+      let nextValue = edges[i + 1];
       if (nextValue === undefined) nextValue = value + step;
       const size = Math.max(0, n / maxBucketValue * histoHeight);
       const top = histoHeight - size;

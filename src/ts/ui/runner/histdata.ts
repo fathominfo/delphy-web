@@ -13,7 +13,7 @@ const MAX_PROB = 0.999;
 const MIN_COUNT_FOR_HISTO = 10;
 export const MAX_COUNT_FOR_DISCRETE = 20;
 
-type BinConfig = {
+export type BinConfig = {
   bins: number[],
   edges: number[], // the min value for each bin
   counts: number[],
@@ -168,7 +168,7 @@ export class HistData extends TraceData {
           edges.push(n);
           bins.push(gaust);
           cumulatives.push(cdf_n);
-          maxBucketValue = Math.max(maxBucketValue, gaust);
+          // maxBucketValue = Math.max(maxBucketValue, gaust);
         }
         previous = cdf_n;
         i++;
@@ -186,7 +186,7 @@ export class HistData extends TraceData {
           console.debug(this.label, n, bindex, edges[bindex], edges[bindex + 1], bins.length);
         }
       });
-
+      maxBucketValue = Math.max.apply(null, counts);
     }
     return {bins, edges, counts, maxBucketValue, positions: [], step: bandwidth };
   }
