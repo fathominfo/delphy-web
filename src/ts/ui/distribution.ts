@@ -1,14 +1,17 @@
 import {KernelDensityEstimate} from "../pythia/kde";
 import { numericSort } from "./common";
+import { calcEffectiveSampleSize } from "./runner/effectivesamplesize";
 
 
-
-const cred_mass = .95
+export const HPD_MIN_INDEX = 0;
+export const HPD_MAX_INDEX = 1;
+export const MEDIAN_INDEX = 2;
+export const cred_mass = .95
 
 export class Distribution {
 
-  name: string;
-  times: number[];
+  data: number[];
+  ess: number;
   kde: KernelDensityEstimate | null;
   min: number;
   max: number;
@@ -20,18 +23,17 @@ export class Distribution {
   hpdMax: number;
   range: number;
   bandwidth:number;
-  bandTimes: number[];
+  bandValues: number[];
   bands: number[];
   bandMax:number;
   total: number;
   median: number;
-  timeOfMax: number;
+  valueAtMax: number;
   distributed: boolean;
 
-  constructor(name: string, times: number[]) {
-    this.name = name;
-    this.times = times;
-    this.bandTimes = [];
+  constructor(times: number[]) {
+    this.data = times;
+    this.bandValues = [];
     this.bands = [];
     this.distributed = false;
     const sorted = times.slice(0).sort(numericSort);
@@ -40,12 +42,13 @@ export class Distribution {
     // else this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
 
     this.bandMax = 0;
-    this.timeOfMax = 0;
+    this.valueAtMax = 0;
     this.total = 0;
     this.bandwidth = 0;
     this.range = 0;
     this.max = 0;
     this.min = 0;
+    this.ess = calcEffectiveSampleSize(times);
     this.kde = null;
 
     this.median = 0;
@@ -57,22 +60,22 @@ export class Distribution {
 
     if (sorted.length >= 3) {
       try {
-        this.kde = new KernelDensityEstimate(sorted);
+        this.kde = new KernelDensityEstimate(sorted, this.ess);
         this.min = this.kde.min_sample;
         this.max = this.kde.max_sample;
         this.bandwidth = this.kde.bandwidth;
         this.range = this.max - this.min;
         let n = this.min;
         this.bandMax = 0;
-        this.timeOfMax = 0;
+        this.valueAtMax = 0;
         while (n <= this.max && this.bandwidth > 0) {
-          const gaust = this.kde.value_at(n);
+          const gaust = this.kde.pdf(n);
           this.bands.push(gaust);
-          this.bandTimes.push(n);
+          this.bandValues.push(n);
           this.total += gaust;
           if (gaust > this.bandMax) {
             this.bandMax = gaust;
-            this.timeOfMax = n;
+            this.valueAtMax = n;
           }
           n += this.bandwidth;
         }
@@ -88,6 +91,7 @@ export class Distribution {
             proxToMedian = dMedian;
           }
         }
+        if (this.range === 0) this.bandMax = 100;
         this.median = medianDate;
       }
       catch(err) {
@@ -102,7 +106,7 @@ export class Distribution {
       if (sorted.length % 2 === 1) this.median = sorted[Math.floor(sorted.length/2)];
       else if (sorted.length > 0) this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
       this.bandMax = 0.0;
-      this.timeOfMax = this.min;
+      this.valueAtMax = this.min;
       this.kde = null;
     }
   }
@@ -116,7 +120,7 @@ export class Distribution {
 
   getValueAt(hoverDate: number) : number {
     if (!this.kde) return 0;
-    const val = this.kde.value_at(hoverDate);
+    const val = this.kde.pdf(hoverDate);
     if (val < this.getMinBand()) return 0;
     return val;
   }
@@ -155,5 +159,18 @@ export const calcHPD = (arr: number[])=>{
     minIndex = intervalWidths.indexOf(minWidth);
   const hpdMin = sorted[minIndex];
   const hpdMax = sorted[minIndex + intervalIdxInc];
-  return [hpdMin, hpdMax];
+  // let's throw the median on there for fun [mark 260121]
+  const medianIndex = Math.floor(lenn/2);
+  let median = sorted[medianIndex];
+  if (lenn % 2 === 0 && lenn > 0) {
+    median = (median + sorted[medianIndex - 1]) / 2;
+  }
+  /*
+  order must correspond to
+    HPD_MIN_INDEX,
+    HPD_MAX_INDEX,
+    MEDIAN_INDEX
+  declared above
+  */
+  return [hpdMin, hpdMax, median];
 }

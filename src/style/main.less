@@ -304,8 +304,6 @@ nav button:not(:disabled):hover {
   gap: 40px;
 }
 
-.controls {.t20()}
-
 
 
 .readout {
@@ -398,6 +396,90 @@ nav button:not(:disabled):hover {
   }
 }
 
+
+
+.copy-button, .download-button {
+  pointer-events: none;
+  opacity: 0;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 19px;
+  width: auto;
+  display: flex;
+  gap: 4px;
+  z-index: 1;
+  transition: opacity 0.15s;
+  cursor: pointer;
+
+  .tooltip {
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .action {
+    display: block;
+    cursor: pointer;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    .tooltip { opacity: 1; }
+  }
+  .completed {
+    display: none;
+    height: 32px;
+  }
+
+  &.completed {
+    .action{display: none;}
+    .completed {display: block;}
+  }
+
+  .button-glyph {
+    width: 14px;
+    aspect-ratio: 1 / 1;
+    transition: all 0.15s;
+  }
+
+
+}
+
+
+
+.copy-button .button-glyph {
+  background-color: var(--chart-axis-text);
+  .masked(url("./assets/icons/copy.svg"));
+}
+
+.download-button .button-glyph {
+  background-color: black;
+  .masked(url("./assets/icons/export.svg"));
+}
+
+.info {
+
+  position: relative;
+  width: auto;
+  min-width: var(--info-size);
+  max-width: var(--info-size);
+  height: auto;
+  min-height: var(--info-size);
+  max-height: var(--info-size);
+  border-radius: var(--info-corner);
+  background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-static));
+  transition: background-color var(--transition) ease-in-out;
+
+  .icon {
+    position: absolute;
+    top: 5%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    // transform: translate(-50%, -50%);
+  }
+}
 ////////////////////////////////////////////
 // PRIVACY, TOS
 ////////////////////////////////////////////

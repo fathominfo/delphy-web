@@ -37,7 +37,7 @@ export class MccConfig {
   topology: Topology;
   colorOption: ColorOption;
   presentation: Presentation;
-  confidenceThreshold: number;
+  confidenceThreshold_: number;
   ySpacingCallback: ChangeHandler;
   topologyCallback: ChangeHandler;
   colorCallback: ChangeHandler;
@@ -76,7 +76,7 @@ export class MccConfig {
     this.topology = Topology.mcc;
     this.colorOption = ColorOption.confidence;
     this.presentation = Presentation.all;
-    this.confidenceThreshold = CONFIDENCE_DEFAULT / 100;
+    this.confidenceThreshold_ = CONFIDENCE_DEFAULT / 100;
     this.verticalZoom = 1;
     this.zoomCenterY = 0.5;
     this.horizontalZoom = 1;
@@ -418,7 +418,11 @@ export class MccConfig {
 
 
   importConfig(config: ConfigExport): void {
-    this.confidenceThreshold = config.confidence ? config.confidence / 100.0 : CONFIDENCE_DEFAULT;
+    /*
+    confidence is exported as an integer 0-100,
+    but for inner workings we want it 0-1.
+    */
+    this.confidenceThreshold = (config.confidence ? config.confidence : CONFIDENCE_DEFAULT)  / 100.0;
     this.topology = !config.topology ? Topology.mcc : Topology.bestof;
     this.presentation = !config.presentation ? Presentation.all : Presentation.umbrella;
     this.ySpacing = !config.spacing ? YSpacing.even : YSpacing.genetic;
@@ -481,6 +485,17 @@ export class MccConfig {
       //   this.metadataColors[field][key].color =
       // }
     }
+  }
+
+  set confidenceThreshold(value: number) {
+    if (value > 1) {
+      console.warn(`got out of bounds threshold '${value}', dividing by 100`);
+      value /= 100;
+    }
+    this.confidenceThreshold_ = value;
+  }
+  get confidenceThreshold() : number {
+    return this.confidenceThreshold_;
   }
 
 }

@@ -481,9 +481,9 @@ const displayParsingState = ()=>{
 
 const checkFiles = (files: File[] | FileList)=>{
   if (files) {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i],
-        fname = file.name,
+    const file = files[0];
+    if (file) {
+      const fname = file.name,
         tokens = fname.split('.'),
         extension = tokens[tokens.length - 1],
         reader = new FileReader();
