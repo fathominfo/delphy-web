@@ -495,10 +495,12 @@ export class RunUI extends UIScreen {
       availables = availables.concat([
         TraceChart.logPosterior,
         TraceChart.logG, TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
-        TraceChart.evolutionaryTime, TraceChart.minDate,
-        TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
-        TraceChart.hkyPiG, TraceChart.hkyPiT]);
-
+        TraceChart.evolutionaryTime, TraceChart.minDate]);
+      if (!params.apobecEnabled) {
+        availables = availables.concat([
+          TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
+          TraceChart.hkyPiG, TraceChart.hkyPiT]);
+      }
       if (params.popModelIsSkygrid) {
         gammas.push(TraceChart.gamma);
       } else {
