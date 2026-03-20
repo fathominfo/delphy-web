@@ -91,7 +91,7 @@ type ESS_THRESHOLD = {threshold: number, className: string};
 
 const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
   {threshold: 0, className: "converging"},
-  {threshold: 10, className: "stable"},
+  {threshold: 15, className: "stable"},
   {threshold: 100, className: "robust"},
   {threshold: 200, className: "publish"}
 ];
