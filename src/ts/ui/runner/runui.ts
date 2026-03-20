@@ -884,7 +884,7 @@ export class RunUI extends UIScreen {
       } else {
         // console.debug('no mcc ref available')
       }
-      this.traceCanvases.forEach(canvas=>canvas.draw());
+      this.traceCanvases.filter(canvas=>canvas.isVisible).forEach(canvas=>canvas.draw());
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
       // this.treeCountText.innerHTML = `${nfc(treeCount)}`;
       // this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;

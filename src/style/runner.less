@@ -544,13 +544,18 @@
         .distribution {
           // opacity: 0.375;
         }
-        rect, path {
+        rect {
           fill: #aaaaaa; //var(--chart-histogram-bar-fill);
           // opacity: 0.375;
           &.highlight {
             fill: rgb(52, 107, 190);
             // opacity: 1.0;
           }
+        }
+        path {
+          stroke-width: 1.5px;
+          stroke: rgb(52, 107, 190);
+          fill: none;
         }
         line {
           stroke-width: 1.5px;

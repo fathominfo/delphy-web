@@ -294,8 +294,9 @@ export class HistCanvas extends TraceCanvas {
   }
 
   draw() {
-    const traceData = this.traceData as HistData;
-    let { data, highlightIndex, binConfig } = traceData,
+    const traceData = this.traceData as HistData,
+      binConfig = traceData.binConfig;
+    let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const { hideBurnIn, savedKneeIndex } = traceData;
     let readoutValue = Number.MAX_VALUE;
@@ -489,11 +490,11 @@ export class HistCanvas extends TraceCanvas {
     const lastValue = edges[edges.length-1] + step;
     const histoValueRange = lastValue - firstValue;
     const histoSize = histoValueRange / valRange * histoWidth;
-    let bucketSize = Math.max(0, histoSize / counts.length);
+    let binSize = Math.max(0, histoSize / counts.length);
 
     if (isHistogram) {
       valRange += step;
-      bucketSize = histoWidth / (valRange);
+      binSize = histoWidth / (valRange);
     }
 
     this.histoBarParent.innerHTML = '';
@@ -507,7 +508,7 @@ export class HistCanvas extends TraceCanvas {
       const x = (value - displayMin) / valRange * this.histoWidth;
       bar.setAttribute("x", `${x}`);
       bar.setAttribute("y", `${top}`);
-      bar.setAttribute("width", `${bucketSize}`);
+      bar.setAttribute("width", `${binSize}`);
       bar.setAttribute("height", `${size}`);
       bar.classList.toggle("highlight", highlightValue >= value && highlightValue < nextValue);
       this.histoBarParent.appendChild(bar);
@@ -519,42 +520,80 @@ export class HistCanvas extends TraceCanvas {
   drawDistributionSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
     const { binConfig, displayMin, displayMax } = traceData as HistData;
-    const { bins, edges, maxBinValue, positions, step } = binConfig;
+    const { bins, counts, edges, maxBinValue, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
     we need to calculate how much room the histogram takes.
     */
-    this.histoBarParent.innerHTML = '';
-    let d = '';
-    let firstX = Number.MIN_SAFE_INTEGER;
-    bins.forEach((n, i)=>{
+    const firstValue = edges[0];
+    const lastValue = edges[edges.length-1] + step;
+    const histoValueRange = lastValue - firstValue;
+    const histoSize = histoValueRange / valRange * histoWidth;
+    const N = counts.length;
+    const binSize = Math.max(0, histoSize / N);
+    const maxCounts = Math.max.apply(null, counts);
+    const sumCounts = counts.reduce((tot, n)=>tot+n, 0);
+    const maxBarProb = maxCounts/sumCounts;
+    // console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label);
+
+    /*
+    bins are `pdf` values, and we want `probability` to align with
+    the histograms
+    */
+    const probs =  bins.map((pdf, i)=>{
       const value = edges[i];
       let nextValue = edges[i + 1];
       if (nextValue === undefined) nextValue = value + step;
-      const size = Math.max(0, n / maxBinValue * histoHeight);
+      const probability = (nextValue - value) * pdf;
+      return probability;
+    });
+    const maxDistProb = Math.max.apply(null, probs);
+    const maxProb = Math.max(maxDistProb, maxBarProb);
+    this.histoBarParent.innerHTML = '';
+
+    counts.forEach((n, i)=>{
+      const value = edges[i];
+      const barProb = Math.max(0, n / sumCounts);
+      const size = barProb / maxProb * histoHeight;
+      const top = histoHeight - size;
+      const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
+      const x = (value - displayMin) / valRange * this.histoWidth;
+      bar.setAttribute("x", `${x}`);
+      bar.setAttribute("y", `${top}`);
+      bar.setAttribute("width", `${binSize}`);
+      bar.setAttribute("height", `${size}`);
+      this.histoBarParent.appendChild(bar);
+      positions[i] = x;
+    });
+
+
+    let d = '';
+    let btot = 0;
+    probs.forEach((probability, i)=>{
+      const value = edges[i];
+      const size = Math.max(0, probability / maxProb * histoHeight);
       const top = histoHeight - size;
       const x = (value - displayMin) / valRange * histoWidth;
       if (d === '') {
         d = `M${x} ${top} L `;
-        firstX = x;
       } else {
         d += `${x} ${top} `;
       }
       positions[i] = x;
+      btot += probability;
     });
-    if (firstX !== Number.MIN_SAFE_INTEGER) {
-      d += `${firstX} ${histoHeight}`;
-    }
+    console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxBinValue: ${maxDistProb}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label, `       ${btot}` );
     const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
     path.setAttribute('d', d);
     this.histoBarParent.appendChild(path);
     if (highlightValue >= displayMin && highlightValue <= displayMax) {
       const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
       if (kde) {
-        const prob = kde.pdf(highlightValue);
-        const size = Math.max(0, prob / maxBinValue * histoHeight);
+        const pdf = kde.pdf(highlightValue);
+        const prob = step * pdf;
+        const size = Math.max(0, prob / maxProb * histoHeight);
         const top = histoHeight - size;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
         const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
