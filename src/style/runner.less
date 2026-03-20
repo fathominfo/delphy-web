@@ -1648,6 +1648,7 @@ label:has(#advanced-skygrid-toggle:checked) {
   flex-shrink: 1;
   // display: flex;
   width: fit-content;
+
   p {
     display: block;
     color: #555;
@@ -1676,7 +1677,7 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 #ess-meter-stages {
-
+  position: relative;
   gap: calc(var(--unit) * 1.5);
   background-color: var(--stability-fill);
   border: var(--stroke-weight) solid var(--stability-stroke);
@@ -1771,6 +1772,15 @@ label:has(#advanced-skygrid-toggle:checked) {
     .bar[data-meter-level="3"] {
       background-color: var(--meter-level-3-fill);
     }
+  }
+
+
+  .info {
+    position: absolute;
+    top: 0;
+    left: unset;
+    right: 0;
+    margin: var(--info-margin);
   }
 
 }
