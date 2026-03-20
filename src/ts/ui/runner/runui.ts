@@ -724,7 +724,7 @@ export class RunUI extends UIScreen {
       (ele as HTMLSpanElement).innerText = `${confValue}%`;
     });
     this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
+    // this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
     this.mccTreeCanvas.colorsUnSet = true;
     if (this.mccTreeCanvas.tree) {
       this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);

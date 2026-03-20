@@ -132,8 +132,7 @@ export const TREE_TIMELINE_SPACING = 110 - 60,
 
 
 export const HI_CONFIDENCE_COLOR = 'rgb(6, 35, 33)',
-  LOW_CONFIDENCE_COLOR = 'rgb(200,200,200)',
-  DEFAULT_NODE_CONFIDENCE = 0.9;
+  LOW_CONFIDENCE_COLOR = 'rgb(200,200,200)';
 
 
 export const nfc = (x:number)=>{
