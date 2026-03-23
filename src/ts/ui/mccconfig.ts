@@ -37,7 +37,7 @@ export class MccConfig {
   topology: Topology;
   colorOption: ColorOption;
   presentation: Presentation;
-  confidenceThreshold_: number;
+  private confidenceThreshold_: number;
   ySpacingCallback: ChangeHandler;
   topologyCallback: ChangeHandler;
   colorCallback: ChangeHandler;

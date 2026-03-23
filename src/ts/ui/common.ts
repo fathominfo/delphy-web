@@ -1,5 +1,6 @@
 import { getMutationName } from '../constants';
-import { addDays, addMonths, addWeeks, addYears, DateTokenIndex, MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
+import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
+  MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
 import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 

@@ -9,11 +9,7 @@ import { parse_iso_date } from '../pythia/dates';
 
 const DEMO_FILES = './demofiles.json'
 
-
-/* hopefully good enough. Source:
-https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
-*/
-// const URL_REGEX = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig; // eslint-disable-line no-useless-escape
+export type configCallbackType = (config: ConfigExport)=>void;
 
 type DemoOption = {
   folder:string,
@@ -155,7 +151,7 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : (config: ConfigExport)=>void) {
+function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
   pythia = p;
   qc = sstate.qc;
   runCallback = callback;
