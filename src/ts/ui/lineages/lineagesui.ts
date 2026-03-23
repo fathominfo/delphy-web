@@ -8,7 +8,8 @@ import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
   TREE_PADDING_LEFT,
   TREE_PADDING_RIGHT,
   TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_TIMELINE_SPACING, UNSET,
-  getNodeColor, getNodeTypeName, getNodeClassName } from '../common';
+  getNodeColor, getNodeTypeName, getNodeClassName,
+  downloadTextFile} from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodeRelationChart } from './noderelationchart';
 import { NodePairType, NodePair, NodeComparisonData,
@@ -120,8 +121,9 @@ export class LineagesUI extends MccUI {
     const dismissCallback: DismissCallback = node=>this.handleNodeDismiss(node);
     const nodeZoomCallback: NodeCallback = node=>this.handleNodeZoom(node);
     const nodeHighlightCallback: NodeCallback = node=>this.handleNodeHighlight(node);
+    const printNodeCallback: NodeCallback = node=>this.handleNodePrint(node);
     this.nodeRelationChart = new NodeRelationChart(nodeHighlightCallback);
-    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback);
+    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, printNodeCallback);
     this.nodeComparisons = [];
     this.constrainHoverByCredibility = false;
     {
@@ -904,6 +906,52 @@ export class LineagesUI extends MccUI {
       nc.highlightNode(node);
     });
 
+  }
+
+
+  handleNodePrint(node: DisplayNode) : void {
+    if (!this.pythia) return;
+    let nodeIndex = UNSET;
+    switch(node) {
+    case DisplayNode.root:
+      nodeIndex = this.rootIndex;
+      break;
+    case DisplayNode.mrca:
+      nodeIndex = this.mrcaIndex;
+      break;
+    case DisplayNode.node1:
+      nodeIndex = this.node1Index;
+      break;
+    case DisplayNode.node2:
+      nodeIndex = this.node2Index;
+      break;
+    }
+    if (nodeIndex !== UNSET) {
+      const mccRef = this.pythia.getMcc(),
+        summaryTree = this.mccTreeCanvas.tree as SummaryTree;
+      const tipIndices: number [] = [];
+      const q: number[] = [nodeIndex];
+      while (q.length > 0) {
+        const i = q.shift();
+        if (i !== undefined) {
+          const left = summaryTree.getLeftChildIndexOf(i);
+          if (left === UNSET) {
+            tipIndices.push(i);
+          } else {
+            q.push(left);
+            q.push(summaryTree.getRightChildIndexOf(i))
+          }
+        }
+      }
+      console.log(tipIndices);
+      const nameSource = summaryTree.getBaseTree(0);
+      const tips = tipIndices.map(tipIndex=>nameSource.getNameOf(tipIndex).split('|')[0]);
+      mccRef.release();
+      /* download these */
+      const title = `delphy_tips_${nodeIndex}.txt`;
+      const output = tips.join('\n');
+      downloadTextFile(title, output);
+    }
   }
 
 

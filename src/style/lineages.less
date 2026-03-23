@@ -373,6 +373,53 @@
     }
   }
 
+
+  &:hover {
+    .print-tips {
+      pointer-events: all;
+      opacity: 1;
+    }
+  }
+
+}
+
+
+.print-tips {
+  border-style: solid;
+  border-width: 1px;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  cursor: pointer;
+  opacity: 0.7;
+  text-transform: uppercase;
+  font-family: MDSystemNarrow, RobotoCondensed, sans-serif;
+  font-weight: 700;
+  position: absolute;
+  top: 0;
+  right: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.root .print-tips {
+  color: @root;
+  border-color: @root;
+}
+
+.mrca .print-tips {
+  color: @mrca;
+  border-color: @mrca;
+}
+
+.node1 .print-tips {
+  color: @node1;
+  border-color: @node1;
+}
+
+.node2 .print-tips {
+  color: @node2;
+  border-color: @node2;
 }
 
 
@@ -409,6 +456,9 @@ details {
 .node-details {
   margin-top: 4px;
   .t05();
+  position: relative;
+  width: 100%;
+
   summary {
     padding: 4px 6px;
     cursor: pointer;

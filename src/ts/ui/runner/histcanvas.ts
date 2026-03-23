@@ -584,7 +584,7 @@ export class HistCanvas extends TraceCanvas {
       positions[i] = x;
       btot += probability;
     });
-    console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxBinValue: ${maxDistProb}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label, `       ${btot}` );
+    // console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxBinValue: ${maxDistProb}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label, `       ${btot}` );
     const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
     path.setAttribute('d', d);
     this.histoBarParent.appendChild(path);

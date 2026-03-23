@@ -8,7 +8,7 @@ METADATA_ITEM_TEMPLATE.remove();
 
 const REPORTING_NTILES = [0.025, 0.5, 0.975];
 
-const DEBUG = false;
+const DEBUG = true;
 
 const TAU = Math.PI * 2;
 
@@ -20,6 +20,7 @@ class NodeItem {
   div: HTMLDivElement;
   countSpan: HTMLSpanElement;
   confidenceSpan: HTMLSpanElement;
+  nodeIndex: number = UNSET;
   nodeStats: HTMLElement;
   nodeIsTip: HTMLElement;
   tipIdSpan: HTMLElement;
@@ -65,6 +66,7 @@ class NodeItem {
   setData(nodeConfidence: number, nodeChildCount: number, locked: boolean,
     nodeMetadata: NodeMetadataValues | undefined, nodeIndex: number = UNSET) : void {
 
+    this.nodeIndex = nodeIndex;
     const {div, countSpan,
       confidenceSpan,
       nodeStats,
@@ -307,7 +309,8 @@ export class NodeListDisplay {
   private nodeHighlightCallback: NodeCallback;
   private nodeZoomCallback: NodeCallback;
 
-  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: NodeCallback, nodeZoomCallback: NodeCallback) {
+  constructor(dismissCallback: DismissCallback, nodeHighlightCallback: NodeCallback,
+    nodeZoomCallback: NodeCallback, nodePrintCallback: NodeCallback) {
     this.container = document.querySelector("#lineages--node-list") as HTMLElement;
 
     const getDiv = (selector: string)=>{
@@ -335,6 +338,8 @@ export class NodeListDisplay {
     const bindDiv = (div: HTMLDivElement, node: DisplayNode) => {
       div.addEventListener('pointerenter', () => nodeHighlightCallback(node));
       div.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET));
+      const printButton = div.querySelector(".print-tips") as HTMLButtonElement;
+      printButton.addEventListener('click', () => nodePrintCallback(node));
     }
     const bindIcon = (div: HTMLDivElement, node: DisplayNode)=>{
       const icon = div.querySelector(".node-icon") as HTMLDivElement;
