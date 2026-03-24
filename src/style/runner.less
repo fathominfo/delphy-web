@@ -507,6 +507,16 @@
         font-weight: var(--chart-xaxis-hover-text-font-weight);
         letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
         color: var(--chart-axis-text);
+
+
+
+        .pct {
+          display: inline-block;
+          margin-left: 2px;
+          color: var(--chart-axis-text);
+          // font-size: 10px;
+          font-weight: 500;
+        }
       }
 
       dt, .value {
@@ -515,6 +525,13 @@
       }
 
     }
+
+    &.root-date .summary-stats .value {
+      &.hpd-min, &.hpd-max {
+        font-size: 10px;
+      }
+    }
+
 
 
     &.trace {

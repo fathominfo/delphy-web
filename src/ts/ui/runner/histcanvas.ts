@@ -705,14 +705,14 @@ export class HistCanvas extends TraceCanvas {
 
   setStatsReadouts() : void {
     const stats = (this.traceData as HistData).getStats();
-    setTextContent(this.statsList, ".mean", stats.mean);
-    setTextContent(this.statsList, ".hpd-min", stats.hpdMin);
-    setTextContent(this.statsList, ".hpd-max", stats.hpdMax);
-    setTextContent(this.statsList, ".median", stats.median);
-    setTextContent(this.statsList, ".stddev", stats.stdDev);
-    setTextContent(this.statsList, ".stderr", stats.stdErrOnMean);
-    setTextContent(this.statsList, ".ess", stats.ess);
-    setTextContent(this.statsList, ".act", stats.act);
+    setTextContent(this.statsList, ".mean", this.formatLabel(stats.mean));
+    setTextContent(this.statsList, ".hpd-min", this.formatLabel(stats.hpdMin));
+    setTextContent(this.statsList, ".hpd-max", this.formatLabel(stats.hpdMax));
+    setTextContent(this.statsList, ".median", this.formatLabel(stats.median));
+    setTextContent(this.statsList, ".stddev", safeLabel(stats.stdDev));
+    setTextContent(this.statsList, ".stderr", safeLabel(stats.stdErrOnMean));
+    setTextContent(this.statsList, ".ess", safeLabel(stats.ess));
+    setTextContent(this.statsList, ".act", safeLabel(stats.act));
   }
 
 
@@ -990,6 +990,6 @@ export class HistCanvas extends TraceCanvas {
 
 }
 
-const setTextContent = (el: HTMLElement, selector: string, value: number) => {
-  (el.querySelector(selector) as HTMLSpanElement).textContent = safeLabel(value);
+const setTextContent = (el: HTMLElement, selector: string, label: string) => {
+  (el.querySelector(selector) as HTMLSpanElement).innerHTML = label;
 }
