@@ -39,7 +39,16 @@ type HistChartConfig = {
   unit: string, // can be valid html
   className: string,
   dataFnc: HistDataFunction,
-  isDiscrete: boolean
+  isDiscrete: boolean,
+}
+
+type HistChartNoESSConfig = {
+  name: string, // can be valid html
+  unit: string, // can be valid html
+  className: string,
+  dataFnc: HistDataFunction,
+  isDiscrete: boolean,
+  noESSReason: string
 }
 
 
@@ -64,7 +73,8 @@ enum TraceChart {
   muStar,
   gamma,
   evolutionaryTime,
-  popGrowth,
+  // popGrowth,
+  growthRate,
   logG,
   alpha,
   logCoalescentPrior,
@@ -84,7 +94,8 @@ Exclude: double time is very volatile & equilibrium variations are nowhere close
 */
 const ESSExcludes : TraceChart[] = [
   TraceChart.numMutations,
-  TraceChart.popGrowth];
+  // TraceChart.popGrowth
+];
 
 type ESS_THRESHOLD = {threshold: number, className: string};
 
@@ -179,7 +190,7 @@ export class RunUI extends UIScreen {
   hoverHandler: hoverListenerType;
   statHoverHandler: statHoverListenerType;
 
-  traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | PopChartConfig} = {};
+  traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | HistChartNoESSConfig | PopChartConfig} = {};
 
 
 
@@ -255,13 +266,16 @@ export class RunUI extends UIScreen {
 
 
 
-    this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: '', className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true};
+    this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: '', className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in ESS calculations: this is a discrete variable with very few possible values"};
     this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
     this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "apobec-mut-rate", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
-    const popGrowthDataFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g)
-    this.traceChartConfig[TraceChart.popGrowth] = { name: "Doubling time", unit: "years", className: "double-time", dataFnc: popGrowthDataFnc, isDiscrete: false};
+    // const popGrowthDataFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
+    // this.traceChartConfig[TraceChart.popGrowth] = { name: "Doubling time", unit: "years", className: "double-time", dataFnc: popGrowthDataFnc, isDiscrete: false, noESSReason : "Not included in ESS calculations: this is very volatile & equilibrium variations are nowhere close to Gaussian."};
+    const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g);
+    this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "e-foldings / day", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
+
 
     this.traceChartConfig[TraceChart.logG] = { name: "ln(Genetic Prior)", unit: '', className: "ln-gen-prior", dataFnc: ()=>(this.pythia as Pythia).logGHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.alpha] = { name: "Rate Spread α", unit: '', className: "alpha", dataFnc: ()=>(this.pythia as Pythia).alphaHist, isDiscrete: false};
@@ -502,19 +516,23 @@ export class RunUI extends UIScreen {
       if (params.popModelIsSkygrid) {
         gammas.push(TraceChart.gamma);
       } else {
-        availables.push(TraceChart.popGrowth);
+        // availables.push(TraceChart.popGrowth);
+        availables.push(TraceChart.growthRate);
       }
 
       availables.forEach((tc: TraceChart)=>{
-        const config: HistChartConfig | HistChartCustomLabelConfig = this.traceChartConfig[tc] as HistChartCustomLabelConfig;
-        const { name, unit, className, dataFnc, isDiscrete } = config;
+        const config = this.traceChartConfig[tc] as any;
+        if (config.unit === undefined) return;
+        const { name, unit, className, dataFnc, isDiscrete } = config as HistChartConfig;
         const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
-        if (config && (config as HistChartCustomLabelConfig).labelFunction !== undefined) {
+        if (config.labelFunction !== undefined) {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
         }
         this.traceCanvases.push(canvas);
         if (!ESSExcludes.includes(tc)) {
           this.essCandidates.push(canvas);
+        } else {
+          canvas.setEssExclusion((config as HistChartNoESSConfig).noESSReason);
         }
         if (!toShow.includes(tc)) {
           canvas.setVisible(false);

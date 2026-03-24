@@ -16,6 +16,10 @@ const DISTRIBUTION_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .di
 DISTRIBUTION_TEMPLATE.remove();
 const HIGHLIGHT_LINE_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution line") as SVGLineElement;
 HIGHLIGHT_LINE_TEMPLATE.remove();
+const INFO_ICON_TEMPLATE = document.querySelector("#runner .main-content .info:has(.icon)") as HTMLAnchorElement;
+// do not remove the INFO_ICON_TEMPLATE
+
+
 
 const MAX_STEP_SIZE = 3;
 const TARGET_LABEL_SPACING = 25; // in px
@@ -195,6 +199,14 @@ export class HistCanvas extends TraceCanvas {
     copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
     histoDownloadsDiv.addEventListener('pointerenter', ()=>histoDownloadsDiv.classList.remove("completed"));
     traceDownloadsDiv.addEventListener('pointerenter', ()=>traceDownloadsDiv.classList.remove("completed"));
+  }
+
+  setEssExclusion(reason: string) : void {
+    console.log(reason);
+    const icon = INFO_ICON_TEMPLATE.cloneNode(true) as HTMLAnchorElement;
+    icon.setAttribute("title", reason);
+    const essLabel = this.statsList.querySelector(`[data-stat="ess"]`) as HTMLDListElement;
+    essLabel.appendChild(icon);
   }
 
 
