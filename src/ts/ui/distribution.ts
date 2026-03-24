@@ -80,10 +80,14 @@ export class Distribution {
           n += this.bandwidth;
         }
         this.distributed = true;
-        // console.log('HPD', hpd_min, hpd_max);
         let proxToMedian = 10,
-          medianDate = Math.floor(this.min);
-        for (let d = medianDate; d < this.max; d++) {
+          medianDate = this.min,
+          increment = this.bandwidth / 3;
+        if (increment > 1) {
+          medianDate = Math.floor(medianDate);
+          increment = 1;
+        }
+        for (let d = medianDate; d < this.max; d += increment) {
           const sample = this.getCumulativeProbability(d),
             dMedian = Math.abs(0.505 - sample);
           if (dMedian < proxToMedian) {

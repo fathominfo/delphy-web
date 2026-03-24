@@ -292,6 +292,9 @@ export class HistCanvas extends TraceCanvas {
 
 
   setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number, steps: number[]) {
+    if (this.className === 'growth-rate') {
+      console.log('hrm')
+    }
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
     this.steps = steps;

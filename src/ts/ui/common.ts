@@ -160,6 +160,9 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
     const oom = Math.floor(magnitude);
     label = x.toFixed(Math.abs(oom));
   }
+  if ('0.00e+0' === label) {
+    console.debug(`0.00e+0 isn't very useful ${x}   ${lowerOOM}   ${upperOOM}`);
+  }
   return label;
 }
 
