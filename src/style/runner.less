@@ -66,6 +66,29 @@
     }
   }
 
+  .chart {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0;
+    background-color: transparent;
+
+
+    .feature, .support {
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 0;
+      width: 100%;
+    }
+
+    * { box-sizing: content-box;}
+  }
+
 }
 
 
@@ -282,6 +305,7 @@
   .display {
     position: relative;
     overflow: visible;
+    box-sizing: border-box;
   }
 
   .displays {
@@ -710,7 +734,14 @@
     &.population {
       min-width: var(--indicator-pop-module-width);
       max-width: var(--indicator-pop-module-width);
+
+      .displays {
+        padding: var(--chart-displays-timeline-inset-x) 0;
+      }
+
       .chart {
+        width: fit-content;
+        gap: 5px;
         // background-color: yellow;
         .graph.display {
           background-color: white;
@@ -740,8 +771,8 @@
           height: var(--chart-yaxis-height);
           line {
             stroke-width: 0.5;
-            // stroke: var(--chart-graph-run-trend-stroke);
-            opacity: 0.3;
+            stroke: var(--chart-graph-run-trend-stroke);
+            opacity: 0.7;
             &.mag {opacity: 1;}
           }
           text {
