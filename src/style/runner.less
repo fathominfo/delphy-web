@@ -34,6 +34,7 @@
       align-items: baseline;
       overflow: visible;
       margin-bottom: var(--module-gap);
+      margin-left: var(--chart-yaxis-width);
 
       .title {
         flex-shrink: 0;
@@ -480,8 +481,9 @@
     .summary-stats {
       display: grid;
       grid-gap: 4px 16px;
-      grid-template-columns: max-content;
-      max-width: 170px;
+      grid-template-columns: 82px 1fr;
+      min-width: var(--indicator-trace-module-width);
+      max-width: var(--indicator-trace-module-width);
       margin: 0;
 
       dt {
@@ -526,17 +528,17 @@
 
     }
 
-    &.root-date .summary-stats .value {
-      &.hpd-min, &.hpd-max {
-        font-size: 10px;
-      }
-    }
+    // &.root-date .summary-stats .value {
+    //   &.hpd-min, &.hpd-max {
+    //     font-size: 10px;
+    //   }
+    // }
 
 
 
     &.trace {
-      min-width: 160px;
-      max-width: 160px; // var(--indicator-trace-module-width);
+      min-width: var(--indicator-trace-module-width);
+      max-width: var(--indicator-trace-module-width);
       overflow-x: visible;
       * { box-sizing: content-box; }
 

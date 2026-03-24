@@ -289,7 +289,7 @@ export class RunUI extends UIScreen {
     this.traceChartConfig[TraceChart.hkyPiC] = { name: "HKY Base Freq. π<sub>C</sub>", unit: '', className: "hkyc", dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
     this.traceChartConfig[TraceChart.hkyPiG] = { name: "HKY Base Freq. π<sub>G</sub>", unit: '', className: "hkyg", dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
     this.traceChartConfig[TraceChart.hkyPiT] = { name: "HKY Base Freq. π<sub>T</sub>", unit: '', className: "hkyt", dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: '', className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n)};
+    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n)};
 
 
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
