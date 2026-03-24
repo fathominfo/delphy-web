@@ -759,8 +759,10 @@
       min-width: var(--indicator-pop-module-width);
       max-width: var(--indicator-pop-module-width);
 
+
       .displays {
         padding: var(--chart-displays-timeline-inset-x) 0;
+        height: var(--trace-chart-width);
       }
 
       .chart {
@@ -771,6 +773,7 @@
           background-color: white;
           min-width: var(--pop-chart-graph-width);
           max-width: var(--pop-chart-graph-width);
+          height: 100%;
         }
 
         .trend {
@@ -792,7 +795,8 @@
 
         .axis.y {
           width: 37px;
-          height: var(--chart-yaxis-height);
+          // height: var(--chart-yaxis-height);
+          height: var(--trace-chart-width);
           line {
             stroke-width: 0.5;
             stroke: var(--chart-graph-run-trend-stroke);
