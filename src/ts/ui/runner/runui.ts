@@ -82,10 +82,9 @@ enum TraceChart {
 Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
 Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
 */
-const ESSSeries : TraceChart[] = [
-  TraceChart.logPosterior,
-  TraceChart.mu,
-  TraceChart.evolutionaryTime];
+const ESSExcludes : TraceChart[] = [
+  TraceChart.numMutations,
+  TraceChart.popGrowth];
 
 type ESS_THRESHOLD = {threshold: number, className: string};
 
@@ -475,13 +474,12 @@ export class RunUI extends UIScreen {
       const toShow = [TraceChart.numMutations];
       const gammas = [];
       let availables = [ TraceChart.numMutations];
-      const esses = ESSSeries.slice(0);
+
 
       if (!params.mutationRateIsFixed) {
         availables.push(TraceChart.mu);
         if (params.apobecEnabled) {
           toShow.push(TraceChart.muStar);
-          esses.push(TraceChart.muStar);
           availables.push(TraceChart.muStar);
         } else {
           toShow.push(TraceChart.mu);
@@ -515,7 +513,7 @@ export class RunUI extends UIScreen {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
         }
         this.traceCanvases.push(canvas);
-        if (esses.includes(tc)) {
+        if (!ESSExcludes.includes(tc)) {
           this.essCandidates.push(canvas);
         }
         if (!toShow.includes(tc)) {
