@@ -108,7 +108,7 @@ export class TimeDistributionCanvas {
     this.hoverSeriesIndex = UNSET;
     this.hoverX = null;
     this.hoverDate = null;
-    const maxMedian = Math.max(...(series.map(ds=>ds?.distribution?.median || minDate)));
+    const maxMedian = Math.max(...(series.map(ds=>ds?.distribution?.medianKDE || minDate)));
     this.textOnRight = (maxMedian - minDate) / (maxDate - minDate) < 0.4;
     this.resize();
   }
@@ -169,9 +169,9 @@ export class TimeDistributionCanvas {
   drawCertainty(ds: DistributionSeries) {
     const {ctx, drawWidth, xheight} = this;
     const {distribution, color} = ds;
-    const {median} = distribution;
+    const {medianKDE: medianDate} = distribution;
     const ogWidth = ctx.lineWidth;
-    const dateLabel = toFullDateString(distribution.median);
+    const dateLabel = toFullDateString(medianDate);
     const textMetrics = measureText(ctx, dateLabel);
     ctx.lineWidth *= 1.5;
     ctx.strokeStyle = color;
@@ -180,7 +180,7 @@ export class TimeDistributionCanvas {
     const alpha = index === this.hoverSeriesIndex ? 0.6 : 0.3;
     this.ctx.globalAlpha = alpha;
     ctx.beginPath();
-    const x = this.xFor(median, drawWidth);
+    const x = this.xFor(medianDate, drawWidth);
     const top = margin.top + textMetrics.height + PADDING;
     const bottom = xheight;
     ctx.moveTo(x, bottom);
@@ -211,7 +211,7 @@ export class TimeDistributionCanvas {
 
     const index = this.series.indexOf(ds);
     const isCertain = ds.distribution.total === 0;
-    const x = this.xFor(distribution.median, drawWidth);
+    const x = this.xFor(distribution.medianKDE, drawWidth);
     let textX = x;
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
@@ -219,9 +219,9 @@ export class TimeDistributionCanvas {
     ctx.textBaseline = "top";
     ctx.font = CHART_TEXT_FONT;
 
-    const [year, month, date] = toDateTokens(distribution.median);
+    const [year, month, date] = toDateTokens(distribution.medianKDE);
     const monthStr = MONTHS_SHORT[month];
-    let dateLabel = toFullDateString(distribution.median);
+    let dateLabel = toFullDateString(distribution.medianKDE);
     const textMetrics = measureText(ctx, dateLabel);
 
     let middleY = margin.top + (xheight - margin.top - margin.bottom) / 2;
@@ -246,7 +246,7 @@ export class TimeDistributionCanvas {
       if (this.hoverSeriesIndex !== index) {
         const other = this.series.find(d => d !== ds);
         if (other) {
-          const [otherYear, , ] = toDateTokens(other.distribution.median);
+          const [otherYear, , ] = toDateTokens(other.distribution.medianKDE);
           if (year === otherYear) {
             dateLabel = `${date} ${monthStr}`;
           } else {

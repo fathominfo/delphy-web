@@ -28,6 +28,7 @@ export class Distribution {
   bandMax:number;
   total: number;
   median: number;
+  medianKDE: number;
   valueAtMax: number;
   distributed: boolean;
 
@@ -38,8 +39,8 @@ export class Distribution {
     this.distributed = false;
     const sorted = times.slice(0).sort(numericSort);
     if (sorted.length === 0) this.median = 0;
-    // else if (sorted.length % 2 === 1) this.median = sorted[Math.floor(sorted.length/2)];
-    // else this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
+    else if (sorted.length % 2 === 1) this.median = sorted[Math.floor(sorted.length/2)];
+    else this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
 
     this.bandMax = 0;
     this.valueAtMax = 0;
@@ -51,7 +52,7 @@ export class Distribution {
     this.ess = calcEffectiveSampleSize(times);
     this.kde = null;
 
-    this.median = 0;
+    this.medianKDE = 0;
 
     /* calculate the HPD */
     const [hpdMin, hpdMax] = calcHPD(sorted);
@@ -96,7 +97,7 @@ export class Distribution {
           }
         }
         if (this.range === 0) this.bandMax = 100;
-        this.median = medianDate;
+        this.medianKDE = medianDate;
       }
       catch(err) {
         // console.trace(err);
@@ -107,8 +108,6 @@ export class Distribution {
       this.min = sorted[0];
       this.max = sorted[sorted.length-1];
       this.range = this.max - this.min;
-      if (sorted.length % 2 === 1) this.median = sorted[Math.floor(sorted.length/2)];
-      else if (sorted.length > 0) this.median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
       this.bandMax = 0.0;
       this.valueAtMax = this.min;
       this.kde = null;
@@ -136,13 +135,14 @@ export class Distribution {
 
   getCumulativeProbability(hoverDate: number) : number {
     if (!this.kde) return 0;
-    const bindex = Math.floor((hoverDate - this.min) / this.kde.bandwidth);
-    let sumProb = this.bands.slice(0, bindex).reduce((tot:number, n: number)=>tot+n, 0);
-    /* interpolate how much of the last bin we get */
-    const daysInBin = (hoverDate - this.min) % this.kde.bandwidth,
-      pctOfBinTime = daysInBin / this.kde.bandwidth;
-    sumProb += pctOfBinTime * (this.bands[bindex] || 0);
-    return sumProb / this.total;
+    // const bindex = Math.floor((hoverDate - this.min) / this.kde.bandwidth);
+    // let sumProb = this.bands.slice(0, bindex).reduce((tot:number, n: number)=>tot+n, 0);
+    // /* interpolate how much of the last bin we get */
+    // const daysInBin = (hoverDate - this.min) % this.kde.bandwidth,
+    //   pctOfBinTime = daysInBin / this.kde.bandwidth;
+    // sumProb += pctOfBinTime * (this.bands[bindex] || 0);
+    // return sumProb / this.total;
+    return this.kde.cdf(hoverDate);
   }
 
 
