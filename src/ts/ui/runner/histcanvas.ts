@@ -1,4 +1,4 @@
-import { downloadTextFile, getTimestampString, nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getDecimalPrecision, getTimestampString, nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData } from "./histdata";
@@ -46,7 +46,7 @@ export class HistCanvas extends TraceCanvas {
   hoverY: number = UNSET;
   stepSize: number = MAX_STEP_SIZE;
   isDragging = false;
-  formatLabel = safeLabel;
+  formatLabel: typeof safeLabel | null = null;
   stdErrFormatLabel = safeLabel;
   highlightStat: SummaryStat | null = null;
   /*
@@ -293,9 +293,6 @@ export class HistCanvas extends TraceCanvas {
 
 
   setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number, steps: number[]) {
-    if (this.className === 'growth-rate') {
-      console.log('hrm')
-    }
     const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
     const histData = this.traceData as HistData;
     this.steps = steps;
@@ -701,15 +698,28 @@ export class HistCanvas extends TraceCanvas {
     } else {
       this.xAxisDiv.classList.add("meaning");
     }
-    (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = this.formatLabel(value);
+    const formatLabel = this.getReadoutFormatFnc();
+    const label = formatLabel(value);
+    (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
+  }
+
+  getReadoutFormatFnc(): typeof safeLabel {
+    let formatLabel = this.formatLabel;
+    if (formatLabel === null) {
+      const stats = (this.traceData as HistData).getStats();
+      const p = getDecimalPrecision(stats.stdErrOnMean);
+      formatLabel = (n:number)=>n.toLocaleString(undefined, {minimumFractionDigits: p, maximumFractionDigits: p});
+    }
+    return formatLabel;
   }
 
   setStatsReadouts() : void {
     const stats = (this.traceData as HistData).getStats();
-    setTextContent(this.statsList, ".mean", this.formatLabel(stats.mean));
-    setTextContent(this.statsList, ".hpd-min", this.formatLabel(stats.hpdMin));
-    setTextContent(this.statsList, ".hpd-max", this.formatLabel(stats.hpdMax));
-    setTextContent(this.statsList, ".median", this.formatLabel(stats.median));
+    const formatLabel = this.getReadoutFormatFnc();
+    setTextContent(this.statsList, ".mean", formatLabel(stats.mean));
+    setTextContent(this.statsList, ".hpd-min", formatLabel(stats.hpdMin));
+    setTextContent(this.statsList, ".hpd-max", formatLabel(stats.hpdMax));
+    setTextContent(this.statsList, ".median", formatLabel(stats.median));
     setTextContent(this.statsList, ".stddev", this.stdErrFormatLabel(stats.stdDev));
     setTextContent(this.statsList, ".stderr", this.stdErrFormatLabel(stats.stdErrOnMean));
     setTextContent(this.statsList, ".ess", safeLabel(stats.ess));
@@ -717,10 +727,11 @@ export class HistCanvas extends TraceCanvas {
     if (magNumber) {
       const {n000, magnitudeLabel} = magNumber;
       setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel}</span>`);
+      // console.log(this.className, stats.act, safeLabel(stats.act), `${n000}${magnitudeLabel}`)
     } else {
+      /* shouldn't happen, but just in case */
       setTextContent(this.statsList, ".act", safeLabel(stats.act));
     }
-
   }
 
 

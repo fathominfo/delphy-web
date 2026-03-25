@@ -166,6 +166,34 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   return label;
 }
 
+
+export const getDecimalPrecision = (n:number): number=>{
+  /*
+  for numbers >= 1, return 0 (to signify integer precision)
+  for decimal values, return how many significant figures we need
+    (basically abs(log10(n))
+  */
+  return Math.abs(Math.min(0, Math.floor(Math.log10(n))));
+};
+
+// const testit = (n: number, exp: number)=>{
+//   const p = getDecimalPrecision(n);
+//   console.log(p === exp, n, p, exp);
+// }
+
+// testit(1.0, 0);
+// testit(9.0, 0);
+// testit(100.0, 0);
+// testit(0.1, 1);
+// testit(0.9, 1);
+// testit(0.1234, 1);
+// testit(0.9999, 1);
+// testit(0.05, 2);
+// testit(0.005, 3);
+// testit(0.0005, 4);
+
+
+
 /*
 round number to the nearest power of 1000, e.g., "96k" or "8M"
 */
@@ -213,17 +241,17 @@ export const getOrdinal = (n:number)=>{
   return ord;
 }
 
-export const minimalDecimalLabel = (x:number)=>{
-  if (x === undefined || isNaN(x) || x === null) return '';
-  let label = '';
-  if (Math.abs(x) < 1) {
-    label = x.toLocaleString();
-    label = label.replace(/0+$/, ''); // trim zeroes off the end
-  } else {
-    label = nfc(Math.round(x));
-  }
-  return label;
-}
+// export const minimalDecimalLabel = (x:number)=>{
+//   if (x === undefined || isNaN(x) || x === null) return '';
+//   let label = '';
+//   if (Math.abs(x) < 1) {
+//     label = x.toLocaleString();
+//     label = label.replace(/0+$/, ''); // trim zeroes off the end
+//   } else {
+//     label = nfc(Math.round(x));
+//   }
+//   return label;
+// }
 
 export const mutToPos = (s:string):number => {
   const r =  /.([\d]*)/.exec(s);
