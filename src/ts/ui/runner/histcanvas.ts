@@ -694,9 +694,9 @@ export class HistCanvas extends TraceCanvas {
     this.xAxisTick.classList.toggle("hidden", noValue);
     this.xAxisTick.style.left = `${ this.hoverX }px`;
     if (isHighlight) {
-      this.xAxisDiv.classList.remove("meaning");
+      this.xAxisDiv.classList.remove("statsing");
     } else {
-      this.xAxisDiv.classList.add("meaning");
+      this.xAxisDiv.classList.add("statsing");
       const statLabel = this.xAxisDiv.querySelector(".stat-label") as HTMLSpanElement;
       if (noValue || this.highlightStat === null) {
         statLabel.textContent = '';
