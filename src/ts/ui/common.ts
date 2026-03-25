@@ -146,6 +146,7 @@ we switch to scientific notation
 */
 export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   if (x === undefined || isNaN(x) || x === null) return '';
+  if (x === 0) return '0.0';
   const magnitude = Math.log10(x);
   let label = '';
   if (magnitude < lowerOOM || magnitude > upperOOM) {
@@ -173,7 +174,7 @@ export const getDecimalPrecision = (n:number): number=>{
   for decimal values, return how many significant figures we need
     (basically abs(log10(n))
   */
-  return Math.abs(Math.min(0, Math.floor(Math.log10(n))));
+  return Math.abs(Math.min(0, Math.floor(Math.log10(n)))) || 0;
 };
 
 // const testit = (n: number, exp: number)=>{
