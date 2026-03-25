@@ -1,4 +1,4 @@
-import { downloadTextFile, getTimestampString, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getTimestampString, nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData } from "./histdata";
@@ -47,6 +47,7 @@ export class HistCanvas extends TraceCanvas {
   stepSize: number = MAX_STEP_SIZE;
   isDragging = false;
   formatLabel = safeLabel;
+  stdErrFormatLabel = safeLabel;
   highlightStat: SummaryStat | null = null;
   /*
   only needed for downloads of trace data.
@@ -709,10 +710,17 @@ export class HistCanvas extends TraceCanvas {
     setTextContent(this.statsList, ".hpd-min", this.formatLabel(stats.hpdMin));
     setTextContent(this.statsList, ".hpd-max", this.formatLabel(stats.hpdMax));
     setTextContent(this.statsList, ".median", this.formatLabel(stats.median));
-    setTextContent(this.statsList, ".stddev", safeLabel(stats.stdDev));
-    setTextContent(this.statsList, ".stderr", safeLabel(stats.stdErrOnMean));
+    setTextContent(this.statsList, ".stddev", this.stdErrFormatLabel(stats.stdDev));
+    setTextContent(this.statsList, ".stderr", this.stdErrFormatLabel(stats.stdErrOnMean));
     setTextContent(this.statsList, ".ess", safeLabel(stats.ess));
-    setTextContent(this.statsList, ".act", safeLabel(stats.act));
+    const magNumber = nf000(stats.act);
+    if (magNumber) {
+      const {n000, magnitudeLabel} = magNumber;
+      setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel}</span>`);
+    } else {
+      setTextContent(this.statsList, ".act", safeLabel(stats.act));
+    }
+
   }
 
 

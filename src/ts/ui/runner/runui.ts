@@ -20,7 +20,7 @@ import { HistData } from './histdata';
 import { UIScreen } from '../uiscreen';
 
 const DAYS_PER_YEAR = 365;
-const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
+// const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
 const EPSILON = 1e-7;
 
@@ -58,7 +58,8 @@ type HistChartCustomLabelConfig = {
   className: string,
   dataFnc: HistDataFunction,
   isDiscrete: boolean,
-  labelFunction: (v:number)=>string
+  labelFunction: (v:number)=>string,
+  stdErrLabelFunction: (v:number)=>string
 }
 
 type PopChartConfig = {
@@ -285,11 +286,11 @@ export class RunUI extends UIScreen {
 
     const pctLabelFnc = (n:number)=>`${safeLabel(n)}<span class="pct">%</span>`;
 
-    this.traceChartConfig[TraceChart.hkyPiA] = { name: "HKY Base Freq. π<sub>A</sub>", unit: '', className: "hkya", dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.hkyPiC] = { name: "HKY Base Freq. π<sub>C</sub>", unit: '', className: "hkyc", dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.hkyPiG] = { name: "HKY Base Freq. π<sub>G</sub>", unit: '', className: "hkyg", dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.hkyPiT] = { name: "HKY Base Freq. π<sub>T</sub>", unit: '', className: "hkyt", dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n)};
+    this.traceChartConfig[TraceChart.hkyPiA] = { name: "HKY Base Freq. π<sub>A</sub>", unit: '', className: "hkya", dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.hkyPiC] = { name: "HKY Base Freq. π<sub>C</sub>", unit: '', className: "hkyc", dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.hkyPiG] = { name: "HKY Base Freq. π<sub>G</sub>", unit: '', className: "hkyg", dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.hkyPiT] = { name: "HKY Base Freq. π<sub>T</sub>", unit: '', className: "hkyt", dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
 
 
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
@@ -527,6 +528,7 @@ export class RunUI extends UIScreen {
         const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
         if (config.labelFunction !== undefined) {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
+          canvas.stdErrFormatLabel = (config as HistChartCustomLabelConfig).stdErrLabelFunction;
         }
         this.traceCanvases.push(canvas);
         if (!ESSExcludes.includes(tc)) {

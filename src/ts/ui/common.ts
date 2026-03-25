@@ -166,6 +166,40 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   return label;
 }
 
+/*
+round number to the nearest power of 1000, e.g., "96k" or "8M"
+*/
+export const nf000 = (x: number) : {n000: number, magnitudeLabel: string} | null=>{
+  if (x === undefined || isNaN(x) || x === null) return null;
+  const magnitude = Math.log10(x);
+  const m000 = Math.floor(magnitude / 3);
+  const n000 = Math.pow(10, m000 * 3);
+  let magnitudeLabel = '';
+  switch (m000) {
+  case 0: magnitudeLabel = ''; break;
+  case 1: magnitudeLabel = 'K'; break;
+  case 2: magnitudeLabel = 'M'; break;
+  case 3: magnitudeLabel = 'B'; break;
+  case 4: magnitudeLabel = 'T'; break;
+  default: console.log(`never thought we'd see a magnitude of ${magnitude}`, x);
+  }
+  // return `${Math.round(x / n000)}${mLabel}`;
+  return { n000: Math.round(x / n000), magnitudeLabel: magnitudeLabel};
+}
+
+// const testit = (n:number, exp:string)=>{
+//   const t = nf000(n);
+//   console.log(t === exp, n, t, exp);
+// }
+
+// testit(96, '96');
+// testit(960, '960');
+// testit(9_600, '10K');
+// testit(96_000, '96K');
+// testit(960_000, '960K');
+// testit(95_900, '96K');
+// testit(8_000_000, '8M');
+// testit(8_100_000, '8M');
 
 export const getOrdinal = (n:number)=>{
   const lastDigit = n % 10;
