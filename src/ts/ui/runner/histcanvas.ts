@@ -159,10 +159,9 @@ export class HistCanvas extends TraceCanvas {
     // const traceDownloadChartButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-chart") as HTMLButtonElement;
     copyButton.addEventListener('click', ()=>{
       const stats = (this.traceData as HistData).getStats();
-      let data = '';
+      let data = `${ this.traceData.label }\n`;
       Object.entries(stats).forEach(([key, value])=>{
         const label = SummaryStatLongLabels[key];
-        console.log(key, label)
         data += `${label}\t${value}\n`}
       );
       navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
@@ -262,9 +261,9 @@ export class HistCanvas extends TraceCanvas {
   handleTreeHighlight(treeIndex: number): void {
     const isMean = treeIndex === UNSET;
     const traceData = this.traceData as HistData;
-    const readoutValue = isMean ? traceData.mean: traceData.data[treeIndex];
+    // const readoutValue = isMean ? traceData.mean: traceData.data[treeIndex];
     traceData.highlightIndex = treeIndex;
-    this.setReadoutLabel(isMean, readoutValue);
+    // this.setReadoutLabel(isMean, readoutValue);
   }
 
 
@@ -317,7 +316,7 @@ export class HistCanvas extends TraceCanvas {
     if (highlightIndex !== UNSET) {
       readoutValue = data[highlightIndex];
       isHighlight = true;
-    } else if (this.highlightStat !== null && PlottableSummaryStats[this.highlightStat]) {
+    } else if (this.highlightStat !== null && PlottableSummaryStats[this.highlightStat] !== undefined) {
       const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
       const stats = (this.traceData as HistData).getStats();
       readoutValue = stats[attribute];
@@ -691,15 +690,27 @@ export class HistCanvas extends TraceCanvas {
 
 
   setReadoutLabel(isHighlight: boolean, value: number) {
-    this.xAxisTick.classList.toggle("hidden", value === Number.MAX_VALUE);
+    const noValue = value === Number.MAX_VALUE;
+    this.xAxisTick.classList.toggle("hidden", noValue);
     this.xAxisTick.style.left = `${ this.hoverX }px`;
     if (isHighlight) {
       this.xAxisDiv.classList.remove("meaning");
     } else {
       this.xAxisDiv.classList.add("meaning");
+      const statLabel = this.xAxisDiv.querySelector(".stat-label") as HTMLSpanElement;
+      if (noValue || this.highlightStat === null) {
+        statLabel.textContent = '';
+      } else {
+        const key = SummaryStat[this.highlightStat] as keyof SummaryStatsType
+        const label = SummaryStatLongLabels[key];
+        statLabel.textContent = label;
+      }
     }
-    const formatLabel = this.getReadoutFormatFnc();
-    const label = formatLabel(value);
+    let label = '';
+    if (!noValue) {
+      const formatLabel = this.getReadoutFormatFnc();
+      label = formatLabel(value);
+    }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
   }
 

@@ -650,7 +650,7 @@
             width: 100%;
             :first-child {flex-grow: 1;}
           }
-          .mean-label, .tree-label {
+          .stat-label, .tree-label {
             margin-right: 0.25em;
           }
           .readout-value {
@@ -667,12 +667,12 @@
               font-weight: 500;
             }
           }
-          .mean-label {display: none;}
+          .stat-label {display: none;}
           .tree-label {display: inline-block;}
           &.meaning {
-            // .mean-label {display: inline-block;}
+            .stat-label {display: inline-block;}
             .tree-label {display: none;}
-            .readout-value {display: none;}
+            // .readout-value {display: none;}
           }
 
         }

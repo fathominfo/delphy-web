@@ -62,6 +62,17 @@ export const SummaryStatLongLabels: {[_:string]: string} = {
   "act" : "Autocorrelation time"
 };
 
+export const SummaryStatShortLabels: {[_:string]: string} = {
+  "mean" : "Mean",
+  "median" : "Median",
+  "hpdMin" : "95% HPD min",
+  "hpdMax" : "95% HPD max",
+  "ess" : "ESS",
+  "stdDev" : "Std dev",
+  "stdErrOnMean" : "Std err",
+  "act" : "ACT"
+};
+
 
 
 export type kneeHoverListenerType = (pct:number)=>void;
