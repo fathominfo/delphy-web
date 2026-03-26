@@ -24,6 +24,13 @@ const INFO_ICON_TEMPLATE = document.querySelector("#runner .main-content .info:h
 const MAX_STEP_SIZE = 3;
 const TARGET_LABEL_SPACING = 25; // in px
 
+/*
+for use in situations where UNSET (-1) falls
+within the valid range of inputs
+*/
+const NO_VALUE = Number.MIN_SAFE_INTEGER;
+
+
 export class HistCanvas extends TraceCanvas {
 
 
@@ -42,6 +49,7 @@ export class HistCanvas extends TraceCanvas {
   statsList: HTMLDListElement;
   xAxisDiv: HTMLDivElement;
   xAxisTick: HTMLSpanElement;
+  probabilityReadout: HTMLParagraphElement;
   hoverX: number = UNSET;
   hoverY: number = UNSET;
   stepSize: number = MAX_STEP_SIZE;
@@ -91,6 +99,7 @@ export class HistCanvas extends TraceCanvas {
     this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
     this.xAxisDiv = this.container.querySelector(".support .axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
+    this.probabilityReadout = this.container.querySelector(".prob-readout") as HTMLParagraphElement;
     this.highlightDiv.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
@@ -311,7 +320,7 @@ export class HistCanvas extends TraceCanvas {
     let { data, highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const { hideBurnIn, savedKneeIndex } = traceData;
-    let readoutValue = Number.MAX_VALUE;
+    let readoutValue = NO_VALUE;
     let isHighlight = false;
     if (highlightIndex !== UNSET) {
       readoutValue = data[highlightIndex];
@@ -502,13 +511,14 @@ export class HistCanvas extends TraceCanvas {
     const lastValue = edges[edges.length-1] + step;
     const histoValueRange = lastValue - firstValue;
     const histoSize = histoValueRange / valRange * histoWidth;
+    const total = counts.reduce((tot:number, n:number)=>(n||0)+tot, 0)
     let binSize = Math.max(0, histoSize / counts.length);
 
     if (isHistogram) {
       valRange += step;
       binSize = histoWidth / (valRange);
     }
-
+    let highlightProb = NO_VALUE;
     this.histoBarParent.innerHTML = '';
     counts.forEach((n, i)=>{
       const value = edges[i];
@@ -522,10 +532,16 @@ export class HistCanvas extends TraceCanvas {
       bar.setAttribute("y", `${top}`);
       bar.setAttribute("width", `${binSize}`);
       bar.setAttribute("height", `${size}`);
-      bar.classList.toggle("highlight", highlightValue >= value && highlightValue < nextValue);
+      if (highlightValue >= value && highlightValue < nextValue) {
+        bar.classList.add("highlight");
+        highlightProb = n / total;
+      } else {
+        bar.classList.remove("highlight");
+      }
       this.histoBarParent.appendChild(bar);
       positions[i] = x;
     });
+    this.setProbabilityLabel(highlightProb);
   }
 
 
@@ -613,7 +629,12 @@ export class HistCanvas extends TraceCanvas {
         line.setAttribute("x2", `${x}`);
         line.setAttribute("y2", `${top}`);
         this.histoBarParent.appendChild(line);
+        this.setProbabilityLabel(prob);
+      } else {
+        this.setProbabilityLabel(NO_VALUE);
       }
+    } else {
+      this.setProbabilityLabel(NO_VALUE);
     }
   }
 
@@ -689,11 +710,16 @@ export class HistCanvas extends TraceCanvas {
   }
 
 
-  setReadoutLabel(isHighlight: boolean, value: number) {
-    const noValue = value === Number.MAX_VALUE;
+  /*
+  @param highlightIsSample: is the highlight from hovering a trace?
+  or is it from hovering one of the summary statistics?
+  */
+  setReadoutLabel(highlightIsSample: boolean, value: number) {
+    const noValue = value === NO_VALUE;
     this.xAxisTick.classList.toggle("hidden", noValue);
     this.xAxisTick.style.left = `${ this.hoverX }px`;
-    if (isHighlight) {
+
+    if (highlightIsSample) {
       this.xAxisDiv.classList.remove("statsing");
     } else {
       this.xAxisDiv.classList.add("statsing");
@@ -712,6 +738,16 @@ export class HistCanvas extends TraceCanvas {
       label = formatLabel(value);
     }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
+  }
+
+  setProbabilityLabel(value: number) {
+    if (value === NO_VALUE) {
+      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = '';
+      this.probabilityReadout.classList.add("inactive");
+    } else {
+      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+      this.probabilityReadout.classList.remove("inactive");
+    }
   }
 
   getReadoutFormatFnc(): typeof safeLabel {

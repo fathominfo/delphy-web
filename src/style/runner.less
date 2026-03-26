@@ -403,6 +403,10 @@
       width: 100%;
       position: relative;
 
+      &:has(.histogram) {
+        padding-left: var(--chart-yaxis-width);
+      }
+
       .download-button {
         left: unset;
         right: 30px;
@@ -587,6 +591,34 @@
         overflow: hidden;
         border: solid 1px var(--chart-stroke);
       }
+
+      .prob-readout {
+        display: flex;
+        flex-direction: row;
+        padding-left: var(--chart-yaxis-width);
+        height: 0;
+        transform: translate(0, -10px);
+        width: var(--trace-chart-width);
+        font-variant-numeric: tabular-nums;
+        line-height: var(--chart-axis-text-line-height);
+
+        .probability-label {
+          flex-grow: 1;
+          margin-right: 0.25em;
+          font-weight: var(--chart-axis-text-font-weight);
+
+          color: var(--chart-axis-text);
+          fill: var(--chart-axis-text);
+        }
+        .readout-value {
+          font-size: var(--chart-xaxis-hover-text-font-size);
+          font-weight: var(--chart-xaxis-hover-text-font-weight);
+          letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+          color: #004f9e; // var(--chart-yaxis-hover-text);
+          white-space: nowrap;
+        }
+      }
+
       .bars {
         // opacity: 0.75;
         .distribution {
@@ -648,10 +680,10 @@
             display: flex;
             flex-direction: row;
             width: 100%;
-            :first-child {flex-grow: 1;}
           }
           .stat-label, .tree-label {
             margin-right: 0.25em;
+            flex-grow: 1;
           }
           .readout-value {
             font-size: var(--chart-xaxis-hover-text-font-size);
