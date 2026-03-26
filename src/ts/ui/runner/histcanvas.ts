@@ -114,15 +114,13 @@ export class HistCanvas extends TraceCanvas {
       this.isDragging = false;
       this.highlightDiv.releasePointerCapture(event.pointerId);
     });
-    // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
-    // this.canvas.addEventListener('pointerover', ()=>{
-    //   this.hovering = true;
-    //   requestDraw();
-    // });
     this.highlightDiv.addEventListener('pointerleave', ()=>{
-      // this.hovering = false;
-      // requestDraw();
       this.hoverListener(UNSET);
+    });
+    this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
+    this.histoSVG.addEventListener('pointerleave', ()=>{
+      this.setProbabilityLabel(NO_VALUE);
+      this.setReadoutLabel(false, NO_VALUE);
     });
     let prevStat = '';
     const announceStat = (event: PointerEvent) => {
@@ -267,12 +265,39 @@ export class HistCanvas extends TraceCanvas {
     }
   }
 
+  handleHistogramHover(event:PointerEvent) : void {
+    const width = this.width;
+    const pct = event.offsetX / width;
+    if (pct >= 0 && pct <= 1) {
+      /* find the prob at pct */
+      const histData = this.traceData as HistData;
+      const { displayMin, displayMax, binConfig } = histData;
+      let value: number;
+      let prob: number;
+      this.hoverX = event.offsetX;
+      if (binConfig.isHistogram) {
+        value = displayMin + pct * (displayMax - displayMin + 1);
+        const { counts, edges } = binConfig;
+        const total = counts.reduce((tot: number, n: number)=>(n||0)+tot, 0);
+        value = Math.floor(value);
+        const index = edges.indexOf(value);
+        prob = counts[index] / total;
+        this.drawHistogramSVG(value);
+
+      } else {
+        value = displayMin + pct * (displayMax - displayMin);
+        const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
+        prob = kde.pdf(value);
+        this.drawDistributionSVG(value);
+      }
+      this.setReadoutLabel(false, value);
+      // this.setProbabilityLabel(prob);
+    }
+  }
+
   handleTreeHighlight(treeIndex: number): void {
-    const isMean = treeIndex === UNSET;
     const traceData = this.traceData as HistData;
-    // const readoutValue = isMean ? traceData.mean: traceData.data[treeIndex];
     traceData.highlightIndex = treeIndex;
-    // this.setReadoutLabel(isMean, readoutValue);
   }
 
 
@@ -548,7 +573,7 @@ export class HistCanvas extends TraceCanvas {
   drawDistributionSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
     const { binConfig, displayMin, displayMax } = traceData as HistData;
-    const { bins, counts, edges, maxBinValue, positions, step } = binConfig;
+    const { bins, counts, edges, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
     /*
@@ -598,7 +623,7 @@ export class HistCanvas extends TraceCanvas {
 
 
     let d = '';
-    let btot = 0;
+    // let btot = 0;
     probs.forEach((probability, i)=>{
       const value = edges[i];
       const size = Math.max(0, probability / maxProb * histoHeight);
@@ -610,7 +635,7 @@ export class HistCanvas extends TraceCanvas {
         d += `${x} ${top} `;
       }
       positions[i] = x;
-      btot += probability;
+      // btot += probability;
     });
     // console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxBinValue: ${maxDistProb}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label, `       ${btot}` );
     const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
