@@ -598,16 +598,20 @@
       }
 
       .prob-readout {
-        display: flex;
-        flex-direction: row;
         padding-left: var(--chart-yaxis-width);
-        height: 0;
+        height: 3em;
         transform: translate(0, -10px);
         width: var(--trace-chart-width);
         font-variant-numeric: tabular-nums;
         line-height: var(--chart-axis-text-line-height);
         opacity: 1;
         transition: opacity 0.15s;
+
+        p {
+          display: flex;
+          flex-direction: row;
+        }
+
 
 
         &.inactive {

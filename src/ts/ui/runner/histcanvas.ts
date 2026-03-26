@@ -30,6 +30,8 @@ within the valid range of inputs
 */
 const NO_VALUE = Number.MIN_SAFE_INTEGER;
 
+const CDF_EPSILON = 0.005;
+
 
 export class HistCanvas extends TraceCanvas {
 
@@ -297,7 +299,7 @@ export class HistCanvas extends TraceCanvas {
 
   handleProbabilityHighlight(cumulativeProbability: number) : void {
     if (cumulativeProbability === NO_VALUE) {
-      this.setProbabilityLabel(NO_VALUE);
+      this.setProbabilityLabel(NO_VALUE, NO_VALUE);
       this.setReadoutLabel(false, NO_VALUE);
     } else {
       /*
@@ -333,24 +335,24 @@ export class HistCanvas extends TraceCanvas {
         // value = displayMin + pct * (displayMax - displayMin);
         const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
         // const prob = kde.cdf(value);
-        const totPdf = 0;
-        const { bins, edges } = binConfig;
-        let index = 0;
-        let cdf = 0;
-        while (index < edges.length) {
-          cdf = kde.cdf(edges[index]);
-          console.log(`${index} / ${edges.length}`, cdf, cumulativeProbability)
-          if (cdf >= cumulativeProbability) {
-            break;
-          }
-          index++;
-        }
-        if (index < edges.length) {
-          value = edges[index];
-        } else {
-          value = displayMax;
-        }
         const valRange = displayMax - displayMin;
+        let lower = displayMin;
+        let upper = displayMax;
+        let value = lower + 0.5 * (upper - lower);
+        let cdf = kde.cdf(value);
+        while (Math.abs(cdf - cumulativeProbability) > CDF_EPSILON
+          && value !== lower
+          && value !== upper
+        ) {
+          if (cdf < cumulativeProbability) {
+            lower = value;
+            value = lower + 0.5 * (upper - lower);
+          } else {
+            upper = value;
+            value = lower + 0.5 * (upper - lower);
+          }
+          cdf = kde.cdf(value);
+        }
         x = (value - displayMin) / valRange * width;
         this.drawDistributionSVG(value);
       }
@@ -611,6 +613,8 @@ export class HistCanvas extends TraceCanvas {
       binSize = histoWidth / (valRange);
     }
     let highlightProb = NO_VALUE;
+    let cumulativeProb = 0;
+    let accumulating = true;
     this.histoBarParent.innerHTML = '';
     counts.forEach((n, i)=>{
       const value = edges[i];
@@ -620,6 +624,7 @@ export class HistCanvas extends TraceCanvas {
       const top = histoHeight - size;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
       const x = (value - displayMin) / valRange * this.histoWidth;
+      if (accumulating) cumulativeProb += n;
       bar.setAttribute("x", `${x}`);
       bar.setAttribute("y", `${top}`);
       bar.setAttribute("width", `${binSize}`);
@@ -627,13 +632,15 @@ export class HistCanvas extends TraceCanvas {
       if (highlightValue >= value && highlightValue < nextValue) {
         bar.classList.add("highlight");
         highlightProb = n / total;
+        cumulativeProb /= total;
+        accumulating = false;
       } else {
         bar.classList.remove("highlight");
       }
       this.histoBarParent.appendChild(bar);
       positions[i] = x;
     });
-    this.setProbabilityLabel(highlightProb);
+    this.setProbabilityLabel(highlightProb, cumulativeProb);
   }
 
 
@@ -712,6 +719,7 @@ export class HistCanvas extends TraceCanvas {
       const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
       if (kde) {
         const pdf = kde.pdf(highlightValue);
+        const cdf = kde.cdf(highlightValue);
         const prob = step * pdf;
         const size = Math.max(0, prob / maxProb * histoHeight);
         const top = histoHeight - size;
@@ -721,12 +729,12 @@ export class HistCanvas extends TraceCanvas {
         line.setAttribute("x2", `${x}`);
         line.setAttribute("y2", `${top}`);
         this.histoBarParent.appendChild(line);
-        this.setProbabilityLabel(prob);
+        this.setProbabilityLabel(prob, cdf);
       } else {
-        this.setProbabilityLabel(NO_VALUE);
+        this.setProbabilityLabel(NO_VALUE, NO_VALUE);
       }
     } else {
-      this.setProbabilityLabel(NO_VALUE);
+      this.setProbabilityLabel(NO_VALUE, NO_VALUE);
     }
   }
 
@@ -832,12 +840,14 @@ export class HistCanvas extends TraceCanvas {
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
   }
 
-  setProbabilityLabel(value: number) {
-    if (value === NO_VALUE) {
-      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = '';
+  setProbabilityLabel(probability: number, cumulative: number) {
+    if (probability === NO_VALUE) {
+      (this.probabilityReadout.querySelector(".readout-value.probability") as HTMLSpanElement).textContent = '';
+      (this.probabilityReadout.querySelector(".readout-value.cumulative") as HTMLSpanElement).textContent = '';
       this.probabilityReadout.classList.add("inactive");
     } else {
-      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+      (this.probabilityReadout.querySelector(".readout-value.probability") as HTMLSpanElement).textContent = safeLabel(probability);
+      (this.probabilityReadout.querySelector(".readout-value.cumulative") as HTMLSpanElement).textContent = safeLabel(cumulative);
       this.probabilityReadout.classList.remove("inactive");
     }
   }
