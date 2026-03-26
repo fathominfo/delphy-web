@@ -105,7 +105,7 @@ export class KernelDensityEstimate {
   }
 
   /*
-  cumulative density function: the probability that the
+  cumulative density function
   */
   cdf(x: number) : number {
     const { samples_, bandwidth_} = this;

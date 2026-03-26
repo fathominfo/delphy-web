@@ -1,6 +1,6 @@
-import { downloadTextFile, getDecimalPrecision, getTimestampString, nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getDecimalPrecision, getTimestampString, nf000, nfc, nicenum, safeLabel, sum, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
+import { HistDataFunction, hoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData } from "./histdata";
 import { getElementsAndStyles } from '../../util/exportutils';
 // import { PDFDocument, rgb } from 'pdf-lib';
@@ -35,8 +35,9 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-  kneeListener: kneeHoverListenerType;
+  kneeListener: hoverListenerType;
   hoverListener: hoverListenerType;
+  probabilityListener: hoverListenerType;
   histoSVG: SVGElement;
   histoWidth: number;
   histoHeight: number;
@@ -77,13 +78,15 @@ export class HistCanvas extends TraceCanvas {
 
 
   constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
-    isDiscrete: boolean, kneeListener: kneeHoverListenerType,
-    hoverListener: hoverListenerType, statHoverListener: statHoverListenerType
+    isDiscrete: boolean, kneeListener: hoverListenerType,
+    hoverListener: hoverListenerType, statHoverListener: statHoverListenerType,
+    probabilityListener: hoverListenerType
   ) {
     super(label, unit, className, getDataFnc, TRACE_TEMPLATE);
     this.traceData = new HistData(label, unit, getDataFnc, isDiscrete);
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
+    this.probabilityListener = probabilityListener;
     this.isVisible = true;
     const unitDiv = this.container.querySelector(".header .readout-unit") as HTMLParagraphElement;
     unitDiv.innerHTML = unit;
@@ -117,10 +120,11 @@ export class HistCanvas extends TraceCanvas {
     this.highlightDiv.addEventListener('pointerleave', ()=>{
       this.hoverListener(UNSET);
     });
-    this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
+    this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>{
+      this.handleHistogramHover(event)
+    });
     this.histoSVG.addEventListener('pointerleave', ()=>{
-      this.setProbabilityLabel(NO_VALUE);
-      this.setReadoutLabel(false, NO_VALUE);
+      this.probabilityListener(NO_VALUE);
     });
     let prevStat = '';
     const announceStat = (event: PointerEvent) => {
@@ -274,26 +278,89 @@ export class HistCanvas extends TraceCanvas {
       const { displayMin, displayMax, binConfig } = histData;
       let value: number;
       let prob: number;
-      this.hoverX = event.offsetX;
       if (binConfig.isHistogram) {
         value = displayMin + pct * (displayMax - displayMin + 1);
         const { counts, edges } = binConfig;
-        const total = counts.reduce((tot: number, n: number)=>(n||0)+tot, 0);
+        const total = counts.reduce(sum, 0);
         value = Math.floor(value);
         const index = edges.indexOf(value);
-        prob = counts[index] / total;
-        this.drawHistogramSVG(value);
-
+        const cumulative = counts.slice(0, index+1).reduce(sum, 0);
+        prob = cumulative / total;
       } else {
         value = displayMin + pct * (displayMax - displayMin);
         const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
-        prob = kde.pdf(value);
-        this.drawDistributionSVG(value);
+        prob = kde.cdf(value);
       }
-      this.setReadoutLabel(false, value);
-      // this.setProbabilityLabel(prob);
+      this.probabilityListener(prob);
     }
   }
+
+  handleProbabilityHighlight(cumulativeProbability: number) : void {
+    if (cumulativeProbability === NO_VALUE) {
+      this.setProbabilityLabel(NO_VALUE);
+      this.setReadoutLabel(false, NO_VALUE);
+    } else {
+      /*
+      find the value that corresponds to the cumulative probability
+      */
+      const width = this.width;
+      const histData = this.traceData as HistData;
+      const { displayMin, displayMax, binConfig } = histData;
+
+
+      let value = 0;
+      let x: number = UNSET;
+      if (binConfig.isHistogram) {
+        // value = displayMin + pct * (displayMax - displayMin + 1);
+        const { counts, edges } = binConfig;
+        const total = counts.reduce(sum, 0);
+        let index = 0;
+        let runningTotal = 0;
+        while (index < counts.length) {
+          runningTotal += counts[index];
+          if (runningTotal / total >= cumulativeProbability) {
+            break;
+          }
+          index++;
+        }
+        value = edges[index];
+        const valRange = displayMax - displayMin;
+        const bucketSize = width / (valRange + 1);
+        const left = bucketSize * 0.5;
+        x = left + (value - displayMin) / valRange * (width - bucketSize);
+        this.drawHistogramSVG(value);
+      } else {
+        // value = displayMin + pct * (displayMax - displayMin);
+        const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
+        // const prob = kde.cdf(value);
+        const totPdf = 0;
+        const { bins, edges } = binConfig;
+        let index = 0;
+        let cdf = 0;
+        while (index < edges.length) {
+          cdf = kde.cdf(edges[index]);
+          console.log(`${index} / ${edges.length}`, cdf, cumulativeProbability)
+          if (cdf >= cumulativeProbability) {
+            break;
+          }
+          index++;
+        }
+        if (index < edges.length) {
+          value = edges[index];
+        } else {
+          value = displayMax;
+        }
+        const valRange = displayMax - displayMin;
+        x = (value - displayMin) / valRange * width;
+        this.drawDistributionSVG(value);
+      }
+      this.hoverX = x;
+      console.log(this.className, value);
+      this.setReadoutLabel(false, value);
+    }
+
+  }
+
 
   handleTreeHighlight(treeIndex: number): void {
     const traceData = this.traceData as HistData;
@@ -536,7 +603,7 @@ export class HistCanvas extends TraceCanvas {
     const lastValue = edges[edges.length-1] + step;
     const histoValueRange = lastValue - firstValue;
     const histoSize = histoValueRange / valRange * histoWidth;
-    const total = counts.reduce((tot:number, n:number)=>(n||0)+tot, 0)
+    const total = counts.reduce(sum, 0)
     let binSize = Math.max(0, histoSize / counts.length);
 
     if (isHistogram) {
@@ -587,7 +654,7 @@ export class HistCanvas extends TraceCanvas {
     const N = counts.length;
     const binSize = Math.max(0, histoSize / N);
     const maxCounts = Math.max.apply(null, counts);
-    const sumCounts = counts.reduce((tot, n)=>tot+n, 0);
+    const sumCounts = counts.reduce(sum, 0);
     const maxBarProb = maxCounts/sumCounts;
     // console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label);
 
@@ -1009,7 +1076,7 @@ export class HistCanvas extends TraceCanvas {
     if (isDiscrete) {
       text += 'discrete values\n';
       text += `bin\tprobability\tcount\n`;
-      const total = bins.reduce((tot, n)=>tot + n, 0);
+      const total = bins.reduce(sum, 0);
       bins.forEach((count, i)=>{
         const bin = edges[i];
         const probability = count / total;
@@ -1019,7 +1086,7 @@ export class HistCanvas extends TraceCanvas {
     } else {
       text += 'distribution\n';
       text = `bin min\tbin max\tcount\tpercent of total\tsmoothed probability (KDE)\tsmoothed pdf (KDE)\n`;
-      const total = counts.reduce((tot, n)=>tot + n, 0);
+      const total = counts.reduce(sum, 0);
       bins.forEach((probability, i)=>{
         const binMin = edges[i];
         const binMax = edges[i+ 1] || (binMin + bandwidth);

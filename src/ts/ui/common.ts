@@ -812,8 +812,8 @@ export const getMedian = (arr:number[])=>{
 
 export const getStdDev = (data: number[])=>{
   const safe = data.filter(n=>Number.isFinite(n));
-  const sum = safe.reduce((tot, c)=>tot+(c||0), 0);
-  const avg = sum / safe.length;
+  const total = safe.reduce(sum, 0);
+  const avg = total / safe.length;
   const sumDeltaSq = safe.reduce((tot, c)=>{
     const d = c - avg;
     return tot + d * d;
@@ -839,3 +839,6 @@ export const downloadTextFile = (filename: string, text: string ) : Promise<void
     resolve();
   })
 };
+
+
+export const sum = (tot: number, n: number)=>(n||0)+tot;

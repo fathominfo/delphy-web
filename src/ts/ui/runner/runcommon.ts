@@ -75,8 +75,7 @@ export const SummaryStatShortLabels: {[_:string]: string} = {
 
 
 
-export type kneeHoverListenerType = (pct:number)=>void;
-export type hoverListenerType = (treeIndex:number)=>void;
+export type hoverListenerType = (input:number)=>void;
 export type statHoverListenerType = (statName:SummaryStat | null)=>void;
 export type requestDrawFnc = ()=>void;
 

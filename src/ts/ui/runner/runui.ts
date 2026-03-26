@@ -8,7 +8,7 @@ import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
-import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, statHoverListenerType, SummaryStat } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -186,10 +186,11 @@ export class RunUI extends UIScreen {
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
 
-  kneeHandler : kneeHoverListenerType;
-  curatedKneeHandler : (pct:number)=>void;
+  kneeHandler : hoverListenerType;
+  curatedKneeHandler : hoverListenerType;
   hoverHandler: hoverListenerType;
   statHoverHandler: statHoverListenerType;
+  histoHoverHandler: hoverListenerType;
 
   traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | HistChartNoESSConfig | PopChartConfig} = {};
 
@@ -245,6 +246,17 @@ export class RunUI extends UIScreen {
         }
       });
       this.requestDraw();
+    };
+
+
+    this.histoHoverHandler = (cumulativeProbability: number) => {
+      requestAnimationFrame(()=>{
+        this.traceCanvases.forEach(hc=>{
+          if (hc.isVisible && hc instanceof HistCanvas) {
+            hc.handleProbabilityHighlight(cumulativeProbability);
+          }
+        });
+      });
     };
 
     this.mccRef = null;
@@ -520,7 +532,9 @@ export class RunUI extends UIScreen {
         const config = this.traceChartConfig[tc] as any;
         if (config.unit === undefined) return;
         const { name, unit, className, dataFnc, isDiscrete } = config as HistChartConfig;
-        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
+        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete,
+          this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler,
+          this.histoHoverHandler);
         if (config.labelFunction !== undefined) {
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
           canvas.stdErrFormatLabel = (config as HistChartCustomLabelConfig).stdErrLabelFunction;
