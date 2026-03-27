@@ -653,6 +653,7 @@ export class HistCanvas extends TraceCanvas {
         const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
         line.setAttribute("x1", `${x}`);
         line.setAttribute("x2", `${x}`);
+        line.setAttribute("y1", `${histoHeight}`);
         line.setAttribute("y2", `${top}`);
         this.histoBarParent.appendChild(line);
         this.setProbabilityLabel(prob);

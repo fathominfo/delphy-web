@@ -412,7 +412,6 @@
         right: 30px;
         transform: translate(100%, 0);
         top: 0;
-        flex-direction: column;
         height: auto;
         cursor: pointer;
         background-color: rgba(255,255,255,0.9);
@@ -436,12 +435,50 @@
       padding: var(--chart-stroke-weight) 0;
     }
 
+    .trace-readout, .prob-readout {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      width: 100%;
+      text-align: right;
+      font-size: var(--chart-xaxis-hover-text-font-size);
+      align-items: end;
+      line-height: var(--chart-axis-text-line-height);
+      height: var(--chart-axis-text-line-height);
+      margin: 24px 0 0
+    }
+    .readout-value {
+      font-weight: var(--chart-xaxis-hover-text-font-weight);
+      letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
+      color: #004f9e; // var(--chart-yaxis-hover-text);
+      white-space: nowrap;
+      width: 74px; //calc(var(--trace-chart-width) / 2 - 8px);
+      text-align: right;
+      vertical-align: baseline;
+      display: inline-block;
 
-    .readout-unit {
+      .pct {
+        display: inline-block;
+        margin-left: 2px;
+        color: var(--chart-axis-text);
+        // font-size: 10px;
+        font-weight: 500;
+      }
+    }
+    .readout-unit, .probability-label {
       white-space: nowrap;
       color: var(--chart-axis-text);
-      text-align: right;
       font-weight: 500;
+      width: 138px;
+      text-align: left;
+    }
+
+    .copy-button {
+      left: calc(var(--trace-chart-width)
+        + var(--chart-yaxis-width)
+        + 16px);
+      top: unset;
+      bottom: 84px;
     }
 
 
@@ -460,13 +497,6 @@
 
 
 
-    // position: relative;
-    // display: flex;
-    // flex-direction: column;
-    // justify-content: flex-start;
-    // align-items: flex-start;
-    // gap: 0;
-    // background-color: transparent;
 
     .graph.display {
       z-index: 1;
@@ -483,7 +513,7 @@
     .summary-stats {
       display: grid;
       grid-gap: 4px 16px;
-      grid-template-columns: 82px 1fr;
+      grid-template-columns: 74px 1fr;
       min-width: var(--indicator-trace-module-width);
       max-width: var(--indicator-trace-module-width);
       margin: 0;
@@ -596,38 +626,19 @@
       }
 
       .prob-readout {
-        display: flex;
-        flex-direction: row;
-        padding-left: var(--chart-yaxis-width);
-        height: 0;
-        transform: translate(0, -10px);
-        width: var(--trace-chart-width);
+        // padding-left: var(--chart-yaxis-width);
+        // height: 0;
+        // transform: translate(0, -10px);
         font-variant-numeric: tabular-nums;
-        line-height: var(--chart-axis-text-line-height);
         opacity: 1;
         transition: opacity 0.15s;
+        margin: 0;
 
 
         &.inactive {
           opacity: 0;
           pointer-events: none;
           visibility: hidden;
-        }
-
-        .probability-label {
-          flex-grow: 1;
-          margin-right: 0.25em;
-          font-weight: var(--chart-axis-text-font-weight);
-
-          color: var(--chart-axis-text);
-          fill: var(--chart-axis-text);
-        }
-        .readout-value {
-          font-size: var(--chart-xaxis-hover-text-font-size);
-          font-weight: var(--chart-xaxis-hover-text-font-weight);
-          letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-          color: #004f9e; // var(--chart-yaxis-hover-text);
-          white-space: nowrap;
         }
       }
 
@@ -670,14 +681,16 @@
         &.x {
 
           // height: var(--chart-xaxis-height);
-          height: calc(var(--unit) * 2.5);
+          height: calc(var(--unit) * 4);
           // margin-left: var(--chart-yaxis-width);
           // margin-right: var(--chart-histogram-width);
-          padding: 0 0 0 var(--chart-stroke-weight);
+          padding: 0;
 
-          margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
+          // margin-left: calc(var(--chart-yaxis-width) + var(--chart-displays-timeline-inset-x) + 1px);
           margin-right: unset;
-          width: var(--trace-chart-width);
+          // width: var(--trace-chart-width);
+          width: 100%;
+
           display: flex;
           flex-direction: column;
           position: relative;
@@ -689,29 +702,6 @@
             color: var(--chart-xaxis-hover-text);
             font-size: 10px;
             transform: translate(-50%, 0);
-          }
-          p {
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-          }
-          .stat-label, .tree-label {
-            margin-right: 0.25em;
-            flex-grow: 1;
-          }
-          .readout-value {
-            font-size: var(--chart-xaxis-hover-text-font-size);
-            font-weight: var(--chart-xaxis-hover-text-font-weight);
-            letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-            color: #004f9e; // var(--chart-yaxis-hover-text);
-            white-space: nowrap;
-            .pct {
-              display: inline-block;
-              margin-left: 2px;
-              color: var(--chart-axis-text);
-              // font-size: 10px;
-              font-weight: 500;
-            }
           }
         }
         &.y {
