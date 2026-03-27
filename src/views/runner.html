@@ -7,7 +7,7 @@
     <section class="main-content">
 
       <div id="runner--top">
-        <div id="run-control" class="controls menu-group">
+        <div id="run-control" class="controls menu-group  no-data">
           <div class="toolbar">
             <input type="checkbox" id="run-input" />
             <label for="run-input" id="run-input--label" class="player">
@@ -17,7 +17,8 @@
                 <path id="run-input--stopping" d="m18 9 a9 9 0 1 0 9 9"/>
               </svg>
             </label>
-            <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
+            <span id="run-steps"><span class="digit">0</span> step<span class="plural">s</span></span>
+            <span class="no-data">Click to start</span>
           </div>
           <div class="controls menu-group">
             <div id="step-control" class="">
@@ -76,16 +77,18 @@
               <div class="bar" data-meter-level="3"></div>
             </div>
             <div class="readout">
-              <span class="label converging" data-readout-level="0">Converging</span>
-              <span class="label stable" data-readout-level="1">Stable</span>
-              <span class="label robust" data-readout-level="2">Robust</span>
-              <span class="label publish" data-readout-level="3">Ready</span>
+              <span class="label no-data" data-readout-level="0">No data</span>
+              <span class="label converging" data-readout-level="1">Converging</span>
+              <span class="label stable" data-readout-level="2">Stable</span>
+              <span class="label robust" data-readout-level="3">Robust</span>
+              <span class="label publish" data-readout-level="4">Ready</span>
             </div>
             <div class="detail">
-              <div class="text converging" data-detail-level="0"><p>Not enough statistically independent samples to be reliable.</p></div>
-              <div class="text stable" data-detail-level="1"><p>Ready for initial exploration. Running longer will refine results.</p></div>
-              <div class="text robust" data-detail-level="2"><p>Running longer is unlikely to materially change any results.</p></div>
-              <div class="text publish" data-detail-level="3"><p>Results are most likely ready for publication.</p></div>
+              <div class="text no-data" data-detail-level="0"><p>The delphy run has not been started.</p></div>
+              <div class="text converging" data-detail-level="1"><p>Not enough statistically independent samples to be reliable.</p></div>
+              <div class="text stable" data-detail-level="2"><p>Ready for initial exploration. Running longer will refine results.</p></div>
+              <div class="text robust" data-detail-level="3"><p>Running longer is unlikely to materially change any results.</p></div>
+              <div class="text publish" data-detail-level="4"><p>Results are most likely ready for publication.</p></div>
             </div>
             <a class="info" href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">
               <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">

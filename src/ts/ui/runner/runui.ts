@@ -110,7 +110,8 @@ const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
 export class RunUI extends UIScreen {
   mccRef: MccRef | null;
 
-  private runControl: HTMLInputElement;
+  private runControl: HTMLDivElement;
+  private runInput: HTMLInputElement;
 
   private stepCountText: HTMLSpanElement;
   private treeCountText: HTMLSpanElement;
@@ -119,6 +120,7 @@ export class RunUI extends UIScreen {
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
   private mccTreeCanvas: MccTreeCanvas;
+  private mccHeader: HTMLSpanElement;
 
   private traceCanvases: TraceCanvas[] = [];
   private defaultCanvases: TraceCanvas[] = [];
@@ -245,11 +247,12 @@ export class RunUI extends UIScreen {
 
     this.mccRef = null;
     this.mccTreeCanvas = instantiateMccTreeCanvas("#runner--mcc .tree-canvas");
-
-    this.runControl = document.querySelector("#run-input") as HTMLInputElement;
+    this.runControl = document.querySelector("#run-control") as HTMLDivElement;
+    this.runInput = this.runControl.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
+    this.mccHeader = this.div.querySelector("#runner--mcc .header") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
     this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
     this.essReadout = this.essWrapper.querySelector(".readout") as HTMLSpanElement;
@@ -579,10 +582,10 @@ export class RunUI extends UIScreen {
       this.burnInToggle.checked = this.sharedState.hideBurnIn;
     }
     if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
-    this.runControl.addEventListener("change", this.runControlHandler);
+    this.runInput.addEventListener("change", this.runControlHandler);
     this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.updateParamsUI();
-    setTimeout(()=>this.runControl.focus(), 100);
+    setTimeout(()=>this.runInput.focus(), 100);
   }
 
   getRunParams(): RunParamConfig {
@@ -761,7 +764,7 @@ export class RunUI extends UIScreen {
       this.stop();
     }
     super.deactivate();
-    this.runControl.removeEventListener("change", this.runControlHandler);
+    this.runInput.removeEventListener("change", this.runControlHandler);
 
   }
 
@@ -789,7 +792,7 @@ export class RunUI extends UIScreen {
     if (!this.is_running && this.timerHandle !== 0) {
       clearTimeout(this.timerHandle);
       this.timerHandle = 0;
-      this.runControl.classList.remove("stopping");
+      this.runInput.classList.remove("stopping");
       this.enableAdvancedFormSubmit();
       this.stepSelector.disabled = false;
     }
@@ -922,15 +925,22 @@ export class RunUI extends UIScreen {
       const tokens = essString.split('.');
       integerPart.textContent = tokens[0];
       fractionPart.textContent = `.${tokens[1]}`;
-      ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
-        if (ess >= et.threshold) {
-          essClass = et.className;
-        }
-      });
-      this.essMeter.setAttribute("data-stage", essClass);
-      if (treeCount > 1) {
+      if (treeCount <= 1) {
+        essClass = 'no-data';
+        this.runControl.classList.add("no-data");
+        this.burnInWrapper.classList.add("pre");
+        this.mccHeader.classList.add("no-data");
+      } else {
+        ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
+          if (ess >= et.threshold) {
+            essClass = et.className;
+          }
+        });
+        this.runControl.classList.remove("no-data");
         this.burnInWrapper.classList.remove("pre");
+        this.mccHeader.classList.remove("no-data");
       }
+      this.essMeter.setAttribute("data-stage", essClass);
       this.stepCountPluralText.innerHTML = stepCountPlural;
 
       // const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
@@ -945,8 +955,8 @@ export class RunUI extends UIScreen {
     }
     if (this.pythia) {
       this.is_running = true;
-      this.runControl.checked = true;
-      this.runControl.classList.remove("stopping");
+      this.runInput.checked = true;
+      this.runInput.classList.remove("stopping");
       this.pythia.startRun(null);
     }
   }
@@ -959,8 +969,8 @@ export class RunUI extends UIScreen {
     // }
     if (this.pythia) {
       this.is_running = false;
-      this.runControl.checked = false;
-      this.runControl.classList.add("stopping");
+      this.runInput.checked = false;
+      this.runInput.classList.add("stopping");
       this.stepSelector.disabled = true;
       this.pythia.pauseRun();
     }
@@ -981,7 +991,7 @@ export class RunUI extends UIScreen {
 
 
   private set_running() : void {
-    this.is_running = this.runControl.checked;
+    this.is_running = this.runInput.checked;
     if (this.is_running) {
       this.start();
     } else {
