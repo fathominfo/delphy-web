@@ -22,7 +22,7 @@ const INFO_ICON_TEMPLATE = document.querySelector("#runner .main-content .info:h
 
 
 const MAX_STEP_SIZE = 3;
-const TARGET_LABEL_SPACING = 25; // in px
+const TARGET_LABEL_SPACING = 70; // in px
 
 /*
 for use in situations where UNSET (-1) falls
@@ -85,7 +85,7 @@ export class HistCanvas extends TraceCanvas {
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
     this.isVisible = true;
-    const unitDiv = this.container.querySelector(".header .readout-unit") as HTMLParagraphElement;
+    const unitDiv = this.container.querySelector(".readout-unit") as HTMLParagraphElement;
     unitDiv.innerHTML = unit;
     this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
@@ -670,13 +670,23 @@ export class HistCanvas extends TraceCanvas {
 
 
   drawYAxisLabels(hideBurnIn: boolean, highlightIndex: number) {
-    const { traceData, hoverY, stepSize } = this;
+    const { traceData, hoverY, stepSize, height } = this;
     const { count, savedKneeIndex, displayCount } = traceData as HistData;
     this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
-    const activeHeight = (displayCount-1) * stepSize;
-    const targetTickCount = Math.ceil(activeHeight / TARGET_LABEL_SPACING);
-    const tickInterval = Math.max(10, nicenum(displayCount / targetTickCount));
-    // const tickInterval = 2; // Math.max(10, nicenum(displayCount / targetTickCount));
+
+
+
+    const activeHeight = Math.min((displayCount) * stepSize, height);
+    let tickInterval = 20;
+    let targetTickCount = 1;
+    if (displayCount >= 80) {
+      targetTickCount = Math.ceil(activeHeight / TARGET_LABEL_SPACING);
+      if (displayCount % targetTickCount === 0) {
+        tickInterval = Math.max(10, nicenum((displayCount + 1) / targetTickCount));
+      } else {
+        tickInterval = Math.max(10, nicenum(displayCount / targetTickCount));
+      }
+    }
     const intervalSize = tickInterval * stepSize;
     let tickStart = 0;
 
@@ -700,7 +710,9 @@ export class HistCanvas extends TraceCanvas {
     }
     let tick = tickStart;
     let y = startY;
+    let actual = 0;
     while (tick < count) {
+      actual++;
       /* make sure this doesn't overlap with the hover */
       if (hoverY === UNSET || Math.abs(hoverY - y) >= TARGET_LABEL_SPACING / 2) {
         this.addYTick(y, tick + 1);
@@ -713,8 +725,10 @@ export class HistCanvas extends TraceCanvas {
         tick += tickInterval;
         y -= intervalSize;
       }
-
     }
+
+    console.log(`activeHeight  ${activeHeight}, target ${targetTickCount}, size ${displayCount}, result ${tickInterval},   actual ${actual}`)
+
     if (highlightIndex === UNSET) {
       this.yAxisHoverDiv.classList.add("hidden");
     } else {
@@ -745,19 +759,19 @@ export class HistCanvas extends TraceCanvas {
     this.xAxisTick.classList.toggle("hidden", noValue);
     this.xAxisTick.style.left = `${ this.hoverX }px`;
 
-    if (highlightIsSample) {
-      this.xAxisDiv.classList.remove("statsing");
-    } else {
-      this.xAxisDiv.classList.add("statsing");
-      const statLabel = this.xAxisDiv.querySelector(".stat-label") as HTMLSpanElement;
-      if (noValue || this.highlightStat === null) {
-        statLabel.textContent = '';
-      } else {
-        const key = SummaryStat[this.highlightStat] as keyof SummaryStatsType
-        const label = SummaryStatLongLabels[key];
-        statLabel.textContent = label;
-      }
-    }
+    // if (highlightIsSample) {
+    //   this.xAxisDiv.classList.remove("statsing");
+    // } else {
+    //   this.xAxisDiv.classList.add("statsing");
+    //   const statLabel = this.xAxisDiv.querySelector(".stat-label") as HTMLSpanElement;
+    //   if (noValue || this.highlightStat === null) {
+    //     statLabel.textContent = '';
+    //   } else {
+    //     const key = SummaryStat[this.highlightStat] as keyof SummaryStatsType
+    //     const label = SummaryStatLongLabels[key];
+    //     statLabel.textContent = label;
+    //   }
+    // }
     let label = '';
     if (!noValue) {
       const formatLabel = this.getReadoutFormatFnc();

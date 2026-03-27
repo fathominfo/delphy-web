@@ -403,9 +403,9 @@
       width: 100%;
       position: relative;
 
-      &:has(.histogram) {
-        padding-left: var(--chart-yaxis-width);
-      }
+      // &:has(.histogram) {
+      //   padding-left: var(--chart-yaxis-width);
+      // }
 
       .download-button {
         left: unset;
@@ -439,11 +439,9 @@
 
     .readout-unit {
       white-space: nowrap;
-      display: block;
-      // font-size: 10px; //var(--chart-axis-text-font-size);
       color: var(--chart-axis-text);
-      margin: 0 0 5px;
-      height: 15px;
+      text-align: right;
+      font-weight: 500;
     }
 
 
@@ -715,14 +713,6 @@
               font-weight: 500;
             }
           }
-          .stat-label {display: none;}
-          .tree-label {display: inline-block;}
-          &.statsing {
-            .stat-label {display: inline-block;}
-            .tree-label {display: none;}
-            // .readout-value {display: none;}
-          }
-
         }
         &.y {
 
@@ -746,12 +736,12 @@
             transition: opacity var(--axis-transition) ease-out;
 
             flex-direction: row;
-            justify-content: flex-end;
+            justify-content: flex-start;
             align-items: center;
             width: auto;
             height: 0;
             position: absolute;
-            right: 0;
+            left: 0;
 
             &.hover {
               top: calc(100% * var(--py));

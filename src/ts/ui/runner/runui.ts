@@ -39,7 +39,7 @@ type HistChartConfig = {
   unit: string, // can be valid html
   className: string,
   dataFnc: HistDataFunction,
-  isDiscrete: boolean,
+  isDiscrete: boolean
 }
 
 type HistChartNoESSConfig = {
@@ -90,12 +90,8 @@ enum TraceChart {
 
 /*
 Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
-Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
 */
-const ESSExcludes : TraceChart[] = [
-  TraceChart.numMutations,
-  // TraceChart.popGrowth
-];
+const ESSExcludes : TraceChart[] = [TraceChart.numMutations];
 
 type ESS_THRESHOLD = {threshold: number, className: string};
 
