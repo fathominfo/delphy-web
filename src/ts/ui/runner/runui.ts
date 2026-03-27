@@ -125,8 +125,9 @@ export class RunUI extends UIScreen {
   private mccTreeCanvas: MccTreeCanvas;
 
   private traceCanvases: TraceCanvas[] = [];
-  private shownCanvases: TraceCanvas[] = [];
+  private defaultCanvases: TraceCanvas[] = [];
   private essCandidates: TraceCanvas[] = [];
+  private showAllCanvases = false;
 
 
   private credibilityInput: BlockSlider;
@@ -345,7 +346,8 @@ export class RunUI extends UIScreen {
 
     const allChartsToggle = this.div.querySelector("#runner--all-traces-toggle") as HTMLInputElement;
     allChartsToggle.addEventListener('change', ()=>{
-      if (allChartsToggle.checked) {
+      this.showAllCanvases = allChartsToggle.checked;
+      if (this.showAllCanvases) {
         this.traceCanvases.forEach(canvas=>canvas.setVisible(true));
         this.setTraceCanvasData();
         this.traceCanvases.forEach(canvas=>canvas.sizeCanvas());
@@ -354,7 +356,7 @@ export class RunUI extends UIScreen {
         });
       } else {
         this.traceCanvases.forEach(canvas=>{
-          if (this.shownCanvases.indexOf(canvas) < 0){
+          if (this.defaultCanvases.indexOf(canvas) < 0){
             canvas.setVisible(false);
           }
         });
@@ -473,7 +475,7 @@ export class RunUI extends UIScreen {
 
   decideTraceCharts() : void {
     this.traceCanvases.length = 0;
-    this.shownCanvases.length = 0;
+    this.defaultCanvases.length = 0;
     this.essCandidates.length = 0;
     chartContainer.innerHTML = '';
 
@@ -530,10 +532,20 @@ export class RunUI extends UIScreen {
         } else {
           canvas.setEssExclusion((config as HistChartNoESSConfig).noESSReason);
         }
+
         if (!toShow.includes(tc)) {
           canvas.setVisible(false);
         } else {
-          this.shownCanvases.push(canvas);
+          this.defaultCanvases.push(canvas);
+        }
+
+        if (toShow.includes(tc)) {
+          this.defaultCanvases.push(canvas);
+          canvas.setVisible(true);
+        } else if (this.showAllCanvases) {
+          canvas.setVisible(true);
+        } else {
+          canvas.setVisible(false);
         }
       });
       gammas.forEach((tc: TraceChart)=>{
@@ -541,7 +553,7 @@ export class RunUI extends UIScreen {
         const { name, dataFnc } = config;
         const canvas = new GammaHistCanvas(name, dataFnc);
         this.traceCanvases.push(canvas);
-        this.shownCanvases.push(canvas);
+        this.defaultCanvases.push(canvas);
       });
 
     } catch (err) {

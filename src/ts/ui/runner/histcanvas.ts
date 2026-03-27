@@ -287,6 +287,7 @@ export class HistCanvas extends TraceCanvas {
       } else {
         value = displayMin + pct * (displayMax - displayMin);
         const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
+        if (!kde) return;
         prob = kde.pdf(value);
         this.drawDistributionSVG(value);
       }
