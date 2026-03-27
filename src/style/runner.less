@@ -585,7 +585,8 @@
       }
       .burn-in {
         .trend {
-          stroke: rgb(45, 126, 207); // rgb(150, 181, 212); // var(--chart-graph-burn-in-trend-stroke);
+          // stroke: rgb(45, 126, 207); // rgb(150, 181, 212); // var(--chart-graph-burn-in-trend-stroke);
+          stroke: var(--chart-graph-burn-in-trend-stroke);
           stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
           // export const BORDER_COLOR = '#cbcbcb';
         }
@@ -598,10 +599,9 @@
       .run {
         .period {
           fill: none; // var(--chart-graph-run-period-fill);
-
         }
         .trend {
-          stroke: rgb(45, 126, 207); // var(--chart-graph-run-trend-stroke);
+          stroke: var(--chart-graph-run-trend-stroke);
         }
       }
 
@@ -695,7 +695,7 @@
           flex-direction: column;
           position: relative;
           .tick {
-            // width: var(--chart-tick-stroke-weight);
+            width: calc(var(--chart-tick-stroke-weight) * 5);
             height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
             margin-top: var(--chart-tick-offset);
             position: absolute;
@@ -706,7 +706,6 @@
         }
         &.y {
 
-          // margin-top: calc(var(--chart-histogram-height) + 11px);
           margin-top: -2px;
           height: var(--trace-chart-height);
           padding: var(--chart-stroke-weight) 0;
