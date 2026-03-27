@@ -18,6 +18,7 @@ import { GammaHistCanvas } from './gammahistcanvas';
 import { chartContainer, TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
 import { UIScreen } from '../uiscreen';
+import { enableAnalyticTabs } from '../nav';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -930,6 +931,7 @@ export class RunUI extends UIScreen {
         this.runControl.classList.add("no-data");
         this.burnInWrapper.classList.add("pre");
         this.mccHeader.classList.add("no-data");
+        enableAnalyticTabs(false);
       } else {
         ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
           if (ess >= et.threshold) {
@@ -939,6 +941,7 @@ export class RunUI extends UIScreen {
         this.runControl.classList.remove("no-data");
         this.burnInWrapper.classList.remove("pre");
         this.mccHeader.classList.remove("no-data");
+        enableAnalyticTabs(true);
       }
       this.essMeter.setAttribute("data-stage", essClass);
       this.stepCountPluralText.innerHTML = stepCountPlural;
