@@ -727,7 +727,7 @@ export class HistCanvas extends TraceCanvas {
       }
     }
 
-    console.log(`activeHeight  ${activeHeight}, target ${targetTickCount}, size ${displayCount}, result ${tickInterval},   actual ${actual}`)
+    // console.log(`activeHeight  ${activeHeight}, target ${targetTickCount}, size ${displayCount}, result ${tickInterval},   actual ${actual}`)
 
     if (highlightIndex === UNSET) {
       this.yAxisHoverDiv.classList.add("hidden");
