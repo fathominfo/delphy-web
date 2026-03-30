@@ -195,7 +195,7 @@ export class HistData extends TraceData {
   setSummaryStats() : void {
     const {ess, act, mean } = this;
     const { median, hpdMin, hpdMax, data } = this.distribution;
-    const stdDev = getStdDev(data);
+    const stdDev = data.length <= 1 ? NaN : getStdDev(data);
     const stdErrOnMean = stdDev / Math.sqrt(ess);
     this.summaryStats = { mean, median, hpdMin, hpdMax, ess, stdDev, stdErrOnMean, act };
   }
