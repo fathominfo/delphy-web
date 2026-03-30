@@ -156,6 +156,14 @@ export class RunUI extends UIScreen {
 
   is_running: boolean;
   private timerHandle:number;
+  /*
+  Why not just declare this as a function on `this`?
+  Because! If we did, we would need to do something like
+  `addEventListener('click', ()=>this.runControlHandler())`,
+  that is, create an anonymous function to invoke the method
+  on `this`. But we want to be able to remove the event listener
+  too, so we need something that is _not_ anonymous. [mark 260330]
+  */
   runControlHandler:()=>void;
 
 
@@ -940,7 +948,7 @@ export class RunUI extends UIScreen {
         stepCountPlural = '';
       }
       const essIsUsable = ess > 0;
-      let essClass  = "converging";
+      let essClass = "converging";
       this.essWrapper.classList.toggle("unset", !essIsUsable);
       this.essWrapper.classList.toggle("unset", !essIsUsable);
       const integerPart = this.essReadout.querySelector(".before") as HTMLSpanElement;
@@ -949,7 +957,7 @@ export class RunUI extends UIScreen {
       const tokens = essString.split('.');
       integerPart.textContent = tokens[0];
       fractionPart.textContent = `.${tokens[1]}`;
-      if (treeCount <= 1) {
+      if (treeCount <= 1 && !this.is_running) {
         essClass = 'no-data';
         this.runControl.classList.add("no-data");
         this.burnInWrapper.classList.add("pre");
