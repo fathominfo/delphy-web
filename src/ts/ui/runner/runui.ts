@@ -196,7 +196,7 @@ export class RunUI extends UIScreen {
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
-    const DEBOUNCE_TIME = 100; // ms
+    const DEBOUNCE_TIME = 20; // ms
     let lastRequestedBurnInPct = -1;
 
     this.kneeHandler = (pct:number)=>{
