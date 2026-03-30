@@ -135,6 +135,7 @@ export class RunUI extends UIScreen {
   private essMeter: HTMLDivElement;
   private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
+  private resetBurnInButton: HTMLButtonElement;
   private hideBurnIn: boolean;
   private mccMinDate:SoftFloat;
   private mccTimelineIndices:DateLabel[];
@@ -225,8 +226,10 @@ export class RunUI extends UIScreen {
 
     this.curatedKneeHandler = (pct:number)=>{
       this.sharedState.kneeIsCurated = true;
+      this.resetBurnInButton.disabled = false;
       this.kneeHandler(pct);
     }
+
 
     this.hoverHandler = (treeIndex:number)=>{
       this.traceCanvases.forEach(hc=>{
@@ -306,7 +309,7 @@ export class RunUI extends UIScreen {
     this.mccIndex = -1
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
-
+    this.resetBurnInButton = this.div.querySelector("#burn-in-override") as HTMLButtonElement;
     this.advancedToggle = this.div.querySelector("#runner--advanced--toggle input") as HTMLInputElement;
     this.advancedFormContainer = document.querySelector("#runner--advanced") as HTMLDivElement;
     this.advancedForm = this.advancedFormContainer.querySelector("#runner--advanced--content") as HTMLFormElement;
@@ -369,6 +372,15 @@ export class RunUI extends UIScreen {
       this.sharedState.hideBurnIn = this.hideBurnIn;
       this.updateRunData();
     });
+
+    this.resetBurnInButton.addEventListener('click', ()=>{
+      this.sharedState.kneeIsCurated = false;
+      this.resetBurnInButton.disabled = true;
+      this.updateRunData();
+    });
+
+
+
     const credibilityCallback = (value: number) => {
       const pct = value / 100;
       this.sharedState.mccConfig.setConfidence(pct);
@@ -722,6 +734,7 @@ export class RunUI extends UIScreen {
       const kneeIndex = pythia.kneeIndex;
       if (kneeIndex > 0) {
         this.sharedState.kneeIsCurated = true;
+        this.resetBurnInButton.disabled = false;
         this.burnInWrapper.classList.remove("pre");
         this.burnInWrapper.classList.remove("unset");
       } else {
