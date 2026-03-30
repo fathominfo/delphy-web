@@ -273,22 +273,22 @@ export class HistCanvas extends TraceCanvas {
       const histData = this.traceData as HistData;
       const { displayMin, displayMax, binConfig } = histData;
       let value: number;
-      let prob: number;
+      // let prob: number;
       this.hoverX = event.offsetX;
       if (binConfig.isHistogram) {
         value = displayMin + pct * (displayMax - displayMin + 1);
-        const { counts, edges } = binConfig;
-        const total = counts.reduce((tot: number, n: number)=>(n||0)+tot, 0);
+        // const { counts, edges } = binConfig;
+        // const total = counts.reduce((tot: number, n: number)=>(n||0)+tot, 0);
         value = Math.floor(value);
-        const index = edges.indexOf(value);
-        prob = counts[index] / total;
+        // const index = edges.indexOf(value);
+        // prob = counts[index] / total;
         this.drawHistogramSVG(value);
 
       } else {
         value = displayMin + pct * (displayMax - displayMin);
         const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
         if (!kde) return;
-        prob = kde.pdf(value);
+        // prob = kde.pdf(value);
         this.drawDistributionSVG(value);
       }
       this.setReadoutLabel(false, value);
@@ -711,9 +711,9 @@ export class HistCanvas extends TraceCanvas {
     }
     let tick = tickStart;
     let y = startY;
-    let actual = 0;
+    // let actual = 0;
     while (tick < count) {
-      actual++;
+      // actual++;
       /* make sure this doesn't overlap with the hover */
       if (hoverY === UNSET || Math.abs(hoverY - y) >= TARGET_LABEL_SPACING / 2) {
         this.addYTick(y, tick + 1);

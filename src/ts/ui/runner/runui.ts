@@ -518,11 +518,20 @@ export class RunUI extends UIScreen {
       }
 
       availables.forEach((tc: TraceChart)=>{
-        const config = this.traceChartConfig[tc] as any;
+        /*
+        AFAICT typescript doesn't have a good way to detect whether
+        an instance matches a user-defined type, other than to
+        check for the presence of attributes. Alas, if you assign
+        a type to a variable, then you can't check for presence of
+        attributes that aren't on that type.
+        */
+        const config = this.traceChartConfig[tc] as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        /* if there is no `unit` defined, this is a PopChartConfig, not trace chart, so skip it */
         if (config.unit === undefined) return;
         const { name, unit, className, dataFnc, isDiscrete } = config as HistChartConfig;
         const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
         if (config.labelFunction !== undefined) {
+          /* this is a HistChartCustomLabelConfig */
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
           canvas.stdErrFormatLabel = (config as HistChartCustomLabelConfig).stdErrLabelFunction;
         }
@@ -530,6 +539,7 @@ export class RunUI extends UIScreen {
         if (!ESSExcludes.includes(tc)) {
           this.essCandidates.push(canvas);
         } else {
+          /* if this is in ESSExcludes, then it ought to have a reason for why */
           canvas.setEssExclusion((config as HistChartNoESSConfig).noESSReason);
         }
 
