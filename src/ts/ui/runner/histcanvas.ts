@@ -382,10 +382,10 @@ export class HistCanvas extends TraceCanvas {
       displayMax, binConfig } = this.traceData as HistData;
     const { height } = this;
     const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
-    const burnInField = burnInContainer.querySelector(".period") as SVGRectElement;
+    const burnInMarker = burnInContainer.querySelector(".period") as SVGRectElement;
     const burnInTrend = burnInContainer.querySelector(".trend") as SVGPathElement;
     const activeContainer = this.svg.querySelector(".run") as SVGGElement;
-    // const activeField = activeContainer.querySelector(".period") as SVGRectElement;
+    const activeField = activeContainer.querySelector(".period") as SVGRectElement;
     const activeInTrend = activeContainer.querySelector(".trend") as SVGPathElement;
 
 
@@ -510,9 +510,10 @@ export class HistCanvas extends TraceCanvas {
       yDiv.style.top = `${hoverY}px`;
     }
 
-    burnInField.classList.toggle("hidden", burnInHeight === 0);
-    burnInField.setAttribute("y1", `${activeHeight}`);
-    burnInField.setAttribute("y2", `${activeHeight}`);
+    activeField.setAttribute("height", `${activeHeight}`);
+    burnInMarker.classList.toggle("hidden", burnInHeight === 0);
+    burnInMarker.setAttribute("y1", `${activeHeight}`);
+    burnInMarker.setAttribute("y2", `${activeHeight}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
     burnInTrend.style.strokeWidth = `${trendWeight}`;
