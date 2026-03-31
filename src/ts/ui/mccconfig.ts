@@ -213,19 +213,27 @@ export class MccConfig {
   getMetadataValues() : string [] {
     if (!this.nodeMetadata) {
       throw new Error("metadata is not set");
+      // console.warn("metadata is not set");
+      // return [];
     }
     if (this.metadataField === null) {
       throw new Error("metadata field has not been defined");
+      // console.warn("metadata field has not been defined");
+      // return [];
     }
     return this.nodeMetadata.getNodeValues(this.metadataField);
   }
 
   getMetadataTipCounts() : FieldTipCount[] {
     if (!this.nodeMetadata) {
-      throw new Error("metadata is not set");
+      // throw new Error("metadata is not set");
+      console.warn("metadata is not set");
+      return [];
     }
     if (this.metadataField === null) {
-      throw new Error("metadata field has not been defined");
+      // throw new Error("metadata field has not been defined");
+      console.warn("metadata field has not been defined");
+      return [];
     }
     return this.nodeMetadata.getNodeTipCounts(this.metadataField);
   }
@@ -294,11 +302,13 @@ export class MccConfig {
 
   importConfig(config: ConfigExport): void {
     this.confidenceThreshold = config.confidence ? config.confidence / 100.0 : CONFIDENCE_DEFAULT;
+    this.colorOption = !config.colorBy ? ColorOption.confidence : ColorOption.metadata;
     if (config.metadataPresent === 1) {
-      this.colorOption = !config.colorBy ? ColorOption.confidence : ColorOption.metadata;
-      this.metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
+      if (!this.metadata) {
+        this.metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
+      }
       this.metadataField = this.metadata.header[config.selectedMDField] || '';
-      this.metadataColors = config.metadataColors || {};
+      this.metadataColors = config.metadataColors || this.metadataColors || {};
       this.metadataColorsDirty = true;
     }
   }

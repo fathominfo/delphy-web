@@ -85,7 +85,7 @@ export class MccUI extends UIScreen {
     this.updateData().then(()=>{
       if (mccConfig.metadataColorsDirty) {
         mccConfig.setMetadata(mccConfig.metadata as Metadata, (this.mccRef as MccRef).getMcc());
-        mccConfig.setColorKeys(this.sharedState.mccConfig.metadataField as string);
+        mccConfig.setColorKeys(mccConfig.metadataField as string);
         mccConfig.setColorSystem(ColorOption.metadata);
       }
     });

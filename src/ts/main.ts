@@ -1,6 +1,6 @@
 import { Pythia, setReadyCallback } from './pythia/pythia';
 import { bindUpload, configCallbackType, hideUpload } from './ui/uploadui';
-import { NavLabel, bindNav, activateView } from  "./ui/nav";
+import { NavLabel, bindNav, activateView, getCurrentView } from  "./ui/nav";
 import { UIScreen } from './ui/uiscreen';
 import { RunUI } from './ui/runner/runui';
 import { LineagesUI } from './ui/lineages/lineagesui';
@@ -12,6 +12,9 @@ import { ConfigExport } from './ui/mccconfig';
 import { initErrors, setStage } from './errors';
 import { STAGES } from './constants';
 import { setQCPanel } from './ui/qcpanel';
+import { MccUI } from './ui/mccui';
+import { SummaryTree } from './pythia/delphy_api';
+import { Metadata } from './ui/metadata';
 
 
 
@@ -111,11 +114,29 @@ function onReady(p:Pythia):void {
     }
   };
   const configCallback: configCallbackType = (config: ConfigExport, descriptor: string)=>{
+    const current = getCurrentView() as MccUI | RunUI;
+    let metadata: Metadata | null;
+    if (config.metadataPresent === 1) {
+      metadata = new Metadata(config.metadataFile || '', config.metadataText || '', config.metadataDelimiter || '');
+      /*
+      To fully set the metadata, we also need a tree with the tip ids
+      */
+      if (metadata && current) {
+        const mccConfig = sharedState.mccConfig;
+        const summary = current.mccTreeCanvas.tree as SummaryTree;
+        mccConfig.setMetadata(metadata, summary);
+        if (!config.metadataColors) {
+          const field = metadata.header[config.selectedMDField] || '';
+          mccConfig.setColorKeys(field);
+        }
+      }
+    }
     sharedState.importConfig(config, descriptor);
     /* set the header text */
     document.querySelectorAll(".header--descriptor .description .text").forEach((div)=>{
       (div as HTMLSpanElement).textContent = descriptor;
     });
+    current.handleConfigChange();
   };
   bindUpload(p, sharedState, runCallback, configCallback);
   setStage(STAGES.selecting);

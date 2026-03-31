@@ -16,6 +16,8 @@ const buttonTemplate = maybeButton as HTMLButtonElement;
 buttonTemplate.remove();
 
 
+let current: UIScreen | null = null;
+
 class NavLabel {
   label: string;
   view: UIScreen;
@@ -44,7 +46,6 @@ class NavLabel {
 let navLabels:NavLabel[];
 
 function activateView(selectedView:UIScreen):void {
-  let current: UIScreen | null = null;
   /*
   per https://github.com/microsoft/TypeScript/issues/16928, the typescript
   compiler seems to think that setting `current` in a callback will
@@ -85,5 +86,9 @@ function bindNav(labels:NavLabel[]):void {
   });
 }
 
+function getCurrentView() :  UIScreen | null {
+  return current;
+}
 
-export { NavLabel, bindNav, activateView };
+
+export { NavLabel, bindNav, activateView, getCurrentView };
