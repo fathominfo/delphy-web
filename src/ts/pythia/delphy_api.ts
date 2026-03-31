@@ -461,7 +461,7 @@ export class Delphy {
 
     Delphy.delphyCoreRaw.string_delete(this.ctx, stringWasm);
 
-    return strBytes;
+    return strBytes.buffer as ArrayBuffer;
   }
 
   // Raw interaction with Emscripten-generated Delphy core artifact
