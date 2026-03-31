@@ -294,7 +294,7 @@ export class CustomizeUI extends MccUI {
           this.pythia.setKneeIndexByPct(0);
         }
         const config = this.sharedState.exportConfig(),
-          outBuffer = this.pythia.getSaveBuffer(config),
+          outBuffer = this.pythia.getSaveBuffer(config) as Uint8Array<ArrayBuffer>,
           file = new Blob([outBuffer], {type: "application/octet-binary;charset=utf-8"}),
           a = document.createElement("a"),
           url = URL.createObjectURL(file),
