@@ -1355,7 +1355,7 @@ export class Pythia {
     const treeInfoSize = read32();
     const treeBuffers:Uint8Array[] = [];
     const paramBuffers:Uint8Array[] = [];
-    const treeInfo = readBuffer(treeInfoSize);
+    const treeInfo = readBuffer(treeInfoSize).buffer as ArrayBuffer;
 
     let treeSize = read32();
     while (treeSize !== NO_MORE_TREES) {
@@ -1378,14 +1378,16 @@ export class Pythia {
     this.resetHist();
 
     // Create a tiny temporary run so that we can read off the run parameters
+    let tBuff = treeBuffers[0].buffer as ArrayBuffer;
+    let pBuff = paramBuffers[0].buffer as ArrayBuffer;
     let runParams: RunParamConfig;
     {
-      const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
+      const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
       const tmpRun = this.delphy.createRun(tmpTree);
       tmpTree.delete();  // tmpRun takes over tmpTree's contents, leaving only a husk
 
-      tmpRun.setParamsFromFlatbuffer(paramBuffers[0]);
+      tmpRun.setParamsFromFlatbuffer(pBuff);
 
       runParams = this.extractRunParamsFromRun(tmpRun);
       runParams.stepsPerSample = stepsPerSample;
@@ -1394,18 +1396,19 @@ export class Pythia {
     }
 
     // Now instantiate the real run and record all the associated snapshots
-    const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
+    const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
     this.run = await this.instantiateRun(firstTree, runParams);
 
     for (let i = 1; i < treeCount; i++) {
       progressCallback(i, treeCount);
-
-      const tree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[i], treeInfo);
+      tBuff = treeBuffers[i].buffer as ArrayBuffer;
+      pBuff = paramBuffers[i].buffer as ArrayBuffer;
+      const tree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
       this.run.getTree().copyFrom(tree);
       tree.delete();
 
-      this.run.setParamsFromFlatbuffer(paramBuffers[i]);
+      this.run.setParamsFromFlatbuffer(pBuff);
 
       this.sampleCurrentTree();
 
