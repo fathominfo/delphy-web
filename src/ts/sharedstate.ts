@@ -62,11 +62,6 @@ export class SharedState {
     this.hideBurnIn = config.burnin === 1;
     this.mccConfig.importConfig(config);
     this.descriptor = descriptor;
-    console.log(`
-      
-      descriptor: ${ descriptor }
-      
-      `)
   }
 
   getTipIndexFromId(id: string): number {
