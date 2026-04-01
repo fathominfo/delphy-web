@@ -603,8 +603,8 @@ export class HistCanvas extends TraceCanvas {
 
   drawDistributionSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
-    const { binConfig, displayMin, displayMax, distribution } = traceData as HistData;
-    const { bins, counts, edges, positions, step } = binConfig;
+    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { counts, edges, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
     /*
