@@ -132,6 +132,13 @@ export class HistCanvas extends TraceCanvas {
     });
     this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
     this.histoSVG.addEventListener('pointerleave', ()=>{
+      this.traceData.highlightIndex = UNSET;
+      const binConfig = (this.traceData as HistData).binConfig;
+      if (binConfig.isHistogram) {
+        this.drawHistogramSVG(NO_VALUE);
+      } else {
+        this.drawDistributionSVG(NO_VALUE);
+      }
       this.setProbabilityLabel(NO_VALUE);
       this.setReadoutLabel(false, NO_VALUE);
     });
@@ -849,7 +856,10 @@ export class HistCanvas extends TraceCanvas {
       const stats = (this.traceData as HistData).getStats();
       const p = getDecimalPrecision(stats.stdErrOnMean);
       formatLabel = (n:number)=>{
-        if (n === undefined) return '';
+        if (n === undefined) {
+          console.debug(`formatLabel for ${this.className} (as created in getReadoutFormatFnc) got 'undefined' as a parameter`);
+          return '';
+        }
         return n.toLocaleString(undefined, {minimumFractionDigits: p, maximumFractionDigits: p});
       };
     }
