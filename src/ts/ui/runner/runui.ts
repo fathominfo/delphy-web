@@ -310,6 +310,13 @@ export class RunUI extends UIScreen {
 
     this.decideTraceCharts();
     this.hideBurnIn = false;
+    /*
+    clear the state of the burn in toggle, required in FF.
+    Maybe we want to keep it? I don't think so, it's nice
+    to see the burn in during early stages of the run.
+    [mark 260401]
+    */
+    this.burnInToggle.checked = this.hideBurnIn;
     this.mccTimelineIndices = [];
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
     this.is_running = false;
@@ -357,6 +364,8 @@ export class RunUI extends UIScreen {
     this.disableAnimation = false;
 
     const allChartsToggle = this.div.querySelector("#runner--all-traces-toggle") as HTMLInputElement;
+    /* reset the option for viewing all charts [mark 260401] */
+    allChartsToggle.checked = false;
     allChartsToggle.addEventListener('change', ()=>{
       this.showAllCanvases = allChartsToggle.checked;
       if (this.showAllCanvases) {
