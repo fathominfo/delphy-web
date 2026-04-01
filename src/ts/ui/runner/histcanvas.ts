@@ -857,7 +857,7 @@ export class HistCanvas extends TraceCanvas {
     const magNumber = nf000(stats.act);
     if (magNumber) {
       const {n000, magnitudeLabel} = magNumber;
-      setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel}</span>`);
+      setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel} steps</span>`);
       // console.log(this.className, stats.act, safeLabel(stats.act), `${n000}${magnitudeLabel}`)
     } else {
       /* shouldn't happen, but just in case */
