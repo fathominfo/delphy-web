@@ -861,7 +861,7 @@ export class HistCanvas extends TraceCanvas {
       // console.log(this.className, stats.act, safeLabel(stats.act), `${n000}${magnitudeLabel}`)
     } else {
       /* shouldn't happen, but just in case */
-      setTextContent(this.statsList, ".act", safeLabel(stats.act));
+      setTextContent(this.statsList, ".act", `${safeLabel(stats.act)} steps`);
     }
   }
 
