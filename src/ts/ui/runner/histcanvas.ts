@@ -848,7 +848,10 @@ export class HistCanvas extends TraceCanvas {
     if (formatLabel === null) {
       const stats = (this.traceData as HistData).getStats();
       const p = getDecimalPrecision(stats.stdErrOnMean);
-      formatLabel = (n:number)=>n.toLocaleString(undefined, {minimumFractionDigits: p, maximumFractionDigits: p});
+      formatLabel = (n:number)=>{
+        if (n === undefined) return '';
+        return n.toLocaleString(undefined, {minimumFractionDigits: p, maximumFractionDigits: p});
+      };
     }
     return formatLabel;
   }
