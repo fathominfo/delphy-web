@@ -219,7 +219,7 @@
                     </div>
                     <p class="prob-readout">
                       <span class="readout-value"></span>
-                      <span class="probability-label">Probability</span>
+                      <span class="probability-label">probability</span>
                     </p>
                   </div>
 
@@ -235,22 +235,36 @@
                       <span class="completed">Copied</span>
                     </span>
                   </button>
-                  <dl class="summary-stats">
-                    <dt data-stat="mean">Mean</dt>
-                      <dd data-stat="mean"><span class="value mean"></span></dd>
-                    <dt data-stat="hpd">95% HPD</dt>
-                      <dd data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</dd>
-                    <dt data-stat="median">Median</dt>
-                      <dd data-stat="median"><span class="value median"></span></dd>
-                    <dt data-stat="stddev">Std dev</dt>
-                      <dd data-stat="stddev"><span class="value stddev"></span></dd>
-                    <dt data-stat="stderr">Std err</dt>
-                      <dd data-stat="stderr"><span class="value stderr"></span></dd>
-                    <dt data-stat="ess">ESS</dt>
-                      <dd data-stat="ess"><span class="value ess"></span></dd>
-                    <dt data-stat="act">ACT</dt>
-                      <dd data-stat="act"><span class="value act"></span></dd>
-                  </dl>
+                  <table class="summary-stats">
+                    <tr>
+                    	<th data-stat="mean">Mean</th>
+                      <td data-stat="mean"><span class="value mean"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="hpd">95% HPD</th>
+                      <td data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="median">Median</th>
+                      <td data-stat="median"><span class="value median"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="stddev">Std dev</th>
+                      <td data-stat="stddev"><span class="value stddev"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="stderr">Std err</th>
+                      <td data-stat="stderr"><span class="value stderr"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="ess">ESS</th>
+                      <td data-stat="ess"><span class="value ess"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="act">ACT</th>
+                      <td data-stat="act"><span class="value act"></span></td>
+                    </tr>
+                  </table>
                 </div>
               </div>
 

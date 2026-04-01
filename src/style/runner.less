@@ -15,7 +15,10 @@
     display: block;
   }
 
-
+  h3, h4 {
+    color: #212121;
+    font-feature-settings: "ss03";
+  }
   .main-content {
     display: flex;
     flex-direction: column;
@@ -399,7 +402,7 @@
       }
 
       .download-button {
-        left: calc(var(--trace-chart-width) );
+        left: calc(var(--trace-chart-width) + 8px);
         height: auto;
         cursor: pointer;
 
@@ -410,11 +413,11 @@
 
 
       &:has(.graph) .download-button {
-        top: calc(var(--trace-chart-height) + 8px);
+        top: calc(var(--trace-chart-height) + 18px);
       }
 
       &:has(.histogram) .download-button {
-        top: calc(var(--chart-histogram-height) + 8px);
+        top: calc(var(--chart-histogram-height) + 9px);
       }
 
     }
@@ -433,7 +436,7 @@
     .trace-readout, .prob-readout {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 2px;
       width: var(--trace-chart-width);
       text-align: center;
       font-size: var(--chart-xaxis-hover-text-font-size);
@@ -441,6 +444,10 @@
       line-height: calc(var(--chart-axis-text-line-height) * 0.3);
       height: calc(var(--chart-axis-text-line-height) * 5);
       margin: 12px 0 0
+    }
+
+    .trace-readout {
+      margin-top: 18px;
     }
     .readout-value {
       font-weight: var(--chart-xaxis-hover-text-font-weight);
@@ -451,6 +458,7 @@
       // text-align: center;
       vertical-align: baseline;
       display: inline-block;
+      height: 12px;
 
       .pct {
         display: inline-block;
@@ -464,13 +472,27 @@
       white-space: nowrap;
       color: #094e77; //var(--chart-axis-text);
       font-weight: 500;
-      width: 138px;
+      height: 12px;
+      sup {
+        display: inline-block;
+        vertical-align: baseline;
+        position: relative;
+        top: calc(var(--chart-xaxis-hover-text-font-size) * -0.375);
+        /* override the default <sup> `font-size: smaller;` */
+        // font-size: calc(var(--chart-xaxis-hover-text-font-size) * 0.8);
+        /*
+        it would be great to use the built in superscript,
+        but at this scale it becomes incredibly tiny [mark 260401]
+        */
+        // font-feature-settings: "sups";
+      }
+
     }
 
     .copy-button {
-      left: calc(var(--trace-chart-width));
+      left: calc(var(--trace-chart-width) + 8px);
       top: unset;
-      bottom: 5px;
+      bottom: 9px;
 
     }
 
@@ -504,35 +526,52 @@
 
 
     .summary-stats {
-      display: grid;
-      grid-gap: 4px 16px;
-      grid-template-columns: 74px 1fr;
+      // display: grid;
+      // grid-gap: 4px 16px;
+      // grid-template-columns: 74px 1fr;
       min-width: var(--indicator-trace-module-width);
       max-width: var(--indicator-trace-module-width);
       margin: 0;
 
-      dt {
+      border-spacing: 0px;
+      border-collapse: collapse;
+      text-indent: 0;
+
+      th {
+        display: inline-block;
+        width: 74px;
         font-size: var(--chart-xaxis-hover-text-font-size);
         // color: var(--chart-axis-text);
         color: #5e5e5e;
         text-align: right;
-        padding-left: 8px;
+        margin-left: 8px;
         position: relative;
+        padding-right: 16px;
+        font-weight: 500;
         .info {
           display: inline-block;
           margin-left: 4px;
         }
       }
-      dd {
+      td {
         display: inline-block;
         margin: 0;
         grid-column-start: 2;
         white-space: nowrap;
         color: var(--chart-axis-text);
+        overflow-y: visible;
+        &[data-stat="hpd"] {
+          position: relative;
+          left: -5px;
+        }
+        font-feature-settings: "tnum";
+
       }
+
       .value {
         font-size: var(--chart-xaxis-hover-text-font-size);
-        font-weight: var(--chart-xaxis-hover-text-font-weight);
+        // font-weight: var(--chart-xaxis-hover-text-font-weight);
+        font-weight: 500;
         letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
         // color: var(--chart-axis-text);
         color: #212121;
@@ -660,7 +699,7 @@
 
 
 
-        &.inactive {
+        &.inactive .readout-value{
           opacity: 0;
           pointer-events: none;
           visibility: hidden;
@@ -682,14 +721,10 @@
             // opacity: 1.0;
           }
         }
-        path {
+        path, line {
           stroke-width: 1.5px;
           stroke: #094e77;
           fill: none;
-        }
-        line {
-          stroke-width: 1.5px;
-          stroke: rgb(52, 107, 190);
         }
       }
       .axis {
@@ -720,7 +755,7 @@
           flex-direction: column;
           position: relative;
           .tick {
-            width: calc(var(--chart-tick-stroke-weight) * 5);
+            width: 8px;
             height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
             line-height: calc(var(--chart-axis-text-line-height));
             margin-top: var(--chart-tick-offset);
@@ -751,7 +786,7 @@
             opacity: 1;
             transition: opacity var(--axis-transition) ease-out;
             font-size: 11px;
-
+            font-weight: 500;
             flex-direction: row;
             justify-content: flex-start;
             align-items: center;
@@ -760,16 +795,17 @@
             position: absolute;
             left: 0;
             color: #999999;
-
+            font-feature-settings: "tnum";
             margin-left: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
 
             &.hover {
               top: calc(100% * var(--py));
-              font-weight: var(--chart-yaxis-hover-text-font-weight);
+              // font-weight: 500; //var(--chart-yaxis-hover-text-font-weight);
               // font-size: var(--chart-yaxis-hover-text-font-size);
               letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
               // color: var(--chart-yaxis-hover-text);
               color: #094e77;
+              line-height: 11px;
             }
           }
 

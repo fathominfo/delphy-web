@@ -594,7 +594,7 @@ export class HistCanvas extends TraceCanvas {
 
   drawDistributionSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
-    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { binConfig, displayMin, displayMax, distribution } = traceData as HistData;
     const { bins, counts, edges, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
@@ -615,15 +615,31 @@ export class HistCanvas extends TraceCanvas {
 
     /*
     bins are `pdf` values, and we want `probability` to align with
-    the histograms
+    the histograms.
+    But drawing the distribution just on the bins is not smooth enough.
+    Let's do a point per 3 px.
     */
-    const probs =  bins.map((pdf, i)=>{
-      const value = edges[i];
-      let nextValue = edges[i + 1];
-      if (nextValue === undefined) nextValue = value + step;
-      const probability = (nextValue - value) * pdf;
-      return probability;
-    });
+    const minVal = edges[0];
+    const maxVal = edges[edges.length-1] + binSize;
+    const distStep = (maxVal - minVal) / this.width * 3;
+    const probs: number[] = [];
+    const values: number[] = [];
+    const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
+    if (kde) {
+      for (let val = minVal; val <= maxVal; val+= distStep) {
+        const pdf = kde.pdf(val);
+        const prob = step * pdf;
+        probs.push(prob);
+        values.push(val);
+      }
+    }
+    // const probs =  bins.map((pdf, i)=>{
+    //   const value = edges[i];
+    //   let nextValue = edges[i + 1];
+    //   if (nextValue === undefined) nextValue = value + step;
+    //   const probability = (nextValue - value) * pdf;
+    //   return probability;
+    // });
     const maxDistProb = Math.max.apply(null, probs);
     const maxProb = Math.max(maxDistProb, maxBarProb);
     this.histoBarParent.innerHTML = '';
@@ -647,7 +663,7 @@ export class HistCanvas extends TraceCanvas {
     let d = '';
     // let btot = 0;
     probs.forEach((probability, i)=>{
-      const value = edges[i];
+      const value = values[i];
       const size = Math.max(0, probability / maxProb * histoHeight);
       const top = histoHeight - size;
       const x = (value - displayMin) / valRange * histoWidth;
@@ -664,7 +680,6 @@ export class HistCanvas extends TraceCanvas {
     path.setAttribute('d', d);
     this.histoBarParent.appendChild(path);
     if (highlightValue >= displayMin && highlightValue <= displayMax) {
-      const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
       if (kde) {
         const pdf = kde.pdf(highlightValue);
         const prob = step * pdf;
