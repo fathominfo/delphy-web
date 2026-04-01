@@ -50,7 +50,7 @@ export class HistCanvas extends TraceCanvas {
   yAxisTickTemplate: HTMLDivElement;
   yAxisHoverDiv: HTMLDivElement;
   supportDiv: HTMLDivElement;
-  statsList: HTMLDListElement;
+  statsList: HTMLTableElement;
   xAxisDiv: HTMLDivElement;
   xAxisTick: HTMLSpanElement;
   hightlightIndicators: {
@@ -104,7 +104,7 @@ export class HistCanvas extends TraceCanvas {
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
     this.supportDiv = this.container.querySelector(".support") as HTMLDivElement;
-    this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
+    this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLTableElement;
     this.xAxisDiv = this.container.querySelector(".axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
     this.hightlightIndicators = {
@@ -138,7 +138,7 @@ export class HistCanvas extends TraceCanvas {
     let prevStat = '';
     const announceStat = (event: PointerEvent) => {
       let ele = event.target as HTMLElement;
-      while (ele !== this.statsList && ele.nodeName !== "DT" && ele.nodeName !== "DD") {
+      while (ele !== this.statsList && ele.nodeName !== "TH" && ele.nodeName !== "TD") {
         ele = ele.parentNode as HTMLElement;
       }
       let statName = ele.getAttribute("data-stat") || '';
