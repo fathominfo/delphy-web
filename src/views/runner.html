@@ -135,20 +135,56 @@
 
 
                 <div class="displays">
-                  <div class="display-wrapper">
-                    <div class="histogram display">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 44">
-                        <g class="bars">
-                          <g class="distribution">
-                            <rect x="48" y="0" height="3.73" width="2"></rect>
-                            <path d=""></path>
-                            <line x1="48" y1="44" x2="48" y2="0"></line>
+
+
+                  <div class="chart-container">
+                    <div class="display-wrapper">
+                      <div class="graph display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 180">
+                          <g class="run">
+                            <rect class="period" x="0" y="0" height="180" width="46"></rect>
+                            <path class="trend" d=""></path>
                           </g>
-                        </g>
-                      </svg>
+                          <g class="burn-in">
+                            <line class="period" x1="0" y1="96" x2="180" y2="96" ></line>
+                            <path class="trend" d=""></path>
+                          </g>
+                          <line class="highlight y" x1="0" x2="96" y1="181" y2="181"></line>
+                          <line class="highlight x" x1="97" x2="97" y1="0" y2="180"></line>
+                          <ellipse class="highlight point" cx="97" cy="181" rx="2" ry="2"></ellipse>
+                          <line class="tick-bar" x1="0" x2="96" y1="0" y2="0"></line>
+                        </svg>
+                      </div>
+                      <div class="y axis">
+                        <div class="values">
+                          <span class="value">
+                            <span class="tick"></span>
+                            <span class="text">
+                              <span class="val"></span>
+                              <span class="units"></span>
+                            </span>
+                          </span>
+                          <span class="value hover">
+                            <span class="tick"></span>
+                            <span class="text">
+                              <span class="val"></span>
+                              <span class="units">samples</span>
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="x axis statsing unitless">
+                      <span class="tick">▲</span>
+                      <p class="trace-readout">
+                        <span class="readout-value"></span>
+                        <span class="readout-unit"></span>
+                      </p>
                     </div>
                     <div class="download-button">
-                      <div class="button-glyph"></div>
+                      <div class="glyph-wrapper">
+                        <div class="button-glyph"></div>
+                      </div>
                       <span class="tooltip">
                         <button class="download-text action">Download<br/>data</button>
                         <button class="download-chart action">Download<br/>chart</button>
@@ -156,68 +192,44 @@
                       </span>
                     </div>
                   </div>
-                  <p class="prob-readout">
-                    <span class="readout-value"></span>
-                    <span class="probability-label">Probability</span>
-                  </p>
-                  <div class="display-wrapper">
-                    <div class="graph display">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 180">
-                        <g class="run">
-                          <rect class="period" x="0" y="0" height="180" width="46"></rect>
-                          <path class="trend" d=""></path>
-                        </g>
-                        <g class="burn-in">
-                          <line class="period" x1="0" y1="96" x2="180" y2="96" ></line>
-                          <path class="trend" d=""></path>
-                        </g>
-                      </svg>
-                      <div class="position">
-                        <div class="x p"></div>
-                        <div class="y p"><div class="pos"></div></div>
-                      </div>
-                    </div>
-                    <div class="y axis">
-                      <div class="values">
-                        <span class="value">
-                          <span class="tick"></span>
-                          <span class="text">
-                            <span class="val"></span>
-                            <span class="units"></span>
-                          </span>
-                        </span>
-                        <span class="value hover">
-                          <span class="tick"></span>
-                          <span class="text">
-                            <span class="val"></span>
-                            <span class="units">
-                          </span>
-                          </span>
-                        </span>
+
+                  <div class="chart-container">
+                    <div class="display-wrapper">
+                      <div class="histogram display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 44">
+                          <g class="bars">
+                            <g class="distribution">
+                              <rect x="48" y="0" height="3.73" width="2"></rect>
+                              <path d=""></path>
+                              <line x1="48" y1="44" x2="48" y2="0"></line>
+                            </g>
+                          </g>
+                        </svg>
                       </div>
                     </div>
                     <div class="download-button">
-                      <div class="button-glyph"></div>
+                      <div class="glyph-wrapper">
+                        <div class="button-glyph"></div>
+                      </div>
                       <span class="tooltip">
                         <button class="download-text action">Download<br/>data</button>
                         <button class="download-chart action">Download<br/>chart</button>
                         <span class="completed">Downloaded</span>
                       </span>
                     </div>
-                  </div>
-                </div>
-
-
-                <div class="support">
-                  <div class="x axis statsing unitless">
-                    <span class="tick">▲</span>
-                    <p class="trace-readout">
+                    <p class="prob-readout">
                       <span class="readout-value"></span>
-                      <span class="readout-unit"></span>
+                      <span class="probability-label">Probability</span>
                     </p>
                   </div>
+
+                </div>
+
+                <div class="support">
                   <button class="copy-button">
-                    <div class="button-glyph"></div>
+                    <div class="glyph-wrapper">
+                      <div class="button-glyph"></div>
+                    </div>
                     <span class="tooltip">
                       <span class="action">Copy<br/>summary<br/>stats</span>
                       <span class="completed">Copied</span>
