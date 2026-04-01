@@ -1,6 +1,8 @@
-import { downloadTextFile, getDecimalPrecision, getTimestampString, nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getTimestampString,
+  nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats,
+  statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData } from "./histdata";
 import { getElementsAndStyles } from '../../util/exportutils';
 // import { PDFDocument, rgb } from 'pdf-lib';
@@ -644,6 +646,8 @@ export class HistCanvas extends TraceCanvas {
     const maxProb = Math.max(maxDistProb, maxBarProb);
     this.histoBarParent.innerHTML = '';
 
+    const highlighting = highlightValue >= displayMin && highlightValue <= displayMax;
+
     counts.forEach((n, i)=>{
       const value = edges[i];
       const barProb = Math.max(0, n / sumCounts);
@@ -661,6 +665,7 @@ export class HistCanvas extends TraceCanvas {
 
 
     let d = '';
+    let highlightD = '';
     // let btot = 0;
     probs.forEach((probability, i)=>{
       const value = values[i];
@@ -672,6 +677,9 @@ export class HistCanvas extends TraceCanvas {
       } else {
         d += `${x} ${top} `;
       }
+      if (highlighting && value < highlightValue) {
+        highlightD = d;
+      }
       positions[i] = x;
       // btot += probability;
     });
@@ -679,20 +687,20 @@ export class HistCanvas extends TraceCanvas {
     const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
     path.setAttribute('d', d);
     this.histoBarParent.appendChild(path);
-    if (highlightValue >= displayMin && highlightValue <= displayMax) {
+    if (highlighting) {
       if (kde) {
         const pdf = kde.pdf(highlightValue);
+        const cdf = kde.cdf(highlightValue);
         const prob = step * pdf;
-        const size = Math.max(0, prob / maxProb * histoHeight);
-        const top = histoHeight - size;
+        const ht = Math.max(0, prob / maxProb * histoHeight);
+        const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
-        const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
-        line.setAttribute("x1", `${x}`);
-        line.setAttribute("x2", `${x}`);
-        line.setAttribute("y1", `${histoHeight}`);
-        line.setAttribute("y2", `${top}`);
-        this.histoBarParent.appendChild(line);
-        this.setProbabilityLabel(prob);
+        highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        const highlightPath = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
+        highlightPath.setAttribute('d', highlightD);
+        highlightPath.classList.add("cdf");
+        this.histoBarParent.append(highlightPath);
+        this.setProbabilityLabel(cdf);
       } else {
         this.setProbabilityLabel(NO_VALUE);
       }
@@ -829,7 +837,8 @@ export class HistCanvas extends TraceCanvas {
       (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = '';
       this.probabilityReadout.classList.add("inactive");
     } else {
-      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+      const label = `${getPercentLabelDecimal(value)}<span class="pct">%</span>`;
+      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
       this.probabilityReadout.classList.remove("inactive");
     }
   }

@@ -7,7 +7,6 @@
 @RADIO_BUTTON_SELECTED_BORDER: #4b85b1;
 
 
-
 #runner {
   position: absolute;
 
@@ -697,7 +696,9 @@
         opacity: 1;
         transition: opacity 0.15s;
 
-
+        .pct {
+          color: #094e77; //var(--chart-axis-text);
+        }
 
         &.inactive .readout-value{
           opacity: 0;
@@ -725,6 +726,11 @@
           stroke-width: 1.5px;
           stroke: #094e77;
           fill: none;
+        }
+        path.cdf {
+          stroke-width: 0.5px;
+          fill: #094e77;
+          fill-opacity: 0.3;
         }
       }
       .axis {
