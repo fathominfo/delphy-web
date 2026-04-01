@@ -167,7 +167,6 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   return label;
 }
 
-
 export const getDecimalPrecision = (n:number): number=>{
   /*
   for numbers >= 1, return 0 (to signify integer precision)
@@ -337,6 +336,15 @@ export const getPercentLabel = (n:number)=>{
   if (n <= 0.01) return '<1';
   if (n > 0.99)  return '>99';
   return `${Math.round(100*n)}`;
+}
+
+/* expects a number between 0 and 1 */
+export const getPercentLabelDecimal = (n:number)=>{
+  if (n === 0) return '0.0';
+  if (n === 1) return '100.0';
+  if (n <= 0.001) return '<0.1';
+  if (n > 0.999)  return '>99.9';
+  return (100*n).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
 }
 
 

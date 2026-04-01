@@ -1,6 +1,8 @@
-import { downloadTextFile, getDecimalPrecision, getTimestampString, nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getTimestampString,
+  nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
-import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats, statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats,
+  statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
 import { HistData } from "./histdata";
 import { getElementsAndStyles } from '../../util/exportutils';
 // import { PDFDocument, rgb } from 'pdf-lib';
@@ -18,6 +20,9 @@ const HIGHLIGHT_LINE_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .
 HIGHLIGHT_LINE_TEMPLATE.remove();
 const INFO_ICON_TEMPLATE = document.querySelector("#runner .main-content .info:has(.icon)") as HTMLAnchorElement;
 // do not remove the INFO_ICON_TEMPLATE
+const TICK_BAR_TEMPLATE = TRACE_TEMPLATE.querySelector("svg .tick-bar") as SVGLineElement;
+TICK_BAR_TEMPLATE.remove();
+
 
 
 
@@ -41,7 +46,6 @@ export class HistCanvas extends TraceCanvas {
   histoWidth: number;
   histoHeight: number;
   histoBarParent: SVGGElement;
-  highlightDiv: HTMLDivElement;
   yAxisDiv: HTMLDivElement;
   yAxisTickTemplate: HTMLDivElement;
   yAxisHoverDiv: HTMLDivElement;
@@ -49,6 +53,11 @@ export class HistCanvas extends TraceCanvas {
   statsList: HTMLDListElement;
   xAxisDiv: HTMLDivElement;
   xAxisTick: HTMLSpanElement;
+  hightlightIndicators: {
+    x: SVGLineElement,
+    y: SVGLineElement,
+    point: SVGEllipseElement
+  };
   probabilityReadout: HTMLParagraphElement;
   hoverX: number = UNSET;
   hoverY: number = UNSET;
@@ -91,30 +100,34 @@ export class HistCanvas extends TraceCanvas {
     this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
     this.histoWidth = UNSET;
     this.histoHeight = UNSET;
-    this.highlightDiv = this.container.querySelector(".position") as HTMLDivElement;
     this.yAxisDiv = this.container.querySelector(".axis.y .values") as HTMLDivElement;
     this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
     this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
     this.supportDiv = this.container.querySelector(".support") as HTMLDivElement;
     this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLDListElement;
-    this.xAxisDiv = this.container.querySelector(".support .axis.x") as HTMLDivElement;
+    this.xAxisDiv = this.container.querySelector(".axis.x") as HTMLDivElement;
     this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
+    this.hightlightIndicators = {
+      x: this.svg.querySelector(".highlight.x") as SVGLineElement,
+      y: this.svg.querySelector(".highlight.y") as SVGLineElement,
+      point: this.svg.querySelector(".highlight.point") as SVGEllipseElement
+    };
     this.probabilityReadout = this.container.querySelector(".prob-readout") as HTMLParagraphElement;
-    this.highlightDiv.addEventListener('pointerdown', event=>{
+    this.svg.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
       this.isDragging = true;
-      this.highlightDiv.setPointerCapture(event.pointerId);
+      this.svg.setPointerCapture(event.pointerId);
       this.handlePointerMove(event);
     });
-    this.highlightDiv.addEventListener('pointermove', event=>{
+    this.svg.addEventListener('pointermove', event=>{
       this.handlePointerMove(event);
     });
-    this.highlightDiv.addEventListener('pointerup', event=>{
+    this.svg.addEventListener('pointerup', event=>{
       this.svg.classList.remove('dragging');
       this.isDragging = false;
-      this.highlightDiv.releasePointerCapture(event.pointerId);
+      this.svg.releasePointerCapture(event.pointerId);
     });
-    this.highlightDiv.addEventListener('pointerleave', ()=>{
+    this.svg.addEventListener('pointerleave', ()=>{
       this.hoverListener(UNSET);
     });
     this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
@@ -158,12 +171,12 @@ export class HistCanvas extends TraceCanvas {
     });
 
     const copyButton = this.supportDiv.querySelector(".copy-button") as HTMLButtonElement;
-    const histoDownloadsDiv = this.container.querySelector(".display-wrapper:has(.histogram) .download-button") as HTMLDivElement;
-    const traceDownloadsDiv = this.container.querySelector(".display-wrapper:has(.graph) .download-button") as HTMLDivElement;
-    // const histoDownloadDataButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-text") as HTMLButtonElement;
-    // const traceDownloadDataButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-text") as HTMLButtonElement;
-    // const histoDownloadChartButton = histoDownloadsDiv.querySelector(".display-wrapper:has(.histogram) .download-chart") as HTMLButtonElement;
-    // const traceDownloadChartButton = traceDownloadsDiv.querySelector(".display-wrapper:has(.graph) .download-chart") as HTMLButtonElement;
+    const histoDownloadsDiv = this.container.querySelector(".chart-container:has(.histogram) .download-button") as HTMLDivElement;
+    const traceDownloadsDiv = this.container.querySelector(".chart-container:has(.graph) .download-button") as HTMLDivElement;
+    // const histoDownloadDataButton = histoDownloadsDiv.querySelector(".chart-container:has(.histogram) .download-text") as HTMLButtonElement;
+    // const traceDownloadDataButton = traceDownloadsDiv.querySelector(".chart-container:has(.graph) .download-text") as HTMLButtonElement;
+    // const histoDownloadChartButton = histoDownloadsDiv.querySelector(".chart-container:has(.histogram) .download-chart") as HTMLButtonElement;
+    // const traceDownloadChartButton = traceDownloadsDiv.querySelector(".chart-container:has(.graph) .download-chart") as HTMLButtonElement;
     copyButton.addEventListener('click', ()=>{
       const stats = (this.traceData as HistData).getStats();
       let data = `${ this.traceData.label }\n`;
@@ -223,10 +236,11 @@ export class HistCanvas extends TraceCanvas {
     const { height } = this;
     const { count, hideBurnIn, displayCount } = this.traceData as HistData;
     if (y >= 0) {
-      pct = 1 - y / height;
-      // console.log('knee', x, pct)
-      if (count * MAX_STEP_SIZE < height) {
-        pct = 1 - y / (count * MAX_STEP_SIZE);
+      pct = y / height;
+      const dataHt = count * MAX_STEP_SIZE;
+      if (dataHt < height) {
+        const undataHt = height - dataHt;
+        pct = (y - undataHt) / dataHt;
       } else if (hideBurnIn) {
         /*
         rescale the pct from just the visible trees
@@ -235,7 +249,8 @@ export class HistCanvas extends TraceCanvas {
         what would the height be if we included the burnin?
         */
         const heightWithInvisible = count / displayCount * height;
-        pct = 1 - y / heightWithInvisible;
+        const invisibleHeight = heightWithInvisible - height;
+        pct = (y + invisibleHeight) / heightWithInvisible;
       }
     }
     return pct;
@@ -393,6 +408,7 @@ export class HistCanvas extends TraceCanvas {
 
     let burnInHeight = 0;
     let activeHeight = height;
+    let activeTop = 0;
 
     let burnInPath = "";
     let activePath = "";
@@ -431,19 +447,20 @@ export class HistCanvas extends TraceCanvas {
         burnInHeight = 0;
       }
       activeHeight = Math.max(0, height - burnInHeight);
+      activeTop = height - activeHeight;
 
       trendWeight = Math.min(1, Math.sqrt(height / data.length));
 
       if (displayMax === displayMin) {
-        activePath = `M${width * 0.5} ${0} L${width * 0.5} ${activeHeight} `;
-        burnInPath = `M${width * 0.5} ${activeHeight} L${width * 0.5} ${plotSize} `;
+        activePath = `M${width * 0.5} ${height} L${width * 0.5} ${activeTop} `;
+        burnInPath = `M${width * 0.5} ${activeTop} L${width * 0.5} ${plotSize} `;
         if (highlightIndex >= 0) {
           hoverX = width * 0.5;
           hoverY = plotSize - highlightIndex * stepSize;
         }
       } else {
         dataScale = width / (valRange || 1);
-        const bottom = Math.min(height, (displayCount - 1) * stepSize);
+        const top = Math.max(0, height - (displayCount - 1) * stepSize);
         // console.log(bottom, height, displayCount * stepH);
         let currentPath = "";
         let first = true;
@@ -458,7 +475,7 @@ export class HistCanvas extends TraceCanvas {
             currentPath = `M${prevX} ${prevY} L `;
           }
           n = data[i];
-          y = bottom - i * stepSize;
+          y = top + i * stepSize;
           if (isNaN(n) || !isFinite(n)) {
             x = left;
           } else {
@@ -485,7 +502,7 @@ export class HistCanvas extends TraceCanvas {
     }
 
     if (hoverX === UNSET) {
-      this.highlightDiv.classList.remove("active");
+      this.svg.classList.remove("highlighting");
       /* set the x value for the highlight stat */
       if (this.highlightStat !== null) {
         if (displayCount > 1) {
@@ -500,20 +517,25 @@ export class HistCanvas extends TraceCanvas {
         hoverX = UNSET;
       }
     } else {
-      this.highlightDiv.classList.add("active");
-      const pointDiv = this.highlightDiv.querySelector(".pos") as HTMLDivElement;
-      const xDiv = this.highlightDiv.querySelector(".x.p") as HTMLDivElement;
-      const yDiv = this.highlightDiv.querySelector(".y.p") as HTMLDivElement;
-      pointDiv.style.left = `${hoverX}px`;
-      pointDiv.style.top = `0px`;
-      xDiv.style.left = `${hoverX}px`;
-      yDiv.style.top = `${hoverY}px`;
+      this.svg.classList.add("highlighting");
+      const {x, y, point} = this.hightlightIndicators;
+      x.setAttribute("x1", `${hoverX}`);
+      x.setAttribute("x2", `${hoverX}`);
+      x.setAttribute("y1", `0`);
+      x.setAttribute("y2", `${this.height}`);
+      point.setAttribute("cx", `${hoverX}`);
+      y.setAttribute("x1", `0`);
+      y.setAttribute("x2", `${this.width}`);
+      y.setAttribute("y1", `${hoverY}`);
+      y.setAttribute("y2", `${hoverY}`);
+      point.setAttribute("cy", `${hoverY}`);
     }
 
     activeField.setAttribute("height", `${activeHeight}`);
+    activeField.setAttribute("y", `${activeTop}`);
     burnInMarker.classList.toggle("hidden", burnInHeight === 0);
-    burnInMarker.setAttribute("y1", `${activeHeight}`);
-    burnInMarker.setAttribute("y2", `${activeHeight}`);
+    burnInMarker.setAttribute("y1", `${activeTop}`);
+    burnInMarker.setAttribute("y2", `${activeTop}`);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
     burnInTrend.style.strokeWidth = `${trendWeight}`;
@@ -574,7 +596,7 @@ export class HistCanvas extends TraceCanvas {
 
   drawDistributionSVG(highlightValue: number) {
     const { traceData, histoWidth, histoHeight } = this;
-    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { binConfig, displayMin, displayMax, distribution } = traceData as HistData;
     const { bins, counts, edges, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
@@ -595,18 +617,36 @@ export class HistCanvas extends TraceCanvas {
 
     /*
     bins are `pdf` values, and we want `probability` to align with
-    the histograms
+    the histograms.
+    But drawing the distribution just on the bins is not smooth enough.
+    Let's do a point per 3 px.
     */
-    const probs =  bins.map((pdf, i)=>{
-      const value = edges[i];
-      let nextValue = edges[i + 1];
-      if (nextValue === undefined) nextValue = value + step;
-      const probability = (nextValue - value) * pdf;
-      return probability;
-    });
+    const minVal = edges[0];
+    const maxVal = edges[edges.length-1] + binSize;
+    const distStep = (maxVal - minVal) / this.width * 3;
+    const probs: number[] = [];
+    const values: number[] = [];
+    const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
+    if (kde) {
+      for (let val = minVal; val <= maxVal; val+= distStep) {
+        const pdf = kde.pdf(val);
+        const prob = step * pdf;
+        probs.push(prob);
+        values.push(val);
+      }
+    }
+    // const probs =  bins.map((pdf, i)=>{
+    //   const value = edges[i];
+    //   let nextValue = edges[i + 1];
+    //   if (nextValue === undefined) nextValue = value + step;
+    //   const probability = (nextValue - value) * pdf;
+    //   return probability;
+    // });
     const maxDistProb = Math.max.apply(null, probs);
     const maxProb = Math.max(maxDistProb, maxBarProb);
     this.histoBarParent.innerHTML = '';
+
+    const highlighting = highlightValue >= displayMin && highlightValue <= displayMax;
 
     counts.forEach((n, i)=>{
       const value = edges[i];
@@ -625,9 +665,10 @@ export class HistCanvas extends TraceCanvas {
 
 
     let d = '';
+    let highlightD = '';
     // let btot = 0;
     probs.forEach((probability, i)=>{
-      const value = edges[i];
+      const value = values[i];
       const size = Math.max(0, probability / maxProb * histoHeight);
       const top = histoHeight - size;
       const x = (value - displayMin) / valRange * histoWidth;
@@ -636,6 +677,9 @@ export class HistCanvas extends TraceCanvas {
       } else {
         d += `${x} ${top} `;
       }
+      if (highlighting && value < highlightValue) {
+        highlightD = d;
+      }
       positions[i] = x;
       // btot += probability;
     });
@@ -643,21 +687,20 @@ export class HistCanvas extends TraceCanvas {
     const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
     path.setAttribute('d', d);
     this.histoBarParent.appendChild(path);
-    if (highlightValue >= displayMin && highlightValue <= displayMax) {
-      const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
+    if (highlighting) {
       if (kde) {
         const pdf = kde.pdf(highlightValue);
+        const cdf = kde.cdf(highlightValue);
         const prob = step * pdf;
-        const size = Math.max(0, prob / maxProb * histoHeight);
-        const top = histoHeight - size;
+        const ht = Math.max(0, prob / maxProb * histoHeight);
+        const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
-        const line = HIGHLIGHT_LINE_TEMPLATE.cloneNode() as SVGLineElement;
-        line.setAttribute("x1", `${x}`);
-        line.setAttribute("x2", `${x}`);
-        line.setAttribute("y1", `${histoHeight}`);
-        line.setAttribute("y2", `${top}`);
-        this.histoBarParent.appendChild(line);
-        this.setProbabilityLabel(prob);
+        highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        const highlightPath = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
+        highlightPath.setAttribute('d', highlightD);
+        highlightPath.classList.add("cdf");
+        this.histoBarParent.append(highlightPath);
+        this.setProbabilityLabel(cdf);
       } else {
         this.setProbabilityLabel(NO_VALUE);
       }
@@ -679,6 +722,7 @@ export class HistCanvas extends TraceCanvas {
 
 
     const activeHeight = Math.min((displayCount) * stepSize, height);
+    const activeTop = height - activeHeight;
     let tickInterval = 20;
     let targetTickCount = 1;
     if (displayCount >= 80) {
@@ -694,7 +738,7 @@ export class HistCanvas extends TraceCanvas {
 
 
 
-    let startY = activeHeight;
+    let startY = activeTop;
     if (hideBurnIn && savedKneeIndex > 0) {
       /*
       what's the first nice num after the start point?
@@ -708,10 +752,11 @@ export class HistCanvas extends TraceCanvas {
       first tick?
       */
       const knee2Tick = tickStart - savedKneeIndex;
-      startY = activeHeight - knee2Tick * stepSize;
+      startY = activeTop + knee2Tick * stepSize;
     }
     let tick = tickStart;
     let y = startY;
+    this.svg.querySelectorAll('.tick-bar').forEach( ele=>(ele as SVGLineElement).remove());
     // let actual = 0;
     while (tick < count) {
       // actual++;
@@ -722,10 +767,10 @@ export class HistCanvas extends TraceCanvas {
       if (tick === 0) {
         tick += tickInterval - 1;
         const ratio = (tickInterval - 1) / tickInterval;
-        y -= intervalSize * ratio;
+        y += intervalSize * ratio;
       } else {
         tick += tickInterval;
-        y -= intervalSize;
+        y += intervalSize;
       }
     }
 
@@ -748,6 +793,11 @@ export class HistCanvas extends TraceCanvas {
     (div.querySelector(".val") as HTMLDivElement).textContent = nfc(value);
     div.style.top = `${y}px`;
     this.yAxisDiv.appendChild(div);
+    const tickBar = TICK_BAR_TEMPLATE.cloneNode() as SVGLineElement;
+    tickBar.setAttribute("x2", `${this.width}`);
+    tickBar.setAttribute("y1", `${y}`);
+    tickBar.setAttribute("y2", `${y}`);
+    this.svg.insertBefore(tickBar, this.svg.childNodes[0]);
     return div;
   }
 
@@ -787,7 +837,8 @@ export class HistCanvas extends TraceCanvas {
       (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = '';
       this.probabilityReadout.classList.add("inactive");
     } else {
-      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
+      const label = `${getPercentLabelDecimal(value)}<span class="pct">%</span>`;
+      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
       this.probabilityReadout.classList.remove("inactive");
     }
   }
@@ -815,11 +866,11 @@ export class HistCanvas extends TraceCanvas {
     const magNumber = nf000(stats.act);
     if (magNumber) {
       const {n000, magnitudeLabel} = magNumber;
-      setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel}</span>`);
+      setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel} steps</span>`);
       // console.log(this.className, stats.act, safeLabel(stats.act), `${n000}${magnitudeLabel}`)
     } else {
       /* shouldn't happen, but just in case */
-      setTextContent(this.statsList, ".act", safeLabel(stats.act));
+      setTextContent(this.statsList, ".act", `${safeLabel(stats.act)} steps`);
     }
   }
 

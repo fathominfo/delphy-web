@@ -105,7 +105,9 @@ h2 {
 }
 
 h3 {
-  .t10();
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 18px;
 }
 
 h4 {
@@ -401,6 +403,7 @@ nav button:not(:disabled):hover {
 .copy-button, .download-button {
   pointer-events: none;
   opacity: 0;
+  color: #212121;
   position: absolute;
   top: 2px;
   left: 2px;
@@ -415,7 +418,7 @@ nav button:not(:disabled):hover {
 
   .tooltip {
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, background-color 0.15s;
     white-space: nowrap;
   }
 
@@ -427,6 +430,8 @@ nav button:not(:disabled):hover {
 
   &:hover {
     opacity: 1 !important;
+    .button-glyph { background-color: #787878;}
+    .glyph-wrapper { border-color: #949494;}
     .tooltip { opacity: 1; }
   }
   .completed {
@@ -439,24 +444,31 @@ nav button:not(:disabled):hover {
     .completed {display: block;}
   }
 
+  .glyph-wrapper {
+    background-color: #f0f0f0;
+    padding: 4px;
+    width: fit-content;
+    aspect-ratio: 1 / 1;
+    border-radius: 2px;
+    border: solid 1px #ababab;
+  }
+
   .button-glyph {
     width: 14px;
     aspect-ratio: 1 / 1;
     transition: all 0.15s;
+    background-color: #949494;
   }
-
 
 }
 
 
 
 .copy-button .button-glyph {
-  background-color: var(--chart-axis-text);
   .masked(url("./assets/icons/copy.svg"));
 }
 
 .download-button .button-glyph {
-  background-color: black;
   .masked(url("./assets/icons/export.svg"));
 }
 

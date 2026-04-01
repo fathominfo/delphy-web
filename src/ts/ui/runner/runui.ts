@@ -275,7 +275,8 @@ export class RunUI extends UIScreen {
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
     // hkyPi{A,C,G,T} -> HKY Long-term Nucleotide Content (π_A)
 
-    this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: '', className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in ESS calculations: this is a discrete variable with very few possible values"};
+    this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: "mutations", className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in ESS calculations: this is a discrete variable with very few possible values"};
+    // this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: `&times; 10<span class="sup">&minus;5</span> mutations / site / year`, className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};

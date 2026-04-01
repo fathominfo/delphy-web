@@ -7,7 +7,6 @@
 @RADIO_BUTTON_SELECTED_BORDER: #4b85b1;
 
 
-
 #runner {
   position: absolute;
 
@@ -15,7 +14,10 @@
     display: block;
   }
 
-
+  h3, h4 {
+    color: #212121;
+    font-feature-settings: "ss03";
+  }
   .main-content {
     display: flex;
     flex-direction: column;
@@ -34,7 +36,6 @@
       align-items: baseline;
       overflow: visible;
       margin-bottom: var(--module-gap);
-      margin-left: var(--chart-yaxis-width);
 
       .title {
         flex-shrink: 0;
@@ -320,7 +321,7 @@
     z-index: 0;
     display: flex;
     flex-direction: row;
-    gap: 8px;
+    gap: 0;
     padding: var(--chart-displays-timeline-inset-x);
     // background-color: var(--chart-stroke);
     border-radius: var(--chart-outer-corner);
@@ -345,20 +346,6 @@
       padding: var(--chart-stroke-weight) 0;
     }
 
-  }
-
-  .position {
-    position: absolute;
-    z-index: 1;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: transparent;
-    mix-blend-mode: multiply;
-    opacity: 0;
-
-    &.active {opacity: 1;}
   }
 
 
@@ -403,37 +390,41 @@
     // gap: var(--module-gap);
     flex: 1;
 
-
-    .display-wrapper {
-      display: flex;
-      width: 100%;
+    .chart-container {
       position: relative;
 
-      // &:has(.histogram) {
-      //   padding-left: var(--chart-yaxis-width);
-      // }
+      &:hover {
+        .download-button {
+          pointer-events: all;
+          opacity: 1;
+        }
+      }
 
       .download-button {
-        left: unset;
-        right: 30px;
-        transform: translate(100%, 0);
-        top: 0;
+        left: calc(var(--trace-chart-width) + 8px);
         height: auto;
         cursor: pointer;
-        background-color: rgba(255,255,255,0.9);
-        box-shadow: 0px 0px 2px 5px rgba(255,255,255,0.9);
 
         .download-chart {
           display: none;
         }
       }
 
-      &:hover {
-        .download-button {
-          pointer-events: all;
-          opacity: 0.65;
-        }
+
+      &:has(.graph) .download-button {
+        top: calc(var(--trace-chart-height) + 18px);
       }
+
+      &:has(.histogram) .download-button {
+        top: calc(var(--chart-histogram-height) + 9px);
+      }
+
+    }
+
+    .display-wrapper {
+      display: flex;
+      width: 100%;
+      position: relative;
     }
 
     .spacer {
@@ -443,25 +434,30 @@
 
     .trace-readout, .prob-readout {
       display: flex;
-      flex-direction: row;
-      gap: 16px;
-      width: 100%;
-      text-align: right;
+      flex-direction: column;
+      gap: 2px;
+      width: var(--trace-chart-width);
+      text-align: center;
       font-size: var(--chart-xaxis-hover-text-font-size);
-      align-items: end;
-      line-height: var(--chart-axis-text-line-height);
-      height: var(--chart-axis-text-line-height);
-      margin: 24px 0 0
+      align-items: center;
+      line-height: calc(var(--chart-axis-text-line-height) * 0.3);
+      height: calc(var(--chart-axis-text-line-height) * 5);
+      margin: 12px 0 0
+    }
+
+    .trace-readout {
+      margin-top: 18px;
     }
     .readout-value {
       font-weight: var(--chart-xaxis-hover-text-font-weight);
       letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-      color: #004f9e; // var(--chart-yaxis-hover-text);
+      color: #094e77 ;//#004f9e; // var(--chart-yaxis-hover-text);
       white-space: nowrap;
       width: 74px; //calc(var(--trace-chart-width) / 2 - 8px);
-      text-align: right;
+      // text-align: center;
       vertical-align: baseline;
       display: inline-block;
+      height: 12px;
 
       .pct {
         display: inline-block;
@@ -473,18 +469,30 @@
     }
     .readout-unit, .probability-label {
       white-space: nowrap;
-      color: var(--chart-axis-text);
+      color: #094e77; //var(--chart-axis-text);
       font-weight: 500;
-      width: 138px;
-      text-align: left;
+      height: 12px;
+      sup {
+        display: inline-block;
+        vertical-align: baseline;
+        position: relative;
+        top: calc(var(--chart-xaxis-hover-text-font-size) * -0.375);
+        /* override the default <sup> `font-size: smaller;` */
+        // font-size: calc(var(--chart-xaxis-hover-text-font-size) * 0.8);
+        /*
+        it would be great to use the built in superscript,
+        but at this scale it becomes incredibly tiny [mark 260401]
+        */
+        // font-feature-settings: "sups";
+      }
+
     }
 
     .copy-button {
-      left: calc(var(--trace-chart-width)
-        + var(--chart-yaxis-width)
-        + 16px);
+      left: calc(var(--trace-chart-width) + 8px);
       top: unset;
-      bottom: 45px;
+      bottom: 9px;
+
     }
 
 
@@ -506,7 +514,7 @@
 
     .graph.display {
       z-index: 1;
-      border: solid 1px var(--chart-stroke);
+      // border: solid 1px var(--chart-stroke);
       border-radius: var(--chart-inner-corner) 0 0 var(--chart-inner-corner);
     }
 
@@ -517,36 +525,55 @@
 
 
     .summary-stats {
-      display: grid;
-      grid-gap: 4px 16px;
-      grid-template-columns: 74px 1fr;
+      // display: grid;
+      // grid-gap: 4px 16px;
+      // grid-template-columns: 74px 1fr;
       min-width: var(--indicator-trace-module-width);
       max-width: var(--indicator-trace-module-width);
       margin: 0;
 
-      dt {
+      border-spacing: 0px;
+      border-collapse: collapse;
+      text-indent: 0;
+
+      th {
+        display: inline-block;
+        width: 62px;
         font-size: var(--chart-xaxis-hover-text-font-size);
-        color: var(--chart-axis-text);
+        // color: var(--chart-axis-text);
+        color: #5e5e5e;
         text-align: right;
-        padding-left: 8px;
+        margin-left: 8px;
         position: relative;
+        padding-right: 16px;
+        font-weight: 500;
         .info {
           display: inline-block;
           margin-left: 4px;
         }
       }
-      dd {
+      td {
         display: inline-block;
         margin: 0;
         grid-column-start: 2;
         white-space: nowrap;
         color: var(--chart-axis-text);
+        overflow-y: visible;
+        &[data-stat="hpd"] {
+          position: relative;
+          left: -5px;
+        }
+        font-feature-settings: "tnum";
+
       }
+
       .value {
         font-size: var(--chart-xaxis-hover-text-font-size);
-        font-weight: var(--chart-xaxis-hover-text-font-weight);
+        // font-weight: var(--chart-xaxis-hover-text-font-weight);
+        font-weight: 500;
         letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-        color: var(--chart-axis-text);
+        // color: var(--chart-axis-text);
+        color: #212121;
 
 
 
@@ -592,7 +619,8 @@
       .burn-in {
         .trend {
           // stroke: rgb(45, 126, 207); // rgb(150, 181, 212); // var(--chart-graph-burn-in-trend-stroke);
-          stroke: var(--chart-graph-burn-in-trend-stroke);
+          // stroke: var(--chart-graph-burn-in-trend-stroke);
+          stroke: #5e5e5e;
           stroke-dasharray: var(--chart-graph-burn-in-trend-stroke-dasharray);
           // export const BORDER_COLOR = '#cbcbcb';
         }
@@ -607,13 +635,39 @@
           fill: none; // var(--chart-graph-run-period-fill);
         }
         .trend {
-          stroke: var(--chart-graph-run-trend-stroke);
+          // stroke: var(--chart-graph-run-trend-stroke);
+          stroke: #5e5e5e;
         }
       }
 
       .graph.display {
-        background-color: #f5f5f5;
+        background-color: #f0f0f0;
         height: var(--trace-chart-height);
+
+        border-width: 0 0 1px 0;
+        border-style: solid;
+        border-color: #7d7d7d;
+
+        /* for the trace chart, let all pointer events trickle up to the svg */
+        svg * { pointer-events: none; }
+
+        .highlight {
+          opacity : 0;
+          &.x, &.y {
+            fill: none;
+            stroke: #749bb1;
+          }
+          &.point {
+            fill: #053399;
+            stroke: none;
+          }
+        }
+
+        .highlighting .highlight { opacity: 1;}
+
+        .tick-bar {
+          stroke: #d3d3d3;
+        }
 
         .trend  {
           fill: none;
@@ -628,7 +682,10 @@
         height: var(--chart-histogram-height);
         border-radius: 0 var(--chart-inner-corner) var(--chart-inner-corner) 0;
         overflow: hidden;
-        border: solid 1px var(--chart-stroke);
+        // border: solid 1px var(--chart-stroke);
+        border-width: 0 0 1px 0;
+        border-style: solid;
+        border-color: #7d7d7d;
       }
 
       .prob-readout {
@@ -638,10 +695,12 @@
         font-variant-numeric: tabular-nums;
         opacity: 1;
         transition: opacity 0.15s;
-        margin: 0;
 
+        .pct {
+          color: #094e77; //var(--chart-axis-text);
+        }
 
-        &.inactive {
+        &.inactive .readout-value{
           opacity: 0;
           pointer-events: none;
           visibility: hidden;
@@ -654,23 +713,24 @@
           // opacity: 0.375;
         }
         rect {
-          fill: var(--chart-histogram-bar-fill);
-          fill-opacity: 0.325;
-          stroke: #f5f5f5;
-          stroke-width: 0.5px;
+          // fill: var(--chart-histogram-bar-fill);
+          fill: #c7c7c7;
+          stroke: #f0f0f0;
+          stroke-width: 1px;
           &.highlight {
-            fill: rgb(52, 107, 190);
+            fill: #679eb6;
             // opacity: 1.0;
           }
         }
-        path {
+        path, line {
           stroke-width: 1.5px;
-          stroke: rgb(52, 107, 190);
+          stroke: #094e77;
           fill: none;
         }
-        line {
-          stroke-width: 1.5px;
-          stroke: rgb(52, 107, 190);
+        path.cdf {
+          stroke-width: 0.5px;
+          fill: #094e77;
+          fill-opacity: 0.3;
         }
       }
       .axis {
@@ -687,7 +747,7 @@
         &.x {
 
           // height: var(--chart-xaxis-height);
-          height: calc(var(--unit) * 4);
+          // height: calc(var(--unit) * 4);
           // margin-left: var(--chart-yaxis-width);
           // margin-right: var(--chart-histogram-width);
           padding: 0;
@@ -701,11 +761,12 @@
           flex-direction: column;
           position: relative;
           .tick {
-            width: calc(var(--chart-tick-stroke-weight) * 5);
+            width: 8px;
             height: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+            line-height: calc(var(--chart-axis-text-line-height));
             margin-top: var(--chart-tick-offset);
             position: absolute;
-            color: var(--chart-xaxis-hover-text);
+            color: #7ba1b7; //var(--chart-xaxis-hover-text);
             font-size: 10px;
             transform: translate(-50%, 0);
           }
@@ -730,7 +791,8 @@
             overflow: visible;
             opacity: 1;
             transition: opacity var(--axis-transition) ease-out;
-
+            font-size: 11px;
+            font-weight: 500;
             flex-direction: row;
             justify-content: flex-start;
             align-items: center;
@@ -738,23 +800,28 @@
             height: 0;
             position: absolute;
             left: 0;
+            color: #999999;
+            font-feature-settings: "tnum";
+            margin-left: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
 
             &.hover {
               top: calc(100% * var(--py));
-              font-weight: var(--chart-yaxis-hover-text-font-weight);
-              font-size: var(--chart-yaxis-hover-text-font-size);
+              // font-weight: 500; //var(--chart-yaxis-hover-text-font-weight);
+              // font-size: var(--chart-yaxis-hover-text-font-size);
               letter-spacing: var(--tabular-numerals-tighter-spacing-3x);
-              color: var(--chart-yaxis-hover-text);
+              // color: var(--chart-yaxis-hover-text);
+              color: #094e77;
+              line-height: 11px;
             }
           }
 
           .tick {
-            display: block;
-            width: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
-            height: var(--chart-tick-stroke-weight);
-            margin-right: var(--chart-tick-offset);
-
-            background-color: var(--chart-yaxis-hover-text);
+            // display: block;
+            // width: calc(var(--chart-tick-size) + (var(--chart-tick-offset) * -1));
+            // height: var(--chart-tick-stroke-weight);
+            // margin-right: var(--chart-tick-offset);
+            // background-color: var(--chart-yaxis-hover-text);
+            display: none;
           }
 
         }
@@ -855,7 +922,7 @@
   }
 
 
-  .module .header .readout, .axis .value, .kit .axis .value {
+  .axis .value {
     // font-family: var(--Inter);
     font-variant-numeric: tabular-nums;
     font-weight: var(--chart-axis-text-font-weight);

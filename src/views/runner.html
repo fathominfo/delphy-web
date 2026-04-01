@@ -135,20 +135,56 @@
 
 
                 <div class="displays">
-                  <div class="display-wrapper">
-                    <div class="histogram display">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 44">
-                        <g class="bars">
-                          <g class="distribution">
-                            <rect x="48" y="0" height="3.73" width="2"></rect>
-                            <path d=""></path>
-                            <line x1="48" y1="44" x2="48" y2="0"></line>
+
+
+                  <div class="chart-container">
+                    <div class="display-wrapper">
+                      <div class="graph display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 180">
+                          <g class="run">
+                            <rect class="period" x="0" y="0" height="180" width="46"></rect>
+                            <path class="trend" d=""></path>
                           </g>
-                        </g>
-                      </svg>
+                          <g class="burn-in">
+                            <line class="period" x1="0" y1="96" x2="180" y2="96" ></line>
+                            <path class="trend" d=""></path>
+                          </g>
+                          <line class="highlight y" x1="0" x2="96" y1="181" y2="181"></line>
+                          <line class="highlight x" x1="97" x2="97" y1="0" y2="180"></line>
+                          <ellipse class="highlight point" cx="97" cy="181" rx="2" ry="2"></ellipse>
+                          <line class="tick-bar" x1="0" x2="96" y1="0" y2="0"></line>
+                        </svg>
+                      </div>
+                      <div class="y axis">
+                        <div class="values">
+                          <span class="value">
+                            <span class="tick"></span>
+                            <span class="text">
+                              <span class="val"></span>
+                              <span class="units"></span>
+                            </span>
+                          </span>
+                          <span class="value hover">
+                            <span class="tick"></span>
+                            <span class="text">
+                              <span class="val"></span>
+                              <span class="units">samples</span>
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="x axis statsing unitless">
+                      <span class="tick">▲</span>
+                      <p class="trace-readout">
+                        <span class="readout-value"></span>
+                        <span class="readout-unit"></span>
+                      </p>
                     </div>
                     <div class="download-button">
-                      <div class="button-glyph"></div>
+                      <div class="glyph-wrapper">
+                        <div class="button-glyph"></div>
+                      </div>
                       <span class="tooltip">
                         <button class="download-text action">Download<br/>data</button>
                         <button class="download-chart action">Download<br/>chart</button>
@@ -156,89 +192,79 @@
                       </span>
                     </div>
                   </div>
-                  <p class="prob-readout">
-                    <span class="readout-value"></span>
-                    <span class="probability-label">Probability</span>
-                  </p>
-                  <div class="display-wrapper">
-                    <div class="graph display">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 180">
-                        <g class="run">
-                          <rect class="period" x="0" y="0" height="180" width="46"></rect>
-                          <path class="trend" d=""></path>
-                        </g>
-                        <g class="burn-in">
-                          <line class="period" x1="0" y1="96" x2="180" y2="96" ></line>
-                          <path class="trend" d=""></path>
-                        </g>
-                      </svg>
-                      <div class="position">
-                        <div class="x p"></div>
-                        <div class="y p"><div class="pos"></div></div>
-                      </div>
-                    </div>
-                    <div class="y axis">
-                      <div class="values">
-                        <span class="value">
-                          <span class="tick"></span>
-                          <span class="text">
-                            <span class="val"></span>
-                            <span class="units"></span>
-                          </span>
-                        </span>
-                        <span class="value hover">
-                          <span class="tick"></span>
-                          <span class="text">
-                            <span class="val"></span>
-                            <span class="units">
-                          </span>
-                          </span>
-                        </span>
+
+                  <div class="chart-container">
+                    <div class="display-wrapper">
+                      <div class="histogram display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 44">
+                          <g class="bars">
+                            <g class="distribution">
+                              <rect x="48" y="0" height="3.73" width="2"></rect>
+                              <path d=""></path>
+                              <line x1="48" y1="44" x2="48" y2="0"></line>
+                            </g>
+                          </g>
+                        </svg>
                       </div>
                     </div>
                     <div class="download-button">
-                      <div class="button-glyph"></div>
+                      <div class="glyph-wrapper">
+                        <div class="button-glyph"></div>
+                      </div>
                       <span class="tooltip">
                         <button class="download-text action">Download<br/>data</button>
                         <button class="download-chart action">Download<br/>chart</button>
                         <span class="completed">Downloaded</span>
                       </span>
                     </div>
-                  </div>
-                </div>
-
-
-                <div class="support">
-                  <div class="x axis statsing unitless">
-                    <span class="tick">▲</span>
-                    <p class="trace-readout">
+                    <p class="prob-readout">
                       <span class="readout-value"></span>
-                      <span class="readout-unit"></span>
+                      <span class="probability-label">probability</span>
                     </p>
                   </div>
+
+                </div>
+
+                <div class="support">
                   <button class="copy-button">
-                    <div class="button-glyph"></div>
+                    <div class="glyph-wrapper">
+                      <div class="button-glyph"></div>
+                    </div>
                     <span class="tooltip">
                       <span class="action">Copy<br/>summary<br/>stats</span>
                       <span class="completed">Copied</span>
                     </span>
                   </button>
-                  <dl class="summary-stats">
-                    <dt data-stat="mean">Mean</dt>
-                      <dd data-stat="mean"><span class="value mean"></span></dd>
-                    <dt data-stat="hpd">95% HPD</dt>
-                      <dd data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</dd>
-                    <dt data-stat="median">Median</dt>
-                      <dd data-stat="median"><span class="value median"></span></dd>
-                    <dt data-stat="stddev">Std dev</dt>
-                      <dd data-stat="stddev"><span class="value stddev"></span></dd>
-                    <dt data-stat="stderr">Std err</dt>
-                      <dd data-stat="stderr"><span class="value stderr"></span></dd>
-                    <dt data-stat="ess">ESS</dt>
-                      <dd data-stat="ess"><span class="value ess"></span></dd>
-                    <dt data-stat="act">ACT</dt>
-                      <dd data-stat="act"><span class="value act"></span></dd>
-                  </dl>
+                  <table class="summary-stats">
+                    <tr>
+                    	<th data-stat="mean">Mean</th>
+                      <td data-stat="mean"><span class="value mean"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="hpd">95% HPD</th>
+                      <td data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="median">Median</th>
+                      <td data-stat="median"><span class="value median"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="stddev">Std dev</th>
+                      <td data-stat="stddev"><span class="value stddev"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="stderr">Std err</th>
+                      <td data-stat="stderr"><span class="value stderr"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="ess">ESS</th>
+                      <td data-stat="ess"><span class="value ess"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="act">ACT</th>
+                      <td data-stat="act"><span class="value act"></span></td>
+                    </tr>
+                  </table>
                 </div>
               </div>
 
