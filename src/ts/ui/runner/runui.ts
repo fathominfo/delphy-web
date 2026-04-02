@@ -73,7 +73,7 @@ enum TraceChart {
   logPosterior,
   mu,
   muStar,
-  gamma,
+  minDate,
   evolutionaryTime,
   growthRate,
   logG,
@@ -85,7 +85,7 @@ enum TraceChart {
   hkyPiC,
   hkyPiG,
   hkyPiT,
-  minDate
+  gamma
 }
 
 
@@ -276,32 +276,29 @@ export class RunUI extends UIScreen {
     // hkyPi{A,C,G,T} -> HKY Long-term Nucleotide Content (π_A)
 
     this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: "mutations", className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in Minimum ESS calculations: this is a discrete variable with very few possible values"};
-    // this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: `&times; 10<span class="sup">&minus;5</span> mutations / site / year`, className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
-    this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
     this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "apobec-mut-rate", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
+    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
     const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g / POP_GROWTH_FACTOR);
     this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "doublings / year", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
+    const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
+    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
 
-
+    this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
     this.traceChartConfig[TraceChart.logG] = { name: "ln(Genetic Prior)", unit: '', className: "ln-gen-prior", dataFnc: ()=>(this.pythia as Pythia).logGHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.alpha] = { name: "Rate Spread α", unit: '', className: "alpha", dataFnc: ()=>(this.pythia as Pythia).alphaHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.logCoalescentPrior] = { name: "ln(Coalescent Prior)", unit: '', className: "ln-coal-prior", dataFnc: ()=>(this.pythia as Pythia).logCoalescentPriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.logOtherPriors] = { name: "ln(Other Priors)", unit: '', className: "ln-others", dataFnc: ()=>(this.pythia as Pythia).logOtherPriorsHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.hkyKappa] = { name: "HKY Ts/Tv Ratio κ", unit: '', className: "kappa", dataFnc: ()=>(this.pythia as Pythia).hkyKappaHist, isDiscrete: false};
-
     const pctLabelFnc = (n:number)=>`${safeLabel(n)}<span class="pct">%</span>`;
-
     this.traceChartConfig[TraceChart.hkyPiA] = { name: "HKY Base Freq. π<sub>A</sub>", unit: '', className: "hkya", dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
     this.traceChartConfig[TraceChart.hkyPiC] = { name: "HKY Base Freq. π<sub>C</sub>", unit: '', className: "hkyc", dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
     this.traceChartConfig[TraceChart.hkyPiG] = { name: "HKY Base Freq. π<sub>G</sub>", unit: '', className: "hkyg", dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
     this.traceChartConfig[TraceChart.hkyPiT] = { name: "HKY Base Freq. π<sub>T</sub>", unit: '', className: "hkyt", dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
 
 
-    const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
-    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
+
 
 
 
@@ -511,30 +508,41 @@ export class RunUI extends UIScreen {
 
     try {
       const params = this.getRunParams();
-
       const toShow = [TraceChart.numMutations];
       const gammas = [];
+
+
+
       let availables = [ TraceChart.numMutations];
 
-
       if (!params.mutationRateIsFixed) {
-        availables.push(TraceChart.mu);
         if (params.apobecEnabled) {
           toShow.push(TraceChart.muStar);
           availables.push(TraceChart.muStar);
         } else {
           toShow.push(TraceChart.mu);
         }
+        availables.push(TraceChart.mu);
       }
-      toShow.push(TraceChart.logPosterior);
-
+      toShow.push(TraceChart.minDate);
+      availables.push(TraceChart.minDate);
+      /*
+      this is separate from the `if (params.popModelIsSkygrid)`
+      check below in order to preserve the proper dispaly order
+      for these charts
+      */
+      if (!params.popModelIsSkygrid) {
+        // availables.push(TraceChart.popGrowth);
+        availables.push(TraceChart.growthRate);
+        toShow.push(TraceChart.growthRate);
+      }
       if (params.siteRateHeterogeneityEnabled) {
         availables.push(TraceChart.alpha);
       }
       availables = availables.concat([
-        TraceChart.logPosterior,
-        TraceChart.logG, TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
-        TraceChart.evolutionaryTime, TraceChart.minDate]);
+        TraceChart.logPosterior, TraceChart.logG,
+        TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
+        TraceChart.evolutionaryTime]);
       if (!params.apobecEnabled) {
         availables = availables.concat([
           TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
@@ -542,9 +550,7 @@ export class RunUI extends UIScreen {
       }
       if (params.popModelIsSkygrid) {
         gammas.push(TraceChart.gamma);
-      } else {
-        // availables.push(TraceChart.popGrowth);
-        availables.push(TraceChart.growthRate);
+        toShow.push(TraceChart.gamma);
       }
 
       availables.forEach((tc: TraceChart)=>{
@@ -572,13 +578,6 @@ export class RunUI extends UIScreen {
           /* if this is in ESSExcludes, then it ought to have a reason for why */
           canvas.setEssExclusion((config as HistChartNoESSConfig).noESSReason);
         }
-
-        if (!toShow.includes(tc)) {
-          canvas.setVisible(false);
-        } else {
-          this.defaultCanvases.push(canvas);
-        }
-
         if (toShow.includes(tc)) {
           this.defaultCanvases.push(canvas);
           canvas.setVisible(true);
@@ -593,7 +592,14 @@ export class RunUI extends UIScreen {
         const { name, dataFnc } = config;
         const canvas = new GammaHistCanvas(name, dataFnc);
         this.traceCanvases.push(canvas);
-        this.defaultCanvases.push(canvas);
+        if (toShow.includes(tc)) {
+          this.defaultCanvases.push(canvas);
+          canvas.setVisible(true);
+        } else if (this.showAllCanvases) {
+          canvas.setVisible(true);
+        } else {
+          canvas.setVisible(false);
+        }
       });
 
     } catch (err) {
