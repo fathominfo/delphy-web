@@ -424,7 +424,7 @@ export class RunUI extends UIScreen {
     });
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     this.advancedToggle.addEventListener("change", (event)=>{
-      event.stopPropagation();
+      // event.stopPropagation();
       if (this.advancedToggle.checked) {
         this.advancedFormContainer.classList.add("active");
         this.advancedForm.classList.remove("warning");
@@ -487,7 +487,8 @@ export class RunUI extends UIScreen {
     this.advancedFormContainer.addEventListener("click", e => {
       if (e.target === this.advancedFormContainer) {
         e.preventDefault();
-        this.advancedFormContainer.classList.add("hidden");
+        this.advancedFormContainer.classList.remove("active");
+        this.advancedToggle.checked = false;
       }
     });
 
