@@ -112,6 +112,7 @@ export class HistCanvas extends TraceCanvas {
       y: this.svg.querySelector(".highlight.y") as SVGLineElement,
       point: this.svg.querySelector(".highlight.point") as SVGEllipseElement
     };
+    this.container.classList.toggle("discrete", isDiscrete);
     this.probabilityReadout = this.container.querySelector(".prob-readout") as HTMLParagraphElement;
     this.svg.addEventListener('pointerdown', event=>{
       this.svg.classList.add('dragging');
@@ -298,14 +299,13 @@ export class HistCanvas extends TraceCanvas {
       // let prob: number;
       this.hoverX = event.offsetX;
       if (binConfig.isHistogram) {
-        value = displayMin + pct * (displayMax - displayMin + 1);
-        // const { counts, edges } = binConfig;
-        // const total = counts.reduce((tot: number, n: number)=>(n||0)+tot, 0);
+        const valRange = displayMax - displayMin;
+        value = displayMin + pct * (valRange + 1);
         value = Math.floor(value);
+        this.hoverX = (value - displayMin + binConfig.step/ 2) / (valRange + binConfig.step) * this.histoWidth;
         // const index = edges.indexOf(value);
         // prob = counts[index] / total;
         this.drawHistogramSVG(value);
-
       } else {
         value = displayMin + pct * (displayMax - displayMin);
         const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
@@ -833,8 +833,12 @@ export class HistCanvas extends TraceCanvas {
     // }
     let label = '';
     if (!noValue) {
-      const formatLabel = this.getReadoutFormatFnc();
-      label = formatLabel(value);
+      if ((this.traceData as HistData).isDiscrete && value === Math.round(value)) {
+        label = nfc(value);
+      } else {
+        const formatLabel = this.getReadoutFormatFnc();
+        label = formatLabel(value);
+      }
     }
     (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
   }
@@ -867,12 +871,19 @@ export class HistCanvas extends TraceCanvas {
   }
 
   setStatsReadouts() : void {
-    const stats = (this.traceData as HistData).getStats();
+    const histoData = (this.traceData as HistData);
+    const stats = histoData.getStats();
     const formatLabel = this.getReadoutFormatFnc();
     setTextContent(this.statsList, ".mean", formatLabel(stats.mean));
-    setTextContent(this.statsList, ".hpd-min", formatLabel(stats.hpdMin));
-    setTextContent(this.statsList, ".hpd-max", formatLabel(stats.hpdMax));
-    setTextContent(this.statsList, ".median", formatLabel(stats.median));
+    if (histoData.isDiscrete) {
+      setTextContent(this.statsList, ".hpd-min", nfc(stats.hpdMin));
+      setTextContent(this.statsList, ".hpd-max", nfc(stats.hpdMax));
+      setTextContent(this.statsList, ".median", nfc(stats.median));
+    } else {
+      setTextContent(this.statsList, ".hpd-min", formatLabel(stats.hpdMin));
+      setTextContent(this.statsList, ".hpd-max", formatLabel(stats.hpdMax));
+      setTextContent(this.statsList, ".median", formatLabel(stats.median));
+    }
     setTextContent(this.statsList, ".stddev", this.stdErrFormatLabel(stats.stdDev));
     setTextContent(this.statsList, ".stderr", this.stdErrFormatLabel(stats.stdErrOnMean));
     setTextContent(this.statsList, ".ess", safeLabel(stats.ess));

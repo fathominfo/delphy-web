@@ -199,6 +199,7 @@
     font-size: var(--title-font-size);
     line-height: var(--title-line-height);
     color: var(--title-text);
+    white-space: nowrap;
   }
 
   .detail {
@@ -826,32 +827,17 @@
 
         }
       }
-      .divider {
-
-        position: absolute;
-        z-index: 0;
-        pointer-events: none;
-        background-color: var(--chart-stroke);
-
-        height: var(--chart-divider-stroke-weight);
-        width: 100%;
-        right: unset;
-        left: 0;
-        top: unset;
-        bottom: 0;
-        transform: translateY(50%);
-
-
-
-      }
-
 
       .displays {
         flex-direction: column;
       }
 
 
-
+      &.discrete {
+        .probability-label {
+          visibility: hidden;
+        }
+      }
 
     }
 
@@ -1021,6 +1007,7 @@ input.stopping + #run-input--label {
   transition: all var(--transition) ease-out;
   position: relative;
   top: -4px;
+  white-space: nowrap;
 }
 
 
