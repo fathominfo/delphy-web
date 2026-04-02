@@ -1,7 +1,8 @@
 import {Tree, PhyloTree, Mutation, SummaryTree} from '../pythia/delphy_api';
 import {TreeCanvas} from './treecanvas';
-import {HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR, DEFAULT_NODE_CONFIDENCE,
-  YSpacing, ColorOption, BRANCH_WEIGHT } from './common';
+import {HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR,
+  YSpacing, ColorOption, BRANCH_WEIGHT,
+  CONFIDENCE_DEFAULT} from './common';
 import {MccConfig} from "./mccconfig";
 import { isTip } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
@@ -28,7 +29,6 @@ const FADE_OPACITY = 0.3;
 export class MccTreeCanvas extends TreeCanvas {
   mccConfig : MccConfig | null;
   verticalTips: TipInfo[];
-  confidenceThreshold: number;
   nodeColors: string[];
   branchColors: string[];
   colorsUnSet: boolean;
@@ -42,7 +42,6 @@ export class MccTreeCanvas extends TreeCanvas {
     super(canvas, ctx);
     this.mccConfig = null;
     this.verticalTips = [];
-    this.confidenceThreshold = DEFAULT_NODE_CONFIDENCE;
     this.nodeColors = [];
     this.branchColors = [];
     this.colorsUnSet = true;
@@ -55,7 +54,6 @@ export class MccTreeCanvas extends TreeCanvas {
 
   setConfig(mccConfig : MccConfig) : void {
     this.mccConfig = mccConfig;
-    this.confidenceThreshold = mccConfig.confidenceThreshold;
     this.colorsUnSet = true;
   }
 
@@ -67,7 +65,6 @@ export class MccTreeCanvas extends TreeCanvas {
       if (this.mccConfig.ySpacing === YSpacing.genetic) {
         this.rescaleGeneticDistance(tree as SummaryTree, mccIndex);
       }
-      this.confidenceThreshold = this.mccConfig.confidenceThreshold;
     }
     return this.nodeYs.map(y=>[y]);
   }
@@ -257,7 +254,7 @@ export class MccTreeCanvas extends TreeCanvas {
     const mccConfig = this.mccConfig,
       size = this.nodeYs.length;
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
-      const confidenceThreshold = this.confidenceThreshold;
+      const confidenceThreshold = mccConfig ? mccConfig.confidenceThreshold : (CONFIDENCE_DEFAULT / 100);
       for (let index = 0; index < size; index++) {
         let confidence = this.creds[index];
         if (isTip(tree,index)) {

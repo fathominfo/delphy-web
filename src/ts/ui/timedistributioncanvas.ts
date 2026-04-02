@@ -1,6 +1,6 @@
-import {Distribution} from './distribution';
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
 import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
+import { TimeDistribution } from './timedistribution';
 
 const margin = {
   top: 5,
@@ -19,13 +19,13 @@ const LINE_COLOR = 'rgba(156, 156, 156, ';
 let READOUT_SERIES_TEMPLATE: HTMLElement;
 
 export class DistributionSeries {
-  distribution: Distribution;
+  distribution: TimeDistribution;
   color: string;
   name: string;
   className: string;
 
   constructor(name: string, times:number[], className: string, color?: string) {
-    this.distribution = new Distribution(name, times);
+    this.distribution = new TimeDistribution(name, times);
     this.name = name;
     if (color) {
       this.color = color;
@@ -108,7 +108,7 @@ export class TimeDistributionCanvas {
     this.hoverSeriesIndex = UNSET;
     this.hoverX = null;
     this.hoverDate = null;
-    const maxMedian = Math.max(...(series.map(ds=>ds?.distribution?.median || minDate)));
+    const maxMedian = Math.max(...(series.map(ds=>ds?.distribution?.medianKDE || minDate)));
     this.textOnRight = (maxMedian - minDate) / (maxDate - minDate) < 0.4;
     this.resize();
   }
@@ -132,7 +132,7 @@ export class TimeDistributionCanvas {
     const {ctx, drawWidth, xheight, allSeriesBandMax} = this;
     // const {ctx, width, xheight} = this;
     const {distribution, color} = ds;
-    const {bands, bandwidth, bandTimes, kde} = distribution;
+    const {bands, bandwidth, bandValues: bandTimes, kde} = distribution;
     // const {bands, bandTimes, bandMax, bandwidth, kde} = distribution;
     ctx.fillStyle = color;
     ctx.strokeStyle = "none";
@@ -155,7 +155,7 @@ export class TimeDistributionCanvas {
       while (val > THRESHOLD) {
         t += bandwidth;
         x = this.xFor(t, drawWidth);
-        val = kde.value_at(t);
+        val = kde.pdf(t);
         const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
         // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
         ctx.lineTo(x, y);
@@ -169,9 +169,9 @@ export class TimeDistributionCanvas {
   drawCertainty(ds: DistributionSeries) {
     const {ctx, drawWidth, xheight} = this;
     const {distribution, color} = ds;
-    const {median} = distribution;
+    const {medianKDE: medianDate} = distribution;
     const ogWidth = ctx.lineWidth;
-    const dateLabel = toFullDateString(distribution.median);
+    const dateLabel = toFullDateString(medianDate);
     const textMetrics = measureText(ctx, dateLabel);
     ctx.lineWidth *= 1.5;
     ctx.strokeStyle = color;
@@ -180,7 +180,7 @@ export class TimeDistributionCanvas {
     const alpha = index === this.hoverSeriesIndex ? 0.6 : 0.3;
     this.ctx.globalAlpha = alpha;
     ctx.beginPath();
-    const x = this.xFor(median, drawWidth);
+    const x = this.xFor(medianDate, drawWidth);
     const top = margin.top + textMetrics.height + PADDING;
     const bottom = xheight;
     ctx.moveTo(x, bottom);
@@ -211,7 +211,7 @@ export class TimeDistributionCanvas {
 
     const index = this.series.indexOf(ds);
     const isCertain = ds.distribution.total === 0;
-    const x = this.xFor(distribution.median, drawWidth);
+    const x = this.xFor(distribution.medianKDE, drawWidth);
     let textX = x;
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
@@ -219,9 +219,9 @@ export class TimeDistributionCanvas {
     ctx.textBaseline = "top";
     ctx.font = CHART_TEXT_FONT;
 
-    const [year, month, date] = toDateTokens(distribution.median);
+    const [year, month, date] = toDateTokens(distribution.medianKDE);
     const monthStr = MONTHS_SHORT[month];
-    let dateLabel = toFullDateString(distribution.median);
+    let dateLabel = toFullDateString(distribution.medianKDE);
     const textMetrics = measureText(ctx, dateLabel);
 
     let middleY = margin.top + (xheight - margin.top - margin.bottom) / 2;
@@ -246,7 +246,7 @@ export class TimeDistributionCanvas {
       if (this.hoverSeriesIndex !== index) {
         const other = this.series.find(d => d !== ds);
         if (other) {
-          const [otherYear, , ] = toDateTokens(other.distribution.median);
+          const [otherYear, , ] = toDateTokens(other.distribution.medianKDE);
           if (year === otherYear) {
             dateLabel = `${date} ${monthStr}`;
           } else {
@@ -522,7 +522,7 @@ export class TimeDistributionCanvas {
     const dist: DistributionSeries | undefined = this.series.length === 2 ? this.series[1] : this.series[0];
     if (dist) {
       const { name, distribution } = dist;
-      const times = distribution.times;
+      const times = distribution.data;
       const dates = times.map(t=>toDateString(t));
       dates.sort();
       const txt = dates.join('\n'),

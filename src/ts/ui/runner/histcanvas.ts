@@ -1,114 +1,273 @@
-import { KernelDensityEstimate } from "../../pythia/kde";
-import { getOrdinal, safeLabel, UNSET } from '../common';
-import { calcEffectiveSampleSize } from "./effectivesamplesize";
-import { log10, TraceCanvas, TICK_LENGTH, TRACE_MARGIN, BG_COLOR, BORDER_COLOR, BORDER_WEIGHT, HALF_BORDER, DIST_WIDTH } from "./tracecanvas";
-import { hoverListenerType, kneeListenerType } from './runcommon';
+import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getTimestampString,
+  nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+import { chartContainer, TraceCanvas } from "./tracecanvas";
+import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats,
+  statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
+import { HistData } from "./histdata";
+import { getElementsAndStyles } from '../../util/exportutils';
+// import { PDFDocument, rgb } from 'pdf-lib';
+import { jsPDF } from "jspdf";
+import { KernelDensityEstimate } from '../../pythia/kde';
+
+
+export const TRACE_TEMPLATE = chartContainer.querySelector('.module.trace') as HTMLDivElement;
+TRACE_TEMPLATE.remove();
+const BAR_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution rect") as SVGRectElement;
+BAR_TEMPLATE.remove();
+const DISTRIBUTION_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution path") as SVGPathElement;
+DISTRIBUTION_TEMPLATE.remove();
+const HIGHLIGHT_LINE_TEMPLATE = TRACE_TEMPLATE.querySelector(".histogram .bars .distribution line") as SVGLineElement;
+HIGHLIGHT_LINE_TEMPLATE.remove();
+const INFO_ICON_TEMPLATE = document.querySelector("#runner .main-content .info:has(.icon)") as HTMLAnchorElement;
+// do not remove the INFO_ICON_TEMPLATE
+const TICK_BAR_TEMPLATE = TRACE_TEMPLATE.querySelector("svg .tick-bar") as SVGLineElement;
+TICK_BAR_TEMPLATE.remove();
 
 
 
-const TRACE_WEIGHT = 1;
-const TRACE_COLOR = 'rgb(45, 126, 207)';
-const TRACE_COLOR_PRE_KNEE = 'rgb(150, 181, 212)';
-const DOT_COLOR = 'rgb(52, 107, 190)';
-const DOT_SIZE = 4;
-const KNEE_LINE_COLOR = 'rgb(104,104,104)';
-const DIST_BAR_COLOR = '#aaaaaa';
+
 const MAX_STEP_SIZE = 3;
+const TARGET_LABEL_SPACING = 70; // in px
 
-type BucketConfig = {
-  buckets: number[],
-  values: number[],
-  positions: number[],
-  maxBucketValue: number,
-  step: number
-};
-
-const MIN_COUNT_FOR_HISTO = 10;
-const MAX_COUNT_FOR_DISCRETE = 20;
+/*
+for use in situations where UNSET (-1) falls
+within the valid range of inputs
+*/
+const NO_VALUE = Number.MIN_SAFE_INTEGER;
 
 
 export class HistCanvas extends TraceCanvas {
 
 
 
-  hideBurnIn = false;
-  data:number[] = []
-  mccIndex: number = UNSET;
-  hoverIndex: number = UNSET;
-  sampleCount = 0;
-  ess = 0;
-  displayCount = 0;
-  isDragging = false;
-  readoutIndex: number = UNSET;
-  dataMean: number = UNSET;
-
-  bucketConfig: BucketConfig;
-  kneeListener: kneeListenerType;
+  kneeListener: kneeHoverListenerType;
   hoverListener: hoverListenerType;
+  histoSVG: SVGElement;
+  histoWidth: number;
+  histoHeight: number;
+  histoBarParent: SVGGElement;
+  yAxisDiv: HTMLDivElement;
+  yAxisTickTemplate: HTMLDivElement;
+  yAxisHoverDiv: HTMLDivElement;
+  supportDiv: HTMLDivElement;
+  statsList: HTMLTableElement;
+  xAxisDiv: HTMLDivElement;
+  xAxisTick: HTMLSpanElement;
+  hightlightIndicators: {
+    x: SVGLineElement,
+    y: SVGLineElement,
+    point: SVGEllipseElement
+  };
+  probabilityReadout: HTMLParagraphElement;
+  hoverX: number = UNSET;
+  hoverY: number = UNSET;
+  stepSize: number = MAX_STEP_SIZE;
+  isDragging = false;
+  formatLabel: typeof safeLabel | null = null;
+  stdErrFormatLabel = safeLabel;
+  highlightStat: SummaryStat | null = null;
+  /*
+  only needed for downloads of trace data.
+  Feels inelegant to have this here for just that one potential need,
+  but other options don't really feel any better:
+    pass in a callback from runui to get the steps hist
+      which is better, a pointer to a function or a pointer to an array
+        at least the function doesn't change, whereas the arry needs updating
+        every time we get fresh data. but meh.
+    pass in the last step, and calculate backwards from there
+      more complicated than just passing an array, and isn't really more
+      efficient
+    manage the download in runui, and pass in everything that's needed from here
+      but really, the bulk of the work and data is here, so that feel needlessly
+      complex
+  open to other solutions, but for the moment this is the simplest [mark 260316]
+  */
+  steps: number[] = [];
 
 
-  constructor(label:string, unit='', kneeListener: kneeListenerType, hoverListener: hoverListenerType) {
-    super(label, unit);
+  constructor(label:string, unit='', className='', getDataFnc: HistDataFunction,
+    isDiscrete: boolean, kneeListener: kneeHoverListenerType,
+    hoverListener: hoverListenerType, statHoverListener: statHoverListenerType
+  ) {
+    super(label, unit, className, getDataFnc, TRACE_TEMPLATE);
+    this.traceData = new HistData(label, unit, getDataFnc, isDiscrete);
     this.kneeListener = kneeListener;
     this.hoverListener = hoverListener;
-    this.bucketConfig = { buckets: [], maxBucketValue: 0, values : [], positions: [], step: 0};
-    this.canvas.addEventListener('pointerdown', event=>{
-      this.canvas.classList.add('dragging');
+    this.isVisible = true;
+    const unitDiv = this.container.querySelector(".readout-unit") as HTMLParagraphElement;
+    unitDiv.innerHTML = unit;
+    this.histoSVG = this.container.querySelector(".histogram svg") as SVGElement;
+    this.histoBarParent = this.histoSVG.querySelector(".distribution") as SVGGElement;
+    this.histoWidth = UNSET;
+    this.histoHeight = UNSET;
+    this.yAxisDiv = this.container.querySelector(".axis.y .values") as HTMLDivElement;
+    this.yAxisTickTemplate = this.yAxisDiv.querySelector(".value:not(.hover)") as HTMLDivElement;
+    this.yAxisHoverDiv = this.yAxisDiv.querySelector(".hover") as HTMLDivElement;
+    this.supportDiv = this.container.querySelector(".support") as HTMLDivElement;
+    this.statsList = this.supportDiv.querySelector(".summary-stats") as HTMLTableElement;
+    this.xAxisDiv = this.container.querySelector(".axis.x") as HTMLDivElement;
+    this.xAxisTick = this.xAxisDiv.querySelector(".tick") as HTMLSpanElement;
+    this.hightlightIndicators = {
+      x: this.svg.querySelector(".highlight.x") as SVGLineElement,
+      y: this.svg.querySelector(".highlight.y") as SVGLineElement,
+      point: this.svg.querySelector(".highlight.point") as SVGEllipseElement
+    };
+    this.probabilityReadout = this.container.querySelector(".prob-readout") as HTMLParagraphElement;
+    this.svg.addEventListener('pointerdown', event=>{
+      this.svg.classList.add('dragging');
       this.isDragging = true;
+      this.svg.setPointerCapture(event.pointerId);
       this.handlePointerMove(event);
     });
-    this.canvas.addEventListener('pointermove', event=>{
+    this.svg.addEventListener('pointermove', event=>{
       this.handlePointerMove(event);
     });
-    this.canvas.addEventListener('pointerup', ()=>{
-      this.canvas.classList.remove('dragging');
+    this.svg.addEventListener('pointerup', event=>{
+      this.svg.classList.remove('dragging');
       this.isDragging = false;
+      this.svg.releasePointerCapture(event.pointerId);
     });
-    // const requestDraw = ()=>requestAnimationFrame(()=>this.draw());
-    // this.canvas.addEventListener('pointerover', ()=>{
-    //   this.hovering = true;
-    //   requestDraw();
-    // });
-    this.canvas.addEventListener('pointerleave', ()=>{
-      // this.hovering = false;
-      // requestDraw();
+    this.svg.addEventListener('pointerleave', ()=>{
       this.hoverListener(UNSET);
     });
-
-  }
-
-  setState(isSettingKnee:boolean): void {
-    this.settingKnee = isSettingKnee;
-  }
-
-  getTreePercentAtX(event:PointerEvent) {
-    let pct = UNSET;
-    const x = event.offsetX - TICK_LENGTH;
-    if (x >= 0) {
-      pct = x / this.traceWidth;
-      // console.log('knee', x, pct)
-      if (this.count * MAX_STEP_SIZE < this.traceWidth) {
-        pct = x / (this.count * MAX_STEP_SIZE);
+    this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
+    this.histoSVG.addEventListener('pointerleave', ()=>{
+      this.traceData.highlightIndex = UNSET;
+      const binConfig = (this.traceData as HistData).binConfig;
+      if (binConfig.isHistogram) {
+        this.drawHistogramSVG(NO_VALUE);
+      } else {
+        this.drawDistributionSVG(NO_VALUE);
       }
-      if (this.hideBurnIn) {
+      this.setProbabilityLabel(NO_VALUE);
+      this.setReadoutLabel(false, NO_VALUE);
+    });
+    let prevStat = '';
+    const announceStat = (event: PointerEvent) => {
+      let ele = event.target as HTMLElement;
+      while (ele !== this.statsList && ele.nodeName !== "TH" && ele.nodeName !== "TD") {
+        ele = ele.parentNode as HTMLElement;
+      }
+      let statName = ele.getAttribute("data-stat") || '';
+      if (statName === "hpd") {
+        if ((event.target as HTMLElement).classList.contains("hpd-max")) {
+          statName = "hpdMax";
+        } else {
+          statName = "hpdMin";
+        }
+      }
+      if (statName !== prevStat) {
+        prevStat = statName || '';
+        let stat: SummaryStat | null = null;
+        if (statName) {
+          stat = SummaryStatLookup[statName];
+          if (stat === undefined) stat = null;
+        }
+        statHoverListener(stat);
+      }
+    };
+    this.statsList.addEventListener('pointerenter', event=>{
+      announceStat(event);
+    });
+    this.statsList.addEventListener('pointermove', event=>{
+      announceStat(event);
+    });
+    this.statsList.addEventListener('pointerleave', ()=>{
+      prevStat = '';
+      statHoverListener(null);
+    });
+
+    const copyButton = this.supportDiv.querySelector(".copy-button") as HTMLButtonElement;
+    const histoDownloadsDiv = this.container.querySelector(".chart-container:has(.histogram) .download-button") as HTMLDivElement;
+    const traceDownloadsDiv = this.container.querySelector(".chart-container:has(.graph) .download-button") as HTMLDivElement;
+    // const histoDownloadDataButton = histoDownloadsDiv.querySelector(".chart-container:has(.histogram) .download-text") as HTMLButtonElement;
+    // const traceDownloadDataButton = traceDownloadsDiv.querySelector(".chart-container:has(.graph) .download-text") as HTMLButtonElement;
+    // const histoDownloadChartButton = histoDownloadsDiv.querySelector(".chart-container:has(.histogram) .download-chart") as HTMLButtonElement;
+    // const traceDownloadChartButton = traceDownloadsDiv.querySelector(".chart-container:has(.graph) .download-chart") as HTMLButtonElement;
+    copyButton.addEventListener('click', ()=>{
+      const stats = (this.traceData as HistData).getStats();
+      let data = `${ this.traceData.label }\n`;
+      Object.entries(stats).forEach(([key, value])=>{
+        const label = SummaryStatLongLabels[key];
+        data += `${label}\t${value}\n`}
+      );
+      navigator.clipboard.writeText(data).then(()=>copyButton.classList.add("completed"));
+    });
+    // histoDownloadDataButton.addEventListener('click', ()=>{
+    histoDownloadsDiv.addEventListener('click', ()=>{
+      const text = this.createHistogramDataExport(),
+        title = `delphy-${label.toLowerCase()}-distribution-${getTimestampString()}.tsv`;
+      downloadTextFile(title, text).then(()=>{
+        histoDownloadsDiv.classList.add("completed");
+      })
+    });
+    // histoDownloadChartButton.addEventListener('click', ()=>{
+    //   this.createHistogramChartExport().then((pdfDoc: jsPDF)=>{
+    //     const title = `delphy-${label.toLowerCase()}-distribution-chart-${getTimestampString()}.pdf`;
+    //     pdfDoc.save(title);
+    //     histoDownloadsDiv.classList.add("completed");
+    //   });
+    // });
+    // traceDownloadDataButton.addEventListener('click', ()=>{
+    traceDownloadsDiv.addEventListener('click', ()=>{
+      const text = this.createTraceDataExport(),
+        title = `delphy-${label}-traces-${getTimestampString()}.tsv`;
+      downloadTextFile(title, text).then(()=>{
+        traceDownloadsDiv.classList.add("completed");
+      });
+    });
+    // traceDownloadChartButton.addEventListener('click', ()=>{
+    //   this.createTraceChartExport().then((pdfDoc: jsPDF)=>{
+    //     const title = `delphy-${label.toLowerCase()}-traces-chart-${getTimestampString()}.pdf`;
+    //     pdfDoc.save(title);
+    //     traceDownloadsDiv.classList.add("completed");
+    //   });
+    // })
+    copyButton.addEventListener('pointerenter', ()=>copyButton.classList.remove("completed"));
+    histoDownloadsDiv.addEventListener('pointerenter', ()=>histoDownloadsDiv.classList.remove("completed"));
+    traceDownloadsDiv.addEventListener('pointerenter', ()=>traceDownloadsDiv.classList.remove("completed"));
+  }
+
+  setEssExclusion(reason: string) : void {
+    console.log(reason);
+    const icon = INFO_ICON_TEMPLATE.cloneNode(true) as HTMLAnchorElement;
+    icon.setAttribute("title", reason);
+    const essLabel = this.statsList.querySelector(`[data-stat="ess"]`) as HTMLDListElement;
+    essLabel.appendChild(icon);
+  }
+
+
+  getTreePercentAtY(event:PointerEvent) {
+    let pct = UNSET;
+    const y = event.offsetY;
+    const { height } = this;
+    const { count, hideBurnIn, displayCount } = this.traceData as HistData;
+    if (y >= 0) {
+      pct = y / height;
+      const dataHt = count * MAX_STEP_SIZE;
+      if (dataHt < height) {
+        const undataHt = height - dataHt;
+        pct = (y - undataHt) / dataHt;
+      } else if (hideBurnIn) {
         /*
         rescale the pct from just the visible trees
         to all the trees.
 
-        the visible trees are what percent of all the trees?
+        what would the height be if we included the burnin?
         */
-        const totalCount = this.savedKneeIndex + this.count,
-          totalIndex = this.savedKneeIndex + Math.round(pct * this.count);
-        pct = totalIndex / totalCount;
+        const heightWithInvisible = count / displayCount * height;
+        const invisibleHeight = heightWithInvisible - height;
+        pct = (y + invisibleHeight) / heightWithInvisible;
       }
     }
     return pct;
   }
 
-  getTreeAtX(event:PointerEvent) {
-    const pct = this.getTreePercentAtX(event);
-    let index = Math.floor(pct * this.data.length);
-    if (!Number.isFinite(this.data[index])) {
+  getTreeAtY(event:PointerEvent) {
+    const pct = this.getTreePercentAtY(event);
+    const data = (this.traceData as HistData).data;
+    let index = Math.floor(pct * data.length);
+    if (!Number.isFinite(data[index])) {
       index = UNSET;
     }
     return index;
@@ -117,458 +276,892 @@ export class HistCanvas extends TraceCanvas {
 
   handlePointerMove(event:PointerEvent) : void {
     if (this.isDragging) {
-      const pct = this.getTreePercentAtX(event);
+      const pct = this.getTreePercentAtY(event);
       if (pct <= 1) {
         this.kneeListener(pct);
       }
     } else {
-      const treeIndex = this.getTreeAtX(event);
-      // if (this.hideBurnIn) treeIndex += this.savedKneeIndex
+      const treeIndex = this.getTreeAtY(event);
+      // console.log('handlePointerMove', treeIndex);
       this.hoverListener(treeIndex);
     }
   }
 
+  handleHistogramHover(event:PointerEvent) : void {
+    const width = this.width;
+    const pct = event.offsetX / width;
+    if (pct >= 0 && pct <= 1) {
+      /* find the prob at pct */
+      const histData = this.traceData as HistData;
+      const { displayMin, displayMax, binConfig } = histData;
+      let value: number;
+      // let prob: number;
+      this.hoverX = event.offsetX;
+      if (binConfig.isHistogram) {
+        value = displayMin + pct * (displayMax - displayMin + 1);
+        // const { counts, edges } = binConfig;
+        // const total = counts.reduce((tot: number, n: number)=>(n||0)+tot, 0);
+        value = Math.floor(value);
+        // const index = edges.indexOf(value);
+        // prob = counts[index] / total;
+        this.drawHistogramSVG(value);
+
+      } else {
+        value = displayMin + pct * (displayMax - displayMin);
+        const kde = (this.traceData as HistData).distribution.kde as KernelDensityEstimate;
+        if (!kde) return;
+        // prob = kde.pdf(value);
+        this.drawDistributionSVG(value);
+      }
+      this.setReadoutLabel(false, value);
+      // this.setProbabilityLabel(prob);
+    }
+  }
+
   handleTreeHighlight(treeIndex: number): void {
-    const isMean = treeIndex === UNSET;
-    const readoutValue = isMean ? this.dataMean: this.data[treeIndex];
-    this.readoutIndex = treeIndex;
-    this.setReadoutLabel(isMean, readoutValue, this.unit, treeIndex);
+    const traceData = this.traceData as HistData;
+    traceData.highlightIndex = treeIndex;
   }
 
 
-  setData(data:number[], kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
-    this.data = data;
+  sizeCanvas(): void {
+    const wrapper = this.histoSVG.parentElement as HTMLDivElement;
+    this.histoWidth = wrapper.clientWidth;
+    this.histoHeight = wrapper.clientHeight;
+    super.sizeCanvas();
+  }
 
-    this.setMetadata(data.length, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.ess = calcEffectiveSampleSize(data.slice(kneeIndex));
-    const shown = hideBurnIn && this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
-    const safe = shown.filter(n=>!isNaN(n) && isFinite(n));
-    if (this.readoutIndex === data.length - 1 || (hideBurnIn && this.readoutIndex < kneeIndex)) {
-      this.readoutIndex = UNSET;
-    }
+  protected setSizes() {
+    super.setSizes();
+    this.histoSVG.setAttribute("width", `${this.histoWidth}`);
+    this.histoSVG.setAttribute("height", `${this.histoHeight}`);
+    this.histoSVG.setAttribute("viewBox", `0 0 ${this.histoWidth} ${this.histoHeight}`);
+    this.svg.querySelectorAll(".graph.display rect.period").forEach(rect=>{
+      (rect as SVGRectElement).setAttribute("width", `${this.width}`);
+    });
 
-    this.dataMin = Math.min(...safe);
-    this.dataMax = Math.max(...safe);
-    const dataSum = safe.reduce((tot, n)=>tot+n, 0);
-    this.dataMean = dataSum / safe.length;
-    /* what scale is the range in? */
-    const range = this.dataMax - this.dataMin;
-
-    if (range === 0 || this.isDiscrete && range < MAX_COUNT_FOR_DISCRETE) {
-      this.displayMin = this.dataMin;
-      this.displayMax = this.dataMax;
-    } else {
-      const expRange = Math.floor(Math.log(range) / log10),
-        mag = Math.pow(10, expRange),
-        magPad = mag * 0.1;
-      this.displayMin = Math.floor((this.dataMin - magPad) / mag) * mag;
-      this.displayMax = Math.ceil((this.dataMax + magPad) / mag) * mag;
-    }
-
-
-    this.setBucketData();
-
-    requestAnimationFrame(()=>this.canvas.classList.toggle('kneed', kneeIndex > 0));
   }
 
 
-  setBucketData() {
-    const {data } = this,
-      kneeIndex = this.currentKneeIndex;
-    if (data.length > 1) {
-      let estimateData = kneeIndex > 0 ? data.slice(kneeIndex) : data.slice(0);
-      estimateData = estimateData.filter(n=>isFinite(n) && !isNaN(n));
-      if (estimateData.length >= MIN_COUNT_FOR_HISTO) {
-        const histoMinVal = Math.min(...estimateData);
-        const histoMaxVal = Math.max(...estimateData);
-        const histoRange = histoMaxVal - histoMinVal;
-        if (this.isDiscrete && histoRange < 20) {
-          this.bucketConfig = this.getDiscreteHistoData(estimateData, histoRange, histoMinVal);
-        } else {
-          this.bucketConfig = this.getKDEHistoData(estimateData);
-        }
-      }
-    }
+  setState(isSettingKnee:boolean): void {
+    this.traceData.settingKnee = isSettingKnee;
   }
 
-  getDiscreteHistoData(estimateData: number[], valRange: number, displayMin: number) : BucketConfig {
-    const buckets: number[] = Array(valRange + 1).fill(0);
-    estimateData.forEach(n=>buckets[n-displayMin]++);
-    const values = buckets.map((_n, i)=>i+displayMin);
-    const maxBucketValue = Math.max(...buckets);
-    return {buckets, values, maxBucketValue, positions: [], step: 1 };
-  }
 
-  getKDEHistoData(estimateData: number[]) : BucketConfig {
-    const kde:KernelDensityEstimate = new KernelDensityEstimate(estimateData),
-      buckets: number[] = [],
-      values: number[] = [],
-      min = kde.min_sample,
-      max = kde.max_sample,
-      range = max - min,
-      bandwidth = kde.bandwidth,
-      halfBandwidth = bandwidth / 2,
-      bucketCount = Math.floor(range / bandwidth + 1);
-    let maxBucketValue = 0;
-    if (bandwidth > 0) {
-      let n = min;
-      for (let i = 0; i < bucketCount; i++) {
-        n = min + i / bucketCount * range;
-        const gaust = kde.value_at(n + halfBandwidth);
-        values.push(n);
-        buckets.push(gaust);
-        maxBucketValue = Math.max(maxBucketValue, gaust);
-      }
-      if (this.label === "Total Evolutionary Time") {
-        const minE = Math.min(...estimateData);
-        const maxE = Math.max(...estimateData);
-        console.log("KDE", this.label, min, max, min===minE, max===maxE, values.length, values.length - bucketCount,
-          "display", this.displayMin, this.displayMax, bandwidth, halfBandwidth,
-          "n vs. max", n, n-max);
-      }
-    }
-    return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
+  setData(kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number, stepsPerSample: number, steps: number[]) {
+    const sourceData : number[] = (this.traceData.getDataFnc()) as number[];
+    const histData = this.traceData as HistData;
+    this.steps = steps;
+    histData.setData(sourceData, kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample);
   }
-
 
 
 
   setMetadata(count: number, kneeIndex:number, mccIndex:number, hideBurnIn:boolean, sampleIndex: number) {
     super.setKneeIndex(count, kneeIndex);
-    this.mccIndex = mccIndex;
-    this.hideBurnIn = hideBurnIn;
-    this.hoverIndex = sampleIndex;
-    this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
+    (this.traceData as HistData).setMetadata(count, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
   }
 
   draw() {
-    let {data, readoutIndex} = this,
-      kneeIndex = this.currentKneeIndex;
-    const isMean = readoutIndex === UNSET;
-    const readoutValue = isMean ? this.dataMean: this.data[readoutIndex];
-    if (this.hideBurnIn && this.savedKneeIndex > 0) {
-      data = data.slice(this.savedKneeIndex);
-      kneeIndex -= this.savedKneeIndex;
-      readoutIndex -= this.savedKneeIndex;
+    const traceData = this.traceData as HistData,
+      binConfig = traceData.binConfig;
+    let { data, highlightIndex } = traceData,
+      kneeIndex = traceData.currentKneeIndex;
+    const { hideBurnIn, savedKneeIndex } = traceData;
+    let readoutValue = NO_VALUE;
+    let isHighlight = false;
+    if (highlightIndex !== UNSET) {
+      readoutValue = data[highlightIndex];
+      isHighlight = true;
+    } else if (this.highlightStat !== null && PlottableSummaryStats[this.highlightStat] !== undefined) {
+      const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+      const stats = (this.traceData as HistData).getStats();
+      readoutValue = stats[attribute];
     }
-    const {ctx, width, height} = this;
-    ctx.clearRect(0, 0, width + 1, height + 1);
-    this.drawSeries(data, kneeIndex, readoutIndex);
-    this.drawHistogram(readoutValue);
-    this.drawLabels(data, kneeIndex, this.readoutIndex, readoutValue, isMean);
-  }
-
-
-
-  drawSeries(data:number[], kneeIndex:number, readoutIndex: number) {
-    // if (this.label === "Mutation Rate μ") {
-    //   console.log( `   `, this.label, kneeIndex, ess)
-    // }
-
-    const {displayCount} = this;
-    const {ctx, traceWidth} = this;
-    let chartHeight = this.chartHeight,
-      top = 0;
-
-    this.drawField();
-
+    if (hideBurnIn && savedKneeIndex > 0) {
+      data = data.slice(savedKneeIndex);
+      kneeIndex -= savedKneeIndex;
+      highlightIndex -= savedKneeIndex;
+    }
     /*
-    as we get more and more data, the time series gets more compact,
-    and the lines acquire a density that is fairly ugly. So we try
-    to counter that by getting a lighter line weight as we get more data.
+    order matters here, since the location of the hovered
+    sample is set in `drawTrace` and read in `drawYAxisLabels`
     */
-    ctx.beginPath();
-    ctx.lineWidth = TRACE_WEIGHT * Math.min(1, Math.sqrt(traceWidth / data.length));
-    if (data.length === 1) {
-      ctx.strokeStyle = TRACE_COLOR;
-      ctx.moveTo(0, chartHeight * 0.5);
-      ctx.lineTo(3, chartHeight * 0.5);
-      ctx.stroke();
-    } else if (data.length > 1) {
-      const {displayMin, displayMax} = this;
-      const valRange = displayMax - displayMin;
-
-      if (this.isDiscrete && valRange < MAX_COUNT_FOR_DISCRETE) {
-        const bucketSize = chartHeight / (valRange + 1);
-        top = bucketSize * 0.5;
-        chartHeight -= bucketSize;
-      }
-
-
-      const stepW = Math.min(MAX_STEP_SIZE, traceWidth / displayCount || 1);
-      const burnInX = TICK_LENGTH + kneeIndex * stepW;
-      // this.drawEssIntervals(stepW, burnInX);
-
-      ctx.strokeStyle = TRACE_COLOR;
-      if (displayMax === displayMin) {
-        // console.log(displayMax);
-        ctx.strokeStyle = TRACE_COLOR;
-        ctx.beginPath();
-        ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
-        ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
-        ctx.stroke();
-      } else {
-        const verticalScale = chartHeight / (valRange || 1);
-        // find the middlemost step
-        let n = data[0],
-          x = 0,
-          y = 0,
-          // mccX = UNSET,
-          // mccY = UNSET,
-          hoverX = UNSET,
-          hoverY = UNSET;
-          // sampleX = UNSET,
-          // sampleY = UNSET;
-        if (kneeIndex > 0) {
-          ctx.strokeStyle = KNEE_LINE_COLOR;
-          x = burnInX;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, chartHeight);
-          ctx.stroke();
-          ctx.strokeStyle = TRACE_COLOR_PRE_KNEE;
-        }
-        ctx.beginPath();
-        x = TICK_LENGTH;
-        if (isNaN(n) || !isFinite(n)) {
-          ctx.moveTo(x, chartHeight);
-        } else {
-          ctx.moveTo(x, chartHeight-(n-displayMin) * verticalScale);
-        }
-        for (let i = 1; i < data.length; i++) {
-          n = data[i];
-          if (!isNaN(n) && isFinite(n)) {
-            y = top + chartHeight -(n-displayMin) * verticalScale;
-            if (this.isDiscrete) {
-              ctx.lineTo(x, y);
-            }
-            x = TICK_LENGTH + i * stepW;
-            ctx.lineTo(x, y);
-            if (i === kneeIndex) {
-              ctx.stroke();
-              ctx.strokeStyle = TRACE_COLOR
-              ctx.beginPath();
-              ctx.moveTo(x, y);
-            }
-            if (i === readoutIndex) {
-              hoverX = x;
-              hoverY = y;
-            }
-          }
-        }
-        ctx.stroke();
-        if (hoverX !== UNSET) {
-          ctx.fillStyle = DOT_COLOR;
-          ctx.beginPath();
-          ctx.arc(hoverX, hoverY, DOT_SIZE, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-      }
+    this.drawTrace(data, kneeIndex, highlightIndex);
+    if (binConfig.isHistogram) {
+      this.drawHistogramSVG(readoutValue);
+    } else {
+      this.drawDistributionSVG(readoutValue);
     }
+    this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
+    this.setReadoutLabel(isHighlight, readoutValue);
+    this.setStatsReadouts();
   }
 
 
-  drawHistogram(readoutValue: number) {
+  drawTrace(data: number[], kneeIndex: number, highlightIndex: number) {
+    const { displayCount, hideBurnIn, displayMin,
+      displayMax, binConfig } = this.traceData as HistData;
+    const { height } = this;
+    const burnInContainer = this.svg.querySelector(".burn-in") as SVGGElement;
+    const burnInMarker = burnInContainer.querySelector(".period") as SVGRectElement;
+    const burnInTrend = burnInContainer.querySelector(".trend") as SVGPathElement;
+    const activeContainer = this.svg.querySelector(".run") as SVGGElement;
+    const activeField = activeContainer.querySelector(".period") as SVGRectElement;
+    const activeInTrend = activeContainer.querySelector(".trend") as SVGPathElement;
 
-    const { ctx, distLeft, bucketConfig, displayMax, displayMin } = this;
-    const { buckets, values, maxBucketValue, positions, step } = bucketConfig;
+
+    let width = this.width;
+
+    let burnInHeight = 0;
+    let activeHeight = height;
+    let activeTop = 0;
+
+    let burnInPath = "";
+    let activePath = "";
+    let hoverX = UNSET;
+    let hoverY = UNSET;
+    let left = 0;
+    let dataScale = 1;
+    let trendWeight = 1;
+    let stepSize = MAX_STEP_SIZE;
+
+    if (displayCount === 1) {
+      activePath = `M${width * 0.5} 0 ${width * 0.5} ${MAX_STEP_SIZE}`;
+    } else if (displayCount > 1) {
+      const valRange = displayMax - displayMin;
+      if (binConfig.isHistogram) {
+        const bucketSize = width / (valRange + 1);
+        left = bucketSize * 0.5;
+        width -= bucketSize;
+      }
+      /*
+      if we span the entire chart with the values we have,
+      how big does each step need to be?
+      */
+      const fullSpanningStepSize = height / (displayCount - 1) || 1;
+      /* steps that are too big look pretty goofy, so cap them if needed */
+      const forceSmallerSteps = fullSpanningStepSize > MAX_STEP_SIZE;
+      stepSize = forceSmallerSteps ? MAX_STEP_SIZE : fullSpanningStepSize;
+      /*
+      in early stages of the run, there might not be enough samples to cover
+      the whole chart. So how much of the chart are we covering?
+      */
+      const plotSize = Math.min(height, displayCount * stepSize);
+      const leftover = height - plotSize;
+      burnInHeight = hideBurnIn ? 0 : Math.max(0, kneeIndex * stepSize + leftover);
+      if (kneeIndex === 0) {
+        burnInHeight = 0;
+      }
+      activeHeight = Math.max(0, height - burnInHeight);
+      activeTop = height - activeHeight;
+
+      trendWeight = Math.min(1, Math.sqrt(height / data.length));
+
+      if (displayMax === displayMin) {
+        activePath = `M${width * 0.5} ${height} L${width * 0.5} ${activeTop} `;
+        burnInPath = `M${width * 0.5} ${activeTop} L${width * 0.5} ${plotSize} `;
+        if (highlightIndex >= 0) {
+          hoverX = width * 0.5;
+          hoverY = plotSize - highlightIndex * stepSize;
+        }
+      } else {
+        dataScale = width / (valRange || 1);
+        const top = Math.max(0, height - (displayCount - 1) * stepSize);
+        // console.log(bottom, height, displayCount * stepH);
+        let currentPath = "";
+        let first = true;
+        let n: number,
+          x: number = UNSET,
+          y: number = UNSET,
+          prevX = UNSET,
+          prevY = UNSET;
+        for (let i = 0; i < data.length; i++) {
+          if (i === kneeIndex) {
+            burnInPath = currentPath;
+            currentPath = `M${prevX} ${prevY} L `;
+          }
+          n = data[i];
+          y = top + i * stepSize;
+          if (isNaN(n) || !isFinite(n)) {
+            x = left;
+          } else {
+            x = left + (n-displayMin) * dataScale;
+          }
+          if (first) {
+            currentPath = `M${x} ${y} L`;
+          } else {
+            if (binConfig.isHistogram) {
+              currentPath += `${prevX} ${y} `;
+            }
+            currentPath += `${x} ${y} `;
+          }
+          if (i === highlightIndex) {
+            hoverX = x;
+            hoverY = y;
+          }
+          first = false;
+          prevX = x;
+          prevY = y;
+        }
+        activePath = currentPath;
+      }
+    }
+
+    if (hoverX === UNSET) {
+      this.svg.classList.remove("highlighting");
+      /* set the x value for the highlight stat */
+      if (this.highlightStat !== null) {
+        if (displayCount > 1) {
+          const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+          const stats = (this.traceData as HistData).getStats();
+          const value = stats[attribute];
+          hoverX = left + (value - displayMin) * dataScale;
+        } else {
+          hoverX = width / 2;
+        }
+      } else {
+        hoverX = UNSET;
+      }
+    } else {
+      this.svg.classList.add("highlighting");
+      const {x, y, point} = this.hightlightIndicators;
+      x.setAttribute("x1", `${hoverX}`);
+      x.setAttribute("x2", `${hoverX}`);
+      x.setAttribute("y1", `0`);
+      x.setAttribute("y2", `${this.height}`);
+      point.setAttribute("cx", `${hoverX}`);
+      y.setAttribute("x1", `0`);
+      y.setAttribute("x2", `${this.width}`);
+      y.setAttribute("y1", `${hoverY}`);
+      y.setAttribute("y2", `${hoverY}`);
+      point.setAttribute("cy", `${hoverY}`);
+    }
+
+    activeField.setAttribute("height", `${activeHeight}`);
+    activeField.setAttribute("y", `${activeTop}`);
+    burnInMarker.classList.toggle("hidden", burnInHeight === 0);
+    burnInMarker.setAttribute("y1", `${activeTop}`);
+    burnInMarker.setAttribute("y2", `${activeTop}`);
+    burnInTrend.setAttribute("d", burnInPath);
+    activeInTrend.setAttribute("d", activePath);
+    burnInTrend.style.strokeWidth = `${trendWeight}`;
+    activeInTrend.style.strokeWidth = `${trendWeight}`;
+    this.hoverX = hoverX;
+    this.hoverY = hoverY;
+    this.stepSize = stepSize;
+  }
+
+
+  drawHistogramSVG(highlightValue: number) {
+    const { traceData, histoWidth, histoHeight } = this;
+    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { edges, counts, maxBinValue, positions, step, isHistogram } = binConfig;
     let valRange = displayMax - displayMin;
-    const { chartHeight } = this;
-    const top = 0;
-    /* draw background and borders for the charts */
-    ctx.fillStyle = BG_COLOR;
-    ctx.strokeStyle = BORDER_COLOR;
-    ctx.lineWidth = BORDER_WEIGHT;
-    ctx.fillRect(distLeft, 0, DIST_WIDTH, chartHeight);
-    ctx.strokeRect(distLeft+HALF_BORDER, HALF_BORDER, DIST_WIDTH-1, chartHeight-1);
-
-    // if (this.label === "Number of Mutations") {
-    //   console.log( `   `, this.label);
-    // }
 
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
     we need to calculate how much room the histogram takes.
     */
-    const firstValue = values[0];
-    const lastValue = values[values.length-1] + step;
+    const firstValue = edges[0];
+    const lastValue = edges[edges.length-1] + step;
     const histoValueRange = lastValue - firstValue;
-    const histoSize = histoValueRange / valRange * chartHeight;
-    let bucketSize = histoSize / buckets.length;
+    const histoSize = histoValueRange / valRange * histoWidth;
+    const total = counts.reduce((tot:number, n:number)=>(n||0)+tot, 0)
+    let binSize = Math.max(0, histoSize / counts.length);
 
-
-    // if (this.className === 'mutation-rate-μ') {
-    //   console.log(`         ${this.className}`);
-    // }
-
-    if (this.isDiscrete && histoValueRange < MAX_COUNT_FOR_DISCRETE) {
+    if (isHistogram) {
       valRange += step;
-      bucketSize = chartHeight / (valRange);
+      binSize = histoWidth / (valRange);
     }
-
-    // ctx.strokeStyle = 'red';
-    // ctx.beginPath();
-    // let lly = ()
-
-    let highlightY = UNSET;
-    let highlightSize = UNSET;
-
-    ctx.fillStyle = DIST_BAR_COLOR;
-    buckets.forEach((n, i)=>{
-      const value = values[i];
-      let nextValue = values[i + 1];
+    let highlightProb = NO_VALUE;
+    this.histoBarParent.innerHTML = '';
+    counts.forEach((n, i)=>{
+      const value = edges[i];
+      let nextValue = edges[i + 1];
       if (nextValue === undefined) nextValue = value + step;
-      const size = n / maxBucketValue * DIST_WIDTH;
-      /*
-      we go from low values at the bottom to higher at the top
-      which also accounts for the negative height
-      */
-      const y = (1 - (value - displayMin) / valRange) * chartHeight + top;
-      if (readoutValue >= value && readoutValue < nextValue) {
-        highlightY = y;
-        highlightSize = size;
-        // if (this.label === "Number of Mutations") {
-        //   console.log(`        ${this.label} ${value} <= ${readoutValue} <= ${nextValue}`);
-        // }
+      const size = Math.max(0, n / maxBinValue * histoHeight);
+      const top = histoHeight - size;
+      const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
+      const x = (value - displayMin) / valRange * this.histoWidth;
+      bar.setAttribute("x", `${x}`);
+      bar.setAttribute("y", `${top}`);
+      bar.setAttribute("width", `${binSize}`);
+      bar.setAttribute("height", `${size}`);
+      if (highlightValue >= value && highlightValue < nextValue) {
+        bar.classList.add("highlight");
+        highlightProb = n / total;
       } else {
-        ctx.fillRect(distLeft, y, size, - bucketSize);
+        bar.classList.remove("highlight");
       }
-      positions[i] = y;
-      // if (i === 0) {
-      //   ctx.fillStyle = 'black';
-      //   ctx.textBaseline = "top";
-      //   ctx.fillText(`${value}`, distLeft, y);
-      //   ctx.fillStyle = DIST_BAR_COLOR;
-      // } else if (i === buckets.length - 1) {
-      //   ctx.fillStyle = 'black';
-      //   ctx.textBaseline = "bottom";
-      //   ctx.fillText(`${nextValue}`, distLeft, y - bucketSize);
-      //   ctx.fillStyle = DIST_BAR_COLOR;
-      // }
+      this.histoBarParent.appendChild(bar);
+      positions[i] = x;
     });
-    if (highlightY !== UNSET) {
-      ctx.fillStyle = DOT_COLOR;
-      ctx.fillRect(distLeft, highlightY, highlightSize, - Math.max(1, bucketSize));
-    }
+    this.setProbabilityLabel(highlightProb);
   }
 
 
+  drawDistributionSVG(highlightValue: number) {
+    const { traceData, histoWidth, histoHeight } = this;
+    const { binConfig, displayMin, displayMax } = traceData as HistData;
+    const { counts, edges, positions, step } = binConfig;
+    const valRange = displayMax - displayMin;
 
-
-  drawLabels(data:number[], kneeIndex:number, readoutIndex: number, readoutValue: number, isMean: boolean) {
-    const count:number = data.length;
-    this.count = count;
-    const {ctx, traceWidth, chartHeight} = this;
-
-
-    /* draw background and borders for the charts */
-    ctx.fillStyle = BG_COLOR;
-
-    let stepSize = 0;
-    ctx.beginPath();
-    if (data.length > 1) {
-      const {displayMin, displayMax} = this;
-      this.setReadoutLabel(isMean, readoutValue, this.unit, readoutIndex);
-
-      ctx.strokeStyle = TRACE_COLOR;
-      if (displayMax === displayMin) {
-        ctx.strokeStyle = TRACE_COLOR;
-        ctx.moveTo(TICK_LENGTH, chartHeight * 0.5);
-        ctx.lineTo(TICK_LENGTH + traceWidth, chartHeight * 0.5);
-        ctx.stroke();
-        this.maxLabel.innerHTML = ``;
-        this.minLabel.innerHTML = ``;
-        this.avgLabel.innerHTML = `${safeLabel(displayMax)}`;
-      } else {
-
-        ctx.strokeStyle = BORDER_COLOR;
-        ctx.lineWidth = BORDER_WEIGHT;
-        if (this.isDiscrete) {
-          stepSize = chartHeight / (displayMax - displayMin + 1) * 0.5;
-        }
-        ctx.beginPath();
-        ctx.moveTo(0, BORDER_WEIGHT * 0.5 + stepSize);
-        ctx.lineTo(TICK_LENGTH, BORDER_WEIGHT * 0.5 + stepSize);
-
-        const midVal = (displayMin + displayMax) / 2;
-        this.maxLabel.innerHTML = `${safeLabel(displayMax)}`;
-        this.minLabel.innerHTML = `${safeLabel(displayMin)}`;
-        let skipMiddle = false;
-        if (this.isDiscrete && displayMax - displayMin < 20 && midVal !== Math.floor(midVal)) {
-          skipMiddle = true;
-        } else if (safeLabel(displayMax) === safeLabel(midVal)) skipMiddle = true;
-        else if (safeLabel(displayMin) === safeLabel(midVal)) skipMiddle = true;
-        if (skipMiddle) {
-          this.avgLabel.innerHTML = '';
-        } else {
-          this.avgLabel.innerHTML = `${safeLabel(midVal)}`;
-          ctx.moveTo(0, chartHeight/2);
-          ctx.lineTo(TICK_LENGTH, chartHeight/2);
-        }
-
-        ctx.moveTo(0, chartHeight - BORDER_WEIGHT * 0.5 - stepSize);
-        ctx.lineTo(TICK_LENGTH, chartHeight - BORDER_WEIGHT * 0.5 - stepSize);
-        ctx.stroke();
-      }
-      this.firstStepLabel.innerHTML = '';
-      this.midStepLabel.innerHTML = ``;
-      this.lastStepLabel.innerHTML = '';
-    } else {
-      // this.readout.innerHTML = `0 ${this.unit}`;
-      this.setReadoutLabel(false, readoutValue, this.unit, 0);
-    }
-    this.maxLabel.style.marginTop = `${stepSize}px`;
-    this.minLabel.style.marginBottom = `${stepSize}px`;
-
-    this.canvas.classList.toggle('kneed', kneeIndex > 0);
-    // ctx.fillStyle = 'black';
-    // const label = `ESS: ${  this.ess.toLocaleString(undefined, {maximumFractionDigits: 2, minimumFractionDigits: 2})}`;
-    // ctx.fillText(label, this.distLeft - 70, chartHeight - 2);
-  }
-
-
-  setReadoutLabel(isMean: boolean, value: number, unit: string, treeIndex: number = UNSET) {
-    if (isMean) {
-      this.readout.classList.add("meaning");
-    } else {
-      this.readout.classList.remove("meaning");
-      (this.readout.querySelector(".tree-label-index") as HTMLSpanElement).textContent = getOrdinal(treeIndex);
-    }
-    (this.readout.querySelector(".readout-value") as HTMLSpanElement).textContent = safeLabel(value);
-    if (unit) {
-      this.readout.classList.remove("unitless");
-      (this.readout.querySelector(".readout-unit") as HTMLSpanElement).innerHTML = unit;
-    } else {
-      this.readout.classList.add("unitless");
-    }
-  }
-
-  drawEssIntervals(stepW: number, burnInX: number) {
-    const {sampleCount, ess, ctx, distLeft, chartHeight} = this;
-    const autoCorrelationTime = sampleCount / ess;
-    const essWidth = stepW * autoCorrelationTime;
-    const rightEdge = distLeft - TRACE_MARGIN;
     /*
-    draw stripes of width essWidth from the start of the burn in
+    since burnin might be visible, and the histogram does not include burn-in values,
+    we need to calculate how much room the histogram takes.
     */
-    ctx.strokeStyle = '#ddd';
-    ctx.beginPath();
-    let essX = burnInX;
-    while (essX < rightEdge && essWidth >=1) {
-      ctx.moveTo(essX, 0);
-      ctx.lineTo(essX, chartHeight);
-      essX += essWidth;
+    const firstValue = edges[0];
+    const lastValue = edges[edges.length-1] + step;
+    const histoValueRange = lastValue - firstValue;
+    const histoSize = histoValueRange / valRange * histoWidth;
+    const N = counts.length;
+    const binSize = Math.max(0, histoSize / N);
+    const maxCounts = Math.max.apply(null, counts);
+    const sumCounts = counts.reduce((tot, n)=>tot+n, 0);
+    const maxBarProb = maxCounts/sumCounts;
+    // console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label);
+
+    /*
+    bins are `pdf` values, and we want `probability` to align with
+    the histograms.
+    But drawing the distribution just on the bins is not smooth enough.
+    Let's do a point per 3 px.
+    */
+    const minVal = edges[0];
+    const maxVal = edges[edges.length-1] + binSize;
+    const distStep = (maxVal - minVal) / this.width * 3;
+    const probs: number[] = [];
+    const values: number[] = [];
+    const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
+    if (kde) {
+      for (let val = minVal; val <= maxVal; val+= distStep) {
+        const pdf = kde.pdf(val);
+        const prob = step * pdf;
+        probs.push(prob);
+        values.push(val);
+      }
     }
-    ctx.stroke();
+    // const probs =  bins.map((pdf, i)=>{
+    //   const value = edges[i];
+    //   let nextValue = edges[i + 1];
+    //   if (nextValue === undefined) nextValue = value + step;
+    //   const probability = (nextValue - value) * pdf;
+    //   return probability;
+    // });
+    const maxDistProb = Math.max.apply(null, probs);
+    const maxProb = Math.max(maxDistProb, maxBarProb);
+    this.histoBarParent.innerHTML = '';
+
+    const highlighting = highlightValue >= displayMin && highlightValue <= displayMax;
+
+    counts.forEach((n, i)=>{
+      const value = edges[i];
+      const barProb = Math.max(0, n / sumCounts);
+      const size = barProb / maxProb * histoHeight;
+      const top = histoHeight - size;
+      const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
+      const x = (value - displayMin) / valRange * this.histoWidth;
+      bar.setAttribute("x", `${x}`);
+      bar.setAttribute("y", `${top}`);
+      bar.setAttribute("width", `${binSize}`);
+      bar.setAttribute("height", `${size}`);
+      this.histoBarParent.appendChild(bar);
+      positions[i] = x;
+    });
+
+
+    let d = '';
+    let highlightD = '';
+    // let btot = 0;
+    probs.forEach((probability, i)=>{
+      const value = values[i];
+      const size = Math.max(0, probability / maxProb * histoHeight);
+      const top = histoHeight - size;
+      const x = (value - displayMin) / valRange * histoWidth;
+      if (d === '') {
+        d = `M${x} ${top} L `;
+      } else {
+        d += `${x} ${top} `;
+      }
+      if (highlighting && value < highlightValue) {
+        highlightD = d;
+      }
+      positions[i] = x;
+      // btot += probability;
+    });
+    // console.log('drawDistributionSVG', `maxBinValue: ${maxBinValue}, maxBinValue: ${maxDistProb}, maxCounts: ${maxCounts}, sumCounts: ${sumCounts}, max bar prob: ${maxBarProb}`, this.traceData.label, `       ${btot}` );
+    const path = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
+    path.setAttribute('d', d);
+    this.histoBarParent.appendChild(path);
+    if (highlighting) {
+      if (kde) {
+        const pdf = kde.pdf(highlightValue);
+        const cdf = kde.cdf(highlightValue);
+        const prob = step * pdf;
+        const ht = Math.max(0, prob / maxProb * histoHeight);
+        const y = histoHeight - ht;
+        const x = (highlightValue - displayMin) / valRange * histoWidth;
+        highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        const highlightPath = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
+        highlightPath.setAttribute('d', highlightD);
+        highlightPath.classList.add("cdf");
+        this.histoBarParent.append(highlightPath);
+        this.setProbabilityLabel(cdf);
+      } else {
+        this.setProbabilityLabel(NO_VALUE);
+      }
+    } else {
+      this.setProbabilityLabel(NO_VALUE);
+    }
   }
 
+
+
+
+
+
+  drawYAxisLabels(hideBurnIn: boolean, highlightIndex: number) {
+    const { traceData, hoverY, stepSize, height } = this;
+    const { count, savedKneeIndex, displayCount } = traceData as HistData;
+    this.yAxisDiv.querySelectorAll(".value:not(.hover)").forEach( (div)=>(div as HTMLDivElement).remove());
+
+
+
+    const activeHeight = Math.min((displayCount) * stepSize, height);
+    const activeTop = height - activeHeight;
+    let tickInterval = 20;
+    let targetTickCount = 1;
+    if (displayCount >= 80) {
+      targetTickCount = Math.ceil(activeHeight / TARGET_LABEL_SPACING);
+      if (displayCount % targetTickCount === 0) {
+        tickInterval = Math.max(10, nicenum((displayCount + 1) / targetTickCount));
+      } else {
+        tickInterval = Math.max(10, nicenum(displayCount / targetTickCount));
+      }
+    }
+    const intervalSize = tickInterval * stepSize;
+    let tickStart = 0;
+
+
+
+    let startY = activeTop;
+    if (hideBurnIn && savedKneeIndex > 0) {
+      /*
+      what's the first nice num after the start point?
+      the `- 1` is for index spacing, for example the start label should
+      be 20, but that's position 19.
+      */
+      tickStart = Math.ceil(savedKneeIndex / tickInterval) * tickInterval - 1;
+      /*
+      where does the first tick land?
+      the first onscreen sample is at the knee, so how far from the knee is the
+      first tick?
+      */
+      const knee2Tick = tickStart - savedKneeIndex;
+      startY = activeTop + knee2Tick * stepSize;
+    }
+    let tick = tickStart;
+    let y = startY;
+    this.svg.querySelectorAll('.tick-bar').forEach( ele=>(ele as SVGLineElement).remove());
+    // let actual = 0;
+    while (tick < count) {
+      // actual++;
+      /* make sure this doesn't overlap with the hover */
+      if (hoverY === UNSET || Math.abs(hoverY - y) >= TARGET_LABEL_SPACING / 2) {
+        this.addYTick(y, tick + 1);
+      }
+      if (tick === 0) {
+        tick += tickInterval - 1;
+        const ratio = (tickInterval - 1) / tickInterval;
+        y += intervalSize * ratio;
+      } else {
+        tick += tickInterval;
+        y += intervalSize;
+      }
+    }
+
+    // console.log(`activeHeight  ${activeHeight}, target ${targetTickCount}, size ${displayCount}, result ${tickInterval},   actual ${actual}`)
+
+    if (highlightIndex === UNSET) {
+      this.yAxisHoverDiv.classList.add("hidden");
+    } else {
+      // console.log('drawLabels', highlightIndex)
+      this.yAxisHoverDiv.classList.remove("hidden");
+      this.yAxisHoverDiv.style.top = `${ hoverY }px`;
+      /* report the tree index starting from 1, not 0 */
+      (this.yAxisHoverDiv.querySelector(".val") as HTMLDivElement).textContent = nfc( highlightIndex + 1);
+    }
+  }
+
+
+  addYTick(y: number, value: number) : HTMLDivElement {
+    const div = this.yAxisTickTemplate.cloneNode(true) as HTMLDivElement;
+    (div.querySelector(".val") as HTMLDivElement).textContent = nfc(value);
+    div.style.top = `${y}px`;
+    this.yAxisDiv.appendChild(div);
+    const tickBar = TICK_BAR_TEMPLATE.cloneNode() as SVGLineElement;
+    tickBar.setAttribute("x2", `${this.width}`);
+    tickBar.setAttribute("y1", `${y}`);
+    tickBar.setAttribute("y2", `${y}`);
+    this.svg.insertBefore(tickBar, this.svg.childNodes[0]);
+    return div;
+  }
+
+
+  /*
+  @param highlightIsSample: is the highlight from hovering a trace?
+  or is it from hovering one of the summary statistics?
+  */
+  setReadoutLabel(highlightIsSample: boolean, value: number) {
+    const noValue = value === NO_VALUE;
+    this.xAxisTick.classList.toggle("hidden", noValue);
+    this.xAxisTick.style.left = `${ this.hoverX }px`;
+
+    // if (highlightIsSample) {
+    //   this.xAxisDiv.classList.remove("statsing");
+    // } else {
+    //   this.xAxisDiv.classList.add("statsing");
+    //   const statLabel = this.xAxisDiv.querySelector(".stat-label") as HTMLSpanElement;
+    //   if (noValue || this.highlightStat === null) {
+    //     statLabel.textContent = '';
+    //   } else {
+    //     const key = SummaryStat[this.highlightStat] as keyof SummaryStatsType
+    //     const label = SummaryStatLongLabels[key];
+    //     statLabel.textContent = label;
+    //   }
+    // }
+    let label = '';
+    if (!noValue) {
+      const formatLabel = this.getReadoutFormatFnc();
+      label = formatLabel(value);
+    }
+    (this.xAxisDiv.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
+  }
+
+  setProbabilityLabel(value: number) {
+    if (value === NO_VALUE) {
+      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).textContent = '';
+      this.probabilityReadout.classList.add("inactive");
+    } else {
+      const label = `${getPercentLabelDecimal(value)}<span class="pct">%</span>`;
+      (this.probabilityReadout.querySelector(".readout-value") as HTMLSpanElement).innerHTML = label;
+      this.probabilityReadout.classList.remove("inactive");
+    }
+  }
+
+  getReadoutFormatFnc(): typeof safeLabel {
+    let formatLabel = this.formatLabel;
+    if (formatLabel === null) {
+      const stats = (this.traceData as HistData).getStats();
+      const p = getDecimalPrecision(stats.stdErrOnMean);
+      formatLabel = (n:number)=>{
+        if (n === undefined) {
+          console.debug(`formatLabel for ${this.className} (as created in getReadoutFormatFnc) got 'undefined' as a parameter`);
+          return '';
+        }
+        return n.toLocaleString(undefined, {minimumFractionDigits: p, maximumFractionDigits: p});
+      };
+    }
+    return formatLabel;
+  }
+
+  setStatsReadouts() : void {
+    const stats = (this.traceData as HistData).getStats();
+    const formatLabel = this.getReadoutFormatFnc();
+    setTextContent(this.statsList, ".mean", formatLabel(stats.mean));
+    setTextContent(this.statsList, ".hpd-min", formatLabel(stats.hpdMin));
+    setTextContent(this.statsList, ".hpd-max", formatLabel(stats.hpdMax));
+    setTextContent(this.statsList, ".median", formatLabel(stats.median));
+    setTextContent(this.statsList, ".stddev", this.stdErrFormatLabel(stats.stdDev));
+    setTextContent(this.statsList, ".stderr", this.stdErrFormatLabel(stats.stdErrOnMean));
+    setTextContent(this.statsList, ".ess", safeLabel(stats.ess));
+    const magNumber = nf000(stats.act);
+    if (magNumber) {
+      const {n000, magnitudeLabel} = magNumber;
+      setTextContent(this.statsList, ".act", `${n000}<span class="pct">${magnitudeLabel} steps</span>`);
+      // console.log(this.className, stats.act, safeLabel(stats.act), `${n000}${magnitudeLabel}`)
+    } else {
+      /* shouldn't happen, but just in case */
+      setTextContent(this.statsList, ".act", `${safeLabel(stats.act)} steps`);
+    }
+  }
+
+
+  handleStatHighlight(statType: SummaryStat | null) : void {
+    this.highlightStat = statType;
+    requestAnimationFrame(()=>{
+      this.highlightStatSpans();
+      const traceData = this.traceData as HistData;
+      let { data, highlightIndex } = traceData,
+        kneeIndex = traceData.currentKneeIndex;
+      const { hideBurnIn, savedKneeIndex } = traceData;
+      if (hideBurnIn && savedKneeIndex > 0) {
+        data = data.slice(savedKneeIndex);
+        kneeIndex -= savedKneeIndex;
+        highlightIndex -= savedKneeIndex;
+      }
+      let readoutValue = traceData.displayMin - 1_000_000;
+      if (this.highlightStat !== null) {
+        const attribute = SummaryStat[this.highlightStat] as keyof SummaryStatsType;
+        const stats = (this.traceData as HistData).getStats();
+        readoutValue = stats[attribute];
+      }
+      /*
+      order matters here, since the location of the hovered
+      sample is set in `drawTrace` and read in `drawLabels`
+      */
+      this.drawTrace(data, kneeIndex, highlightIndex);
+      const { binConfig } = traceData as HistData;
+
+      if (binConfig.isHistogram) {
+        this.drawHistogramSVG(readoutValue);
+      } else {
+        this.drawDistributionSVG(readoutValue);
+      }
+    });
+  }
+
+  highlightStatSpans() : void {
+    const statType = this.highlightStat;
+    if (statType === null) {
+      this.statsList.querySelectorAll(".back").forEach(dt=>dt.classList.remove("back"));
+    } else {
+      this.statsList.querySelectorAll("dt, .value").forEach(dt=>dt.classList.add("back"));
+      let valueEle: HTMLElement;
+      switch (statType) {
+      case SummaryStat.mean:
+        valueEle = this.statsList.querySelector(".mean") as HTMLElement;
+        break;
+      case SummaryStat.hpdMin:
+        valueEle = this.statsList.querySelector(".hpd-min") as HTMLElement;
+        break;
+      case SummaryStat.hpdMax:
+        valueEle = this.statsList.querySelector(".hpd-max") as HTMLElement;
+        break;
+      case SummaryStat.median:
+        valueEle = this.statsList.querySelector(".median") as HTMLElement;
+        break;
+      case SummaryStat.stdDev:
+        valueEle = this.statsList.querySelector(".stddev") as HTMLElement;
+        break;
+      case SummaryStat.stdErrOnMean:
+        valueEle = this.statsList.querySelector(".stderr") as HTMLElement;
+        break;
+      case SummaryStat.ess:
+        valueEle = this.statsList.querySelector(".ess") as HTMLElement;
+        break;
+      case SummaryStat.act:
+        valueEle = this.statsList.querySelector(".act") as HTMLElement;
+        break;
+      }
+      if (valueEle) {
+        valueEle.classList.remove("back");
+        /*
+        find the corresponding dt element:
+        the HTML is something like
+          <dt>mean</dt><dd><span class="value mean"></span></dd>
+        so find the parent dd element, and then it's prior sibling
+        */
+        const dd = valueEle.parentNode as HTMLElement;
+        const dt = dd.previousElementSibling as HTMLElement;
+        dt.classList.remove("back");
+      }
+    }
+  }
+
+  createTraceDataExport() : string {
+    const traces = (this.traceData as HistData).data,
+      steps = this.steps,
+      label = this.className;
+    let text = `step\t${label}\n`;
+    console.assert(traces.length === steps.length);
+    traces.forEach((trace, i)=>text += `${steps[i]}\t${trace}\n`);
+    return text;
+  }
+
+
+  createTraceChartExport() : Promise<jsPDF> {
+    const result = getElementsAndStyles(this.svg);
+    return new Promise((resolve)=>{
+
+      const height = this.height;
+      const width = this.width;
+      const doc = new jsPDF({ // eslint-disable-line new-cap
+        unit: "px",
+        orientation: "portrait",
+        format: [width, height]
+      });
+      console.log('        createTraceExport', width, height);
+      if (result) {
+        const {elements, styles } = result;
+        elements.forEach((element, i)=>{
+          if (element.nodeName === "rect" || element.nodeName === "path") {
+            const style = styles[i];
+            const fill = style.fill;
+            const stroke = style.stroke;
+            let drawInstructions: string | null = null;
+            if (fill !== "none") {
+              doc.setFillColor(fill);
+              drawInstructions = 'F';
+            }
+            if (stroke !== "none") {
+              doc.setDrawColor(stroke);
+              const strokeWidth = style.strokeWidth;
+              doc.setLineWidth(parseFloat(strokeWidth));
+              if (drawInstructions !== null) drawInstructions += 'D';
+              else drawInstructions = 'S';
+            }
+            if (element.nodeName === "rect") {
+              if (drawInstructions) {
+                const rect = element as SVGRectElement;
+                console.log(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+                doc.rect(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+              }
+            } else if (element.nodeName === "path") {
+              const d = (element as SVGPathElement).getAttribute("d") as string;
+              console.log(d)
+              const tokens = d.split(' ');
+              /*
+              would prefer to use the jsPdf path command https://artskydj.github.io/jsPDF/docs/jsPDF.html#path,
+              since it uses absolute coordinates, but it does not seem to render.
+              Instead using lines.
+              */
+              let lines: number[][] = [];
+              let line: number[];
+              let n;
+              tokens.forEach(t=>{
+                n = parseFloat(t);
+                const isNumber = !isNaN(n);
+                if (!isNumber) {
+                  line = [];
+                  lines.push(line);
+                  if (t.length > 1) {
+                    n = parseFloat(t.substring(1));
+                    line.push(n)
+                  }
+                } else if (line.length < 2) {
+                  line.push(n)
+                } else {
+                  line = [n];
+                  lines.push(line);
+                }
+              });
+              // console.log(lines.map(arr=>arr.join()));
+              lines = lines.filter(coords=>coords.length === 2);
+              /*
+              jsPDF lines takes relative coordinates,
+              so start at the end of the array,
+              and find the delta from the previous coordinate
+              */
+              for (let i = lines.length - 1; i > 0; i--) {
+                const coord = lines[i];
+                const prev = lines[i-1];
+                coord[0] -= prev[0];
+                coord[1] -= prev[1];
+              }
+
+              if (lines.length > 0) {
+                const [x, y] = lines.shift() as number[];
+                const scale = [1.0, 1.0];
+                const closed = false;
+                // console.log(lines.map(arr=>arr.join()));
+                doc.lines(lines, x, y, scale, drawInstructions, closed);
+              }
+            }
+          }
+
+        })
+      }
+      resolve(doc);
+    });
+  }
+
+
+  createHistogramDataExport() : string {
+    const { binConfig, distribution, isDiscrete } = this.traceData as HistData;
+    const { bins, edges, counts } = binConfig;
+    const bandwidth = distribution.bandwidth;
+    // console.log(distribution)
+    const label = this.className;
+    let text = `delphy ${label} `;
+    // let totProb = 0;
+    // let totPdf = 0;
+    if (isDiscrete) {
+      text += 'discrete values\n';
+      text += `bin\tprobability\tcount\n`;
+      const total = bins.reduce((tot, n)=>tot + n, 0);
+      bins.forEach((count, i)=>{
+        const bin = edges[i];
+        const probability = count / total;
+        // totProb += probability;
+        text += `${bin}\t${probability}\t${count}\n`;
+      });
+    } else {
+      text += 'distribution\n';
+      text = `bin min\tbin max\tcount\tpercent of total\tsmoothed probability (KDE)\tsmoothed pdf (KDE)\n`;
+      const total = counts.reduce((tot, n)=>tot + n, 0);
+      bins.forEach((probability, i)=>{
+        const binMin = edges[i];
+        const binMax = edges[i+ 1] || (binMin + bandwidth);
+        const count = counts[i];
+        const pct = 100 * count / total;
+        const binRange = binMax - binMin;
+        const pdf = probability / binRange;
+        // totProb += probability;
+        // totPdf += pdf;
+        text += `${binMin}\t${binMax}\t${count}\t${pct}\t${probability}\t${pdf}\n`;
+      });
+    }
+    // console.debug("total prob", totProb, totPdf);
+    return text;
+  }
+
+
+  createHistogramChartExport() : Promise<jsPDF> {
+    const result = getElementsAndStyles(this.histoSVG);
+    return new Promise((resolve)=>{
+
+      const width = this.histoWidth * 2;
+      const height = this.histoHeight * 2;
+      const doc = new jsPDF({ // eslint-disable-line new-cap
+        unit: "px",
+        orientation: "landscape",
+        format: [width, height]
+      });
+
+      // console.log(`pdf ${width} ${height}`);
+      if (result) {
+        const {elements, styles } = result;
+        elements.forEach((element, i)=>{
+          if (element.nodeName === "rect") {
+            const rect = element as SVGRectElement;
+            const style = styles[i];
+            const fill = style.fill;
+            let drawInstructions = '';
+            if (fill !== "none") {
+              doc.setFillColor(fill);
+              drawInstructions = 'F';
+            }
+            const stroke = style.stroke;
+            if (stroke !== "none") {
+              doc.setDrawColor(stroke);
+              const strokeWidth = style.strokeWidth;
+              doc.setLineWidth(parseFloat(strokeWidth));
+              drawInstructions += 'D';
+            }
+            doc.rect(rect.x.baseVal.value * 2, rect.y.baseVal.value * 2, rect.width.baseVal.value * 2, rect.height.baseVal.value * 2, drawInstructions);
+            // console.log(element, style);
+            // console.log(rect.x.baseVal.value, rect.y.baseVal.value, rect.width.baseVal.value, rect.height.baseVal.value, fill, stroke);
+          }
+        })
+      }
+      resolve(doc);
+    });
+  }
 
 }
 
-// export const addHistHeader = (text: string)=>{
-//   const sectionLabel = document.createElement("h1") as HTMLHeadingElement;
-//   sectionLabel.innerHTML = text;
-//   chartContainer.appendChild(sectionLabel);
-// }
-
+const setTextContent = (el: HTMLElement, selector: string, label: string) => {
+  (el.querySelector(selector) as HTMLSpanElement).innerHTML = label;
+}

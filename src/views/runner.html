@@ -2,142 +2,340 @@
     <div id="reloading-scrim">
       <div id="reloading-inner">Loading</div>
     </div>
-    <section id="runner--left">
-      <div id="runner--controls">
-        <div id="run-control" class="controls">
-          <input type="checkbox" id="run-input" />
-          <label for="run-input" id="run-input--label">
-            <svg id="run-input--running" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M10.62,20.31H14v-10H10.62Zm8.76-10H16v10h3.34Z"/></svg>
-            <svg id="run-input--paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M22,15,12,20V10Z"/></svg>
-            <svg id="run-input--stopping" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><path d="M15 7 A8 8 0 1 0 23 15"/></svg>
-          </label>
-          <span id="run-steps"><span class="digit">11</span> step<span class="plural">s</span></span>
-        </div>
-        <div id="step-control" class="controls">
-          <label for="step-options">Sample <span class="digit">1</span> tree per</label>
-          <select id="step-options">
-            <option value="7" >10,000,000 steps</option>
-            <option value="6" selected>1,000,000 steps</option>
-            <option value="5" >100,000 steps</option>
-            <option value="4" >10,000 steps</option>
-            <option value="3" >1,000 steps</option>
-            <option value="2" >100 steps</option>
-            <option value="1" >10 steps</option>
-            <option value="0" >1 step</option>
-          </select>
-        </div>
-      </div>
-      <div id="runner--advanced-container">
-        <button type="button" id="advanced-toggle"><div class="box"><div class="glyph"></div></div>Advanced options</button>
-      </div>
-      <div id="runner--tree">
-        <h1 class="tree-header">Sampled Tree</h1>
-        <canvas id="ui" class="tree-canvas"></canvas>
-      </div>
-      <div class="tree-scrubber">
-        <div class="tree-scrubber--text">
-          <div class="burn-in-label">No burn-in set.</div>
-          <div class="trees-label">Modeling from <span class="digit" id="run-mcc">0</span> / <span class="digit" id="run-trees">0</span> sampled tree<span class="plural">s</span>.</div>
-        </div>
-        <div class="burn-in-indicator no-burn-in"></div>
-        <div class="tree-scrubber--range-container">
-          <label for="tree-scrubber--range">Preview sampled tree</label>
-          <input type="range" class="tree-scrubber--range" id="tree-scrubber--range" min="0" step="1">
-        </div>
-        <div class="tree-scrubber--visualizer">
-          <canvas class="tree-scrubber--canvas"></canvas>
-          <div class="tree-scrubber--mcc-label hidden">
-            <div class="mcc">
-              MCC
-              <div class="previewing hidden">(previewing)</div>
+
+
+    <section class="main-content">
+
+      <div id="runner--top">
+        <div id="run-control" class="controls menu-group  no-data">
+          <div class="toolbar">
+            <input type="checkbox" id="run-input" />
+            <label for="run-input" id="run-input--label" class="player">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+                <path id="run-input--running" d="m13.5,13h9c.28,0,.5.22.5.5v9c0,.28-.22.5-.5.5h-9c-.28,0-.5-.22-.5-.5v-9c0-.28.22-.5.5-.5Z" stroke="none" />
+                <path id="run-input--paused" d="m23.72,18.45l-9,4.5c-.33.17-.72-.08-.72-.45v-9c0-.37.39-.61.72-.45l9,4.5c.37.18.37.71,0,.89Z" stroke="none"/>
+                <path id="run-input--stopping" d="m18 9 a9 9 0 1 0 9 9"/>
+              </svg>
+            </label>
+            <span id="run-steps"><span class="digit">0</span> step<span class="plural">s</span></span>
+            <span class="no-data">Click to start</span>
+          </div>
+          <div class="controls menu-group">
+            <div id="step-control" class="">
+              <label for="step-options">Sample <span class="digit">1</span> tree per</label>
+              <select id="step-options">
+                <option value="7" >10,000,000 steps</option>
+                <option value="6" selected>1,000,000 steps</option>
+                <option value="5" >100,000 steps</option>
+                <option value="4" >10,000 steps</option>
+                <option value="3" >1,000 steps</option>
+                <option value="2" >100 steps</option>
+                <option value="1" >10 steps</option>
+                <option value="0" >1 step</option>
+              </select>
             </div>
-            <div class="mcc-indicator"></div>
-          </div>
-          <div class="tree-scrubber--preview-label previewing hidden">Previewing</div>
-        </div>
-      </div>
-    </section>
-    <section id="runner--mcc">
-      <h1 class="tree-header">Maximum Clade Credibility (MCC) Tree</h1>
-      <canvas id="ui_mcc" class="tree-canvas"></canvas>
-      <div id="ui_mcc--legend">
-        <!-- <div class="mcc-legend-swatch low-cred"></div>
-        <p>credibility below <span class="cred-threshold">90%</span> of base trees</span></p>
-        <div class="mcc-legend-swatch hi-cred"></div>
-        <p>credibility at or above <span class="cred-threshold">90%</span> of base trees</span></p> -->
-        <div class="mcc-opt-list confidence">
-          <label for="mcc-opt--confidence-range">Credibility threshold</label>
-          <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
-            Highlighting nodes in
-            <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
-            of base trees
-          </output>
 
-          <div class="mcc-opt--confidence-range block-slider">
-            <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
-            <div class="slider--track"></div>
-            <div class="slider--track-filled"></div>
-            <div class="slider--thumb"></div>
+            <div id="runner--advanced-container">
+              <label id="runner--advanced--toggle">
+                <input type="checkbox" />
+                <div class="icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                    <path d="m11.84,9.18l-.94-.39c.07-.25.12-.52.12-.79s-.05-.54-.12-.79l.94-.39c.19-.08.28-.3.2-.49s-.3-.28-.49-.2l-.95.39c-.27-.47-.65-.85-1.12-1.12l.39-.95c.08-.19-.01-.41-.2-.49-.19-.08-.41.01-.49.2l-.39.94c-.25-.07-.52-.12-.79-.12s-.54.05-.79.12l-.39-.94c-.08-.19-.3-.28-.49-.2-.19.08-.28.3-.2.49l.39.95c-.47.27-.85.65-1.12,1.12l-.95-.39c-.19-.08-.41.01-.49.2s.01.41.2.49l.94.39c-.07.25-.12.52-.12.79s.05.54.12.79l-.94.39c-.19.08-.28.3-.2.49.06.14.2.23.35.23.05,0,.1,0,.14-.03l.95-.39c.27.47.65.85,1.12,1.12l-.39.95c-.08.19.01.41.2.49.05.02.1.03.14.03.15,0,.29-.09.35-.23l.39-.94c.25.07.52.12.79.12s.54-.05.79-.12l.39.94c.06.14.2.23.35.23.05,0,.1,0,.14-.03.19-.08.28-.3.2-.49l-.39-.95c.47-.27.85-.65,1.12-1.12l.95.39s.1.03.14.03c.15,0,.29-.09.35-.23.08-.19-.01-.41-.2-.49Zm-3.84,1.07c-1.24,0-2.25-1.01-2.25-2.25s1.01-2.25,2.25-2.25,2.25,1.01,2.25,2.25-1.01,2.25-2.25,2.25Z" stroke-width="0"></path>
+                  </svg>
+                </div>
+                <span>Advanced options</span>
+              </button>
+            </div>
           </div>
         </div>
 
-      </div>
-    </section>
-    <section id="runner--panel">
-      <div id="ess-wrapper" class="pre">
-        <h1 id="ess-readout">Minimum Effective Sample Size: <span class="readout">0</span></h1>
-        <div id="ess-meter-stages" class="converging">
-          <div class="stage converging">
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Converging</div></a>
-            <p>Not enough statistically independent samples to be reliable.</p>
+
+
+        <div id="ess-wrapper" class="pre menu-group">
+          <div id="ess-readout" class="toolbar" data-element="sample_size">
+            <div class="heading" data-tooltip="outside">
+              <span>Minimum effective</span> <span>sample size</span>
+              <a class="info" href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="8" height="8">
+                  <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"/>
+                </svg>
+              </a>
+            </div>
+            <div class="readout">
+              <span class="count composite fractional">
+                <span class="before"></span>
+                <span class="after"></span>
+              </span>
+            </div>
           </div>
-          <div class="stage stable">
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Stable</div></a>
-            <p>Ready for initial exploration. Running longer will refine results.</p>
-          </div>
-          <div class="stage publish">
-            <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_"><div class="stage-label">Robust</div></a>
-            <p>Running longer is unlikely to materially change any results.</p>
+
+          <div id="ess-meter-stages" class="toolbar" data-stage="converging" data-tooltip="inside">
+            <div class="meter">
+              <div class="bar" data-meter-level="0"></div>
+              <div class="bar" data-meter-level="1"></div>
+              <div class="bar" data-meter-level="2"></div>
+              <div class="bar" data-meter-level="3"></div>
+            </div>
+            <div class="readout">
+              <span class="label no-data" data-readout-level="0">No data</span>
+              <span class="label converging" data-readout-level="1">Converging</span>
+              <span class="label stable" data-readout-level="2">Stable</span>
+              <span class="label robust" data-readout-level="3">Robust</span>
+              <span class="label publish" data-readout-level="4">Ready</span>
+            </div>
+            <div class="detail">
+              <div class="text no-data" data-detail-level="0"><p>The delphy run has not been started.</p></div>
+              <div class="text converging" data-detail-level="1"><p>Not enough statistically independent samples to be reliable.</p></div>
+              <div class="text stable" data-detail-level="2"><p>Ready for initial exploration. Running longer will refine results.</p></div>
+              <div class="text robust" data-detail-level="3"><p>Running longer is unlikely to materially change any results.</p></div>
+              <div class="text publish" data-detail-level="4"><p>Results are most likely ready for publication.</p></div>
+            </div>
+            <a class="info" href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
+                <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"/>
+              </svg>
+            </a>
           </div>
         </div>
-        <p>Learn more in the <a href="https://github.com/fathominfo/delphy-web/wiki/Effective-Sample-Size" target="_">wiki</a></p>
+
       </div>
-      <div id="burn-in-wrapper" class="pre">
-        <input type="checkbox" id="burn-in-toggle" disabled />
-        <label for="burn-in-toggle" >Hide burn in <span class="hint">click a histogram to select</span></label>
-      </div>
-      <div id="runner--panel--blocks" class="blocks">
-        <div class="block">
-          <div class="block-header">
-            <h1></h1>
-          </div>
-          <div class="block--chart">
-            <ul class="y-axis">
-              <li class="max"></li><li class="median"></li><li class="min"></li>
-            </ul>
-            <div class="graphic">
-              <div class="chart">
-                <canvas></canvas>
+
+      <div id="runner--bottom">
+
+        <div id="runner--mcc">
+          {{>mcc_tree}}
+
+          <div class="mcc-legend">
+            <div class="mcc-opt-list confidence">
+              <label for="mcc-opt--confidence-range">Credibility threshold</label>
+              <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
+                Highlighting nodes in
+                <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
+                of base trees
+              </output>
+
+              <div class="mcc-opt--confidence-range block-slider">
+                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
+                <div class="slider--track"></div>
+                <div class="slider--track-filled"></div>
+                <div class="slider--thumb"></div>
               </div>
-              <ul class="x-axis"><li class="step-first"></li><li class="step-mid"></li><li class="step-last"></li></ul>
             </div>
           </div>
-          <p class="block-readout meaning unitless">
-            <span class="mean-label">Mean:</span>
-            <span class="tree-label"><span class="tree-label-index">#</span> sample:</span>
-            <span class="readout-value"></span>
-            <span class="readout-unit"></span>
-          </p>
         </div>
-      </div>
-      <div id="runner--export-list">
-        <button id="runner--export-csv">Export Traces to TSV</button>
+
+
+        <div id="run--indicators">
+
+          <div id="runner--panel--modules" class="blocks">
+              <div class="module trace">
+                <div class="header">
+                  <h3 class="title"></h3>
+                </div>
+
+
+                <div class="displays">
+
+
+                  <div class="chart-container">
+                    <div class="display-wrapper">
+                      <div class="graph display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 180">
+                          <g class="run">
+                            <rect class="period" x="0" y="0" height="180" width="46"></rect>
+                            <path class="trend" d=""></path>
+                          </g>
+                          <g class="burn-in">
+                            <line class="period" x1="0" y1="96" x2="180" y2="96" ></line>
+                            <path class="trend" d=""></path>
+                          </g>
+                          <line class="highlight y" x1="0" x2="96" y1="181" y2="181"></line>
+                          <line class="highlight x" x1="97" x2="97" y1="0" y2="180"></line>
+                          <ellipse class="highlight point" cx="97" cy="181" rx="2" ry="2"></ellipse>
+                          <line class="tick-bar" x1="0" x2="96" y1="0" y2="0"></line>
+                        </svg>
+                      </div>
+                      <div class="y axis">
+                        <div class="values">
+                          <span class="value">
+                            <span class="tick"></span>
+                            <span class="text">
+                              <span class="val"></span>
+                              <span class="units"></span>
+                            </span>
+                          </span>
+                          <span class="value hover">
+                            <span class="tick"></span>
+                            <span class="text">
+                              <span class="val"></span>
+                              <span class="units">samples</span>
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="x axis statsing unitless">
+                      <span class="tick">▲</span>
+                      <p class="trace-readout">
+                        <span class="readout-value"></span>
+                        <span class="readout-unit"></span>
+                      </p>
+                    </div>
+                    <div class="download-button">
+                      <div class="glyph-wrapper">
+                        <div class="button-glyph"></div>
+                      </div>
+                      <span class="tooltip">
+                        <button class="download-text action">Download<br/>data</button>
+                        <button class="download-chart action">Download<br/>chart</button>
+                        <span class="completed">Downloaded</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="chart-container">
+                    <div class="display-wrapper">
+                      <div class="histogram display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 44">
+                          <g class="bars">
+                            <g class="distribution">
+                              <rect x="48" y="0" height="3.73" width="2"></rect>
+                              <path d=""></path>
+                              <line x1="48" y1="44" x2="48" y2="0"></line>
+                            </g>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="download-button">
+                      <div class="glyph-wrapper">
+                        <div class="button-glyph"></div>
+                      </div>
+                      <span class="tooltip">
+                        <button class="download-text action">Download<br/>data</button>
+                        <button class="download-chart action">Download<br/>chart</button>
+                        <span class="completed">Downloaded</span>
+                      </span>
+                    </div>
+                    <p class="prob-readout">
+                      <span class="readout-value"></span>
+                      <span class="probability-label">probability</span>
+                    </p>
+                  </div>
+
+                </div>
+
+                <div class="support">
+                  <button class="copy-button">
+                    <div class="glyph-wrapper">
+                      <div class="button-glyph"></div>
+                    </div>
+                    <span class="tooltip">
+                      <span class="action">Copy<br/>summary<br/>stats</span>
+                      <span class="completed">Copied</span>
+                    </span>
+                  </button>
+                  <table class="summary-stats">
+                    <tr>
+                    	<th data-stat="mean">Mean</th>
+                      <td data-stat="mean"><span class="value mean"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="hpd">95% HPD</th>
+                      <td data-stat="hpd">[<span class="value hpd-min"></span>, <span class="value hpd-max"></span>]</td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="median">Median</th>
+                      <td data-stat="median"><span class="value median"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="stddev">Std dev</th>
+                      <td data-stat="stddev"><span class="value stddev"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="stderr">Std err</th>
+                      <td data-stat="stderr"><span class="value stderr"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="ess">ESS</th>
+                      <td data-stat="ess"><span class="value ess"></span></td>
+                    </tr>
+                    <tr>
+                    	<th data-stat="act">ACT</th>
+                      <td data-stat="act"><span class="value act"></span></td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+
+              <div class="module population">
+                <div class="header">
+                  <h3 class="title"></h3>
+                  <p class="readuout-unit"></p>
+                </div>
+                <div class="chart">
+                  <div class="feature">
+                    <div class="y axis">
+                      <svg class="log-scale-ticks" xmlns="http://www.w3.org/2000/svg" >
+                        <text x="0">##</text>
+                        <line></line>
+                      </svg>
+                    </div>
+                    <div class="displays">
+                      <div class="graph display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 96">
+                          <path class="trend range" d=""></path>
+                          <path class="trend median" d=""></path>
+                          <path class="trend sample" d=""></path>
+                        </svg>
+                        <div class="position">
+                          <div class="x p"></div>
+                          <div class="y p"><div class="pos"></div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="support">
+                    <div class="x axis">
+                      <div class="min-date"></div>
+                      <div class="max-date"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+          </div>
+
+          <div id="run--indicator--controls" class="menu-group">
+
+            <div id="burn-in-wrapper" class="pre">
+              <input type="checkbox" id="burn-in-toggle" disabled />
+              <label for="burn-in-toggle" >Hide burn in <span class="hint">click in a trace chart to select</span></label>
+            </div>
+
+
+            <button id="burn-in-override" class="pre" disabled title="allow delphy to detect the burn-in period">Reset burn in</button>
+
+
+
+            <label id="runner--show-traces">
+              <input id="runner--all-traces-toggle" type="checkbox" />
+              <span id="runner--all-traces">Show all traces</span>
+            </label>
+
+
+
+            <button id="runner--export-csv">Export Traces to TSV</button>
+
+          </div>
+        </div>
       </div>
 
     </section>
 
-    <div id="runner--advanced" class="hidden">
-      <form class="runner--advanced--content">
+    <div id="runner--advanced">
+      <form id="runner--advanced--content">
         <div class="runner--advanced--header">
           <h2 class="runner--advanced--title">Advanced options</h2>
           <button type="button" class="close-button" aria-label="Close"><div class="box"><div class="glyph"></div></div></button>

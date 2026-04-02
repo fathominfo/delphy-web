@@ -1,5 +1,5 @@
 import { Pythia, setReadyCallback } from './pythia/pythia';
-import { bindUpload, hideUpload } from './ui/uploadui';
+import { bindUpload, configCallbackType, hideUpload } from './ui/uploadui';
 import { NavLabel, bindNav, activateView } from  "./ui/nav";
 import { UIScreen } from './ui/uiscreen';
 import { RunUI } from './ui/runner/runui';
@@ -110,7 +110,7 @@ function onReady(p:Pythia):void {
       });
     }
   };
-  const configCallback = (config: ConfigExport)=>{
+  const configCallback : configCallbackType = (config: ConfigExport)=>{
     sharedState.importConfig(config);
   };
   bindUpload(p, sharedState, runCallback, configCallback);

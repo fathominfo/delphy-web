@@ -165,6 +165,14 @@ export class Pythia {
   logPosteriorHist : number[] = [];
   logGHist : number[] = [];
   numMutationsHist : number[] = [];
+  alphaHist: number[] = [];
+  logCoalescentPriorHist: number[] = [];
+  logOtherPriorsHist: number[] = [];
+  hkyKappaHist: number[] = [];
+  hkyPiAHist: number[] = [];
+  hkyPiCHist: number[] = [];
+  hkyPiGHist: number[] = [];
+  hkyPiTHist: number[] = [];
   popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
@@ -561,6 +569,14 @@ export class Pythia {
     this.logPosteriorHist = [];
     this.logGHist = [];
     this.numMutationsHist = [];
+    this.alphaHist = [];
+    this.logCoalescentPriorHist = [];
+    this.logOtherPriorsHist = [];
+    this.hkyKappaHist = [];
+    this.hkyPiAHist = [];
+    this.hkyPiCHist = [];
+    this.hkyPiGHist = [];
+    this.hkyPiTHist = [];
     this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
@@ -574,6 +590,37 @@ export class Pythia {
 
   sampleCurrentTree():void {
     if (this.run) {
+      const step = this.run.getStep();
+      /*
+      some save files mistakenly save multiple records of the initial tree.
+      */
+      const isDuplicate = step === this.stepsHist[this.stepsHist.length - 1];
+      if (isDuplicate) {
+        this.stepsHist.pop();
+        if (this.run.isMpoxHackEnabled()) {
+          this.muHist.pop();
+          this.muStarHist.pop();
+        } else {
+          this.muHist.pop();
+        }
+        this.totalBranchLengthHist.pop();
+        this.logPosteriorHist.pop();
+        this.logGHist.pop();
+        this.numMutationsHist.pop();
+        this.alphaHist.pop();
+        this.logCoalescentPriorHist.pop();
+        this.logOtherPriorsHist.pop();
+        this.hkyKappaHist.pop();
+        this.hkyPiAHist.pop();
+        this.hkyPiCHist.pop();
+        this.hkyPiGHist.pop();
+        this.hkyPiTHist.pop();
+        this.popModelHist.pop();
+        this.paramsHist.pop();
+        this.treeHist.pop();
+        this.minDateHist.pop();
+      }
+      this.stepsHist.push(step);
       if (this.run.isMpoxHackEnabled()) {
         this.muHist.push(this.run.getMpoxMu());
         this.muStarHist.push(this.run.getMpoxMuStar());
@@ -584,8 +631,15 @@ export class Pythia {
       this.logPosteriorHist.push(this.run.getLogPosterior());
       this.logGHist.push(this.run.getLogG());
       this.numMutationsHist.push(this.run.getNumMutations());
+      this.alphaHist.push(this.run.getAlpha());
+      this.logCoalescentPriorHist.push(this.run.getLogCoalescentPrior());
+      this.logOtherPriorsHist.push(this.run.getLogOtherPriors());
+      this.hkyKappaHist.push(this.run.getHkyKappa());
+      this.hkyPiAHist.push(this.run.getHkyPiA());
+      this.hkyPiCHist.push(this.run.getHkyPiC());
+      this.hkyPiGHist.push(this.run.getHkyPiG());
+      this.hkyPiTHist.push(this.run.getHkyPiT());
       this.popModelHist.push(this.run.getPopModel());
-      this.stepsHist.push(this.run.getStep())
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);
     }
@@ -1301,7 +1355,7 @@ export class Pythia {
     const treeInfoSize = read32();
     const treeBuffers:Uint8Array[] = [];
     const paramBuffers:Uint8Array[] = [];
-    const treeInfo = readBuffer(treeInfoSize);
+    const treeInfo = readBuffer(treeInfoSize).buffer as ArrayBuffer;
 
     let treeSize = read32();
     while (treeSize !== NO_MORE_TREES) {
@@ -1321,15 +1375,19 @@ export class Pythia {
     const treeEndLocation = read64();
     console.debug(`using save format version ${saveFormatVersion}, read ${pos} of ${actualSize} bytes. Trees end at position ${treeEndLocation}`);
 
+    this.resetHist();
+
     // Create a tiny temporary run so that we can read off the run parameters
+    let tBuff = treeBuffers[0].buffer as ArrayBuffer;
+    let pBuff = paramBuffers[0].buffer as ArrayBuffer;
     let runParams: RunParamConfig;
     {
-      const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
+      const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
       const tmpRun = this.delphy.createRun(tmpTree);
       tmpTree.delete();  // tmpRun takes over tmpTree's contents, leaving only a husk
 
-      tmpRun.setParamsFromFlatbuffer(paramBuffers[0]);
+      tmpRun.setParamsFromFlatbuffer(pBuff);
 
       runParams = this.extractRunParamsFromRun(tmpRun);
       runParams.stepsPerSample = stepsPerSample;
@@ -1338,18 +1396,19 @@ export class Pythia {
     }
 
     // Now instantiate the real run and record all the associated snapshots
-    const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[0], treeInfo);
+    const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
     this.run = await this.instantiateRun(firstTree, runParams);
 
-    for (let i = 0; i < treeCount; i++) {
+    for (let i = 1; i < treeCount; i++) {
       progressCallback(i, treeCount);
-
-      const tree = this.delphy.createPhyloTreeFromFlatbuffers(treeBuffers[i], treeInfo);
+      tBuff = treeBuffers[i].buffer as ArrayBuffer;
+      pBuff = paramBuffers[i].buffer as ArrayBuffer;
+      const tree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
       this.run.getTree().copyFrom(tree);
       tree.delete();
 
-      this.run.setParamsFromFlatbuffer(paramBuffers[i]);
+      this.run.setParamsFromFlatbuffer(pBuff);
 
       this.sampleCurrentTree();
 

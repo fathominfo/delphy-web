@@ -85,5 +85,14 @@ function bindNav(labels:NavLabel[]):void {
   });
 }
 
+function enableAnalyticTabs(enable = true) : void {
+  navLabels.forEach(nl=>{
+    if (nl.label === 'Lineages' || nl.label === 'Mutations') {
+      const button = nl.button as HTMLButtonElement;
+      button.disabled = !enable;
+    }
+  });
+}
 
-export { NavLabel, bindNav, activateView };
+
+export { NavLabel, bindNav, activateView, enableAnalyticTabs };

@@ -1,36 +1,29 @@
 import {MccRef} from '../../pythia/mccref';
-import {PhyloTree, ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+// import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
+import {ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
-import {TreeCanvas, instantiateTreeCanvas} from '../treecanvas';
 import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
-import { TreeScrubber, sampleListenerType } from './treescrubber';
 import {DateLabel} from '../datelabel';
-import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} from '../common';
+import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
-import {UIScreen} from '../uiscreen';
 import {SharedState} from '../../sharedstate';
-import { hoverListenerType, kneeListenerType } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType, statHoverListenerType, SummaryStat } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
+import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, Pythia, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
-import { TraceCanvas } from './tracecanvas';
+import { chartContainer, TraceCanvas } from './tracecanvas';
+import { HistData } from './histdata';
+import { UIScreen } from '../uiscreen';
+import { enableAnalyticTabs } from '../nav';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
 
 const EPSILON = 1e-7;
-
-type ESS_THRESHOLD = {threshold: number, className: string};
-
-const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
-  {threshold: 0, className: "converging"},
-  {threshold: 10, className: "stable"},
-  {threshold: 100, className: "publish"}
-];
 
 const RESET_MESSAGE = `Updating this setting will erase your current progress and start over.\nDo you wish to continue?`;
 
@@ -41,10 +34,85 @@ const RESET_MESSAGE = `Updating this setting will erase your current progress an
 //   RESTART_ONLY = 3
 // }
 
+
+type HistChartConfig = {
+  name: string, // can be valid html
+  unit: string, // can be valid html
+  className: string,
+  dataFnc: HistDataFunction,
+  isDiscrete: boolean
+}
+
+type HistChartNoESSConfig = {
+  name: string, // can be valid html
+  unit: string, // can be valid html
+  className: string,
+  dataFnc: HistDataFunction,
+  isDiscrete: boolean,
+  noESSReason: string
+}
+
+
+type HistChartCustomLabelConfig = {
+  name: string, // can be valid html
+  unit: string, // can be valid html
+  className: string,
+  dataFnc: HistDataFunction,
+  isDiscrete: boolean,
+  labelFunction: (v:number)=>string,
+  stdErrLabelFunction: (v:number)=>string
+}
+
+type PopChartConfig = {
+  name: string,
+  dataFnc: GammaDataFunction
+}
+
+enum TraceChart {
+  numMutations,
+  logPosterior,
+  mu,
+  muStar,
+  minDate,
+  evolutionaryTime,
+  growthRate,
+  logG,
+  alpha,
+  logCoalescentPrior,
+  logOtherPriors,
+  hkyKappa,
+  hkyPiA,
+  hkyPiC,
+  hkyPiG,
+  hkyPiT,
+  gamma
+}
+
+
+/*
+Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
+*/
+const ESSExcludes : TraceChart[] = [TraceChart.numMutations];
+
+type ESS_THRESHOLD = {threshold: number, className: string};
+
+const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
+  {threshold: 0, className: "converging"},
+  {threshold: 15, className: "stable"},
+  {threshold: 100, className: "robust"},
+  {threshold: 200, className: "publish"}
+];
+
+
+
+
+
+
 export class RunUI extends UIScreen {
   mccRef: MccRef | null;
 
-  private runControl: HTMLInputElement;
+  private runControl: HTMLDivElement;
+  private runInput: HTMLInputElement;
 
   private stepCountText: HTMLSpanElement;
   private treeCountText: HTMLSpanElement;
@@ -52,20 +120,14 @@ export class RunUI extends UIScreen {
 
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
-
-  private treeCanvas: TreeCanvas;
   private mccTreeCanvas: MccTreeCanvas;
-  private treeScrubber: TreeScrubber;
+  private mccHeader: HTMLSpanElement;
 
-  private logPosteriorCanvas: HistCanvas;
-  private muCanvas: HistCanvas;
-  private muStarCanvas: HistCanvas;
-  private TCanvas: HistCanvas;
-  private mutCountCanvas: HistCanvas;
-  private popGrowthCanvas: HistCanvas;
-  private gammaCanvas: GammaHistCanvas;
-  private traceCanvases: TraceCanvas[];
-  private histCanvases: HistCanvas[];
+  private traceCanvases: TraceCanvas[] = [];
+  private defaultCanvases: TraceCanvas[] = [];
+  private essCandidates: TraceCanvas[] = [];
+  private showAllCanvases = false;
+
 
   private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
@@ -73,12 +135,11 @@ export class RunUI extends UIScreen {
   private essMeter: HTMLDivElement;
   private burnInWrapper: HTMLDivElement;
   private burnInToggle: HTMLInputElement;
+  private resetBurnInButton: HTMLButtonElement;
   private hideBurnIn: boolean;
-  private minDate:SoftFloat;
   private mccMinDate:SoftFloat;
-  private timelineIndices:DateLabel[];
   private mccTimelineIndices:DateLabel[];
-  private baseTree: PhyloTree | null;
+
 
   private burninPrompt: BurninPrompt;
   private ess: number;
@@ -95,6 +156,14 @@ export class RunUI extends UIScreen {
 
   is_running: boolean;
   private timerHandle:number;
+  /*
+  Why not just declare this as a function on `this`?
+  Because! If we did, we would need to do something like
+  `addEventListener('click', ()=>this.runControlHandler())`,
+  that is, create an anonymous function to invoke the method
+  on `this`. But we want to be able to remove the event listener
+  too, so we need something that is _not_ anonymous. [mark 260330]
+  */
   runControlHandler:()=>void;
 
 
@@ -102,9 +171,9 @@ export class RunUI extends UIScreen {
   mccIndex: number;
   private drawHandle: number;
 
-
-  advanced: HTMLElement;
+  advancedToggle: HTMLInputElement;
   advancedForm: HTMLFormElement;
+  advancedFormContainer: HTMLDivElement;
 
   fixedRateToggle: HTMLInputElement;
   mutationRateInput: HTMLInputElement;
@@ -121,17 +190,22 @@ export class RunUI extends UIScreen {
   minBarrierLocationInput: HTMLInputElement;
 
   submitAdvancedButton: HTMLButtonElement;
-  restartWarning: HTMLElement;
 
   /* useful when updating the advanced run parameters */
   disableAnimation: boolean;
 
-  kneeHandler : kneeListenerType;
+  kneeHandler : kneeHoverListenerType;
+  curatedKneeHandler : (pct:number)=>void;
+  hoverHandler: hoverListenerType;
+  statHoverHandler: statHoverListenerType;
+
+  traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | HistChartNoESSConfig | PopChartConfig} = {};
+
 
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
-    const DEBOUNCE_TIME = 100; // ms
+    const DEBOUNCE_TIME = 20; // ms
     let lastRequestedBurnInPct = -1;
 
     this.kneeHandler = (pct:number)=>{
@@ -157,19 +231,15 @@ export class RunUI extends UIScreen {
       }
     };
 
-    const curatedKneeHandler = (pct:number)=>{
+
+    this.curatedKneeHandler = (pct:number)=>{
       this.sharedState.kneeIsCurated = true;
+      this.resetBurnInButton.disabled = false;
       this.kneeHandler(pct);
     }
 
-    const sampleHandler: sampleListenerType = ()=>{
-      this.updateRunData();
-    };
 
-    const hoverHandler: hoverListenerType = (treeIndex:number)=>{
-      // if (treeIndex === UNSET) {
-      //   console.log(`hoverHandler(${treeIndex})`);
-      // }
+    this.hoverHandler = (treeIndex:number)=>{
       this.traceCanvases.forEach(hc=>{
         if (hc.isVisible) {
           hc.handleTreeHighlight(treeIndex);
@@ -178,14 +248,23 @@ export class RunUI extends UIScreen {
       this.requestDraw();
     };
 
+    this.statHoverHandler = (statType: SummaryStat | null)=>{
+      this.traceCanvases.forEach(hc=>{
+        if (hc.isVisible && hc instanceof HistCanvas) {
+          hc.handleStatHighlight(statType);
+        }
+      });
+      this.requestDraw();
+    };
 
     this.mccRef = null;
-    this.treeCanvas = instantiateTreeCanvas("#ui");
-    this.mccTreeCanvas = instantiateMccTreeCanvas("#ui_mcc");
-    this.runControl = document.querySelector("#run-input") as HTMLInputElement;
+    this.mccTreeCanvas = instantiateMccTreeCanvas("#runner--mcc .tree-canvas");
+    this.runControl = document.querySelector("#run-control") as HTMLDivElement;
+    this.runInput = this.runControl.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
     this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
     this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
+    this.mccHeader = this.div.querySelector("#runner--mcc .header") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
     this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
     this.essReadout = this.essWrapper.querySelector(".readout") as HTMLSpanElement;
@@ -194,34 +273,59 @@ export class RunUI extends UIScreen {
     this.burnInToggle = this.burnInWrapper.querySelector("#burn-in-toggle") as HTMLInputElement;
     this.runControlHandler = ()=> this.set_running();
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
-    this.treeScrubber = new TreeScrubber(document.querySelector(".tree-scrubber") as HTMLElement, sampleHandler);
+    // hkyPi{A,C,G,T} -> HKY Long-term Nucleotide Content (π_A)
 
-    this.mutCountCanvas = new HistCanvas("Number of Mutations", '', curatedKneeHandler, hoverHandler);
-    this.logPosteriorCanvas = new HistCanvas("ln(Posterior)", '', curatedKneeHandler, hoverHandler);
-    this.muCanvas = new HistCanvas("Mutation Rate μ", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler, hoverHandler);
-    this.muStarCanvas = new HistCanvas("APOBEC Mutation Rate", "&times; 10<sup>&minus;5</sup> mutations / site / year", curatedKneeHandler, hoverHandler);
-    this.TCanvas = new HistCanvas("Total Evolutionary Time", 'years', curatedKneeHandler, hoverHandler);
-    this.popGrowthCanvas = new HistCanvas("Doubling time", 'years', curatedKneeHandler, hoverHandler);
-    this.gammaCanvas = new GammaHistCanvas("Effective population size in years");
-    this.histCanvases = [this.mutCountCanvas, this.logPosteriorCanvas, this.muCanvas, this.muStarCanvas, this.TCanvas, this.popGrowthCanvas];
-    this.traceCanvases = (this.histCanvases as TraceCanvas[] ).concat(this.gammaCanvas);
-    this.mutCountCanvas.isDiscrete = true;
+    this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: "mutations", className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in Minimum ESS calculations: this is a discrete variable with very few possible values"};
+    this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
+    this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "apobec-mut-rate", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
+    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
+    const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g / POP_GROWTH_FACTOR);
+    this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "doublings / year", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
+    const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
+    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
+
+    this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
+    this.traceChartConfig[TraceChart.logG] = { name: "ln(Genetic Prior)", unit: '', className: "ln-gen-prior", dataFnc: ()=>(this.pythia as Pythia).logGHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.alpha] = { name: "Rate Spread α", unit: '', className: "alpha", dataFnc: ()=>(this.pythia as Pythia).alphaHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.logCoalescentPrior] = { name: "ln(Coalescent Prior)", unit: '', className: "ln-coal-prior", dataFnc: ()=>(this.pythia as Pythia).logCoalescentPriorHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.logOtherPriors] = { name: "ln(Other Priors)", unit: '', className: "ln-others", dataFnc: ()=>(this.pythia as Pythia).logOtherPriorsHist, isDiscrete: false};
+    this.traceChartConfig[TraceChart.hkyKappa] = { name: "HKY Ts/Tv Ratio κ", unit: '', className: "kappa", dataFnc: ()=>(this.pythia as Pythia).hkyKappaHist, isDiscrete: false};
+    const pctLabelFnc = (n:number)=>`${safeLabel(n)}<span class="pct">%</span>`;
+    this.traceChartConfig[TraceChart.hkyPiA] = { name: "HKY Base Freq. π<sub>A</sub>", unit: '', className: "hkya", dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.hkyPiC] = { name: "HKY Base Freq. π<sub>C</sub>", unit: '', className: "hkyc", dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.hkyPiG] = { name: "HKY Base Freq. π<sub>G</sub>", unit: '', className: "hkyg", dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.hkyPiT] = { name: "HKY Base Freq. π<sub>T</sub>", unit: '', className: "hkyt", dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+
+
+
+
+
+
+
+
+
+    this.decideTraceCharts();
     this.hideBurnIn = false;
-    this.timelineIndices = [];
+    /*
+    clear the state of the burn in toggle, required in FF.
+    Maybe we want to keep it? I don't think so, it's nice
+    to see the burn in during early stages of the run.
+    [mark 260401]
+    */
+    this.burnInToggle.checked = this.hideBurnIn;
     this.mccTimelineIndices = [];
-    this.minDate = new SoftFloat(0, 0.75, 0.3);
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
     this.is_running = false;
     this.timerHandle = 0;
     this.stepCount = -1;
     this.mccIndex = -1
-    this.baseTree = null;
     this.drawHandle = 0;
     const exportButton = this.div.querySelector("#runner--export-csv") as HTMLButtonElement;
-
-    const openAdvancedButton = this.div.querySelector("#advanced-toggle") as HTMLButtonElement;
-    this.advanced = this.div.querySelector("#runner--advanced") as HTMLElement;
-    this.advancedForm = document.querySelector(".runner--advanced--content") as HTMLFormElement;
+    this.resetBurnInButton = this.div.querySelector("#burn-in-override") as HTMLButtonElement;
+    this.advancedToggle = this.div.querySelector("#runner--advanced--toggle input") as HTMLInputElement;
+    this.advancedFormContainer = document.querySelector("#runner--advanced") as HTMLDivElement;
+    this.advancedForm = this.advancedFormContainer.querySelector("#runner--advanced--content") as HTMLFormElement;
 
     this.fixedRateToggle = this.div.querySelector("#fixed-mutation-rate-toggle") as HTMLInputElement;
     this.mutationRateInput = this.div.querySelector("#overall-mutation-rate-input") as HTMLInputElement;
@@ -256,11 +360,42 @@ export class RunUI extends UIScreen {
 
     this.disableAnimation = false;
 
+    const allChartsToggle = this.div.querySelector("#runner--all-traces-toggle") as HTMLInputElement;
+    /* reset the option for viewing all charts [mark 260401] */
+    allChartsToggle.checked = false;
+    allChartsToggle.addEventListener('change', ()=>{
+      this.showAllCanvases = allChartsToggle.checked;
+      if (this.showAllCanvases) {
+        this.traceCanvases.forEach(canvas=>canvas.setVisible(true));
+        this.setTraceCanvasData();
+        this.traceCanvases.forEach(canvas=>canvas.sizeCanvas());
+        requestAnimationFrame(()=>{
+          this.traceCanvases.forEach(canvas=>canvas.draw());
+        });
+      } else {
+        this.traceCanvases.forEach(canvas=>{
+          if (this.defaultCanvases.indexOf(canvas) < 0){
+            canvas.setVisible(false);
+          }
+        });
+
+      }
+    })
+
     this.burnInToggle.addEventListener('change', ()=>{
       this.hideBurnIn = this.burnInToggle.checked;
       this.sharedState.hideBurnIn = this.hideBurnIn;
       this.updateRunData();
     });
+
+    this.resetBurnInButton.addEventListener('click', ()=>{
+      this.sharedState.kneeIsCurated = false;
+      this.resetBurnInButton.disabled = true;
+      this.updateRunData();
+    });
+
+
+
     const credibilityCallback = (value: number) => {
       const pct = value / 100;
       this.sharedState.mccConfig.setConfidence(pct);
@@ -287,13 +422,23 @@ export class RunUI extends UIScreen {
       }
 
     });
-    this.restartWarning = this.div.querySelector(".warning-text") as HTMLElement;
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
-    openAdvancedButton.addEventListener("click", ()=>{
-      this.advanced.classList.remove("hidden");
-      this.restartWarning.classList.add("hidden");
-      this.submitAdvancedButton.innerText = (this.stepCount === 0) ? "Confirm" : "Restart with selected options";
-      this.submitAdvancedButton.classList.toggle("warning-button", this.stepCount > 0);
+    this.advancedToggle.addEventListener("change", (event)=>{
+      event.stopPropagation();
+      if (this.advancedToggle.checked) {
+        this.advancedFormContainer.classList.add("active");
+        this.advancedForm.classList.remove("warning");
+        if (this.stepCount === 0) {
+          this.submitAdvancedButton.innerText = "Confirm";
+          this.submitAdvancedButton.classList.remove("warning-button");
+        } else {
+          this.submitAdvancedButton.innerText = "Restart with selected options";
+          this.submitAdvancedButton.classList.add("warning-button");
+        }
+
+      } else {
+        this.advancedFormContainer.classList.remove("active");
+      }
     });
 
     this.fixedRateToggle.addEventListener("change", () => {
@@ -327,31 +472,148 @@ export class RunUI extends UIScreen {
 
 
 
+    const advancedCloseButton = this.advancedFormContainer.querySelector(".close-button") as HTMLButtonElement;
     const advancedCancelButton = this.div.querySelector(".advanced--cancel-button") as HTMLButtonElement;
-    const advancedCloseButton = this.div.querySelector(".close-button") as HTMLButtonElement;
-    [advancedCancelButton, advancedCloseButton].forEach(button => button.addEventListener("click", () => {
-      this.advanced.classList.add("hidden");
-    }));
+    [advancedCloseButton, advancedCancelButton].forEach(button=>{
+      button.addEventListener("click", () => {
+        this.advancedToggle.classList.remove("active");
+        this.advancedToggle.checked = false;
+        this.advancedFormContainer.classList.remove("active");
+      });
+    });
+
     this.advancedForm.addEventListener("input", () => this.enableAdvancedFormSubmit());
     this.advancedForm.addEventListener("submit", e => this.submitAdvancedOptions(e));
-    this.advanced.addEventListener("click", e => {
-      if (e.target === this.advanced) {
+    this.advancedFormContainer.addEventListener("click", e => {
+      if (e.target === this.advancedFormContainer) {
         e.preventDefault();
-        this.advanced.classList.add("hidden");
+        this.advancedFormContainer.classList.add("hidden");
       }
     });
+
     window.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !this.advanced.classList.contains("hidden")) {
-        this.advanced.classList.add("hidden");
+      if (e.key === "Escape" && this.advancedToggle.classList.contains("active")) {
+        this.advancedToggle.classList.remove("active");
+        this.advancedToggle.checked = false;
+        this.advancedFormContainer.classList.remove("active");
       }
     })
+  }
+
+  decideTraceCharts() : void {
+    this.traceCanvases.length = 0;
+    this.defaultCanvases.length = 0;
+    this.essCandidates.length = 0;
+    chartContainer.innerHTML = '';
+
+    try {
+      const params = this.getRunParams();
+      const toShow = [TraceChart.numMutations];
+      const gammas = [];
+
+
+
+      let availables = [ TraceChart.numMutations];
+
+      if (!params.mutationRateIsFixed) {
+        if (params.apobecEnabled) {
+          toShow.push(TraceChart.muStar);
+          availables.push(TraceChart.muStar);
+        } else {
+          toShow.push(TraceChart.mu);
+        }
+        availables.push(TraceChart.mu);
+      }
+      toShow.push(TraceChart.minDate);
+      availables.push(TraceChart.minDate);
+      /*
+      this is separate from the `if (params.popModelIsSkygrid)`
+      check below in order to preserve the proper dispaly order
+      for these charts
+      */
+      if (!params.popModelIsSkygrid) {
+        // availables.push(TraceChart.popGrowth);
+        availables.push(TraceChart.growthRate);
+        toShow.push(TraceChart.growthRate);
+      }
+      if (params.siteRateHeterogeneityEnabled) {
+        availables.push(TraceChart.alpha);
+      }
+      availables = availables.concat([
+        TraceChart.logPosterior, TraceChart.logG,
+        TraceChart.logCoalescentPrior, TraceChart.logOtherPriors,
+        TraceChart.evolutionaryTime]);
+      if (!params.apobecEnabled) {
+        availables = availables.concat([
+          TraceChart.hkyKappa, TraceChart.hkyPiA, TraceChart.hkyPiC,
+          TraceChart.hkyPiG, TraceChart.hkyPiT]);
+      }
+      if (params.popModelIsSkygrid) {
+        gammas.push(TraceChart.gamma);
+        toShow.push(TraceChart.gamma);
+      }
+
+      availables.forEach((tc: TraceChart)=>{
+        /*
+        AFAICT typescript doesn't have a good way to detect whether
+        an instance matches a user-defined type, other than to
+        check for the presence of attributes. Alas, if you assign
+        a type to a variable, then you can't check for presence of
+        attributes that aren't on that type.
+        */
+        const config = this.traceChartConfig[tc] as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        /* if there is no `unit` defined, this is a PopChartConfig, not trace chart, so skip it */
+        if (config.unit === undefined) return;
+        const { name, unit, className, dataFnc, isDiscrete } = config as HistChartConfig;
+        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
+        if (config.labelFunction !== undefined) {
+          /* this is a HistChartCustomLabelConfig */
+          canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
+          canvas.stdErrFormatLabel = (config as HistChartCustomLabelConfig).stdErrLabelFunction;
+        }
+        this.traceCanvases.push(canvas);
+        if (!ESSExcludes.includes(tc)) {
+          this.essCandidates.push(canvas);
+        } else {
+          /* if this is in ESSExcludes, then it ought to have a reason for why */
+          canvas.setEssExclusion((config as HistChartNoESSConfig).noESSReason);
+        }
+        if (toShow.includes(tc)) {
+          this.defaultCanvases.push(canvas);
+          canvas.setVisible(true);
+        } else if (this.showAllCanvases) {
+          canvas.setVisible(true);
+        } else {
+          canvas.setVisible(false);
+        }
+      });
+      gammas.forEach((tc: TraceChart)=>{
+        const config : PopChartConfig = this.traceChartConfig[tc] as PopChartConfig;
+        const { name, dataFnc } = config;
+        const canvas = new GammaHistCanvas(name, dataFnc);
+        this.traceCanvases.push(canvas);
+        if (toShow.includes(tc)) {
+          this.defaultCanvases.push(canvas);
+          canvas.setVisible(true);
+        } else if (this.showAllCanvases) {
+          canvas.setVisible(true);
+        } else {
+          canvas.setVisible(false);
+        }
+      });
+
+    } catch (err) {
+      // ignore
+    }
+
+
   }
 
 
   enableAdvancedFormSubmit() : void {
     const willRestart = this.getWillRestart();
     if (this.stepCount > 0) {
-      this.restartWarning.classList.toggle("hidden", !willRestart);
+      this.submitAdvancedButton.classList.add("warning");
     }
     /* don't enable the form while waiting for samples from the delphy engine */
     const isPausedAndWaitingForSample = !this.is_running && this.timerHandle !== 0;
@@ -367,10 +629,10 @@ export class RunUI extends UIScreen {
       this.burnInToggle.checked = this.sharedState.hideBurnIn;
     }
     if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
-    this.runControl.addEventListener("change", this.runControlHandler);
+    this.runInput.addEventListener("change", this.runControlHandler);
     this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.updateParamsUI();
-    setTimeout(()=>this.runControl.focus(), 100);
+    setTimeout(()=>this.runInput.focus(), 100);
   }
 
   getRunParams(): RunParamConfig {
@@ -489,20 +751,14 @@ export class RunUI extends UIScreen {
     const popGrowthRateFixed = (params.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
     this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
 
-    // toggle canvases
-    this.toggleHistCanvasVisibility(this.muCanvas, !params.mutationRateIsFixed);
-    this.toggleHistCanvasVisibility(this.muStarCanvas, params.apobecEnabled);
-    this.toggleHistCanvasVisibility(this.popGrowthCanvas, !params.popGrowthRateIsFixed && !params.popModelIsSkygrid);
-    this.toggleHistCanvasVisibility(this.gammaCanvas, params.popModelIsSkygrid)
-    // disable fieldsets
-    // this.mutationRateFieldset.disabled = params.apobecEnabled;
-    // this.apobecFieldset.disabled = params.mutationRateIsFixed || params.siteRateHeterogeneityEnabled;
+    this.decideTraceCharts();
 
     const treeCount = pythia.treeHist.length;
     if (treeCount > 1) {
       const kneeIndex = pythia.kneeIndex;
       if (kneeIndex > 0) {
         this.sharedState.kneeIsCurated = true;
+        this.resetBurnInButton.disabled = false;
         this.burnInWrapper.classList.remove("pre");
         this.burnInWrapper.classList.remove("unset");
       } else {
@@ -541,7 +797,7 @@ export class RunUI extends UIScreen {
       (ele as HTMLSpanElement).innerText = `${confValue}%`;
     });
     this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
+    // this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
     this.mccTreeCanvas.colorsUnSet = true;
     if (this.mccTreeCanvas.tree) {
       this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
@@ -556,28 +812,20 @@ export class RunUI extends UIScreen {
       this.stop();
     }
     super.deactivate();
-    this.runControl.removeEventListener("change", this.runControlHandler);
+    this.runInput.removeEventListener("change", this.runControlHandler);
 
   }
 
   resize():void {
     this.mccTreeCanvas.sizeCanvas();
-    this.treeScrubber.sizeCanvas();
+
 
     this.traceCanvases.forEach(hc => {
       if (hc.isVisible) {
         hc.sizeCanvas();
       }
     });
-    // this.logPosteriorCanvas.sizeCanvas();
-    // this.muCanvas.sizeCanvas();
-    // this.muStarCanvas.sizeCanvas();
-    // this.TCanvas.sizeCanvas();
-    // this.mutCountCanvas.sizeCanvas();
 
-    const {width, height} = this.mccTreeCanvas,
-      aspectRatio = width / height;
-    this.treeCanvas.setAspectRatio(aspectRatio);
     if (!this.is_running) {
       this.updateRunData();
     }
@@ -592,7 +840,7 @@ export class RunUI extends UIScreen {
     if (!this.is_running && this.timerHandle !== 0) {
       clearTimeout(this.timerHandle);
       this.timerHandle = 0;
-      this.runControl.classList.remove("stopping");
+      this.runInput.classList.remove("stopping");
       this.enableAdvancedFormSubmit();
       this.stepSelector.disabled = false;
     }
@@ -605,89 +853,41 @@ export class RunUI extends UIScreen {
     if (!this.pythia) return;
     const stepsHist = this.pythia.stepsHist,
       last = stepsHist.length - 1;
-    if (this.treeScrubber.showLatestBaseTree) {
-      this.baseTree = this.pythia.treeHist[last];
-    } else {
-      this.baseTree = this.pythia.treeHist[this.treeScrubber.sampledIndex];
-    }
-    if (this.baseTree) {
-      // const run = this.pythia.run;
-      const tree = this.baseTree;
-      const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
-      let earliestMCCDate = earliestBaseDate;
-      const mccRef = this.pythia.getMcc();
-      // console.debug(`RunUI set ${mccRef.getManager().id} ${mccRef.getRefNo()}`)
-      this.baseTree = this.pythia.treeHist[last];
-      this.stepCount = stepsHist[last] || 0;
-      this.treeCanvas.positionTreeNodes(tree);
-      if (mccRef) {
-        const oldRef = this.mccRef;
-        this.mccRef = mccRef;
-        this.mccIndex = this.pythia.getMccIndex();
-        // console.log(`this.mccIndex`, this.mccIndex)
-        const mccTree = mccRef.getMcc(),
-          nodeConfidence = mccRef.getNodeConfidence();
-        if (mccTree !== this.mccTreeCanvas.tree) {
-          this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
-          this.sharedState.resetSelections();
-        }
-        earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
-        if (oldRef) {
-          oldRef.release();
-        }
-      }
-      this.minDate.setTarget(earliestBaseDate);
-      this.mccMinDate.setTarget(earliestMCCDate);
-    }
-    this.minDate.update();
-    this.mccMinDate.update();
-    this.timelineIndices = getTimelineIndices(this.minDate.value, this.pythia.maxDate);
-    this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
-    const hideBurnIn = this.sharedState.hideBurnIn,
-      mccIndex = this.mccIndex,
-      sampleIndex = this.treeScrubber.showLatestBaseTree ? UNSET : this.treeScrubber.sampledIndex,
-      {muHist, muStarHist, totalBranchLengthHist, logPosteriorHist, numMutationsHist, popModelHist, kneeIndex} = this.pythia;
-    this.treeScrubber.setData(last, kneeIndex, mccIndex);
-    const muud = muHist.map(n=>n*MU_FACTOR);
-    const totalLengthYear = totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR);
-    const serieses = [
-      logPosteriorHist,
-      muud,
-      totalLengthYear,
-      //numMutationsHist, // Exclude: # of mutations is too jumpy, so equilibrium variations are nowhere close to Gaussian
-      //popHistGrowth,    // Exclude: double time is very volatile & equilibrium variations are nowhere close to Gaussian
-    ];
 
-    this.logPosteriorCanvas.setData(logPosteriorHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.muCanvas.setData(muud, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.TCanvas.setData(totalLengthYear, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    this.mutCountCanvas.setData(numMutationsHist, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    const essCandidates: number[] = [
-      this.logPosteriorCanvas.ess,
-      this.muCanvas.ess,
-      this.TCanvas.ess,
-      // this.mutCountCanvas.ess,
-      // this.popGrowthCanvas.ess
-    ];
-    if (this.getRunParams().apobecEnabled) {
-      const muudStar = muStarHist.map(n=>n*MU_FACTOR);
-      this.muStarCanvas.setData(muudStar, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-      serieses.push(muudStar);
-      essCandidates.push(this.muStarCanvas.ess);
+    const mccRef = this.pythia.getMcc();
+    this.stepCount = stepsHist[last] || 0;
+    if (mccRef) {
+      const oldRef = this.mccRef;
+      this.mccRef = mccRef;
+      this.mccIndex = this.pythia.getMccIndex();
+      const mccTree = mccRef.getMcc(),
+        nodeConfidence = mccRef.getNodeConfidence();
+      if (mccTree !== this.mccTreeCanvas.tree) {
+        // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
+        this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+        this.sharedState.resetSelections();
+      }
+      const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
+      this.mccMinDate.setTarget(earliestMCCDate);
+      if (oldRef) {
+        oldRef.release();
+      }
     }
-    if (this.getRunParams().popModelIsSkygrid) {
-      const gammaHist = popModelHist.map(popModel => (popModel as SkygridPopModel).gamma);
-      console.assert(popModelHist.length > 0, 'No population models at all?  Not even in the initial tree?');
-      const xHist = (popModelHist[0] as SkygridPopModel).x;
-      const isLogLinear = (popModelHist[0] as SkygridPopModel).type === SkygridPopModelType.LogLinear;
-      this.gammaCanvas.setRangeData(gammaHist, xHist, isLogLinear, kneeIndex, sampleIndex);
-    } else {
-      const popHistGrowth = popModelHist.map(popModel => POP_GROWTH_FACTOR / (popModel as ExpPopModel).g);
-      this.popGrowthCanvas.setData(popHistGrowth, kneeIndex, mccIndex, hideBurnIn, sampleIndex);
-    }
+
+    this.mccMinDate.update();
+
+    this.mccTimelineIndices = getTimelineIndices(this.mccMinDate.value, this.pythia.maxDate);
+
+    this.setTraceCanvasData();
+
+
+    const essData: HistData[] = this.essCandidates.map(canvas=>(canvas.traceData as HistData));
+    const essSeries: number[][] = essData.map(histData=>histData.data);
+    const essCandidates: number[] = essData.map(histData=>histData.ess);
+
     this.ess = Math.min.apply(null, essCandidates);
     if (!this.sharedState.kneeIsCurated) {
-      const candidateIndex = this.burninPrompt.evalAllSeries(serieses);
+      const candidateIndex = this.burninPrompt.evalAllSeries(essSeries);
       if (candidateIndex > 0) {
         /* calculate the pct */
         const pct = 1.0 * candidateIndex / last;
@@ -696,7 +896,7 @@ export class RunUI extends UIScreen {
       }
     }
     this.requestDraw();
-    if (this.disableAnimation || (this.minDate.atTarget() && this.mccMinDate.atTarget())) {
+    if (this.disableAnimation || this.mccMinDate.atTarget()) {
       if (this.drawHandle !== 0) {
         clearInterval(this.drawHandle);
         this.drawHandle = 0;
@@ -706,71 +906,95 @@ export class RunUI extends UIScreen {
     }
   }
 
+
+  private setTraceCanvasData() : void {
+    if (!this.pythia) return;
+    const hideBurnIn = this.sharedState.hideBurnIn,
+      mccIndex = this.mccIndex,
+      sampleIndex = UNSET,
+      kneeIndex = this.pythia.kneeIndex,
+      stepsPerSample = this.getRunParams().stepsPerSample,
+      steps = this.pythia.stepsHist;
+    this.traceCanvases.forEach(canvas=>{
+      if (canvas.isVisible || this.essCandidates.includes(canvas)) {
+        if (canvas instanceof HistCanvas) {
+          canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample, steps);
+        } else if (canvas instanceof GammaHistCanvas) {
+          canvas.setRangeData(kneeIndex, sampleIndex);
+        }
+      }
+    });
+
+  }
+
+
   private requestDraw():void {
     requestAnimationFrame(()=>this.draw());
   }
 
   private draw():void {
     if (this.pythia) {
-      const {stepCount, minDate, ess}  = this;
-      const {maxDate} = this.pythia;
-      // const mccRef = this.pythia.getMcc();
-      this.treeCanvas.draw(minDate.value, maxDate, this.timelineIndices);
-      let treeCount = 0,
-        mccCount = 0;
+      const {stepCount, ess}  = this;
+      // const {maxDate} = this.pythia;
+      let treeCount = 0;
+      // let mccCount = 0;
       if (this.mccRef) {
         /* for safety, add extra ref while drawing */
-        const drawRef = this.pythia.getMcc(),
-          mcc = drawRef.getMcc();
+        const drawRef = this.pythia.getMcc();
+        // const mcc = drawRef.getMcc();
         try {
-          this.mccTreeCanvas.draw(this.mccMinDate.value, maxDate, this.mccTimelineIndices);
+          // this.mccTreeCanvas.draw();
+          this.mccTreeCanvas.draw(this.mccMinDate.value, this.pythia.maxDate, this.mccTimelineIndices);
         } catch (ex) {
           console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
         }
         treeCount = this.pythia.getBaseTreeCount();
-        mccCount = mcc.getNumBaseTrees();
+        // mccCount = mcc.getNumBaseTrees();
         drawRef.release();
         this.mccRef.release();
       } else {
         // console.debug('no mcc ref available')
       }
-      this.mutCountCanvas.draw();
-      this.logPosteriorCanvas.draw();
-      this.muCanvas.draw();
-      if (this.getRunParams().apobecEnabled) {
-        this.muStarCanvas.draw();
-      }
-      this.TCanvas.draw();
-      if (this.getRunParams().popModelIsSkygrid) {
-        this.gammaCanvas.draw();
-      } else {
-        this.popGrowthCanvas.draw();
-      }
+      this.traceCanvases.filter(canvas=>canvas.isVisible).forEach(canvas=>canvas.draw());
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
-      this.treeCountText.innerHTML = `${nfc(treeCount)}`;
-      this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
+      // this.treeCountText.innerHTML = `${nfc(treeCount)}`;
+      // this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
       let stepCountPlural = 's';
       if (stepCount === 1) {
         stepCountPlural = '';
       }
       const essIsUsable = ess > 0;
-      let essClass  = "converging";
+      let essClass = "converging";
       this.essWrapper.classList.toggle("unset", !essIsUsable);
-      if (essIsUsable) this.essReadout.textContent = ess.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
-      else this.essReadout.textContent = "0";
-      ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
-        if (ess >= et.threshold) {
-          essClass = et.className;
-        }
-      });
-      this.essMeter.setAttribute("class", essClass);
-      if (treeCount > 1) {
+      this.essWrapper.classList.toggle("unset", !essIsUsable);
+      const integerPart = this.essReadout.querySelector(".before") as HTMLSpanElement;
+      const fractionPart = this.essReadout.querySelector(".after") as HTMLSpanElement;
+      const essString = (essIsUsable ? ess : 0).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
+      const tokens = essString.split('.');
+      integerPart.textContent = tokens[0];
+      fractionPart.textContent = `.${tokens[1]}`;
+      if (treeCount <= 1 && !this.is_running) {
+        essClass = 'no-data';
+        this.runControl.classList.add("no-data");
+        this.burnInWrapper.classList.add("pre");
+        this.mccHeader.classList.add("no-data");
+        enableAnalyticTabs(false);
+      } else {
+        ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
+          if (ess >= et.threshold) {
+            essClass = et.className;
+          }
+        });
+        this.runControl.classList.remove("no-data");
         this.burnInWrapper.classList.remove("pre");
+        this.mccHeader.classList.remove("no-data");
+        enableAnalyticTabs(true);
       }
+      this.essMeter.setAttribute("data-stage", essClass);
       this.stepCountPluralText.innerHTML = stepCountPlural;
 
-      const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
-      treeCountPluralText.classList.toggle("hidden", treeCount === 1);
+      // const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
+      // treeCountPluralText.classList.toggle("hidden", treeCount === 1);
     }
   }
 
@@ -781,8 +1005,8 @@ export class RunUI extends UIScreen {
     }
     if (this.pythia) {
       this.is_running = true;
-      this.runControl.checked = true;
-      this.runControl.classList.remove("stopping");
+      this.runInput.checked = true;
+      this.runInput.classList.remove("stopping");
       this.pythia.startRun(null);
     }
   }
@@ -795,29 +1019,29 @@ export class RunUI extends UIScreen {
     // }
     if (this.pythia) {
       this.is_running = false;
-      this.runControl.checked = false;
-      this.runControl.classList.add("stopping");
+      this.runInput.checked = false;
+      this.runInput.classList.add("stopping");
       this.stepSelector.disabled = true;
       this.pythia.pauseRun();
     }
   }
 
 
-  private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
-    canvas.setVisible(showIt);
+  // private toggleHistCanvasVisibility(canvas: TraceCanvas, showIt: boolean) : void {
+  //   canvas.setVisible(showIt);
 
-    this.traceCanvases.forEach(hc => {
-      if (hc.isVisible) {
-        hc.sizeCanvas();
-        hc.draw();
-      }
-    });
-  }
+  //   this.histCanvases.forEach(hc => {
+  //     if (hc.isVisible) {
+  //       hc.sizeCanvas();
+  //       hc.draw();
+  //     }
+  //   });
+  // }
 
 
 
   private set_running() : void {
-    this.is_running = this.runControl.checked;
+    this.is_running = this.runInput.checked;
     if (this.is_running) {
       this.start();
     } else {
@@ -896,7 +1120,10 @@ export class RunUI extends UIScreen {
 
 
   private confirmRestart(newParams: RunParamConfig, skipDialog=true): void {
-    this.advanced.classList.add("hidden");
+    this.advancedToggle.classList.remove("active");
+    this.advancedToggle.checked = false;
+    this.advancedFormContainer.classList.remove("active");
+
 
     const currentStepCount: number = this.pythia ? this.pythia.stepsHist.length  : 0,
       currentRunWouldBeErased = currentStepCount > 1;

@@ -1,4 +1,7 @@
-import { SummaryTree } from '../pythia/delphy_api';
+import { getMutationName } from '../constants';
+import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
+  MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
+import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
 export const UNDEF = '-';
@@ -130,18 +133,101 @@ export const TREE_TIMELINE_SPACING = 110 - 60,
 
 
 export const HI_CONFIDENCE_COLOR = 'rgb(6, 35, 33)',
-  LOW_CONFIDENCE_COLOR = 'rgb(200,200,200)',
-  DEFAULT_NODE_CONFIDENCE = 0.9;
+  LOW_CONFIDENCE_COLOR = 'rgb(200,200,200)';
 
 
 export const nfc = (x:number)=>{
   return x === undefined ? '' : x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-export const safeLabel = (x:number)=>{
+/*
+@param lowerOOM, upperOOM: lower and upper orders of magnitude at which
+we switch to scientific notation
+*/
+export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   if (x === undefined || isNaN(x) || x === null) return '';
-  return Math.abs(x) >= 100 ? nfc(Math.round(x)) : x.toFixed(2);
+  if (x === 0) return '0.0';
+  const magnitude = Math.log10(x);
+  let label = '';
+  if (magnitude < lowerOOM || magnitude > upperOOM) {
+    label = x.toExponential(2);
+  } else if (Math.abs(x) >= 100) {
+    label = nfc(Math.round(x));
+  } else if (Math.abs(x) >= 10) {
+    label = x.toFixed(1);
+  } else if (x >= 0.1) {
+    label = x.toFixed(2);
+  } else {
+    const oom = Math.floor(magnitude);
+    label = x.toFixed(Math.abs(oom));
+  }
+  if ('0.00e+0' === label) {
+    console.debug(`0.00e+0 isn't very useful ${x}   ${lowerOOM}   ${upperOOM}`);
+  }
+  return label;
 }
+
+export const getDecimalPrecision = (n:number): number=>{
+  /*
+  for numbers >= 1, return 0 (to signify integer precision)
+  for decimal values, return how many significant figures we need
+    (basically abs(log10(n))
+  */
+  return Math.abs(Math.min(0, Math.floor(Math.log10(n)))) || 0;
+};
+
+// const testit = (n: number, exp: number)=>{
+//   const p = getDecimalPrecision(n);
+//   console.log(p === exp, n, p, exp);
+// }
+
+// testit(1.0, 0);
+// testit(9.0, 0);
+// testit(100.0, 0);
+// testit(0.1, 1);
+// testit(0.9, 1);
+// testit(0.1234, 1);
+// testit(0.9999, 1);
+// testit(0.05, 2);
+// testit(0.005, 3);
+// testit(0.0005, 4);
+
+
+
+/*
+round number to the nearest power of 1000, e.g., "96k" or "8M"
+*/
+export const nf000 = (x: number) : {n000: number, magnitudeLabel: string} | null=>{
+  if (x === undefined || isNaN(x) || x === null) return null;
+  const magnitude = Math.log10(x);
+  const m000 = Math.floor(magnitude / 3);
+  const n000 = Math.pow(10, m000 * 3);
+  let magnitudeLabel = '';
+  switch (m000) {
+  case 0: magnitudeLabel = ''; break;
+  case 1: magnitudeLabel = 'K'; break;
+  case 2: magnitudeLabel = 'M'; break;
+  case 3: magnitudeLabel = 'B'; break;
+  case 4: magnitudeLabel = 'T'; break;
+  default: console.log(`never thought we'd see a magnitude of ${magnitude}`, x);
+  }
+  // return `${Math.round(x / n000)}${mLabel}`;
+  return { n000: Math.round(x / n000), magnitudeLabel: magnitudeLabel};
+}
+
+// const testit = (n:number, exp:string)=>{
+//   const t = nf000(n);
+//   console.log(t === exp, n, t, exp);
+// }
+
+// testit(96, '96');
+// testit(960, '960');
+// testit(9_600, '10K');
+// testit(96_000, '96K');
+// testit(960_000, '960K');
+// testit(95_900, '96K');
+// testit(8_000_000, '8M');
+// testit(8_100_000, '8M');
 
 export const getOrdinal = (n:number)=>{
   const lastDigit = n % 10;
@@ -155,17 +241,17 @@ export const getOrdinal = (n:number)=>{
   return ord;
 }
 
-export const minimalDecimalLabel = (x:number)=>{
-  if (x === undefined || isNaN(x) || x === null) return '';
-  let label = '';
-  if (Math.abs(x) < 1) {
-    label = x.toLocaleString();
-    label = label.replace(/0+$/, ''); // trim zeroes off the end
-  } else {
-    label = nfc(Math.round(x));
-  }
-  return label;
-}
+// export const minimalDecimalLabel = (x:number)=>{
+//   if (x === undefined || isNaN(x) || x === null) return '';
+//   let label = '';
+//   if (Math.abs(x) < 1) {
+//     label = x.toLocaleString();
+//     label = label.replace(/0+$/, ''); // trim zeroes off the end
+//   } else {
+//     label = nfc(Math.round(x));
+//   }
+//   return label;
+// }
 
 export const mutToPos = (s:string):number => {
   const r =  /.([\d]*)/.exec(s);
@@ -250,6 +336,15 @@ export const getPercentLabel = (n:number)=>{
   if (n <= 0.01) return '<1';
   if (n > 0.99)  return '>99';
   return `${Math.round(100*n)}`;
+}
+
+/* expects a number between 0 and 1 */
+export const getPercentLabelDecimal = (n:number)=>{
+  if (n === 0) return '0.0';
+  if (n === 1) return '100.0';
+  if (n <= 0.001) return '<0.1';
+  if (n > 0.999)  return '>99.9';
+  return (100*n).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
 }
 
 
@@ -428,3 +523,327 @@ export const getNtile = (arr: number[], ntile: number) =>{
 }
 
 export type ValueHandler = (value: number) => void;
+
+export const log10 = Math.log(10);
+
+
+
+
+/**
+  * nicenum: find a "nice" number approximately equal to x.
+  * Round the number if round is true, take ceiling if round is false
+  */
+export const nicenum = (x: number, round = false )=>{
+  const expv = Math.floor(Math.log10(x));  // exponent of x
+  // f is the fractional part of x
+  const f = x / Math.pow(10, expv);    // between 1 and 10
+  let nf;        /* nice, rounded fraction */
+  if (round) {
+    if (f < 1.5) nf = 1;
+    else if (f < 3) nf = 2;
+    else if (f < 7) nf = 5;
+    else nf = 10;
+  } else {
+    if (f <= 1) nf = 1;
+    else if (f <= 2) nf = 2;
+    else if (f <= 5) nf = 5;
+    else nf = 10;
+  }
+  return nf * Math.pow(10, expv);
+}
+
+
+export const DATE_TEMPLATE = document.querySelector("#templates .date") as HTMLDivElement;
+DATE_TEMPLATE.remove();
+
+export enum DateScale {
+  day = 1,
+  week = 2,
+  month = 3,
+  year = 4
+}
+
+
+
+export type DateAxisEntry = {
+  yearLabel: string,
+  monthLabel: string,
+  dateLabel: string,
+  tokens: [number, number, number],
+  date: number,
+  percent: number,
+  isNewMonth: boolean,
+  isNewYear: boolean
+};
+
+
+// number of weeks per tick before we switch from days to weeks
+const WEEK_THRESHOLD = 0.5;
+// number of months per tick before we switch from weeks to months
+const MONTH_THRESHOLD = 0.5;
+// number of years per tick before we switch from months to years
+const YEAR_THRESHOLD = 0.5;
+/*
+this may need to become dynamic if we allow for charts of different
+widths, but for now it's a constant [mark 260121] */
+const TARGET_NUM_TICKS = 6;
+
+export type DateIntervalData = {
+  scale: DateScale,
+  entries: DateAxisEntry[]
+};
+
+
+export function getNiceDateInterval(min: number, max: number): DateIntervalData {
+  // console.log(`getNiceDateInterval(${toDateString(min)}, ${toDateString(max)})`)
+  const range = max - min;
+  const daysPerTick = range / TARGET_NUM_TICKS;
+  let scaleFunction = addDays;
+  let scale = DateScale.day;
+  let scaleCount = 1; // number of `scale` per tick, e.g. _2_ weeks, _5_ years
+  let monthsNeedAligning = false;
+  let daysNeedAligning = false;
+  const weeksPerTick = daysPerTick / 7; // days per week
+  if (weeksPerTick < WEEK_THRESHOLD) {
+    scaleCount = Math.max(1, Math.floor(daysPerTick));
+  } else {
+    const monthsPerTick = daysPerTick / 30; // days per month
+    if (monthsPerTick < MONTH_THRESHOLD) {
+      scaleFunction = addWeeks;
+      scale = DateScale.week;
+      if (weeksPerTick < 2) {
+        scaleCount = 1;
+      } else if (weeksPerTick < 3) {
+        scaleCount = 2;
+      } else {
+        scaleCount = 4;
+      }
+    } else {
+      daysNeedAligning = true;
+      const yearsPerTick = daysPerTick / 365;
+      if (yearsPerTick < YEAR_THRESHOLD) {
+        scaleFunction = addMonths;
+        scale = DateScale.month;
+        if (monthsPerTick < 2) {
+          scaleCount = 1;
+        }
+        else if (monthsPerTick < 4.5) {
+          scaleCount = 3;
+          monthsNeedAligning = true;
+        } else {
+          scaleCount = 6;
+          monthsNeedAligning = true;
+        }
+      } else {
+        scaleFunction = addYears;
+        scale = DateScale.year;
+        scaleCount = Math.min(1, nicenum(yearsPerTick));
+      }
+    }
+  }
+
+  const entries: DateAxisEntry[] = [];
+  let date = min;
+  const d = toDate(date);
+  let tokens = toDateTokens(date);
+  let percent = 0;
+  let yearLabel = getYearLabel(tokens);
+  let monthLabel = getMonthLabel(tokens);
+  let dateLabel = getDateLabel(tokens);
+  let isNewYear = true;
+  let isNewMonth = true;
+  let prevYear = tokens[DateTokenIndex.year];
+  let prevMonth = tokens[DateTokenIndex.month];
+
+
+
+  entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth});
+  let initialScaleCount = scaleCount;
+  if (monthsNeedAligning) {
+    const month = tokens[DateTokenIndex.month];
+    const alignedMonth = Math.ceil(month / scaleCount) * scaleCount;
+    initialScaleCount = alignedMonth - month;
+  }
+  date = scaleFunction(d, initialScaleCount);
+  if (daysNeedAligning) {
+    // set to the first of the month
+    // d = toDate(date);
+    d.setUTCDate(1);
+    date = toDateNumber(d);
+  }
+
+  let year: number, month: number;
+  while (date <= max) {
+    tokens = toDateTokens(date);
+    year = tokens[DateTokenIndex.year];
+    month = tokens[DateTokenIndex.month];
+    yearLabel = getYearLabel(tokens);
+    monthLabel = getMonthLabel(tokens);
+    dateLabel = getDateLabel(tokens);
+    isNewYear = year !== prevYear;
+    isNewMonth = month !== prevMonth;
+    prevYear = year;
+    prevMonth = month;
+    percent = (date - min) / range;
+    entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth });
+    date = scaleFunction(d, scaleCount);
+  }
+  /* add the last date */
+  date = max;
+  tokens = toDateTokens(date);
+  year = tokens[DateTokenIndex.year];
+  month = tokens[DateTokenIndex.month];
+  yearLabel = getYearLabel(tokens);
+  monthLabel = getMonthLabel(tokens);
+  dateLabel = getDateLabel(tokens);
+  isNewYear = year !== prevYear;
+  isNewMonth = month !== prevMonth;
+  percent = 1.0;
+  entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth });
+
+  // switch (scale)  {
+  // case DateScale.year:
+  //   entries.forEach(ent=>ent.label = `${ent.tokens[DateTokenIndex.year]}`);
+  //   break;
+  // case DateScale.month:
+  //   {
+  //     let prevYear = UNSET;
+  //     entries.forEach(ent=>{
+  //       const month = ent.tokens[DateTokenIndex.month];
+  //       const year = ent.tokens[DateTokenIndex.year];
+  //       ent.label = MONTHS_SHORT[month];
+  //       if (year !== prevYear) {
+  //         ent.subLabel = `${year}`;
+  //         prevYear = year;
+  //       }
+  //     });
+  //   }
+  //   break;
+  // default:
+  // {
+  //   let prevYear = UNSET;
+  //   const prevMonth = UNSET;
+  //   const lastIndex = entries.length - 1;
+
+  //   entries.forEach((ent, i)=>{
+  //     const isMaxDate = i === lastIndex;
+  //     const day = ent.tokens[DateTokenIndex.day];
+  //     const month = ent.tokens[DateTokenIndex.month];
+  //     const year = ent.tokens[DateTokenIndex.year];
+  //     if (isMaxDate) {
+  //       ent.label = `${MONTHS_SHORT[month]} ${day}`;
+  //       ent.subLabel = `${year}`;
+  //     } else {
+  //       if (month === prevMonth) {
+  //         ent.label = `${day}`;
+  //       } else if () {
+  //         ent.label = `${MONTHS_SHORT[month]} ${day}`;
+
+  //       }
+  //       if (year !== prevYear || isMaxDate) {
+  //         ent.subLabel = `${year}`;
+  //         prevYear = year;
+  //       }
+  //     }
+  //   });
+  // }
+  // }
+
+  return {scale,  entries};
+}
+
+
+export const getYearLabel = (tokens: [number, number, number]): string => {
+  const year = tokens[DateTokenIndex.year];
+  return `${year}`;
+}
+
+export const getMonthLabel = (tokens: [number, number, number]): string => {
+  const month = tokens[DateTokenIndex.month];
+  return MONTHS_SHORT[month];
+}
+
+export const getMonthDateLabel = (tokens: [number, number, number]): string => {
+  const month = getMonthLabel(tokens)
+  return `${month} ${tokens[DateTokenIndex.day]}`;
+}
+
+export const getDateLabel = (tokens: [number, number, number]): string => {
+  const date = tokens[DateTokenIndex.day];
+  return `${date}`;
+}
+
+
+
+/* access css variables to get declared colors */
+const root = document.querySelector(":root") as HTMLBodyElement,
+  rootStyle = window.getComputedStyle(root) as CSSStyleDeclaration;
+
+export const getCSSValue = (property: string) : string =>{
+  return rootStyle.getPropertyValue(property);
+}
+
+export const DATE_LABEL_WIDTH_PX = 35;
+export type AxisLabel = {
+  div: HTMLDivElement,
+  left: number
+};
+
+
+
+export const setDateLabel = (date: number, div: HTMLDivElement)=>{
+  const tokens = toDateTokens(date);
+  const month = tokens[DateTokenIndex.month];
+  (div.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
+  (div.querySelector(".month") as HTMLSpanElement).textContent = `${MONTHS_SHORT[month]}`;
+  (div.querySelector(".year") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.year]}`;
+};
+
+
+export const sameMutation = (m1: Mutation | null, m2: Mutation | null) : boolean=>{
+  return m1 !== null && m2 !== null && getMutationName(m1) === getMutationName(m2);
+};
+
+export const getMedian = (arr:number[])=>{
+  let median = 0;
+  if (arr.length > 0) {
+    const sorted = arr.sort(numericSort);
+    if (sorted.length % 2 === 1) {
+      median = sorted[Math.floor(sorted.length/2)];
+    } else {
+      median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
+    }
+  }
+  return median;
+}
+
+
+export const getStdDev = (data: number[])=>{
+  const safe = data.filter(n=>Number.isFinite(n));
+  const sum = safe.reduce((tot, c)=>tot+(c||0), 0);
+  const avg = sum / safe.length;
+  const sumDeltaSq = safe.reduce((tot, c)=>{
+    const d = c - avg;
+    return tot + d * d;
+  }, 0);
+  const stdDev = Math.sqrt(sumDeltaSq/safe.length);
+  return stdDev;
+}
+
+
+
+export const downloadTextFile = (filename: string, text: string ) : Promise<void>=>{
+  return new Promise(resolve=>{
+    const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' }),
+      url = URL.createObjectURL(blob),
+      a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{
+      a.remove();
+    }, 1000);
+    resolve();
+  })
+};

@@ -105,7 +105,9 @@ h2 {
 }
 
 h3 {
-  .t10();
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 18px;
 }
 
 h4 {
@@ -304,8 +306,6 @@ nav button:not(:disabled):hover {
   gap: 40px;
 }
 
-.controls {.t20()}
-
 
 
 .readout {
@@ -397,6 +397,113 @@ nav button:not(:disabled):hover {
     pointer-events: none;
   }
 }
+
+
+
+.copy-button, .download-button {
+  pointer-events: none;
+  opacity: 0;
+  color: #212121;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 19px;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1;
+  transition: opacity 0.15s;
+  cursor: pointer;
+
+  .tooltip {
+    opacity: 0;
+    transition: opacity 0.15s, background-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .action {
+    display: block;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    .button-glyph { background-color: #787878;}
+    .glyph-wrapper { border-color: #949494;}
+    .tooltip { opacity: 1; }
+  }
+  .completed {
+    display: none;
+    height: 32px;
+  }
+
+  &.completed {
+    .action{display: none;}
+    .completed {display: block;}
+  }
+
+  .glyph-wrapper {
+    background-color: #f0f0f0;
+    padding: 4px;
+    width: fit-content;
+    aspect-ratio: 1 / 1;
+    border-radius: 2px;
+    border: solid 1px #ababab;
+  }
+
+  .button-glyph {
+    width: 14px;
+    aspect-ratio: 1 / 1;
+    transition: all 0.15s;
+    background-color: #949494;
+  }
+
+}
+
+
+
+.copy-button .button-glyph {
+  .masked(url("./assets/icons/copy.svg"));
+}
+
+.download-button .button-glyph {
+  .masked(url("./assets/icons/export.svg"));
+}
+
+.info {
+
+  position: relative;
+  width: auto;
+  min-width: var(--info-size);
+  max-width: var(--info-size);
+  height: auto;
+  min-height: var(--info-size);
+  max-height: var(--info-size);
+  border-radius: var(--info-corner);
+  background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-static));
+  transition: background-color var(--transition) ease-in-out;
+
+  .icon {
+    position: absolute;
+    top: 5%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    // transform: translate(-50%, -50%);
+  }
+}
+
+
+.mcc-title {
+  .initial-tree { display: none; }
+  &.no-data {
+    .initial-tree { display: inline-block; }
+    .mcc { display: none; }
+  }
+}
+
 
 ////////////////////////////////////////////
 // PRIVACY, TOS
