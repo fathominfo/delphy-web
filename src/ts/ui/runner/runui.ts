@@ -278,7 +278,7 @@ export class RunUI extends UIScreen {
     this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: "mutations", className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in Minimum ESS calculations: this is a discrete variable with very few possible values"};
     this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
     this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "apobec-mut-rate", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
-    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "days", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
+    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
     const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g / POP_GROWTH_FACTOR);
     this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "doublings / year", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
@@ -424,7 +424,7 @@ export class RunUI extends UIScreen {
     });
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
     this.advancedToggle.addEventListener("change", (event)=>{
-      event.stopPropagation();
+      // event.stopPropagation();
       if (this.advancedToggle.checked) {
         this.advancedFormContainer.classList.add("active");
         this.advancedForm.classList.remove("warning");
@@ -487,7 +487,8 @@ export class RunUI extends UIScreen {
     this.advancedFormContainer.addEventListener("click", e => {
       if (e.target === this.advancedFormContainer) {
         e.preventDefault();
-        this.advancedFormContainer.classList.add("hidden");
+        this.advancedFormContainer.classList.remove("active");
+        this.advancedToggle.checked = false;
       }
     });
 
