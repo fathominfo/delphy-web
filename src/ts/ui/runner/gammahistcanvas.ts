@@ -1,6 +1,6 @@
 import { toDateString, toFullDateString } from "../../pythia/dates";
 import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
-import { getDateLabel, NO_VALUE, safeLabel, UNSET } from "../common";
+import { getDateLabel, NO_VALUE, numericSort, safeLabel, UNSET } from "../common";
 import { GammaData, LogLabelType } from "./gammadata";
 import { GammaDataFunction } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
@@ -26,11 +26,26 @@ const UPPER_OOM = 3;
 
 const PADDING = 3;
 
+const DATE_LABEL_WIDTH = 86;
+const HALF_DATE_LABEL_WIDTH = DATE_LABEL_WIDTH / 2;
+const POP_CHART_Y_AXIS_TEXT_RIGHT = 30;
+
+type highlightDataType = {
+  median: number,
+  medianY: number,
+  hpdMin: number,
+  hpdMinY: number,
+  hpdMax: number,
+  hpdMaxY: number
+};
+
+
 
 export class GammaHistCanvas extends TraceCanvas {
 
   minSpan: HTMLDivElement;
   maxSpan: HTMLDivElement;
+  hoverSpan: HTMLDivElement;
   trendRange: SVGPathElement;
   medianTrend: SVGPathElement;
   sampleTrend: SVGPathElement;
@@ -42,6 +57,14 @@ export class GammaHistCanvas extends TraceCanvas {
   yAxisWidth: number = UNSET;
   yAxisHeight: number = UNSET;
   dataWidth: number = UNSET;
+  highlightData: highlightDataType = {
+    median: UNSET,
+    medianY: UNSET,
+    hpdMin: UNSET,
+    hpdMinY: UNSET,
+    hpdMax: UNSET,
+    hpdMaxY: UNSET
+  };
 
   constructor(label:string, getDataFnc: GammaDataFunction) {
     const className = label.toLowerCase().replace(/ /g, '-').replace(/[()<>]/g, '');
@@ -49,11 +72,12 @@ export class GammaHistCanvas extends TraceCanvas {
     this.traceData = new GammaData(label, '', getDataFnc);
     this.minSpan = this.container.querySelector(".support .axis.x .min-date") as HTMLDivElement;
     this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as HTMLDivElement;
+    this.hoverSpan = this.container.querySelector(".support .axis.x .hover-date") as HTMLDivElement;
     this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
     this.medianTrend = this.svg.querySelector(".trend.median") as SVGPathElement;
     this.sampleTrend = this.svg.querySelector(".trend.sample") as SVGPathElement;
     // this.highlightDistribution = this.svg.querySelector(".dist") as SVGPathElement;
-    this.highlightG = this.svg.querySelector(".highlight") as SVGGElement;
+    this.highlightG = this.svg.querySelector("g.highlight") as SVGGElement;
     this.labelContainer = this.container.querySelector(".chart .feature .axis.y svg.log-scale-ticks") as SVGElement;
     this.labelTextTemplate = this.labelContainer.querySelector("text") as SVGTextElement;
     this.labelTickTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
@@ -64,9 +88,12 @@ export class GammaHistCanvas extends TraceCanvas {
       requestAnimationFrame(()=>this.draw());
     });
     this.svg.addEventListener('pointermove', (event: PointerEvent)=>{
+      const old = gammaData.knotIndex;
       const xPct = event.offsetX / this.width;
       gammaData.dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
-      requestAnimationFrame(()=>this.draw());
+      if (old !== gammaData.knotIndex) {
+        requestAnimationFrame(()=>this.draw());
+      }
     });
     this.svg.addEventListener('pointerleave', (event: PointerEvent)=>{
       gammaData.dateIndex = NO_VALUE;
@@ -117,7 +144,7 @@ export class GammaHistCanvas extends TraceCanvas {
 
   drawRangeSeriesSVG():void {
     const gammaData = (this.traceData as GammaData);
-    const {rangeData, sampleIndex, knotIndex, postBurnin, converted } = gammaData;
+    const {rangeData, sampleIndex, knotIndex, postBurnin, knotStats: converted } = gammaData;
     if (converted.length === 0) return;
     const {height, dataWidth} = this;
     const {displayMin, displayMax} = this.traceData;
@@ -165,7 +192,7 @@ export class GammaHistCanvas extends TraceCanvas {
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
     }
-    rangeD += `${0} ${firstY} `;
+    rangeD += `${PADDING} ${firstY} `;
 
     // draw the population curve for the current sample
     if (sampleIndex !== UNSET) {
@@ -216,22 +243,39 @@ export class GammaHistCanvas extends TraceCanvas {
       // });
       /* get median and 95% HPD for this time / knot */
       const x = PADDING + knotIndex * kWidth;
-      const knotData = converted[knotIndex]
+      const knotData = converted[knotIndex].slice(0);
       const median = knotData[MEDIAN_INDEX];
       const hpdMin = knotData[MIN_HPD_INDEX];
       const hpdMax = knotData[MAX_HPD_INDEX];
       const medianY = height-(median-displayMin) * verticalScale;
       const hpdMinY = height-(hpdMin-displayMin) * verticalScale;
       const hpdMaxY = height-(hpdMax-displayMin) * verticalScale;
-      const line = this.highlightG.querySelector("line") as SVGLineElement;
+      this.highlightData = { median, medianY, hpdMin, hpdMinY, hpdMax, hpdMaxY };
+      let line = this.highlightG.querySelector(".dist") as SVGLineElement;
       line.setAttribute("y1", `${hpdMinY}`);
       line.setAttribute("y2", `${hpdMaxY}`);
-      (this.highlightG.querySelector(".hpdmin") as SVGEllipseElement).setAttribute("cy", `${hpdMinY}`);
-      (this.highlightG.querySelector(".median") as SVGEllipseElement).setAttribute("cy", `${medianY}`);
-      (this.highlightG.querySelector(".hpdmax") as SVGEllipseElement).setAttribute("cy", `${hpdMaxY}`);
+      line = this.svg.querySelector(".marker.hpdmin") as SVGLineElement;
+      line.setAttribute("x1", `${PADDING}`);
+      line.setAttribute("x2", `${this.width - PADDING}`);
+      line.setAttribute("y1", `${hpdMinY}`);
+      line.setAttribute("y2", `${hpdMinY}`);
+      line = this.svg.querySelector(".marker.median") as SVGLineElement;
+      line.setAttribute("x1", `${PADDING}`);
+      line.setAttribute("x2", `${this.width - PADDING}`);
+      line.setAttribute("y1", `${medianY}`);
+      line.setAttribute("y2", `${medianY}`);
+      line = this.svg.querySelector(".marker.hpdmax") as SVGLineElement;
+      line.setAttribute("x1", `${PADDING}`);
+      line.setAttribute("x2", `${this.width - PADDING}`);
+      line.setAttribute("y1", `${hpdMaxY}`);
+      line.setAttribute("y2", `${hpdMaxY}`);
+
+      (this.highlightG.querySelector(".point.hpdmin") as SVGEllipseElement).setAttribute("cy", `${hpdMinY}`);
+      (this.highlightG.querySelector(".point.median") as SVGEllipseElement).setAttribute("cy", `${medianY}`);
+      (this.highlightG.querySelector(".point.hpdmax") as SVGEllipseElement).setAttribute("cy", `${hpdMaxY}`);
       this.highlightG.setAttribute("transform", `translate(${x}, 0)`);
       this.container.classList.add("highlighting");
-      console.log(`     ${height}  ${hpdMinY}   ${medianY}   ${hpdMaxY}`);
+      console.log(knotIndex, knotData);
     } else {
       this.container.classList.remove("highlighting");
     }
@@ -243,43 +287,86 @@ export class GammaHistCanvas extends TraceCanvas {
 
 
   drawLabels():void {
-    const { yAxisWidth, yAxisHeight, minSpan, maxSpan } = this;
-    const { logRange, maxMagnitude, minDate, maxDate } = this.traceData as GammaData;
-    this.labelContainer.innerHTML = '';
-    minSpan.textContent = toFullDateString(minDate);
-    maxSpan.textContent = toFullDateString(maxDate);
+    const { yAxisHeight, minSpan, maxSpan, height } = this;
+    const { logRange, maxMagnitude, minDate, maxDate, knotIndex, dates, knotStats: converted } = this.traceData as GammaData;
     const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = yAxisHeight >= labelHeight;
     // ctx.strokeStyle = 'black';
     // ctx.lineWidth = 0;
     // ctx.beginPath();
-
-    this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
-    const logLabels = (this.traceData as GammaData).logLabels;
-    logLabels.forEach((ll:LogLabelType)=>{
-      const { ticks, value } = ll;
-      ticks.forEach(([pct, tickLength], i)=>{
-        const y = yAxisHeight - pct * yAxisHeight;
-        const x2 = yAxisWidth - tickLength;
-        /* we don't want the tics to be so dense that they become a single shape */
-        if (labelsOK || i === 0 || i % 3 === 1) {
-          const tic = this.addTick(y, x2);
-          if (i === 0) {
-            tic.classList.add("on-mag");
-            this.addText(safeLabel(value), y);
+    let dateX = NO_VALUE;
+    const highlighting = knotIndex !== NO_VALUE;
+    this.labelContainer.innerHTML = '';
+    {
+      this.hoverSpan.textContent = '';
+      this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
+      const logLabels = (this.traceData as GammaData).logLabels;
+      logLabels.forEach((ll:LogLabelType)=>{
+        const { ticks, value } = ll;
+        ticks.forEach(([pct, tickLength], i)=>{
+          const y = yAxisHeight - pct * yAxisHeight;
+          const x2 = tickLength;
+          /* we don't want the tics to be so dense that they become a single shape */
+          if (labelsOK || i === 0 || i % 3 === 1) {
+            const tic = this.addTick(y, x2);
+            if (i === 0) {
+              tic.classList.add("on-mag");
+              if (!highlighting) {
+                this.addText(safeLabel(value), y);
+              }
+            }
           }
-        }
-      });
+        });
 
-    });
-    /* label the top tick */
-    this.addTick(0, (this.traceData as GammaData).getTickLength(9));
-    this.addText(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM), 0);
+      });
+      /* label the top tick */
+      this.addTick(0, (this.traceData as GammaData).getTickLength(9));
+      if (!highlighting) {
+        this.addText(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM), 0);
+      }
+    }
+
+    if (highlighting) {
+      let { medianY, hpdMinY, hpdMaxY } = this.highlightData;
+      const { median, hpdMin, hpdMax } = this.highlightData;
+      const dateIndex = dates[knotIndex];
+      const kWidth = this.dataWidth / (converted.length - 1);
+      dateX = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, PADDING + knotIndex * kWidth), this.width - HALF_DATE_LABEL_WIDTH);
+      if (medianY < LABEL_HEIGHT * 1.5) {
+        hpdMaxY = LABEL_HEIGHT * 0.5;
+        medianY = LABEL_HEIGHT * 1.5;
+      } else if (hpdMaxY - LABEL_HEIGHT / 2 < 0) {
+        hpdMaxY = LABEL_HEIGHT / 2;
+      }
+      if (medianY > height - LABEL_HEIGHT * 1.5) {
+        hpdMinY = height - LABEL_HEIGHT * 0.5;
+        medianY = height - LABEL_HEIGHT * 1.5;
+      } else if (hpdMinY > height - LABEL_HEIGHT * 0.5) {
+        hpdMinY = height - LABEL_HEIGHT * 0.5;
+      }
+      if (medianY - hpdMaxY < LABEL_HEIGHT) {
+        hpdMaxY = medianY - LABEL_HEIGHT;
+      }
+      if (hpdMinY - medianY < LABEL_HEIGHT) {
+        hpdMinY = medianY + LABEL_HEIGHT;
+      }
+
+      this.addHighlightText(hpdMax, hpdMaxY, true);
+      this.addHighlightText(median, medianY);
+      this.addHighlightText(hpdMin, hpdMinY);
+      this.hoverSpan.textContent = toFullDateString(dateIndex);
+      this.hoverSpan.style.left = `${dateX}px`;
+    }
+    minSpan.textContent = toFullDateString(minDate);
+    maxSpan.textContent = toFullDateString(maxDate);
+    minSpan.classList.toggle("hidden", dateX !== NO_VALUE && dateX <= DATE_LABEL_WIDTH * 1.5);
+    maxSpan.classList.toggle("hidden", dateX >= this.width - DATE_LABEL_WIDTH * 1.5);
+
   }
 
   addTick(y: number, x2: number) : SVGLineElement {
     const tick = this.labelTickTemplate.cloneNode(true) as SVGLineElement;
-    tick.setAttribute("x1", `${ this.yAxisWidth }`);
+    tick.setAttribute("x1", `${ 0 }`);
     tick.setAttribute("y1", `${ y }`);
     tick.setAttribute("x2", `${ x2 }`);
     tick.setAttribute("y2", `${ y }`);
@@ -290,7 +377,23 @@ export class GammaHistCanvas extends TraceCanvas {
   addText(text: string, y: number): SVGTextElement {
     const textEle = this.labelTextTemplate.cloneNode(true) as SVGTextElement;
     textEle.textContent = text;
-    textEle.setAttribute("x", `${ this.yAxisWidth - 12 }`);
+    textEle.setAttribute("x", `${ POP_CHART_Y_AXIS_TEXT_RIGHT }`);
+    textEle.setAttribute("y", `${y}`);
+    this.labelContainer.appendChild(textEle);
+    return textEle;
+  }
+
+
+  addHighlightText(value: number, y: number, showUnit=false) : SVGTextElement {
+    const scaledValue = Math.exp(value) / 365;
+    const textEle = this.labelTextTemplate.cloneNode(true) as SVGTextElement;
+    let label = `${ safeLabel(scaledValue)}`;
+    if (showUnit) {
+      label += ' years';
+    }
+    textEle.textContent = label;
+    textEle.classList.add("highlight");
+    textEle.setAttribute("x", `${ 10 }`);
     textEle.setAttribute("y", `${y}`);
     this.labelContainer.appendChild(textEle);
     return textEle;

@@ -275,33 +275,37 @@
                 </div>
                 <div class="chart">
                   <div class="feature">
+                    <div class="displays">
+                      <div class="graph display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 145 96">
+                          <path class="trend range" d=""></path>
+                          <path class="trend median" d=""></path>
+                          <path class="trend sample" d=""></path>
+                          <!-- <path class="dist"></path> -->
+                          <line class="highlight marker hpdmax" x1="0" y1="-2" x2="0" y2="-1"></line>
+                          <line class="highlight marker median" x1="0" y1="-2" x2="0" y2="-1"></line>
+                          <line class="highlight marker hpdmin" x1="0" y1="-2" x2="0" y2="-1"></line>
+                          <g class="highlight">
+                            <line class="dist" x1="0" y1="-1" x2="0" y2="-1"></line>
+                            <ellipse class="point hpdmax" cx="0" cy="-1" rx="2" ry="2"></ellipse>
+                            <ellipse class="point median" cx="0" cy="-1" rx="2" ry="2"></ellipse>
+                            <ellipse class="point hpdmin" cx="0" cy="-1" rx="2" ry="2"></ellipse>
+                          </g>
+                        </svg>
+                      </div>
+                    </div>
                     <div class="y axis">
                       <svg class="log-scale-ticks" xmlns="http://www.w3.org/2000/svg" >
                         <text x="0">##</text>
                         <line></line>
                       </svg>
                     </div>
-                    <div class="displays">
-                      <div class="graph display">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 96">
-                          <path class="trend range" d=""></path>
-                          <path class="trend median" d=""></path>
-                          <path class="trend sample" d=""></path>
-                          <!-- <path class="dist"></path> -->
-                          <g class="highlight">
-                            <line x1="0" y1="" x2="0" y2=""></line>
-                            <ellipse class="point hpdmax" cx="0" cy="" rx="2" ry="2"></ellipse>
-                            <ellipse class="point median" cx="0" cy="" rx="2" ry="2"></ellipse>
-                            <ellipse class="point hpdmin" cx="0" cy="" rx="2" ry="2"></ellipse>
-                          </g>
-                        </svg>
-                      </div>
-                    </div>
                   </div>
                   <div class="support">
                     <div class="x axis">
                       <div class="min-date"></div>
                       <div class="max-date"></div>
+                      <div class="hover-date"></div>
                     </div>
                   </div>
                 </div>

@@ -847,10 +847,17 @@
       max-width: var(--indicator-pop-module-width);
 
 
+      &.highlighting .chart .highlight {
+        opacity: 1;
+      }
+
+
       .displays {
         padding: var(--chart-displays-timeline-inset-x) 0;
         height: var(--trace-chart-width);
       }
+
+
 
       .chart {
         width: fit-content;
@@ -884,6 +891,7 @@
         //   stroke: var(--chart-graph-run-trend-stroke);
         // }
         .highlight {
+          opacity: 0;
           ellipse {
             fill: var(--chart-graph-run-trend-stroke);
             stroke: none;
@@ -893,11 +901,16 @@
           }
         }
 
+        line.highlight {
+          stroke: var(--chart-graph-run-trend-stroke);
+          stroke-opacity: 0.3;
+        }
+
 
         .axis.y {
-          width: 37px;
-          // height: var(--chart-yaxis-height);
+          width: var(--pop-chart-yaxis-width);
           height: var(--trace-chart-width);
+          // background-color: pink;
           line {
             stroke-width: 0.5;
             stroke: var(--chart-graph-run-trend-stroke);
@@ -905,17 +918,35 @@
             &.mag {opacity: 1;}
           }
           text {
+            font-size: 11px;
             alignment-baseline: middle;
             text-anchor: end;
+            &.highlight {
+              fill: #094e77;
+              text-anchor: start;
+            }
           }
         }
 
         .axis.x {
-          margin-left: 37px; // var(--chart-yaxis-width);
-          margin-right: unset;
+          position: relative;
+          margin-left: 3px;
+          margin-right: 3px;
           margin-top: 3px;
-          width: var(--pop-chart-graph-width);
+          width: calc(var(--pop-chart-graph-width) - 6px);
           .min-date {flex-grow: 1;}
+          .min-date, .max-date {
+            &.hidden {
+              display: inherit !important;
+              opacity: 0;
+            }
+          }
+          .hover-date {
+            position: absolute;
+            width: 86px;
+            margin-left: -43px;
+            white-space: nowrap;
+          }
         }
       }
     }

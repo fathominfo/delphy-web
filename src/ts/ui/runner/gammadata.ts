@@ -20,7 +20,7 @@ export class GammaData extends TraceData {
   rangeData: number[][] = [];
   postBurnin: number[][] = [];
   /* stores the median and 95% HPD for each knot */
-  converted: number[][] = [];
+  knotStats: number[][] = [];
   dates: number[] = [];
   isLogLinear = false;
   yearsMin: number = NO_VALUE;
@@ -48,8 +48,8 @@ export class GammaData extends TraceData {
     this.postBurnin.forEach((gamma, i)=>{
       gamma.forEach((g, k)=>byKnots[k][i] = g);
     });
-    this.converted = byKnots.map(hpdeify);
-    const safe = this.converted.flat().filter(n=>Number.isFinite(n));
+    this.knotStats = byKnots.map(hpdeify);
+    const safe = this.knotStats.flat().filter(n=>Number.isFinite(n));
 
     this.dataMin = Math.min(...safe);
     this.dataMax = Math.max(...safe);
@@ -107,6 +107,7 @@ export class GammaData extends TraceData {
       mag++;
       tens *= 10;
     }
+    console.log(this.logLabels)
 
 
   }
@@ -134,7 +135,7 @@ export class GammaData extends TraceData {
     const pct = (n - this.minDate) / (this.maxDate - this.minDate);
     this._knotIndex = Math.round(pct * (this.dates.length - 1));
     const date = this.dates[this._knotIndex];
-    console.log(n, toDateString(n), toDateString(this.minDate), toDateString(this.maxDate), toDateString(date), this.dates, this.converted[this._knotIndex]);
+    // console.log(n, toDateString(n), toDateString(this.minDate), toDateString(this.maxDate), toDateString(date), this.dates, this.knotStats[this._knotIndex]);
   }
 
   // get dateIndex() {
