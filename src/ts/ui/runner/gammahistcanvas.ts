@@ -1,6 +1,6 @@
-import { toFullDateString } from "../../pythia/dates";
+import { toDateString, toFullDateString } from "../../pythia/dates";
 import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
-import { safeLabel, UNSET } from "../common";
+import { getDateLabel, NO_VALUE, safeLabel, UNSET } from "../common";
 import { GammaData, LogLabelType } from "./gammadata";
 import { GammaDataFunction } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
@@ -24,6 +24,9 @@ const LOWER_OOM = -2;
 const UPPER_OOM = 3;
 
 
+const PADDING = 3;
+
+
 export class GammaHistCanvas extends TraceCanvas {
 
   minSpan: HTMLDivElement;
@@ -31,11 +34,14 @@ export class GammaHistCanvas extends TraceCanvas {
   trendRange: SVGPathElement;
   medianTrend: SVGPathElement;
   sampleTrend: SVGPathElement;
+  // highlightDistribution: SVGPathElement;
+  highlightG: SVGGElement;
   labelContainer: SVGElement;
   labelTextTemplate: SVGTextElement;
   labelTickTemplate: SVGLineElement;
   yAxisWidth: number = UNSET;
   yAxisHeight: number = UNSET;
+  dataWidth: number = UNSET;
 
   constructor(label:string, getDataFnc: GammaDataFunction) {
     const className = label.toLowerCase().replace(/ /g, '-').replace(/[()<>]/g, '');
@@ -46,17 +52,35 @@ export class GammaHistCanvas extends TraceCanvas {
     this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
     this.medianTrend = this.svg.querySelector(".trend.median") as SVGPathElement;
     this.sampleTrend = this.svg.querySelector(".trend.sample") as SVGPathElement;
+    // this.highlightDistribution = this.svg.querySelector(".dist") as SVGPathElement;
+    this.highlightG = this.svg.querySelector(".highlight") as SVGGElement;
     this.labelContainer = this.container.querySelector(".chart .feature .axis.y svg.log-scale-ticks") as SVGElement;
     this.labelTextTemplate = this.labelContainer.querySelector("text") as SVGTextElement;
     this.labelTickTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
+    const gammaData = this.traceData as GammaData;
+    this.svg.addEventListener('pointerenter', (event: PointerEvent)=>{
+      const xPct = event.offsetX / this.width;
+      gammaData.dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
+      requestAnimationFrame(()=>this.draw());
+    });
+    this.svg.addEventListener('pointermove', (event: PointerEvent)=>{
+      const xPct = event.offsetX / this.width;
+      gammaData.dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
+      requestAnimationFrame(()=>this.draw());
+    });
+    this.svg.addEventListener('pointerleave', (event: PointerEvent)=>{
+      gammaData.dateIndex = NO_VALUE;
+      requestAnimationFrame(()=>this.draw());
+    });
   }
 
   sizeCanvas() {
-    super.sizeCanvas();
     const wrapper = this.labelContainer.parentElement as HTMLDivElement;
     this.yAxisWidth = wrapper.offsetWidth;
     this.yAxisHeight = wrapper.offsetHeight;
-    requestAnimationFrame(()=>this.setSizes());
+    super.sizeCanvas();
+    this.dataWidth = this.width - 2 * PADDING;
+
   }
 
   protected setSizes(): void {
@@ -73,12 +97,12 @@ export class GammaHistCanvas extends TraceCanvas {
   //   (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
   // }
 
-  setRangeData(kneeIndex: number, sampleIndex: number):void {
+  setRangeData(kneeIndex: number):void {
     const popModelHist : SkygridPopModel[] = (this.traceData.getDataFnc as GammaDataFunction)();
     const gamma = popModelHist.map(popModel=>popModel.gamma);
     const xHist = popModelHist[0].x;
     const isLogLinear = popModelHist[0].type === SkygridPopModelType.LogLinear;
-    (this.traceData as GammaData).setRangeData(gamma, xHist, isLogLinear, kneeIndex, sampleIndex);
+    (this.traceData as GammaData).setRangeData(gamma, xHist, isLogLinear, kneeIndex);
   }
 
   handleTreeHighlight(treeIndex: number): void {
@@ -92,18 +116,19 @@ export class GammaHistCanvas extends TraceCanvas {
 
 
   drawRangeSeriesSVG():void {
-    const data:number[][] = (this.traceData as GammaData).converted;
-    if (data.length === 0) return;
-    const {height, width} = this;
+    const gammaData = (this.traceData as GammaData);
+    const {rangeData, sampleIndex, knotIndex, postBurnin, converted } = gammaData;
+    if (converted.length === 0) return;
+    const {height, dataWidth} = this;
     const {displayMin, displayMax} = this.traceData;
     const valRange = displayMax - displayMin;
     const verticalScale = height / (valRange || 1);
-    const kCount = data.length;
-    const kWidth = width / (kCount - 1);
+    const kCount = converted.length;
+    const kWidth = dataWidth / (kCount - 1);
     let i = 0;
-    let hpd = data[i][MIN_HPD_INDEX];
+    let hpd = converted[i][MIN_HPD_INDEX];
     const firstY = height-(hpd-displayMin) * verticalScale;
-    let x = 0;
+    let x = PADDING;
     let y = firstY;
 
     const drawingStaircase = !(this.traceData as GammaData).isLogLinear;
@@ -116,38 +141,37 @@ export class GammaHistCanvas extends TraceCanvas {
     // draw the 95% HPD area
     rangeD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
-      hpd = data[i][MIN_HPD_INDEX];
+      hpd = converted[i][MIN_HPD_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       if (drawingStaircase) {
         rangeD += `${x} ${y} `;
       }
-      x = i * kWidth;
+      x = PADDING + i * kWidth;
       rangeD += `${x} ${y} `;
     }
     for (i = kCount - 1; i > 0; i--) {
-      x = i * kWidth;
-      hpd = data[i][MAX_HPD_INDEX];
+      x = PADDING + i * kWidth;
+      hpd = converted[i][MAX_HPD_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
       if (drawingStaircase) {
-        x = (i-1) * kWidth;
+        x = PADDING + (i-1) * kWidth;
         rangeD += `${x} ${y} `;
       }
     }
     if (!drawingStaircase) {
-      x = 0;
-      hpd = data[0][MAX_HPD_INDEX];
+      x = PADDING;
+      hpd = converted[0][MAX_HPD_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
     }
     rangeD += `${0} ${firstY} `;
 
     // draw the population curve for the current sample
-    const {rangeData, highlightIndex: sampleIndex } = (this.traceData as GammaData);
     if (sampleIndex !== UNSET) {
       const sampleData = rangeData[sampleIndex];
       console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
-      x = 0;
+      x = PADDING;
       y = height-(sampleData[0]-displayMin) * verticalScale;
       if (!drawingStaircase) {
         sampleD = `M${x} ${y} L`;
@@ -157,7 +181,7 @@ export class GammaHistCanvas extends TraceCanvas {
         if (drawingStaircase) {
           sampleD = `M${x} ${y} L`;
         }
-        x = i * kWidth;
+        x = PADDING + i * kWidth;
         sampleD += `${x} ${y} `;
       }
       this.sampleTrend.classList.remove("hidden");
@@ -167,19 +191,51 @@ export class GammaHistCanvas extends TraceCanvas {
     }
 
     // draw the median
-    let median = data[0][MEDIAN_INDEX];
-    x = 0;
+    let median = converted[0][MEDIAN_INDEX];
+    x = PADDING;
     y = height-(median-displayMin) * verticalScale;
     medianD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
-      median = data[i][MEDIAN_INDEX];
+      median = converted[i][MEDIAN_INDEX];
       y = height-(median-displayMin) * verticalScale;
       if (drawingStaircase) {
         medianD = `M${x} ${y} L`;
       }
-      x = i * kWidth;
+      x = PADDING + i * kWidth;
       medianD += `${x} ${y} `;
     }
+
+    if (knotIndex !== NO_VALUE) {
+      // /* get all the samples at this time */
+      // const samples = postBurnin.map(treeData=>treeData[knotIndex]);
+      // const x1 = knotIndex * kWidth - 2;
+      // const x2 = x1 + 4;
+      // samples.forEach((value, i)=>{
+      //   const y = height-(value-displayMin) * verticalScale;
+      //   distD += `M${x1} ${y} L${x2} ${y}  `;
+      // });
+      /* get median and 95% HPD for this time / knot */
+      const x = PADDING + knotIndex * kWidth;
+      const knotData = converted[knotIndex]
+      const median = knotData[MEDIAN_INDEX];
+      const hpdMin = knotData[MIN_HPD_INDEX];
+      const hpdMax = knotData[MAX_HPD_INDEX];
+      const medianY = height-(median-displayMin) * verticalScale;
+      const hpdMinY = height-(hpdMin-displayMin) * verticalScale;
+      const hpdMaxY = height-(hpdMax-displayMin) * verticalScale;
+      const line = this.highlightG.querySelector("line") as SVGLineElement;
+      line.setAttribute("y1", `${hpdMinY}`);
+      line.setAttribute("y2", `${hpdMaxY}`);
+      (this.highlightG.querySelector(".hpdmin") as SVGEllipseElement).setAttribute("cy", `${hpdMinY}`);
+      (this.highlightG.querySelector(".median") as SVGEllipseElement).setAttribute("cy", `${medianY}`);
+      (this.highlightG.querySelector(".hpdmax") as SVGEllipseElement).setAttribute("cy", `${hpdMaxY}`);
+      this.highlightG.setAttribute("transform", `translate(${x}, 0)`);
+      this.container.classList.add("highlighting");
+      console.log(`     ${height}  ${hpdMinY}   ${medianY}   ${hpdMaxY}`);
+    } else {
+      this.container.classList.remove("highlighting");
+    }
+
 
     this.trendRange.setAttribute("d", rangeD);
     this.medianTrend.setAttribute("d", medianD);
@@ -187,11 +243,11 @@ export class GammaHistCanvas extends TraceCanvas {
 
 
   drawLabels():void {
-    const { yAxisWidth, yAxisHeight, minSpan, maxSpan} = this;
-    const {dates, logRange, maxMagnitude} = this.traceData as GammaData;
+    const { yAxisWidth, yAxisHeight, minSpan, maxSpan } = this;
+    const { logRange, maxMagnitude, minDate, maxDate } = this.traceData as GammaData;
     this.labelContainer.innerHTML = '';
-    minSpan.textContent = toFullDateString(dates[0])
-    maxSpan.textContent = toFullDateString(dates[dates.length - 1]);
+    minSpan.textContent = toFullDateString(minDate);
+    maxSpan.textContent = toFullDateString(maxDate);
     const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = yAxisHeight >= labelHeight;
     // ctx.strokeStyle = 'black';

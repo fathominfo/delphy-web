@@ -4,7 +4,6 @@ import { GammaDataFunction, HistDataFunction } from './runcommon';
 export class TraceData {
 
 
-  sampleIndex: number;
   sampleCount: number;
 
 
@@ -17,7 +16,7 @@ export class TraceData {
   unit:string;
   count: number;
 
-  highlightIndex: number;
+  sampleIndex: number;
 
   /*
   distinguish between the knee index
@@ -42,9 +41,8 @@ export class TraceData {
     this.dataMin = UNSET;
     this.dataMax = UNSET;
 
-    this.sampleIndex = UNSET;
     this.count = 0;
-    this.highlightIndex = UNSET;
+    this.sampleIndex = UNSET;
     this.savedKneeIndex = UNSET;
     this.currentKneeIndex = UNSET;
     this.settingKnee = false;
@@ -62,7 +60,7 @@ export class TraceData {
 
 
   handleTreeHighlight(treeIndex: number): void {
-    this.highlightIndex = treeIndex;
+    this.sampleIndex = treeIndex;
   }
 
 

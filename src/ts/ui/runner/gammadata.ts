@@ -1,4 +1,5 @@
-import { log10, numericSort, UNSET } from '../common';
+import { toDateString } from '../../pythia/dates';
+import { log10, NO_VALUE, numericSort, UNSET } from '../common';
 import { calcHPD } from '../distribution';
 import { GammaDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
@@ -17,32 +18,34 @@ export type LogLabelType = {
 export class GammaData extends TraceData {
 
   rangeData: number[][] = [];
+  postBurnin: number[][] = [];
+  /* stores the median and 95% HPD for each knot */
   converted: number[][] = [];
   dates: number[] = [];
   isLogLinear = false;
-  highlightIndex: number = UNSET;
-  yearsMin: number = UNSET;
-  yearsMax: number = UNSET;
-  minMagnitude: number = UNSET;
-  maxMagnitude: number = UNSET;
+  yearsMin: number = NO_VALUE;
+  yearsMax: number = NO_VALUE;
+  minMagnitude: number = NO_VALUE;
+  maxMagnitude: number = NO_VALUE;
   logRange: number = UNSET;
   logLabels: LogLabelType[] = [];
+  _dateIndex: number = NO_VALUE;
+  _knotIndex: number = NO_VALUE;
 
   constructor(label:string, unit='', getDataFnc: GammaDataFunction) {
     super(label, unit, getDataFnc);
   }
 
-  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
+  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number):void {
 
     this.rangeData = data;
     this.dates = dates;
     this.isLogLinear = isLogLinear;
     this.setKneeIndex(data.length, kneeIndex);
-    this.highlightIndex = sampleIndex;
-    const shown = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
+    this.postBurnin = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     /* pivot the data to make arrays for every knot */
-    const byKnots:number[][] = shown[0].map(()=>new Array(shown.length));
-    shown.forEach((gamma, i)=>{
+    const byKnots:number[][] = this.postBurnin[0].map(()=>new Array(this.postBurnin.length));
+    this.postBurnin.forEach((gamma, i)=>{
       gamma.forEach((g, k)=>byKnots[k][i] = g);
     });
     this.converted = byKnots.map(hpdeify);
@@ -84,8 +87,8 @@ export class GammaData extends TraceData {
 
     while (mag < this.maxMagnitude) {
       const logLabel: LogLabelType = {
-        value: UNSET,
-        mag: UNSET,
+        value: NO_VALUE,
+        mag: NO_VALUE,
         ticks: []
       };
       this.logLabels.push(logLabel);
@@ -113,6 +116,34 @@ export class GammaData extends TraceData {
     return len;
   }
 
+
+  get minDate() : number {
+    return this.dates[0];
+  }
+
+  get maxDate() : number {
+    return this.dates[this.dates.length-1];
+  }
+
+  set dateIndex(n:number) {
+    if (n === NO_VALUE) {
+      this._knotIndex = NO_VALUE;
+      return;
+    }
+    this._dateIndex = n;
+    const pct = (n - this.minDate) / (this.maxDate - this.minDate);
+    this._knotIndex = Math.round(pct * (this.dates.length - 1));
+    const date = this.dates[this._knotIndex];
+    console.log(n, toDateString(n), toDateString(this.minDate), toDateString(this.maxDate), toDateString(date), this.dates, this.converted[this._knotIndex]);
+  }
+
+  // get dateIndex() {
+  //   return this._dateIndex;
+  // }
+
+  get knotIndex() {
+    return this._knotIndex;
+  }
 
 }
 

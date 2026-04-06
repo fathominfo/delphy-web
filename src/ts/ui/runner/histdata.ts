@@ -31,7 +31,6 @@ export class HistData extends TraceData {
   data:number[] = [];
   postBurnIn: number[] = [];
   mccIndex: number = UNSET;
-  highlightIndex: number = UNSET;
   mean = 0;
   ess: number = UNSET;
   act: number = UNSET;
@@ -211,7 +210,7 @@ export class HistData extends TraceData {
     super.setKneeIndex(count, kneeIndex);
     this.mccIndex = mccIndex;
     this.hideBurnIn = hideBurnIn;
-    this.highlightIndex = sampleIndex;
+    this.sampleIndex = sampleIndex;
     this.displayCount = this.hideBurnIn && this.savedKneeIndex > 0 ? this.count - this.savedKneeIndex : this.count;
   }
 

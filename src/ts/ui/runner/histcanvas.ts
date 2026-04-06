@@ -1,5 +1,5 @@
 import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getTimestampString,
-  nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+  nf000, nfc, nicenum, NO_VALUE, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats,
   statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
@@ -28,13 +28,6 @@ TICK_BAR_TEMPLATE.remove();
 
 const MAX_STEP_SIZE = 3;
 const TARGET_LABEL_SPACING = 70; // in px
-
-/*
-for use in situations where UNSET (-1) falls
-within the valid range of inputs
-*/
-const NO_VALUE = Number.MIN_SAFE_INTEGER;
-
 
 export class HistCanvas extends TraceCanvas {
 
@@ -133,7 +126,7 @@ export class HistCanvas extends TraceCanvas {
     });
     this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
     this.histoSVG.addEventListener('pointerleave', ()=>{
-      this.traceData.highlightIndex = UNSET;
+      this.traceData.sampleIndex = UNSET;
       const binConfig = (this.traceData as HistData).binConfig;
       if (binConfig.isHistogram) {
         this.drawHistogramSVG(NO_VALUE);
@@ -320,7 +313,7 @@ export class HistCanvas extends TraceCanvas {
 
   handleTreeHighlight(treeIndex: number): void {
     const traceData = this.traceData as HistData;
-    traceData.highlightIndex = treeIndex;
+    traceData.sampleIndex = treeIndex;
   }
 
 
@@ -365,7 +358,7 @@ export class HistCanvas extends TraceCanvas {
   draw() {
     const traceData = this.traceData as HistData,
       binConfig = traceData.binConfig;
-    let { data, highlightIndex } = traceData,
+    let { data, sampleIndex: highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const { hideBurnIn, savedKneeIndex } = traceData;
     let readoutValue = NO_VALUE;
@@ -393,7 +386,7 @@ export class HistCanvas extends TraceCanvas {
     } else {
       this.drawDistributionSVG(readoutValue);
     }
-    this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
+    this.drawYAxisLabels(hideBurnIn, traceData.sampleIndex);
     this.setReadoutLabel(isHighlight, readoutValue);
     this.setStatsReadouts();
   }
@@ -904,7 +897,7 @@ export class HistCanvas extends TraceCanvas {
     requestAnimationFrame(()=>{
       this.highlightStatSpans();
       const traceData = this.traceData as HistData;
-      let { data, highlightIndex } = traceData,
+      let { data, sampleIndex: highlightIndex } = traceData,
         kneeIndex = traceData.currentKneeIndex;
       const { hideBurnIn, savedKneeIndex } = traceData;
       if (hideBurnIn && savedKneeIndex > 0) {

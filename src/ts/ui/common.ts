@@ -491,6 +491,13 @@ export function textIntersects(metrics1: MyTextMetrics, metrics2: MyTextMetrics)
 }
 
 export const UNSET = -1;
+/*
+for use in situations where UNSET (-1) falls
+within the valid range of inputs
+*/
+export const NO_VALUE = Number.MIN_SAFE_INTEGER;
+
+
 
 export type ZoomFnc = (vertZoom: number, vertScroll: number, horizZoom: number, horizScroll: number)=>void;
 
