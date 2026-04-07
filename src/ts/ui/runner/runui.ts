@@ -282,7 +282,7 @@ export class RunUI extends UIScreen {
     const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g / POP_GROWTH_FACTOR);
     this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "doublings / year", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
-    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
+    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size", dataFnc: gammaDataFnc};
 
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};

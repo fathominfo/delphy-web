@@ -485,6 +485,11 @@ nav button:not(:disabled):hover {
   background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-static));
   transition: background-color var(--transition) ease-in-out;
 
+  &:hover {
+    background-color: rgb(from var(--info-fill) r g b / var(--info-fill-opacity-on));
+  }
+
+
   .icon {
     position: absolute;
     top: 5%;

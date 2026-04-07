@@ -628,6 +628,19 @@ export class HistCanvas extends TraceCanvas {
     const values: number[] = [];
     const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
     if (kde) {
+      /*
+      While testing new features, I saw delphy hang a couple times. I was able to track
+      it one time to `maxVal` being set to `Infinity`, but it made no sense how it would
+      get that value. I added this debug info, but have not been able to recreate the
+      hanging again. [mark 260407]
+      */
+      if ((!Number.isFinite(minVal) && !isNaN(minVal)) || (!Number.isFinite(maxVal) && !isNaN(maxVal))) {
+        console.warn(`bad maxVal calculation in drawDistributionSVG for ${this.className}:
+          min: ${minVal}, max: ${maxVal},
+          firstValue: ${firstValue}, lastValue: ${lastValue}, histoValueRange: ${histoValueRange},
+          histoSize: ${histoSize}, N: ${N} binSize: ${binSize}`);
+        return;
+      }
       for (let val = minVal; val <= maxVal; val+= distStep) {
         const pdf = kde.pdf(val);
         const prob = step * pdf;

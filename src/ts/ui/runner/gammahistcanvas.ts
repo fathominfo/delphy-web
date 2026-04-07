@@ -28,7 +28,7 @@ const PADDING = 3;
 
 const DATE_LABEL_WIDTH = 86;
 const HALF_DATE_LABEL_WIDTH = DATE_LABEL_WIDTH / 2;
-const POP_CHART_Y_AXIS_TEXT_RIGHT = 30;
+const POP_CHART_Y_AXIS_TEXT_RIGHT = 10;
 
 type highlightDataType = {
   median: number,
@@ -322,7 +322,7 @@ export class GammaHistCanvas extends TraceCanvas {
       /* label the top tick */
       this.addTick(0, (this.traceData as GammaData).getTickLength(9));
       if (!highlighting) {
-        this.addText(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM), 0);
+        this.addText(`${safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM)} years`, 0);
       }
     }
 
@@ -393,7 +393,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     textEle.textContent = label;
     textEle.classList.add("highlight");
-    textEle.setAttribute("x", `${ 10 }`);
+    textEle.setAttribute("x", `${ POP_CHART_Y_AXIS_TEXT_RIGHT }`);
     textEle.setAttribute("y", `${y}`);
     this.labelContainer.appendChild(textEle);
     return textEle;
