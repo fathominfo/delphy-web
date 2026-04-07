@@ -1,6 +1,6 @@
-import { toDateString, toFullDateString } from "../../pythia/dates";
+import { toFullDateString } from "../../pythia/dates";
 import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
-import { getDateLabel, NO_VALUE, numericSort, safeLabel, UNSET } from "../common";
+import { NO_VALUE, safeLabel, UNSET } from "../common";
 import { GammaData, LogLabelType } from "./gammadata";
 import { GammaDataFunction } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
@@ -95,7 +95,7 @@ export class GammaHistCanvas extends TraceCanvas {
         requestAnimationFrame(()=>this.draw());
       }
     });
-    this.svg.addEventListener('pointerleave', (event: PointerEvent)=>{
+    this.svg.addEventListener('pointerleave', ()=>{
       gammaData.dateIndex = NO_VALUE;
       requestAnimationFrame(()=>this.draw());
     });
@@ -144,16 +144,16 @@ export class GammaHistCanvas extends TraceCanvas {
 
   drawRangeSeriesSVG():void {
     const gammaData = (this.traceData as GammaData);
-    const {rangeData, sampleIndex, knotIndex, postBurnin, knotStats: converted } = gammaData;
-    if (converted.length === 0) return;
+    const {rangeData, sampleIndex, knotIndex, knotStats } = gammaData;
+    if (knotStats.length === 0) return;
     const {height, dataWidth} = this;
     const {displayMin, displayMax} = this.traceData;
     const valRange = displayMax - displayMin;
     const verticalScale = height / (valRange || 1);
-    const kCount = converted.length;
+    const kCount = knotStats.length;
     const kWidth = dataWidth / (kCount - 1);
     let i = 0;
-    let hpd = converted[i][MIN_HPD_INDEX];
+    let hpd = knotStats[i][MIN_HPD_INDEX];
     const firstY = height-(hpd-displayMin) * verticalScale;
     let x = PADDING;
     let y = firstY;
@@ -168,7 +168,7 @@ export class GammaHistCanvas extends TraceCanvas {
     // draw the 95% HPD area
     rangeD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
-      hpd = converted[i][MIN_HPD_INDEX];
+      hpd = knotStats[i][MIN_HPD_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       if (drawingStaircase) {
         rangeD += `${x} ${y} `;
@@ -178,7 +178,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     for (i = kCount - 1; i > 0; i--) {
       x = PADDING + i * kWidth;
-      hpd = converted[i][MAX_HPD_INDEX];
+      hpd = knotStats[i][MAX_HPD_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
       if (drawingStaircase) {
@@ -188,7 +188,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     if (!drawingStaircase) {
       x = PADDING;
-      hpd = converted[0][MAX_HPD_INDEX];
+      hpd = knotStats[0][MAX_HPD_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
     }
@@ -218,12 +218,12 @@ export class GammaHistCanvas extends TraceCanvas {
     }
 
     // draw the median
-    let median = converted[0][MEDIAN_INDEX];
+    let median = knotStats[0][MEDIAN_INDEX];
     x = PADDING;
     y = height-(median-displayMin) * verticalScale;
     medianD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
-      median = converted[i][MEDIAN_INDEX];
+      median = knotStats[i][MEDIAN_INDEX];
       y = height-(median-displayMin) * verticalScale;
       if (drawingStaircase) {
         medianD = `M${x} ${y} L`;
@@ -243,7 +243,7 @@ export class GammaHistCanvas extends TraceCanvas {
       // });
       /* get median and 95% HPD for this time / knot */
       const x = PADDING + knotIndex * kWidth;
-      const knotData = converted[knotIndex].slice(0);
+      const knotData = knotStats[knotIndex].slice(0);
       const median = knotData[MEDIAN_INDEX];
       const hpdMin = knotData[MIN_HPD_INDEX];
       const hpdMax = knotData[MAX_HPD_INDEX];

@@ -423,7 +423,7 @@ export class RunUI extends UIScreen {
 
     });
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
-    this.advancedToggle.addEventListener("change", (event)=>{
+    this.advancedToggle.addEventListener("change", ()=>{
       // event.stopPropagation();
       if (this.advancedToggle.checked) {
         this.advancedFormContainer.classList.add("active");

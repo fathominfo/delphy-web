@@ -1,4 +1,3 @@
-import { toDateString } from '../../pythia/dates';
 import { log10, NO_VALUE, numericSort, UNSET } from '../common';
 import { calcHPD } from '../distribution';
 import { GammaDataFunction } from './runcommon';
@@ -134,7 +133,7 @@ export class GammaData extends TraceData {
     this._dateIndex = n;
     const pct = (n - this.minDate) / (this.maxDate - this.minDate);
     this._knotIndex = Math.round(pct * (this.dates.length - 1));
-    const date = this.dates[this._knotIndex];
+    // const date = this.dates[this._knotIndex];
     // console.log(n, toDateString(n), toDateString(this.minDate), toDateString(this.maxDate), toDateString(date), this.dates, this.knotStats[this._knotIndex]);
   }
 
