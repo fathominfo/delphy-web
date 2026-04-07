@@ -847,8 +847,14 @@
       max-width: var(--indicator-pop-module-width);
 
 
-      &.highlighting .chart .highlight {
-        opacity: 1;
+      &.highlighting .chart {
+        .labels {
+          opacity: 0;
+        }
+
+        .highlight {
+          opacity: 1;
+        }
       }
 
 
@@ -886,6 +892,21 @@
           }
         }
 
+
+        .labels {
+          transform: translate(5px, 0);
+          text {
+            font-size: 11px;
+            font-weight: 600;
+            fill: black;
+            opacity: 0.37;
+            transition: opacity 0.15s;
+            dominant-baseline: middle;
+          }
+        }
+
+
+
         // .dist {
         //   fill: none;
         //   stroke: var(--chart-graph-run-trend-stroke);
@@ -919,7 +940,7 @@
           }
           text {
             font-size: 11px;
-            alignment-baseline: middle;
+            dominant-baseline: middle;
             text-anchor: start;
             &.highlight {
               fill: #094e77;
