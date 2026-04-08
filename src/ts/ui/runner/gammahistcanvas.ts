@@ -199,7 +199,7 @@ export class GammaHistCanvas extends TraceCanvas {
       for (i = 1; i < kCount; i++) {
         y = height-(sampleData[i]-displayMin) * verticalScale;
         if (drawingStaircase) {
-          sampleD = `M${x} ${y} L`;
+          sampleD += `M${x} ${y} L`;
         }
         x = PADDING + i * kWidth;
         sampleD += `${x} ${y} `;
@@ -214,12 +214,14 @@ export class GammaHistCanvas extends TraceCanvas {
     let median = knotStats[0][MEDIAN_INDEX];
     x = PADDING;
     y = height-(median-displayMin) * verticalScale;
-    medianD = `M${x} ${y} L`;
+    if (!drawingStaircase) {
+      medianD = `M${x} ${y} L`;
+    }
     for (i = 1; i < kCount; i++) {
       median = knotStats[i][MEDIAN_INDEX];
       y = height-(median-displayMin) * verticalScale;
       if (drawingStaircase) {
-        medianD = `M${x} ${y} L`;
+        medianD += `M${x} ${y} L`;
       }
       x = PADDING + i * kWidth;
       medianD += `${x} ${y} `;
