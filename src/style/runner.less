@@ -907,25 +907,10 @@
           }
         }
 
-
-        // .labels {
-        //   transform: translate(5px, 0);
-        //   text {
-        //     font-size: 11px;
-        //     font-weight: 600;
-        //     fill: black;
-        //     opacity: 0.37;
-        //     transition: opacity 0.15s;
-        //     dominant-baseline: middle;
-        //   }
-        // }
-
-
-
-        // .dist {
-        //   fill: none;
-        //   stroke: var(--chart-graph-run-trend-stroke);
-        // }
+        .scrim {
+          fill: white;
+          fill-opacity: 0.6;
+        }
         .highlight {
           opacity: 0;
           ellipse {
@@ -936,6 +921,28 @@
             display: none;
             stroke: var(--chart-graph-run-trend-stroke);
           }
+          text {
+            font-size: 11px;
+            dominant-baseline: middle;
+            text-anchor: start;
+            fill: var(--chart-axis-text);
+            .value {
+              font-size: 11px;
+              font-weight: 400;
+            }
+            .label {
+              font-weight: 400;
+            }
+            &.median .value {
+              fill: #094e77;
+              font-weight: 600;
+            }
+          }
+
+          &.right text {
+            text-anchor: end;
+          }
+
         }
 
         line.highlight {
@@ -959,20 +966,6 @@
             font-size: 11px;
             dominant-baseline: middle;
             text-anchor: start;
-          }
-          .hover {
-            .value {
-              font-size: 11px;
-              font-weight: 400;
-            }
-            .label {
-              font-weight: 400;
-            }
-            &.median .value {
-              fill: #094e77;
-              font-weight: 600;
-            }
-
           }
         }
 

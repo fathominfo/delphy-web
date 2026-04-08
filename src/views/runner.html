@@ -281,18 +281,24 @@
                           <path class="trend range" d=""></path>
                           <path class="trend median" d=""></path>
                           <path class="trend sample" d=""></path>
-                          <!-- <path class="dist"></path> -->
-                          <line class="highlight marker hpdmax" x1="0" y1="-2" x2="0" y2="-1"></line>
-                          <line class="highlight marker median" x1="0" y1="-2" x2="0" y2="-1"></line>
-                          <line class="highlight marker hpdmin" x1="0" y1="-2" x2="0" y2="-1"></line>
+                          <rect class="scrim" x="0" y="0" width="0" height="0"></rect>
                           <g class="highlight">
                             <line class="dist" x1="0" y1="-1" x2="0" y2="-1"></line>
                             <ellipse class="point hpdmax" cx="0" cy="-1" rx="2" ry="2"></ellipse>
                             <ellipse class="point median" cx="0" cy="-1" rx="2" ry="2"></ellipse>
                             <ellipse class="point hpdmin" cx="0" cy="-1" rx="2" ry="2"></ellipse>
-                            <!-- <text class="hpdmax" x="0" y="5">95% HPD Max</text>
-                            <text class="median" x="0" y="50.5">Median</text>
-                            <text class="hpdmin" x="0" y="91">95% HPD Min</text> -->
+                            <text class="hover hpdmax" x="4">
+                              <tspan class="value"></tspan>
+                              <tspan class="label" dx="2">max</tspan>
+                            </text>
+                            <text class="hover median" x="4">
+                              <tspan class="value"></tspan>
+                              <tspan class="label" dx="2">median</tspan>
+                            </text>
+                            <text class="hover hpdmin" x="4">
+                              <tspan class="value"></tspan>
+                              <tspan class="label" dx="2">min</tspan>
+                            </text>
                           </g>
                         </svg>
                       </div>
