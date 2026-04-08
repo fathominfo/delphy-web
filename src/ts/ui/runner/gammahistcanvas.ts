@@ -2,7 +2,7 @@ import { toFullDateString } from "../../pythia/dates";
 import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
 import { NO_VALUE, safeLabel, UNSET } from "../common";
 import { MEDIAN_INDEX, HPD_MIN_INDEX, HPD_MAX_INDEX } from "../distribution";
-import { GammaData, GammaHighlightDataType, LogLabelType } from "./gammadata";
+import { GammaData, LogLabelType } from "./gammadata";
 import { GammaDataFunction } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 
@@ -75,19 +75,19 @@ export class GammaHistCanvas extends TraceCanvas {
     const gammaData = this.traceData as GammaData;
     this.svg.addEventListener('pointerenter', (event: PointerEvent)=>{
       const xPct = event.offsetX / this.width;
-      gammaData.dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
+      const dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
+      gammaData.setDateIndex(dateIndex);
       requestAnimationFrame(()=>this.draw());
     });
     this.svg.addEventListener('pointermove', (event: PointerEvent)=>{
-      const old = gammaData.knotIndex;
       const xPct = event.offsetX / this.width;
-      gammaData.dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
-      if (old !== gammaData.knotIndex) {
+      const dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
+      if (gammaData.setDateIndex(dateIndex)) {
         requestAnimationFrame(()=>this.draw());
       }
     });
     this.svg.addEventListener('pointerleave', ()=>{
-      gammaData.dateIndex = NO_VALUE;
+      gammaData.setDateIndex(NO_VALUE);
       requestAnimationFrame(()=>this.draw());
     });
   }
@@ -135,7 +135,7 @@ export class GammaHistCanvas extends TraceCanvas {
 
   drawRangeSeriesSVG():void {
     const gammaData = (this.traceData as GammaData);
-    const {rangeData, sampleIndex, knotIndex, knotStats, highlightData } = gammaData;
+    const {rangeData, sampleIndex, knotStats, highlightData } = gammaData;
     if (knotStats.length === 0) return;
     const {height, dataWidth} = this;
     const {displayMin, displayMax} = this.traceData;
@@ -266,7 +266,7 @@ export class GammaHistCanvas extends TraceCanvas {
       this.highlightG.setAttribute("transform", `translate(${dateX}, 0)`);
       this.container.classList.add("highlighting");
     } else {
-      // this.container.classList.remove("highlighting");
+      this.container.classList.remove("highlighting");
     }
 
 
@@ -277,15 +277,15 @@ export class GammaHistCanvas extends TraceCanvas {
 
   drawLabels():void {
     const { yAxisHeight, minSpan, maxSpan, height } = this;
-    const { logRange, maxMagnitude, minDate, maxDate, knotIndex,
-      dates, highlightData } = this.traceData as GammaData;
+    const { logRange, maxMagnitude, minDate, maxDate,
+      highlightData } = this.traceData as GammaData;
     const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = yAxisHeight >= labelHeight;
     // ctx.strokeStyle = 'black';
     // ctx.lineWidth = 0;
     // ctx.beginPath();
     let dateX = NO_VALUE;
-    const highlighting = knotIndex !== NO_VALUE;
+    const highlighting = highlightData !== null;
     this.labelContainer.innerHTML = '';
 
     this.hoverSpan.textContent = '';
@@ -328,8 +328,7 @@ export class GammaHistCanvas extends TraceCanvas {
       // (this.svg.querySelector(".labels .median") as SVGTextElement).setAttribute("y", `${medianY}`);
       // (this.svg.querySelector(".labels .hpdmax") as SVGTextElement).setAttribute("y", `${hpdMaxY}`);
     } else {
-      const { median, hpdMin, hpdMax } = highlightData;
-      const dateIndex = dates[knotIndex];
+      const { median, hpdMin, hpdMax, dateLabel } = highlightData;
       dateX = PADDING + highlightData.dateX * this.width;
       dateX = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, dateX), this.width - HALF_DATE_LABEL_WIDTH);
       const positions: [number, number, number] = [
@@ -341,7 +340,7 @@ export class GammaHistCanvas extends TraceCanvas {
       this.addHighlightText(hpdMax, hpdMaxY, "max");
       this.addHighlightText(median, medianY, "median");
       this.addHighlightText(hpdMin, hpdMinY, "min");
-      this.hoverSpan.textContent = toFullDateString(dateIndex);
+      this.hoverSpan.textContent = dateLabel;
       this.hoverSpan.style.left = `${dateX}px`;
     }
     minSpan.textContent = toFullDateString(minDate);

@@ -1,3 +1,4 @@
+import { toFullDateString } from '../../pythia/dates';
 import { log10, NO_VALUE, numericSort, UNSET } from '../common';
 import { calcHPD, MEDIAN_INDEX, HPD_MIN_INDEX, HPD_MAX_INDEX } from '../distribution';
 import { GammaDataFunction } from './runcommon';
@@ -22,7 +23,9 @@ export type GammaHighlightDataType = {
   hpdMinY: number, // 0 (top) - 1 (bottom)
   hpdMax: number,
   hpdMaxY: number, // 0 (top) - 1 (bottom)
-  dateX: number    // 0 (left) - 1 (right)
+  dateIndex: number,
+  dateX: number,    // 0 (left) - 1 (right)
+  dateLabel: string
 };
 
 
@@ -40,8 +43,7 @@ export class GammaData extends TraceData {
   maxMagnitude: number = NO_VALUE;
   logRange: number = UNSET;
   logLabels: LogLabelType[] = [];
-  _dateIndex: number = NO_VALUE;
-  _knotIndex: number = NO_VALUE;
+  dateIndex: number = NO_VALUE;
   highlightData: GammaHighlightDataType | null = null;
 
   constructor(label:string, unit='', getDataFnc: GammaDataFunction) {
@@ -138,45 +140,45 @@ export class GammaData extends TraceData {
     return this.dates[this.dates.length-1];
   }
 
-  set dateIndex(n:number) {
-    if (n === NO_VALUE) {
-      this._knotIndex = NO_VALUE;
+  setDateIndex(dateIndex:number) : boolean {
+    const isUpdate = this.dateIndex !== dateIndex;
+    if (dateIndex === NO_VALUE) {
       this.highlightData = null;
-      return;
+      return isUpdate;
     }
-    this._dateIndex = n;
-    const pct = (n - this.minDate) / (this.maxDate - this.minDate);
-    this._knotIndex = Math.round(pct * (this.dates.length - 1));
-    // const date = this.dates[this._knotIndex];
-    // console.log(n, toDateString(n), toDateString(this.minDate), toDateString(this.maxDate), toDateString(date), this.dates, this.knotStats[this._knotIndex]);
-
-    const { displayMin, displayMax, dates } = this;
+    this.dateIndex = dateIndex;
+    const { displayMin, displayMax, minDate, maxDate, dates } = this;
+    const dateX = (dateIndex - minDate) / (maxDate - minDate);
     const range = displayMax - displayMin;
-    const firstDate = dates[0];
-    const lastDate = dates[dates.length - 1];
-    const dateRange = lastDate - firstDate;
-
-
-    const knotData = this.knotStats[this.knotIndex].slice(0);
-    const median = knotData[MEDIAN_INDEX];
-    const hpdMin = knotData[HPD_MIN_INDEX];
-    const hpdMax = knotData[HPD_MAX_INDEX];
+    const datePct = dateX * (dates.length - 1)
+    const lowerKnot = Math.floor(datePct);
+    const upperKnot = Math.ceil(datePct);
+    let median: number,
+      hpdMin: number,
+      hpdMax: number;
+    if (lowerKnot === upperKnot) {
+      const knotData = this.knotStats[lowerKnot].slice(0);
+      median = knotData[MEDIAN_INDEX];
+      hpdMin = knotData[HPD_MIN_INDEX];
+      hpdMax = knotData[HPD_MAX_INDEX];
+    } else {
+      const lowerData = this.knotStats[lowerKnot].slice(0);
+      const upperData = this.knotStats[upperKnot].slice(0);
+      const interpol = (datePct - lowerKnot) / (upperKnot - lowerKnot);
+      median = lowerData[MEDIAN_INDEX] + interpol * (upperData[MEDIAN_INDEX] - lowerData[MEDIAN_INDEX]);
+      hpdMin = lowerData[HPD_MIN_INDEX] + interpol * (upperData[HPD_MIN_INDEX] - lowerData[HPD_MIN_INDEX]);
+      hpdMax = lowerData[HPD_MAX_INDEX] + interpol * (upperData[HPD_MAX_INDEX] - lowerData[HPD_MAX_INDEX]);
+    }
     const medianY = 1-(median-displayMin) / range;
     const hpdMinY = 1-(hpdMin-displayMin) / range;
     const hpdMaxY = 1-(hpdMax-displayMin) / range;
-    const dateX = (n - firstDate) / dateRange;
-    this.highlightData = { median, medianY, hpdMin, hpdMinY, hpdMax, hpdMaxY, dateX };
 
-
+    const dateLabel = toFullDateString(dateIndex);
+    this.highlightData = { median, medianY, hpdMin, hpdMinY, hpdMax, hpdMaxY,
+      dateIndex, dateX, dateLabel };
+    return isUpdate;
   }
 
-  // get dateIndex() {
-  //   return this._dateIndex;
-  // }
-
-  get knotIndex() {
-    return this._knotIndex;
-  }
 
 }
 
@@ -193,7 +195,8 @@ const hpdeify = (arr:number[]):number[]=>{
   const sum = sorted.reduce((tot, n)=>tot+n, 0);
   const mean = sum / sorted.length;
   /*
-  must correspond to HPD_MIN_INDEX, HPD_MAX_INDEX, MEDIAN_INDEX, and MEAN_INDEX
+  must correspond to HPD_MIN_INDEX, HPD_MAX_INDEX, MEDIAN_INDEX,
+  (as defined in distribution.ts) and MEAN_INDEX (defined above)
   */
   return [hpdMin, hpdMax, median, mean];
 }
