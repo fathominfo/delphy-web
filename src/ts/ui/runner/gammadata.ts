@@ -156,8 +156,13 @@ export class GammaData extends TraceData {
     let median: number,
       hpdMin: number,
       hpdMax: number;
-    if (lowerKnot === upperKnot) {
-      const knotData = this.knotStats[lowerKnot].slice(0);
+    /*
+    If we don't need to interpolate, then don't!
+    And if this is stepwise as opposed to log linear,
+    then we just take the values from the upper knot.
+    */
+    if (lowerKnot === upperKnot || !this.isLogLinear) {
+      const knotData = this.knotStats[upperKnot].slice(0);
       median = knotData[MEDIAN_INDEX];
       hpdMin = knotData[HPD_MIN_INDEX];
       hpdMax = knotData[HPD_MAX_INDEX];
