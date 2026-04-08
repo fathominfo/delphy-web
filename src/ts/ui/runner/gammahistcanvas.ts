@@ -287,7 +287,7 @@ export class GammaHistCanvas extends TraceCanvas {
       this.container.classList.add("highlighting");
       console.log(knotIndex, knotData);
     } else {
-      // this.container.classList.remove("highlighting");
+      this.container.classList.remove("highlighting");
     }
 
 
