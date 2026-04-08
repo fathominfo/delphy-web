@@ -27,6 +27,7 @@ const PADDING = 3;
 const DATE_LABEL_WIDTH = 86;
 const HALF_DATE_LABEL_WIDTH = DATE_LABEL_WIDTH / 2;
 const POP_CHART_Y_AXIS_TEXT_RIGHT = 10;
+const POP_CHART_LABEL_WIDTH = 95;
 
 
 
@@ -248,7 +249,7 @@ export class GammaHistCanvas extends TraceCanvas {
       const positions: [number, number, number] = [hpdMinY, medianY, hpdMaxY];
       this.setLabelYSpacing(positions);
       const [hpdMinLabelY, medianLabelY, hpdMaxLabelY] = positions;
-      const rightAlign = dateX > this.width - DATE_LABEL_WIDTH;
+      const rightAlign = dateX > this.width - POP_CHART_LABEL_WIDTH;
       const textX = rightAlign ? - 4 : 4;
       let label = this.highlightG.querySelector(".hover.hpdmax") as SVGTextElement;
       label.setAttribute("x", `${textX}`);
@@ -269,10 +270,12 @@ export class GammaHistCanvas extends TraceCanvas {
       this.highlightG.setAttribute("transform", `translate(${dateX}, 0)`);
       if (rightAlign) {
         this.highlightG.classList.add("right");
+        this.scrim.setAttribute("x", `${dateX - this.width}`);
       } else {
         this.highlightG.classList.remove("right");
+        this.scrim.setAttribute("x", `${dateX}`);
       }
-      this.scrim.setAttribute("x", `${dateX}`);
+
       this.scrim.setAttribute("width", `${this.width}`);
       this.scrim.setAttribute("height", `${height}`);
       dateX = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, dateX), this.width - HALF_DATE_LABEL_WIDTH);
@@ -284,7 +287,7 @@ export class GammaHistCanvas extends TraceCanvas {
     } else {
       this.container.classList.remove("highlighting");
       this.hoverSpan.textContent = '';
-      this.scrim.setAttribute("x", `${this.width}`);
+      // this.scrim.setAttribute("x", `${this.width}`);
     }
 
 

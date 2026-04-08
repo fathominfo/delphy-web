@@ -148,7 +148,7 @@ export class GammaData extends TraceData {
     }
     this.dateIndex = dateIndex;
     const { displayMin, displayMax, minDate, maxDate, dates } = this;
-    const dateX = (dateIndex - minDate) / (maxDate - minDate);
+    const dateX = Math.min(Math.max(0, (dateIndex - minDate) / (maxDate - minDate)), 1);
     const range = displayMax - displayMin;
     const datePct = dateX * (dates.length - 1)
     const lowerKnot = Math.max(0, Math.floor(datePct));

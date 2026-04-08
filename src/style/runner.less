@@ -854,7 +854,9 @@
         // .labels {
         //   opacity: 0;
         // }
-
+        .scrim {
+          fill-opacity: 0.6;
+        }
         .highlight {
           opacity: 1;
         }
@@ -909,8 +911,10 @@
 
         .scrim {
           fill: white;
-          fill-opacity: 0.6;
+          fill-opacity: 0;
+          transition: fill-opacity 0.15s;
         }
+
         .highlight {
           opacity: 0;
           ellipse {
