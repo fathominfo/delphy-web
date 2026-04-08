@@ -271,7 +271,7 @@
               <div class="module population">
                 <div class="header">
                   <h3 class="title"></h3>
-                  <p class="readuout-unit"></p>
+                  <p class="subtitle"></p>
                 </div>
                 <div class="chart">
                   <div class="feature">
@@ -290,19 +290,21 @@
                             <ellipse class="point hpdmax" cx="0" cy="-1" rx="2" ry="2"></ellipse>
                             <ellipse class="point median" cx="0" cy="-1" rx="2" ry="2"></ellipse>
                             <ellipse class="point hpdmin" cx="0" cy="-1" rx="2" ry="2"></ellipse>
-                          </g>
-                          <g class="labels">
-                            <text class="hpdmax" x="0" y="5">95% HPD Max</text>
+                            <!-- <text class="hpdmax" x="0" y="5">95% HPD Max</text>
                             <text class="median" x="0" y="50.5">Median</text>
-                            <text class="hpdmin" x="0" y="91">95% HPD Min</text>
+                            <text class="hpdmin" x="0" y="91">95% HPD Min</text> -->
                           </g>
                         </svg>
                       </div>
                     </div>
                     <div class="y axis">
                       <svg class="log-scale-ticks" xmlns="http://www.w3.org/2000/svg" >
-                        <text x="0">##</text>
+                        <text class="tick" x="0"></text>
                         <line></line>
+                        <text class="hover">
+                          <tspan class="value"></tspan>
+                          <tspan class="label" dx="2"></tspan>
+                        </text>
                       </svg>
                     </div>
                   </div>

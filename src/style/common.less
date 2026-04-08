@@ -153,11 +153,12 @@
   --trace-chart-graph-width: 180px;
   --trace-chart-width: var(--trace-chart-graph-width);
   --trace-chart-height: 225px;
+  --pop-chart-highlight-dot-radius: 3px;
   --pop-chart-graph-width: calc(
       var(--indicator-trace-module-width)
     + var(--view-gap)
     + var(--trace-chart-width)
-    + 6px
+    + 2 * var(--pop-chart-highlight-dot-radius)
   );
   --chart-graph-burn-in-trend-stroke-dasharray: var(--chart-graph-trend-stroke-weight) calc(var(--chart-graph-trend-stroke-weight) * 2);
   --chart-position-axis-stroke-weight: var(--position-line-stroke-weight);
