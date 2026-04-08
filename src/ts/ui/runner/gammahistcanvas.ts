@@ -1,7 +1,8 @@
 import { toFullDateString } from "../../pythia/dates";
 import { SkygridPopModel, SkygridPopModelType } from "../../pythia/delphy_api";
 import { NO_VALUE, safeLabel, UNSET } from "../common";
-import { GammaData, LogLabelType } from "./gammadata";
+import { MEDIAN_INDEX, HPD_MIN_INDEX, HPD_MAX_INDEX } from "../distribution";
+import { GammaData, GammaHighlightDataType, LogLabelType } from "./gammadata";
 import { GammaDataFunction } from "./runcommon";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 
@@ -15,9 +16,6 @@ const Y_AXIS_OVERFLOW = 10;
 
 const LABEL_HEIGHT = 14;
 
-const MIN_HPD_INDEX = 0;
-const MAX_HPD_INDEX = 1;
-const MEDIAN_INDEX = 3;
 
 
 const LOWER_OOM = -2;
@@ -30,14 +28,7 @@ const DATE_LABEL_WIDTH = 86;
 const HALF_DATE_LABEL_WIDTH = DATE_LABEL_WIDTH / 2;
 const POP_CHART_Y_AXIS_TEXT_RIGHT = 10;
 
-type highlightDataType = {
-  median: number,
-  medianY: number,
-  hpdMin: number,
-  hpdMinY: number,
-  hpdMax: number,
-  hpdMaxY: number
-};
+
 
 
 
@@ -58,14 +49,6 @@ export class GammaHistCanvas extends TraceCanvas {
   yAxisWidth: number = UNSET;
   yAxisHeight: number = UNSET;
   dataWidth: number = UNSET;
-  highlightData: highlightDataType = {
-    median: UNSET,
-    medianY: UNSET,
-    hpdMin: UNSET,
-    hpdMinY: UNSET,
-    hpdMax: UNSET,
-    hpdMaxY: UNSET
-  };
 
   constructor(label:string, subtitle: string, className: string, getDataFnc: GammaDataFunction) {
     if (className === '') {
@@ -152,7 +135,7 @@ export class GammaHistCanvas extends TraceCanvas {
 
   drawRangeSeriesSVG():void {
     const gammaData = (this.traceData as GammaData);
-    const {rangeData, sampleIndex, knotIndex, knotStats } = gammaData;
+    const {rangeData, sampleIndex, knotIndex, knotStats, highlightData } = gammaData;
     if (knotStats.length === 0) return;
     const {height, dataWidth} = this;
     const {displayMin, displayMax} = this.traceData;
@@ -161,7 +144,7 @@ export class GammaHistCanvas extends TraceCanvas {
     const kCount = knotStats.length;
     const kWidth = dataWidth / (kCount - 1);
     let i = 0;
-    let hpd = knotStats[i][MIN_HPD_INDEX];
+    let hpd = knotStats[i][HPD_MIN_INDEX];
     const firstY = height-(hpd-displayMin) * verticalScale;
     let x = PADDING;
     let y = firstY;
@@ -178,7 +161,7 @@ export class GammaHistCanvas extends TraceCanvas {
     // draw the 95% HPD area
     rangeD = `M${x} ${y} L`;
     for (i = 1; i < kCount; i++) {
-      hpd = knotStats[i][MIN_HPD_INDEX];
+      hpd = knotStats[i][HPD_MIN_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       if (drawingStaircase) {
         rangeD += `${x} ${y} `;
@@ -188,7 +171,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     for (i = kCount - 1; i > 0; i--) {
       x = PADDING + i * kWidth;
-      hpd = knotStats[i][MAX_HPD_INDEX];
+      hpd = knotStats[i][HPD_MAX_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
       if (drawingStaircase) {
@@ -198,7 +181,7 @@ export class GammaHistCanvas extends TraceCanvas {
     }
     if (!drawingStaircase) {
       x = PADDING;
-      hpd = knotStats[0][MAX_HPD_INDEX];
+      hpd = knotStats[0][HPD_MAX_INDEX];
       y = height-(hpd-displayMin) * verticalScale;
       rangeD += `${x} ${y} `;
     }
@@ -242,7 +225,7 @@ export class GammaHistCanvas extends TraceCanvas {
       medianD += `${x} ${y} `;
     }
 
-    if (knotIndex !== NO_VALUE) {
+    if (highlightData !== null) {
       // /* get all the samples at this time */
       // const samples = postBurnin.map(treeData=>treeData[knotIndex]);
       // const x1 = knotIndex * kWidth - 2;
@@ -252,15 +235,12 @@ export class GammaHistCanvas extends TraceCanvas {
       //   distD += `M${x1} ${y} L${x2} ${y}  `;
       // });
       /* get median and 95% HPD for this time / knot */
-      const x = PADDING + knotIndex * kWidth;
-      const knotData = knotStats[knotIndex].slice(0);
-      const median = knotData[MEDIAN_INDEX];
-      const hpdMin = knotData[MIN_HPD_INDEX];
-      const hpdMax = knotData[MAX_HPD_INDEX];
-      const medianY = height-(median-displayMin) * verticalScale;
-      const hpdMinY = height-(hpdMin-displayMin) * verticalScale;
-      const hpdMaxY = height-(hpdMax-displayMin) * verticalScale;
-      this.highlightData = { median, medianY, hpdMin, hpdMinY, hpdMax, hpdMaxY };
+      let { medianY, hpdMinY, hpdMaxY, dateX } = highlightData;
+      medianY *= height;
+      hpdMinY *= height;
+      hpdMaxY *= height;
+      dateX *= this.width;
+
       let line = this.highlightG.querySelector(".dist") as SVGLineElement;
       line.setAttribute("y1", `${hpdMinY}`);
       line.setAttribute("y2", `${hpdMaxY}`);
@@ -283,11 +263,10 @@ export class GammaHistCanvas extends TraceCanvas {
       (this.highlightG.querySelector(".point.hpdmin") as SVGEllipseElement).setAttribute("cy", `${hpdMinY}`);
       (this.highlightG.querySelector(".point.median") as SVGEllipseElement).setAttribute("cy", `${medianY}`);
       (this.highlightG.querySelector(".point.hpdmax") as SVGEllipseElement).setAttribute("cy", `${hpdMaxY}`);
-      this.highlightG.setAttribute("transform", `translate(${x}, 0)`);
+      this.highlightG.setAttribute("transform", `translate(${dateX}, 0)`);
       this.container.classList.add("highlighting");
-      console.log(knotIndex, knotData);
     } else {
-      this.container.classList.remove("highlighting");
+      // this.container.classList.remove("highlighting");
     }
 
 
@@ -299,7 +278,7 @@ export class GammaHistCanvas extends TraceCanvas {
   drawLabels():void {
     const { yAxisHeight, minSpan, maxSpan, height } = this;
     const { logRange, maxMagnitude, minDate, maxDate, knotIndex,
-      dates, knotStats, displayMin, displayMax } = this.traceData as GammaData;
+      dates, highlightData } = this.traceData as GammaData;
     const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = yAxisHeight >= labelHeight;
     // ctx.strokeStyle = 'black';
@@ -332,14 +311,14 @@ export class GammaHistCanvas extends TraceCanvas {
     });
     /* label the top tick */
     this.addTick(0, (this.traceData as GammaData).getTickLength(9));
-    if (!highlighting) {
+    if (highlightData === null) {
       this.addText(`${safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM)} years`, 0);
       // const valRange = displayMax - displayMin;
       // const verticalScale = height / (valRange || 1);
       // const firstKnot = knotStats[0].slice(0);
       // let medianY = height-(firstKnot[MEDIAN_INDEX]-displayMin) * verticalScale;
-      // let hpdMinY = height-(firstKnot[MIN_HPD_INDEX]-displayMin) * verticalScale;
-      // let hpdMaxY = height-(firstKnot[MAX_HPD_INDEX]-displayMin) * verticalScale;
+      // let hpdMinY = height-(firstKnot[HPD_MIN_INDEX]-displayMin) * verticalScale;
+      // let hpdMaxY = height-(firstKnot[HPD_MAX_INDEX]-displayMin) * verticalScale;
       // const positions: [number, number, number] = [hpdMinY, medianY, hpdMaxY];
       // this.setLabelYSpacing(positions);
       // hpdMinY = positions[0];
@@ -349,11 +328,14 @@ export class GammaHistCanvas extends TraceCanvas {
       // (this.svg.querySelector(".labels .median") as SVGTextElement).setAttribute("y", `${medianY}`);
       // (this.svg.querySelector(".labels .hpdmax") as SVGTextElement).setAttribute("y", `${hpdMaxY}`);
     } else {
-      const { median, hpdMin, hpdMax } = this.highlightData;
+      const { median, hpdMin, hpdMax } = highlightData;
       const dateIndex = dates[knotIndex];
-      const kWidth = this.dataWidth / (knotStats.length - 1);
-      dateX = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, PADDING + knotIndex * kWidth), this.width - HALF_DATE_LABEL_WIDTH);
-      const positions: [number, number, number] = [this.highlightData.hpdMinY, this.highlightData.medianY, this.highlightData.hpdMaxY];
+      dateX = PADDING + highlightData.dateX * this.width;
+      dateX = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, dateX), this.width - HALF_DATE_LABEL_WIDTH);
+      const positions: [number, number, number] = [
+        highlightData.hpdMinY * height,
+        highlightData.medianY * height,
+        highlightData.hpdMaxY * height];
       this.setLabelYSpacing(positions);
       const [hpdMinY, medianY, hpdMaxY] = positions;
       this.addHighlightText(hpdMax, hpdMaxY, "max");

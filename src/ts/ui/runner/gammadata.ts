@@ -1,16 +1,28 @@
 import { log10, NO_VALUE, numericSort, UNSET } from '../common';
-import { calcHPD } from '../distribution';
+import { calcHPD, MEDIAN_INDEX, HPD_MIN_INDEX, HPD_MAX_INDEX } from '../distribution';
 import { GammaDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
 
-
+export const MEAN_INDEX = 3;
 const MIN_TICK_LENGTH = 4;
 const MAX_TICKS_FACTOR = 10 * 10 + MIN_TICK_LENGTH;
+
 
 export type LogLabelType = {
   value: number,
   mag: number,
   ticks: number[][]
+};
+
+
+export type GammaHighlightDataType = {
+  median: number,
+  medianY: number, // 0 (top) - 1 (bottom)
+  hpdMin: number,
+  hpdMinY: number, // 0 (top) - 1 (bottom)
+  hpdMax: number,
+  hpdMaxY: number, // 0 (top) - 1 (bottom)
+  dateX: number    // 0 (left) - 1 (right)
 };
 
 
@@ -30,6 +42,7 @@ export class GammaData extends TraceData {
   logLabels: LogLabelType[] = [];
   _dateIndex: number = NO_VALUE;
   _knotIndex: number = NO_VALUE;
+  highlightData: GammaHighlightDataType | null = null;
 
   constructor(label:string, unit='', getDataFnc: GammaDataFunction) {
     super(label, unit, getDataFnc);
@@ -128,6 +141,7 @@ export class GammaData extends TraceData {
   set dateIndex(n:number) {
     if (n === NO_VALUE) {
       this._knotIndex = NO_VALUE;
+      this.highlightData = null;
       return;
     }
     this._dateIndex = n;
@@ -135,6 +149,25 @@ export class GammaData extends TraceData {
     this._knotIndex = Math.round(pct * (this.dates.length - 1));
     // const date = this.dates[this._knotIndex];
     // console.log(n, toDateString(n), toDateString(this.minDate), toDateString(this.maxDate), toDateString(date), this.dates, this.knotStats[this._knotIndex]);
+
+    const { displayMin, displayMax, dates } = this;
+    const range = displayMax - displayMin;
+    const firstDate = dates[0];
+    const lastDate = dates[dates.length - 1];
+    const dateRange = lastDate - firstDate;
+
+
+    const knotData = this.knotStats[this.knotIndex].slice(0);
+    const median = knotData[MEDIAN_INDEX];
+    const hpdMin = knotData[HPD_MIN_INDEX];
+    const hpdMax = knotData[HPD_MAX_INDEX];
+    const medianY = 1-(median-displayMin) / range;
+    const hpdMinY = 1-(hpdMin-displayMin) / range;
+    const hpdMaxY = 1-(hpdMax-displayMin) / range;
+    const dateX = (n - firstDate) / dateRange;
+    this.highlightData = { median, medianY, hpdMin, hpdMinY, hpdMax, hpdMaxY, dateX };
+
+
   }
 
   // get dateIndex() {
@@ -159,8 +192,10 @@ const hpdeify = (arr:number[]):number[]=>{
   const [hpdMin, hpdMax, median] = calcHPD(sorted);
   const sum = sorted.reduce((tot, n)=>tot+n, 0);
   const mean = sum / sorted.length;
-  // console.log(hpdMin, hpdMax, mean)
-  return [hpdMin, hpdMax, mean, median];
+  /*
+  must correspond to HPD_MIN_INDEX, HPD_MAX_INDEX, MEDIAN_INDEX, and MEAN_INDEX
+  */
+  return [hpdMin, hpdMax, median, mean];
 }
 
 
