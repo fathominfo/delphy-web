@@ -65,7 +65,9 @@ type HistChartCustomLabelConfig = {
 
 type PopChartConfig = {
   name: string,
-  dataFnc: GammaDataFunction
+  subtitle: string,
+  dataFnc: GammaDataFunction,
+  className: string
 }
 
 enum TraceChart {
@@ -282,7 +284,7 @@ export class RunUI extends UIScreen {
     const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g / POP_GROWTH_FACTOR);
     this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "doublings / year", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
-    this.traceChartConfig[TraceChart.gamma] = { name: "Effective population size in years", dataFnc: gammaDataFnc};
+    this.traceChartConfig[TraceChart.gamma] = { name: `Effective population size`, className: "effective-population-size", subtitle: "Showing Median and 95% HPD", dataFnc: gammaDataFnc};
 
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
@@ -423,7 +425,7 @@ export class RunUI extends UIScreen {
 
     });
     this.submitAdvancedButton = this.div.querySelector(".advanced--submit-button") as HTMLButtonElement;
-    this.advancedToggle.addEventListener("change", (event)=>{
+    this.advancedToggle.addEventListener("change", ()=>{
       // event.stopPropagation();
       if (this.advancedToggle.checked) {
         this.advancedFormContainer.classList.add("active");
@@ -590,8 +592,8 @@ export class RunUI extends UIScreen {
       });
       gammas.forEach((tc: TraceChart)=>{
         const config : PopChartConfig = this.traceChartConfig[tc] as PopChartConfig;
-        const { name, dataFnc } = config;
-        const canvas = new GammaHistCanvas(name, dataFnc);
+        const { name, dataFnc, subtitle, className } = config;
+        const canvas = new GammaHistCanvas(name, subtitle, className, dataFnc);
         this.traceCanvases.push(canvas);
         if (toShow.includes(tc)) {
           this.defaultCanvases.push(canvas);
@@ -921,7 +923,7 @@ export class RunUI extends UIScreen {
         if (canvas instanceof HistCanvas) {
           canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample, steps);
         } else if (canvas instanceof GammaHistCanvas) {
-          canvas.setRangeData(kneeIndex, sampleIndex);
+          canvas.setRangeData(kneeIndex);
         }
       }
     });

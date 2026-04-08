@@ -150,6 +150,7 @@ export class Distribution {
 }
 
 
+/* calculate the 95% highest posterior density interval */
 export const calcHPD = (arr: number[])=>{
   const sorted = arr.slice(0).sort(numericSort);
   /* calculate the HPD */

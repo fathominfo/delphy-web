@@ -47,22 +47,17 @@
         // height: 100%;
         white-space: nowrap;
         overflow: visible;
-        &h3 {
-          font-weight: var(--title-font-weight);
-          font-size: var(--title-font-size);
-          line-height: var(--title-line-height);
-          display: inline-block;
-          width: auto;
-          max-width: 100%;
-          // color: var(--title-text);
-          overflow: visible;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
+
         sub {
           display: inline-block;
           margin-top: 3px;
         }
+      }
+      .subtitle {
+        font-weight: 400;
+        color:  #5e5e5e;
+        font-size: var(--chart-xaxis-hover-text-font-size);
+        margin: 0.5em 0;
       }
 
     }
@@ -283,7 +278,16 @@
 #runner--bottom {
   display: flex;
   flex-direction: row;
-  gap: inherit;
+  /*
+  hack for gamma chart to visually align with
+  trend charts. See explanation at in this file
+  at
+    .population .chart .graph.display {margin-left}
+  and related is
+    #runner--panel--modules {padding}
+  */
+
+  gap: calc(var(--view-gap) - var(--pop-chart-highlight-dot-radius));
   height: calc(100% - 64px);
 }
 
@@ -308,7 +312,6 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-
 
 
   .display {
@@ -710,9 +713,9 @@
 
       .bars {
         // opacity: 0.75;
-        .distribution {
-          // opacity: 0.375;
-        }
+        // .distribution {
+        //   // opacity: 0.375;
+        // }
         rect {
           // fill: var(--chart-histogram-bar-fill);
           fill: #c7c7c7;
@@ -847,10 +850,25 @@
       max-width: var(--indicator-pop-module-width);
 
 
+      &.highlighting .chart {
+        // .labels {
+        //   opacity: 0;
+        // }
+        .scrim {
+          fill-opacity: 0.6;
+        }
+        .highlight {
+          opacity: 1;
+        }
+      }
+
+
       .displays {
         padding: var(--chart-displays-timeline-inset-x) 0;
         height: var(--trace-chart-width);
       }
+
+
 
       .chart {
         width: fit-content;
@@ -861,6 +879,18 @@
           min-width: var(--pop-chart-graph-width);
           max-width: var(--pop-chart-graph-width);
           height: 100%;
+          /*
+          Move the chart over so that the trend lines
+          visually align with the charts above. We need
+          to do this because the svg element is a little wider
+          than the data inside it, because if we didn't,
+          the highlight dots would get clipped at either edge.
+          Related entries in this file are for
+            #runner--panel--modules {padding}
+          and
+            #runner--bottom {gap}
+          */
+          margin-left: calc(-1 * var(--pop-chart-highlight-dot-radius));
         }
 
         .trend {
@@ -879,11 +909,57 @@
           }
         }
 
+        .scrim {
+          fill: white;
+          fill-opacity: 0;
+          transition: fill-opacity 0.15s;
+        }
+
+        .highlight {
+          opacity: 0;
+          ellipse {
+            fill: var(--chart-graph-run-trend-stroke);
+            stroke: none;
+          }
+          line {
+            display: none;
+            stroke: var(--chart-graph-run-trend-stroke);
+          }
+          text {
+            font-size: 11px;
+            dominant-baseline: middle;
+            text-anchor: start;
+            fill: var(--chart-axis-text);
+            .value {
+              font-size: 11px;
+              font-weight: 400;
+            }
+            .label {
+              font-weight: 400;
+            }
+            &.median .value {
+              fill: #094e77;
+              font-weight: 600;
+            }
+          }
+
+          &.right text {
+            text-anchor: end;
+          }
+
+        }
+
+        line.highlight {
+          stroke: var(--chart-graph-run-trend-stroke);
+          stroke-opacity: 0.3;
+        }
+
 
         .axis.y {
-          width: 37px;
-          // height: var(--chart-yaxis-height);
+          width: calc(var(--pop-chart-yaxis-width) * 2);
           height: var(--trace-chart-width);
+          overflow: visible;
+          // background-color: pink;
           line {
             stroke-width: 0.5;
             stroke: var(--chart-graph-run-trend-stroke);
@@ -891,17 +967,31 @@
             &.mag {opacity: 1;}
           }
           text {
-            alignment-baseline: middle;
-            text-anchor: end;
+            font-size: 11px;
+            dominant-baseline: middle;
+            text-anchor: start;
           }
         }
 
         .axis.x {
-          margin-left: 37px; // var(--chart-yaxis-width);
-          margin-right: unset;
+          position: relative;
+          margin-left: 3px;
+          margin-right: 3px;
           margin-top: 3px;
-          width: var(--pop-chart-graph-width);
+          width: calc(var(--pop-chart-graph-width) - 6px);
           .min-date {flex-grow: 1;}
+          .min-date, .max-date {
+            &.hidden {
+              display: inherit !important;
+              opacity: 0;
+            }
+          }
+          .hover-date {
+            position: absolute;
+            width: 86px;
+            margin-left: -43px;
+            white-space: nowrap;
+          }
         }
       }
     }
@@ -924,11 +1014,15 @@
 #runner--panel--modules {
   overflow: auto;
   height: calc(100% - 45px);
-}
-
-#runner--panel--other-modules {
-  display: none;
-  background-color: red;
+  /*
+  hack for gamma chart to visually align with
+  trend charts. See explanation at in this file
+  at
+    .population .chart .graph.display {margin-left}
+  and related is
+    #runner--bottom {gap}
+  */
+  padding: 0 0 0 var(--pop-chart-highlight-dot-radius);
 }
 
 
@@ -1711,11 +1805,11 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 
-.block.effective-population-size-log-scale .block--chart {
-  // canvas, canvas.kneed {
-  //   cursor: default;
-  // }
-}
+// .block.effective-population-size-log-scale .block--chart {
+//   // canvas, canvas.kneed {
+//   //   cursor: default;
+//   // }
+// }
 
 
 .y-axis,

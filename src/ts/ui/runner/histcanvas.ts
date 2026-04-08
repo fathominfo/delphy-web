@@ -1,5 +1,5 @@
 import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getTimestampString,
-  nf000, nfc, nicenum, safeLabel, UNSET } from '../common';
+  nf000, nfc, nicenum, NO_VALUE, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats,
   statHoverListenerType, SummaryStat, SummaryStatLongLabels, SummaryStatLookup, SummaryStatsType } from './runcommon';
@@ -28,13 +28,6 @@ TICK_BAR_TEMPLATE.remove();
 
 const MAX_STEP_SIZE = 3;
 const TARGET_LABEL_SPACING = 70; // in px
-
-/*
-for use in situations where UNSET (-1) falls
-within the valid range of inputs
-*/
-const NO_VALUE = Number.MIN_SAFE_INTEGER;
-
 
 export class HistCanvas extends TraceCanvas {
 
@@ -133,7 +126,7 @@ export class HistCanvas extends TraceCanvas {
     });
     this.histoSVG.addEventListener('pointermove', (event: PointerEvent)=>this.handleHistogramHover(event));
     this.histoSVG.addEventListener('pointerleave', ()=>{
-      this.traceData.highlightIndex = UNSET;
+      this.traceData.sampleIndex = UNSET;
       const binConfig = (this.traceData as HistData).binConfig;
       if (binConfig.isHistogram) {
         this.drawHistogramSVG(NO_VALUE);
@@ -320,7 +313,7 @@ export class HistCanvas extends TraceCanvas {
 
   handleTreeHighlight(treeIndex: number): void {
     const traceData = this.traceData as HistData;
-    traceData.highlightIndex = treeIndex;
+    traceData.sampleIndex = treeIndex;
   }
 
 
@@ -365,7 +358,7 @@ export class HistCanvas extends TraceCanvas {
   draw() {
     const traceData = this.traceData as HistData,
       binConfig = traceData.binConfig;
-    let { data, highlightIndex } = traceData,
+    let { data, sampleIndex: highlightIndex } = traceData,
       kneeIndex = traceData.currentKneeIndex;
     const { hideBurnIn, savedKneeIndex } = traceData;
     let readoutValue = NO_VALUE;
@@ -393,7 +386,7 @@ export class HistCanvas extends TraceCanvas {
     } else {
       this.drawDistributionSVG(readoutValue);
     }
-    this.drawYAxisLabels(hideBurnIn, traceData.highlightIndex);
+    this.drawYAxisLabels(hideBurnIn, traceData.sampleIndex);
     this.setReadoutLabel(isHighlight, readoutValue);
     this.setStatsReadouts();
   }
@@ -635,6 +628,19 @@ export class HistCanvas extends TraceCanvas {
     const values: number[] = [];
     const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
     if (kde) {
+      /*
+      While testing new features, I saw delphy hang a couple times. I was able to track
+      it one time to `maxVal` being set to `Infinity`, but it made no sense how it would
+      get that value. I added this debug info, but have not been able to recreate the
+      hanging again. [mark 260407]
+      */
+      if ((!Number.isFinite(minVal) && !isNaN(minVal)) || (!Number.isFinite(maxVal) && !isNaN(maxVal))) {
+        console.warn(`bad maxVal calculation in drawDistributionSVG for ${this.className}:
+          min: ${minVal}, max: ${maxVal},
+          firstValue: ${firstValue}, lastValue: ${lastValue}, histoValueRange: ${histoValueRange},
+          histoSize: ${histoSize}, N: ${N} binSize: ${binSize}`);
+        return;
+      }
       for (let val = minVal; val <= maxVal; val+= distStep) {
         const pdf = kde.pdf(val);
         const prob = step * pdf;
@@ -904,7 +910,7 @@ export class HistCanvas extends TraceCanvas {
     requestAnimationFrame(()=>{
       this.highlightStatSpans();
       const traceData = this.traceData as HistData;
-      let { data, highlightIndex } = traceData,
+      let { data, sampleIndex: highlightIndex } = traceData,
         kneeIndex = traceData.currentKneeIndex;
       const { hideBurnIn, savedKneeIndex } = traceData;
       if (hideBurnIn && savedKneeIndex > 0) {

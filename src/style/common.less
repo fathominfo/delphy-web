@@ -153,11 +153,12 @@
   --trace-chart-graph-width: 180px;
   --trace-chart-width: var(--trace-chart-graph-width);
   --trace-chart-height: 225px;
+  --pop-chart-highlight-dot-radius: 3px;
   --pop-chart-graph-width: calc(
-    var(--view-gap) / 2
-    + var(--indicator-trace-module-width)
-    + var(--chart-yaxis-width)
-    + var(--trace-chart-graph-width)
+      var(--indicator-trace-module-width)
+    + var(--view-gap)
+    + var(--trace-chart-width)
+    + 2 * var(--pop-chart-highlight-dot-radius)
   );
   --chart-graph-burn-in-trend-stroke-dasharray: var(--chart-graph-trend-stroke-weight) calc(var(--chart-graph-trend-stroke-weight) * 2);
   --chart-position-axis-stroke-weight: var(--position-line-stroke-weight);
@@ -210,13 +211,9 @@
     var(--chart-yaxis-height) +
     var(--chart-xaxis-height)
   );
-  --indicator-pop-module-width: calc(
-    var(--chart-yaxis-width) +
-    var(--chart-stroke-weight) +
-    var(--pop-chart-graph-width) +
-    var(--chart-stroke-weight)
-  );
+  --indicator-pop-module-width: calc(var(--indicator-trace-module-width) * 2 + var(--view-gap));
   --indicator-module-header-title-max-width: calc(var(--indicator-module-width) - var(--module-header-readout-basis-width) - var(--view-header-gap));
+  --pop-chart-yaxis-width: calc( var(--indicator-trace-module-width) - var(--trace-chart-width));
   --tree-max-height: calc(
     (
       (var(--indicator-module-height) * 3) +
