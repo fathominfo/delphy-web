@@ -13,10 +13,10 @@ type ChangeHandler = (event:Event)=>void;
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 
 
-const COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`,
-  COLOR_META_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_METADATA}]`,
-  CONFIDENCE_RANGE_SELECTOR = '.mcc-opt--confidence-range',
-  CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout';
+export const COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`;
+export const COLOR_META_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_METADATA}]`;
+const CONFIDENCE_RANGE_SELECTOR = '.mcc-opt--confidence-range';
+const CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout';
 
 
 export class MccConfig {

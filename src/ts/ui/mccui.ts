@@ -8,6 +8,7 @@ import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
 import { Metadata } from './metadata';
 import { BlockSlider } from '../util/blockslider';
+import { COLOR_CONF_SELECTOR, COLOR_META_SELECTOR } from './mccconfig';
 
 
 export class MccUI extends UIScreen {
@@ -122,7 +123,6 @@ export class MccUI extends UIScreen {
       this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
         (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
       });
-
       this.setTreeFromConfig(mccRef, pythia).then(()=>{
         mccRef.release();
       });
@@ -138,6 +138,12 @@ export class MccUI extends UIScreen {
         const mccConfig = this.sharedState.mccConfig;
         if (mccConfig) {
           mccConfig.updateInnerNodeMetadata(summary);
+          let input = this.div.querySelector(COLOR_META_SELECTOR) as HTMLInputElement;
+          if (input) {
+            input.checked = mccConfig.colorOption === ColorOption.metadata;
+            input = this.div.querySelector(COLOR_CONF_SELECTOR) as HTMLInputElement;
+            input.checked = mccConfig.colorOption === ColorOption.confidence;
+          }
         }
         this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence);
         requestAnimationFrame(()=>document.body.classList.remove("summarizing"));
