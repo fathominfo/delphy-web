@@ -211,7 +211,7 @@ export class HistCanvas extends TraceCanvas {
     let width = this.width;
 
     let burnInHeight = 0;
-    let activeHeight = height;
+    let activeHeight = Math.max(0, height);
 
     let burnInPath = "";
     let activePath = "";
