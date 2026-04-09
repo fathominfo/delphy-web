@@ -136,7 +136,7 @@ function onReady(p:Pythia):void {
     document.querySelectorAll(".header--descriptor .description .text").forEach((div)=>{
       (div as HTMLSpanElement).textContent = descriptor;
     });
-    current.handleConfigChange();
+    current?.handleConfigChange();
   };
   bindUpload(p, sharedState, runCallback, configCallback);
   setStage(STAGES.selecting);
