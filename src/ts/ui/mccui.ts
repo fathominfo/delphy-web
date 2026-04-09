@@ -7,6 +7,7 @@ import {UIScreen} from './uiscreen';
 import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
 import { Metadata } from './metadata';
+import { BlockSlider } from '../util/blockslider';
 
 
 export class MccUI extends UIScreen {
@@ -18,7 +19,7 @@ export class MccUI extends UIScreen {
   minDate: number;
   maxDate: number;
   baseTreeMinDate: number;
-
+  credibilityInput: BlockSlider | null = null;
 
   constructor(sharedState: SharedState, divSelector: string, treeSelector:string) {
     super(sharedState, divSelector);
@@ -69,6 +70,16 @@ export class MccUI extends UIScreen {
       setEnabled();
     }
 
+    const credibilityCallback = (value: number) => {
+      const pct = value / 100;
+      this.sharedState.mccConfig.setConfidence(pct);
+      this.setCladeCred();
+    };
+    const confidenceSlider = this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement;
+    if (confidenceSlider) {
+      this.credibilityInput = new BlockSlider(confidenceSlider, credibilityCallback);
+    }
+
 
   }
 
@@ -89,6 +100,7 @@ export class MccUI extends UIScreen {
         mccConfig.setColorSystem(ColorOption.metadata);
       }
     });
+    this.credibilityInput?.set(this.sharedState.mccConfig.confidenceThreshold * 100);
   }
 
   deactivate(): void {
@@ -195,5 +207,23 @@ export class MccUI extends UIScreen {
       drawRef.release();
     }
   }
+
+  setCladeCred() : void {
+    if (!this.credibilityInput) return;
+    const confValue = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}`;
+    this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
+      (ele as HTMLSpanElement).innerText = `${confValue}%`;
+    });
+    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
+    this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
+    this.mccTreeCanvas.colorsUnSet = true;
+    if (this.mccTreeCanvas.tree) {
+      this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
+      this.requestDraw();
+    }
+  }
+
+  requestDraw() { console.debug('the inheriting class should implement this');}
+
 
 }

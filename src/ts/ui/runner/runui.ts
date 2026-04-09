@@ -4,11 +4,10 @@ import {ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {HistCanvas} from './histcanvas';
 import {DateLabel} from '../datelabel';
-import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET} from '../common';
+import {nfc, getTimelineIndices, getTimestampString, UNSET} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
 import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType } from './runcommon';
-import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, Pythia, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
@@ -108,7 +107,7 @@ export class RunUI extends MccUI {
   private essCandidates: TraceCanvas[] = [];
 
 
-  private credibilityInput: BlockSlider;
+  // private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
   private essReadout: HTMLSpanElement;
   private essMeter: HTMLDivElement;
@@ -176,6 +175,13 @@ export class RunUI extends MccUI {
     super(sharedState, divSelector, "#runner--mcc .tree-canvas" );
     const DEBOUNCE_TIME = 100; // ms
     let lastRequestedBurnInPct = -1;
+
+
+    /*
+    In the run ui, coloring by metadata is distracting and serves no purpose.
+    */
+    this.mccTreeCanvas.setColors = this.mccTreeCanvas.setConfidenceColors;
+
 
     this.kneeHandler = (pct:number)=>{
       this.burnInToggle.disabled = pct <= 0;
@@ -332,12 +338,12 @@ export class RunUI extends MccUI {
       this.sharedState.hideBurnIn = this.hideBurnIn;
       this.updateRunData();
     });
-    const credibilityCallback = (value: number) => {
-      const pct = value / 100;
-      this.sharedState.mccConfig.setConfidence(pct);
-      this.setCladeCred();
-    }
-    this.credibilityInput = new BlockSlider((this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement), credibilityCallback);
+    // const credibilityCallback = (value: number) => {
+    //   const pct = value / 100;
+    //   this.sharedState.mccConfig.setConfidence(pct);
+    //   this.setCladeCred();
+    // }
+    // this.credibilityInput = new BlockSlider((this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement), credibilityCallback);
 
     this.stepSelector.addEventListener('input', ()=>{
       const power = parseInt(this.stepSelector.value);
@@ -512,7 +518,6 @@ export class RunUI extends MccUI {
     }
     if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
     this.runControl.addEventListener("change", this.runControlHandler);
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.updateParamsUI();
     setTimeout(()=>this.runControl.focus(), 100);
   }
@@ -672,21 +677,6 @@ export class RunUI extends MccUI {
 
 
 
-  setCladeCred() : void {
-    const confValue = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}`;
-    this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
-      (ele as HTMLSpanElement).innerText = `${confValue}%`;
-    });
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
-    this.mccTreeCanvas.colorsUnSet = true;
-    if (this.mccTreeCanvas.tree) {
-      this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
-      this.requestDraw();
-    }
-  }
-
-
 
   deactivate():void {
     if (this.is_running) {
@@ -796,7 +786,7 @@ export class RunUI extends MccUI {
     }
   }
 
-  private requestDraw():void {
+  requestDraw():void {
     requestAnimationFrame(()=>this.draw());
   }
 

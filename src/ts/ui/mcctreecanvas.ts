@@ -713,45 +713,58 @@ export class MccTreeCanvas {
 
 
   setColors(tree:Tree): void {
-    // console.debug('setColorrs');
-    const mccConfig = this.mccConfig,
-      size = this.rootConfigs[this.rootIndex].size;
-
+    const mccConfig = this.mccConfig;
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
-      const confidenceThreshold = this.confidenceThreshold;
-      const HI_CONFIDENCE_COLOR = getCSSValue("--tree-branch-a-stroke");
-      const LOW_CONFIDENCE_COLOR = getCSSValue("--tree-branch-c-stroke");
-      const HI_CONFIDENCE_WEIGHT = getCSSValue("--tree-branch-a-stroke-weight");
-      const LOW_CONFIDENCE_WEIGHT = getCSSValue("--tree-branch-c-stroke-weight");
-
-      for (let index = 0; index < size; index++) {
-        let confidence = this.creds[index];
-        if (isTip(tree,index)) {
-          confidence = this.creds[this.nodeParents[index]];
-          this.nodeColors[index] = confidence >= confidenceThreshold ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR;
-          this.branchColors[index] = HI_CONFIDENCE_COLOR;
-        } else {
-          const hiConf = confidence >= confidenceThreshold,
-            color = hiConf ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR,
-            weight = parseFloat(hiConf ? HI_CONFIDENCE_WEIGHT : LOW_CONFIDENCE_WEIGHT);
-          this.nodeColors[index] = color;
-          this.branchColors[index] = color;
-          this.branchWeights[index] = weight;
-        }
-      }
+      this.setConfidenceColors(tree);
     } else if (mccConfig.metadataColors) {
-      this.metadataNodeValues = mccConfig.getMetadataValues();
-      this.metadataNodeValueOptions = mccConfig.getMetadataTipCounts();
-      const nodeValues = this.metadataNodeValues;
-      for (let index = 0; index < size; index++) {
-        const value = nodeValues[index],
-          color = mccConfig.getMetadataColor(value);
-        this.nodeColors[index] = color;
-        this.branchColors[index] = color;
-      }
+      this.setMetadataColors(tree);
     }
     this.colorsUnSet = false;
   }
+
+
+
+  setConfidenceColors(tree:Tree): void {
+    const size = this.rootConfigs[this.rootIndex].size;
+    const confidenceThreshold = this.confidenceThreshold;
+    const HI_CONFIDENCE_COLOR = getCSSValue("--tree-branch-a-stroke");
+    const LOW_CONFIDENCE_COLOR = getCSSValue("--tree-branch-c-stroke");
+    const HI_CONFIDENCE_WEIGHT = getCSSValue("--tree-branch-a-stroke-weight");
+    const LOW_CONFIDENCE_WEIGHT = getCSSValue("--tree-branch-c-stroke-weight");
+    for (let index = 0; index < size; index++) {
+      let confidence = this.creds[index];
+      if (isTip(tree,index)) {
+        confidence = this.creds[this.nodeParents[index]];
+        this.nodeColors[index] = confidence >= confidenceThreshold ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR;
+        this.branchColors[index] = HI_CONFIDENCE_COLOR;
+      } else {
+        const hiConf = confidence >= confidenceThreshold,
+          color = hiConf ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR,
+          weight = parseFloat(hiConf ? HI_CONFIDENCE_WEIGHT : LOW_CONFIDENCE_WEIGHT);
+        this.nodeColors[index] = color;
+        this.branchColors[index] = color;
+        this.branchWeights[index] = weight;
+      }
+    }
+  }
+
+  setMetadataColors(tree: Tree): void {
+    const mccConfig = this.mccConfig;
+    if (!mccConfig) return;
+    const size = this.rootConfigs[this.rootIndex].size
+    this.metadataNodeValues = mccConfig.getMetadataValues();
+    this.metadataNodeValueOptions = mccConfig.getMetadataTipCounts();
+    const nodeValues = this.metadataNodeValues;
+    for (let index = 0; index < size; index++) {
+      const value = nodeValues[index],
+        color = mccConfig.getMetadataColor(value);
+      this.nodeColors[index] = color;
+      this.branchColors[index] = color;
+    }
+  }
+
+
+
 
   setHoverDate(date:number) {
     const x = this.getZoomX(date);

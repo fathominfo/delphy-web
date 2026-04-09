@@ -121,7 +121,7 @@ export class HistCanvas extends TraceCanvas {
       }
     } else {
       const treeIndex = this.getTreeAtY(event);
-      console.log('handlePointerMove', treeIndex);
+      // console.log('handlePointerMove', treeIndex);
       this.hoverListener(treeIndex);
     }
   }

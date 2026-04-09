@@ -18,7 +18,6 @@ export class BlockSlider {
 
   constructor(div: HTMLElement, inputCallback: ValueHandler, min?: number, max?: number, step?: number) {
     this.div = div;
-
     this.input = div.querySelector(".slider--input") as HTMLInputElement;
     if (min !== undefined && max !== undefined && step !== undefined) {
       this.min = min;
