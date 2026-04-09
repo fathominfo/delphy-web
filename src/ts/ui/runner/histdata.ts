@@ -119,9 +119,9 @@ export class HistData extends TraceData {
       if (this.label === "Total Evolutionary Time") {
         const minE = Math.min(...estimateData);
         const maxE = Math.max(...estimateData);
-        console.log("KDE", this.label, min, max, min===minE, max===maxE, values.length, values.length - bucketCount,
-          "display", this.displayMin, this.displayMax, bandwidth, halfBandwidth,
-          "n vs. max", n, n-max);
+        // console.log("KDE", this.label, min, max, min===minE, max===maxE, values.length, values.length - bucketCount,
+        //   "display", this.displayMin, this.displayMax, bandwidth, halfBandwidth,
+        //   "n vs. max", n, n-max);
       }
     }
     return {buckets, values, maxBucketValue, positions: [], step: bandwidth };
