@@ -684,7 +684,6 @@ export class RunUI extends MccUI {
     }
     super.deactivate();
     this.runControl.removeEventListener("change", this.runControlHandler);
-
   }
 
   resize():void {

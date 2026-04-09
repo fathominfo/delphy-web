@@ -9,13 +9,11 @@ import { BlockSlider } from '../util/blockslider';
 
 
 type ChangeHandler = (event:Event)=>void;
-type returnless = ()=>void;
-
 
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 
 
-const  COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`,
+const COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`,
   COLOR_META_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_METADATA}]`,
   CONFIDENCE_RANGE_SELECTOR = '.mcc-opt--confidence-range',
   CONFIDENCE_READOUT_SELECTOR = '.mcc-opt--confidence-readout';
@@ -135,7 +133,7 @@ export class MccConfig {
           ele.addEventListener('change', callback);
           ele.checked = isSelected;
         } else {
-          console.debug(`could not find "${selector}"`);
+          console.debug(`could not find "${selector}" on the #${div.id} page`);
         }
         return ele;
       };
@@ -148,9 +146,12 @@ export class MccConfig {
         readout.innerHTML = `${Math.round(value)}`;
         this.setConfidence(confidenceThreshold);
       };
-      this.confidenceSlider = new BlockSlider((div.querySelector(CONFIDENCE_RANGE_SELECTOR) as HTMLElement), this.confidenceCallback);
-      this.confidenceSlider.set(this.confidenceThreshold * 100);
-      readout.innerHTML = `${Math.round(this.confidenceThreshold * 100)}`;
+      const input = div.querySelector(CONFIDENCE_RANGE_SELECTOR) as HTMLElement;
+      if (input) {
+        this.confidenceSlider = new BlockSlider(input, this.confidenceCallback);
+        this.confidenceSlider.set(this.confidenceThreshold * 100);
+        readout.innerHTML = `${Math.round(this.confidenceThreshold * 100)}`;
+      }
 
       // const addClickListener = (selector: string, callback:returnless)=>{
       //   const ele = document.querySelector(selector) as HTMLInputElement;
@@ -247,13 +248,14 @@ export class MccConfig {
 
   unbind() : void {
     if (this.div) {
+      console.trace('running unbind');
       const div: HTMLDivElement = this.div;
       const removeChangeListener = (selector: string, callback:ChangeHandler)=>{
         const ele = div.querySelector(selector) as HTMLInputElement;
         if (ele) {
           ele.removeEventListener('change', callback);
         } else {
-          console.debug(`could not find "${selector}"`);
+          console.debug(`could not find "${selector}" on #${div.id}`);
         }
       }
       removeChangeListener(COLOR_CONF_SELECTOR, this.colorCallback);

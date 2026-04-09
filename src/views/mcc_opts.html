@@ -3,7 +3,7 @@
           <div class="mcc-opt-list confidence">
             <label >Credibility threshold <span class="mcc-opt--confidence-readout">90</span>%
               <div class="mcc-opt--confidence-range block-slider">
-                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
+                <input type="range" min="1" max="100" value="90" step="1" class="slider--input"/>
                 <div class="slider--track"></div>
                 <div class="slider--track-filled"></div>
                 <div class="slider--thumb"></div>
@@ -13,10 +13,14 @@
           <div class="mcc-opt-list color">
             <p>Branch coloring</p>
             <div class="toggle-container">
-              <input type="radio" name="mcc-opt--color" value="confidence" class="mcc-opt" id="color--confidence" />
-              <label for="color--confidence">Credibility</label>
-              <input type="radio" name="mcc-opt--color" value="metadata" class="mcc-opt" id="color--metadata" />
-              <label for="color--metadata">Metadata</label>
+              <label>
+                Credibility
+                <input type="radio" name="mcc-opt--color" value="confidence" class="mcc-opt" class="color--confidence" />
+              </label>
+              <label>
+                Metadata
+                <input type="radio" name="mcc-opt--color" value="metadata" class="mcc-opt" class="color--metadata" />
+              </label>
             </div>
           </div>
         </div>

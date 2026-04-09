@@ -69,18 +69,6 @@ export class MccUI extends UIScreen {
       });
       setEnabled();
     }
-
-    const credibilityCallback = (value: number) => {
-      const pct = value / 100;
-      this.sharedState.mccConfig.setConfidence(pct);
-      this.setCladeCred();
-    };
-    const confidenceSlider = this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement;
-    if (confidenceSlider) {
-      this.credibilityInput = new BlockSlider(confidenceSlider, credibilityCallback);
-    }
-
-
   }
 
 
@@ -88,6 +76,7 @@ export class MccUI extends UIScreen {
     /* hold onto the current mcc while this tab is open */
     if (this.pythia) this.mccRef = this.pythia.getMcc();
     const mccConfig = this.sharedState.mccConfig;
+    mccConfig.bind(this.div);
     mccConfig.setListener(()=>this.handleConfigChange());
     if (this.mccTreeCanvas) {
       this.mccTreeCanvas.setConfig(mccConfig);

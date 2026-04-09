@@ -55,15 +55,16 @@ function activateView(selectedView:UIScreen):void {
   */
   for (let i = 0; i < navLabels.length; i++) {
     const nl:NavLabel = navLabels[i],
-      active = selectedView === nl.view;
+      view = nl.view,
+      active = selectedView === view;
     nl.div.classList.toggle('active', active);
     if (nl.button) {
       nl.button.classList.toggle('active', active);
     }
     if (active) {
-      current = nl.view;
-    } else {
-      nl.view.deactivate();
+      current = view;
+    } else if (view.isActive) {
+      view.deactivate();
     }
   }
   if (current) {
