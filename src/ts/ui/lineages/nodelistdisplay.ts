@@ -181,7 +181,11 @@ class DivPool {
         const index = (div?.node as DisplayNode).index;
         dismissCallback(index);
       });
-      actualDiv.addEventListener('pointerenter', () => nodeHighlightCallback((div?.node as DisplayNode).index, UNSET, null));
+      actualDiv.addEventListener('pointerenter', () => {
+        const dnode = div?.node as DisplayNode;
+        const index = dnode ? dnode.index : UNSET;
+        nodeHighlightCallback(index, UNSET, null)
+      });
       actualDiv.addEventListener('pointerleave', () => nodeHighlightCallback(UNSET, UNSET, null));
       actualDiv.addEventListener('click', () => nodeZoomCallback((div?.node as DisplayNode).index));
       const setRootButton = actualDiv.querySelector('.node-set-root') as HTMLButtonElement;
