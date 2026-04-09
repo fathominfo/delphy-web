@@ -159,7 +159,11 @@ export class NodeSchematic {
   resize() {
     const { offsetWidth, offsetHeight } = WRAPPER;
     this.width = offsetWidth;
-    this.height = offsetHeight;
+    /*
+    The wrapper div is 3 px taller than the svg.
+    Not sure why. [mark 260409]
+    */
+    this.height = offsetHeight - 3;
     requestAnimationFrame(()=>{
       CONTAINER.setAttribute("viewBox", `0 0 ${ this.width} ${ this.height}`);
       CONTAINER.setAttribute("width", `${ this.width}`);
