@@ -262,7 +262,7 @@ export class CoreLineagesData {
     if (nodeIndex === this.highlightNode.index && date === this.highlightDate && mutation === this.highlightMutation) {
       return false;
     }
-    console.log(`setting highlight node to ${nodeIndex}`)
+    // console.log(`setting highlight node to ${nodeIndex}`)
     const minimap = this.selectionTreeData as SelectionTreeData;
 
     let displayNode: DisplayNode | null = null;
