@@ -216,8 +216,10 @@ export class MccTreeCanvas {
 
 
   setConfig(mccConfig : MccConfig) : void {
+    // console.log(`setting MccConfig root ${mccConfig.configuredRoot}`);
     this.mccConfig = mccConfig;
     this.confidenceThreshold = mccConfig.confidenceThreshold;
+    this.rootIndex = mccConfig.configuredRoot;
     this.colorsUnSet = true;
   }
 
@@ -225,7 +227,7 @@ export class MccTreeCanvas {
     this.colorsUnSet = true;
     const nodeCount = tree.getSize();
     if (nodeCount > 0) {
-      if (this.rootIndex === UNSET || this.tree !== tree) {
+      if (this.rootIndex === UNSET) {
         this.rootIndex = (tree as Tree).getRootIndex();
       }
       this.gatherNodeStats(tree, creds);

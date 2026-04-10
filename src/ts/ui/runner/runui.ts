@@ -198,6 +198,7 @@ export class RunUI extends MccUI {
             this.pythia.setKneeIndexByPct(pct);
             this.pythia.recalcMccTree().then(()=>{
               if (currentKnee !== this.pythia?.kneeIndex) {
+                this.sharedState.resetSelections();
                 this.updateRunData();
               }
             });
@@ -707,6 +708,7 @@ export class RunUI extends MccUI {
       last = stepsHist.length - 1;
     if (this.stepCount === stepsHist[last]) return;
     this.updateRunData();
+    this.sharedState.resetSelections();
     if (!this.is_running && this.timerHandle !== 0) {
       clearTimeout(this.timerHandle);
       this.timerHandle = 0;
@@ -717,9 +719,8 @@ export class RunUI extends MccUI {
   }
 
 
-
-
   updateRunData():void {
+    // console.log(`updateRunData root ${this.sharedState.mccConfig.configuredRoot}`);
     if (!this.pythia) return;
     const stepsHist = this.pythia.stepsHist,
       last = stepsHist.length - 1;
@@ -732,10 +733,8 @@ export class RunUI extends MccUI {
       this.mccIndex = this.pythia.getMccIndex();
       const mccTree = mccRef.getMcc(),
         nodeConfidence = mccRef.getNodeConfidence();
-      if (mccTree !== this.mccTreeCanvas.tree) {
-        this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
-        this.sharedState.resetSelections();
-      }
+      this.mccTreeCanvas.rootIndex = UNSET;
+      this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
       const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
       this.mccMinDate.setTarget(earliestMCCDate);
       if (oldRef) {
@@ -848,6 +847,7 @@ export class RunUI extends MccUI {
   start():void {
     if (this.timerHandle === 0) {
       this.updateRunData();
+      this.sharedState.resetSelections();
       this.timerHandle = setInterval(()=>this.pingPythiaForUpdate(), 30) as unknown as number;
     }
     if (this.pythia) {
@@ -998,6 +998,7 @@ export class RunUI extends MccUI {
       this.stepCount = 0;
       this.updateParamsUI();
       this.updateRunData();
+      this.sharedState.resetSelections();
       this.disableAnimation = false;
       setStage(STAGES.loaded);
     });
