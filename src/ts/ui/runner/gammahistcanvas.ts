@@ -79,13 +79,15 @@ export class GammaHistCanvas extends TraceCanvas {
     this.svg.addEventListener('pointerenter', (event: PointerEvent)=>{
       const xPct = event.offsetX / this.width;
       const dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
-      gammaData.setDateIndex(dateIndex);
-      requestAnimationFrame(()=>this.draw());
+      if (Number.isFinite(dateIndex)) {
+        gammaData.setDateIndex(dateIndex);
+        requestAnimationFrame(()=>this.draw());
+      }
     });
     this.svg.addEventListener('pointermove', (event: PointerEvent)=>{
       const xPct = event.offsetX / this.width;
       const dateIndex = Math.round(gammaData.minDate + xPct * (gammaData.maxDate - gammaData.minDate));
-      if (gammaData.setDateIndex(dateIndex)) {
+      if (Number.isFinite(dateIndex) && gammaData.setDateIndex(dateIndex)) {
         requestAnimationFrame(()=>this.draw());
       }
     });
@@ -301,7 +303,7 @@ export class GammaHistCanvas extends TraceCanvas {
     const { logRange, maxMagnitude, minDate, maxDate } = this.traceData as GammaData;
     const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = yAxisHeight >= labelHeight;
-    const dateX = NO_VALUE;
+    // const dateX = NO_VALUE;
     this.labelContainer.innerHTML = '';
 
     this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
