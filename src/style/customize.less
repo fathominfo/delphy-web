@@ -38,6 +38,15 @@
   a {
     color: #4B85E1;
   }
+
+
+  .main-content .header {
+    max-height: 43px;
+    .title h3 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+  }
 }
 
 #customize--mcc {
@@ -80,11 +89,11 @@
 #customize--right {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   max-height: 100%;
   padding: 15px;
-  background-color: #fcfcfc;
-  border: 1px solid #e3e3e3;
+  // background-color: #fcfcfc;
+  // border: 1px solid #e3e3e3;
 }
 
 .customize--column {
@@ -248,7 +257,8 @@
       }
 
       .uploader-text {
-        width: 135px;
+        width: 15em;
+        text-align: left;
       }
     }
   }

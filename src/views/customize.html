@@ -6,10 +6,7 @@
   </header>
   <div class="main-content">
     <section id="customize--mcc">
-      <h1>MCC</h1>
-      <div class="tree-canvas-container">
-        <canvas id="customize--mcc-canvas" class="tree-canvas"></canvas>
-      </div>
+      {{> mcc_tree }}
       <div class="tree-export">
         <h2>Export</h2>
         <div class="export-category">
@@ -63,8 +60,8 @@
           <label for="metadata-file-input" id="metadata-file-label">
             <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
             <div class="uploader-text">
-              Click here or drag to load a metadata file (.csv, .tsv)
-              <br/>One column should be titled "ID", corresponding to the ids in the fasta file.
+              Click here or drag to load a metadata file (.csv, .tsv).
+              <br/><br/>One column should be titled "ID", corresponding to the ids in the fasta file.
             </div>
           </label>
           <div id="metadata-loading">
@@ -180,59 +177,6 @@
         </div>
       </div>
 
-      <div id="customize--tree" class="customize--column">
-        <!-- <div id="customize--tree-topology">
-          <h2>Topology</h2>
-          <div class="paragraph-radio">
-            <input type="radio" name="topology" id="topology--mcc" value="mcc" checked>
-            <label for="topology--mcc">
-              <h4>Maximum Clade Credibility (MCC) tree</h4>
-              <p>Picks the tree that has the highest product of all the clade credibilities (posterior probabilities) for all the clades in the tree, then annotates it with summary information for the full set of trees from the sample.</p>
-            </label>
-          </div>
-          <div class="paragraph-radio">
-            <input type="radio" name="topology" id="topology--mcs" value="mcs">
-            <label for="topology--mcs">
-              <h4>High Frequency Split (HFS) tree <span class="exp-feature">Experimental</span></h4>
-              <p>Builds a tree node by node, starting at the root. Finds all the tips under that node, and queries the base trees for the most common split of those tips. Assigns those tips to its child nodes, and repeats until it reaches the tips. </p>
-            </label>
-          </div>
-        </div> -->
-        <!-- <div id="customize--tree-presentation">
-          <h2>Presentation</h2>
-          <div class="paragraph-radio">
-            <input type="radio" name="presentation" id="presentation--all" value="all" checked>
-            <label for="presentation--all">
-              <h4>Show all inner nodes</h4>
-              <p>Includes all inner nodes, including those produced as an arbitrary or low-information side-effect of the binary algorithm.</p>
-            </label>
-          </div>
-          <div class="paragraph-radio">
-            <input type="radio" name="presentation" id="presentation--mutations" value="mutations">
-            <label for="presentation--mutations">
-              <h4>Show only inner nodes with mutations <span class="exp-feature">Experimental</span></h4>
-              <p>Displays an “umbrella” tree resulting from the removal of all inner nodes that do not have a corresponding mutation.</p>
-            </label>
-          </div>
-        </div> -->
-        <!-- <div id="customize--tree-spacing">
-          <h2>Vertical spacing</h2>
-          <div class="paragraph-radio">
-            <input type="radio" name="spacing" id="spacing--even" value="even" checked>
-            <label for="spacing--even">
-              <h4>Even spacing</h4>
-              <p>Spaces all tips evenly.</p>
-            </label>
-          </div>
-          <div class="paragraph-radio">
-            <input type="radio" name="spacing" id="spacing--genetic" value="genetic">
-            <label for="spacing--genetic">
-              <h4>SNP distance <span class="exp-feature">Experimental</span></h4>
-              <p>Adds space between consecutive tips according to the number of differences in nucleotides between them.</p>
-            </label>
-          </div>
-        </div> -->
-      </div>
 
     </section>
   </div>

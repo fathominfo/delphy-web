@@ -70,7 +70,7 @@ export class CustomizeUI extends MccUI {
   metadataLoaded = false;
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector, "#customize--mcc-canvas");
+    super(sharedState, divSelector, "#customize--mcc .tree-canvas");
 
     this.selectAllToggle = this.div.querySelector("#select-all-toggle") as HTMLInputElement;
     this.selectAllCallback = null;
