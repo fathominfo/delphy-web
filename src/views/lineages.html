@@ -26,12 +26,20 @@
         </div>
         {{> mcc_opts }}
       </section>
-      <section id="lineages--right" class="charts--container dual">
-        <div id="lineages--overview" class="duo">
+      <section id="lineages-center">
           <div id="lineages--node-list" class="block left">
             <div class="header">
               <div class="title">
                 <h3>Nodes</h3>
+                <div class="id-lookup">
+                  <form>
+                    <label for="id-lookup--input">Look up a sequence id</label>
+                    <div>
+                      <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
+                    </div>
+                    <div class="autocomplete-suggestion"></div>
+                  </form>
+                </div>
               </div>
             </div>
             <div id="lineages--node-items">
@@ -39,14 +47,42 @@
                 <div class="node-info">
                   <div class="node-icon"><div class="shape"></div></div>
                   <div class="node-description">
-                    <div class="node-title"><span class="node-name">Name</span> <span class="node-source">(inferred)</span></div>
-                    <div class="node-stats">
+                    <div class="node-title"><span class="node-name">Name</span> </div>
+                    <div class="node-info--inner-node node-stats">
                       <span class="node--tip-count">00 tips</span>
                       <span class="mono-hover">, monophyletic
                       in <span class="node--confidence">00%</span> of base trees
+
+                      <h4 class="estimated metadata--heading">Estimated metadata</h4>
+                      <div class="node-metadata-item">
+                        <details>
+                          <summary>
+                            <div class="pair--key-value">
+                              <span class="key"></span> <div class="value"></div>
+                            </div>
+                          </summary>
+                          <div class="tip-counts">
+                            <div class="metadata--heading">Metadata values of tips</div>
+                            <div class="pair--value-count">
+                              <span class="value"></span> <span class="count"></span>
+                            </div>
+                          </div>
+                        </details>
+                      </div>
+
                     </div>
-                    <div class="tip-info">Tip <span class="tip-id"></span></div>
-                    {{> lineages_node_metadata }}
+                    <div class="node-info--tip node-stats">
+                      <div class="tip-info">Tip <span class="tip-id"></span></div>
+                      <h4>Metadata</h4>
+                      <table>
+                        <tr>
+                          <th></th>
+                          <td></td>
+                        </tr>
+                      </table>
+                      <p><span class="node-info--label"></span> <span class="node-info--value"></span></p>
+                    </div>
+
                   </div>
                 </div>
                 <div class="node-actions">
@@ -64,98 +100,11 @@
                 </div>
               </div>
             </div>
-            <div class="id-lookup">
-              <form>
-                <label for="id-lookup--input">Look up a sequence id</label>
-                <div>
-                  <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
-                </div>
-                <div class="autocomplete-suggestion"></div>
-              </form>
-            </div>
           </div>
-          <div id="lineages--prevalence" class="block right">
 
-            <div class="header">
-              <div class="title" data-tooltip="outside">
-                <h4>Lineage prevalence over time</h4>
-                <button class="info">
-                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
-                    <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
-                  </svg>
-                </button>
-              </div>
-              <form id="prevalence-display-opt" class="mode toggles">
-                <label data-destination-mode="mean" class="toggle off">
-                  <h4>Mean</h4>
-                  <input type="radio" name="prevalence-display" value="mean" checked />
-                </label>
-                <label data-destination-mode="mcc" class="toggle">
-                  <h4>Median and 95% HPD</h4>
-                  <input type="radio" name="prevalence-display" value="distribution" />
-                </label>
-              </form>
-            </div>
-            <div class="chart">
-              <div class="feature">
-                <div class="y axis">
-                  <div class="values">
-                    <span class="value p0" ><span class="text"><span class="val">0%</span></span><span class="tick"></span></span>
-                    <span class="value p025" ><span class="text"><span class="val">25%</span></span><span class="tick"></span></span>
-                    <span class="value p05" ><span class="text"><span class="val">50%</span></span><span class="tick"></span></span>
-                    <span class="value p075" ><span class="text"><span class="val">75%</span></span><span class="tick"></span></span>
-                    <span class="value p1" ><span class="text"><span class="val">100%</span></span><span class="tick"></span></span>
-                  </div>
-                </div>
-                <div id="lineages--prevalence--chart-container">
-                  <svg id="lineages--prevalence--chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
-                    <g class="group">
-                      <path class="shape" d=""></path>
-                      <path class="trend" d=""></path>
-                    </g>
-                  </svg>
-                  <div class="tracker-dates">
-                    <div class="tracker-date hover" data-stamp="" style="left: 57.8595%;">
-                      <div class="tracker"></div>
-                      <div class="line"></div>
-                      <div class="text">
-                        <span class="cal">
-                          <span class="day">10</span>
-                          <span class="month">Feb</span>
-                        </span>
-                        <span class="year">2020</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div id="lineages--prevalence--date-labels" class="support">
-                <div class="x axis">
-                  <div class="axis-dates">
-                    <div class="axis-date reference" style="left: 0%;">
-                      <div class="line"></div>
-                      <div class="text">
-                        <span class="cal">
-                          <span class="month"></span>
-                        </span>
-                        <span class="year"></span>
-                      </div>
-                    </div>
-                    <div class="axis-date marker" style="left: 25%;">
-                      <div class="line"></div>
-                      <div class="text">
-                        <span class="cal">
-                          <span class="month"></span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div id="lineages--relationships" class="duo">
+      </section>
+      <section id="lineages--right" class="charts--container">
+
           <div id="lineages--node-layout"  class="block left" data-duo="left" >
 
             <div class="header">
@@ -164,7 +113,7 @@
               </div>
             </div>
 
-            <div id="subway">
+            <div id="subway" class="">
               <svg width="256" height="160" viewBox="0 0 256 160">
                 <path class="connector" d="M0 0 L-45 0 -45 -15"></path>
                 <g class="label">
@@ -234,116 +183,7 @@
               </div>
             </div>
           </div>
-        </div>
 
-
-        <div id="lineages--list">
-          <div id="list--titles" class="duo">
-            <div class="block left"></div>
-            <div class="block right">
-              <div class="header">
-                <div class="title" data-tooltip="outside">
-                  <h4>Mutation emergence date distributions</h4>
-                  <button class="info">
-                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
-                      <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div id="lineages--track-mutations-container">
-            <div class="lineages--track-mutations duo" data-from="root" data-to="mrca">
-              <div class="block left">
-                <div class="header">
-                  <div class="schematic" data-trail-alignment="center">
-                    <div class="division">
-                      <div class="segment" data-from="root" data-to="mrca" data-trail="center">
-                        <div class="trail"></div>
-                        <div class="point from"></div>
-                        <div class="point to"></div>
-                      </div>
-                    </div>
-                    <div class="division">
-                      <div class="segment" data-from="mrca" data-to="a" data-trail="up">
-                        <div class="trail"></div>
-                        <div class="point from"></div>
-                        <div class="point to"></div>
-                      </div>
-                      <div class="segment" data-from="mrca" data-to="b" data-trail="down">
-                        <div class="trail"></div>
-                        <div class="point from"></div>
-                        <div class="point to"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <h4>
-                    <span class="lineages--mutations-ancestor"></span>
-                    to
-                    <span class="lineages--mutations-descendant"></span>
-                  </h4>
-
-                  <!-- <span class="lineages--node-overlap-item">
-                    In <span class="lnoi-pct"></span>% of base trees,
-                    <span class="root-message">
-                      the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span>
-                    </span>
-                    <span class="non-root-message">
-                      the MRCA of the tips under
-                      <span class="lnoi-1"></span> and the MRCA of the tips under
-                      <span class="lnoi-2"></span> are the same inner node.
-                    </span>
-                  </span> -->
-                </div>
-              </div>
-              <div class="lineages--mutation-timeline block right">
-                <div class="date-container">
-                  <div class="dates">
-                    <div class="range">
-                      <div class="guide date start" data-stamp="2020-02-05"></div>
-                      <div class="guide date end" data-stamp="2020-05-05"></div>
-                    </div>
-                    <div class="tracker-date hover reference" data-stamp="">
-                        <div class="tracker"></div>
-                      </div>
-                  </div>
-                </div>
-
-                <!-- <p class="lineages--node-comparison--mutation-header">
-                  <span class="lineages--node-comparison--mutation-count">0 mutations</span> between nodes appear in
-                  <span class="lineages--node-comparison--mutation-threshold">50%</span> of base trees;
-                </p> -->
-                <div class="lineages--node-comparison--mutation">
-                  <div class="lineages--node-comparison--mutation-labels">
-                    <a class="lineages--node-comparison--mutation-name mutation-name" href="">
-                      <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
-                    </a>
-                    <span class="lineages--node-comparison--mutation-is-apobec">APOBEC</span>
-                    <p class="lineages--node-comparison--mutation-prevalence"><span>99%</span> of base trees</p>
-                  </div>
-                  <div class="lineages--mutation-time-chart-container">
-                    <svg class="series-group-container" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 12" width="352" height="12" preserveAspectRatio="none" >
-                      <g class="series group">
-                        <path class="dist" d="" fill="" stroke-width="0"></path>
-                        <line class="pointer" x1="-1" y1="-1" x2="-1" y2="-1" fill="none" stroke="#000" stroke-linejoin="round"></line>
-                      </g>
-                    </svg>
-                    <div class="guide min"></div>
-                    <div class="time-chart--readout">
-                      <div class="time-chart--date"></div>
-                      <div class="time-chart--series">
-                        <span class="value-label">##%</span>
-                        <span class="series-label"></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
     </div>
 
