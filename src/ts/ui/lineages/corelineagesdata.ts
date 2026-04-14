@@ -191,17 +191,19 @@ export class CoreLineagesData {
       const actualRootIndex = summaryTree.getRootIndex();
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
-        minDate = pythia.getBaseTreeMinDate(),
         maxDate = pythia.maxDate;
+      let minDate = pythia.getBaseTreeMinDate();
       const chartData: ChartData = structuredClone(defaultChartData)
-      chartData.minDate = minDate;
       chartData.maxDate =maxDate;
       if (this.selectionTreeData?.root) {
         chartData.rootNode = this.selectionTreeData.root;
       }
-      if (this.rootNode.index !== actualRootIndex) {
+      if (this.rootNode.index !== actualRootIndex && this.rootNode.series) {
         chartData.selectedRootIndex = this.rootNode.index;
+        /* what is the earliest date for the selected node? */
+        minDate = this.rootNode.series.bandTimes[0];
       }
+      chartData.minDate = minDate;
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
@@ -424,11 +426,13 @@ export class CoreLineagesData {
     if (nodeIndex === UNSET || nodeIndex === actualRootIndex) {
       this.rootNode.isInferred = true;
       this.rootNode.index = actualRootIndex;
+      this.rootNode = this.getNodeDisplay(actualRootIndex, true, true, this.rootNode);
     } else {
       /* since this node is becoming root, remove it from the selections */
-      this.bypassNode(nodeIndex);
+      const oldNode = this.bypassNode(nodeIndex);
       this.rootNode.isInferred = false;
-      this.rootNode.index = nodeIndex;
+      this.rootNode.copyDataFrom(oldNode);
+      // this.rootNode.index = nodeIndex;
       /* check that all the selected nodes fall under the root */
       const toFind: boolean[] = [];
       this.selectedNodes.forEach(n=>toFind[n.index] = false);
@@ -457,11 +461,12 @@ export class CoreLineagesData {
     this.setChartData();
   }
 
-  bypassNode(nodeIndex: number) : void {
+  bypassNode(nodeIndex: number) : DisplayNode {
     const node = this.selectedNodes.find(n=>n.index === nodeIndex) as DisplayNode;
     const index = this.selectedNodes.indexOf(node);
     this.selectedNodes.splice(index, 1);
     this.bypassedNodes.push(node);
+    return node;
   }
 
 

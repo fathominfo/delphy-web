@@ -123,7 +123,6 @@ export class DisplayNode {
 
 
   copyFrom(other: DisplayNode) {
-    this.index = other.index;
     this.name = other.name;
     this.label = other.label;
     this.className = other.className;
@@ -131,12 +130,19 @@ export class DisplayNode {
     this.isInferred = other.isInferred;
     this.isRoot = other.isRoot;
     this.isLocked = other.isLocked;
+    this.copyDataFrom(other);
+  }
+
+
+  copyDataFrom(other: DisplayNode) {
+    this.index = other.index;
     this.confidence = other.confidence;
     this.childCount = other.childCount;
     this.series = other.series;
     this.times = other.times;
     this.metadata = other.metadata;
   }
+
 
   getStroke(): string {
     const strokeProp = `--${ this.className.toLowerCase() }-stroke`;

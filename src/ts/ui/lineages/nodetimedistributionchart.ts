@@ -5,6 +5,8 @@ import { SVGSeriesGroup, TimeDistributionChart } from "../timedistributionchart"
 import { DisplayNode } from "./displaynode";
 
 
+const FRAME_DURATION = 50; // ms
+
 
 export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
@@ -156,7 +158,7 @@ export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart
       this.draw();
       if (this.seriesMax.isTargeting()) {
         if (this.timer === UNSET) clearTimeout(this.timer);
-        this.timer = setTimeout(()=>this.requestDraw(), 500);
+        this.timer = setTimeout(()=>this.requestDraw(), FRAME_DURATION);
       } else {
         this.timer = UNSET;
       }
