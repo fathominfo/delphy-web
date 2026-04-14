@@ -117,7 +117,7 @@
   --tree-container-width-basis: calc(var(--unit) * 38);
   --tree-container-min-width: calc(var(--unit) * 24);
   --tree-container-max-width: calc(var(--unit) * 48);
-  --lineages-tree-container-max-width: calc(var(--unit) * 36);
+  --lineages-tree-container-max-width: 50vh;
   --date-text-offset: calc(var(--unit) / 4);
   --date-text-height: calc(var(--unit) * 2);
   --date-text-gap: calc(var(--unit) / 4);
@@ -1338,6 +1338,7 @@ nav {
   flex-direction: column;
   gap: var(--block-gap);
   position: relative;
+  max-width: calc(var(--lineages-prevalence-chart-height) * 4);
   h2, h4 {
     margin: unset;
   }

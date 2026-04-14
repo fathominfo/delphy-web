@@ -18,7 +18,12 @@
     min-width: var(--tree-container-min-width);
     max-width: var(--lineages-tree-container-max-width);
     gap: var(--module-gap);
-    width: 256px;
+
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
   }
 
   // .tree-canvas-container {
@@ -52,13 +57,6 @@
 }
 
 
-#lineages--mcc {
-  width: 300px;
-  height: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
 
 
 .mcc-zoom-button {
