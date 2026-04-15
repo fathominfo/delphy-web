@@ -397,19 +397,16 @@ details {
   gap: var(--selections-gap);
 }
 
-#lineages--node-items {
-  width: 100%;
-}
 
-.lineages--node-item {
+.lineages--node-info {
   position: relative;
-  // display: flex;
+  display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  height: 40px;
+  // height: 40px;
   padding: 0;
   border: solid var(--selection-stroke-weight) var(--selection-stroke-static);
   border-radius: var(--selection-corner);
@@ -418,6 +415,9 @@ details {
 
   background-color: var(--selection-fill-static);
   color: var(--selection-text-static);
+
+
+
 
 
   .node-info {
@@ -461,11 +461,8 @@ details {
     line-height: var(--selection-node-line-height);
   }
 
-  .node-source {
-    display: none;
-  }
-
-  .node-stats, .tip-info {
+  .node-stats {
+    display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     width: 100%;
@@ -482,11 +479,14 @@ details {
     .node--tip-count, .node--confidence {
       font-weight: 800;
     }
+
+    &.node-info--tip  {
+      display: none;
+    }
   }
 
 
-  .node-stats { display: flex; }
-  .tip-info { display: none; }
+
 
   .tip-id {
     font-weight: 800;
@@ -534,10 +534,8 @@ details {
   }
 
   &.is-tip {
-    .node-stats, .node-set-root, .node-reset-root {
-      display: none;
-    }
-    .tip-info { display: flex; }
+    .node-info--tip {display: flex;}
+    .node-info--inner-node {display: none;}
   }
 
 

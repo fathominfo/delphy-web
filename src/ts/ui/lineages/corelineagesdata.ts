@@ -597,6 +597,9 @@ export class CoreLineagesData {
     return this.selectable;
   }
 
+  getRootNode(): DisplayNode {
+    return this.rootNode;
+  }
 
 }
 
