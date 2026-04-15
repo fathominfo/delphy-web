@@ -2,8 +2,6 @@ import { UNSET, getPercentLabel } from '../common';
 import { DisplayNode, NULL_NODE_CODE } from './displaynode';
 import { HoverCallback, NodeCallback } from './lineagescommon';
 
-const METADATA_ITEM_TEMPLATE = document.querySelector(".node-metadata-item") as HTMLElement;
-METADATA_ITEM_TEMPLATE.remove();
 const NODE_DIV_TEMPLATE = document.querySelector(".lineages--node-item") as HTMLDivElement;
 const CONTAINER = document.querySelector("#lineages--node-items") as HTMLElement
 NODE_DIV_TEMPLATE.remove();
@@ -18,7 +16,6 @@ class NodeDiv {
   nodeStats: HTMLElement;
   nodeIsTip: HTMLElement;
   tipIdSpan: HTMLElement;
-  mdDiv: HTMLDivElement;
   dismiss: HTMLButtonElement;
   monophyletic: HTMLSpanElement;
   nodeName: HTMLSpanElement;
@@ -32,7 +29,6 @@ class NodeDiv {
     this.nodeStats = this.div.querySelector(".node-stats") as HTMLElement;
     this.nodeIsTip = this.div.querySelector(".tip-info") as HTMLElement;
     this.tipIdSpan = this.div.querySelector(".tip-id") as HTMLElement;
-    this.mdDiv = this.div.querySelector(".node-metadata") as HTMLDivElement;
     this.dismiss = this.div.querySelector(".node-dismiss") as HTMLButtonElement;
     this.monophyletic = this.div.querySelector(".mono-hover") as HTMLSpanElement;
     this.nodeName = this.div.querySelector(".node-name") as HTMLSpanElement;
@@ -51,8 +47,7 @@ class NodeDiv {
       div,
       countSpan,
       confidenceSpan,
-      tipIdSpan,
-      mdDiv} = this;
+      tipIdSpan } = this;
 
     if (node === null) {
       this.div.classList.remove('active');
@@ -95,43 +90,6 @@ class NodeDiv {
       }
     }
 
-
-    if (node.metadata === null || (Object.keys(node.metadata).length === 1 && node.metadata.id !== undefined)) {
-      mdDiv.classList.add('hidden');
-    } else {
-      mdDiv.classList.remove('hidden');
-
-      mdDiv.querySelectorAll(".node-metadata-item").forEach(div=>div.remove());
-      Object.entries(node.metadata).forEach(([key, value])=>{
-        if (key.toLowerCase() !== 'id' && key.toLowerCase() !== 'accession'){
-          const item = METADATA_ITEM_TEMPLATE.cloneNode(true) as HTMLElement;
-          mdDiv.appendChild(item);
-
-          const summary = item.querySelector(".pair--key-value") as HTMLElement;
-          (summary.querySelector(".key") as HTMLElement).innerText = key;
-          (summary.querySelector(".value") as HTMLElement).innerText = replaceUnknown(value.value);
-
-          const valueCountPair = item.querySelector(".pair--value-count") as HTMLElement;
-          item.querySelectorAll(".pair--value-count").forEach(el => el.remove());
-
-          if (!node.isTip()) {
-            const tipCounts = item.querySelector(".tip-counts") as HTMLElement;
-            Object.entries(value.counts).forEach(([val, count])=>{
-              const pair = valueCountPair.cloneNode(true) as HTMLElement;
-              tipCounts.appendChild(pair);
-              if (val === value.value) {
-                pair.classList.add("current");
-              }
-              (pair.querySelector(".value") as HTMLElement).innerText = replaceUnknown(val);
-              (pair.querySelector(".count") as HTMLElement).innerText = `${count}`;
-            });
-          } else {
-            const details = item.querySelector("details") as HTMLDetailsElement;
-            details.classList.add("disabled");
-          }
-        }
-      });
-    }
   }
 
   clear() {

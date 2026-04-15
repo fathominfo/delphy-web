@@ -290,8 +290,8 @@ export class CoreLineagesData {
     return true;
   }
 
-  hoverNode(nodeIndex: number, _date:number): void {
-    let _hint: TreeHint = TreeHint.Zoom;
+  hoverNode(nodeIndex: number, _date:number): void { // eslint-disable-line @typescript-eslint/no-unused-vars
+    // let _hint: TreeHint = TreeHint.Zoom;
     // this.highlightDate = date;
     const prevIndex = this.highlightNode.index;
     if (nodeIndex !== prevIndex) {
@@ -308,7 +308,7 @@ export class CoreLineagesData {
         const minimap = this.selectionTreeData as SelectionTreeData;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
-          _hint = TreeHint.Zoom;
+          // _hint = TreeHint.Zoom;
           this.getNodeDisplay(UNSET, false, false, this.highlightNode);
         } else {
           this.getNodeDisplay(nodeIndex, false, false, this.highlightNode);

@@ -179,9 +179,9 @@ export class MccTreeCanvas {
       this.canvas.addEventListener("pointermove", (event:PointerEvent)=>this.handlePointerMove(event));
       this.canvas.addEventListener("pointerup", (event:PointerEvent)=>this.handlePointerUp(event));
       this.canvas.addEventListener("dblclick", (event:MouseEvent)=>this.handleDoubleClick(event));
+      this.canvas.addEventListener("resize", ()=>this.sizeCanvas());
     }
     this.resetZoom();
-
   }
 
 
@@ -192,6 +192,9 @@ export class MccTreeCanvas {
       this.width = parseInt(computed.width.replace('px', ''));
       if (this.width !== UNSTYLED_CANVAS_WIDTH) {
         const {width, height} = resizeCanvas(canvas);
+        console.log(`
+          canvas sized to ${width}, ${height}
+          `)
         this.width = width;
         this.height = height;
         this.ctx.textAlign = 'center';
@@ -748,7 +751,7 @@ export class MccTreeCanvas {
     }
   }
 
-  setMetadataColors(tree: Tree): void {
+  setMetadataColors(tree: Tree): void { // eslint-disable-line @typescript-eslint/no-unused-vars
     const mccConfig = this.mccConfig;
     if (!mccConfig) return;
     const size = this.rootConfigs[this.rootIndex].size

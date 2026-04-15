@@ -10,8 +10,7 @@ const nodeComparisonContainer = document.querySelector("#lineages--node-timeline
 const svg = nodeComparisonContainer.querySelector("svg.series-group-container") as SVGElement,
   dateMarkerContainer = nodeComparisonContainer.querySelector(".timeline") as HTMLDivElement,
   dateMarkerTemplate = dateMarkerContainer.querySelector(".label.reference") as HTMLDivElement,
-  dateHoverDiv = nodeComparisonContainer.querySelector(".tracker") as HTMLDivElement,
-  maxProbDiv = nodeComparisonContainer.querySelector(".axis.y .max .val") as HTMLDivElement;
+  dateHoverDiv = nodeComparisonContainer.querySelector(".tracker") as HTMLDivElement;
 
 
 const nameSpanTemplate = nodeComparisonContainer.querySelector(".support .tag") as HTMLSpanElement;

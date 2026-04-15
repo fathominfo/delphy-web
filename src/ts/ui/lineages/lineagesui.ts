@@ -13,6 +13,7 @@ import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
+import { NodeListDisplay } from './nodelistdisplay';
 
 
 
@@ -25,6 +26,7 @@ export class LineagesUI extends MccUI {
   nodeSchematic: NodeSchematic;
   nodeTimelines: NodeTimelines;
   nodeDetails: NodeDetails;
+  nodeListDisplay: NodeListDisplay;
 
 
   nodeHighlightCallback: HoverCallback;
@@ -55,6 +57,7 @@ export class LineagesUI extends MccUI {
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
+    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
 
@@ -177,6 +180,7 @@ export class LineagesUI extends MccUI {
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     this.nodeDetails.setData(node || rootNode?.node as DisplayNode);
+    this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
@@ -188,6 +192,7 @@ export class LineagesUI extends MccUI {
     (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
     this.nodeSchematic.requestRender()
     this.nodeDetails.requestDraw();
+    this.nodeListDisplay.requestDraw();
     this.nodeTimelines.requestDraw();
   }
 
@@ -196,17 +201,14 @@ export class LineagesUI extends MccUI {
 
   /* invoked by the tree when hovering a node */
   handleNodeHover(nodeIndex: number, date:number):void {
-    if (nodeIndex !== UNSET) {
-      this.coreData.hoverNode(nodeIndex, date);
-    }
-
+    this.coreData.hoverNode(nodeIndex, date);
     /* if this is a node that we have selected, highlight it */
-    // const selected = this.coreData.getSelection(nodeIndex);
-    // if (selected && selected.isLocked) {
-    //   this.nodeDetails.setData(selected);
-    // } else {
-    //   this.nodeDetails.setData(this.coreData.getRootNode());
-    // }
+    const selected = this.coreData.getSelection(nodeIndex);
+    if (selected && selected.isLocked) {
+      this.nodeDetails.setData(selected);
+    } else {
+      this.nodeDetails.setData(this.coreData.getRootNode());
+    }
 
   }
 
@@ -218,10 +220,11 @@ export class LineagesUI extends MccUI {
   }
 
   highlightCharts() {
-    const { node, date, mutation } = this.coreData.getHighlights();
+    const { node, date, mutation } = this.coreData.getHighlights(); // eslint-disable-line @typescript-eslint/no-unused-vars
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
     this.nodeDetails.setData(node || this.coreData.getRootNode());
     this.nodeDetails.requestDraw();
+    this.nodeListDisplay.highlightNode(node);
     this.nodeSchematic.highlightNode(node);
     this.nodeTimelines.highlightNode(node, date);
   }

@@ -26,9 +26,10 @@
     flex-grow: 1;
   }
 
-  // .tree-canvas-container {
-  //   border: solid 1px red;
-  // }
+  .tree-canvas-container {
+    width: 100%;
+    height: 100%;
+  }
   // .mcc_highlight {
   //   border: solid 1px yellow;
   // }
@@ -389,16 +390,26 @@ details {
 // ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝    ╚══════╝╚═╝╚══════╝   ╚═╝
 
 
-#lineages--node-list {
+#lineages--center {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+}
+
+#lineages--node-list, #lineages--node-detail {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
   gap: var(--selections-gap);
+  width: 100%;
 }
 
+#lineages--node-items {
+  width: 100%;
+}
 
-.lineages--node-info {
+.lineages--node-info, .lineages--node-item {
   position: relative;
   display: flex;
   flex-direction: row;

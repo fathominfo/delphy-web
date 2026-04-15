@@ -32,7 +32,7 @@ export class UIScreen {
     this.isApobecEnabled = this.pythia.runParams?.apobecEnabled || false;
     // this.worker.onmessage = (message:any)=>this.handleMessage(message.data);
     window.addEventListener('resize', this.resizeHandler);
-    setTimeout(()=>this.resize(), 10);
+    setTimeout(()=>requestAnimationFrame(()=>this.resize()), 10);
     this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
       (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
     });

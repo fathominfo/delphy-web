@@ -26,73 +26,104 @@
         </div>
         {{> mcc_opts }}
       </section>
-      <section id="lineages-center">
-          <div id="lineages--node-list" class="block left">
-            <div class="header">
-              <div class="title">
-                <h3>Node</h3>
-                <div class="id-lookup">
-                  <form>
-                    <label for="id-lookup--input">Look up a sequence id</label>
-                    <div>
-                      <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
-                    </div>
-                    <div class="autocomplete-suggestion"></div>
-                  </form>
-                </div>
-              </div>
-            </div>
-            <div class="lineages--node-info" data-nodetype="">
-              <div class="node-icon"><div class="shape"></div></div>
-              <div class="node-description">
-                <div class="node-title"><span class="node-name">Name</span> </div>
-                <div class="node-info--inner-node node-stats">
-                  <span class="node--tip-count">00 tips</span>
-                  <span class="mono-hover">, monophyletic in <span class="node--confidence">00%</span> of base trees
-                  <div class="node-actions">
-                    <button type="button" class="node-set-root" aria-label="set node as root">
-                        Set as root
-                    </button>
-                    <button type="button" class="node-reset-root" aria-label="reset root">
-                        Reset root
-                    </button>
-                    <button type="button" class="node-dismiss" aria-label="Dismiss node" title="Dismiss node" >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
-                      </svg>
-                    </button>
+      <section id="lineages--center">
+        <div id="lineages--node-detail" class="block">
+          <div class="header">
+            <div class="title">
+              <h3>Node Detail</h3>
+              <div class="id-lookup">
+                <form>
+                  <label for="id-lookup--input">Look up a sequence id</label>
+                  <div>
+                    <input type="search" class="id-lookup--input" name="id-lookup" id="id-lookup--input" spellcheck="false" autocomplete="off" placeholder="Look up a sequence id…">
                   </div>
-                  <div class="metadata">
-                    <h4 class="estimated metadata--heading">Estimated metadata</h4>
-                    <div class="node-metadata-item">
-                        <div class="pair--key-value">
-                          <span class="key"></span> <div class="value"></div>
-                        </div>
-                        <div class="tip-counts">
-                          <div class="metadata--heading">Metadata values of tips</div>
-                          <div class="pair--value-count">
-                            <span class="value"></span> <span class="count"></span>
-                          </div>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="node-info--tip node-stats">
-                  <div class="tip-info">Tip <span class="tip-id"></span></div>
-                  <div class="metadata">
-                    <h4>Metadata</h4>
-                    <table>
-                      <tr>
-                        <th></th>
-                        <td></td>
-                      </tr>
-                    </table>
-                  </div>
-                </div>
-
+                  <div class="autocomplete-suggestion"></div>
+                </form>
               </div>
             </div>
           </div>
+          <div class="lineages--node-info" data-nodetype="">
+            <div class="node-icon"><div class="shape"></div></div>
+            <div class="node-description">
+              <div class="node-title"><span class="node-name">Name</span> </div>
+              <div class="node-info--inner-node node-stats">
+                <span class="node--tip-count">00 tips</span>
+                <span class="mono-hover">, monophyletic in <span class="node--confidence">00%</span> of base trees</span>
+                <div class="metadata">
+                  <h4 class="estimated metadata--heading">Estimated metadata</h4>
+                  <div class="node-metadata-item">
+                    <div class="pair--key-value">
+                      <span class="key"></span> <div class="value"></div>
+                    </div>
+                    <div class="tip-counts">
+                      <div class="metadata--heading">Metadata values of tips</div>
+                      <table class="pair--value-count">
+                        <tr>
+                          <th class="value"></th>
+                          <td class="count"></td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="node-info--tip node-stats">
+                <div class="tip-info">Tip <span class="tip-id"></span></div>
+                <div class="metadata">
+                  <h4>Metadata</h4>
+                  <table>
+                    <tr>
+                      <th></th>
+                      <td></td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <div id="lineages--node-list" class="block">
+          <div class="header">
+            <div class="title">
+              <h3>Nodes</h3>
+            </div>
+          </div>
+          <div id="lineages--node-items">
+            <div class="lineages--node-item" data-nodetype="">
+              <div class="node-info">
+                <div class="node-icon"><div class="shape"></div></div>
+                <div class="node-description">
+                  <div class="node-title"><span class="node-name">Name</span></div>
+                  <div class="node-info--inner-node node-stats">
+                    <span class="node--tip-count">00 tips</span>
+                    <span class="mono-hover">, monophyletic
+                    in <span class="node--confidence">00%</span> of base trees
+                  </div>
+                  <div class="node-info--tip node-stats">
+                    <div class="tip-info">Tip <span class="tip-id"></span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="node-actions">
+                <button type="button" class="node-set-root" aria-label="set node as root">
+                    Set as root
+                </button>
+                <button type="button" class="node-reset-root" aria-label="reset root">
+                    Reset root
+                </button>
+                <button type="button" class="node-dismiss" aria-label="Dismiss node" title="Dismiss node" >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="m15.27,14.73c.15.15.15.38,0,.53-.07.07-.17.11-.27.11s-.19-.04-.27-.11l-2.73-2.73-2.73,2.73c-.07.07-.17.11-.27.11s-.19-.04-.27-.11c-.15-.15-.15-.38,0-.53l2.73-2.73-2.73-2.73c-.15-.15-.15-.38,0-.53s.38-.15.53,0l2.73,2.73,2.73-2.73c.15-.15.38-.15.53,0,.15.15.15.38,0,.53l-2.73,2.73,2.73,2.73Z" stroke-width="0"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
 
       </section>
       <section id="lineages--right" class="charts--container">

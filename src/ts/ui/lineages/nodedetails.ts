@@ -103,7 +103,7 @@ export class NodeDetails {
             const item = tipMetadataTemplate.cloneNode(true) as HTMLTableRowElement;
             (item.querySelector("th") as HTMLTableCellElement).innerText = key;
             (item.querySelector("td") as HTMLTableCellElement).innerText = replaceUnknown(value.value);
-            tipMetadata.appendChild(item);
+            container.appendChild(item);
           }
         });
       }

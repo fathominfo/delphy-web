@@ -12,7 +12,7 @@ export class NodeSVGSeriesGroup extends SVGSeriesGroup {
 
   node: DisplayNode | null = null;
 
-  setNode(node: DisplayNode, toggle=true) {
+  setNode(node: DisplayNode, toggle=true) { // eslint-disable-line @typescript-eslint/no-unused-vars
     this.node = node;
     this.setNodeType(node.className);
   }
@@ -79,7 +79,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
         nodeGroup.toggleClass("unmatching", false);
       });
     } else {
-      this.svgGroups.forEach((group: SVGSeriesGroup, i)=>{
+      this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         const node = nodeGroup.node;
         if (node?.index === matchNode.index) {
