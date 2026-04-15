@@ -19,7 +19,6 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   highlightedDate: number = UNSET;
   highlightCanvas: HTMLCanvasElement;
   highlightCtx: CanvasRenderingContext2D;
-  configuredRootNode: number = UNSET;
 
 
   constructor(canvas: HTMLCanvasElement | PdfCanvas,
@@ -81,17 +80,18 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
         selectionCallback(nodeIndex);
       }
     });
-
-
   }
 
 
   setNodes(nodes: DisplayNode [], descendants: NodePair[], configuredRootNode: number) {
     this.nodes = nodes;
     this.descendants = descendants;
-    if (this.configuredRootNode !== configuredRootNode) {
-      this.configuredRootNode = configuredRootNode;
+    if (this.rootIndex !== configuredRootNode) {
+      this.rootIndex = configuredRootNode;
       this.setRootNode(configuredRootNode);
+      if (this.mccConfig) {
+        this.mccConfig.configuredRoot = configuredRootNode;
+      }
       // const [ minDate, maxDate ] = this.getDateRange();
       // const timlineIndices = getTimelineIndices(minDate, maxDate);
       this.draw();
