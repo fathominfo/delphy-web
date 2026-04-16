@@ -27,7 +27,7 @@ For inner nodes, we tally values of the tips under them:
   ...
 }
 */
-export type TreeMetadataCounts = NodeMetadataValues[];
+// export type TreeMetadataCounts = NodeMetadataValues[];
 
 export class ColumnSummary {
   values: {[key: string]: number};
@@ -73,6 +73,10 @@ export class NodeMetadata {
 
   metadata: Metadata;
   tree: Tree;
+  /*
+  stores the node metadata by
+    [nodeIndex][column sequence]
+  */
   nodeValues: NodeFieldData[][];
   columnSummaries: ColumnSummary[];
   tipMetadata: MetadataRow[];
