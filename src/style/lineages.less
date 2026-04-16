@@ -303,9 +303,6 @@ details {
     font-weight: 900;
   }
 }
-.is-tip .estimated {
-  display: none;
-}
 .md-info {
   position: absolute;
   right: 0;
@@ -340,37 +337,17 @@ details {
 .pair--key-value {
   display: inline-flex;
   gap: 1em;
-}
-.pair--value-count {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-}
-.lineages--node-detail:not(.is-tip) .pair--key-value {
   padding-left: 2%;
-}
-.lineages--node-detail:not(.is-tip) {
-  .pair--key-value .value {
+  .value {
     //font-style: italic;
     font-weight: 700;
   }
 }
-.is-tip {
-  .node-details--inner {
-    details,
-    summary {
-      display: block;
-      cursor: auto;
-    }
-    canvas {
-      display: none;
-    }
-    .pair--key-value .value,
-    .pair--value-count .count {
-      font-weight: 700;
-    }
-  }
-}
 
+.pair--value-count {
+  th {text-align: left;}
+  td {text-align: right;}
+}
 
 
 #lineages--column-2 {
@@ -472,6 +449,10 @@ details {
     line-height: var(--selection-node-line-height);
   }
 
+  .node-info--tip  {
+    display: none;
+  }
+
   .node-stats {
     display: flex;
     flex-direction: row;
@@ -489,10 +470,6 @@ details {
 
     .node--tip-count, .node--confidence {
       font-weight: 800;
-    }
-
-    &.node-info--tip  {
-      display: none;
     }
   }
 
@@ -544,8 +521,9 @@ details {
 
   }
 
+
   &.is-tip {
-    .node-info--tip {display: flex;}
+    .node-info--tip {display: block;}
     .node-info--inner-node {display: none;}
   }
 
@@ -728,12 +706,12 @@ details {
       background-color: var(--l-fill);
     }
    }
-
-
-
-
 }
 
+
+#lineages--node-info .metadata {
+  overflow-y: auto;
+}
 
 
 // ██████╗ ██████╗ ███████╗██╗   ██╗ █████╗ ██╗     ███████╗███╗   ██╗ ██████╗███████╗

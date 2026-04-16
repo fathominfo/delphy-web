@@ -1,4 +1,4 @@
-import { getPercentLabel } from '../common';
+import { getPercentLabel, UNSET } from '../common';
 import { DisplayNode } from './displaynode';
 import { HoverCallback, NodeCallback } from './lineagescommon';
 
@@ -6,16 +6,17 @@ const DEBUG = false;
 
 export class NodeDetails {
   div: HTMLDivElement;
-  tipIdSpan: HTMLElement;
   nodeName: HTMLSpanElement;
+  tipIdSpan: HTMLElement;
+  tipMetadata: HTMLDivElement;
+  tipMetadataTemplate: HTMLElement;
+
   countSpan: HTMLSpanElement;
   confidenceSpan: HTMLSpanElement;
   monophyletic: HTMLSpanElement;
   innerNodeMetadata: HTMLDivElement;
-  tipMetadata: HTMLDivElement;
-
   innerMetadataTemplate: HTMLElement;
-  tipMetadataTemplate: HTMLElement;
+
 
   node: DisplayNode | null = null;
   dismissCallback: NodeCallback;
@@ -24,23 +25,21 @@ export class NodeDetails {
 
   constructor(dismissCallback: NodeCallback, nodeHighlightCallback: HoverCallback, rootSelectCallback: NodeCallback) {
     this.div = document.querySelector(".lineages--node-info") as HTMLDivElement;
-
-    const tipDiv = this.div.querySelector(".node-info--tip") as HTMLDivElement;
-    const innerNodeDiv = this.div.querySelector(".node-info--inner-node") as HTMLDivElement;
-
-    this.countSpan = innerNodeDiv.querySelector('.node--tip-count') as HTMLSpanElement;
-    this.confidenceSpan = innerNodeDiv.querySelector('.node--confidence') as HTMLSpanElement;
-
-    this.tipIdSpan = tipDiv.querySelector(".tip-id") as HTMLElement;
-    this.monophyletic = this.div.querySelector(".mono-hover") as HTMLSpanElement;
     this.nodeName = this.div.querySelector(".node-name") as HTMLSpanElement;
 
-    this.innerNodeMetadata = innerNodeDiv.querySelector(".metadata") as HTMLDivElement;
+    const tipDiv = this.div.querySelector(".node-info--tip") as HTMLDivElement;
+    this.tipIdSpan = tipDiv.querySelector(".tip-id") as HTMLElement;
     this.tipMetadata = tipDiv.querySelector(".metadata") as  HTMLDivElement;
-    this.innerMetadataTemplate = innerNodeDiv.querySelector(".node-metadata-item") as HTMLElement;
     this.tipMetadataTemplate = tipDiv.querySelector("tr") as HTMLElement;
-    this.innerMetadataTemplate.remove();
     this.tipMetadataTemplate.remove();
+
+    const innerNodeDiv = this.div.querySelector(".node-info--inner-node") as HTMLDivElement;
+    this.countSpan = innerNodeDiv.querySelector('.node--tip-count') as HTMLSpanElement;
+    this.confidenceSpan = innerNodeDiv.querySelector('.node--confidence') as HTMLSpanElement;
+    this.monophyletic = this.div.querySelector(".mono-hover") as HTMLSpanElement;
+    this.innerNodeMetadata = innerNodeDiv.querySelector(".metadata") as HTMLDivElement;
+    this.innerMetadataTemplate = innerNodeDiv.querySelector(".node-metadata-item") as HTMLElement;
+    this.innerMetadataTemplate.remove();
 
 
     this.dismissCallback = dismissCallback;
@@ -62,12 +61,13 @@ export class NodeDetails {
   draw() {
     const { node, div } = this;
 
-    if (node === null) {
+    if (node === null || node.index === UNSET) {
       this.div.classList.remove('active');
       this.div.classList.remove('locked');
+      this.div.classList.add("hidden")
       return;
     }
-
+    this.div.classList.remove("hidden")
 
     div.classList.add('active');
     div.setAttribute("data-nodetype", node.className.toLowerCase());
@@ -120,28 +120,22 @@ export class NodeDetails {
         Object.entries(node.metadata).forEach(([key, value])=>{
           if (key.toLowerCase() !== 'id' && key.toLowerCase() !== 'accession'){
             const item = innerMetadataTemplate.cloneNode(true) as HTMLElement;
-
-
+            const detailContainer = item.querySelector("table") as HTMLTableElement;
+            const detailTemplate = detailContainer.querySelector("tr") as HTMLTableRowElement;
+            detailTemplate.remove();
             const summary = item.querySelector(".pair--key-value") as HTMLElement;
             (summary.querySelector(".key") as HTMLElement).innerText = key;
             (summary.querySelector(".value") as HTMLElement).innerText = replaceUnknown(value.value);
-
-            const valueCountPair = item.querySelector(".pair--value-count") as HTMLElement;
-            item.querySelectorAll(".pair--value-count").forEach(el => el.remove());
-
-            innerNodeMetadata.appendChild(item);
-
-
-            const tipCounts = item.querySelector(".tip-counts") as HTMLElement;
             Object.entries(value.counts).forEach(([val, count])=>{
-              const pair = valueCountPair.cloneNode(true) as HTMLElement;
-              tipCounts.appendChild(pair);
+              const pair = detailTemplate.cloneNode(true) as HTMLElement;
               if (val === value.value) {
                 pair.classList.add("current");
               }
               (pair.querySelector(".value") as HTMLElement).innerText = replaceUnknown(val);
               (pair.querySelector(".count") as HTMLElement).innerText = `${count}`;
+              detailContainer.appendChild(pair);
             });
+            innerNodeMetadata.appendChild(item);
 
           }
         });

@@ -179,7 +179,11 @@ export class LineagesUI extends MccUI {
     const { nodes, minDate, maxDate, nodePairs, rootNode, selectedRootIndex } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
-    this.nodeDetails.setData(node || rootNode?.node as DisplayNode);
+    let highlightNode = node;
+    if (highlightNode === null || highlightNode.index === UNSET) {
+      highlightNode = rootNode?.node as DisplayNode;
+    }
+    this.nodeDetails.setData(highlightNode);
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeTimelines.setData(nodes);
@@ -203,12 +207,12 @@ export class LineagesUI extends MccUI {
   handleNodeHover(nodeIndex: number, date:number):void {
     this.coreData.hoverNode(nodeIndex, date);
     /* if this is a node that we have selected, highlight it */
-    const selected = this.coreData.getSelection(nodeIndex);
-    if (selected && selected.isLocked) {
-      this.nodeDetails.setData(selected);
-    } else {
-      this.nodeDetails.setData(this.coreData.getRootNode());
-    }
+    // const selected = this.coreData.getSelection(nodeIndex);
+    // if (selected && selected.isLocked) {
+    //   this.nodeDetails.setData(selected);
+    // } else {
+    //   this.nodeDetails.setData(this.coreData.getRootNode());
+    // }
 
   }
 
@@ -222,7 +226,11 @@ export class LineagesUI extends MccUI {
   highlightCharts() {
     const { node, date, mutation } = this.coreData.getHighlights(); // eslint-disable-line @typescript-eslint/no-unused-vars
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
-    this.nodeDetails.setData(node || this.coreData.getRootNode());
+    let highlightNode = node;
+    if (highlightNode === null || highlightNode.index === UNSET) {
+      highlightNode = this.coreData.getRootNode();
+    }
+    this.nodeDetails.setData(highlightNode);
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.highlightNode(node);
     this.nodeSchematic.highlightNode(node);
