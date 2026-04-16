@@ -1,9 +1,9 @@
 import { ColorOption, COLOR_CONF, COLOR_METADATA,
   CONFIDENCE_DEFAULT, ColorDict, Screens, NavigateFunctionType, UNDEF,
   UNSET} from './common';
-import { ColumnSummary, Metadata} from './metadata';
+import { Metadata} from './metadata';
 import { ColorChooser, UNDEF_COLOR } from './colorchooser';
-import { NodeMetadata, FieldTipCount } from './nodemetadata';
+import { NodeMetadata, FieldTipCount, ColumnSummary } from './nodemetadata';
 import { SummaryTree } from '../pythia/delphy_api';
 import { BlockSlider } from '../util/blockslider';
 
@@ -85,7 +85,6 @@ export class MccConfig {
   setMetadata(metadata: Metadata, tree: SummaryTree) : void {
     this.metadata = metadata;
     this.nodeMetadata = new NodeMetadata(metadata, tree, tree.getBaseTree(0));
-    this.metadata.summarize(this.nodeMetadata);
     this.updateCallback();
   }
 
@@ -208,7 +207,7 @@ export class MccConfig {
     if (!this.nodeMetadata?.metadata) {
       throw new Error("can't retrieve metadata");
     }
-    return this.nodeMetadata.metadata.getColumnSummary(name);
+    return this.nodeMetadata.getColumnSummary(name);
   }
 
   getMetadataValues() : string [] {
