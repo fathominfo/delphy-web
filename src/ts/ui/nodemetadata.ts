@@ -145,9 +145,6 @@ export class NodeMetadata {
 
 
   updateTree(tree: Tree): NodeFieldData[][] {
-    const nodeCount = tree.getSize(),
-      columns = this.metadata.header,
-      columnCount = columns.length;
     /*
     a breadth first traversal of the tree.
     we will along this list backwards, setting values
@@ -399,10 +396,10 @@ export class NodeMetadata {
 
 }
 
-const getRandom = (options: string[]) : string => {
-  const rando = Math.floor(Math.random() * options.length);
-  return options[rando];
-}
+// const getRandom = (options: string[]) : string => {
+//   const rando = Math.floor(Math.random() * options.length);
+//   return options[rando];
+// }
 
 const getWeightedRandom = (options: string[], ftc: FieldTipCount) : string =>{
   if (options.length === 0) {
@@ -413,7 +410,7 @@ const getWeightedRandom = (options: string[], ftc: FieldTipCount) : string =>{
     return options.indexOf(key) >= 0;
   });
   let sum = 0;
-  const runningTotals = candidates.map(([_value, count])=>{
+  const runningTotals = candidates.map(([_value, count])=>{ // eslint-disable-line @typescript-eslint/no-unused-vars
     sum += count;
     return sum;
   });
