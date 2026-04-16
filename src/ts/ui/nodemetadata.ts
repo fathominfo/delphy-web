@@ -1,18 +1,33 @@
 import { Tree, PhyloTree, SummaryTree } from '../pythia/delphy_api';
 import { Metadata, MetadataRow } from './metadata';
 import { isTip } from '../util/treeutils';
-import { UNDEF } from './common';
+import { UNDEF, UNSET } from './common';
 
-export type FieldTipCount = {[name: string]: number};
+export type FieldTipCount = {[value: string]: number};
+export type MetadataTipTally = {[field: string]: FieldTipCount};
+export type MetadataOptions = {[field: string]: string[]};
 export type NodeFieldData = {value: string, counts: FieldTipCount};
 export type NodeMetadataValues = {[key: string]: NodeFieldData};
 
-type IndexOptionsFnc = (index:number, options: string[][])=>string[];
-
-
 type ColCount = [value: string, count: number];
 
-
+/*
+for a base tree, return an array of objects that provide
+tallies for each metadata field.
+For tips, the tallies will be simple, like
+{
+  field 1: {value: 1},
+  field 2: {value: 1},
+  ...
+}
+For inner nodes, we tally values of the tips under them:
+{
+  field 1: {value 1: #, value 2: #, value 3: #, ...},
+  field 2: {value 1: #, value 2: #, value 3: #, ...},
+  ...
+}
+*/
+export type TreeMetadataCounts = NodeMetadataValues[];
 
 export class ColumnSummary {
   values: {[key: string]: number};
@@ -58,10 +73,6 @@ export class NodeMetadata {
 
   metadata: Metadata;
   tree: Tree;
-  /*  tipMetadataRow[treeTipIndex] = metadataRowIndex  */
-  tipMetadataRow: number[];
-  indicesRootToTip: number[];
-  /* nodeValues[treeTipIndex] = metadata row */
   nodeValues: NodeFieldData[][];
   columnSummaries: ColumnSummary[];
   tipMetadata: MetadataRow[];
@@ -79,11 +90,10 @@ export class NodeMetadata {
     const nodeCount = nameSource.getSize(),
       tipCount = (nodeCount + 1) / 2,
       idColumn: string[] = metadata.ids,
-      nodeValues = [],
       columns = metadata.header,
       columnCount = columns.length;
+    this.nodeValues = [];
     this.columnSummaries = columns.map(()=>new ColumnSummary());
-    this.tipMetadataRow = new Array(tipCount);
     this.tipMetadata = new Array(tipCount);
 
     /*
@@ -93,7 +103,6 @@ export class NodeMetadata {
     */
     let missingCount = 0;
     for (let i = 0; i < nodeCount; i++) {
-      nodeValues[i] = Array(columnCount);
       if (isTip(nameSource, i)) {
         let tipName = nameSource.getNameOf(i).split('|')[0];
         /*
@@ -105,16 +114,13 @@ export class NodeMetadata {
           tipName = tipName.substring(1);
         }
         const mdIndex = idColumn.indexOf(tipName);
-        this.tipMetadataRow[i] = mdIndex;
+
         const metadataRow = metadata.rows[mdIndex];
         if (metadataRow) {
           this.tipMetadata[i] = {};
           for (let c=0; c < columnCount; c++) {
             const field = columns[c],
-              value = metadataRow[c],
-              counts: FieldTipCount = {};
-            counts[value] = 1;
-            nodeValues[i][c] = {value, counts};
+              value = metadataRow[c];
             if (value !== UNDEF) {
               this.tipMetadata[i][field] = value;
               this.columnSummaries[c].increment(value);
@@ -132,19 +138,25 @@ export class NodeMetadata {
     } else {
       console.debug(`${missingCount} tips in the tree did not have matching ids in the metadata`);
     }
-    this.indicesRootToTip = [];
-    this.nodeValues = nodeValues;
     this.columnSummaries.forEach(cs=>cs.setSorted());
-    this.updateTree(tree);
+    this.tree = tree;
+    this.nodeValues = this.updateTree(tree);
   }
 
 
-  updateTree(tree: Tree): void {
-    this.tree = tree;
-    /* a breadth first traversal of the tree */
-    const indicesRootToTip : number[] = [tree.getRootIndex()];
+  updateTree(tree: Tree): NodeFieldData[][] {
+    const nodeCount = tree.getSize(),
+      columns = this.metadata.header,
+      columnCount = columns.length;
+    /*
+    a breadth first traversal of the tree.
+    we will along this list backwards, setting values
+    as we go. This way, by the time we get to a parent
+    node, we know that the data for the child nodes
+    will have been set.
+    */
+    const indicesRootToTip: number[] = [tree.getRootIndex()];
     let i = 0;
-
     while (i < indicesRootToTip.length) {
       const index = indicesRootToTip[i],
         left = tree.getLeftChildIndexOf(index),
@@ -155,47 +167,82 @@ export class NodeMetadata {
       }
       i++;
     }
-    this.indicesRootToTip = indicesRootToTip;
-    /* reset the values for the inner nodes */
-    const nodeCount = tree.getSize(),
-      columnCount = this.metadata.header.length;
-    for (let i = 0; i < nodeCount; i++) {
-      if (!isTip(tree, i)) {
-        this.nodeValues[i] = Array(columnCount);
-      }
-    }
-    const header = this.metadata.header,
-      idCol = this.metadata.idColumn;
-    const getIndexOptions: IndexOptionsFnc = (index:number, options: string[][])=>{
-      const leftIndex = tree.getLeftChildIndexOf(index),
-        rightIndex = tree.getRightChildIndexOf(index),
-        leftOpts = options[leftIndex] || [],
-        rightOpts = options[rightIndex] || [],
-        withDupes = leftOpts.concat(rightOpts);
-      return withDupes;
-    };
-
-    header.forEach((_, i)=>{
-      if (i !== idCol) {
-        // console.debug(`setting inner nodes for '${_}'`);
-        this.inheritUp(i, getIndexOptions);
-      }
-    });
-  }
-
-
-  inheritUp(column: number, getIndexOptions: IndexOptionsFnc) : void {
-    // console.debug(column, this.metadata.header[column]);
     /*
     now set metadata values for each node.
     we are using a "parsimonious" ancestral state reconstruction:
-    first set the state for the tips
-    inner node possible states are chosen depending on the possible
-    state of the two children:
-    * if there's an overlap between the possible states, then use
-      the intersection of those states
-    * if there's no overlap between possible states, then use the
-      union of those states
+    set options from the bottom up
+    then choose from options from the top down
+    */
+    const tipTallies = this.tallyTips(tree);
+    const options = this.gatherOptions(tree, indicesRootToTip);
+    const nodeValues = this.pickOptions(tree, indicesRootToTip, options, tipTallies);
+    return nodeValues;
+  }
+
+  gatherOptions(tree: Tree, indicesRootToTip: number[]) : MetadataOptions[] {
+    const nodeCount = tree.getSize(),
+      columns = this.metadata.header,
+      tipMetadata = this.tipMetadata,
+      options: MetadataOptions[] = new Array(nodeCount),
+      idCol = this.metadata.idColumn;
+    for (let i = indicesRootToTip.length - 1; i >= 0; i--) {
+      const index = indicesRootToTip[i];
+      const mo: MetadataOptions = {};
+      if (isTip(tree, index)) {
+        const tally = tipMetadata[index] || {};
+        columns.forEach((field, c)=>{
+          if (c !== idCol) {
+            const value = tally[field];
+            if (value !== undefined) {
+              mo[field] = [value];
+            } else {
+              mo[field] = [];
+            }
+          }
+        });
+      } else {
+        /*
+        inner node possible states are chosen depending on the possible
+        state of the two children:
+        * if there's an overlap between the possible states, then use
+          the intersection of those states
+        * if there's no overlap between possible states, then use the
+          union of those states
+        */
+        const leftIndex = tree.getLeftChildIndexOf(index),
+          rightIndex = tree.getRightChildIndexOf(index),
+          leftOpts = options[leftIndex],
+          rightOpts = options[rightIndex];
+        columns.forEach((field, c)=>{
+          if (c !== idCol) {
+            const leftFieldOpts = leftOpts[field] || [];
+            const rightFieldOpts = rightOpts[field] || [];
+            const withDupes = leftFieldOpts.concat(rightFieldOpts);
+            withDupes.sort();
+            const overlaps = withDupes.filter((value, i)=>value === withDupes[i-1]);
+            if (overlaps.length === 0) {
+              mo[field] = withDupes;
+            } else {
+              mo[field] = overlaps;
+            }
+          }
+        });
+      }
+      options[index] = mo;
+    }
+    return options;
+  }
+
+
+  pickOptions(tree: Tree, indicesRootToTip: number[], options: MetadataOptions[], tipTallies: MetadataTipTally[]) : NodeFieldData[][] {
+    const columns = this.metadata.header,
+      idCol = this.metadata.idColumn;
+    /* create an array of arrays */
+    const nodeValues : NodeFieldData[][] = Array.from(indicesRootToTip, ()=>{
+      const fieldValues: NodeFieldData[] = columns.map(()=>{return {value: '', counts: {}}});
+      return fieldValues;
+    });
+    /*
     * once you've assigned possible states from the bottom up, you
       can pick actual state top-down:
       * pick one of the possible states of the root at random
@@ -204,77 +251,106 @@ export class NodeMetadata {
           pick that (no mutations!)
         * otherwise, pick one of the possible states of C at random
     */
-    const {tree, indicesRootToTip, tipMetadataRow, nodeValues} = this,
-      options: string[][] = [];
-    let i: number;
-
-    /* set what we can and build options from the bottom up */
-    for (i = indicesRootToTip.length - 1; i >= 0; i--) {
-      /* if is tip */
-      const index = indicesRootToTip[i],
-        mdIndex: number | undefined = tipMetadataRow[index];
-      if (mdIndex !== undefined && nodeValues[index][column]) {
-        const value = nodeValues[index][column].value;
-        options[index] = [value];
-      } else {
-        const withDupes:string[] = getIndexOptions(index, options),
-          /* this filters out dupes */
-          uniques = withDupes.filter((n,i)=>withDupes.indexOf(n) === i),
-          /* this finds only the dupes */
-          overlaps = withDupes.filter((n, i)=>withDupes.indexOf(n) !== i);
-        if (overlaps.length === 1) {
-          this.nodeValues[index][column] = {value: overlaps[0], counts: {}};
-        }
-        if (overlaps.length > 0) {
-          options[index] = overlaps;
-        } else {
-          options[index] = uniques;
-        }
-      }
-    }
-    /*
-    now set state from the top down
-    start with the root node
-    */
     let index = indicesRootToTip[0];
-    if (this.nodeValues[index] === undefined || this.nodeValues[index][column] === undefined) {
-      const nodeOptions = options[index],
-        rando = Math.floor(Math.random() * nodeOptions.length),
-        value = nodeOptions[rando];
-      this.nodeValues[index][column] = {value: value, counts: {}};
-    }
-    for (let i = 1; i < indicesRootToTip.length; i++) {
-      index = indicesRootToTip[i];
-      if (this.nodeValues[index][column] === undefined) {
-        const parentIndex = tree.getParentIndexOf(index),
-          parentVal = this.nodeValues[parentIndex][column].value,
-          nodeOptions = options[index];
-        let valIndex = nodeOptions.indexOf(parentVal),
-          value: string;
-        if (valIndex >= 0) {
-          value = parentVal;
+    let nodeOptions = options[index];
+    let nodeFieldOptions: string[];
+    let value: string;
+    columns.forEach((column, c)=>{
+      if (c !== idCol) {
+        nodeFieldOptions = nodeOptions[column];
+        if (nodeFieldOptions.length === 1) {
+          value = nodeFieldOptions[0];
         } else {
-          valIndex = Math.floor(Math.random() * nodeOptions.length);
-          value = nodeOptions[valIndex];
+          // value = getRandom(nodeFieldOptions);
+          value = getWeightedRandom(nodeFieldOptions, tipTallies[index][column]);
         }
-        this.nodeValues[index][column] = {value: value, counts: {}};
-      }
-    }
-
-    /* now tally the tips with each metadata value upward from the tips */
-    this.nodeValues.forEach((tipMetadata, tipIndex)=>{
-      const value = tipMetadata[column].value;
-      let parent = tree.getParentIndexOf(tipIndex);
-      while (parent !== -1) {
-        const tally = this.nodeValues[parent][column].counts;
-        if (tally[value]) tally[value]++;
-        else tally[value] = 1;
-        parent = tree.getParentIndexOf(parent);
+        nodeValues[index][c].value = value;
+        nodeValues[index][c].counts = tipTallies[index][column];
       }
     });
+    let parentIndex: number;
+    let parentValues: NodeFieldData[];
+    let parentValue: string;
+
+    let valIndex: number;
+    let tally: FieldTipCount;
+
+
+    for (let i = 1; i < indicesRootToTip.length; i++) {
+      index = indicesRootToTip[i];
+      nodeOptions = options[index];
+      parentIndex = tree.getParentIndexOf(index);
+      parentValues = nodeValues[parentIndex];
+      columns.forEach((column, c)=>{
+        if (c !== idCol) {
+          nodeFieldOptions = nodeOptions[column];
+          parentValue = parentValues[c].value;
+          valIndex = nodeFieldOptions.indexOf(parentValue);
+          tally = tipTallies[index][column] || {};
+          if (valIndex >= 0) {
+            value = parentValue;
+          } else if (nodeFieldOptions.length === 1) {
+            value = nodeFieldOptions[0];
+          } else {
+            // value = getRandom(nodeFieldOptions);
+            value = getWeightedRandom(nodeFieldOptions, tally);
+          }
+          nodeValues[index][c].value = value;
+          nodeValues[index][c].counts = tally;
+        }
+      });
+    }
+
+    /* append the id to the tips */
+    const idColName = columns[idCol];
+    this.tipMetadata.forEach((md: MetadataRow, index: number)=>{
+      const id = md[idColName];
+      const nfd: NodeFieldData[] = nodeValues[index];
+      nfd[idCol].value = id;
+    })
+
+    return nodeValues;
   }
 
 
+
+  tallyTips(tree: Tree) : MetadataTipTally[] {
+    const nodeCount = tree.getSize(),
+      columns = this.metadata.header,
+      tipMetadata = this.tipMetadata,
+      tallies: MetadataTipTally[] = new Array(nodeCount),
+      idCol = this.metadata.idColumn;
+    for (let i = 0; i < nodeCount; i++) {
+      tallies[i] = {};
+    }
+    const tallyField = (fmo: MetadataTipTally, field: string, value: string)=>{
+      if (fmo[field] === undefined) {
+        fmo[field] = {};
+        fmo[field][value] = 1;
+      } else if (fmo[field][value] === undefined) {
+        fmo[field][value] = 1;
+      } else {
+        fmo[field][value] += 1;
+      }
+    }
+    tipMetadata.forEach((md, index)=>{
+      columns.forEach((field, c)=>{
+        if (c !== idCol) {
+          let value = md[field];
+          if (value === undefined) {
+            value = UNDEF;
+          }
+          tallyField(tallies[index], field, value);
+          let parent = tree.getParentIndexOf(index);
+          while (parent !== UNSET) {
+            tallyField(tallies[parent], field, value);
+            parent = tree.getParentIndexOf(parent);
+          }
+        }
+      });
+    });
+    return tallies;
+  }
 
 
   getNodeValues(field: string) : string[] {
@@ -323,3 +399,29 @@ export class NodeMetadata {
 
 }
 
+const getRandom = (options: string[]) : string => {
+  const rando = Math.floor(Math.random() * options.length);
+  return options[rando];
+}
+
+const getWeightedRandom = (options: string[], ftc: FieldTipCount) : string =>{
+  if (options.length === 0) {
+    return UNDEF;
+  }
+  const candidates = Object.entries(ftc).filter((entry)=>{
+    const key: string = entry[0];
+    return options.indexOf(key) >= 0;
+  });
+  let sum = 0;
+  const runningTotals = candidates.map(([_value, count])=>{
+    sum += count;
+    return sum;
+  });
+  const rando = Math.random() * sum;
+  let i = 0;
+  while (runningTotals[i] < rando && i < runningTotals.length) {
+    i++;
+  }
+  return candidates[i][0];
+
+};
