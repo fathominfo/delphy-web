@@ -5,13 +5,14 @@ import { YSpacing, Topology, ColorOption, Presentation,
 import {noop} from '../../constants';
 import {MccUI} from '../mccui';
 import {SharedState} from '../../sharedstate';
-import { Metadata, ColumnSummary } from '../metadata';
+import { Metadata } from '../metadata';
 import { ColorChooser } from '../colorchooser';
 import { MccTree, SummaryTree } from '../../pythia/delphy_api';
 import { MccTreeCanvas } from '../mcctreecanvas';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
+import { ColumnSummary } from '../nodemetadata';
 
 /* global NodeListOf */
 

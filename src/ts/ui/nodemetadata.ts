@@ -1,14 +1,57 @@
-import { Tree, PhyloTree } from '../pythia/delphy_api';
-import { Metadata} from './metadata';
+import { Tree, PhyloTree, SummaryTree } from '../pythia/delphy_api';
+import { Metadata, MetadataRow } from './metadata';
 import { isTip } from '../util/treeutils';
 import { UNDEF } from './common';
-import { MccUmbrella } from '../pythia/mccumbrella';
 
 export type FieldTipCount = {[name: string]: number};
 export type NodeFieldData = {value: string, counts: FieldTipCount};
 export type NodeMetadataValues = {[key: string]: NodeFieldData};
 
 type IndexOptionsFnc = (index:number, options: string[][])=>string[];
+
+
+type ColCount = [value: string, count: number];
+
+
+
+export class ColumnSummary {
+  values: {[key: string]: number};
+  sorted: ColCount[];
+  unique: number;
+
+  constructor () {
+    this.values = {};
+    this.sorted = [];
+    this.unique = 0;
+  }
+
+  increment(value: string) : void {
+    if (!this.values[value]) {
+      this.values[value] = 1;
+    } else {
+      this.values[value]++;
+    }
+  }
+
+  setSorted(): void {
+    this.sorted = Object.entries(this.values);
+    this.sorted.sort(colCountSort);
+    this.unique = this.sorted.length;
+  }
+}
+
+function colCountSort(a:ColCount, b:ColCount): number {
+  let diff = b[1] - a[1];
+  if (a[0] === UNDEF && b[0] !== UNDEF) {
+    diff = 1;
+  } else if (b[0] === UNDEF) {
+    diff = -1;
+  } else if (diff === 0) {
+    diff = b[0] < a[0] ? 1 : -1;
+  }
+  return diff;
+}
+
 
 
 export class NodeMetadata {
@@ -20,9 +63,11 @@ export class NodeMetadata {
   indicesRootToTip: number[];
   /* nodeValues[treeTipIndex] = metadata row */
   nodeValues: NodeFieldData[][];
+  columnSummaries: ColumnSummary[];
+  tipMetadata: MetadataRow[];
 
 
-  constructor(metadata: Metadata, tree: Tree, nameSource: PhyloTree) {
+  constructor(metadata: Metadata, tree: SummaryTree, nameSource: PhyloTree) {
     this.metadata = metadata;
     this.tree = tree;
     /*
@@ -32,11 +77,15 @@ export class NodeMetadata {
     with the id column in the first position.
     */
     const nodeCount = nameSource.getSize(),
+      tipCount = (nodeCount + 1) / 2,
       idColumn: string[] = metadata.ids,
       nodeValues = [],
       columns = metadata.header,
       columnCount = columns.length;
-    this.tipMetadataRow = [];
+    this.columnSummaries = columns.map(()=>new ColumnSummary());
+    this.tipMetadataRow = new Array(tipCount);
+    this.tipMetadata = new Array(tipCount);
+
     /*
     tipMetadataRow will be indexed by tree tip position,
         with the value pointing to the corresponding row in the metadata file
@@ -59,11 +108,18 @@ export class NodeMetadata {
         this.tipMetadataRow[i] = mdIndex;
         const metadataRow = metadata.rows[mdIndex];
         if (metadataRow) {
+          this.tipMetadata[i] = {};
           for (let c=0; c < columnCount; c++) {
-            const value = metadataRow[c],
+            const field = columns[c],
+              value = metadataRow[c],
               counts: FieldTipCount = {};
             counts[value] = 1;
             nodeValues[i][c] = {value, counts};
+            if (value !== UNDEF) {
+              this.tipMetadata[i][field] = value;
+              this.columnSummaries[c].increment(value);
+            }
+
           }
         } else {
         //   console.debug(`${tipName} note found in metadata (index ${mdIndex})`);
@@ -78,6 +134,7 @@ export class NodeMetadata {
     }
     this.indicesRootToTip = [];
     this.nodeValues = nodeValues;
+    this.columnSummaries.forEach(cs=>cs.setSorted());
     this.updateTree(tree);
   }
 
@@ -87,24 +144,16 @@ export class NodeMetadata {
     /* a breadth first traversal of the tree */
     const indicesRootToTip : number[] = [tree.getRootIndex()];
     let i = 0;
-    if (tree instanceof MccUmbrella) {
-      const umbrella = tree as MccUmbrella;
-      while (i < indicesRootToTip.length) {
-        const index = indicesRootToTip[i];
-        umbrella.getChildren(index).forEach(kindex=>indicesRootToTip.push(kindex));
-        i++;
+
+    while (i < indicesRootToTip.length) {
+      const index = indicesRootToTip[i],
+        left = tree.getLeftChildIndexOf(index),
+        right = tree.getRightChildIndexOf(index);
+      if (left >= 0) {
+        indicesRootToTip.push(left);
+        indicesRootToTip.push(right);
       }
-    } else {
-      while (i < indicesRootToTip.length) {
-        const index = indicesRootToTip[i],
-          left = tree.getLeftChildIndexOf(index),
-          right = tree.getRightChildIndexOf(index);
-        if (left >= 0) {
-          indicesRootToTip.push(left);
-          indicesRootToTip.push(right);
-        }
-        i++;
-      }
+      i++;
     }
     this.indicesRootToTip = indicesRootToTip;
     /* reset the values for the inner nodes */
@@ -117,33 +166,14 @@ export class NodeMetadata {
     }
     const header = this.metadata.header,
       idCol = this.metadata.idColumn;
-    /*
-    The algorithm to set metadata values for inner nodes
-    relies on querying the metadata values for child
-    nodes. The means of doing this is different for
-    umbrella trees vs other trees, although other
-    aspects of the algorithm remain the same.
-    We use this arrow function to isolate the differences
-    between the implementations.
-    */
-    let getIndexOptions: IndexOptionsFnc;
-    if (tree instanceof MccUmbrella) {
-      const umbrella = tree as MccUmbrella;
-      getIndexOptions = (index:number, options: string[][])=>{
-        let withDupes: string[] = [];
-        umbrella.getChildren(index).forEach(cIndex=>withDupes = withDupes.concat(options[cIndex]))
-        return withDupes;
-      }
-    } else {
-      getIndexOptions = (index:number, options: string[][])=>{
-        const leftIndex = tree.getLeftChildIndexOf(index),
-          rightIndex = tree.getRightChildIndexOf(index),
-          leftOpts = options[leftIndex] || [],
-          rightOpts = options[rightIndex] || [],
-          withDupes = leftOpts.concat(rightOpts);
-        return withDupes;
-      };
-    }
+    const getIndexOptions: IndexOptionsFnc = (index:number, options: string[][])=>{
+      const leftIndex = tree.getLeftChildIndexOf(index),
+        rightIndex = tree.getRightChildIndexOf(index),
+        leftOpts = options[leftIndex] || [],
+        rightOpts = options[rightIndex] || [],
+        withDupes = leftOpts.concat(rightOpts);
+      return withDupes;
+    };
 
     header.forEach((_, i)=>{
       if (i !== idCol) {
@@ -280,6 +310,15 @@ export class NodeMetadata {
     }
     return values;
 
+  }
+
+  getColumnSummary(field: string) : ColumnSummary {
+    const index = this.metadata.header.indexOf(field),
+      summ = this.columnSummaries[index];
+    if (!summ) {
+      throw new Error(`no field named '${field}' in metadata`);
+    }
+    return summ;
   }
 
 }
