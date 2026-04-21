@@ -1,4 +1,4 @@
-import { BaseTreeSeriesType } from "../../constants";
+import { BaseTreeSeriesType, NodeDistributionType } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
@@ -12,8 +12,11 @@ import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata
 import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
+import { calculateAcrossTrees } from "../../util/prevalenceutil";
 
 
+const HI_CONFIDENCE = 0.9;
+const PEAK_PREVALENCE_MIN = 0.05;
 
 export type NodeHoverData = {
   indices: number[],
@@ -87,6 +90,7 @@ export class CoreLineagesData {
   private summaryTree: SummaryTree | null = null;
   private nodeChildCount: number[] = [];
   private nodeConfidence: number[] = [];
+  private peakPrevalence: number[] = [];
   private getY: getYFunction | null = null;
 
 
@@ -171,7 +175,8 @@ export class CoreLineagesData {
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
-      this.selectionTreeData.setData([this.rootNode]);
+      this.autoSelectNodesOfInterest();
+      this.selectionTreeData.setData(this.selectedNodes);
       if (this.sharedState.nodeList.length > 0) {
         // this.nodeAIndex = this.sharedState.nodeList[0];
         // if (this.sharedState.nodeList.length > 1) {
@@ -183,34 +188,87 @@ export class CoreLineagesData {
     }
   }
 
-  setChartData() {
+  getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree, minDate: number, maxDate: number) : number [] {
+    const nodeCount = this.nodeConfidence.length;
+    const tipCount = (nodeCount + 1) / 2;
+    const hiConf: number[] = [];
+    for (let i = tipCount; i < nodeCount; i++) {
+      if (this.nodeConfidence[i] >= HI_CONFIDENCE) {
+        hiConf.push(i);
+      }
+    }
+    const nodePrevalenceData = pythia.getPopulationNodeDistribution(hiConf, minDate, maxDate, tree);
+    /* pct for each series indexed by tree, series, date */
+    const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
+    const peaks = averages.map((series: number[])=>Math.max.apply(null, series));
+    const theNodes: number[] = [];
+    hiConf.forEach((node, i)=>{
+      const peak = peaks[i];
+      if (peak >= PEAK_PREVALENCE_MIN) {
+        theNodes.push(node);
+      }
+    });
+    // console.log(hiConf, peaks, theNodes);
+    return theNodes;
+  }
+
+
+  getGeoIntroNodes() : number [] {
+    const theNodes: number[] = [];
+    return theNodes;
+  }
+
+
+  autoSelectNodesOfInterest() : void {
     const pythia = this.pythia;
+    let autoSelected: number[] = [];
     if (pythia) {
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.selectionTreeData as SelectionTreeData;
-      const actualRootIndex = summaryTree.getRootIndex();
-      const getY = this.getY as getYFunction;
-      const mccRef = pythia.getMcc(),
-        maxDate = pythia.maxDate;
-      let minDate = pythia.getBaseTreeMinDate();
-      const chartData: ChartData = structuredClone(defaultChartData)
-      chartData.maxDate =maxDate;
-      if (this.selectionTreeData?.root) {
-        chartData.rootNode = this.selectionTreeData.root;
-      }
+      const minDate = this.getMinDate();
+      const maxDate = pythia.maxDate;
+      const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate);
+      const introNodes = this.getGeoIntroNodes();
+      autoSelected = influentialNodes.concat(introNodes);
+    }
+    this.selectedNodes = autoSelected.map(nodeIndex=>this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex()));
+  }
+
+
+  getMinDate() : number {
+    if (this.pythia) {
+      let minDate = this.pythia.getBaseTreeMinDate();
+      const actualRootIndex = (this.summaryTree as SummaryTree).getRootIndex()
       if (this.rootNode.index !== actualRootIndex && this.rootNode.series) {
-        chartData.selectedRootIndex = this.rootNode.index;
         /* what is the earliest date for the selected node? */
         minDate = this.rootNode.series.bandTimes[0];
       }
+      return minDate;
+    }
+    return UNSET;
+  }
+
+
+  setChartData() {
+    const pythia = this.pythia;
+    if (pythia) {
+      const minimapData = this.selectionTreeData as SelectionTreeData;
+      const getY = this.getY as getYFunction;
+      const mccRef = pythia.getMcc(),
+        maxDate = pythia.maxDate,
+        minDate = this.getMinDate();
+      const chartData: ChartData = structuredClone(defaultChartData)
+      chartData.maxDate =maxDate;
+      if (minimapData?.root) {
+        chartData.rootNode = minimapData.root;
+      }
       chartData.minDate = minDate;
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
-      const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
-      const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
-      const nodeDistributions = nodePrevalenceData.series;
-      /* we want the default distribution to come first, so take it off the end and put it first */
-      nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      chartData.nodeDistributions = nodeDistributions;
+      // const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
+      // const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
+      // const nodeDistributions = nodePrevalenceData.series;
+      // /* we want the default distribution to come first, so take it off the end and put it first */
+      // nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+      // chartData.nodeDistributions = nodeDistributions;
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
         if (ancestor) {

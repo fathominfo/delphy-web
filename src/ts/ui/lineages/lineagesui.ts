@@ -24,7 +24,6 @@ AC_SUGGESTION_TEMPLATE.remove();
 export class LineagesUI extends MccUI {
   coreData: CoreLineagesData;
   nodeSchematic: NodeSchematic;
-  nodeTimelines: NodeTimelines;
   nodeDetails: NodeDetails;
   nodeListDisplay: NodeListDisplay;
 
@@ -58,7 +57,6 @@ export class LineagesUI extends MccUI {
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
-    this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
 
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
@@ -122,8 +120,7 @@ export class LineagesUI extends MccUI {
   activate() {
     super.activate();
     this.coreData.activate();
-    const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
-    this.nodeTimelines.setDateRange(minDate, maxDate);
+    // const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
   }
 
   deactivate() {
@@ -136,9 +133,7 @@ export class LineagesUI extends MccUI {
 
   resize(): void {
     super.resize();
-    this.nodeTimelines.resize();
     this.nodeSchematic.resize();
-    this.nodeTimelines.requestDraw();
   }
 
 
@@ -176,7 +171,7 @@ export class LineagesUI extends MccUI {
   }
 
   update(chartData: ChartData): void {
-    const { nodes, minDate, maxDate, nodePairs, rootNode, selectedRootIndex } = chartData;
+    const { nodes, nodePairs, rootNode, selectedRootIndex } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
@@ -186,8 +181,6 @@ export class LineagesUI extends MccUI {
     this.nodeDetails.setData(highlightNode);
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
-    this.nodeTimelines.setData(nodes);
-    this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeSchematic.setData(nodePairs, rootNode);
     this.requestDraw();
   }
@@ -197,7 +190,6 @@ export class LineagesUI extends MccUI {
     this.nodeSchematic.requestRender()
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.requestDraw();
-    this.nodeTimelines.requestDraw();
   }
 
 
@@ -234,7 +226,6 @@ export class LineagesUI extends MccUI {
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.highlightNode(node);
     this.nodeSchematic.highlightNode(node);
-    this.nodeTimelines.highlightNode(node, date);
   }
 
   selectNode(nodeIndex: number): void {

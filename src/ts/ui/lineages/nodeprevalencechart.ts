@@ -4,6 +4,7 @@ import { DateScale, UNSET, getNiceDateInterval,
 import { DisplayNode } from './displaynode';
 import { calcHPD, HPD_MAX_INDEX, HPD_MIN_INDEX, MEDIAN_INDEX } from '../distribution';
 import { HoverCallback } from './lineagescommon';
+import { calculateAcrossTrees } from '../../util/prevalenceutil';
 
 const TARGET = 200;
 const TOO_MANY = TARGET * 2;
@@ -145,33 +146,8 @@ export class NodePrevalenceChart {
   */
   calculate() : void {
 
-    const { dist, seriesCount, treeCount } = this;
-
+    const { averages, distributions } = calculateAcrossTrees(this.dist);
     const drawnCount = this.binCount;
-
-    const averages: number[][] = new Array(seriesCount);
-    const distributions: number[][][] = new Array(seriesCount);
-    let d: number;
-    let tot: number;
-    let t: number;
-    let v: number;
-    const acrossTrees: number[] = new Array(treeCount);
-
-    for (let s = 0; s < seriesCount; s++) {
-      // for each tree, daily values for this series
-      averages[s] = Array(drawnCount);
-      distributions[s] = Array(drawnCount);
-      for (d = 0; d < drawnCount; d++) {
-        tot = 0;
-        for (t = 0; t < treeCount; t++) {
-          v = dist[t][s][d];
-          tot += v;
-          acrossTrees[t] = v;
-        }
-        averages[s][d] = tot / treeCount;
-        distributions[s][d] = calcHPD(acrossTrees);
-      }
-    }
     /*
     calculate the stacked positions of the means
     */
