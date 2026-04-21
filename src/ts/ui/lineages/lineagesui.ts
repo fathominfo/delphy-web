@@ -4,8 +4,9 @@ import { DataResolveType, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES } from './lineagescommon';
-// import { NodeListDisplay } from './nodelistdisplay';
-import { NodeTimelines } from './nodetimelines';
+import { NodeListDisplay } from './nodelistdisplay';
+// import { NodeTimelines } from './nodetimelines';
+import { NodePrevalenceChart } from './nodeprevalencechart'
 import autocomplete from 'autocompleter';
 // import { PdfCanvas } from '../../util/pdfcanvas';
 import { NodeSchematic } from './nodeschematic';
@@ -13,7 +14,7 @@ import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
-import { NodeListDisplay } from './nodelistdisplay';
+
 
 
 
@@ -26,6 +27,7 @@ export class LineagesUI extends MccUI {
   nodeSchematic: NodeSchematic;
   nodeDetails: NodeDetails;
   nodeListDisplay: NodeListDisplay;
+  nodePrevalenceCanvas: NodePrevalenceChart;
 
 
   nodeHighlightCallback: HoverCallback;
@@ -58,7 +60,7 @@ export class LineagesUI extends MccUI {
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
-
+    this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
 
     this.resetZoomButton = this.div.querySelector(".mcc-zoom-button.reset") as HTMLButtonElement;
@@ -134,6 +136,8 @@ export class LineagesUI extends MccUI {
   resize(): void {
     super.resize();
     this.nodeSchematic.resize();
+    this.nodePrevalenceCanvas.resize();
+    this.nodePrevalenceCanvas.requestDraw();
   }
 
 
@@ -171,7 +175,8 @@ export class LineagesUI extends MccUI {
   }
 
   update(chartData: ChartData): void {
-    const { nodes, nodePairs, rootNode, selectedRootIndex } = chartData;
+    const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
+      nodePairs, rootNode, selectedRootIndex } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
@@ -182,6 +187,7 @@ export class LineagesUI extends MccUI {
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setData(nodePairs, rootNode);
+    this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
   }
 
@@ -190,6 +196,7 @@ export class LineagesUI extends MccUI {
     this.nodeSchematic.requestRender()
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.requestDraw();
+    this.nodePrevalenceCanvas.requestDraw();
   }
 
 
@@ -226,6 +233,7 @@ export class LineagesUI extends MccUI {
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.highlightNode(node);
     this.nodeSchematic.highlightNode(node);
+    this.nodePrevalenceCanvas.highlightNode(node, date);
   }
 
   selectNode(nodeIndex: number): void {

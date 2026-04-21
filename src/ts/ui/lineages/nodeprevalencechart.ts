@@ -206,13 +206,14 @@ export class NodePrevalenceChart {
 
   highlightNode(node: DisplayNode, date:number) : void {
     requestAnimationFrame(()=>{
+
       if (node.index === UNSET) {
         Object.values(this.svgGroups).forEach((group)=>{
           group.toggleClass("matching", false);
           group.toggleClass("unmatching", false);
         });
       } else {
-        Object.values(this.svgGroups).forEach((group)=>{
+        Object.values(this.svgGroups).forEach((group, i)=>{
           group.toggleClass("matching", node.index === group.node.index);
           group.toggleClass("unmatching", node.index !== group.node.index);
         });
@@ -231,8 +232,13 @@ export class NodePrevalenceChart {
           isOverlapping = left + widthInPct > pct && left < pct + widthInPct;
           div.classList.toggle("off", isOverlapping);
         });
+        const { binCount, averages } = this;
+        const bindex = Math.floor(pct * binCount / 100);
+        const nodeIndex = this.nodes.map(n=>n.index).indexOf(node.index);
+        // console.log('prevalence hover', nodeIndex, node, averages[nodeIndex]?.[bindex]);
+        /*
 
-
+        */
       }
 
     });

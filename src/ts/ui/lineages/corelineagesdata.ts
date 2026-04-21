@@ -251,6 +251,7 @@ export class CoreLineagesData {
   setChartData() {
     const pythia = this.pythia;
     if (pythia) {
+      const summaryTree = this.summaryTree as SummaryTree;
       const minimapData = this.selectionTreeData as SelectionTreeData;
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
@@ -263,12 +264,12 @@ export class CoreLineagesData {
       }
       chartData.minDate = minDate;
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
-      // const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
-      // const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
-      // const nodeDistributions = nodePrevalenceData.series;
-      // /* we want the default distribution to come first, so take it off the end and put it first */
-      // nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
-      // chartData.nodeDistributions = nodeDistributions;
+      const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
+      const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
+      const nodeDistributions = nodePrevalenceData.series;
+      /* we want the default distribution to come first, so take it off the end and put it first */
+      nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+      chartData.nodeDistributions = nodeDistributions;
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
         if (ancestor) {
