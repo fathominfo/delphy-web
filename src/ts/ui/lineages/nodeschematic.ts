@@ -20,8 +20,10 @@ const MARGIN  = {
   right: 10
 }
 
-const MAX_TIP_DISTANCE = 40;
-const NODE_X_SPACING = 45;
+const MIN_NODE_X_SPACING = 22;
+const MAX_NODE_X_SPACING = 45;
+const MIN_NODE_Y_SPACING = 22;
+const MAX_NODE_Y_SPACING = 40;
 
 const TEXT_LABEL_HEIGHT = 20;
 const TEXT_LABEL_MIN_WIDTH = 20;
@@ -63,9 +65,9 @@ class TreeNodeDisplay {
     labelBackground.addEventListener("pointerleave", ()=>nodeHighlightCallback(UNSET, UNSET, null));
   }
 
-  position(_width: number, height: number) {
-    this.xPos = MARGIN.left + this.stepsFromRoot * NODE_X_SPACING;
-    this.yPos = MARGIN.top + this.tipPlacement * MAX_TIP_DISTANCE + height / 2;
+  position(_width: number, height: number, xSpacing: number, ySpacing: number) {
+    this.xPos = MARGIN.left + this.stepsFromRoot * xSpacing;
+    this.yPos = MARGIN.top + this.tipPlacement * ySpacing + height / 2;
     const elements = [this.nameLabel];
     if (!this.node.isRoot) {
       elements.push(this.mutLabel);
@@ -148,6 +150,11 @@ export class NodeSchematic {
   stepCount = 0;
   width: number = UNSET;
   height: number = UNSET;
+  xSpacing = MAX_NODE_X_SPACING;
+  ySpacing = MAX_NODE_Y_SPACING;
+  maxGenerations = UNSET;
+  tipRange = UNSET;
+  rootPositon = UNSET;
 
 
   constructor(nodeHighlightCallback: HoverCallback) {
@@ -179,13 +186,23 @@ export class NodeSchematic {
 
 
   render() {
-    const { width, height } = this;
+    const { width, height, xSpacing, ySpacing } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     CONTAINER.innerHTML = '';
-    this.nodes.forEach(display=>display.position(width, height));
+    this.setSpacing();
+    this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
     this.nodes.forEach(display=>display.renderLabel());
     this.nodes.forEach(display=>display.renderConnector());
+  }
 
+  setSpacing() {
+    const { width, height, maxGenerations, tipRange } = this;
+    let xSpacing = (width - 40 - 10) / maxGenerations;
+    let ySpacing = (height - 20) / tipRange * 0.6;
+    xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING), MIN_NODE_X_SPACING);
+    ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING), MIN_NODE_Y_SPACING);
+    this.xSpacing = xSpacing;
+    this.ySpacing = ySpacing;
   }
 
 
@@ -204,7 +221,6 @@ export class NodeSchematic {
   */
   setData(pairs: NodePair[], rootNode: TreeNode | null) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
-
     const pairsByDescendant: NodePair[] = [];
     pairs.forEach(pair=>{
       // index the mutations by the descendent
@@ -214,11 +230,19 @@ export class NodeSchematic {
     this.tipCount = 0;
     this.stepCount = 0;
     this.nodes.length = 0;
+    let maxTipPlacement = Number.MIN_SAFE_INTEGER;
+    let minTipPlacement = Number.MAX_SAFE_INTEGER;
+    this.maxGenerations = 0;
     if (rootNode) {
       const q = [rootNode];
       while (q.length > 0) {
         const treeNode = q.shift() as TreeNode;
         const node = treeNode.node;
+        this.maxGenerations = Math.max(this.maxGenerations, treeNode.stepsFromRoot);
+        if (Number.isFinite(treeNode.tipPlacement)) {
+          maxTipPlacement = Math.max(maxTipPlacement, treeNode.tipPlacement);
+          minTipPlacement = Math.min(minTipPlacement, treeNode.tipPlacement);
+        }
         treeNode.children.forEach(tn=>q.push(tn));
         const pair = pairsByDescendant[node.index];
         let mutationCount = 0;
@@ -236,6 +260,9 @@ export class NodeSchematic {
         this.nodes.push(tnd);
         lookup[node.index] = tnd;
       }
+      this.tipRange = maxTipPlacement - minTipPlacement;
+      this.rootPositon = maxTipPlacement / this.tipRange;
+      this.setSpacing();
     }
   }
 

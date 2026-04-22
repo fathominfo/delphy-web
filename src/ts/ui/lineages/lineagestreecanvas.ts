@@ -101,7 +101,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   private drawSelection() {
     const ctx = this.highlightCtx;
     ctx.clearRect(0, 0, this.width, this.height);
-    this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
+    // this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
     this.nodes.forEach(n=>this.drawNode(n));
   }
 
