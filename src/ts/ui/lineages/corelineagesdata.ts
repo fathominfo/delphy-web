@@ -231,7 +231,25 @@ export class CoreLineagesData {
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }
-    this.selectedNodes = autoSelected.map(nodeIndex=>this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex()));
+    const already: boolean[] = [];
+    this.selectedNodes.map(node=>already[node.index] = true);
+    autoSelected.forEach(nodeIndex=>{
+      if (already[nodeIndex] === undefined) {
+        const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
+        this.selectedNodes.push(nd);
+      } else {
+        delete already[nodeIndex];
+      }
+    });
+    /* delete and deactivate the ones we don't need anymore */
+    const selectedIndices = this.selectedNodes.map(n=>n.index);
+    for (let i = this.selectedNodes.length - 1; i >= 0; i--) {
+      const dn = this.selectedNodes[i];
+      if (already[dn.index] !== undefined) {
+        dn.deactivate();
+        this.selectedNodes.splice(i, 1);
+      }
+    }
   }
 
 
