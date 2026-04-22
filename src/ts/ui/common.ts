@@ -697,4 +697,5 @@ export const getMedian = (arr:number[])=>{
   return median;
 }
 
-
+export type LISTENER_CALLBACK_TYPE = ()=>void;
+export type RANGE_CALLBACK_TYPE = (value: number)=>void;

@@ -1,12 +1,13 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MccUI } from '../mccui';
-import { DataResolveType, Screens, UNSET } from '../common';
+import { DataResolveType, RANGE_CALLBACK_TYPE, Screens, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
-  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES } from './lineagescommon';
+  OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
+  ToggleCallback} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 // import { NodeTimelines } from './nodetimelines';
-import { NodePrevalenceChart } from './nodeprevalencechart'
+// import { NodePrevalenceChart } from './nodeprevalencechart'
 import autocomplete from 'autocompleter';
 // import { PdfCanvas } from '../../util/pdfcanvas';
 import { NodeSchematic } from './nodeschematic';
@@ -27,6 +28,7 @@ export class LineagesUI extends MccUI {
   nodeSchematic: NodeSchematic;
   nodeDetails: NodeDetails;
   nodeListDisplay: NodeListDisplay;
+  previousConfidence: number;
   // nodePrevalenceCanvas: NodePrevalenceChart;
 
 
@@ -53,17 +55,19 @@ export class LineagesUI extends MccUI {
     };
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
     const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
+    const prevThresholdCallback: RANGE_CALLBACK_TYPE = (prevThreshold: number)=>this.coreData.updatePeakPrevalenceThreshold(prevThreshold);
+    const geoIntroCallback: ToggleCallback = (findGeo: boolean)=>{console.log(findGeo)};
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback);
+    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, geoIntroCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
     // this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
-
     this.resetZoomButton = this.div.querySelector(".mcc-zoom-button.reset") as HTMLButtonElement;
+    this.previousConfidence = this.sharedState.mccConfig.confidenceThreshold;
 
     const lookupForm = document.querySelector(".id-lookup form") as HTMLFormElement;
     lookupForm.addEventListener("submit", e => e.preventDefault());
@@ -146,6 +150,11 @@ export class LineagesUI extends MccUI {
   handleConfigChange(): void {
     super.handleConfigChange();
     this.updateNodeData();
+    // console.log('handleConfigChange', this.previousConfidence, this.sharedState.mccConfig.confidenceThreshold);
+    if (this.previousConfidence !== this.sharedState.mccConfig.confidenceThreshold) {
+      this.previousConfidence = this.sharedState.mccConfig.confidenceThreshold;
+      this.coreData.updateConfidenceThreshold(this.previousConfidence);
+    }
   }
 
 

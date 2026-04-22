@@ -1,10 +1,12 @@
-import { UNSET } from "../common";
+import { RANGE_CALLBACK_TYPE, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { HoverCallback, NodePair, NodeRelationType } from "./lineagescommon";
+import { HoverCallback, NodePair, NodeRelationType, ToggleCallback } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
-
+const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
+const PREVALENCE_THRESHOLD_INPUT = CONTROLS.querySelector("#lineages--peak-prevalence input") as HTMLInputElement;
+const GEO_INTRODUCTIONS_INPUT = CONTROLS.querySelector("#lineages--geo-introductions input") as HTMLInputElement;
 const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
 const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
 const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
@@ -157,9 +159,16 @@ export class NodeSchematic {
   rootPositon = UNSET;
 
 
-  constructor(nodeHighlightCallback: HoverCallback) {
+  constructor(nodeHighlightCallback: HoverCallback,
+    prevThresholdCallback: RANGE_CALLBACK_TYPE, geoIntroCallback: ToggleCallback) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
+    PREVALENCE_THRESHOLD_INPUT.addEventListener("input", ()=>{
+      prevThresholdCallback(parseFloat(PREVALENCE_THRESHOLD_INPUT.value));
+    });
+    GEO_INTRODUCTIONS_INPUT.addEventListener("input", ()=>{
+      geoIntroCallback(GEO_INTRODUCTIONS_INPUT.checked);
+    });
   }
 
 

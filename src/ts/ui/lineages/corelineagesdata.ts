@@ -15,8 +15,8 @@ import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedat
 import { calculateAcrossTrees } from "../../util/prevalenceutil";
 
 
-const HI_CONFIDENCE = 0.9;
-const PEAK_PREVALENCE_MIN = 0.05;
+const DEFAULT_HI_CONFIDENCE = 0.9;
+const DEFAULT_PEAK_PREVALENCE = 0.05;
 
 export type NodeHoverData = {
   indices: number[],
@@ -101,6 +101,9 @@ export class CoreLineagesData {
   */
   private rootNode : DisplayNode;
   private selectedNodes: DisplayNode[] = [];
+  private peakPrevalenceThreshold: number = DEFAULT_PEAK_PREVALENCE;
+  private confidenceThreshold: number = DEFAULT_HI_CONFIDENCE;
+
   /*
   bypassed nodes happen when the user selects an inner
   node to be the root, and there are selected nodes
@@ -178,26 +181,19 @@ export class CoreLineagesData {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
       this.peakPrevalence.length = 0;
-      this.autoSelectNodesOfInterest();
+      this.selectNodesByImpact();
       this.selectionTreeData.setData(this.selectedNodes);
-      if (this.sharedState.nodeList.length > 0) {
-        // this.nodeAIndex = this.sharedState.nodeList[0];
-        // if (this.sharedState.nodeList.length > 1) {
-        //   this.nodeBIndex = this.sharedState.nodeList[1];
-        //   this.mrcaIndex = this.checkMRCA(this.nodeAIndex, this.nodeBIndex);
-        // }
-      }
       this.setChartData();
     }
   }
 
   getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree,
-    minDate: number, maxDate: number, minPeak: number) : number [] {
+    minDate: number, maxDate: number, minPeak: number, minConf: number) : number [] {
     const nodeCount = this.nodeConfidence.length;
     const numTips = (nodeCount + 1) / 2;
     const hiConf: number[] = [];
     for (let i = numTips; i < nodeCount; i++) {
-      if (this.nodeConfidence[i] >= HI_CONFIDENCE && this.tipCounts[i] > 1) {
+      if (this.nodeConfidence[i] >= minConf && this.tipCounts[i] > 1) {
         if (this.peakPrevalence[i] === undefined) {
           const nodePrevalenceData = pythia.getPopulationNodeDistribution([i], minDate, maxDate, tree);
           /* pct for each series indexed by tree, series, date */
@@ -222,20 +218,43 @@ export class CoreLineagesData {
   }
 
 
-  autoSelectNodesOfInterest() : void {
+  selectNodesByImpact() : void {
+    const peakThreshold = this.peakPrevalenceThreshold;
+    const confidenceThreshold = this.confidenceThreshold
     const pythia = this.pythia;
     let autoSelected: number[] = [];
     if (pythia) {
       const summaryTree = this.summaryTree as SummaryTree;
       const minDate = this.getMinDate();
       const maxDate = pythia.maxDate;
-      const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, PEAK_PREVALENCE_MIN);
+      const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }
     this.selectedNodes = autoSelected.map(nodeIndex=>this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex()));
   }
 
+
+  /*
+  expects a number 0-100
+  */
+  updatePeakPrevalenceThreshold(minPeak: number) : void {
+    this.peakPrevalenceThreshold = minPeak / 100;
+    this.selectNodesByImpact();
+    if (this.selectionTreeData) {
+      this.selectionTreeData.setData(this.selectedNodes);
+      this.setChartData();
+    }
+  }
+
+  updateConfidenceThreshold(confidenceThreshold: number) : void {
+    this.confidenceThreshold = confidenceThreshold;
+    this.selectNodesByImpact();
+    if (this.selectionTreeData) {
+      this.selectionTreeData.setData(this.selectedNodes);
+      this.setChartData();
+    }
+  }
 
   getMinDate() : number {
     if (this.pythia) {

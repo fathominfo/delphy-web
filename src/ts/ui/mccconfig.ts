@@ -1,6 +1,8 @@
 import { ColorOption, COLOR_CONF, COLOR_METADATA,
   CONFIDENCE_DEFAULT, ColorDict, Screens, NavigateFunctionType, UNDEF,
-  UNSET} from './common';
+  UNSET,
+  RANGE_CALLBACK_TYPE,
+  LISTENER_CALLBACK_TYPE} from './common';
 import { Metadata} from './metadata';
 import { ColorChooser, UNDEF_COLOR } from './colorchooser';
 import { NodeMetadata, FieldTipCount, ColumnSummary } from './nodemetadata';
@@ -10,7 +12,6 @@ import { BlockSlider } from '../util/blockslider';
 
 type ChangeHandler = (event:Event)=>void;
 
-export type LISTENER_CALLBACK_TYPE = ()=>void;
 
 
 export const COLOR_CONF_SELECTOR = `input[name=mcc-opt--color][value=${COLOR_CONF}]`;
@@ -24,7 +25,7 @@ export class MccConfig {
   colorOption: ColorOption;
   confidenceThreshold: number;
   colorCallback: ChangeHandler;
-  confidenceCallback: (value: number) => void;
+  confidenceCallback: RANGE_CALLBACK_TYPE;
 
   div: HTMLDivElement | null;
   metadata: Metadata | null;
