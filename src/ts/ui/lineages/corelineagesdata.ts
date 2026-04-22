@@ -3,7 +3,7 @@ import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { isTip } from "../../util/treeutils";
+import { getTipCounts, isTip } from "../../util/treeutils";
 import { UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
@@ -90,6 +90,7 @@ export class CoreLineagesData {
   private summaryTree: SummaryTree | null = null;
   private nodeChildCount: number[] = [];
   private nodeConfidence: number[] = [];
+  private tipCounts: number[] = [];
   private peakPrevalence: number[] = [];
   private getY: getYFunction | null = null;
 
@@ -166,7 +167,8 @@ export class CoreLineagesData {
       this.nodeChildCount = childCounts;
       this.summaryTree = summaryTree;
       this.nodeConfidence = mccTreeCanvas.creds;
-      this.getY = (n:number)=>mccTreeCanvas.getZoomY(n);
+      this.tipCounts = getTipCounts(summaryTree);
+      this.getY = (n:number)=>mccTreeCanvas.getRawY(n);
       this.nodeMetadata = this.sharedState.mccConfig.nodeMetadata;
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
@@ -175,6 +177,7 @@ export class CoreLineagesData {
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
+      this.peakPrevalence.length = 0;
       this.autoSelectNodesOfInterest();
       this.selectionTreeData.setData(this.selectedNodes);
       if (this.sharedState.nodeList.length > 0) {
@@ -188,27 +191,27 @@ export class CoreLineagesData {
     }
   }
 
-  getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree, minDate: number, maxDate: number) : number [] {
+  getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree,
+    minDate: number, maxDate: number, minPeak: number) : number [] {
     const nodeCount = this.nodeConfidence.length;
-    const tipCount = (nodeCount + 1) / 2;
+    const numTips = (nodeCount + 1) / 2;
     const hiConf: number[] = [];
-    for (let i = tipCount; i < nodeCount; i++) {
-      if (this.nodeConfidence[i] >= HI_CONFIDENCE) {
+    for (let i = numTips; i < nodeCount; i++) {
+      if (this.nodeConfidence[i] >= HI_CONFIDENCE && this.tipCounts[i] > 1) {
+        if (this.peakPrevalence[i] === undefined) {
+          const nodePrevalenceData = pythia.getPopulationNodeDistribution([i], minDate, maxDate, tree);
+          /* pct for each series indexed by tree, series, date */
+          const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
+          const peak = Math.max.apply(null, averages[0]);
+          this.peakPrevalence[i] = peak;
+        }
         hiConf.push(i);
       }
     }
-    const nodePrevalenceData = pythia.getPopulationNodeDistribution(hiConf, minDate, maxDate, tree);
-    /* pct for each series indexed by tree, series, date */
-    const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
-    const peaks = averages.map((series: number[])=>Math.max.apply(null, series));
-    const theNodes: number[] = [];
-    hiConf.forEach((node, i)=>{
-      const peak = peaks[i];
-      if (peak >= PEAK_PREVALENCE_MIN) {
-        theNodes.push(node);
-      }
-    });
-    // console.log(hiConf, peaks, theNodes);
+    const theNodes: number[] = hiConf
+      .map((nodeIndex)=>[nodeIndex, this.peakPrevalence[nodeIndex]])
+      .filter(([_nodeIndex, peak])=>peak >= minPeak)
+      .map(([nodeIndex, _peak])=>nodeIndex);
     return theNodes;
   }
 
@@ -226,7 +229,7 @@ export class CoreLineagesData {
       const summaryTree = this.summaryTree as SummaryTree;
       const minDate = this.getMinDate();
       const maxDate = pythia.maxDate;
-      const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate);
+      const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, PEAK_PREVALENCE_MIN);
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }

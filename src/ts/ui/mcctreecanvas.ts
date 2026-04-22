@@ -192,9 +192,9 @@ export class MccTreeCanvas {
       this.width = parseInt(computed.width.replace('px', ''));
       if (this.width !== UNSTYLED_CANVAS_WIDTH) {
         const {width, height} = resizeCanvas(canvas);
-        console.log(`
-          canvas sized to ${width}, ${height}
-          `)
+        // console.log(`
+        //   canvas sized to ${width}, ${height}
+        //   `)
         this.width = width;
         this.height = height;
         this.ctx.textAlign = 'center';
@@ -473,10 +473,15 @@ export class MccTreeCanvas {
     return x;
   }
 
-  getZoomY(index: number) : number {
+  getRawY(index: number) : number {
     const config = this.rootConfigs[this.rootIndex];
-    const unzoomedY = config.nodeYs[index] * this.zoomAmount + this.zoomOffset.y
-    return TREE_PADDING_TOP + unzoomedY * (this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM);
+    return config.nodeYs[index];
+
+  }
+
+  getZoomY(index: number) : number {
+    const zoomedY = this.getRawY(index) * this.zoomAmount + this.zoomOffset.y
+    return TREE_PADDING_TOP + zoomedY * (this.height - TREE_PADDING_TOP - TREE_PADDING_BOTTOM);
   }
 
   getZoomedDateRange() : number[] {
@@ -849,8 +854,6 @@ export class MccTreeCanvas {
 
 
   draw(_pdf: PdfCanvas | null = null) { // eslint-disable-line @typescript-eslint/no-unused-vars
-
-    // console.log(`draw ${this.zoomCenterX}  ${this.zoomCenterY}`)
     const config = this.rootConfigs[this.rootIndex];
     if (!config) return;
     const { nodeYs } = config;

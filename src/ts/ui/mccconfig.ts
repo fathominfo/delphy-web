@@ -247,7 +247,7 @@ export class MccConfig {
 
   unbind() : void {
     if (this.div) {
-      console.trace('running unbind');
+      // console.trace('running unbind');
       const div: HTMLDivElement = this.div;
       const removeChangeListener = (selector: string, callback:ChangeHandler)=>{
         const ele = div.querySelector(selector) as HTMLInputElement;
