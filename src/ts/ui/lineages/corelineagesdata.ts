@@ -198,6 +198,7 @@ export class CoreLineagesData {
           const nodePrevalenceData = pythia.getPopulationNodeDistribution([i], minDate, maxDate, tree);
           /* pct for each series indexed by tree, series, date */
           const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
+          console.log(i, averages[0].join());
           const peak = Math.max.apply(null, averages[0]);
           this.peakPrevalence[i] = peak;
         }
