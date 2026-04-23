@@ -3,7 +3,7 @@ import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { getTipCounts, isTip } from "../../util/treeutils";
+import { assembleInheritanceTree, getParents, getTipCounts, isTip, NodeParentIndex } from "../../util/treeutils";
 import { UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
@@ -190,26 +190,59 @@ export class CoreLineagesData {
   getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree,
     minDate: number, maxDate: number, minPeak: number, minConf: number) : number [] {
     const nodeCount = this.nodeConfidence.length;
-    const numTips = (nodeCount + 1) / 2;
+    const tipCount = (nodeCount + 1) / 2;
     const hiConf: number[] = [];
-    for (let i = numTips; i < nodeCount; i++) {
+    for (let i = tipCount; i < nodeCount; i++) {
       if (this.nodeConfidence[i] >= minConf && this.tipCounts[i] > 1) {
-        if (this.peakPrevalence[i] === undefined) {
-          const nodePrevalenceData = pythia.getPopulationNodeDistribution([i], minDate, maxDate, tree);
-          /* pct for each series indexed by tree, series, date */
-          const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
-          const peak = Math.max.apply(null, averages[0]);
-          this.peakPrevalence[i] = peak;
-        }
         hiConf.push(i);
       }
     }
-    const theNodes: number[] = hiConf
-      .map((nodeIndex)=>[nodeIndex, this.peakPrevalence[nodeIndex]])
-      .filter(([_nodeIndex, peak])=>peak >= minPeak)
-      .map(([nodeIndex, _peak])=>nodeIndex);
+    /*
+    do we have cached values for each node?
+    */
+    const anyMissing: boolean = hiConf.reduce((missing: boolean, nodeIndex: number)=>{
+      const peak = this.peakPrevalence[nodeIndex];
+      return missing || peak === undefined;
+    }, false);
+    if (anyMissing) {
+      /*
+      In the default calculations, the prevalence of child nodes is _excluded_ from
+      that of its ancestors. For this analysis, we want to include them, so build
+      a means of finding which rows we will need to sum up.
+      */
+      const inheritance = assembleInheritanceTree(tree, hiConf);
+      const parents = getParents(inheritance);
+      /* this will be easiest if we retrieve the data sorted according to inheritance */
+      const sorted = parents.map((pair: NodeParentIndex)=>pair.node);
+      // add back in the root
+      sorted.push(parents[parents.length-1].parent);
+      const nodePrevalenceData = pythia.getPopulationNodeDistribution(sorted, minDate, maxDate, tree);
+      /* pct for each series indexed by tree, series, date */
+      const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
+      /*
+      For each node, find the closest ancestor, and add its prevalence to the ancestor's.
+      We do this in order so the results trickle up to the root.
+      */
+      parents.forEach(({node, parent})=>{
+        const childIndex = sorted.indexOf(node);
+        const parentIndex = sorted.indexOf(parent);
+        const childSeries = averages[childIndex];
+        const parentSeries = averages[parentIndex];
+        childSeries.forEach((n, i)=>parentSeries[i] += n);
+      });
+      const peaks = averages.map((series: number[])=>Math.max.apply(null, series));
+      sorted.forEach((node, i)=>{
+        this.peakPrevalence[node] = peaks[i];
+      });
+    }
+    const theNodes = hiConf.filter(node=>this.peakPrevalence[node] >= minPeak);
+    // console.log(hiConf, peaks, theNodes);
     return theNodes;
   }
+
+
+
+
 
 
   getGeoIntroNodes() : number [] {
@@ -227,7 +260,9 @@ export class CoreLineagesData {
       const summaryTree = this.summaryTree as SummaryTree;
       const minDate = this.getMinDate();
       const maxDate = pythia.maxDate;
+      const startTime = Date.now();
       const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
+      console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }

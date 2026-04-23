@@ -160,7 +160,8 @@ export class NodeSchematic {
 
 
   constructor(nodeHighlightCallback: HoverCallback,
-    prevThresholdCallback: RANGE_CALLBACK_TYPE, geoIntroCallback: ToggleCallback) {
+    prevThresholdCallback: RANGE_CALLBACK_TYPE,
+    geoIntroCallback: ToggleCallback) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
     PREVALENCE_THRESHOLD_INPUT.addEventListener("input", ()=>{
