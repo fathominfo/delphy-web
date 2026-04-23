@@ -211,6 +211,7 @@ export class CoreLineagesData {
       a means of finding which rows we will need to sum up.
       */
       const inheritance = assembleInheritanceTree(tree, hiConf);
+      console.log(inheritance);
       const parents = getParents(inheritance);
       /* this will be easiest if we retrieve the data sorted according to inheritance */
       const sorted = parents.map((pair: NodeParentIndex)=>pair.node);
@@ -226,12 +227,16 @@ export class CoreLineagesData {
       */
       console.debug(parents);
       parents.forEach(({node, parent})=>{
-        console.debug(`adding ${node} to ${parent}`);
         const childIndex = sorted.indexOf(node);
         const parentIndex = sorted.indexOf(parent);
         const childSeries = averages[childIndex];
         const parentSeries = averages[parentIndex];
-        childSeries.forEach((n, i)=>parentSeries[i] += n);
+        childSeries.forEach((n, i)=>{
+          if (parent === 265 && i === 171) {
+            console.debug(`adding ${node} (${n})  to ${parent}  (${parentSeries[i]}) at index ${i}=>${parentSeries[i]+n}`);
+          }
+          parentSeries[i] += n;
+        });
       });
       console.debug(`
         post adding`);

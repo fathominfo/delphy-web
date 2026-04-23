@@ -104,7 +104,8 @@ class TreeNodeDisplay {
     // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
     // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
 
-    const label = mrca ? "" : node.label;
+    // const label = mrca ? "" : node.label;
+    const label = `${node.index}`;
     textNode.textContent = label;
     nameLabel.classList.add(node.className);
     CONTAINER.appendChild(this.nameLabel);
