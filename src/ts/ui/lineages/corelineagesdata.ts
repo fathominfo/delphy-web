@@ -227,7 +227,9 @@ export class CoreLineagesData {
       const summaryTree = this.summaryTree as SummaryTree;
       const minDate = this.getMinDate();
       const maxDate = pythia.maxDate;
+      const startTime = Date.now();
       const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
+      console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }
