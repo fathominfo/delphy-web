@@ -192,13 +192,22 @@ export class CoreLineagesData {
     const nodeCount = this.nodeConfidence.length;
     const numTips = (nodeCount + 1) / 2;
     const hiConf: number[] = [];
+    const debugNode = 202;
+    const debugDay = 154;
     for (let i = numTips; i < nodeCount; i++) {
       if (this.nodeConfidence[i] >= minConf && this.tipCounts[i] > 1) {
         if (this.peakPrevalence[i] === undefined) {
           const nodePrevalenceData = pythia.getPopulationNodeDistribution([i], minDate, maxDate, tree);
           /* pct for each series indexed by tree, series, date */
+          if (i === debugNode) {
+            const dayData: number[] = nodePrevalenceData.series.map((treeData)=>{
+              const nodeSeries = treeData[0];
+              return nodeSeries[debugDay];
+            });
+            console.log(`node ${debugDay} day ${debugDay} values`, dayData);
+          }
           const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
-          console.log(i, averages[0].join());
+          // console.log(i, averages[0].join());
           const peak = Math.max.apply(null, averages[0]);
           this.peakPrevalence[i] = peak;
         }
