@@ -212,7 +212,6 @@ export class CoreLineagesData {
       */
       const inheritance = assembleInheritanceTree(tree, hiConf);
       const parents = getParents(inheritance);
-      console.log(parents)
       /* this will be easiest if we retrieve the data sorted according to inheritance */
       const sorted = parents.map((pair: NodeParentIndex)=>pair.node);
       // add back in the root
@@ -220,18 +219,23 @@ export class CoreLineagesData {
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(sorted, minDate, maxDate, tree);
       /* pct for each series indexed by tree, series, date */
       const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
-      console.log(sorted, averages.map((series: number[])=>Math.max.apply(null, series)))
+      sorted.forEach((n, i)=>console.debug(n, averages[i].join()));
       /*
       For each node, find the closest ancestor, and add its prevalence to the ancestor's.
       We do this in order so the results trickle up to the root.
       */
+      console.debug(parents);
       parents.forEach(({node, parent})=>{
+        console.debug(`adding ${node} to ${parent}`);
         const childIndex = sorted.indexOf(node);
         const parentIndex = sorted.indexOf(parent);
         const childSeries = averages[childIndex];
         const parentSeries = averages[parentIndex];
         childSeries.forEach((n, i)=>parentSeries[i] += n);
       });
+      console.debug(`
+        post adding`);
+      sorted.forEach((n, i)=>console.debug(n, averages[i].join()));
       const peaks = averages.map((series: number[])=>Math.max.apply(null, series));
       sorted.forEach((node, i)=>{
         this.peakPrevalence[node] = peaks[i];
