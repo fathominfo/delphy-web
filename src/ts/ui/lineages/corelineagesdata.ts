@@ -1,4 +1,4 @@
-import { BaseTreeSeriesType, NodeDistributionType } from "../../constants";
+import { BaseTreeSeriesType } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
@@ -12,7 +12,7 @@ import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata
 import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
-import { calculateAcrossTrees } from "../../util/prevalenceutil";
+
 
 
 const DEFAULT_HI_CONFIDENCE = 0.9;
@@ -190,36 +190,34 @@ export class CoreLineagesData {
   getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree,
     minDate: number, maxDate: number, minPeak: number, minConf: number) : number [] {
     const nodeCount = this.nodeConfidence.length;
-    const numTips = (nodeCount + 1) / 2;
+    const tipCount = (nodeCount + 1) / 2;
     const hiConf: number[] = [];
-    const debugNode = 202;
-    const debugDay = 154;
-    for (let i = numTips; i < nodeCount; i++) {
+    for (let i = tipCount; i < nodeCount; i++) {
       if (this.nodeConfidence[i] >= minConf && this.tipCounts[i] > 1) {
-        if (this.peakPrevalence[i] === undefined) {
-          const nodePrevalenceData = pythia.getPopulationNodeDistribution([i], minDate, maxDate, tree);
-          /* pct for each series indexed by tree, series, date */
-          if (i === debugNode) {
-            const dayData: number[] = nodePrevalenceData.series.map((treeData)=>{
-              const nodeSeries = treeData[0];
-              return nodeSeries[debugDay];
-            });
-            console.log(`node ${debugDay} day ${debugDay} values`, dayData);
-          }
-          const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
-          // console.log(i, averages[0].join());
-          const peak = Math.max.apply(null, averages[0]);
-          this.peakPrevalence[i] = peak;
-        }
         hiConf.push(i);
       }
     }
-    const theNodes: number[] = hiConf
-      .map((nodeIndex)=>[nodeIndex, this.peakPrevalence[nodeIndex]])
-      .filter(([_nodeIndex, peak])=>peak >= minPeak)
-      .map(([nodeIndex, _peak])=>nodeIndex);
+    /*
+    do we have cached values for each node?
+    */
+    const anyMissing: boolean = hiConf.reduce((missing: boolean, nodeIndex: number)=>{
+      const peak = this.peakPrevalence[nodeIndex];
+      return missing || peak === undefined;
+    }, false);
+    if (anyMissing) {
+      const peaks = pythia.getMaxPrevalence(hiConf, minDate, maxDate, tree);
+      hiConf.forEach((node, i)=>{
+        this.peakPrevalence[node] = peaks[i];
+      });
+    }
+    const theNodes = hiConf.filter(node=>this.peakPrevalence[node] >= minPeak);
+    // console.log(hiConf, peaks, theNodes);
     return theNodes;
   }
+
+
+
+
 
 
   getGeoIntroNodes() : number [] {
@@ -254,7 +252,6 @@ export class CoreLineagesData {
       }
     });
     /* delete and deactivate the ones we don't need anymore */
-    const selectedIndices = this.selectedNodes.map(n=>n.index);
     for (let i = this.selectedNodes.length - 1; i >= 0; i--) {
       const dn = this.selectedNodes[i];
       if (already[dn.index] !== undefined) {

@@ -255,7 +255,7 @@ export class MccConfig {
         if (ele) {
           ele.removeEventListener('change', callback);
         } else {
-          console.debug(`could not find "${selector}" on #${div.id}`);
+          // console.debug(`could not find "${selector}" on #${div.id}`);
         }
       }
       removeChangeListener(COLOR_CONF_SELECTOR, this.colorCallback);
