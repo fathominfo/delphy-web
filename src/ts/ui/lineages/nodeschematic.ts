@@ -7,7 +7,9 @@ import { TreeNode } from "./selectiontreedata";
 const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
 const PREVALENCE_THRESHOLD_INPUT = CONTROLS.querySelector("#lineages--peak-prevalence input") as HTMLInputElement;
 const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#lineages--peak-prevalence--readout") as HTMLSpanElement
-const GEO_INTRODUCTIONS_INPUT = CONTROLS.querySelector("#lineages--geo-introductions input") as HTMLInputElement;
+const METADATA_TRANSITIONS_CONTROL = CONTROLS.querySelector("#lineages--metadata-transitions") as HTMLDivElement;
+const METADATA_TRANSITIONS_INPUT = METADATA_TRANSITIONS_CONTROL.querySelector("#lineages--metadata-transitions input") as HTMLInputElement;
+const METADATA_TRANSITIONS_FIELD = METADATA_TRANSITIONS_CONTROL.querySelector("#lineages--metadata-transitions #lineages--metadata-field") as HTMLSpanElement;
 const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
 const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
 const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
@@ -163,14 +165,14 @@ export class NodeSchematic {
 
   constructor(nodeHighlightCallback: HoverCallback,
     prevThresholdCallback: RANGE_CALLBACK_TYPE,
-    geoIntroCallback: ToggleCallback) {
+    metadataTransitionCallback: ToggleCallback) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
     PREVALENCE_THRESHOLD_INPUT.addEventListener("input", ()=>{
       prevThresholdCallback(parseFloat(PREVALENCE_THRESHOLD_INPUT.value));
     });
-    GEO_INTRODUCTIONS_INPUT.addEventListener("input", ()=>{
-      geoIntroCallback(GEO_INTRODUCTIONS_INPUT.checked);
+    METADATA_TRANSITIONS_INPUT.addEventListener("input", ()=>{
+      metadataTransitionCallback(METADATA_TRANSITIONS_INPUT.checked);
     });
   }
 
@@ -231,7 +233,13 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null, peakPrevalence: number) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null, peakPrevalence: number,
+    hasMetadata: boolean, metadataField : string | null
+  ) {
+    METADATA_TRANSITIONS_CONTROL.classList.toggle("hidden", !hasMetadata);
+    if (metadataField !== null) {
+      METADATA_TRANSITIONS_FIELD.textContent = metadataField;
+    }
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     const pairsByDescendant: NodePair[] = [];
     const pct = Math.round(peakPrevalence * 100);

@@ -15,6 +15,7 @@ import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
+import { MccConfig } from '../mccconfig';
 
 
 
@@ -56,11 +57,11 @@ export class LineagesUI extends MccUI {
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
     const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
     const prevThresholdCallback: RANGE_CALLBACK_TYPE = (prevThreshold: number)=>this.coreData.updatePeakPrevalenceThreshold(prevThreshold);
-    const geoIntroCallback: ToggleCallback = (findGeo: boolean)=>{console.log(findGeo)};
+    const metadataTransitionCallback: ToggleCallback = (findTransitions: boolean)=>this.coreData.toggleMetadataTransitions(findTransitions);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, geoIntroCallback);
+    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -196,7 +197,10 @@ export class LineagesUI extends MccUI {
     this.nodeDetails.setData(highlightNode);
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
-    this.nodeSchematic.setData(nodePairs, rootNode, peakPrevalence);
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const hasMetadata = !!mccConfig.metadata;
+    const metadataField = mccConfig.metadata ? mccConfig.metadataField : null;
+    this.nodeSchematic.setData(nodePairs, rootNode, peakPrevalence, hasMetadata, metadataField);
     // this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
   }

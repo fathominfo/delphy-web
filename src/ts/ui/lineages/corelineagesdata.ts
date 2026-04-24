@@ -4,7 +4,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { UNSET } from "../common";
+import { UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
@@ -12,6 +12,7 @@ import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata
 import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
+import { MccConfig } from "../mccconfig";
 
 
 
@@ -53,6 +54,11 @@ export type ChartData = {
 }
 
 export type updateFunction = (_: ChartData)=>void;
+
+interface ParentMetadataType  {
+  node: number,
+  parentValue: string
+}
 
 
 const defaultChartData : ChartData = {
@@ -290,6 +296,11 @@ export class CoreLineagesData {
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }
+    this.setAutoNodeSelections(autoSelected);
+  }
+
+
+  private setAutoNodeSelections(autoSelected: number[]) : void {
     const already: boolean[] = [];
     this.selectedNodes.map(node=>already[node.index] = true);
     autoSelected.forEach(nodeIndex=>{
@@ -328,6 +339,51 @@ export class CoreLineagesData {
     this.selectNodesByImpact();
     if (this.selectionTreeData) {
       this.selectionTreeData.setData(this.selectedNodes);
+      this.setChartData();
+    }
+  }
+
+  toggleMetadataTransitions(yes: boolean) : void {
+    const pythia = this.pythia;
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    if (yes && pythia && mccConfig.metadata) {
+      // const metadata = mccConfig.metadata;
+      // const field = mccConfig.metadataField;
+      const nodeValues = mccConfig.getMetadataValues();
+      const summaryTree = this.summaryTree as SummaryTree;
+      const rootNode = summaryTree.getRootIndex();
+      const rootValue = nodeValues[rootNode];
+      const introductions: number[] = [];
+      const q: ParentMetadataType[] = [
+        {node: rootNode, parentValue: UNDEF}
+      ];
+      while (q.length > 0) {
+        const item: ParentMetadataType | undefined = q.shift();
+        if (item) {
+          const { node, parentValue } = item;
+          const nodeValue = nodeValues[node];
+          if (node === rootNode) {
+            // always include the root node
+            introductions.push(node);
+          }
+          if (nodeValue !== UNDEF && parentValue !== UNDEF && nodeValue !== parentValue) {
+            // we have a transition
+            introductions.push(node);
+          }
+          const leftChild = summaryTree.getLeftChildIndexOf(node);
+          if (leftChild !== UNSET) {
+            q.push({ node: leftChild, parentValue: nodeValue });
+            q.push({ node: summaryTree.getRightChildIndexOf(node), parentValue: nodeValue });
+          }
+        }
+      }
+      this.setAutoNodeSelections(introductions);
+
+    }
+    if (this.selectionTreeData) {
+      if (this.selectedNodes.length > 0) {
+        this.selectionTreeData.setData(this.selectedNodes);
+      }
       this.setChartData();
     }
   }
