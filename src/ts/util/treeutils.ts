@@ -1,6 +1,5 @@
-import {PhyloTree, Tree} from '../pythia/delphy_api';
+import { Tree} from '../pythia/delphy_api';
 import { UNSET } from '../ui/common';
-import { NodeSchematic } from '../ui/lineages/nodeschematic';
 
 export const getTipCounts = (tree: Tree) : number[] => {
   const size = tree.getSize(),
