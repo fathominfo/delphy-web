@@ -3,7 +3,7 @@ import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { getTipCounts, isTip } from "../../util/treeutils";
+import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
 import { UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
@@ -213,7 +213,54 @@ export class CoreLineagesData {
       });
     }
     const theNodes = hiConf.filter(node=>this.peakPrevalence[node] >= minPeak);
-    // console.log(hiConf, peaks, theNodes);
+    /*
+    with the selected nodes, build a tree. From there, evaluate
+    how many descendants each node has. If has only one descendant, remove
+    the descendant, unless that descendant has more than descendant.
+    We're trying to remove strings of only one descendant, but preserve
+    all branching points.
+    */
+    const reference: InheritanceNode = assembleInheritanceTree(tree, theNodes);
+    const schematic: InheritanceNode = assembleInheritanceTree(tree, theNodes);
+    const q = [schematic];
+    const DEBUG_NODES = [6018, 5051, 4445, 3383, 3850, 3804 ];
+    while (q.length > 0) {
+      const node: InheritanceNode | undefined = q.shift();
+      if (node) {
+        if (DEBUG_NODES.indexOf(node.index) >= 0) {
+          console.log(`
+            debug`, node)
+        }
+        if (node.children.length > 1) {
+          node.children.forEach(child=>q.push(child));
+        } else if (node.children.length === 1) {
+          const child = node.children[0];
+          if (child.children.length <= 1) {
+            node.children = child.children;
+            if (node.children.length === 1) {
+              /*
+              maybe the new array is also one child,
+              so put this item back in the queue
+              */
+              q.push(node);
+            }
+          } else {
+            node.children.forEach(child=>q.push(child));
+          }
+        }
+      }
+    }
+    console.log(reference, schematic);
+    theNodes.length = 0;
+    q.length = 0;
+    q.push(schematic);
+    while (q.length > 0) {
+      const node: InheritanceNode | undefined = q.shift();
+      if (node) {
+        theNodes.unshift(node.index);
+        node.children.forEach(child=>q.push(child));
+      }
+    }
     return theNodes;
   }
 
