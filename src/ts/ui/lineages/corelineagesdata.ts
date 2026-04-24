@@ -48,7 +48,8 @@ export type ChartData = {
   nodePairs: NodePair[],
   nodes: DisplayNode[],
   rootNode: TreeNode | null,
-  selectedRootIndex: number
+  selectedRootIndex: number,
+  peakPrevalence: number
 }
 
 export type updateFunction = (_: ChartData)=>void;
@@ -63,7 +64,8 @@ const defaultChartData : ChartData = {
   nodePairs: [],
   nodes: [],
   rootNode: null,
-  selectedRootIndex: UNSET
+  selectedRootIndex: UNSET,
+  peakPrevalence: UNSET
 };
 
 
@@ -235,9 +237,9 @@ export class CoreLineagesData {
       const summaryTree = this.summaryTree as SummaryTree;
       const minDate = this.getMinDate();
       const maxDate = pythia.maxDate;
-      const startTime = Date.now();
+      // const startTime = Date.now();
       const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
-      console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
+      // console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
       const introNodes = this.getGeoIntroNodes();
       autoSelected = influentialNodes.concat(introNodes);
     }
@@ -312,6 +314,7 @@ export class CoreLineagesData {
         chartData.rootNode = minimapData.root;
       }
       chartData.minDate = minDate;
+      chartData.peakPrevalence = this.peakPrevalenceThreshold;
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);

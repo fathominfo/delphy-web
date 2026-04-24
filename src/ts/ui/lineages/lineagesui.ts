@@ -184,8 +184,9 @@ export class LineagesUI extends MccUI {
   }
 
   update(chartData: ChartData): void {
-    const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
-      nodePairs, rootNode, selectedRootIndex } = chartData;
+    // const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
+    //   nodePairs, rootNode, selectedRootIndex } = chartData;
+    const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
@@ -195,7 +196,7 @@ export class LineagesUI extends MccUI {
     this.nodeDetails.setData(highlightNode);
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
-    this.nodeSchematic.setData(nodePairs, rootNode);
+    this.nodeSchematic.setData(nodePairs, rootNode, peakPrevalence);
     // this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
   }

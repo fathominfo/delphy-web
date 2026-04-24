@@ -6,6 +6,7 @@ import { TreeNode } from "./selectiontreedata";
 
 const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
 const PREVALENCE_THRESHOLD_INPUT = CONTROLS.querySelector("#lineages--peak-prevalence input") as HTMLInputElement;
+const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#lineages--peak-prevalence--readout") as HTMLSpanElement
 const GEO_INTRODUCTIONS_INPUT = CONTROLS.querySelector("#lineages--geo-introductions input") as HTMLInputElement;
 const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
 const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
@@ -230,9 +231,12 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null, peakPrevalence: number) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     const pairsByDescendant: NodePair[] = [];
+    const pct = Math.round(peakPrevalence * 100);
+    PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
+    PREVALENCE_THRESHOLD_INPUT.value = `${pct}`;
     pairs.forEach(pair=>{
       // index the mutations by the descendent
       pairsByDescendant[pair.descendant.index] = pair;
@@ -276,7 +280,6 @@ export class NodeSchematic {
       this.setSpacing();
     }
   }
-
 
   highlightNode(node: DisplayNode) : void {
     if (node.index !== this.highlightIndex) {
