@@ -205,44 +205,8 @@ export class CoreLineagesData {
       return missing || peak === undefined;
     }, false);
     if (anyMissing) {
-      /*
-      In the default calculations, the prevalence of child nodes is _excluded_ from
-      that of its ancestors. For this analysis, we want to include them, so build
-      a means of finding which rows we will need to sum up.
-      */
-      const inheritance = assembleInheritanceTree(tree, hiConf);
-      console.log(inheritance);
-      const parents = getParents(inheritance);
-      /* this will be easiest if we retrieve the data sorted according to inheritance */
-      const sorted = parents.map((pair: NodeParentIndex)=>pair.node);
-      // add back in the root
-      sorted.push(parents[parents.length-1].parent);
-      const nodePrevalenceData = pythia.getPopulationNodeDistribution(sorted, minDate, maxDate, tree);
-      /* pct for each series indexed by tree, series, date */
-      const { averages } = calculateAcrossTrees(nodePrevalenceData.series);
-      sorted.forEach((n, i)=>console.debug(n, averages[i].join()));
-      /*
-      For each node, find the closest ancestor, and add its prevalence to the ancestor's.
-      We do this in order so the results trickle up to the root.
-      */
-      console.debug(parents);
-      parents.forEach(({node, parent})=>{
-        const childIndex = sorted.indexOf(node);
-        const parentIndex = sorted.indexOf(parent);
-        const childSeries = averages[childIndex];
-        const parentSeries = averages[parentIndex];
-        childSeries.forEach((n, i)=>{
-          if (parent === 265 && i === 171) {
-            console.debug(`adding ${node} (${n})  to ${parent}  (${parentSeries[i]}) at index ${i}=>${parentSeries[i]+n}`);
-          }
-          parentSeries[i] += n;
-        });
-      });
-      console.debug(`
-        post adding`);
-      sorted.forEach((n, i)=>console.debug(n, averages[i].join()));
-      const peaks = averages.map((series: number[])=>Math.max.apply(null, series));
-      sorted.forEach((node, i)=>{
+      const peaks = pythia.getMaxPrevalence(hiConf, minDate, maxDate, tree);
+      hiConf.forEach((node, i)=>{
         this.peakPrevalence[node] = peaks[i];
       });
     }

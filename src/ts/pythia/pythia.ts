@@ -7,7 +7,7 @@ import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
-import { isTip } from '../util/treeutils';
+import { assembleInheritanceTree, getParents, isTip, NodeParentIndex } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
@@ -962,6 +962,80 @@ export class Pythia {
   }
 
 
+  /*
+  returns an array containing the average max prevalence across all base trees
+  for the nodes in `nodeIndices`
+  sorted according to `nodeIndices`
+  */
+  getMaxPrevalence(nodeIndices: number[], minDate: number, maxDate: number, summaryTree: SummaryTree) : number[] {
+    const treeCount = summaryTree.getNumBaseTrees(),
+      nodeCount = nodeIndices.length,
+      startDate = Math.floor(minDate-1),
+      treeMaxes: number[][] = Array(nodeCount).fill(new Array(treeCount)),
+      nodeIndexLookup: number[] = [];
+    nodeIndices.forEach((n,i)=>nodeIndexLookup[n] = i);
+    let range = maxDate - startDate + 1;
+    if (range >= TOO_MANY) range = TARGET;
+    if (treeCount > 0) {
+      // rather for each base tree of the MCC
+      //   for each node in the MCC
+      //     find the corresponding node in the base tree
+      //       inherit up as needed
+      //       calculate the max prevalence for each node
+      for (let t = 0; t < treeCount; t++) {
+        const tree = summaryTree.getBaseTree(t),
+          baseTreeIndex = t + this.kneeIndex,
+          popModel = this.popModelHist[baseTreeIndex],
+          baseTreeIndices = nodeIndices.map(mccNodeIndex=>summaryTree.getCorrespondingNodeInBaseTree(mccNodeIndex, t)),
+          deduped = baseTreeIndices.map((n, i)=>i === baseTreeIndices.lastIndexOf(n) ? n : UNSET),
+          /*
+          In the default calculations, the prevalence of child nodes is _excluded_ from
+          that of its ancestors. For this analysis, we want to include them, so build
+          a means of finding which rows we will need to sum up.
+          */
+          inheritance = assembleInheritanceTree(tree, deduped),
+          parents = getParents(inheritance),
+          /* this will be easiest if we retrieve the data sorted according to inheritance */
+          sorted = parents.map((pair: NodeParentIndex)=>pair.node);
+        // add back in the root
+        sorted.push(parents[parents.length-1].parent);
+        const nodePrevalenceOverTime = this.delphy.popModelProbeAncestorsOnTree(tree, popModel, sorted, startDate, maxDate, range);
+        /* get rid of the default node, we don't need it here */
+        nodePrevalenceOverTime.pop();
+        /*
+        For each node, find the closest ancestor, and add its prevalence to the ancestor's.
+        We do this in order so the results trickle up to the root.
+        */
+        parents.forEach(({node, parent})=>{
+          const childIndex = sorted.indexOf(node);
+          const parentIndex = sorted.indexOf(parent);
+          const childSeries = nodePrevalenceOverTime[childIndex];
+          const parentSeries = nodePrevalenceOverTime[parentIndex];
+          childSeries.forEach((n, i)=>{
+            parentSeries[i] += n;
+          });
+        });
+        /*
+        get the max for each node and save it
+        */
+        nodePrevalenceOverTime.map((arr, i)=>{
+          const max = Math.max.apply(null, arr);
+          const baseNode = sorted[i];
+          const baseNodeIndex = baseTreeIndices.indexOf(baseNode);
+          const mccNode = nodeIndices[baseNodeIndex];
+          const mccNodeIndex = nodeIndexLookup[mccNode];
+          treeMaxes[mccNodeIndex][t] = max;
+        });
+
+      }
+    }
+    // across all base trees, average the max prevalence for each node
+    const averaged = treeMaxes.map(arr=>{
+      const sum = arr.reduce((tot, n)=>tot+n, 0);
+      return sum / treeCount;
+    });
+    return averaged;
+  }
 
 
 
