@@ -18,6 +18,8 @@ import { MccConfig } from "../mccconfig";
 
 const DEFAULT_HI_CONFIDENCE = 0.9;
 const DEFAULT_PEAK_PREVALENCE = 0.05;
+const SELECTED_BY_PREVALENCE = 'prevalence';
+const SELECTED_BY_USER = 'curated';
 
 export type NodeHoverData = {
   indices: number[],
@@ -52,6 +54,7 @@ export type ChartData = {
   selectedRootIndex: number,
   peakPrevalence: number
 }
+
 
 export type updateFunction = (_: ChartData)=>void;
 
@@ -109,6 +112,7 @@ export class CoreLineagesData {
   */
   private rootNode : DisplayNode;
   private selectedNodes: DisplayNode[] = [];
+  private selectionReasons: Set<string>[] = [];
   private peakPrevalenceThreshold: number = DEFAULT_PEAK_PREVALENCE;
   private confidenceThreshold: number = DEFAULT_HI_CONFIDENCE;
 
@@ -272,15 +276,6 @@ export class CoreLineagesData {
 
 
 
-
-
-
-  getGeoIntroNodes() : number [] {
-    const theNodes: number[] = [];
-    return theNodes;
-  }
-
-
   selectNodesByImpact() : void {
     const peakThreshold = this.peakPrevalenceThreshold;
     const confidenceThreshold = this.confidenceThreshold
@@ -291,26 +286,77 @@ export class CoreLineagesData {
       const minDate = this.getMinDate();
       const maxDate = pythia.maxDate;
       // const startTime = Date.now();
-      const influentialNodes = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
+      autoSelected = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
       // console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
-      const introNodes = this.getGeoIntroNodes();
-      autoSelected = influentialNodes.concat(introNodes);
     }
-    this.setAutoNodeSelections(autoSelected);
+    this.setAutoNodeSelections(autoSelected, SELECTED_BY_PREVALENCE);
   }
 
 
-  private setAutoNodeSelections(autoSelected: number[]) : void {
+  getMetadataTransitionNodes(mccConfig: MccConfig) : number[] {
+    // const metadata = mccConfig.metadata;
+    // const field = mccConfig.metadataField;
+    const nodeValues = mccConfig.getMetadataValues();
+    const summaryTree = this.summaryTree as SummaryTree;
+    const rootNode = summaryTree.getRootIndex();
+    const introductions: number[] = [];
+    const q: ParentMetadataType[] = [
+      {node: rootNode, parentValue: UNDEF}
+    ];
+    while (q.length > 0) {
+      const item: ParentMetadataType | undefined = q.shift();
+      if (item) {
+        const { node, parentValue } = item;
+        const nodeValue = nodeValues[node];
+        if (node === rootNode) {
+          // always include the root node
+          introductions.push(node);
+        }
+        if (nodeValue !== UNDEF && parentValue !== UNDEF && nodeValue !== parentValue) {
+          // we have a transition
+          introductions.push(node);
+        }
+        const leftChild = summaryTree.getLeftChildIndexOf(node);
+        if (leftChild !== UNSET) {
+          q.push({ node: leftChild, parentValue: nodeValue });
+          q.push({ node: summaryTree.getRightChildIndexOf(node), parentValue: nodeValue });
+        }
+      }
+    }
+    return introductions;
+  }
+
+
+
+  private setAutoNodeSelections(autoSelected: number[], selectionSource: string) : void {
+    console.log(`adding automatic selections based on '${selectionSource}'`, autoSelected);
     const already: boolean[] = [];
     this.selectedNodes.map(node=>already[node.index] = true);
+    /* clear previous selections, in case we are altering the criteria here (like node confidence, etc. ) */
+    this.selectionReasons.forEach((reasons:Set<string>)=>{
+      reasons.delete(selectionSource);
+    });
     autoSelected.forEach(nodeIndex=>{
+      if (this.selectionReasons[nodeIndex] === undefined) {
+        this.selectionReasons[nodeIndex] = new Set();
+      }
+      this.selectionReasons[nodeIndex].add(selectionSource);
+    });
+    /* what nodes have reason to show up? */
+    const shouldShow: number[] = [];
+    this.selectionReasons.forEach((reasons, nodeIndex)=>{
+      if (reasons.size > 0) {
+        shouldShow.push(nodeIndex);
+      }
+    });
+    shouldShow.forEach(nodeIndex=>{
       if (already[nodeIndex] === undefined) {
         const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
         this.selectedNodes.push(nd);
       } else {
         delete already[nodeIndex];
       }
-    });
+    })
     /* delete and deactivate the ones we don't need anymore */
     for (let i = this.selectedNodes.length - 1; i >= 0; i--) {
       const dn = this.selectedNodes[i];
@@ -346,39 +392,18 @@ export class CoreLineagesData {
   toggleMetadataTransitions(yes: boolean) : void {
     const pythia = this.pythia;
     const mccConfig: MccConfig = this.sharedState.mccConfig;
-    if (yes && pythia && mccConfig.metadata) {
-      // const metadata = mccConfig.metadata;
-      // const field = mccConfig.metadataField;
-      const nodeValues = mccConfig.getMetadataValues();
-      const summaryTree = this.summaryTree as SummaryTree;
-      const rootNode = summaryTree.getRootIndex();
-      const rootValue = nodeValues[rootNode];
-      const introductions: number[] = [];
-      const q: ParentMetadataType[] = [
-        {node: rootNode, parentValue: UNDEF}
-      ];
-      while (q.length > 0) {
-        const item: ParentMetadataType | undefined = q.shift();
-        if (item) {
-          const { node, parentValue } = item;
-          const nodeValue = nodeValues[node];
-          if (node === rootNode) {
-            // always include the root node
-            introductions.push(node);
-          }
-          if (nodeValue !== UNDEF && parentValue !== UNDEF && nodeValue !== parentValue) {
-            // we have a transition
-            introductions.push(node);
-          }
-          const leftChild = summaryTree.getLeftChildIndexOf(node);
-          if (leftChild !== UNSET) {
-            q.push({ node: leftChild, parentValue: nodeValue });
-            q.push({ node: summaryTree.getRightChildIndexOf(node), parentValue: nodeValue });
-          }
-        }
+    if (yes) {
+      if (pythia && mccConfig.metadata && mccConfig.metadataField) {
+        const introductions = this.getMetadataTransitionNodes(mccConfig);
+        this.setAutoNodeSelections(introductions, `metadata:${mccConfig.metadataField}`);
+      } else {
+        console.debug(`somehow, we requested finding nodes by metadata transition…
+          …but there's no metadata available.  
+          `);
       }
-      this.setAutoNodeSelections(introductions);
-
+    } else {
+      /* find the nodes that were added by the transition, and clear them */
+      this.setAutoNodeSelections([], `metadata:${mccConfig.metadataField}`);
     }
     if (this.selectionTreeData) {
       if (this.selectedNodes.length > 0) {
@@ -596,6 +621,16 @@ export class CoreLineagesData {
       /* clicking on a node that's already there removes it */
       const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
       selection.unlock();
+      /*
+      We're assuming that if the user cleared this node, then they
+      don't want to see it, even if it was added due to metadata
+      transitions or it's a high impact node.
+      Note that this will not persist: if the user adjusts the
+      prevalence or confidence criteria, or toggles the metadata
+      display, if this node meets the new criteria, it will be shown
+      again. Should we add a `don't auto select this node again` option?
+      */
+      this.selectionReasons[nodeIndex].clear();
     } else {
       let selection: DisplayNode = this.highlightNode;
       if (nodeIndex !== this.highlightNode.index) {
@@ -614,6 +649,10 @@ export class CoreLineagesData {
       }
       selection.lock();
       this.selectedNodes.push(selection);
+      if (this.selectionReasons[nodeIndex] === undefined) {
+        this.selectionReasons[nodeIndex] = new Set();
+      }
+      this.selectionReasons[nodeIndex].add(SELECTED_BY_USER);
       /* prep the next hover */
       this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     }

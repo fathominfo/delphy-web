@@ -2,7 +2,7 @@ import { getCSSValue, UNSET } from "../common";
 import { Distribution } from "../distribution";
 import { NodeMetadataValues } from "../nodemetadata";
 
-const MAX_NODE_COUNT = 526;
+const MAX_NODE_COUNT = 1024;
 const NUMS_IN_USE: boolean[] = new Array(MAX_NODE_COUNT);
 NUMS_IN_USE.fill(false);
 
