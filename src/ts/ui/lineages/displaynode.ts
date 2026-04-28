@@ -2,7 +2,7 @@ import { getCSSValue, UNSET } from "../common";
 import { Distribution } from "../distribution";
 import { NodeMetadataValues } from "../nodemetadata";
 
-const MAX_NODE_COUNT = 1024;
+const MAX_NODE_COUNT = 18_277; //Math.pow(26, 3) + Math.pow(26, 2) + 26 - 1;
 const NUMS_IN_USE: boolean[] = new Array(MAX_NODE_COUNT);
 NUMS_IN_USE.fill(false);
 
@@ -88,23 +88,28 @@ export class DisplayNode {
       this.name = "Root";
       this.label = "Root";
       this.mrcaName = "";
+      this.className = this.name.toLowerCase() || '';
     } else if (isInferred) {
       // console.log("set data isInferred");
       // if (this.name === "") {
       this.name = "MRCA";
       this.label = "M";
+      this.className = this.name.toLowerCase() || '';
       // }
     } else if (index === UNSET || index === NULL_NODE_CODE) {
       this.name = "";
       this.label = this.name;
       this.mrcaName = "";
+      this.className = this.name.toLowerCase() || '';
     } else {
-      this.name = String.fromCharCode(ASCII_BASE + this.nameIndex);
+      this.name = getName(this.nameIndex);
       this.label = this.name;
       this.mrcaName = "";
+      const classLetter = String.fromCharCode(ASCII_BASE + (this.nameIndex % 12));
+      this.className = classLetter.toLowerCase() || '';
     }
     this.index = index;
-    this.className = this.name.toLowerCase() || '';
+
     this.generationsFromRoot = generationsFromRoot;
     this.isInferred = isInferred;
     this.isRoot = isRoot;
@@ -187,4 +192,39 @@ const getNextSelectionClass = ():number=>{
   // console.log(`getNextNameNum(${ available[0] })`);
   return available[0];
 }
+
+
+const getName = (n:number): string => {
+  let s = '';
+  while (n >= 26) {
+    s = String.fromCharCode(ASCII_BASE + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  s = String.fromCharCode(ASCII_BASE + n) + s;
+  return s;
+}
+
+
+// const testIt = (expected:string, n:number)=>{
+//   const s = getName(n);
+//   console.log(`${n}: ${ s === expected ? 'OK': ' '} ${expected} ${ s !== expected ? s: ''}`);
+// }
+
+// testIt('A', 0);
+// testIt('Z', 25);
+// testIt('AA', 26);
+// testIt('AB', 27);
+// testIt('AZ', 51);
+// testIt('BA', 52);
+// testIt('YA', 25 * 26);
+// testIt('ZA', 26 * 26);
+// testIt('ZZ', 26 * 26 + 25);
+// testIt('AAA', 27 * 26);
+// testIt('ABA', 28 * 26);
+// testIt('AZZ', 52 * 26 + 25);
+// testIt('BAA', 53 * 26);
+// testIt('ZAA', (26 * 26 + 1) * 26);
+// testIt('ZAZ', (26 * 26 + 1) * 26 + 25);
+// testIt('ZZZ', 26 * 26 * 26 + 26 * 26 + 25);
+
 
