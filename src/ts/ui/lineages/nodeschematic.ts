@@ -58,7 +58,6 @@ class TreeNodeDisplay {
   textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
   textLabelHeight: number = TEXT_LABEL_HEIGHT;
   isCollapsed = false;
-  isHidden = false;
   isTip = false;
 
   constructor(src: TreeNode, mutCount: number,
@@ -89,6 +88,7 @@ class TreeNodeDisplay {
       CAR_CONTROLS_EXPAND_INPUT.checked = !this.isCollapsed;
       CONTAINER.appendChild(CAR_CONTROLS);
       CONTAINER.appendChild(this.nameLabel);
+      console.log(`highlighting ${this.node.index} ${CAR_CONTROLS_EXPAND_INPUT.checked}`);
     });
   }
 
@@ -173,7 +173,9 @@ export class NodeSchematic {
   highlightIndex: number = UNSET;
   nodeHighlightCallback: HoverCallback;
   metadataTransitionCallback: MetadataToggleCallback;
-  rootNode: TreeNodeDisplay | null = null;
+  pairsByDescendant: NodePair[] = [];
+  rootNode: TreeNode | null = null;
+  rootNodeDisplay: TreeNodeDisplay | null = null;
   nodes: TreeNodeDisplay[] = [];
   tipCount = 0;
   stepCount = 0;
@@ -209,7 +211,12 @@ export class NodeSchematic {
       dismissNodeCallback(this.highlightIndex);
     });
     CAR_CONTROLS_EXPAND_INPUT.addEventListener("input", ()=>{
-      //
+      const node = this.nodes.filter(display=>display.node.index === this.highlightIndex)[0];
+      if (node) {
+        node.isCollapsed = !CAR_CONTROLS_EXPAND_INPUT.checked;
+        console.log(`node ${this.highlightIndex} is collapsed: ${ node.isCollapsed }, is checked: ${CAR_CONTROLS_EXPAND_INPUT.checked}`)
+        this.setLayout();
+      }
     });
   }
 
@@ -307,33 +314,38 @@ export class NodeSchematic {
     We can traverse the entire tree by traversing the children of each node.
   */
   setData(pairs: NodePair[], rootNode: TreeNode | null) {
-
-
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
-    const pairsByDescendant: NodePair[] = [];
+    this.rootNode = rootNode;
+    this.pairsByDescendant = [];
     pairs.forEach(pair=>{
       // index the mutations by the descendent
-      pairsByDescendant[pair.descendant.index] = pair;
+      this.pairsByDescendant[pair.descendant.index] = pair;
     });
+    this.setLayout();
+  }
+
+  setLayout() {
     const lookup: TreeNodeDisplay[] = [];
+    const previous: TreeNodeDisplay[] = [];
+    this.nodes.forEach(tnd=>previous[tnd.node.index] = tnd);
     this.tipCount = 0;
     this.stepCount = 0;
     this.nodes.length = 0;
     let maxTipPlacement = Number.MIN_SAFE_INTEGER;
     let minTipPlacement = Number.MAX_SAFE_INTEGER;
     this.maxGenerations = 0;
-    if (rootNode) {
-      const q = [rootNode];
+    if (this.rootNode) {
+      const q = [this.rootNode];
       while (q.length > 0) {
         const treeNode = q.shift() as TreeNode;
         const node = treeNode.node;
+        console.log(`handling ${node.index} ${node.label}`);
         this.maxGenerations = Math.max(this.maxGenerations, treeNode.stepsFromRoot);
         if (Number.isFinite(treeNode.tipPlacement)) {
           maxTipPlacement = Math.max(maxTipPlacement, treeNode.tipPlacement);
           minTipPlacement = Math.min(minTipPlacement, treeNode.tipPlacement);
         }
-        treeNode.children.forEach(tn=>q.push(tn));
-        const pair = pairsByDescendant[node.index];
+        const pair = this.pairsByDescendant[node.index];
         let mutationCount = 0;
         let relationType: NodeRelationType | typeof UNSET = UNSET;
         if (pair) {// no pair for root
@@ -344,16 +356,25 @@ export class NodeSchematic {
         if (treeNode.parent) {
           parent = lookup[treeNode.parent.node.index];
         }
-        const tnd: TreeNodeDisplay = new TreeNodeDisplay(treeNode,
-          mutationCount, relationType, parent, this.nodeHighlightCallback);
+        let tnd: TreeNodeDisplay = previous[treeNode.node.index];
+        if (!tnd) {
+          tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent, this.nodeHighlightCallback);
+        }
         this.nodes.push(tnd);
+        if (tnd.isCollapsed) {
+          console.log(`    ${tnd.node.label} is collapsed`, tnd.node.childCount);
+        }
+        if (!tnd.isCollapsed) {
+          treeNode.children.forEach(tn=>q.push(tn));
+        }
         lookup[node.index] = tnd;
       }
       this.tipRange = maxTipPlacement - minTipPlacement;
       this.rootPositon = maxTipPlacement / this.tipRange;
-      this.setSpacing();
+      this.render();
     }
   }
+
 
   highlightNode(node: DisplayNode) : void {
     if (node.index !== this.highlightIndex) {
