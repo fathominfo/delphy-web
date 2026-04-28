@@ -1,6 +1,6 @@
 import { PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { HoverCallback, MetadataToggleCallback, NodePair, NodeRelationType } from "./lineagescommon";
+import { HoverCallback, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
@@ -16,6 +16,13 @@ const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
 const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
 const MUTATION_COUNT_TEMPLATE = CONTAINER.querySelector(".mut-count") as SVGGElement;
 const CONNECTOR_TEMPLATE = CONTAINER.querySelector(".connector") as SVGLineElement;
+const CAR_CONTROLS = CONTAINER.querySelector("#subway--car-actions") as HTMLDivElement;
+const CAR_CONTROLS_RECT = CAR_CONTROLS.querySelector("#subway--car-action-container") as SVGRectElement;
+const CAR_CONTROLS_DISMISS  = CAR_CONTROLS.querySelector("#subway--car-dismiss--fo") as SVGElement;
+const CAR_CONTROLS_EXPAND = CAR_CONTROLS.querySelector("#subway--car-expansion--fo") as SVGElement;
+const CAR_CONTROLS_EXPAND_INPUT = CAR_CONTROLS_EXPAND.querySelector("input") as HTMLInputElement;
+CAR_CONTROLS.remove();
+
 
 [LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE, CONNECTOR_TEMPLATE].forEach(el=>el.remove());
 
@@ -50,6 +57,9 @@ class TreeNodeDisplay {
   connector: SVGPathElement;
   textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
   textLabelHeight: number = TEXT_LABEL_HEIGHT;
+  isCollapsed = false;
+  isHidden = false;
+  isTip = false;
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
@@ -65,10 +75,21 @@ class TreeNodeDisplay {
     this.mutLabel = MUTATION_COUNT_TEMPLATE.cloneNode(true) as SVGGElement;
     this.parent = parent;
     this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
+    this.isTip = src.children.length === 0;
 
     const labelBackground = this.nameLabel.querySelector("rect") as SVGRectElement;
-    labelBackground.addEventListener("pointerenter", ()=>nodeHighlightCallback(this.node.index, UNSET, null));
-    labelBackground.addEventListener("pointerleave", ()=>nodeHighlightCallback(UNSET, UNSET, null));
+    labelBackground.addEventListener("pointerenter", ()=>{
+      nodeHighlightCallback(this.node.index, UNSET, null);
+      CAR_CONTROLS_RECT.setAttribute("width", `${this.textLabelWidth + 30}`);
+      CAR_CONTROLS_RECT.setAttribute("x", `${ -6 - this.textLabelWidth / 2}`);
+      CAR_CONTROLS_DISMISS.setAttribute("x", `${ this.textLabelWidth / 2 + 8}`);
+      CAR_CONTROLS_EXPAND.setAttribute("x", `${ this.textLabelWidth / 2 + 8}`);
+      CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`)
+      CAR_CONTROLS_EXPAND.classList.toggle("hidden", this.isTip);
+      CAR_CONTROLS_EXPAND_INPUT.checked = !this.isCollapsed;
+      CONTAINER.appendChild(CAR_CONTROLS);
+      CONTAINER.appendChild(this.nameLabel);
+    });
   }
 
   position(_width: number, height: number, xSpacing: number, ySpacing: number) {
@@ -168,7 +189,9 @@ export class NodeSchematic {
 
   constructor(nodeHighlightCallback: HoverCallback,
     prevThresholdCallback: PREVALENCE_CALLBACK_TYPE,
-    metadataTransitionCallback: MetadataToggleCallback) {
+    metadataTransitionCallback: MetadataToggleCallback,
+    dismissNodeCallback: NodeCallback
+  ) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
     PREVALENCE_THRESHOLD_SLIDER.addEventListener("input", ()=>{
@@ -178,6 +201,16 @@ export class NodeSchematic {
       prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
     });
     this.metadataTransitionCallback = metadataTransitionCallback;
+    CAR_CONTROLS.addEventListener("pointerleave", ()=>{
+      nodeHighlightCallback(UNSET, UNSET, null);
+      CAR_CONTROLS.remove();
+    });
+    CAR_CONTROLS_DISMISS.addEventListener("click", ()=>{
+      dismissNodeCallback(this.highlightIndex);
+    });
+    CAR_CONTROLS_EXPAND_INPUT.addEventListener("input", ()=>{
+      //
+    });
   }
 
 

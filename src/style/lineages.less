@@ -367,7 +367,7 @@ details {
 // ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝    ╚══════╝╚═╝╚══════╝   ╚═╝
 
 
-#lineages--center {
+.lineages--center {
   display: flex;
   flex-direction: column;
   width: 200px;
@@ -974,7 +974,7 @@ details {
 /* LINEAGES / Subway diagram */
 
 #subway {
-
+  position: relative;
 
   height: calc(100% - var(--view-header-height) );
 
@@ -1050,8 +1050,28 @@ details {
 
 }
 
+#subway--car-action-container {
+  fill: white;
+  fill-opacity: 0.6;
+  stroke: #aaa;
+  rx: 7;
+  ry: 7;
+}
 
 
+// #subway--car-dismiss {
+// }
+
+#subway--car-expansion {
+  .expanded { display: none; }
+  &:has(input:checked) {
+    .expanded { display: inline; }
+    .collapsed { display: none; }
+  }
+  input {
+    appearance: none;
+  }
+}
 
 
 
