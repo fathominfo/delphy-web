@@ -1,8 +1,8 @@
 import { ColorOption, COLOR_CONF, COLOR_METADATA,
   CONFIDENCE_DEFAULT, ColorDict, Screens, NavigateFunctionType, UNDEF,
   UNSET,
-  RANGE_CALLBACK_TYPE,
-  LISTENER_CALLBACK_TYPE} from './common';
+  LISTENER_CALLBACK_TYPE,
+  RANGE_CALLBACK_TYPE} from './common';
 import { Metadata} from './metadata';
 import { ColorChooser, UNDEF_COLOR } from './colorchooser';
 import { NodeMetadata, FieldTipCount, ColumnSummary } from './nodemetadata';
@@ -211,18 +211,18 @@ export class MccConfig {
     return this.nodeMetadata.getColumnSummary(name);
   }
 
-  getMetadataValues() : string [] {
+  getMetadataValues(field=this.metadataField) : string [] {
     if (!this.nodeMetadata) {
       throw new Error("metadata is not set");
       // console.warn("metadata is not set");
       // return [];
     }
-    if (this.metadataField === null) {
+    if (field === null) {
       throw new Error("metadata field has not been defined");
       // console.warn("metadata field has not been defined");
       // return [];
     }
-    return this.nodeMetadata.getNodeValues(this.metadataField);
+    return this.nodeMetadata.getNodeValues(field);
   }
 
   getMetadataTipCounts() : FieldTipCount[] {

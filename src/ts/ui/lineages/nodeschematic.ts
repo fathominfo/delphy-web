@@ -1,15 +1,16 @@
-import { RANGE_CALLBACK_TYPE, UNSET } from "../common";
+import { PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { HoverCallback, NodePair, NodeRelationType, ToggleCallback } from "./lineagescommon";
+import { HoverCallback, MetadataToggleCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
 const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
-const PREVALENCE_THRESHOLD_INPUT = CONTROLS.querySelector("#lineages--peak-prevalence input") as HTMLInputElement;
+const PREVALENCE_THRESHOLD_TOGGLE = CONTROLS.querySelector("#lineages--peak-prevalence-toggle input") as HTMLInputElement;
+const PREVALENCE_THRESHOLD_SLIDER = CONTROLS.querySelector("#lineages--peak-prevalence-selector") as HTMLInputElement;
 const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#lineages--peak-prevalence--readout") as HTMLSpanElement
-const METADATA_TRANSITIONS_CONTROL = CONTROLS.querySelector("#lineages--metadata-transitions") as HTMLDivElement;
-const METADATA_TRANSITIONS_INPUT = METADATA_TRANSITIONS_CONTROL.querySelector("#lineages--metadata-transitions input") as HTMLInputElement;
-const METADATA_TRANSITIONS_FIELD = METADATA_TRANSITIONS_CONTROL.querySelector("#lineages--metadata-transitions #lineages--metadata-field") as HTMLSpanElement;
+const METADATA_TRANSITION_TEMPLATE = CONTROLS.querySelector(".lineages--metadata-transitions") as HTMLDivElement;
+const METADATA_PARENT = METADATA_TRANSITION_TEMPLATE.parentNode as HTMLDivElement;
+METADATA_TRANSITION_TEMPLATE.remove();
 const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
 const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
 const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
@@ -150,6 +151,7 @@ export class NodeSchematic {
   hasMRCA: boolean;
   highlightIndex: number = UNSET;
   nodeHighlightCallback: HoverCallback;
+  metadataTransitionCallback: MetadataToggleCallback;
   rootNode: TreeNodeDisplay | null = null;
   nodes: TreeNodeDisplay[] = [];
   tipCount = 0;
@@ -161,19 +163,21 @@ export class NodeSchematic {
   maxGenerations = UNSET;
   tipRange = UNSET;
   rootPositon = UNSET;
+  metadataFieldCount = 0;
 
 
   constructor(nodeHighlightCallback: HoverCallback,
-    prevThresholdCallback: RANGE_CALLBACK_TYPE,
-    metadataTransitionCallback: ToggleCallback) {
+    prevThresholdCallback: PREVALENCE_CALLBACK_TYPE,
+    metadataTransitionCallback: MetadataToggleCallback) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    PREVALENCE_THRESHOLD_INPUT.addEventListener("input", ()=>{
-      prevThresholdCallback(parseFloat(PREVALENCE_THRESHOLD_INPUT.value));
+    PREVALENCE_THRESHOLD_SLIDER.addEventListener("input", ()=>{
+      prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
     });
-    METADATA_TRANSITIONS_INPUT.addEventListener("input", ()=>{
-      metadataTransitionCallback(METADATA_TRANSITIONS_INPUT.checked);
+    PREVALENCE_THRESHOLD_TOGGLE.addEventListener("input", ()=>{
+      prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
     });
+    this.metadataTransitionCallback = metadataTransitionCallback;
   }
 
 
@@ -228,23 +232,52 @@ export class NodeSchematic {
     }
   }
 
+
+  setPrevalenceSelectors(prevalenceActive: boolean, peakPrevalence: number) : void {
+    const pct = Math.round(peakPrevalence * 100);
+    PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
+    PREVALENCE_THRESHOLD_SLIDER.value = `${pct}`;
+  }
+
+  setMetadataSelectors(metadataFields : string[]) : void {
+    if (metadataFields.length !== this.metadataFieldCount) {
+      const fieldsChecked: {[_: string]: boolean} = {};
+      METADATA_PARENT.querySelectorAll(".lineages--metadata-transitions").forEach((ele:Element)=>{
+        const input = ele.querySelector("input") as HTMLInputElement;
+        const fieldSpan = ele.querySelector(".lineages--metadata-field") as HTMLSpanElement;
+        const fieldName = (fieldSpan.textContent || '').toLowerCase();
+        const checked = input.checked;
+        fieldsChecked[fieldName] = checked;
+        ele.remove();
+      });
+      metadataFields.forEach((mdField:string)=>{
+        if (mdField.toLowerCase() === "id" || mdField.toLowerCase() === "accession" ) return;
+        const mdDiv = METADATA_TRANSITION_TEMPLATE.cloneNode(true) as HTMLDivElement;
+        const input = mdDiv.querySelector("input") as HTMLInputElement;
+        const fieldSpan = mdDiv.querySelector(".lineages--metadata-field") as HTMLSpanElement;
+        fieldSpan.textContent = mdField;
+        const wasChecked = fieldsChecked[mdField.toLowerCase()];
+        input.checked = !!wasChecked;
+        input.addEventListener("input", ()=>{
+          this.metadataTransitionCallback(input.checked, mdField);
+        });
+        METADATA_PARENT.appendChild(mdDiv);
+      });
+      this.metadataFieldCount = metadataFields.length;
+    }
+  }
+
+
   /*
   @param pairs: contains mutation data for each track that we will display.
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null, peakPrevalence: number,
-    hasMetadata: boolean, metadataField : string | null
-  ) {
-    METADATA_TRANSITIONS_CONTROL.classList.toggle("hidden", !hasMetadata);
-    if (metadataField !== null) {
-      METADATA_TRANSITIONS_FIELD.textContent = metadataField;
-    }
+  setData(pairs: NodePair[], rootNode: TreeNode | null) {
+
+
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     const pairsByDescendant: NodePair[] = [];
-    const pct = Math.round(peakPrevalence * 100);
-    PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
-    PREVALENCE_THRESHOLD_INPUT.value = `${pct}`;
     pairs.forEach(pair=>{
       // index the mutations by the descendent
       pairsByDescendant[pair.descendant.index] = pair;

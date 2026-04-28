@@ -41,7 +41,8 @@ export class NodePair {
 export type HoverCallback = (nodeIndex: number, dateIndex: number, mutation: Mutation|null)=>void;
 export type NodeCallback = (nodeIndex: number)=>void;
 export type OpenMutationPageFncType = (mutation?: Mutation) => void;
-export type ToggleCallback = (isTrue: boolean)=>void;
+// export type ToggleCallback = (isTrue: boolean)=>void;
+export type MetadataToggleCallback = (isTrue: boolean, fieldName: string)=>void;
 export type KeyEventHandler = (event: KeyboardEvent)=>void;
 
 export const MATCH_CLASS = "matching";

@@ -152,16 +152,20 @@
               </div>
             </div>
             <div id="lineages--schematic-controls">
-              <label id="lineages--peak-prevalence">
-                <span>Select by minimum peak prevalence</span>
-                <br/>
-                <input type="range" min="0" max="100" value="5" />
-                <span id="lineages--peak-prevalence--readout"></span>
-              </label>
-              <br/>
-              <label id="lineages--metadata-transitions">
-                <span>Select <span id="lineages--metadata-field">Geo</span> introductions</span>
+              <div id="lineages--peak-prevalence">
+                <label id="lineages--peak-prevalence-toggle">
+                  <input type="checkbox" checked />
+                  <span>Select by minimum peak prevalence</span>
+                </label>
+                <div>
+                  <input id="lineages--peak-prevalence-selector" type="range" min="0" max="100" value="5" />
+                  <span id="lineages--peak-prevalence--readout"></span>
+                </div>
+              </div>
+
+              <label class="lineages--metadata-transitions">
                 <input type="checkbox"  />
+                <span>Select <span class="lineages--metadata-field"></span> introductions</span>
               </label>
 
             </div>

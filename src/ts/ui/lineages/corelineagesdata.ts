@@ -293,10 +293,10 @@ export class CoreLineagesData {
   }
 
 
-  getMetadataTransitionNodes(mccConfig: MccConfig) : number[] {
+  getMetadataTransitionNodes(mccConfig: MccConfig, field: string) : number[] {
     // const metadata = mccConfig.metadata;
     // const field = mccConfig.metadataField;
-    const nodeValues = mccConfig.getMetadataValues();
+    const nodeValues = mccConfig.getMetadataValues(field);
     const summaryTree = this.summaryTree as SummaryTree;
     const rootNode = summaryTree.getRootIndex();
     const introductions: number[] = [];
@@ -371,9 +371,16 @@ export class CoreLineagesData {
   /*
   expects a number 0-100
   */
-  updatePeakPrevalenceThreshold(minPeak: number) : void {
+  updatePeakPrevalenceThreshold(yes: boolean, minPeak: number) : void {
     this.peakPrevalenceThreshold = minPeak / 100;
-    this.selectNodesByImpact();
+    if (yes) {
+      this.selectNodesByImpact();
+    } else {
+      this.setAutoNodeSelections([], SELECTED_BY_PREVALENCE);
+      if (this.selectedNodes.length === 0) {
+        this.selectedNodes.push(this.rootNode);
+      }
+    }
     if (this.selectionTreeData) {
       this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
@@ -389,13 +396,14 @@ export class CoreLineagesData {
     }
   }
 
-  toggleMetadataTransitions(yes: boolean) : void {
+  toggleMetadataTransitions(yes: boolean, field: string) : void {
     const pythia = this.pythia;
     const mccConfig: MccConfig = this.sharedState.mccConfig;
+    if (!mccConfig || !mccConfig.metadata) return
     if (yes) {
-      if (pythia && mccConfig.metadata && mccConfig.metadataField) {
-        const introductions = this.getMetadataTransitionNodes(mccConfig);
-        this.setAutoNodeSelections(introductions, `metadata:${mccConfig.metadataField}`);
+      if (pythia && mccConfig.metadata.getFields().includes(field)) {
+        const introductions = this.getMetadataTransitionNodes(mccConfig, field);
+        this.setAutoNodeSelections(introductions, `metadata:${field}`);
       } else {
         console.debug(`somehow, we requested finding nodes by metadata transition…
           …but there's no metadata available.  
@@ -403,7 +411,7 @@ export class CoreLineagesData {
       }
     } else {
       /* find the nodes that were added by the transition, and clear them */
-      this.setAutoNodeSelections([], `metadata:${mccConfig.metadataField}`);
+      this.setAutoNodeSelections([], `metadata:${field}`);
     }
     if (this.selectionTreeData) {
       if (this.selectedNodes.length > 0) {

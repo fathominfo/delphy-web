@@ -1,10 +1,10 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MccUI } from '../mccui';
-import { DataResolveType, RANGE_CALLBACK_TYPE, Screens, UNSET } from '../common';
+import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
-  ToggleCallback} from './lineagescommon';
+  MetadataToggleCallback } from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 // import { NodeTimelines } from './nodetimelines';
 // import { NodePrevalenceChart } from './nodeprevalencechart'
@@ -56,8 +56,8 @@ export class LineagesUI extends MccUI {
     };
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
     const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
-    const prevThresholdCallback: RANGE_CALLBACK_TYPE = (prevThreshold: number)=>this.coreData.updatePeakPrevalenceThreshold(prevThreshold);
-    const metadataTransitionCallback: ToggleCallback = (findTransitions: boolean)=>this.coreData.toggleMetadataTransitions(findTransitions);
+    const prevThresholdCallback: PREVALENCE_CALLBACK_TYPE = (usePrev: boolean, prevThreshold: number)=>this.coreData.updatePeakPrevalenceThreshold(usePrev, prevThreshold);
+    const metadataTransitionCallback: MetadataToggleCallback = (findTransitions: boolean, fieldName: string)=>this.coreData.toggleMetadataTransitions(findTransitions, fieldName);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
@@ -127,6 +127,9 @@ export class LineagesUI extends MccUI {
   activate() {
     super.activate();
     this.coreData.activate();
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
+    this.nodeSchematic.setMetadataSelectors(metadataFields);
     // const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
   }
 
@@ -156,6 +159,9 @@ export class LineagesUI extends MccUI {
       this.previousConfidence = this.sharedState.mccConfig.confidenceThreshold;
       this.coreData.updateConfidenceThreshold(this.previousConfidence);
     }
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
+    this.nodeSchematic.setMetadataSelectors(metadataFields);
   }
 
 
@@ -197,10 +203,8 @@ export class LineagesUI extends MccUI {
     this.nodeDetails.setData(highlightNode);
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
-    const mccConfig: MccConfig = this.sharedState.mccConfig;
-    const hasMetadata = !!mccConfig.metadata;
-    const metadataField = mccConfig.metadata ? mccConfig.metadataField : null;
-    this.nodeSchematic.setData(nodePairs, rootNode, peakPrevalence, hasMetadata, metadataField);
+    this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
+    this.nodeSchematic.setData(nodePairs, rootNode);
     // this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
   }
