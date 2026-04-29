@@ -671,7 +671,8 @@ export class CoreLineagesData {
   dismissNode(nodeIndex: number) : void {
     const index = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
     const node = this.selectedNodes.splice(index, 1)[0];
-    this.selectionReasons[nodeIndex].delete(SELECTED_BY_USER);
+    // this.selectionReasons[nodeIndex].delete(SELECTED_BY_USER);
+    this.selectionReasons[nodeIndex].clear();
     node.deactivate();
     /* reset the hover */
     this.hoverNode(UNSET, UNSET);

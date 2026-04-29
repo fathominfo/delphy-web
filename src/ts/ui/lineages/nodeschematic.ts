@@ -235,6 +235,8 @@ export class NodeSchematic {
     });
     CAR_CONTROLS_DISMISS.addEventListener("click", ()=>{
       dismissNodeCallback(this.highlightIndex);
+      this.highlightIndex = UNSET;
+      this.setHighlightNode();
     });
     CAR_CONTROLS_EXPAND_INPUT.addEventListener("input", ()=>{
       const node = this.nodes.filter(display=>display.node.index === this.highlightIndex)[0];
