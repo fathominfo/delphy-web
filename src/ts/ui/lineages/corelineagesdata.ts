@@ -4,7 +4,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { UNDEF, UNSET } from "../common";
+import { numericSort, numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
@@ -20,6 +20,9 @@ const DEFAULT_HI_CONFIDENCE = 0.9;
 const DEFAULT_PEAK_PREVALENCE = 0.05;
 const SELECTED_BY_PREVALENCE = 'prevalence';
 const SELECTED_BY_USER = 'curated';
+
+const SCHEMATIC_MIN_SIZE = 5;
+
 
 export type NodeHoverData = {
   indices: number[],
@@ -193,14 +196,38 @@ export class CoreLineagesData {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
       this.peakPrevalence.length = 0;
+      this.setNodePeakPrevalence(this.confidenceThreshold);
+      this.autoSelectPeakPrevalence();
       this.selectNodesByImpact();
       this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
     }
   }
 
-  getHighImpactConfidentNodes(pythia: Pythia, tree: SummaryTree,
-    minDate: number, maxDate: number, minPeak: number, minConf: number) : number [] {
+  setNodePeakPrevalence(minConf: number) {
+    const pythia = this.pythia;
+    if (pythia) {
+      const hiConf: number[] = this.getConfidentInnerNodes(minConf);
+      /*
+      do we have cached values for each node?
+      */
+      const anyMissing: boolean = hiConf.reduce((missing: boolean, nodeIndex: number)=>{
+        const peak = this.peakPrevalence[nodeIndex];
+        return missing || peak === undefined;
+      }, false);
+      if (anyMissing) {
+        const tree = this.summaryTree as SummaryTree;
+        const minDate = this.getMinDate();
+        const maxDate = pythia.maxDate;
+        const peaks = pythia.getMaxPrevalence(hiConf, minDate, maxDate, tree);
+        hiConf.forEach((node, i)=>{
+          this.peakPrevalence[node] = peaks[i];
+        });
+      }
+    }
+  }
+
+  getConfidentInnerNodes(minConf: number): number[] {
     const nodeCount = this.nodeConfidence.length;
     const tipCount = (nodeCount + 1) / 2;
     const hiConf: number[] = [];
@@ -209,38 +236,44 @@ export class CoreLineagesData {
         hiConf.push(i);
       }
     }
-    /*
-    do we have cached values for each node?
-    */
-    const anyMissing: boolean = hiConf.reduce((missing: boolean, nodeIndex: number)=>{
-      const peak = this.peakPrevalence[nodeIndex];
-      return missing || peak === undefined;
-    }, false);
-    if (anyMissing) {
-      const peaks = pythia.getMaxPrevalence(hiConf, minDate, maxDate, tree);
-      hiConf.forEach((node, i)=>{
-        this.peakPrevalence[node] = peaks[i];
-      });
-    }
-    const theNodes = hiConf.filter(node=>this.peakPrevalence[node] >= minPeak);
-    /*
-    with the selected nodes, build a tree. From there, evaluate
-    how many descendants each node has. If has only one descendant, remove
-    the descendant, unless that descendant has more than descendant.
-    We're trying to remove strings of only one descendant, but preserve
-    all branching points.
-    */
-    const reference: InheritanceNode = assembleInheritanceTree(tree, theNodes);
+    return hiConf;
+  }
+
+
+  getHighImpactConfidentNodes(minPeak: number, minConf: number) : number [] {
+    const tree = this.summaryTree as SummaryTree;
+    const hiConf: number[] = this.getConfidentInnerNodes(minConf);
+    let theNodes = hiConf.filter(node=>this.peakPrevalence[node] >= minPeak);
+    /* build a tree for the selected nodes */
     const schematic: InheritanceNode = assembleInheritanceTree(tree, theNodes);
+    this.trimLongBranches(schematic);
+    theNodes = this.getNodesInTree(schematic);
+    return theNodes;
+  }
+
+
+  /*
+  In the tree, we don't want to see many nodes in a row that only
+  have 1 child each. For example, in a structure like
+
+  node 0 +
+          +-- node 1 --- node 2 --- node 3 --- node 4 +
+                                                      + node 5
+
+  node 2 and node 3 aren't adding any new information. Node 1 is important
+  as the first child of the branching point, and Node 4 is important as the
+  last node before the branching point. In order to eliminate nodes like
+  2 and 3, evaluate how many descendants each node has.
+  If has only one descendant, check whether that descendant is a branching
+  point (that is, check that the descendant in turn has more than one
+  descendant). If it has one or none, remove it.
+  */
+
+  trimLongBranches(schematic: InheritanceNode) : void {
     const q = [schematic];
-    const DEBUG_NODES = [6018, 5051, 4445, 3383, 3850, 3804 ];
     while (q.length > 0) {
       const node: InheritanceNode | undefined = q.shift();
       if (node) {
-        if (DEBUG_NODES.indexOf(node.index) >= 0) {
-          console.log(`
-            debug`, node)
-        }
         if (node.children.length > 1) {
           node.children.forEach(child=>q.push(child));
         } else if (node.children.length === 1) {
@@ -260,10 +293,13 @@ export class CoreLineagesData {
         }
       }
     }
-    console.log(reference, schematic);
-    theNodes.length = 0;
-    q.length = 0;
-    q.push(schematic);
+  }
+
+  getNodesInTree(tree: InheritanceNode) : number[] {
+    // console.log(reference, schematic);
+    const theNodes: number[] = [];
+    const q: InheritanceNode[] = [];
+    q.push(tree);
     while (q.length > 0) {
       const node: InheritanceNode | undefined = q.shift();
       if (node) {
@@ -276,17 +312,69 @@ export class CoreLineagesData {
 
 
 
+  /*
+  find the threshold for peak prevalence that gives us a good
+  number of nodes to display
+  */
+  autoSelectPeakPrevalence() : void {
+    /* get a sorted version of the prevalences */
+    const sortedPrevalences = this.peakPrevalence.slice(0);
+    sortedPrevalences.sort(numericSortReverse);
+    /*
+    get the total number of nodes visible at each threshold.
+    store them in an array like [threshold, count]
+    */
+    const aboveThresholdCounts: [number, number][] = [];
+    sortedPrevalences.forEach((t, count)=>{
+      const asPct = Math.floor(t * 100);
+      aboveThresholdCounts.push([asPct, count]);
+    });
+    // console.log(this.peakPrevalence.map((n,i)=>[n, this.tipCounts[i], this.nodeConfidence[i]]));
+    // console.log(sortedPrevalences);
+    console.log(aboveThresholdCounts);
+    /*
+    `aboveThresholdCounts` might not reflect the actual number
+    of nodes that will show up onscreen (since we try to `trimLongBranches`).
+    find a good starting point, then get the number of nodes we will trim.
+    Lower the threshold until we get the minimum.
+    */
+    let index = aboveThresholdCounts.length - 1;
+    while (index >= 0 && aboveThresholdCounts[index][1] > SCHEMATIC_MIN_SIZE) {
+      index--;
+    }
+    if (index < 0) this.peakPrevalenceThreshold = 1; // 100%
+    else {
+      const tree = this.summaryTree as SummaryTree;
+      let prev: number;
+      let nodes: number[];
+      let schematic: InheritanceNode;
+      while (index < aboveThresholdCounts.length) {
+        prev = aboveThresholdCounts[index][0] / 100;
+        nodes = this.peakPrevalence.map((n, i)=>[n, i]).filter(([n])=>n >= prev).map(([_,i])=>i);
+        schematic = assembleInheritanceTree(tree, nodes);
+        this.trimLongBranches(schematic);
+        nodes = this.getNodesInTree(schematic);
+        if (nodes.length >= SCHEMATIC_MIN_SIZE) {
+          this.peakPrevalenceThreshold = prev;
+          break;
+        }
+        index++;
+      }
+      if (index < 0) {
+        this.peakPrevalenceThreshold = 1;
+      }
+    }
+
+  }
+
   selectNodesByImpact() : void {
     const peakThreshold = this.peakPrevalenceThreshold;
     const confidenceThreshold = this.confidenceThreshold
     const pythia = this.pythia;
     let autoSelected: number[] = [];
     if (pythia) {
-      const summaryTree = this.summaryTree as SummaryTree;
-      const minDate = this.getMinDate();
-      const maxDate = pythia.maxDate;
       // const startTime = Date.now();
-      autoSelected = this.getHighImpactConfidentNodes(pythia, summaryTree, minDate, maxDate, peakThreshold, confidenceThreshold);
+      autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
       // console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
     }
     this.setAutoNodeSelections(autoSelected, SELECTED_BY_PREVALENCE);
@@ -329,7 +417,7 @@ export class CoreLineagesData {
 
 
   private setAutoNodeSelections(autoSelected: number[], selectionSource: string) : void {
-    console.log(`adding automatic selections based on '${selectionSource}'`, autoSelected);
+    // console.log(`adding automatic selections based on '${selectionSource}'`, autoSelected);
     const already: boolean[] = [];
     this.selectedNodes.map(node=>already[node.index] = true);
     /* clear previous selections, in case we are altering the criteria here (like node confidence, etc. ) */
