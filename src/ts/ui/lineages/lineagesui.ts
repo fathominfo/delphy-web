@@ -211,7 +211,9 @@ export class LineagesUI extends MccUI {
 
   requestDraw() {
     (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
-    this.nodeSchematic.requestRender()
+    // console.log('lineagesui calling this.nodeSchematic.setLayout()');
+    this.nodeSchematic.setLayout();
+    this.nodeSchematic.requestRender();
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.requestDraw();
     // this.nodePrevalenceCanvas.requestDraw();

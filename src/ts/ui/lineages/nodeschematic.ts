@@ -45,9 +45,11 @@ const TEXT_PADDING = 5;
 
 class TreeNodeDisplay {
   node: DisplayNode;
+  srcTipPlacement: number;
   xPos: number = UNSET;
   yPos: number = UNSET;
   parent: TreeNodeDisplay | null = null;
+  children: TreeNodeDisplay[] = [];
   stepsFromRoot: number;
   tipPlacement: number;
   mutationCount: number;
@@ -66,7 +68,10 @@ class TreeNodeDisplay {
     nodeHighlightCallback: HoverCallback
   ) {
     this.node = src.node;
-    this.tipPlacement = src.tipPlacement;
+    /* track the positioning of the node in the MCC tree */
+    this.srcTipPlacement = src.tipPlacement;
+    /* this will be the placement in this display */
+    this.tipPlacement = UNSET;
     this.stepsFromRoot = src.stepsFromRoot;
     this.mutationCount = mutCount;
     this.relation = relation;
@@ -88,8 +93,30 @@ class TreeNodeDisplay {
       CAR_CONTROLS_EXPAND_INPUT.checked = !this.isCollapsed;
       CONTAINER.appendChild(CAR_CONTROLS);
       CONTAINER.appendChild(this.nameLabel);
-      console.log(`highlighting ${this.node.index} ${CAR_CONTROLS_EXPAND_INPUT.checked}`);
+      // console.log(`highlighting ${this.node.index} ${CAR_CONTROLS_EXPAND_INPUT.checked}`);
     });
+  }
+
+
+  setStateFromNode(src: TreeNode, mutCount: number,
+    relation: NodeRelationType | typeof UNSET,
+    parent: TreeNodeDisplay | null
+  ) {
+    this.srcTipPlacement = src.tipPlacement;
+    this.tipPlacement = UNSET;
+    this.stepsFromRoot = src.stepsFromRoot;
+    this.mutationCount = mutCount;
+    this.relation = relation;
+    this.parent = parent;
+    this.isTip = src.children.length === 0;
+    /*
+    the children of the source node might not be displayed here
+    */
+    this.children.length = 0;
+  }
+
+  addDescendant(desc: TreeNodeDisplay) {
+    this.children.push(desc);
   }
 
   position(_width: number, height: number, xSpacing: number, ySpacing: number) {
@@ -177,7 +204,6 @@ export class NodeSchematic {
   rootNode: TreeNode | null = null;
   rootNodeDisplay: TreeNodeDisplay | null = null;
   nodes: TreeNodeDisplay[] = [];
-  tipCount = 0;
   stepCount = 0;
   width: number = UNSET;
   height: number = UNSET;
@@ -214,8 +240,10 @@ export class NodeSchematic {
       const node = this.nodes.filter(display=>display.node.index === this.highlightIndex)[0];
       if (node) {
         node.isCollapsed = !CAR_CONTROLS_EXPAND_INPUT.checked;
-        console.log(`node ${this.highlightIndex} is collapsed: ${ node.isCollapsed }, is checked: ${CAR_CONTROLS_EXPAND_INPUT.checked}`)
+        // console.log(`node ${this.highlightIndex} is collapsed: ${ node.isCollapsed }, is checked: ${CAR_CONTROLS_EXPAND_INPUT.checked}`)
+        // console.log('collapse / expand calling this.nodeSchematic.setLayout()')
         this.setLayout();
+        this.requestRender();
       }
     });
   }
@@ -229,11 +257,13 @@ export class NodeSchematic {
     Not sure why. [mark 260409]
     */
     this.height = offsetHeight - 3;
+    // console.log('resize calling this.nodeSchematic.setLayout()')
+    this.setLayout();
     requestAnimationFrame(()=>{
       CONTAINER.setAttribute("viewBox", `0 0 ${ this.width} ${ this.height}`);
       CONTAINER.setAttribute("width", `${ this.width}`);
       CONTAINER.setAttribute("height", `${ this.height}`);
-      this.requestRender();
+      this.render();
     });
   }
 
@@ -244,10 +274,10 @@ export class NodeSchematic {
 
 
   render() {
-    const { width, height, xSpacing, ySpacing } = this;
+    const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     CONTAINER.innerHTML = '';
-    this.setSpacing();
+    const { xSpacing, ySpacing } = this;
     this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
     this.nodes.forEach(display=>display.renderLabel());
     this.nodes.forEach(display=>display.renderConnector());
@@ -255,10 +285,12 @@ export class NodeSchematic {
 
   setSpacing() {
     const { width, height, maxGenerations, tipRange } = this;
-    let xSpacing = (width - 40 - 10) / maxGenerations;
+    if (width === UNSET || height === UNSET) return;
+    let xSpacing = (width - 70) / maxGenerations;
     let ySpacing = (height - 20) / tipRange * 0.6;
-    xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING), MIN_NODE_X_SPACING);
-    ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING), MIN_NODE_Y_SPACING);
+    // console.log(MIN_NODE_X_SPACING, MAX_NODE_X_SPACING, this.xSpacing, xSpacing );
+    xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING, this.xSpacing), MIN_NODE_X_SPACING);
+    ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING, this.ySpacing), MIN_NODE_Y_SPACING);
     this.xSpacing = xSpacing;
     this.ySpacing = ySpacing;
   }
@@ -317,34 +349,30 @@ export class NodeSchematic {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     this.rootNode = rootNode;
     this.pairsByDescendant = [];
+    // this.nodes.length = 0;
     pairs.forEach(pair=>{
       // index the mutations by the descendent
       this.pairsByDescendant[pair.descendant.index] = pair;
     });
-    this.setLayout();
+    // this.setLayout();
   }
 
   setLayout() {
     const lookup: TreeNodeDisplay[] = [];
     const previous: TreeNodeDisplay[] = [];
     this.nodes.forEach(tnd=>previous[tnd.node.index] = tnd);
-    this.tipCount = 0;
     this.stepCount = 0;
     this.nodes.length = 0;
-    let maxTipPlacement = Number.MIN_SAFE_INTEGER;
-    let minTipPlacement = Number.MAX_SAFE_INTEGER;
+    const tips: TreeNodeDisplay[] = [];
     this.maxGenerations = 0;
     if (this.rootNode) {
       const q = [this.rootNode];
+      const displayQ: TreeNodeDisplay[] = [];
       while (q.length > 0) {
         const treeNode = q.shift() as TreeNode;
         const node = treeNode.node;
-        console.log(`handling ${node.index} ${node.label}`);
+        // console.log(`handling ${node.index} ${node.label}`);
         this.maxGenerations = Math.max(this.maxGenerations, treeNode.stepsFromRoot);
-        if (Number.isFinite(treeNode.tipPlacement)) {
-          maxTipPlacement = Math.max(maxTipPlacement, treeNode.tipPlacement);
-          minTipPlacement = Math.min(minTipPlacement, treeNode.tipPlacement);
-        }
         const pair = this.pairsByDescendant[node.index];
         let mutationCount = 0;
         let relationType: NodeRelationType | typeof UNSET = UNSET;
@@ -359,19 +387,45 @@ export class NodeSchematic {
         let tnd: TreeNodeDisplay = previous[treeNode.node.index];
         if (!tnd) {
           tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent, this.nodeHighlightCallback);
+        } else {
+          tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
+        if (treeNode === this.rootNode) {
+          this.rootNodeDisplay = tnd;
+        }
+        if (parent) parent.addDescendant(tnd);
         this.nodes.push(tnd);
-        if (tnd.isCollapsed) {
-          console.log(`    ${tnd.node.label} is collapsed`, tnd.node.childCount);
-        }
-        if (!tnd.isCollapsed) {
+        // if (tnd.isCollapsed) {
+        //   console.log(`    ${tnd.node.label} is collapsed`, tnd.node.childCount);
+        // }
+        if (treeNode.children.length === 0) {
+          tips.push(tnd);
+        } else if (tnd.isCollapsed) {
+          tips.push(tnd);
+        } else {
           treeNode.children.forEach(tn=>q.push(tn));
         }
         lookup[node.index] = tnd;
+        displayQ.unshift(tnd);
       }
-      this.tipRange = maxTipPlacement - minTipPlacement;
-      this.rootPositon = maxTipPlacement / this.tipRange;
-      this.render();
+      this.tipRange = tips.length - 1;
+      const halfRange = this.tipRange / 2;
+      /* align the tree according to the MCC tree */
+      tips.sort((a,b)=>a.srcTipPlacement - b.srcTipPlacement);
+      tips.forEach((tnd, i)=>tnd.tipPlacement = i - halfRange);
+
+
+      while (displayQ.length > 0) {
+        const tnd: TreeNodeDisplay = displayQ.shift() as TreeNodeDisplay;
+        if (tnd) {
+          const count = tnd.children.length;
+          if (count > 0) {
+            tnd.tipPlacement = tnd.children.reduce((tot: number, child: TreeNodeDisplay)=>tot+child.tipPlacement, 0) / count;
+          }
+        }
+      }
+      if (this.rootNodeDisplay) this.rootPositon = this.rootNodeDisplay.tipPlacement;
+      this.setSpacing();
     }
   }
 
