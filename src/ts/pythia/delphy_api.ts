@@ -206,11 +206,10 @@ export class Delphy {
     return Delphy.delphyCoreInitPromise;
   }
 
-  constructor() {
+  constructor(prngSeed: number) {
     if (!Delphy.coreInited) {
       throw "Core not initialized yet: did attach a continuation to Delphy.waitForInit()?";
     }
-    const prngSeed = 0;    // 0 = Seed PRNG with system's random device
     const numThreads = 0;  // 0 = Default to hardware concurrency (always at least 1)
     this.ctx = Delphy.delphyCoreRaw.create_context(prngSeed, numThreads);
   }
@@ -292,7 +291,7 @@ export class Delphy {
       .finally(() => Delphy.delphyCoreRaw.free(mapleBytesWasm));
   }
 
-  createRun(phyloTree: PhyloTree, prngSeed = 0): Run {
+  createRun(phyloTree: PhyloTree, prngSeed: number): Run {
     return new Run(this, phyloTree, prngSeed);
   }
 

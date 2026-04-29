@@ -4,7 +4,7 @@ import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
-import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
+import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict, RANDOM_SEED} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
@@ -328,7 +328,7 @@ export class Pythia {
         this.run = null;
       }
       const runTree = this.initialTree.copy();
-      const run = this.run = this.delphy.createRun(runTree);  // Core takes possession of runTree's contents, leaving it a husk
+      const run = this.run = this.delphy.createRun(runTree, RANDOM_SEED);  // Core takes possession of runTree's contents, leaving it a husk
       runTree.delete();
 
       this.resetHist();
@@ -1388,7 +1388,7 @@ export class Pythia {
     {
       const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
-      const tmpRun = this.delphy.createRun(tmpTree);
+      const tmpRun = this.delphy.createRun(tmpTree, RANDOM_SEED);
       tmpTree.delete();  // tmpRun takes over tmpTree's contents, leaving only a husk
 
       tmpRun.setParamsFromFlatbuffer(pBuff);
@@ -1447,7 +1447,7 @@ export class Pythia {
   // BEASTY OUTPUT
   getBeastOutputs(version:string): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
-    const run = this.delphy.createRun(this.treeHist[0].copy());
+    const run = this.delphy.createRun(this.treeHist[0].copy(), RANDOM_SEED);
     run.setParamsFromFlatbuffer(this.paramsHist[0]);  // Some options can influence output
     const bout = run.createBeastyOutput(version);
     for (let i = 0; i < treeCount; ++i) {
@@ -1551,9 +1551,10 @@ export function setReadyCallback(fnc:(_:Pythia)=>void):void { // eslint-disable-
 
 Delphy.waitForInit()
   .then(() => {
-    globalDelphy = new Delphy();
+    globalDelphy = new Delphy(RANDOM_SEED);
     console.log(`Delphy core loaded (version ${globalDelphy.getVersionString()}, ` +
-                `build ${globalDelphy.getBuildNumber()}, commit ${globalDelphy.getCommitString()})`);
+                `build ${globalDelphy.getBuildNumber()}, commit ${globalDelphy.getCommitString()}, ` +
+                `seed ${RANDOM_SEED})`);
     if (readyCallback) {
       readyCallback(new Pythia());
     }
