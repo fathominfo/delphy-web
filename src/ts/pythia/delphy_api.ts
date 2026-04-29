@@ -713,10 +713,11 @@ export class Delphy {
     pop_model_get_class: (ctx: DelphyContextPtr, popModel: PopModelPtr) => InternalPopModelClass,
     pop_model_delete: (ctx: DelphyContextPtr, popModel: PopModelPtr) => void,
 
-    exp_pop_model_new: (ctx: DelphyContextPtr, t0: number, n0: number, g: number) => PopModelPtr,
+    exp_pop_model_new: (ctx: DelphyContextPtr, t0: number, n0: number, g: number, minPop: number) => PopModelPtr,
     exp_pop_model_get_t0: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
     exp_pop_model_get_n0: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
     exp_pop_model_get_g: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
+    exp_pop_model_get_min_pop: (ctx: DelphyContextPtr, expPopModel: PopModelPtr) => number,
     run_get_pop_inv_n0_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr) => number,
     run_set_pop_inv_n0_prior_alpha: (ctx: DelphyContextPtr, run: RunPtr, alpha: number) => void,
     run_get_pop_inv_n0_prior_beta: (ctx: DelphyContextPtr, run: RunPtr) => number,
@@ -967,6 +968,7 @@ export class Delphy {
       exp_pop_model_get_t0: Module['_delphy_exp_pop_model_get_t0'],
       exp_pop_model_get_n0: Module['_delphy_exp_pop_model_get_n0'],
       exp_pop_model_get_g: Module['_delphy_exp_pop_model_get_g'],
+      exp_pop_model_get_min_pop: Module['_delphy_exp_pop_model_get_min_pop'],
       run_get_pop_inv_n0_prior_alpha: Module['_delphy_run_get_pop_inv_n0_prior_alpha'],
       run_set_pop_inv_n0_prior_alpha: Module['_delphy_run_set_pop_inv_n0_prior_alpha'],
       run_get_pop_inv_n0_prior_beta: Module['_delphy_run_get_pop_inv_n0_prior_beta'],
@@ -1313,13 +1315,13 @@ enum InternalPopModelClass {
 }
 
 export class ExpPopModel extends PopModel {
-  constructor(public t0: number, public n0: number, public g: number) {
+  constructor(public t0: number, public n0: number, public g: number, public minPop: number) {
     super();
   }
 
   toPopModelPtr(ctx: DelphyContextPtr): PopModelPtr {
     return Delphy.delphyCoreRaw.exp_pop_model_new(
-      ctx, this.t0, this.n0, this.g);
+      ctx, this.t0, this.n0, this.g, this.minPop);
   }
 }
 
@@ -1369,8 +1371,9 @@ function popModelPtrToPopModel(ctx: DelphyContextPtr, rawPopModel: PopModelPtr):
     const t0 = Delphy.delphyCoreRaw.exp_pop_model_get_t0(ctx, rawPopModel);
     const n0 = Delphy.delphyCoreRaw.exp_pop_model_get_n0(ctx, rawPopModel);
     const g = Delphy.delphyCoreRaw.exp_pop_model_get_g(ctx, rawPopModel);
+    const minPop = Delphy.delphyCoreRaw.exp_pop_model_get_min_pop(ctx, rawPopModel);
 
-    return new ExpPopModel(t0, n0, g);
+    return new ExpPopModel(t0, n0, g, minPop);
   }
   case InternalPopModelClass.SkygridPopModel: {
     const type = Delphy.delphyCoreRaw.skygrid_pop_model_get_type(ctx, rawPopModel);

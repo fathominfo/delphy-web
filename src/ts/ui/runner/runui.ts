@@ -1114,6 +1114,8 @@ export class RunUI extends UIScreen {
       const overallPopGrowthRate = (formData.overallPopGrowthRate !== undefined) ?
         parseFloat(formData.overallPopGrowthRate as string) : this.getRunParams().popGrowthRate;
       newParams = this.fixPopGrowthRate(newParams, isFixedPopGrowthRate, overallPopGrowthRate);
+
+      // TODO: expose minPop (minimum population barrier) in the Advanced Options dialog
     }
 
     const isApobec = formData.isApobec === "on";

@@ -68,6 +68,7 @@ export type RunParamConfig = {
   finalPopSize: number,
   popGrowthRateIsFixed: boolean,
   popGrowthRate: number,
+  minPop: number,
   // skygrid population model params
   skygridStartDate: number,
   skygridNumIntervals: number,
@@ -129,6 +130,7 @@ export function getEmptyRunParamConfig(): RunParamConfig {
     finalPopSize: 1000.0, // days
     popGrowthRateIsFixed: false,
     popGrowthRate: 0.0,  // e-foldings / year
+    minPop: 1.0,  // days
 
     // Defaults for Skygrid pop model
     skygridStartDate: UNSET,
@@ -777,7 +779,8 @@ export class Pythia {
       run.setPopModel(
         new ExpPopModel(calcMaxDateOfTree(run.getTree()),
           runParams.finalPopSize,
-          runParams.popGrowthRate));
+          runParams.popGrowthRate,
+          runParams.minPop));
     }
   }
 
@@ -798,6 +801,7 @@ export class Pythia {
       result.finalPopSize = popModel.n0;
       result.popGrowthRateIsFixed = !run.isPopGrowthRateMoveEnabled();
       result.popGrowthRate = popModel.g;
+      result.minPop = popModel.minPop;
 
     } else if (popModel instanceof SkygridPopModel) {
       result.popModelIsSkygrid = true;
