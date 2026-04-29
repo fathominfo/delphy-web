@@ -1,6 +1,6 @@
 import { PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { HoverCallback, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./lineagescommon";
+import { DismissNodeCallback, HoverCallback, MetadataToggleCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
@@ -45,7 +45,7 @@ const TEXT_PADDING = 5;
 
 class TreeNodeDisplay {
   node: DisplayNode;
-  srcTipPlacement: number;
+  treeNode: TreeNode;
   xPos: number = UNSET;
   yPos: number = UNSET;
   parent: TreeNodeDisplay | null = null;
@@ -68,11 +68,10 @@ class TreeNodeDisplay {
     nodeHighlightCallback: HoverCallback
   ) {
     this.node = src.node;
-    /* track the positioning of the node in the MCC tree */
-    this.srcTipPlacement = src.tipPlacement;
+    this.treeNode = src;
     /* this will be the placement in this display */
     this.tipPlacement = UNSET;
-    this.stepsFromRoot = src.stepsFromRoot;
+    this.stepsFromRoot = UNSET;
     this.mutationCount = mutCount;
     this.relation = relation;
     this.nameLabel = LABEL_TEMPLATE.cloneNode(true) as SVGGElement;
@@ -102,13 +101,13 @@ class TreeNodeDisplay {
     relation: NodeRelationType | typeof UNSET,
     parent: TreeNodeDisplay | null
   ) {
-    this.srcTipPlacement = src.tipPlacement;
-    this.tipPlacement = UNSET;
-    this.stepsFromRoot = src.stepsFromRoot;
+    this.treeNode = src;
+    this.stepsFromRoot = UNSET;
     this.mutationCount = mutCount;
     this.relation = relation;
     this.parent = parent;
     this.isTip = src.children.length === 0;
+    this.tipPlacement = UNSET;
     /*
     the children of the source node might not be displayed here
     */
@@ -218,7 +217,7 @@ export class NodeSchematic {
   constructor(nodeHighlightCallback: HoverCallback,
     prevThresholdCallback: PREVALENCE_CALLBACK_TYPE,
     metadataTransitionCallback: MetadataToggleCallback,
-    dismissNodeCallback: NodeCallback
+    dismissNodeCallback: DismissNodeCallback
   ) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -234,7 +233,25 @@ export class NodeSchematic {
       CAR_CONTROLS.remove();
     });
     CAR_CONTROLS_DISMISS.addEventListener("click", ()=>{
-      dismissNodeCallback(this.highlightIndex);
+      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.node.index === this.highlightIndex)[0];
+      if (tnd) {
+        if (tnd.isCollapsed) {
+          /* gather descendants */
+          const q = [tnd.treeNode];
+          let i = 0;
+          while (i < q.length) {
+            const n = q[i] as TreeNode;
+            if (n) {
+              n.children.forEach(c=>q.push(c));
+            }
+            i++;
+          }
+          const indices = q.map(n=>n.node.index);
+          dismissNodeCallback(indices);
+        } else {
+          dismissNodeCallback(this.highlightIndex);
+        }
+      }
       this.highlightIndex = UNSET;
       this.setHighlightNode();
     });
@@ -373,12 +390,11 @@ export class NodeSchematic {
       while (q.length > 0) {
         const treeNode = q.shift() as TreeNode;
         const node = treeNode.node;
-        // console.log(`handling ${node.index} ${node.label}`);
-        this.maxGenerations = Math.max(this.maxGenerations, treeNode.stepsFromRoot);
         const pair = this.pairsByDescendant[node.index];
+        // console.log(`handling ${node.index} ${node.label}`);
         let mutationCount = 0;
         let relationType: NodeRelationType | typeof UNSET = UNSET;
-        if (pair) {// no pair for root
+        if (pair) { // no pair for root
           mutationCount = pair.mutations.length;
           relationType = pair.relation;
         }
@@ -393,9 +409,15 @@ export class NodeSchematic {
           tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
         if (treeNode === this.rootNode) {
+          tnd.stepsFromRoot = 0;
           this.rootNodeDisplay = tnd;
+        } else if (parent) {
+          tnd.stepsFromRoot = parent.stepsFromRoot + 1;
+          parent.addDescendant(tnd);
+        } else {
+          console.warn(`we had a node with no parent that is not root!`)
         }
-        if (parent) parent.addDescendant(tnd);
+        this.maxGenerations = Math.max(this.maxGenerations, tnd.stepsFromRoot);
         this.nodes.push(tnd);
         // if (tnd.isCollapsed) {
         //   console.log(`    ${tnd.node.label} is collapsed`, tnd.node.childCount);
@@ -413,7 +435,7 @@ export class NodeSchematic {
       this.tipRange = tips.length - 1;
       const halfRange = this.tipRange / 2;
       /* align the tree according to the MCC tree */
-      tips.sort((a,b)=>a.srcTipPlacement - b.srcTipPlacement);
+      tips.sort((a,b)=>a.treeNode.tipPlacement - b.treeNode.tipPlacement);
       tips.forEach((tnd, i)=>tnd.tipPlacement = i - halfRange);
 
 

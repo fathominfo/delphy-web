@@ -4,7 +4,8 @@ import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET } from '../co
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
-  MetadataToggleCallback } from './lineagescommon';
+  MetadataToggleCallback,
+  DismissNodeCallback} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 // import { NodeTimelines } from './nodetimelines';
 // import { NodePrevalenceChart } from './nodeprevalencechart'
@@ -44,7 +45,7 @@ export class LineagesUI extends MccUI {
     super(sharedState, divSelector, "#lineages .tree-canvas");
     const updateCallback: updateFunction = (data: ChartData)=>this.update(data);
     this.coreData = new CoreLineagesData(sharedState, updateCallback);
-    const dismissCallback: NodeCallback = nodeIndex=>this.handleNodeDismiss(nodeIndex);
+    const dismissCallback: DismissNodeCallback = (nodeIndex: number | number[])=>this.handleNodeDismiss(nodeIndex);
     const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
     const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.updateHighlight(nodeIndex, date, mutation);
     let previousNode = UNSET
@@ -274,7 +275,7 @@ export class LineagesUI extends MccUI {
   }
 
 
-  handleNodeDismiss(nodeIndex: number): void {
+  handleNodeDismiss(nodeIndex: number | number[]): void {
     this.coreData.dismissNode(nodeIndex);
     // this.setChartData([this.coreData.rootIndex, this.coreData.mrcaIndex, this.coreData.nodeAIndex, this.coreData.nodeBIndex]);
     // this.highlightCharts(null, UNSET, null);

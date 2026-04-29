@@ -668,12 +668,21 @@ export class CoreLineagesData {
   }
 
 
-  dismissNode(nodeIndex: number) : void {
-    const index = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
-    const node = this.selectedNodes.splice(index, 1)[0];
-    // this.selectionReasons[nodeIndex].delete(SELECTED_BY_USER);
-    this.selectionReasons[nodeIndex].clear();
-    node.deactivate();
+  dismissNode(nodeIndex: number | number[]) : void {
+    const lookup: boolean[] = [];
+    if (nodeIndex instanceof Array) {
+      nodeIndex.forEach(n=>lookup[n] = true);
+    } else {
+      lookup[nodeIndex] = true;
+    }
+    for (let i = this.selectedNodes.length - 1; i >= 0; i--) {
+      const index = this.selectedNodes[i].index;
+      if (lookup[index]){
+        const node = this.selectedNodes.splice(i, 1)[0];
+        this.selectionReasons[node.index].clear();
+        node.deactivate();
+      }
+    }
     /* reset the hover */
     this.hoverNode(UNSET, UNSET);
   }
