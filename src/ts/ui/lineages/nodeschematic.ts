@@ -147,7 +147,7 @@ class TreeNodeDisplay {
     }
   }
 
-  renderLabel() {
+  renderLabel(color='') {
     const { node, nameLabel } = this;
     const mrca = node.isInferred && !node.isRoot;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
@@ -155,10 +155,16 @@ class TreeNodeDisplay {
     // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
     // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
 
-    // const label = mrca ? "" : node.label;
-    const label = `${node.index}`;
+    const label = mrca ? "" : node.label;
+    // const label = `${node.index}`;
     textNode.textContent = label;
-    nameLabel.classList.add(node.className);
+    if (color === '') {
+      rect.setAttribute("fill", '');
+      nameLabel.classList.add(node.className);
+    } else {
+      rect.setAttribute("fill", color);
+      nameLabel.classList.remove(node.className);
+    }
     CONTAINER.appendChild(this.nameLabel);
     if (mrca) {
       this.textLabelWidth = 0;
@@ -212,6 +218,8 @@ export class NodeSchematic {
   tipRange = UNSET;
   rootPositon = UNSET;
   metadataFieldCount = 0;
+  colorByMetadata = false;
+  nodeMetadataColors: string[] = [];
 
 
   constructor(nodeHighlightCallback: HoverCallback,
@@ -296,9 +304,16 @@ export class NodeSchematic {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     CONTAINER.innerHTML = '';
-    const { xSpacing, ySpacing } = this;
+    const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
     this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
-    this.nodes.forEach(display=>display.renderLabel());
+    if (colorByMetadata) {
+      this.nodes.forEach(display=>{
+        const color: string = nodeMetadataColors[display.node.index];
+        display.renderLabel(color);
+      });
+    } else {
+      this.nodes.forEach(display=>display.renderLabel());
+    }
     this.nodes.forEach(display=>display.renderConnector());
   }
 
@@ -358,6 +373,13 @@ export class NodeSchematic {
     }
   }
 
+  setColorMethod(colorByMetadata: boolean, nodeMetadataColors: string[]) {
+    console.log(`
+      setColorMethod(${colorByMetadata}, ${nodeMetadataColors})
+      `)
+    this.colorByMetadata = colorByMetadata;
+    this.nodeMetadataColors = nodeMetadataColors;
+  }
 
   /*
   @param pairs: contains mutation data for each track that we will display.

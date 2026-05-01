@@ -1,6 +1,6 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MccUI } from '../mccui';
-import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET } from '../common';
+import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET, ColorOption } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
@@ -311,6 +311,17 @@ export class LineagesUI extends MccUI {
     // this.nodeSchematic.highlightNode(zoomNode, null);
   }
 
+  /*
+  this step happens in the flow after the tree colors have been set.
+  so we can take this moment to set the colors for the schematic
+  */
+  protected requestTreeDraw(): void {
+    super.requestTreeDraw();
+    const metadataColors = this.mccTreeCanvas.nodeColors.slice(0);
+    const colorByMetadata = this.sharedState.mccConfig.colorOption === ColorOption.metadata;
+    this.nodeSchematic.setColorMethod(colorByMetadata, metadataColors);
+    requestAnimationFrame(()=>this.nodeSchematic.render());
+  }
 
 
 

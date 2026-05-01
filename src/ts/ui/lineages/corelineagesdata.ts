@@ -4,7 +4,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { numericSortReverse, UNDEF, UNSET } from "../common";
+import { ColorDict, ColorOption, numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
@@ -204,6 +204,24 @@ export class CoreLineagesData {
     }
   }
 
+  // getNodeMetadataColors(): string[] {
+  //   const mccConfig = this.sharedState.mccConfig;
+  //   const nodeColors: string[] = [];
+  //   if (mccConfig.metadataColors && mccConfig.metadataField) {
+  //     // string: {color: string, active: boolean}
+  //     const nodeValues = mccConfig.getMetadataValues();
+  //     this.selectedNodes.forEach(n=>{
+  //       const index = n.index;
+  //       const value = nodeValues[index];
+  //       const color = mccConfig.getMetadataColor(value);
+  //       nodeColors[index] = color;
+  //     });
+  //   }
+  //   return nodeColors;
+  // }
+
+
+
   setNodePeakPrevalence(minConf: number) {
     const pythia = this.pythia;
     if (pythia) {
@@ -257,16 +275,21 @@ export class CoreLineagesData {
   have 1 child each. For example, in a structure like
 
   node 0 +
-          +-- node 1 --- node 2 --- node 3 --- node 4 +
-                                                      + node 5
+         +-- node 1 --- node 2 --- node 3 --- node 4 +
+                                                     + node 5
 
   node 2 and node 3 aren't adding any new information. Node 1 is important
   as the first child of the branching point, and Node 4 is important as the
-  last node before the branching point. In order to eliminate nodes like
-  2 and 3, evaluate how many descendants each node has.
-  If has only one descendant, check whether that descendant is a branching
-  point (that is, check that the descendant in turn has more than one
-  descendant). If it has one or none, remove it.
+  last node before the branching point. In this case, the goal would be:
+
+  node 0 +
+         +-- node 1 --- node 4 +
+                               + node 5
+
+  In order to eliminate nodes like 2 and 3, evaluate how many descendants
+  each node has.If has only one descendant, check whether that descendant
+  is a branching point (that is, check that the descendant in turn has more
+  than one descendant). If it has one or none, remove it.
   */
 
   trimLongBranches(schematic: InheritanceNode) : void {
