@@ -4,7 +4,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { numericSort, numericSortReverse, UNDEF, UNSET } from "../common";
+import { numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
@@ -21,7 +21,7 @@ const DEFAULT_PEAK_PREVALENCE = 0.05;
 const SELECTED_BY_PREVALENCE = 'prevalence';
 const SELECTED_BY_USER = 'curated';
 
-const SCHEMATIC_MIN_SIZE = 5;
+const SCHEMATIC_MIN_SIZE = 12;
 
 
 export type NodeHoverData = {
@@ -350,7 +350,9 @@ export class CoreLineagesData {
       let schematic: InheritanceNode;
       while (index < aboveThresholdCounts.length) {
         prev = aboveThresholdCounts[index][0] / 100;
-        nodes = this.peakPrevalence.map((n, i)=>[n, i]).filter(([n])=>n >= prev).map(([_,i])=>i);
+        nodes = this.peakPrevalence.map((n, i)=>[n, i])
+          .filter(([n])=>n >= prev)
+          .map(([_,i])=>i); // eslint-disable-line @typescript-eslint/no-unused-vars
         schematic = assembleInheritanceTree(tree, nodes);
         this.trimLongBranches(schematic);
         nodes = this.getNodesInTree(schematic);
