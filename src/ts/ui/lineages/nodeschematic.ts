@@ -155,8 +155,8 @@ class TreeNodeDisplay {
     // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
     // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
 
-    const label = mrca ? "" : node.label;
-    // const label = `${node.index}`;
+    // const label = mrca ? "" : node.label;
+    const label = `${node.index}`;
     textNode.textContent = label;
     if (color === '') {
       rect.setAttribute("fill", '');
@@ -374,9 +374,6 @@ export class NodeSchematic {
   }
 
   setColorMethod(colorByMetadata: boolean, nodeMetadataColors: string[]) {
-    console.log(`
-      setColorMethod(${colorByMetadata}, ${nodeMetadataColors})
-      `)
     this.colorByMetadata = colorByMetadata;
     this.nodeMetadataColors = nodeMetadataColors;
   }

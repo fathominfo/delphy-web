@@ -354,7 +354,7 @@ export class CoreLineagesData {
     });
     // console.log(this.peakPrevalence.map((n,i)=>[n, this.tipCounts[i], this.nodeConfidence[i]]));
     // console.log(sortedPrevalences);
-    console.log(aboveThresholdCounts);
+    // console.log(aboveThresholdCounts);
     /*
     `aboveThresholdCounts` might not reflect the actual number
     of nodes that will show up onscreen (since we try to `trimLongBranches`).
