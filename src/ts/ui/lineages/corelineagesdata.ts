@@ -386,30 +386,38 @@ export class CoreLineagesData {
   getMetadataTransitionNodes(mccConfig: MccConfig, field: string) : number[] {
     // const metadata = mccConfig.metadata;
     // const field = mccConfig.metadataField;
+    const { confidenceThreshold, nodeConfidence } = this;
+    const tree = this.summaryTree as SummaryTree;
     const nodeValues = mccConfig.getMetadataValues(field);
     const summaryTree = this.summaryTree as SummaryTree;
-    const rootNode = summaryTree.getRootIndex();
+    const rootIndex = this.rootNode.index;
     const introductions: number[] = [];
-    const q: ParentMetadataType[] = [
-      {node: rootNode, parentValue: UNDEF}
-    ];
+    const q: number[] = [rootIndex];
     while (q.length > 0) {
-      const item: ParentMetadataType | undefined = q.shift();
-      if (item) {
-        const { node, parentValue } = item;
-        const nodeValue = nodeValues[node];
-        if (node === rootNode) {
+      const index: number | undefined = q.shift();
+      if (index !== undefined) {
+        const nodeValue = nodeValues[index];
+        if (index === rootIndex) {
           // always include the root node
-          introductions.push(node);
+          introductions.push(index);
+        } else if (nodeConfidence[index] >= confidenceThreshold) {
+          let hiConfAncestorIndex = tree.getParentIndexOf(index);
+          while (hiConfAncestorIndex !== UNSET && !(nodeConfidence[hiConfAncestorIndex] >= confidenceThreshold)) {
+            hiConfAncestorIndex = tree.getParentIndexOf(hiConfAncestorIndex);
+          }
+          if (hiConfAncestorIndex !== UNSET) {
+            const parentValue = nodeValues[hiConfAncestorIndex];
+            // console.log(index, nodeValue, nodeConfidence[index], hiConfAncestorIndex, parentValue, nodeConfidence[hiConfAncestorIndex]);
+            if (nodeValue !== UNDEF && parentValue !== undefined && parentValue !== UNDEF && nodeValue !== parentValue) {
+              // we have a transition
+              introductions.push(index);
+            }
+          }
         }
-        if (nodeValue !== UNDEF && parentValue !== UNDEF && nodeValue !== parentValue) {
-          // we have a transition
-          introductions.push(node);
-        }
-        const leftChild = summaryTree.getLeftChildIndexOf(node);
+        const leftChild = summaryTree.getLeftChildIndexOf(index);
         if (leftChild !== UNSET) {
-          q.push({ node: leftChild, parentValue: nodeValue });
-          q.push({ node: summaryTree.getRightChildIndexOf(node), parentValue: nodeValue });
+          q.push(leftChild);
+          q.push(summaryTree.getRightChildIndexOf(index));
         }
       }
     }
