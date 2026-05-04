@@ -582,8 +582,9 @@ export class CoreLineagesData {
       chartData.nodeDistributions = nodeDistributions;
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
-        if (ancestor) {
+        if (ancestor && ancestor.node.index !== UNSET) {
           const descendant = treeNode.node;
+          if (descendant.index === UNSET) return;
           let relation: NodeRelationType = NodeRelationType.singleDescendant;
           if (ancestor.children.length > 1) {
             const other: TreeNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
