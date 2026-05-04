@@ -536,9 +536,10 @@ export class CoreLineagesData {
       this.setAutoNodeSelections([], `metadata:${field}`);
     }
     if (this.selectionTreeData) {
-      if (this.selectedNodes.length > 0) {
-        this.selectionTreeData.setData(this.selectedNodes);
+      if (this.selectedNodes.length === 0) {
+        this.selectedNodes.push(this.rootNode);
       }
+      this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
     }
   }
