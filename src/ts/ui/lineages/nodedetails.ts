@@ -126,7 +126,22 @@ export class NodeDetails {
             const summary = item.querySelector(".pair--key-value") as HTMLElement;
             (summary.querySelector(".key") as HTMLElement).innerText = key;
             (summary.querySelector(".value") as HTMLElement).innerText = replaceUnknown(value.value);
-            Object.entries(value.counts).forEach(([val, count])=>{
+            let tipCounts = Object.entries(value.counts);
+            let someUnshown = false;
+            const counstCount = tipCounts.length;
+            if (counstCount > 4) {
+              someUnshown = true;
+              tipCounts = tipCounts.slice(0, 3);
+            }
+            tipCounts.sort((a,b)=>{
+              /* first by count */
+              let diff = b[1]-a[1];
+              if (diff === 0) {
+                diff = a[0].localeCompare(b[0]);
+              }
+              return diff;
+            });
+            tipCounts.forEach(([val, count])=>{
               const pair = detailTemplate.cloneNode(true) as HTMLElement;
               if (val === value.value) {
                 pair.classList.add("current");
@@ -135,6 +150,11 @@ export class NodeDetails {
               (pair.querySelector(".count") as HTMLElement).innerText = `${count}`;
               detailContainer.appendChild(pair);
             });
+            if (someUnshown) {
+              const span = document.createElement("span");
+              span.textContent = `showing top 3 of ${counstCount}`;
+              item.appendChild(span);
+            }
             innerNodeMetadata.appendChild(item);
 
           }
