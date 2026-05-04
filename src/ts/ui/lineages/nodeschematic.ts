@@ -421,7 +421,7 @@ export class NodeSchematic {
         if (treeNode.parent) {
           parent = lookup[treeNode.parent.node.index];
         }
-        let tnd: TreeNodeDisplay = previous[treeNode.node.index];
+        let tnd: TreeNodeDisplay = previous[node.index];
         if (!tnd) {
           tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent, this.nodeHighlightCallback);
         } else {

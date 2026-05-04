@@ -473,6 +473,7 @@ export class CoreLineagesData {
     shouldShow.forEach(nodeIndex=>{
       if (already[nodeIndex] === undefined) {
         const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
+        nd.isLocked = true;
         this.selectedNodes.push(nd);
       } else {
         delete already[nodeIndex];

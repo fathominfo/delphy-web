@@ -51,6 +51,7 @@ export class LineagesUI extends MccUI {
     let previousNode = UNSET
     const treeHoverCallback: NodeCallback = (nodeIndex: number)=>{
       if (nodeIndex !== previousNode) {
+        // console.log(`${previousNode} --> handleNodeHover(${nodeIndex})`);
         previousNode = nodeIndex;
         this.handleNodeHover(nodeIndex, UNSET);
       }
@@ -206,6 +207,9 @@ export class LineagesUI extends MccUI {
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
     this.nodeSchematic.setData(nodePairs, rootNode);
+    this.nodeListDisplay.highlightNode(highlightNode);
+    this.nodeSchematic.highlightNode(highlightNode);
+
     // this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
   }
@@ -244,7 +248,8 @@ export class LineagesUI extends MccUI {
   }
 
   highlightCharts() {
-    const { node, date, mutation } = this.coreData.getHighlights(); // eslint-disable-line @typescript-eslint/no-unused-vars
+    // const { node, date, mutation } = this.coreData.getHighlights();
+    const { node, date } = this.coreData.getHighlights();
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
     let highlightNode = node;
     if (highlightNode === null || highlightNode.index === UNSET) {
