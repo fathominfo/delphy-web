@@ -30,6 +30,8 @@ import { isTip } from '../util/treeutils';
 
 const HOVER_DISTANCE = 20;
 
+const MIN_DIST_BETWEEN_DATE_LABELS = 50;
+
 /* how far does the mouse need to move before it's no longer a click? */
 const DRAG_PX_THRESHOLD = 8;
 
@@ -441,20 +443,24 @@ export class MccTreeCanvas {
     const lastIndex = entries.length - 1;
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
+    let previousLeft = Number.MIN_SAFE_INTEGER;
     entries.forEach((entry, i)=>{
       if (scale === DateScale.year) {
         //
       } else {
         if (entry.isNewYear || i === lastIndex) {
-          const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
-          (div.querySelector(".cal .month") as HTMLSpanElement).textContent = entry.monthLabel;
-          (div.querySelector(".cal .day") as HTMLSpanElement).textContent = entry.dateLabel;
-          (div.querySelector(".year") as HTMLSpanElement).textContent = entry.yearLabel;
-          div.classList.add("reference")
           const left = this.getZoomX(entry.date);
+          const div: HTMLDivElement = DATE_TEMPLATE.cloneNode(true) as HTMLDivElement;
+          div.classList.add("reference")
           div.style.left = `${left}px`;
+          if (left - previousLeft >= MIN_DIST_BETWEEN_DATE_LABELS) {
+            (div.querySelector(".cal .month") as HTMLSpanElement).textContent = entry.monthLabel;
+            (div.querySelector(".cal .day") as HTMLSpanElement).textContent = entry.dateLabel;
+            (div.querySelector(".year") as HTMLSpanElement).textContent = entry.yearLabel;
+            previousLeft = left;
+          }
           this.dateAxis.appendChild(div);
-          this.dateAxisEntries.push({div, left})
+          this.dateAxisEntries.push({div, left});
         }
       }
     })
