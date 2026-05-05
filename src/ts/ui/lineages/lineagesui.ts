@@ -202,7 +202,7 @@ export class LineagesUI extends MccUI {
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode);
+    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length);
     this.nodeSchematic.highlightNode(highlightNode);
     this.nodeListDisplay.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {

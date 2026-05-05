@@ -4,7 +4,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { ColorDict, ColorOption, numericSortReverse, UNDEF, UNSET } from "../common";
+import { numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
@@ -18,7 +18,7 @@ import { MccConfig } from "../mccconfig";
 
 const DEFAULT_HI_CONFIDENCE = 0.9;
 const DEFAULT_PEAK_PREVALENCE = 0.05;
-const SELECTED_BY_PREVALENCE = 'prevalence';
+const AUTO_SELECTED = 'poweredbydelphy';
 const SELECTED_BY_USER = 'curated';
 
 const SCHEMATIC_MIN_SIZE = 12;
@@ -61,11 +61,6 @@ export type ChartData = {
 
 export type updateFunction = (_: ChartData)=>void;
 
-interface ParentMetadataType  {
-  node: number,
-  parentValue: string
-}
-
 
 const defaultChartData : ChartData = {
   nodeDistributions: [],
@@ -106,6 +101,7 @@ export class CoreLineagesData {
   private nodeConfidence: number[] = [];
   private tipCounts: number[] = [];
   private peakPrevalence: number[] = [];
+  private metadataTransitionNodes: { [_: string] : number[]} = {};
   private getY: getYFunction | null = null;
 
 
@@ -118,6 +114,8 @@ export class CoreLineagesData {
   private selectionReasons: Set<string>[] = [];
   private peakPrevalenceThreshold: number = DEFAULT_PEAK_PREVALENCE;
   private confidenceThreshold: number = DEFAULT_HI_CONFIDENCE;
+  private filteringByPeakPrevalence = true;
+  private filteringByMetadataFields: Set<string> = new Set();
 
   /*
   bypassed nodes happen when the user selects an inner
@@ -196,8 +194,11 @@ export class CoreLineagesData {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
       this.peakPrevalence.length = 0;
+      this.metadataTransitionNodes = {};
       this.setNodePeakPrevalence(this.confidenceThreshold);
-      this.autoSelectPeakPrevalence();
+      if (this.filteringByPeakPrevalence) {
+        this.autoSelectPeakPrevalence();
+      }
       this.selectNodesByImpact();
       this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
@@ -389,20 +390,10 @@ export class CoreLineagesData {
         this.peakPrevalenceThreshold = 1;
       }
     }
-
   }
 
   selectNodesByImpact() : void {
-    const peakThreshold = this.peakPrevalenceThreshold;
-    const confidenceThreshold = this.confidenceThreshold
-    const pythia = this.pythia;
-    let autoSelected: number[] = [];
-    if (pythia) {
-      // const startTime = Date.now();
-      autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
-      // console.log(`elapsed: ${(Date.now() - startTime) / 1000} s for ${influentialNodes.length} nodes`, this.peakPrevalence);
-    }
-    this.setAutoNodeSelections(autoSelected, SELECTED_BY_PREVALENCE);
+    this.setAutoNodeSelections();
   }
 
 
@@ -449,19 +440,64 @@ export class CoreLineagesData {
 
 
 
-  private setAutoNodeSelections(autoSelected: number[], selectionSource: string) : void {
+  private setAutoNodeSelections() : void {
     // console.log(`adding automatic selections based on '${selectionSource}'`, autoSelected);
     const already: boolean[] = [];
     this.selectedNodes.map(node=>already[node.index] = true);
     /* clear previous selections, in case we are altering the criteria here (like node confidence, etc. ) */
     this.selectionReasons.forEach((reasons:Set<string>)=>{
-      reasons.delete(selectionSource);
+      reasons.delete(AUTO_SELECTED);
     });
+    let autoSelected: number[] = [];
+    if (this.filteringByMetadataFields.size > 0) {
+      const nodes: boolean[] = [];
+      const lookup: boolean[] = [];
+      Object.values(this.metadataTransitionNodes).forEach((nodeIndices, i)=>{
+        if (i === 0) {
+          /*
+          build a lookup by node index of whether it passes the
+          test of the first metadata field
+          */
+          nodeIndices.forEach(nodeIndex=>nodes[nodeIndex] = true);
+        } else {
+          /*
+          for each node, does it also pass the test of the current metadata field?
+          */
+          lookup.length = 0;
+          nodeIndices.forEach(nodeIndex=>lookup[nodeIndex] = true);
+          nodes.forEach((_, i)=>{
+            if (lookup[i] === undefined){
+              nodes[i] = false;
+            }
+          });
+        }
+      });
+      nodes.forEach((passes, index)=>{
+        if (passes) {
+          autoSelected.push(index);
+        }
+      });
+      if (this.filteringByPeakPrevalence) {
+        const peakThreshold = this.peakPrevalenceThreshold;
+        const confidenceThreshold = this.confidenceThreshold;
+        const {peakPrevalence, nodeConfidence} = this;
+        autoSelected = autoSelected.filter(nodeIndex=>{
+          const pp = peakPrevalence[nodeIndex];
+          const nc = nodeConfidence[nodeIndex];
+          return pp >= peakThreshold
+            && nc >= confidenceThreshold;
+        });
+      }
+    } else if (this.filteringByPeakPrevalence) {
+      const peakThreshold = this.peakPrevalenceThreshold;
+      const confidenceThreshold = this.confidenceThreshold
+      autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
+    }
     autoSelected.forEach(nodeIndex=>{
       if (this.selectionReasons[nodeIndex] === undefined) {
         this.selectionReasons[nodeIndex] = new Set();
       }
-      this.selectionReasons[nodeIndex].add(selectionSource);
+      this.selectionReasons[nodeIndex].add(AUTO_SELECTED);
     });
     /* what nodes have reason to show up? */
     const shouldShow: number[] = [];
@@ -495,10 +531,11 @@ export class CoreLineagesData {
   */
   updatePeakPrevalenceThreshold(yes: boolean, minPeak: number) : void {
     this.peakPrevalenceThreshold = minPeak / 100;
+    this.filteringByPeakPrevalence = yes;
     if (yes) {
       this.selectNodesByImpact();
     } else {
-      this.setAutoNodeSelections([], SELECTED_BY_PREVALENCE);
+      this.setAutoNodeSelections();
       if (this.selectedNodes.length === 0) {
         this.selectedNodes.push(this.rootNode);
       }
@@ -523,9 +560,12 @@ export class CoreLineagesData {
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     if (!mccConfig || !mccConfig.metadata) return
     if (yes) {
-      if (pythia && mccConfig.metadata.getFields().includes(field)) {
-        const introductions = this.getMetadataTransitionNodes(mccConfig, field);
-        this.setAutoNodeSelections(introductions, `metadata:${field}`);
+      this.filteringByMetadataFields.add(field);
+      if (this.metadataTransitionNodes[field] === undefined) {
+        if (pythia && mccConfig.metadata.getFields().includes(field)) {
+          const introductions = this.getMetadataTransitionNodes(mccConfig, field);
+          this.metadataTransitionNodes[field] = introductions;
+        }
       } else {
         console.debug(`somehow, we requested finding nodes by metadata transition…
           …but there's no metadata available.  
@@ -533,8 +573,9 @@ export class CoreLineagesData {
       }
     } else {
       /* find the nodes that were added by the transition, and clear them */
-      this.setAutoNodeSelections([], `metadata:${field}`);
+      this.filteringByMetadataFields.delete(field);
     }
+    this.setAutoNodeSelections();
     if (this.selectionTreeData) {
       if (this.selectedNodes.length === 0) {
         this.selectedNodes.push(this.rootNode);
