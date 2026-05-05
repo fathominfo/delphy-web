@@ -119,7 +119,22 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
 
   /*
   This is invoked when a highlight is created from a component
-  _other_ than the tree
+  _other_ than the tree.
+
+  However! The DisplayNode object that gets passed in ultimately
+  comes from CoreLineagesData, and it is a persistent object
+  whose inner data changes. So whether it's 1) passing in an
+  object, or 2) checking whether the highlightedNode has a
+  match in this.nodes, both are misleading. Not sure if we can
+  get away with just passing in a nodeIndex for the highlightNode,
+  but that might be a less misleading implementation [mark 260505]
+
+  TODO: refactor highlightNode to either
+  a) pass in just the nodeIndex of the highlighted node, or
+  b) since the passed in node is (probably? need to check)
+  always the same node, don't pass in the node, just alert
+  this class that a value _to which it already has a reference_
+  has been updated.
   */
   highlightNode(node: DisplayNode, date: number) {
     // console.log('   highlightNode', node?.index)
