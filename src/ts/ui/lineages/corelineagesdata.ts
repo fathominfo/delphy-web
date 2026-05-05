@@ -185,7 +185,8 @@ export class CoreLineagesData {
       this.nodeConfidence = mccTreeCanvas.creds;
       this.tipCounts = getTipCounts(summaryTree);
       this.getY = (n:number)=>mccTreeCanvas.getRawY(n);
-      this.nodeMetadata = this.sharedState.mccConfig.nodeMetadata;
+      const mccConfig = this.sharedState.mccConfig;
+      this.nodeMetadata = mccConfig.nodeMetadata;
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
@@ -194,11 +195,15 @@ export class CoreLineagesData {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
       this.peakPrevalence.length = 0;
-      this.metadataTransitionNodes = {};
       this.setNodePeakPrevalence(this.confidenceThreshold);
       if (this.filteringByPeakPrevalence) {
         this.autoSelectPeakPrevalence();
       }
+      this.metadataTransitionNodes = {};
+      this.filteringByMetadataFields.forEach(field=>{
+        const introductions = this.getMetadataTransitionNodes(mccConfig, field);
+        this.metadataTransitionNodes[field] = introductions;
+      });
       this.selectNodesByImpact();
       this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
@@ -536,11 +541,11 @@ export class CoreLineagesData {
       this.selectNodesByImpact();
     } else {
       this.setAutoNodeSelections();
+    }
+    if (this.selectionTreeData) {
       if (this.selectedNodes.length === 0) {
         this.selectedNodes.push(this.rootNode);
       }
-    }
-    if (this.selectionTreeData) {
       this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
     }
