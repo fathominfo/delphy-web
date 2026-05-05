@@ -1,6 +1,6 @@
 import { Context2d } from "jspdf";
 import { PdfCanvas } from "../../util/pdfcanvas";
-import { getCSSValue, UNSET } from "../common";
+import { ColorOption, getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { NodeCallback, NodePair } from "./lineagescommon";
@@ -20,6 +20,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   highlightCanvas: HTMLCanvasElement;
   highlightCtx: CanvasRenderingContext2D;
   configuredRootNode: number = UNSET;
+  useMetadataColor = true;
 
 
   constructor(canvas: HTMLCanvasElement | PdfCanvas,
@@ -112,6 +113,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
 
   draw() {
     super.draw();
+    this.useMetadataColor = !this.mccConfig || this.mccConfig.colorOption === ColorOption.metadata;
     this.drawSelection();
   }
 
@@ -146,7 +148,11 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       y = this.getZoomY(descendant.index);
     let py, px;
     ctx.globalAlpha = highlightNode === null || descendant === highlightNode ? 1 : 0.5;
-    ctx.strokeStyle = descendant.getStroke();
+    if (this.useMetadataColor) {
+      ctx.strokeStyle = this.nodeColors[descendant.index];
+    } else {
+      ctx.strokeStyle = descendant.getStroke();
+    }
     ctx.lineWidth = parseFloat(getCSSValue("--lineages-tree-descent-stroke-weight"));
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -178,7 +184,9 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     const radius = displayNode.isInferred ? INFERRED_NODE_RADIUS : SELECTED_NODE_RADIUS;
     let fillColor: string;
     let outlining = false;
-    if (displayNode.isInferred) {
+    if (this.useMetadataColor) {
+      fillColor = this.nodeColors[index];
+    } else if (displayNode.isInferred) {
       fillColor = displayNode.getStroke();
     } else {
       fillColor = displayNode.getFill();

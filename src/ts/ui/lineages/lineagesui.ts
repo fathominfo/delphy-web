@@ -1,6 +1,6 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MccUI } from '../mccui';
-import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET } from '../common';
+import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET, ColorOption } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
@@ -51,6 +51,7 @@ export class LineagesUI extends MccUI {
     let previousNode = UNSET
     const treeHoverCallback: NodeCallback = (nodeIndex: number)=>{
       if (nodeIndex !== previousNode) {
+        // console.log(`${previousNode} --> handleNodeHover(${nodeIndex})`);
         previousNode = nodeIndex;
         this.handleNodeHover(nodeIndex, UNSET);
       }
@@ -198,14 +199,17 @@ export class LineagesUI extends MccUI {
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
-    if (highlightNode === null || highlightNode.index === UNSET) {
-      highlightNode = rootNode?.node as DisplayNode;
-    }
     this.nodeDetails.setData(highlightNode);
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
     this.nodeSchematic.setData(nodePairs, rootNode);
+    this.nodeSchematic.highlightNode(highlightNode);
+    if (highlightNode === null || highlightNode.index === UNSET) {
+      highlightNode = rootNode?.node as DisplayNode;
+    }
+    this.nodeListDisplay.highlightNode(highlightNode);
+
     // this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
     this.requestDraw();
   }
@@ -244,7 +248,8 @@ export class LineagesUI extends MccUI {
   }
 
   highlightCharts() {
-    const { node, date, mutation } = this.coreData.getHighlights(); // eslint-disable-line @typescript-eslint/no-unused-vars
+    // const { node, date, mutation } = this.coreData.getHighlights();
+    const { node, date } = this.coreData.getHighlights();
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
     let highlightNode = node;
     if (highlightNode === null || highlightNode.index === UNSET) {
@@ -311,6 +316,17 @@ export class LineagesUI extends MccUI {
     // this.nodeSchematic.highlightNode(zoomNode, null);
   }
 
+  /*
+  this step happens in the flow after the tree colors have been set.
+  so we can take this moment to set the colors for the schematic
+  */
+  protected requestTreeDraw(): void {
+    super.requestTreeDraw();
+    const metadataColors = this.mccTreeCanvas.nodeColors.slice(0);
+    const colorByMetadata = this.sharedState.mccConfig.colorOption === ColorOption.metadata;
+    this.nodeSchematic.setColorMethod(colorByMetadata, metadataColors);
+    requestAnimationFrame(()=>this.nodeSchematic.render());
+  }
 
 
 
