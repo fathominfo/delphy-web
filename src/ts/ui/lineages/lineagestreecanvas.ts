@@ -117,13 +117,18 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     this.drawSelection();
   }
 
+  /*
+  This is invoked when a highlight is created from a component
+  _other_ than the tree
+  */
   highlightNode(node: DisplayNode, date: number) {
+    // console.log('   highlightNode', node?.index)
     this.highlightCtx.clearRect(0, 0, this.width, this.height);
     this.highlightedNode = node;
     this.highlightedDate = date;
     this.subtreeNode = node;
     if (node.index !== UNSET) {
-      const others: DisplayNode[] = this.nodes.filter(n=>n!==node)
+      const others: DisplayNode[] = this.nodes.filter(n=>n!==node);
       this.highlightCtx.globalAlpha = 0.5;
       this.renderSubtree();
       this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
@@ -141,13 +146,13 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
 
   drawAncestry(pair: NodePair): void {
     const ctx = this.highlightCtx;
-    const highlightNode = this.highlightedNode;
+    const highlightedNode = this.highlightedNode;
     const {ancestor, descendant} = pair;
     const mcc = this.tree as SummaryTree;
     let x = this.getZoomX(mcc.getTimeOf(descendant.index)),
       y = this.getZoomY(descendant.index);
     let py, px;
-    ctx.globalAlpha = highlightNode === null || descendant === highlightNode ? 1 : 0.5;
+    ctx.globalAlpha = highlightedNode === null || highlightedNode.index === UNSET || descendant.index === highlightedNode.index ? 1 : 0.5;
     if (this.useMetadataColor) {
       ctx.strokeStyle = this.nodeColors[descendant.index];
     } else {
@@ -177,7 +182,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     const index = displayNode.index;
     if (index === UNSET) return;
     const ctx = this.highlightCtx;
-    const highlightNode = this.highlightedNode;
+    const highlightedNode = this.highlightedNode;
     const mcc = this.tree as SummaryTree,
       x = this.getZoomX(mcc.getTimeOf(index)),
       y = this.getZoomY(index);
@@ -193,7 +198,8 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       outlining = true;
     }
     const strokeColor = displayNode.getStroke();
-    ctx.globalAlpha = highlightNode === null || displayNode === highlightNode ? 1 : 0.5;
+    ctx.globalAlpha = highlightedNode === null || highlightedNode.index === UNSET || displayNode.index === highlightedNode.index ? 1 : 0.5;
+    // console.log('drawing ', index, ctx.globalAlpha, displayNode === highlightNode)
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
