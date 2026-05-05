@@ -179,7 +179,6 @@ export class MccTreeCanvas {
       this.canvas.addEventListener("pointermove", (event:PointerEvent)=>this.handlePointerMove(event));
       this.canvas.addEventListener("pointerup", (event:PointerEvent)=>this.handlePointerUp(event));
       this.canvas.addEventListener("dblclick", (event:MouseEvent)=>this.handleDoubleClick(event));
-      this.canvas.addEventListener("resize", ()=>this.sizeCanvas());
     }
     this.resetZoom();
   }

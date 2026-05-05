@@ -112,6 +112,7 @@ export class MccUI extends UIScreen {
       this.highlightCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
     }
     this.requestTreeDraw();
+    requestAnimationFrame(()=>this.mccTreeCanvas.setAxisDates());
   }
 
 

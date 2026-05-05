@@ -688,7 +688,7 @@ export class RunUI extends MccUI {
 
   resize():void {
     this.mccTreeCanvas.sizeCanvas();
-
+    this.mccTreeCanvas.setAxisDates();
 
     this.traceCanvases.forEach(hc => {
       if (hc.isVisible) {
