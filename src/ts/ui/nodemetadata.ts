@@ -258,8 +258,8 @@ export class NodeMetadata {
         if (nodeFieldOptions.length === 1) {
           value = nodeFieldOptions[0];
         } else {
-          // value = getRandom(nodeFieldOptions);
-          value = getWeightedRandom(nodeFieldOptions, tipTallies[index][column]);
+          value = getRandom(nodeFieldOptions);
+          // value = getWeightedRandom(nodeFieldOptions, tipTallies[index][column]);
         }
         nodeValues[index][c].value = value;
         nodeValues[index][c].counts = tipTallies[index][column];
