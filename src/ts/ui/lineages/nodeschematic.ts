@@ -393,7 +393,7 @@ export class NodeSchematic {
       // index the mutations by the descendent
       this.pairsByDescendant[pair.descendant.index] = pair;
     });
-    COUNT_SPAN.textContent = `${nfc(nodeCount)} nodes${ nodeCount === 1 ? '' : 's'}` ;
+    COUNT_SPAN.textContent = `${nfc(nodeCount)} node${ nodeCount === 1 ? '' : 's'}` ;
     // this.setLayout();
   }
 
