@@ -1,10 +1,11 @@
-import { PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
+import { nfc, PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
 import { DismissNodeCallback, HoverCallback, MetadataToggleCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
 const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
+const COUNT_SPAN = document.querySelector("#lineages--schematic-count") as HTMLSpanElement;
 const PREVALENCE_THRESHOLD_TOGGLE = CONTROLS.querySelector("#lineages--peak-prevalence-toggle input") as HTMLInputElement;
 const PREVALENCE_THRESHOLD_SLIDER = CONTROLS.querySelector("#lineages--peak-prevalence-selector") as HTMLInputElement;
 const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#lineages--peak-prevalence--readout") as HTMLSpanElement
@@ -155,8 +156,8 @@ class TreeNodeDisplay {
     // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
     // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
 
-    // const label = mrca ? "" : node.label;
-    const label = `${node.index}`;
+    const label = mrca ? "" : node.label;
+    // const label = `${node.index}`;
     textNode.textContent = label;
     if (color === '') {
       rect.setAttribute("fill", '');
@@ -383,7 +384,7 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     this.rootNode = rootNode;
     this.pairsByDescendant = [];
@@ -392,6 +393,7 @@ export class NodeSchematic {
       // index the mutations by the descendent
       this.pairsByDescendant[pair.descendant.index] = pair;
     });
+    COUNT_SPAN.textContent = `${nfc(nodeCount)} node${ nodeCount === 1 ? '' : 's'}` ;
     // this.setLayout();
   }
 
