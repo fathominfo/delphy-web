@@ -716,6 +716,9 @@ details {
 .lineages--node-item {
   height: 40px;
 }
+.lineages--node-item + .lineages--node-item{
+  margin-top: 3px;
+}
 
 
 // ██████╗ ██████╗ ███████╗██╗   ██╗ █████╗ ██╗     ███████╗███╗   ██╗ ██████╗███████╗
@@ -1814,41 +1817,135 @@ details {
 }
 
 
-  /*
-  color the mrca nodes by the root, since it is not inferred
-  */
+/*
+color the mrca nodes by the root, since it is not inferred
+*/
 
-  .lineages--track-mutations[data-to="mrca"] {
-    path { fill: var(--mrca-timeline-fill); }
-    line { stroke: var(--mrca-timeline-stroke); }
-    .lineages--node-comparison--mutation-name {
-      color: var(--mrca-mutation-text);
-      .site {
-        color : var(--mrca-position-text);
-      }
+.lineages--track-mutations[data-to="mrca"] {
+  path { fill: var(--mrca-timeline-fill); }
+  line { stroke: var(--mrca-timeline-stroke); }
+  .lineages--node-comparison--mutation-name {
+    color: var(--mrca-mutation-text);
+    .site {
+      color : var(--mrca-position-text);
+    }
+  }
+}
+
+.lineages--track-mutations[data-to="a"] {
+  path { fill: var(--a-timeline-fill); }
+  line { stroke: var(--a-timeline-stroke); }
+  .lineages--node-comparison--mutation-name {
+    color: var(--a-mutation-text);
+    .site {
+      color : var(--a-position-text);
+    }
+  }
+}
+
+.lineages--track-mutations[data-to="b"] {
+  path { fill: var(--b-timeline-fill); }
+  line { stroke: var(--b-timeline-stroke); }
+  .lineages--node-comparison--mutation-name {
+    color: var(--b-mutation-text);
+    .site {
+      color : var(--b-position-text);
+    }
+  }
+}
+
+
+
+
+#subway--car-actions {
+
+  p {
+    margin: 3px 0;
+  }
+
+  #subway--detail-tip-name {display: none;}
+  #border {
+    fill: white;
+    stroke: gray;
+  }
+
+  #subway--node-actions {
+    position: absolute;
+    right: -2px;
+    top: -2px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+
+  .node-root-action {
+    display: inline-block;
+    transition: color .15s;
+    color: var(--selection-static-icon-fill-static);
+    &:hover {
+      color: var(--selection-on-icon-fill-on);
     }
   }
 
-  .lineages--track-mutations[data-to="a"] {
-    path { fill: var(--a-timeline-fill); }
-    line { stroke: var(--a-timeline-stroke); }
-    .lineages--node-comparison--mutation-name {
-      color: var(--a-mutation-text);
-      .site {
-        color : var(--a-position-text);
-      }
+  #subway--reset-root {
+    display: none;
+  }
+
+  #subway--node-dismiss {
+    flex-shrink: 0;
+    width: var(--selection-remove-size);
+    height: var(--selection-remove-size);
+    cursor: pointer;
+    position: relative;
+    font-size: 20px;
+    display: block;
+    margin-top: -2px;
+    color: var(--selection-static-icon-fill-static);
+    &:hover {
+      color: var(--selection-on-icon-fill-on);
     }
   }
 
-  .lineages--track-mutations[data-to="b"] {
-    path { fill: var(--b-timeline-fill); }
-    line { stroke: var(--b-timeline-stroke); }
-    .lineages--node-comparison--mutation-name {
-      color: var(--b-mutation-text);
-      .site {
-        color : var(--b-position-text);
-      }
-    }
+
+  &.is-lower {
+    #subway--node-detail-fo { y: 14;}
   }
 
 
+
+  &.is-tip {
+    #subway--detail-tip-name {display: block;}
+    /* tips cannot be set to root */
+    #subway--set-root, #subway--reset-root,
+    #subway--detail-tip-count,
+    #subway--detail-tree-mono {display: none;}
+  }
+
+  &.is-root {
+    /* this is the actual root, so can't dismiss it, or set it as root */
+    #subway--set-root,
+    #subway--reset-root,
+    #subway--node-dismiss {display: none;}
+  }
+
+  &.is-set-root {
+    /*
+    this is an inner node that has been set to root,
+    so can't dismiss it, or set it as root,
+    but we can reset it so the actual root will display as root */
+    #subway--set-root  { display: none; }
+    #subway--reset-root  { display: inline-block; }
+    #subway--node-dismiss {
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
+  &:hover {
+    .node-root-action {
+      opacity: 1;
+    }
+  }
+
+}

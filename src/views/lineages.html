@@ -80,25 +80,32 @@
             <div class="header">
               <div class="title">
                 <h4>Node selection <span id="lineages--schematic-count"></span></h4>
-                <p>Select nodes for further analysis by clicking in the tree</p>
+                <p>Choose nodes for further analysis</p>
+                <p>Add nodes by clicking in the tree on the left</p>
               </div>
             </div>
             <div id="lineages--schematic-controls">
+              <div>
+                <button id="lineages--schematic-auto">Auto</button>
+                <button id="lineages--schematic-clear">Clear</button>
+              </div>
               <div id="lineages--peak-prevalence">
                 <label id="lineages--peak-prevalence-toggle">
-                  <input type="checkbox" checked />
-                  <span>Select by minimum peak prevalence</span>
-                </label>
-                <div>
-                  <input id="lineages--peak-prevalence-selector" type="range" min="0" max="100" value="5" />
+                  <span>Minimum peak prevalence</span>
+                  <button id="lineages--peak-prevalence-less">-</button>
                   <span id="lineages--peak-prevalence--readout"></span>
-                </div>
+                  <button id="lineages--peak-prevalence-more">+</button>
+                </label>
               </div>
 
-              <label class="lineages--metadata-transitions">
-                <input type="checkbox"  />
-                <span>Select <span class="lineages--metadata-field"></span> introductions</span>
-              </label>
+              <form id="lineages--metadata-transitions">
+                <span>Highlight metadata transitions</span>
+                <label>
+                  <span class="lineages--metadata-field"></span>
+                  <input type="radio" name="field" />
+                </label>
+
+              </form>
 
             </div>
 
@@ -115,29 +122,23 @@
                 </g>
 
                 <g id="subway--car-actions">
-                  <rect id="subway--car-action-container" x="-16" y="-15" width="50" height="30"></rect>
-                  <foreignObject id="subway--car-dismiss--fo" x="20" y="-15" width="15" height="15">
-                    <button xmlns="http://www.w3.org/1999/xhtml" id="subway--car-dismiss" title="remove node">x</button>
-                  </foreignObject>
-                  <foreignObject id="subway--car-expansion--fo" x="20" y="-2" width="15" height="15">
-                    <label id="subway--car-expansion">
-                      <span class="expanded" title="collapse node">v</span>
-                      <span class="collapsed" title="expand node">&gt;</span>
-                      <input type="checkbox">
-                    </label>
+                  <path id="border" d="M-16 -10 L-196 -10 -196 -55  16 -55 16  14 -16  14z"></path>
+                  <foreignObject id="subway--node-detail-fo" x="-190" y="-54" width="204" height="50">
+                    <p id="subway--detail-tip-name">Tip <span>12354678</span></p>
+                    <p id="subway--detail-tip-count"><span>55</span> tips</p>
+                    <p id="subway--detail-tree-mono">monophyletic in <span>50</span>% of base trees</p>
+                    <div id="subway--node-actions">
+                      <button type="button" id="subway--set-root" class="node-root-action" aria-label="set node as root">
+                          Set as root
+                      </button>
+                      <button type="button" id="subway--reset-root" class="node-root-action" aria-label="reset root">
+                          Reset root
+                      </button>
+                      <button type="button" id="subway--node-dismiss" aria-label="Dismiss node" title="Dismiss node" >&times;</button>
+                    </div>
                   </foreignObject>
                 </g>
-
               </svg>
-              <!-- <div id="subway--car-actions">
-                <div id="subway--car-scrim"></div>
-                <button id="subway--car-dismiss" title="remove node">x</button>
-                <label id="subway--car-expansion">
-                  <span class="expanded">v</span>
-                  <span class="collapsed">&gt;</span>
-                  <input type="checkbox">
-                </label>
-              </div> -->
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MccUI } from '../mccui';
-import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET, ColorOption } from '../common';
+import { DataResolveType, Screens, SET_PREVALENCE_CALLBACK_TYPE, UNSET, ColorOption } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
@@ -58,14 +58,14 @@ export class LineagesUI extends MccUI {
     };
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
     const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
-    const prevThresholdCallback: PREVALENCE_CALLBACK_TYPE = (usePrev: boolean, prevThreshold: number)=>this.coreData.updatePeakPrevalenceThreshold(usePrev, prevThreshold);
-    const metadataTransitionCallback: MetadataToggleCallback = (findTransitions: boolean, fieldName: string)=>this.coreData.toggleMetadataTransitions(findTransitions, fieldName);
+    const prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE = (increment = true)=>this.coreData.updatePeakPrevalenceThreshold(increment);
+    const metadataTransitionCallback: MetadataToggleCallback = (fieldName: string)=>this.coreData.highlightMetadataTransitions(fieldName);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightedNode = node;
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback, dismissCallback);
+    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback, dismissCallback, rootSelectCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;

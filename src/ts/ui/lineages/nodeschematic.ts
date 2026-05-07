@@ -1,15 +1,18 @@
-import { nfc, PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
+import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { DismissNodeCallback, HoverCallback, MetadataToggleCallback, NodePair, NodeRelationType } from "./lineagescommon";
+import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
 
 
+const METADATA_FIELD_SELECTOR = "#lineages--metadata-transitions label";
+
 const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
 const COUNT_SPAN = document.querySelector("#lineages--schematic-count") as HTMLSpanElement;
-const PREVALENCE_THRESHOLD_TOGGLE = CONTROLS.querySelector("#lineages--peak-prevalence-toggle input") as HTMLInputElement;
-const PREVALENCE_THRESHOLD_SLIDER = CONTROLS.querySelector("#lineages--peak-prevalence-selector") as HTMLInputElement;
+
+const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#lineages--peak-prevalence-less") as HTMLButtonElement;
+const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#lineages--peak-prevalence-more") as HTMLButtonElement;
 const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#lineages--peak-prevalence--readout") as HTMLSpanElement
-const METADATA_TRANSITION_TEMPLATE = CONTROLS.querySelector(".lineages--metadata-transitions") as HTMLDivElement;
+const METADATA_TRANSITION_TEMPLATE = CONTROLS.querySelector(METADATA_FIELD_SELECTOR) as HTMLDivElement;
 const METADATA_PARENT = METADATA_TRANSITION_TEMPLATE.parentNode as HTMLDivElement;
 METADATA_TRANSITION_TEMPLATE.remove();
 const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
@@ -18,19 +21,26 @@ const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
 const MUTATION_COUNT_TEMPLATE = CONTAINER.querySelector(".mut-count") as SVGGElement;
 const CONNECTOR_TEMPLATE = CONTAINER.querySelector(".connector") as SVGLineElement;
 const CAR_CONTROLS = CONTAINER.querySelector("#subway--car-actions") as HTMLDivElement;
-const CAR_CONTROLS_RECT = CAR_CONTROLS.querySelector("#subway--car-action-container") as SVGRectElement;
-const CAR_CONTROLS_DISMISS  = CAR_CONTROLS.querySelector("#subway--car-dismiss--fo") as SVGElement;
-const CAR_CONTROLS_EXPAND = CAR_CONTROLS.querySelector("#subway--car-expansion--fo") as SVGElement;
-const CAR_CONTROLS_EXPAND_INPUT = CAR_CONTROLS_EXPAND.querySelector("input") as HTMLInputElement;
+const CAR_CONTROLS_DISMISS = CAR_CONTROLS.querySelector("#subway--node-dismiss") as HTMLButtonElement;
+const CAR_CONTROLS_ROOT_SELECT = CAR_CONTROLS.querySelector("#subway--set-root") as HTMLButtonElement;
+const CAR_CONTROLS_ROOT_RESET = CAR_CONTROLS.querySelector("#subway--reset-root") as HTMLButtonElement;
+
+
+const CONTROL_W = 212;
+const CONTROL_H = 70;
+const CONTROL_Y1 = 14;
+const CONTROL_Y2 = -10;
+const CONTROL_Y3 = -55;
+
 CAR_CONTROLS.remove();
 
 
 [LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE, CONNECTOR_TEMPLATE].forEach(el=>el.remove());
 
 const MARGIN  = {
-  top: 10,
-  bottom: 10,
-  left: 40,
+  top: CONTROL_H,
+  bottom: CONTROL_H,
+  left: CONTROL_W,
   right: 10
 }
 
@@ -84,13 +94,48 @@ class TreeNodeDisplay {
     const labelBackground = this.nameLabel.querySelector("rect") as SVGRectElement;
     labelBackground.addEventListener("pointerenter", ()=>{
       nodeHighlightCallback(this.node.index, UNSET, null);
-      CAR_CONTROLS_RECT.setAttribute("width", `${this.textLabelWidth + 30}`);
-      CAR_CONTROLS_RECT.setAttribute("x", `${ -6 - this.textLabelWidth / 2}`);
-      CAR_CONTROLS_DISMISS.setAttribute("x", `${ this.textLabelWidth / 2 + 8}`);
-      CAR_CONTROLS_EXPAND.setAttribute("x", `${ this.textLabelWidth / 2 + 8}`);
-      CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`)
-      CAR_CONTROLS_EXPAND.classList.toggle("hidden", this.isTip);
-      CAR_CONTROLS_EXPAND_INPUT.checked = !this.isCollapsed;
+      CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`);
+      const node = this.node;
+      const isLower: boolean = !!this.parent && this.parent.yPos < this.yPos;
+      CAR_CONTROLS.classList.toggle("is-tip", node.isTip());
+      CAR_CONTROLS.classList.toggle("is-root", node.isRoot && node.isInferred);
+      CAR_CONTROLS.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
+      CAR_CONTROLS.classList.toggle("is-lower", isLower);
+      if (node.isTip()) {
+        const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
+        if (node.metadata !== null) {
+          if (node.metadata.id !== undefined) {
+            tipIdSpan.innerText = `${node.metadata.id.value}`;
+            tipIdSpan.title = node.metadata.id.value;
+          } else if (node.metadata.accession !== undefined) {
+            tipIdSpan.innerText = `${node.metadata.accession.value}`;
+            tipIdSpan.title = node.metadata.accession.value;
+          }
+        } else {
+          tipIdSpan.textContent = '';
+        }
+
+      } else {
+        (CAR_CONTROLS.querySelector("#subway--detail-tip-count span") as HTMLSpanElement).textContent = nfc(node.childCount);
+        (CAR_CONTROLS.querySelector("#subway--detail-tree-mono span") as HTMLSpanElement).textContent = getPercentLabel(node.confidence);
+      }
+
+      const lowerFactor = isLower ? -1 : 1;
+      const y1 = CONTROL_Y1 * lowerFactor;
+      const y2 = CONTROL_Y2 * lowerFactor;
+      const y3 = CONTROL_Y3 * lowerFactor;
+      const w = this.textLabelWidth + 9;
+      const x1 = w/2;
+      const x2 = - x1;
+      const x3 = x1 - CONTROL_W;
+      const x4 = x3 + 5;
+      const pathD = `M${x1} ${y1} L${x2} ${y1} ${x2} ${y2} ${x3} ${y2} ${x3} ${y3} ${x1} ${y3} z`;
+
+      (CAR_CONTROLS.querySelector("#border") as SVGPathElement).setAttribute("d", pathD);
+      (CAR_CONTROLS.querySelector("#subway--node-detail-fo") as SVGElement).style.setProperty('x',`${x4}`);
+
+
+
       CONTAINER.appendChild(CAR_CONTROLS);
       CONTAINER.appendChild(this.nameLabel);
       // console.log(`highlighting ${this.node.index} ${CAR_CONTROLS_EXPAND_INPUT.checked}`);
@@ -224,18 +269,26 @@ export class NodeSchematic {
 
 
   constructor(nodeHighlightCallback: HoverCallback,
-    prevThresholdCallback: PREVALENCE_CALLBACK_TYPE,
+    prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE,
     metadataTransitionCallback: MetadataToggleCallback,
-    dismissNodeCallback: DismissNodeCallback
+    dismissNodeCallback: DismissNodeCallback,
+    rootSelectCallback: NodeCallback
   ) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    PREVALENCE_THRESHOLD_SLIDER.addEventListener("input", ()=>{
-      prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
+    // PREVALENCE_THRESHOLD_SLIDER.addEventListener("input", ()=>{
+    //   prevThresholdCallback(true, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
+    // });
+    // // PREVALENCE_THRESHOLD_TOGGLE.addEventListener("input", ()=>{
+    //   prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
+    // });
+    PREVALENCE_THRESHOLD_LESS.addEventListener("click", ()=>{
+      prevThresholdCallback(false);
     });
-    PREVALENCE_THRESHOLD_TOGGLE.addEventListener("input", ()=>{
-      prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
+    PREVALENCE_THRESHOLD_MORE.addEventListener("click", ()=>{
+      prevThresholdCallback(true);
     });
+
     this.metadataTransitionCallback = metadataTransitionCallback;
     CAR_CONTROLS.addEventListener("pointerleave", ()=>{
       nodeHighlightCallback(UNSET, UNSET, null);
@@ -264,16 +317,13 @@ export class NodeSchematic {
       this.highlightIndex = UNSET;
       this.setHighlightNode();
     });
-    CAR_CONTROLS_EXPAND_INPUT.addEventListener("input", ()=>{
-      const node = this.nodes.filter(display=>display.node.index === this.highlightIndex)[0];
-      if (node) {
-        node.isCollapsed = !CAR_CONTROLS_EXPAND_INPUT.checked;
-        // console.log(`node ${this.highlightIndex} is collapsed: ${ node.isCollapsed }, is checked: ${CAR_CONTROLS_EXPAND_INPUT.checked}`)
-        // console.log('collapse / expand calling this.nodeSchematic.setLayout()')
-        this.setLayout();
-        this.requestRender();
+    CAR_CONTROLS_ROOT_SELECT.addEventListener("click", ()=>{
+      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.node.index === this.highlightIndex)[0];
+      if (tnd) {
+        rootSelectCallback(tnd.node.index);
       }
     });
+    CAR_CONTROLS_ROOT_RESET.addEventListener('click', () => rootSelectCallback(UNSET));
   }
 
 
@@ -321,8 +371,8 @@ export class NodeSchematic {
   setSpacing() {
     const { width, height, maxGenerations, tipRange } = this;
     if (width === UNSET || height === UNSET) return;
-    let xSpacing = (width - 70) / maxGenerations;
-    let ySpacing = (height - 20) / tipRange * 0.6;
+    let xSpacing = (width - CONTROL_W) / maxGenerations;
+    let ySpacing = (height - CONTROL_H * 2) / tipRange * 0.6;
     // console.log(MIN_NODE_X_SPACING, MAX_NODE_X_SPACING, this.xSpacing, xSpacing );
     xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING, this.xSpacing), MIN_NODE_X_SPACING);
     ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING, this.ySpacing), MIN_NODE_Y_SPACING);
@@ -343,13 +393,12 @@ export class NodeSchematic {
   setPrevalenceSelectors(prevalenceActive: boolean, peakPrevalence: number) : void {
     const pct = Math.round(peakPrevalence * 100);
     PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
-    PREVALENCE_THRESHOLD_SLIDER.value = `${pct}`;
   }
 
   setMetadataSelectors(metadataFields : string[]) : void {
     if (metadataFields.length !== this.metadataFieldCount) {
       const fieldsChecked: {[_: string]: boolean} = {};
-      METADATA_PARENT.querySelectorAll(".lineages--metadata-transitions").forEach((ele:Element)=>{
+      METADATA_PARENT.querySelectorAll(METADATA_FIELD_SELECTOR).forEach((ele:Element)=>{
         const input = ele.querySelector("input") as HTMLInputElement;
         const fieldSpan = ele.querySelector(".lineages--metadata-field") as HTMLSpanElement;
         const fieldName = (fieldSpan.textContent || '').toLowerCase();
@@ -357,19 +406,21 @@ export class NodeSchematic {
         fieldsChecked[fieldName] = checked;
         ele.remove();
       });
-      metadataFields.forEach((mdField:string)=>{
+      const addMetadaOption = (mdField:string, label: string)=>{
         if (mdField.toLowerCase() === "id" || mdField.toLowerCase() === "accession" ) return;
         const mdDiv = METADATA_TRANSITION_TEMPLATE.cloneNode(true) as HTMLDivElement;
         const input = mdDiv.querySelector("input") as HTMLInputElement;
         const fieldSpan = mdDiv.querySelector(".lineages--metadata-field") as HTMLSpanElement;
-        fieldSpan.textContent = mdField;
+        fieldSpan.textContent = label;
         const wasChecked = fieldsChecked[mdField.toLowerCase()];
         input.checked = !!wasChecked;
         input.addEventListener("input", ()=>{
-          this.metadataTransitionCallback(input.checked, mdField);
+          this.metadataTransitionCallback(mdField);
         });
         METADATA_PARENT.appendChild(mdDiv);
-      });
+      };
+      metadataFields.forEach(field=>addMetadaOption(field, field));
+      addMetadaOption(METADATA_NONE_OPTION, 'None');
       this.metadataFieldCount = metadataFields.length;
     }
   }

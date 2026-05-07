@@ -9,7 +9,7 @@ import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
+import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 import { MccConfig } from "../mccconfig";
@@ -534,10 +534,12 @@ export class CoreLineagesData {
   /*
   expects a number 0-100
   */
-  updatePeakPrevalenceThreshold(yes: boolean, minPeak: number) : void {
-    this.peakPrevalenceThreshold = minPeak / 100;
-    this.filteringByPeakPrevalence = yes;
-    if (yes) {
+  updatePeakPrevalenceThreshold(increment: boolean) : void {
+    let newPct = this.peakPrevalenceThreshold * 100;
+    newPct += increment ? 1 : -1;
+    this.peakPrevalenceThreshold = Math.min(Math.max(0, newPct / 100),1);
+    this.filteringByPeakPrevalence = true;
+    if (this.filteringByPeakPrevalence) {
       this.selectNodesByImpact();
     } else {
       this.setAutoNodeSelections();
@@ -560,11 +562,11 @@ export class CoreLineagesData {
     }
   }
 
-  toggleMetadataTransitions(yes: boolean, field: string) : void {
+  highlightMetadataTransitions(field: string) : void {
     const pythia = this.pythia;
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     if (!mccConfig || !mccConfig.metadata) return
-    if (yes) {
+    if (field !== METADATA_NONE_OPTION) {
       this.filteringByMetadataFields.add(field);
       if (this.metadataTransitionNodes[field] === undefined) {
         if (pythia && mccConfig.metadata.getFields().includes(field)) {
