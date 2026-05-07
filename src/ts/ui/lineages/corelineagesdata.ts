@@ -44,6 +44,12 @@ export type HighlightData = {
   mutation: Mutation | null
 };
 
+export interface IntroductionData {
+  nodeIndex: number,
+  value: string,
+  upstreamValue: string
+}
+
 
 export type ChartData = {
   nodeDistributions: BaseTreeSeriesType,
@@ -55,11 +61,12 @@ export type ChartData = {
   nodes: DisplayNode[],
   rootNode: TreeNode | null,
   selectedRootIndex: number,
-  peakPrevalence: number
+  peakPrevalence: number,
+  fieldIntroductions: IntroductionData[]
 }
 
 
-export type updateFunction = (_: ChartData)=>void;
+export type UpdateFunction = (_: ChartData)=>void;
 
 
 const defaultChartData : ChartData = {
@@ -72,7 +79,8 @@ const defaultChartData : ChartData = {
   nodes: [],
   rootNode: null,
   selectedRootIndex: UNSET,
-  peakPrevalence: UNSET
+  peakPrevalence: UNSET,
+  fieldIntroductions: []
 };
 
 
@@ -81,7 +89,7 @@ const defaultChartData : ChartData = {
 export class CoreLineagesData {
 
   /* interface to push updates */
-  update: updateFunction;
+  update: UpdateFunction;
 
   /* shared data stores that we need */
   sharedState: SharedState;
@@ -115,7 +123,8 @@ export class CoreLineagesData {
   private peakPrevalenceThreshold: number = DEFAULT_PEAK_PREVALENCE;
   private confidenceThreshold: number = DEFAULT_HI_CONFIDENCE;
   private filteringByPeakPrevalence = true;
-  private filteringByMetadataFields: Set<string> = new Set();
+  private filteringByMetadataField: string | null = null;
+  private fieldIntroductions: IntroductionData[] = [];
 
   /*
   bypassed nodes happen when the user selects an inner
@@ -144,7 +153,7 @@ export class CoreLineagesData {
   */
   nullNode: DisplayNode;
 
-  constructor(sharedState: SharedState, update: updateFunction) {
+  constructor(sharedState: SharedState, update: UpdateFunction) {
     this.update = update;
     this.sharedState = sharedState;
     this.nullNode = this.getNodeDisplay(NULL_NODE_CODE, false, false);
@@ -200,10 +209,10 @@ export class CoreLineagesData {
         this.autoSelectPeakPrevalence();
       }
       this.metadataTransitionNodes = {};
-      this.filteringByMetadataFields.forEach(field=>{
-        const introductions = this.getMetadataTransitionNodes(mccConfig, field);
-        this.metadataTransitionNodes[field] = introductions;
-      });
+      if (this.filteringByMetadataField !== null) {
+        const introductions = this.getMetadataTransitionNodes(mccConfig, this.filteringByMetadataField);
+        this.metadataTransitionNodes[this.filteringByMetadataField] = introductions;
+      }
       this.selectNodesByImpact();
       this.selectionTreeData.setData(this.selectedNodes);
       this.setChartData();
@@ -453,51 +462,9 @@ export class CoreLineagesData {
     this.selectionReasons.forEach((reasons:Set<string>)=>{
       reasons.delete(AUTO_SELECTED);
     });
-    let autoSelected: number[] = [];
-    if (this.filteringByMetadataFields.size > 0) {
-      const nodes: boolean[] = [];
-      const lookup: boolean[] = [];
-      Object.values(this.metadataTransitionNodes).forEach((nodeIndices, i)=>{
-        if (i === 0) {
-          /*
-          build a lookup by node index of whether it passes the
-          test of the first metadata field
-          */
-          nodeIndices.forEach(nodeIndex=>nodes[nodeIndex] = true);
-        } else {
-          /*
-          for each node, does it also pass the test of the current metadata field?
-          */
-          lookup.length = 0;
-          nodeIndices.forEach(nodeIndex=>lookup[nodeIndex] = true);
-          nodes.forEach((_, i)=>{
-            if (lookup[i] === undefined){
-              nodes[i] = false;
-            }
-          });
-        }
-      });
-      nodes.forEach((passes, index)=>{
-        if (passes) {
-          autoSelected.push(index);
-        }
-      });
-      if (this.filteringByPeakPrevalence) {
-        const peakThreshold = this.peakPrevalenceThreshold;
-        const confidenceThreshold = this.confidenceThreshold;
-        const {peakPrevalence, nodeConfidence} = this;
-        autoSelected = autoSelected.filter(nodeIndex=>{
-          const pp = peakPrevalence[nodeIndex];
-          const nc = nodeConfidence[nodeIndex];
-          return pp >= peakThreshold
-            && nc >= confidenceThreshold;
-        });
-      }
-    } else if (this.filteringByPeakPrevalence) {
-      const peakThreshold = this.peakPrevalenceThreshold;
-      const confidenceThreshold = this.confidenceThreshold
-      autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
-    }
+    const peakThreshold = this.peakPrevalenceThreshold;
+    const confidenceThreshold = this.confidenceThreshold
+    const autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
     autoSelected.forEach(nodeIndex=>{
       if (this.selectionReasons[nodeIndex] === undefined) {
         this.selectionReasons[nodeIndex] = new Set();
@@ -563,33 +530,42 @@ export class CoreLineagesData {
   }
 
   highlightMetadataTransitions(field: string) : void {
-    const pythia = this.pythia;
     const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const fieldIntroductions: IntroductionData[] = []
     if (!mccConfig || !mccConfig.metadata) return
-    if (field !== METADATA_NONE_OPTION) {
-      this.filteringByMetadataFields.add(field);
-      if (this.metadataTransitionNodes[field] === undefined) {
-        if (pythia && mccConfig.metadata.getFields().includes(field)) {
-          const introductions = this.getMetadataTransitionNodes(mccConfig, field);
-          this.metadataTransitionNodes[field] = introductions;
-        }
-      } else {
-        console.debug(`somehow, we requested finding nodes by metadata transition…
-          …but there's no metadata available.  
-          `);
-      }
+    if (field === METADATA_NONE_OPTION) {
+      this.filteringByMetadataField = null;
+      this.fieldIntroductions.length = 0;
     } else {
-      /* find the nodes that were added by the transition, and clear them */
-      this.filteringByMetadataFields.delete(field);
-    }
-    this.setAutoNodeSelections();
-    if (this.selectionTreeData) {
-      if (this.selectedNodes.length === 0) {
-        this.selectedNodes.push(this.rootNode);
+      this.filteringByMetadataField = field;
+      /* build a list of the current nodes that have introductions */
+      /* start with a lookup of the current metadata values */
+      const nodeValues = mccConfig.getMetadataValues(field);
+      const allNodes = [this.rootNode].concat(this.selectedNodes);
+      const selectedValues: string [] = [];
+      allNodes.forEach(n=>{
+        selectedValues[n.index] = nodeValues[n.index];
+        console.log(n.index, n.name, nodeValues[n.index])
+      });
+      const tree = this.summaryTree as SummaryTree;
+      this.selectedNodes.forEach(node=>{
+        const nodeIndex = node.index;
+        const value = nodeValues[nodeIndex];
+        let parentIndex = tree.getParentIndexOf(nodeIndex);
+        while (parentIndex !== UNSET && selectedValues[parentIndex] === undefined) {
+          parentIndex = tree.getParentIndexOf(parentIndex);
+        }
+        if (parentIndex >= 0) {
+          const upstreamValue = nodeValues[parentIndex];
+          if (upstreamValue !== value) {
+            fieldIntroductions.push({nodeIndex, value, upstreamValue});
+          }
+        }
       }
-      this.selectionTreeData.setData(this.selectedNodes);
-      this.setChartData();
+      );
+      this.fieldIntroductions = fieldIntroductions;
     }
+    this.setChartData();
   }
 
   getMinDate() : number {
@@ -629,6 +605,7 @@ export class CoreLineagesData {
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       chartData.nodeDistributions = nodeDistributions;
+      chartData.fieldIntroductions = this.fieldIntroductions.slice();
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
         if (ancestor && ancestor.node.index !== UNSET) {
@@ -664,7 +641,6 @@ export class CoreLineagesData {
       mccRef.release();
       this.update(chartData);
     }
-
   }
 
 

@@ -1,4 +1,5 @@
 import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
+import { IntroductionData } from "./corelineagesdata";
 import { DisplayNode } from "./displaynode";
 import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./lineagescommon";
 import { TreeNode } from "./selectiontreedata";
@@ -61,6 +62,7 @@ class TreeNodeDisplay {
   yPos: number = UNSET;
   parent: TreeNodeDisplay | null = null;
   children: TreeNodeDisplay[] = [];
+  introduction: IntroductionData | null = null;
   stepsFromRoot: number;
   tipPlacement: number;
   mutationCount: number;
@@ -91,7 +93,7 @@ class TreeNodeDisplay {
     this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
     this.isTip = src.children.length === 0;
 
-    const labelBackground = this.nameLabel.querySelector("rect") as SVGRectElement;
+    const labelBackground = this.nameLabel.querySelector(".name") as SVGRectElement;
     labelBackground.addEventListener("pointerenter", ()=>{
       nodeHighlightCallback(this.node.index, UNSET, null);
       CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`);
@@ -160,6 +162,10 @@ class TreeNodeDisplay {
     this.children.length = 0;
   }
 
+  setIntroductionStatus(introData: IntroductionData | undefined) {
+    this.introduction = introData || null;
+  }
+
   addDescendant(desc: TreeNodeDisplay) {
     this.children.push(desc);
   }
@@ -197,10 +203,10 @@ class TreeNodeDisplay {
     const { node, nameLabel } = this;
     const mrca = node.isInferred && !node.isRoot;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
-    const rect = nameLabel.querySelector("rect") as SVGRectElement;
-    // const mutTextNode = this.mutLabel.querySelector("text") as SVGTextElement;
-    // const mutRect = this.mutLabel.querySelector("rect") as SVGRectElement;
-
+    const rect = nameLabel.querySelector(".name") as SVGRectElement;
+    const introOutline = nameLabel.querySelector(".outline") as SVGRectElement;
+    nameLabel.classList.toggle("mrca", mrca);
+    nameLabel.classList.toggle("is-intro", this.introduction !== null);
     const label = mrca ? "" : node.label;
     // const label = `${node.index}`;
     textNode.textContent = label;
@@ -222,15 +228,8 @@ class TreeNodeDisplay {
     }
     rect.setAttribute("width", `${ this.textLabelWidth}`);
     rect.setAttribute("x", `${ -(this.textLabelWidth) / 2}`);
-    // if (!this.node.isRoot) {
-    //   mutTextNode.textContent = `${this.mutationCount}`;
-    //   CONTAINER.appendChild(this.mutLabel);
-    //   this.mutLabel.classList.add(node.className);
-    //   tw = mutTextNode.getComputedTextLength();
-    //   mutRect.setAttribute("width", `${ tw + 10}`);
-    //   mutRect.setAttribute("x", `${ -45 - (tw + 10) / 2}`);
-    // }
-
+    introOutline.setAttribute("width", `${ this.textLabelWidth + 8}`);
+    introOutline.setAttribute("x", `${ -(this.textLabelWidth + 8) / 2}`);
   }
 
   pushBack(pushIt: boolean) : void {
@@ -252,6 +251,7 @@ export class NodeSchematic {
   nodeHighlightCallback: HoverCallback;
   metadataTransitionCallback: MetadataToggleCallback;
   pairsByDescendant: NodePair[] = [];
+  introductionLookup: IntroductionData[] = [];
   rootNode: TreeNode | null = null;
   rootNodeDisplay: TreeNodeDisplay | null = null;
   nodes: TreeNodeDisplay[] = [];
@@ -357,6 +357,7 @@ export class NodeSchematic {
     CONTAINER.innerHTML = '';
     const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
     this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
+    this.nodes.forEach(display=>display.renderConnector());
     if (colorByMetadata) {
       this.nodes.forEach(display=>{
         const color: string = nodeMetadataColors[display.node.index];
@@ -365,7 +366,6 @@ export class NodeSchematic {
     } else {
       this.nodes.forEach(display=>display.renderLabel());
     }
-    this.nodes.forEach(display=>display.renderConnector());
   }
 
   setSpacing() {
@@ -435,17 +435,18 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number, fieldIntroductions: IntroductionData[]) {
     // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
     this.rootNode = rootNode;
     this.pairsByDescendant = [];
-    // this.nodes.length = 0;
+    /* expand the fieldIntroductions into a lookup */
+    this.introductionLookup = [];
+    fieldIntroductions.forEach(item=>this.introductionLookup[item.nodeIndex] = item);
     pairs.forEach(pair=>{
       // index the mutations by the descendent
       this.pairsByDescendant[pair.descendant.index] = pair;
     });
     COUNT_SPAN.textContent = `${nfc(nodeCount)} node${ nodeCount === 1 ? '' : 's'}` ;
-    // this.setLayout();
   }
 
   setLayout() {
@@ -480,6 +481,7 @@ export class NodeSchematic {
         } else {
           tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
+        tnd.setIntroductionStatus(this.introductionLookup[node.index]);
         if (treeNode === this.rootNode) {
           tnd.stepsFromRoot = 0;
           this.rootNodeDisplay = tnd;

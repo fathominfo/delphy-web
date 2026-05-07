@@ -985,7 +985,7 @@ details {
     opacity: 1;
     transition: opacity 0.15s;
 
-    rect {
+    .name {
       stroke: none;
       rx: 5;
       ry: 5;
@@ -999,8 +999,20 @@ details {
       pointer-events: none;
     }
 
+    .outline {
+      fill: white;
+      stroke: gray;
+      rx: 7.5;
+      ry: 7.5;
+      opacity: 0;
+    }
+
     &.back {
       opacity: 0.3;
+    }
+
+    &.is-intro .outline {
+      opacity: 1;
     }
   }
 
@@ -1008,18 +1020,18 @@ details {
     text {
       fill: white;
     }
-    &.a rect { fill: var(--a-fill); }
-    &.b rect { fill: var(--b-fill); }
-    &.c rect { fill: var(--c-fill); }
-    &.d rect { fill: var(--d-fill); }
-    &.e rect { fill: var(--e-fill); }
-    &.f rect { fill: var(--f-fill); }
-    &.g rect { fill: var(--g-fill); }
-    &.h rect { fill: var(--h-fill); }
-    &.i rect { fill: var(--i-fill); }
-    &.j rect { fill: var(--j-fill); }
-    &.k rect { fill: var(--k-fill); }
-    &.l rect { fill: var(--l-fill); }
+    &.a .name { fill: var(--a-fill); }
+    &.b .name { fill: var(--b-fill); }
+    &.c .name { fill: var(--c-fill); }
+    &.d .name { fill: var(--d-fill); }
+    &.e .name { fill: var(--e-fill); }
+    &.f .name { fill: var(--f-fill); }
+    &.g .name { fill: var(--g-fill); }
+    &.h .name { fill: var(--h-fill); }
+    &.i .name { fill: var(--i-fill); }
+    &.j .name { fill: var(--j-fill); }
+    &.k .name { fill: var(--k-fill); }
+    &.l .name { fill: var(--l-fill); }
   }
 
   .mut-count, .label.root, .label.mrca {
@@ -1036,9 +1048,14 @@ details {
     }
   }
 
-  .label.mrca rect {
-    pointer-events: none;
+  .label.mrca {
+    .outline {display: none;}
+    rect {
+      pointer-events: none;
+    }
   }
+
+
 
 
 

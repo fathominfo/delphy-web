@@ -13,7 +13,7 @@ import autocomplete from 'autocompleter';
 // import { PdfCanvas } from '../../util/pdfcanvas';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
-import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
+import { ChartData, CoreLineagesData, UpdateFunction } from './corelineagesdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
@@ -43,7 +43,7 @@ export class LineagesUI extends MccUI {
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#lineages .tree-canvas");
-    const updateCallback: updateFunction = (data: ChartData)=>this.update(data);
+    const updateCallback: UpdateFunction = (data: ChartData)=>this.update(data);
     this.coreData = new CoreLineagesData(sharedState, updateCallback);
     const dismissCallback: DismissNodeCallback = (nodeIndex: number | number[])=>this.handleNodeDismiss(nodeIndex);
     const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
@@ -197,14 +197,14 @@ export class LineagesUI extends MccUI {
   update(chartData: ChartData): void {
     // const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
     //   nodePairs, rootNode, selectedRootIndex } = chartData;
-    const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence } = chartData;
+    const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence, fieldIntroductions } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
     this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length);
+    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions);
     this.nodeSchematic.highlightNode(highlightNode);
     this.nodeListDisplay.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {
