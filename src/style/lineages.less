@@ -1895,6 +1895,8 @@ color the mrca nodes by the root, since it is not inferred
     gap: 10px;
   }
 
+  #subway--detail-tree-mono {display: none;}
+  #subway--detail-metadata { display: none; }
 
   .node-root-action {
     display: inline-block;
@@ -1958,6 +1960,9 @@ color the mrca nodes by the root, since it is not inferred
       opacity: 0;
     }
   }
+
+  &.is-intro #subway--detail-metadata { display: block; }
+
 
   &:hover {
     .node-root-action {

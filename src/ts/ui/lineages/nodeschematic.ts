@@ -99,10 +99,12 @@ class TreeNodeDisplay {
       CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`);
       const node = this.node;
       const isLower: boolean = !!this.parent && this.parent.yPos < this.yPos;
+      const isIntro = this.introduction !== null;
       CAR_CONTROLS.classList.toggle("is-tip", node.isTip());
       CAR_CONTROLS.classList.toggle("is-root", node.isRoot && node.isInferred);
       CAR_CONTROLS.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
       CAR_CONTROLS.classList.toggle("is-lower", isLower);
+      CAR_CONTROLS.classList.toggle("is-intro", isIntro);
       if (node.isTip()) {
         const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
         if (node.metadata !== null) {
@@ -119,7 +121,15 @@ class TreeNodeDisplay {
 
       } else {
         (CAR_CONTROLS.querySelector("#subway--detail-tip-count span") as HTMLSpanElement).textContent = nfc(node.childCount);
-        (CAR_CONTROLS.querySelector("#subway--detail-tree-mono span") as HTMLSpanElement).textContent = getPercentLabel(node.confidence);
+        // (CAR_CONTROLS.querySelector("#subway--detail-tree-mono span") as HTMLSpanElement).textContent = getPercentLabel(node.confidence);
+      }
+
+      if (isIntro) {
+        const introData = this.introduction as IntroductionData;
+        const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
+        (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
+        (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = introData.value;
+
       }
 
       const lowerFactor = isLower ? -1 : 1;
