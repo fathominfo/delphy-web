@@ -590,7 +590,8 @@ export class CoreLineagesData {
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         maxDate = pythia.maxDate,
-        minDate = this.getMinDate();
+        minDate = this.getMinDate(),
+        actualRootIndex = summaryTree.getRootIndex();
       const chartData: ChartData = structuredClone(defaultChartData)
       chartData.maxDate =maxDate;
       if (minimapData?.root) {
@@ -598,6 +599,7 @@ export class CoreLineagesData {
       }
       chartData.minDate = minDate;
       chartData.peakPrevalence = this.peakPrevalenceThreshold;
+      chartData.selectedRootIndex = this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index;
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
