@@ -5,7 +5,8 @@ import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
   MetadataToggleCallback,
-  DismissNodeCallback} from './lineagescommon';
+  DismissNodeCallback,
+  METADATA_NONE_OPTION} from './lineagescommon';
 import { NodeListDisplay } from './nodelistdisplay';
 // import { NodeTimelines } from './nodetimelines';
 // import { NodePrevalenceChart } from './nodeprevalencechart'
@@ -59,7 +60,9 @@ export class LineagesUI extends MccUI {
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
     const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
     const prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE = (increment = true)=>this.coreData.updatePeakPrevalenceThreshold(increment);
-    const metadataTransitionCallback: MetadataToggleCallback = (fieldName: string)=>this.coreData.highlightMetadataTransitions(fieldName);
+    const metadataTransitionCallback: MetadataToggleCallback = (fieldName: string)=>{
+      this.coreData.highlightMetadataTransitions(fieldName);
+    };
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);

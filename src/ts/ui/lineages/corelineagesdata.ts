@@ -4,7 +4,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { numericSortReverse, UNDEF, UNSET } from "../common";
+import { ColorOption, numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
@@ -536,8 +536,11 @@ export class CoreLineagesData {
     if (field === METADATA_NONE_OPTION) {
       this.filteringByMetadataField = null;
       this.fieldIntroductions.length = 0;
+      mccConfig.setColorSystem(ColorOption.confidence);
     } else {
       this.filteringByMetadataField = field;
+      mccConfig.setColorSystem(ColorOption.confidence);
+      mccConfig.setMetadataField(field);
       /* build a list of the current nodes that have introductions */
       /* start with a lookup of the current metadata values */
       const nodeValues = mccConfig.getMetadataValues(field);
