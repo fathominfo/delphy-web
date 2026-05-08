@@ -483,7 +483,9 @@ export class NodeSchematic {
       this.tipRange = tips.length - 1;
       const halfRange = this.tipRange / 2;
       /* align the tree according to the MCC tree */
+      // console.log("tips b4 sort", tips.map(n=>`${n.treeNode.node.name} ${n.treeNode.tipPlacement}`));
       tips.sort((a,b)=>a.treeNode.tipPlacement - b.treeNode.tipPlacement);
+      // console.log("tips sorted ", tips.map(n=>`${n.treeNode.node.name} ${n.treeNode.tipPlacement}`));
       tips.forEach((tnd, i)=>tnd.tipPlacement = i - halfRange);
 
 

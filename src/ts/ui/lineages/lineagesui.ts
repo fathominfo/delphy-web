@@ -57,7 +57,11 @@ export class LineagesUI extends MccUI {
       }
     };
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
-    const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
+    const rootSelectCallback: NodeCallback = (nodeIndex: number)=>{
+      /* reset the root of the mcc tree so that we can get the y position of any node */
+      this.mccTreeCanvas.setRootNode(UNSET);
+      this.coreData.selectRoot(nodeIndex);
+    };
     const prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE = (increment = true)=>this.coreData.updatePeakPrevalenceThreshold(increment);
     const metadataTransitionCallback: MetadataToggleCallback = (fieldName: string)=>{
       this.coreData.highlightMetadataTransitions(fieldName);

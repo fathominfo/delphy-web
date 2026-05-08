@@ -135,7 +135,15 @@ export class SelectionTreeData {
         console.warn(`the schematic tree building is not binary`, treeNode);
       }
     });
+    // tips.forEach(n=>{
+    //   if (this.getY(n.node.index) === undefined) {
+    //     const s = this.getY(n.node.index);
+    //     console.log("miksi?", s);
+
+    //   }
+    // })
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
+    // console.log('selectionTreeData tips',  tips.map(n=>`${n.node.name} ${n.node.index} ${this.getY(n.node.index)}`));
     const numTips = tips.length;
     const midTips = numTips / 2;
     tips.forEach((tn, i)=>{
