@@ -21,19 +21,14 @@ const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
 const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
 const MUTATION_COUNT_TEMPLATE = CONTAINER.querySelector(".mut-count") as SVGGElement;
 const CONNECTOR_TEMPLATE = CONTAINER.querySelector(".connector") as SVGLineElement;
-const CAR_CONTROLS = CONTAINER.querySelector("#subway--car-actions") as HTMLDivElement;
+const CAR_CONTROLS = document.querySelector("#subway-hover") as HTMLDivElement;
 const CAR_CONTROLS_DISMISS = CAR_CONTROLS.querySelector("#subway--node-dismiss") as HTMLButtonElement;
 const CAR_CONTROLS_ROOT_SELECT = CAR_CONTROLS.querySelector("#subway--set-root") as HTMLButtonElement;
 const CAR_CONTROLS_ROOT_RESET = CAR_CONTROLS.querySelector("#subway--reset-root") as HTMLButtonElement;
 
 
-const CONTROL_W = 212;
+const CONTROL_W = 80;
 const CONTROL_H = 70;
-const CONTROL_Y1 = 14;
-const CONTROL_Y2 = -10;
-const CONTROL_Y3 = -55;
-
-CAR_CONTROLS.remove();
 
 
 [LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE, CONNECTOR_TEMPLATE].forEach(el=>el.remove());
@@ -89,60 +84,6 @@ class TreeNodeDisplay {
     this.parent = parent;
     this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
     this.isTip = src.children.length === 0;
-
-    const labelBackground = this.nameLabel.querySelector(".name") as SVGRectElement;
-    labelBackground.addEventListener("pointerenter", ()=>{
-      const node = this.treeNode.node;
-      nodeHighlightCallback(node.index, UNSET, null);
-      CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`);
-      const isLower: boolean = !!this.parent && this.parent.yPos < this.yPos;
-      const isIntro = this.introduction !== null;
-      CAR_CONTROLS.classList.toggle("is-tip", node.isTip());
-      CAR_CONTROLS.classList.toggle("is-root", node.isRoot && node.isInferred);
-      CAR_CONTROLS.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
-      CAR_CONTROLS.classList.toggle("is-lower", isLower);
-      CAR_CONTROLS.classList.toggle("is-intro", isIntro);
-      if (node.isTip()) {
-        const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
-        let name = '';
-        if (node.metadata !== null) {
-          if (node.metadata.id !== undefined) {
-            name = node.metadata.id.value;
-          } else if (node.metadata.accession !== undefined) {
-            name = node.metadata.accession.value;
-          }
-        }
-        tipIdSpan.textContent = name;
-        tipIdSpan.title = name;
-      }
-
-      // if (isIntro) {
-      //   const introData = this.introduction as IntroductionData;
-      //   const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
-      //   (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
-      //   (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = introData.value;
-      // }
-
-      const lowerFactor = isLower ? -1 : 1;
-      const y1 = CONTROL_Y1 * lowerFactor;
-      const y2 = CONTROL_Y2 * lowerFactor;
-      const y3 = CONTROL_Y3 * lowerFactor;
-      const w = this.textLabelWidth + 9;
-      const x1 = w/2;
-      const x2 = - x1;
-      const x3 = x1 - CONTROL_W;
-      const x4 = x3 + 5;
-      const pathD = `M${x1} ${y1} L${x2} ${y1} ${x2} ${y2} ${x3} ${y2} ${x3} ${y3} ${x1} ${y3} z`;
-
-      (CAR_CONTROLS.querySelector("#border") as SVGPathElement).setAttribute("d", pathD);
-      (CAR_CONTROLS.querySelector("#subway--node-detail-fo") as SVGElement).style.setProperty('x',`${x4}`);
-
-
-
-      CONTAINER.appendChild(CAR_CONTROLS);
-      CONTAINER.appendChild(this.nameLabel);
-      // console.log(`highlighting ${this.node.index} ${CAR_CONTROLS_EXPAND_INPUT.checked}`);
-    });
   }
 
 
@@ -175,7 +116,7 @@ class TreeNodeDisplay {
 
   position(_width: number, height: number, xSpacing: number, ySpacing: number) {
     this.xPos = MARGIN.left + this.stepsFromRoot * xSpacing;
-    this.yPos = MARGIN.top + this.tipPlacement * ySpacing + height / 2;
+    this.yPos = this.tipPlacement * ySpacing + height / 2;
     const elements = [this.nameLabel];
     if (!this.treeNode.node.isRoot) {
       elements.push(this.mutLabel);
@@ -209,6 +150,7 @@ class TreeNodeDisplay {
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
     const rect = nameLabel.querySelector(".name") as SVGRectElement;
     const introOutline = nameLabel.querySelector(".outline") as SVGRectElement;
+    rect.setAttribute("data-index", `${node.index}`);
     nameLabel.classList.toggle("mrca", mrca);
     nameLabel.classList.toggle("is-intro", this.introduction !== null);
     const label = mrca ? "" : node.label;
@@ -244,6 +186,15 @@ class TreeNodeDisplay {
     this.nameLabel.classList.toggle("back", pushIt);
     this.connector.classList.toggle("back", pushIt);
   }
+
+  pushBackLabel(pushIt: boolean) : void {
+    this.nameLabel.classList.toggle("back", pushIt);
+  }
+
+  pushBackConnector(pushIt: boolean) : void {
+    this.connector.classList.toggle("back", pushIt);
+  }
+
 
 }
 
@@ -300,7 +251,7 @@ export class NodeSchematic {
     this.metadataTransitionCallback = metadataTransitionCallback;
     CAR_CONTROLS.addEventListener("pointerleave", ()=>{
       nodeHighlightCallback(UNSET, UNSET, null);
-      CAR_CONTROLS.remove();
+      this.hideHover();
     });
     CAR_CONTROLS_DISMISS.addEventListener("click", ()=>{
       const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
@@ -317,6 +268,28 @@ export class NodeSchematic {
       }
     });
     CAR_CONTROLS_ROOT_RESET.addEventListener('click', () => rootSelectCallback(UNSET));
+
+    CONTAINER.addEventListener("pointermove", event=>{
+      const target = event.target as SVGElement;
+      const nodeIndex = target.getAttribute("data-index");
+      // if (target instanceof SVGRectElement) {
+      //   console.log(nodeIndex, event.offsetX, event.offsetY);
+      // }
+      let found = false;
+      if (nodeIndex !== null) {
+        const index = parseInt(nodeIndex);
+        const tnd = this.nodes.filter(n=>n.getIndex() === index)[0];
+        if (tnd) {
+          nodeHighlightCallback(index, UNSET, null);
+          this.setHover(tnd);
+          found = true;
+        }
+      }
+      if (!found) {
+        nodeHighlightCallback(UNSET, UNSET, null);
+        this.hideHover();
+      }
+    });
   }
 
 
@@ -369,7 +342,7 @@ export class NodeSchematic {
   setSpacing() {
     const { width, height, maxGenerations, tipRange } = this;
     if (width === UNSET || height === UNSET) return;
-    let xSpacing = (width - MARGIN.left - MARGIN.right) / maxGenerations + 6;
+    let xSpacing = (width - MARGIN.left - MARGIN.right) / (maxGenerations + 1) + 1;
     let ySpacing = (height - MARGIN.top - MARGIN.bottom) / tipRange * 0.5 + 6;
     // console.log(MIN_NODE_X_SPACING, MAX_NODE_X_SPACING, this.xSpacing, xSpacing );
     xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING, this.xSpacing), MIN_NODE_X_SPACING);
@@ -383,7 +356,10 @@ export class NodeSchematic {
     if (this.highlightIndex === UNSET) {
       this.nodes.forEach(display=>display.pushBack(false));
     } else {
-      this.nodes.forEach(display=>display.pushBack(display.getIndex() !== this.highlightIndex));
+      this.nodes.forEach(display=>{
+        display.pushBackConnector(true);
+        display.pushBackLabel(display.getIndex() !== this.highlightIndex);
+      });
     }
   }
 
@@ -534,4 +510,56 @@ export class NodeSchematic {
   }
 
 
+  setHover(tnd: TreeNodeDisplay) {
+    const node = tnd.treeNode.node;
+    const isUpper: boolean = !tnd.parent || tnd.yPos < tnd.parent.yPos;
+    const isIntro = tnd.introduction !== null;
+    const x = tnd.xPos + tnd.textLabelWidth/2;
+    const y = tnd.yPos;
+    CAR_CONTROLS.style.right = `${this.width - x}px`;
+    if (isUpper) {
+      CAR_CONTROLS.style.top = `unset`;
+      CAR_CONTROLS.style.bottom = `${this.height - y + tnd.textLabelHeight/2}px`;
+    } else {
+      CAR_CONTROLS.style.top = `${y + tnd.textLabelHeight/2}px`;
+      CAR_CONTROLS.style.bottom = `unset`;
+    }
+    CAR_CONTROLS.classList.toggle("is-tip", node.isTip());
+    CAR_CONTROLS.classList.toggle("is-root", node.isRoot && node.isInferred);
+    CAR_CONTROLS.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
+    CAR_CONTROLS.classList.toggle("is-upper", isUpper);
+    CAR_CONTROLS.classList.toggle("is-intro", isIntro);
+    if (node.isTip()) {
+      const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
+      let name = '';
+      if (node.metadata !== null) {
+        if (node.metadata.id !== undefined) {
+          name = node.metadata.id.value;
+        } else if (node.metadata.accession !== undefined) {
+          name = node.metadata.accession.value;
+        }
+      }
+      tipIdSpan.textContent = name;
+      tipIdSpan.title = name;
+    }
+
+    if (isIntro) {
+      const introData = tnd.introduction as IntroductionData;
+      const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
+      (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
+      (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = introData.value;
+    }
+
+    CONTAINER.appendChild(tnd.nameLabel);
+    CAR_CONTROLS.classList.add("active");
+  }
+
+
+  hideHover() {
+    CAR_CONTROLS.classList.remove("active");
+  }
+
+
 }
+
+

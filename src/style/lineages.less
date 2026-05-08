@@ -979,7 +979,6 @@ details {
 
 #subway {
   position: relative;
-
   height: calc(100% - var(--view-header-height) );
 
   .label, .mut-count {
@@ -1071,27 +1070,94 @@ details {
 
 }
 
-#subway--car-action-container {
-  fill: white;
-  fill-opacity: 0.6;
-  stroke: #aaa;
-  rx: 7;
-  ry: 7;
-}
+#subway-hover {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: auto;
+  height: auto;
+  top: 0;
+  right: 0;
+  // background-color: rgba(255,255,255,0.9);
+  padding: 5px 0 5px 3px;
+  transition: opacity 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  box-sizing: border-box;
+  // margin-right: 18px;
 
-
-// #subway--car-dismiss {
-// }
-
-#subway--car-expansion {
-  .expanded { display: none; }
-  &:has(input:checked) {
-    .expanded { display: inline; }
-    .collapsed { display: none; }
+  &.active {
+    opacity: 1;
+    pointer-events: all;
   }
-  input {
-    appearance: none;
+
+  #subway--detail-tip-name {
+    color: var(--selection-text-on);
+    display: none;
+    font-weight: 700;
   }
+
+  #subway--detail-metadata {
+    color: var(--selection-text-on);
+    display: none;
+    margin: 2px 0;
+    background-color: white;
+    .md-from, .md-to {
+      font-weight: 700;
+    }
+  }
+
+  .node-root-action, #subway--node-dismiss {
+    display: block;
+    background-color: white;
+    transition: color .15s;
+    color: var(--selection-text-static);
+    &:hover {
+      color: black; //var(--title-text);
+    }
+  }
+
+  #subway--reset-root {
+    display: none;
+  }
+
+  &.is-upper {
+    padding-bottom: 10px;
+  }
+
+  &.is-tip {
+    #subway--detail-tip-name {display: block;}
+    /* tips cannot be set to root */
+    #subway--set-root, #subway--reset-root {display: none;}
+  }
+
+  &.is-root {
+    /* this is the actual root, so can't dismiss it, or set it as root */
+    #subway--set-root,
+    #subway--reset-root,
+    #subway--node-dismiss {display: none;}
+  }
+
+  &.is-set-root {
+    /*
+    this is an inner node that has been set to root,
+    so can't dismiss it, or set it as root,
+    but we can reset it so the actual root will display as root */
+    #subway--set-root  { display: none; }
+    #subway--reset-root  { display: inline-block; }
+    #subway--node-dismiss {
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
+  &.is-intro {
+    #subway--detail-metadata {
+      display: block;
+    }
+  }
+
 }
 
 
@@ -1874,99 +1940,98 @@ color the mrca nodes by the root, since it is not inferred
 
 
 
+// #subway--car-actions {
 
-#subway--car-actions {
+//   #subway--node-detail-fo div {
+//     display: flex;
+//     flex-direction: column;
+//     align-items: end;
+//     width: 80px;
+//   }
 
-  #subway--node-detail-fo div {
-    display: flex;
-    flex-direction: column;
-    align-items: end;
-    width: 80px;
-  }
+//   p {
+//     margin: 3px 0;
+//   }
 
-  p {
-    margin: 3px 0;
-  }
+//   #subway--detail-tip-name {display: none;}
+//   #border {
+//     fill: white;
+//     stroke: gray;
+//   }
 
-  #subway--detail-tip-name {display: none;}
-  #border {
-    fill: white;
-    stroke: gray;
-  }
+//   #subway--detail-tree-mono {display: none;}
+//   #subway--detail-metadata { display: none; }
 
-  #subway--detail-tree-mono {display: none;}
-  #subway--detail-metadata { display: none; }
+//   .node-root-action, #subway--node-dismiss {
+//     display: block;
+//     transition: color .15s;
+//     color: var(--selection-static-icon-fill-static);
+//     &:hover {
+//       color: var(--selection-on-icon-fill-on);
+//     }
+//   }
 
-  .node-root-action, #subway--node-dismiss {
-    display: block;
-    transition: color .15s;
-    color: var(--selection-static-icon-fill-static);
-    &:hover {
-      color: var(--selection-on-icon-fill-on);
-    }
-  }
+//   #subway--reset-root {
+//     display: none;
+//   }
 
-  #subway--reset-root {
-    display: none;
-  }
-
-  // #subway--node-dismiss {
-  //   flex-shrink: 0;
-  //   width: var(--selection-remove-size);
-  //   height: var(--selection-remove-size);
-  //   cursor: pointer;
-  //   position: relative;
-  //   font-size: 20px;
-  //   display: block;
-  //   margin-top: -2px;
-  //   color: var(--selection-static-icon-fill-static);
-  //   &:hover {
-  //     color: var(--selection-on-icon-fill-on);
-  //   }
-  // }
-
-
-  &.is-lower {
-    #subway--node-detail-fo { y: 14;}
-  }
+//   // #subway--node-dismiss {
+//   //   flex-shrink: 0;
+//   //   width: var(--selection-remove-size);
+//   //   height: var(--selection-remove-size);
+//   //   cursor: pointer;
+//   //   position: relative;
+//   //   font-size: 20px;
+//   //   display: block;
+//   //   margin-top: -2px;
+//   //   color: var(--selection-static-icon-fill-static);
+//   //   &:hover {
+//   //     color: var(--selection-on-icon-fill-on);
+//   //   }
+//   // }
 
 
-
-  &.is-tip {
-    #subway--detail-tip-name {display: block;}
-    /* tips cannot be set to root */
-    #subway--set-root, #subway--reset-root,
-    #subway--detail-tip-count,
-    #subway--detail-tree-mono {display: none;}
-  }
-
-  &.is-root {
-    /* this is the actual root, so can't dismiss it, or set it as root */
-    #subway--set-root,
-    #subway--reset-root,
-    #subway--node-dismiss {display: none;}
-  }
-
-  &.is-set-root {
-    /*
-    this is an inner node that has been set to root,
-    so can't dismiss it, or set it as root,
-    but we can reset it so the actual root will display as root */
-    #subway--set-root  { display: none; }
-    #subway--reset-root  { display: inline-block; }
-    #subway--node-dismiss {
-      pointer-events: none;
-      opacity: 0;
-    }
-  }
-
-  &.is-intro #subway--detail-metadata { display: block; }
+//   &.is-lower {
+//     #subway--node-detail-fo { y: 14;}
+//   }
 
 
-  &:hover {
-    .node-root-action {
-      opacity: 1;
-    }
-  }
 
-}
+//   &.is-tip {
+//     #subway--detail-tip-name {display: block;}
+//     /* tips cannot be set to root */
+//     #subway--set-root, #subway--reset-root,
+//     #subway--detail-tip-count,
+//     #subway--detail-tree-mono {display: none;}
+//   }
+
+//   &.is-root {
+//     /* this is the actual root, so can't dismiss it, or set it as root */
+//     #subway--set-root,
+//     #subway--reset-root,
+//     #subway--node-dismiss {display: none;}
+//   }
+
+//   &.is-set-root {
+//     /*
+//     this is an inner node that has been set to root,
+//     so can't dismiss it, or set it as root,
+//     but we can reset it so the actual root will display as root */
+//     #subway--set-root  { display: none; }
+//     #subway--reset-root  { display: inline-block; }
+//     #subway--node-dismiss {
+//       pointer-events: none;
+//       opacity: 0;
+//     }
+//   }
+
+//   &.is-intro #subway--detail-metadata { display: block; }
+
+
+//   &:hover {
+//     .node-root-action {
+//       opacity: 1;
+//     }
+//   }
+
+// }
