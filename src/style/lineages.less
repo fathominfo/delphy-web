@@ -324,6 +324,7 @@ details {
 }
 .node-metadata-item {
   .tip-counts {
+    display: none;
     margin-bottom: 0.4em;
     > div {
       margin: 0.2em 0;
@@ -1876,6 +1877,13 @@ color the mrca nodes by the root, since it is not inferred
 
 #subway--car-actions {
 
+  #subway--node-detail-fo div {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    width: 80px;
+  }
+
   p {
     margin: 3px 0;
   }
@@ -1886,20 +1894,11 @@ color the mrca nodes by the root, since it is not inferred
     stroke: gray;
   }
 
-  #subway--node-actions {
-    position: absolute;
-    right: -2px;
-    top: -2px;
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-  }
-
   #subway--detail-tree-mono {display: none;}
   #subway--detail-metadata { display: none; }
 
-  .node-root-action {
-    display: inline-block;
+  .node-root-action, #subway--node-dismiss {
+    display: block;
     transition: color .15s;
     color: var(--selection-static-icon-fill-static);
     &:hover {
@@ -1911,20 +1910,20 @@ color the mrca nodes by the root, since it is not inferred
     display: none;
   }
 
-  #subway--node-dismiss {
-    flex-shrink: 0;
-    width: var(--selection-remove-size);
-    height: var(--selection-remove-size);
-    cursor: pointer;
-    position: relative;
-    font-size: 20px;
-    display: block;
-    margin-top: -2px;
-    color: var(--selection-static-icon-fill-static);
-    &:hover {
-      color: var(--selection-on-icon-fill-on);
-    }
-  }
+  // #subway--node-dismiss {
+  //   flex-shrink: 0;
+  //   width: var(--selection-remove-size);
+  //   height: var(--selection-remove-size);
+  //   cursor: pointer;
+  //   position: relative;
+  //   font-size: 20px;
+  //   display: block;
+  //   margin-top: -2px;
+  //   color: var(--selection-static-icon-fill-static);
+  //   &:hover {
+  //     color: var(--selection-on-icon-fill-on);
+  //   }
+  // }
 
 
   &.is-lower {

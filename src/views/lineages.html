@@ -26,7 +26,7 @@
         </div>
         {{> mcc_opts }}
       </section>
-      <section class="lineages--center">
+      <!-- <section class="lineages--center">
 
 
         <div id="lineages--node-list" class="block">
@@ -71,7 +71,7 @@
           </div>
         </div>
 
-      </section>
+      </section> -->
 
       <section id="lineages--right" class="charts--container">
 
@@ -125,23 +125,36 @@
                 <g id="subway--car-actions">
                   <path id="border" d="M-16 -10 L-196 -10 -196 -55  16 -55 16  14 -16  14z"></path>
                   <foreignObject id="subway--node-detail-fo" x="-190" y="-54" width="204" height="75">
-                    <p id="subway--detail-tip-name">Tip <span>12354678</span></p>
-                    <p id="subway--detail-tip-count"><span>55</span> tips</p>
-                    <p id="subway--detail-tree-mono">monophyletic in <span>50</span>% of base trees</p>
-                    <p id="subway--detail-metadata"><span class="md-from">blue</span> -> <span class="md-to">pink</span></p>
-                    <div id="subway--node-actions">
+                    <div>
+                      <p id="subway--detail-tip-name">Tip <span>12354678</span></p>
+                      <!-- <p id="subway--detail-tip-count"><span>55</span> tips</p>
+                      <p id="subway--detail-tree-mono">monophyletic in <span>50</span>% of base trees</p> -->
+                      <!-- <p id="subway--detail-metadata"><span class="md-from">blue</span> -> <span class="md-to">pink</span></p> -->
                       <button type="button" id="subway--set-root" class="node-root-action" aria-label="set node as root">
                           Set as root
                       </button>
                       <button type="button" id="subway--reset-root" class="node-root-action" aria-label="reset root">
                           Reset root
                       </button>
-                      <button type="button" id="subway--node-dismiss" aria-label="Dismiss node" title="Dismiss node" >&times;</button>
+                      <button type="button" id="subway--node-dismiss" aria-label="Dismiss node" title="Dismiss node" >Remove node</button>
                     </div>
                   </foreignObject>
                 </g>
               </svg>
             </div>
+          </div>
+          <div id="subway-hover">
+            <p id="subway--detail-tip-name">Tip <span>12354678</span></p>
+            <!-- <p id="subway--detail-tip-count"><span>55</span> tips</p>
+            <p id="subway--detail-tree-mono">monophyletic in <span>50</span>% of base trees</p> -->
+            <!-- <p id="subway--detail-metadata"><span class="md-from">blue</span> -> <span class="md-to">pink</span></p> -->
+            <button type="button" id="subway--set-root" class="node-root-action" aria-label="set node as root">
+                Set as root
+            </button>
+            <button type="button" id="subway--reset-root" class="node-root-action" aria-label="reset root">
+                Reset root
+            </button>
+            <button type="button" id="subway--node-dismiss" aria-label="Dismiss node" title="Dismiss node" >Remove node</button>
           </div>
 
           <!-- <div id="lineages--prevalence" class="block right">
