@@ -104,30 +104,24 @@ class TreeNodeDisplay {
       CAR_CONTROLS.classList.toggle("is-intro", isIntro);
       if (node.isTip()) {
         const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
+        let name = '';
         if (node.metadata !== null) {
           if (node.metadata.id !== undefined) {
-            tipIdSpan.innerText = `${node.metadata.id.value}`;
-            tipIdSpan.title = node.metadata.id.value;
+            name = node.metadata.id.value;
           } else if (node.metadata.accession !== undefined) {
-            tipIdSpan.innerText = `${node.metadata.accession.value}`;
-            tipIdSpan.title = node.metadata.accession.value;
+            name = node.metadata.accession.value;
           }
-        } else {
-          tipIdSpan.textContent = '';
         }
-
-      } else {
-        (CAR_CONTROLS.querySelector("#subway--detail-tip-count span") as HTMLSpanElement).textContent = nfc(node.childCount);
-        // (CAR_CONTROLS.querySelector("#subway--detail-tree-mono span") as HTMLSpanElement).textContent = getPercentLabel(node.confidence);
+        tipIdSpan.textContent = name;
+        tipIdSpan.title = name;
       }
 
-      if (isIntro) {
-        const introData = this.introduction as IntroductionData;
-        const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
-        (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
-        (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = introData.value;
-
-      }
+      // if (isIntro) {
+      //   const introData = this.introduction as IntroductionData;
+      //   const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
+      //   (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
+      //   (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = introData.value;
+      // }
 
       const lowerFactor = isLower ? -1 : 1;
       const y1 = CONTROL_Y1 * lowerFactor;
@@ -375,8 +369,8 @@ export class NodeSchematic {
   setSpacing() {
     const { width, height, maxGenerations, tipRange } = this;
     if (width === UNSET || height === UNSET) return;
-    let xSpacing = (width - CONTROL_W) / maxGenerations;
-    let ySpacing = (height - CONTROL_H * 2) / tipRange * 0.6;
+    let xSpacing = (width - MARGIN.left - MARGIN.right) / maxGenerations + 6;
+    let ySpacing = (height - MARGIN.top - MARGIN.bottom) / tipRange * 0.5 + 6;
     // console.log(MIN_NODE_X_SPACING, MAX_NODE_X_SPACING, this.xSpacing, xSpacing );
     xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING, this.xSpacing), MIN_NODE_X_SPACING);
     ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING, this.ySpacing), MIN_NODE_Y_SPACING);
