@@ -539,7 +539,7 @@ export class CoreLineagesData {
       const selectedValues: string [] = [];
       allNodes.forEach(n=>{
         selectedValues[n.index] = nodeValues[n.index];
-        console.log(n.index, n.name, nodeValues[n.index])
+        // console.log(n.index, n.name, nodeValues[n.index]);
       });
       const tree = this.summaryTree as SummaryTree;
       this.selectedNodes.forEach(node=>{

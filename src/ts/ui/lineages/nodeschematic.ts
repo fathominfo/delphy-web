@@ -67,6 +67,7 @@ class TreeNodeDisplay {
   textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
   textLabelHeight: number = TEXT_LABEL_HEIGHT;
   isTip = false;
+  previousNodeClass = '';
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
@@ -91,6 +92,7 @@ class TreeNodeDisplay {
     relation: NodeRelationType | typeof UNSET,
     parent: TreeNodeDisplay | null
   ) {
+    this.previousNodeClass = this.treeNode.node.className;
     this.treeNode = src;
     this.stepsFromRoot = UNSET;
     this.mutationCount = mutCount;
@@ -151,6 +153,14 @@ class TreeNodeDisplay {
     const rect = nameLabel.querySelector(".name") as SVGRectElement;
     const introOutline = nameLabel.querySelector(".outline") as SVGRectElement;
     rect.setAttribute("data-index", `${node.index}`);
+    if (this.previousNodeClass !== '') {
+      /*
+      we try to reuse DOM objects, but sometimes they have vestigial classes.
+
+      */
+      nameLabel.classList.remove(this.previousNodeClass);
+      this.previousNodeClass = '';
+    }
     nameLabel.classList.toggle("mrca", mrca);
     nameLabel.classList.toggle("is-intro", this.introduction !== null);
     const label = mrca ? "" : node.label;
@@ -365,7 +375,7 @@ export class NodeSchematic {
 
 
   setPrevalenceSelectors(prevalenceActive: boolean, peakPrevalence: number) : void {
-    const pct = Math.round(peakPrevalence * 100);
+    const pct = getPercentLabel(peakPrevalence);
     PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
   }
 
@@ -380,21 +390,22 @@ export class NodeSchematic {
         fieldsChecked[fieldName] = checked;
         ele.remove();
       });
-      const addMetadaOption = (mdField:string, label: string)=>{
+      let anyChecked = false;
+      const addMetadaOption = (mdField:string, label: string, checked=false)=>{
         if (mdField.toLowerCase() === "id" || mdField.toLowerCase() === "accession" ) return;
         const mdDiv = METADATA_TRANSITION_TEMPLATE.cloneNode(true) as HTMLDivElement;
         const input = mdDiv.querySelector("input") as HTMLInputElement;
         const fieldSpan = mdDiv.querySelector(".lineages--metadata-field") as HTMLSpanElement;
         fieldSpan.textContent = label;
-        const wasChecked = fieldsChecked[mdField.toLowerCase()];
-        input.checked = !!wasChecked;
+        input.checked = !!checked;
         input.addEventListener("input", ()=>{
           this.metadataTransitionCallback(mdField);
         });
         METADATA_PARENT.appendChild(mdDiv);
+        if (checked) anyChecked = true;
       };
-      metadataFields.forEach(field=>addMetadaOption(field, field));
-      addMetadaOption(METADATA_NONE_OPTION, 'None');
+      metadataFields.forEach(field=>addMetadaOption(field, field, fieldsChecked[field.toLowerCase()]));
+      addMetadaOption(METADATA_NONE_OPTION, 'None', !anyChecked);
       this.metadataFieldCount = metadataFields.length;
     }
   }

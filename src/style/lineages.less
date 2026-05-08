@@ -973,6 +973,34 @@ details {
 #lineages--schematic-controls {
   display: flex;
   flex-direction: column;
+  p {margin: 5px 0;}
+  label, button {
+    border: solid 1px var(--selection-text-on);
+    margin : 0 5px;
+    border-radius: 4px;
+    padding: 2px 4px;
+    text-align: center;
+    color: var(--selection-text-on);
+    font-weight: 600;
+    opacity: 0.7;
+    &:has(:checked) {
+      color: var(--selection-text-on);
+      opacity: 1;
+    }
+  }
+}
+
+
+#lineages--peak-prevalence-toggle {
+  button, #lineages--peak-prevalence--readout {
+    font-weight: 600;
+  }
+}
+
+#lineages--metadata-transitions {
+  margin: 10px 0;
+
+
 }
 
 /* LINEAGES / Subway diagram */
