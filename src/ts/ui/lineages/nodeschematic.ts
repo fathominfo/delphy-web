@@ -56,7 +56,6 @@ const TEXT_PADDING = 5;
 
 
 class TreeNodeDisplay {
-  node: DisplayNode;
   treeNode: TreeNode;
   xPos: number = UNSET;
   yPos: number = UNSET;
@@ -72,7 +71,6 @@ class TreeNodeDisplay {
   connector: SVGPathElement;
   textLabelWidth: number = TEXT_LABEL_MIN_WIDTH;
   textLabelHeight: number = TEXT_LABEL_HEIGHT;
-  isCollapsed = false;
   isTip = false;
 
   constructor(src: TreeNode, mutCount: number,
@@ -80,7 +78,6 @@ class TreeNodeDisplay {
     parent: TreeNodeDisplay | null,
     nodeHighlightCallback: HoverCallback
   ) {
-    this.node = src.node;
     this.treeNode = src;
     /* this will be the placement in this display */
     this.tipPlacement = UNSET;
@@ -95,9 +92,9 @@ class TreeNodeDisplay {
 
     const labelBackground = this.nameLabel.querySelector(".name") as SVGRectElement;
     labelBackground.addEventListener("pointerenter", ()=>{
-      nodeHighlightCallback(this.node.index, UNSET, null);
+      const node = this.treeNode.node;
+      nodeHighlightCallback(node.index, UNSET, null);
       CAR_CONTROLS.setAttribute("transform", `translate(${this.xPos}, ${this.yPos})`);
-      const node = this.node;
       const isLower: boolean = !!this.parent && this.parent.yPos < this.yPos;
       const isIntro = this.introduction !== null;
       CAR_CONTROLS.classList.toggle("is-tip", node.isTip());
@@ -176,6 +173,8 @@ class TreeNodeDisplay {
     this.introduction = introData || null;
   }
 
+  getIndex(): number { return this.treeNode.node.index; }
+
   addDescendant(desc: TreeNodeDisplay) {
     this.children.push(desc);
   }
@@ -184,7 +183,7 @@ class TreeNodeDisplay {
     this.xPos = MARGIN.left + this.stepsFromRoot * xSpacing;
     this.yPos = MARGIN.top + this.tipPlacement * ySpacing + height / 2;
     const elements = [this.nameLabel];
-    if (!this.node.isRoot) {
+    if (!this.treeNode.node.isRoot) {
       elements.push(this.mutLabel);
       elements.push(this.connector);
     }
@@ -205,12 +204,13 @@ class TreeNodeDisplay {
       const d = `M${ xStart } 0 L${ xEnd } 0 ${ xEnd } ${ yEnd }`;
       this.connector.setAttribute("d", d);
       CONTAINER.appendChild(this.connector);
-      this.connector.classList.add(this.node.className);
+      this.connector.classList.add(this.treeNode.node.className);
     }
   }
 
   renderLabel(color='') {
-    const { node, nameLabel } = this;
+    const node = this.treeNode.node;
+    const { nameLabel } = this;
     const mrca = node.isInferred && !node.isRoot;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
     const rect = nameLabel.querySelector(".name") as SVGRectElement;
@@ -240,6 +240,10 @@ class TreeNodeDisplay {
     rect.setAttribute("x", `${ -(this.textLabelWidth) / 2}`);
     introOutline.setAttribute("width", `${ this.textLabelWidth + 8}`);
     introOutline.setAttribute("x", `${ -(this.textLabelWidth + 8) / 2}`);
+  }
+
+  reattachLabel() {
+    CONTAINER.appendChild(this.nameLabel);
   }
 
   pushBack(pushIt: boolean) : void {
@@ -305,32 +309,17 @@ export class NodeSchematic {
       CAR_CONTROLS.remove();
     });
     CAR_CONTROLS_DISMISS.addEventListener("click", ()=>{
-      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.node.index === this.highlightIndex)[0];
+      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
       if (tnd) {
-        if (tnd.isCollapsed) {
-          /* gather descendants */
-          const q = [tnd.treeNode];
-          let i = 0;
-          while (i < q.length) {
-            const n = q[i] as TreeNode;
-            if (n) {
-              n.children.forEach(c=>q.push(c));
-            }
-            i++;
-          }
-          const indices = q.map(n=>n.node.index);
-          dismissNodeCallback(indices);
-        } else {
-          dismissNodeCallback(this.highlightIndex);
-        }
+        dismissNodeCallback(this.highlightIndex);
       }
       this.highlightIndex = UNSET;
       this.setHighlightNode();
     });
     CAR_CONTROLS_ROOT_SELECT.addEventListener("click", ()=>{
-      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.node.index === this.highlightIndex)[0];
+      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
       if (tnd) {
-        rootSelectCallback(tnd.node.index);
+        rootSelectCallback(tnd.getIndex());
       }
     });
     CAR_CONTROLS_ROOT_RESET.addEventListener('click', () => rootSelectCallback(UNSET));
@@ -367,15 +356,20 @@ export class NodeSchematic {
     CONTAINER.innerHTML = '';
     const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
     this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
-    this.nodes.forEach(display=>display.renderConnector());
+    /*
+    we need to attach and measure the label before rendering the connectors
+    */
     if (colorByMetadata) {
       this.nodes.forEach(display=>{
-        const color: string = nodeMetadataColors[display.node.index];
+        const color: string = nodeMetadataColors[display.getIndex()];
         display.renderLabel(color);
       });
     } else {
       this.nodes.forEach(display=>display.renderLabel());
     }
+    this.nodes.forEach(display=>display.renderConnector());
+    /* we want the labels to be above the connectors in the svg */
+    this.nodes.forEach(display=>display.reattachLabel());
   }
 
   setSpacing() {
@@ -395,7 +389,7 @@ export class NodeSchematic {
     if (this.highlightIndex === UNSET) {
       this.nodes.forEach(display=>display.pushBack(false));
     } else {
-      this.nodes.forEach(display=>display.pushBack(display.node.index !== this.highlightIndex));
+      this.nodes.forEach(display=>display.pushBack(display.getIndex() !== this.highlightIndex));
     }
   }
 
@@ -446,7 +440,9 @@ export class NodeSchematic {
     We can traverse the entire tree by traversing the children of each node.
   */
   setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number, fieldIntroductions: IntroductionData[]) {
-    // console.debug(src.map(ncd=>`${NodePairType[ncd.nodePair.pairType]} ${ncd.nodePair.mutations.length} mutations, nodeAIsUpper ? ${nodeAIsUpper}`));
+    const {ancestor, descendant} = pairs[0];
+    console.debug(ancestor.index, ancestor.label, ancestor.className,
+      descendant.index, descendant.label, descendant.className);
     this.rootNode = rootNode;
     this.pairsByDescendant = [];
     /* expand the fieldIntroductions into a lookup */
@@ -462,11 +458,12 @@ export class NodeSchematic {
   setLayout() {
     const lookup: TreeNodeDisplay[] = [];
     const previous: TreeNodeDisplay[] = [];
-    this.nodes.forEach(tnd=>previous[tnd.node.index] = tnd);
+    this.nodes.forEach(tnd=>previous[tnd.getIndex()] = tnd);
     this.stepCount = 0;
     this.nodes.length = 0;
     const tips: TreeNodeDisplay[] = [];
     this.maxGenerations = 0;
+    // console.log(`\n          setLayout`);
     if (this.rootNode) {
       const q = [this.rootNode];
       const displayQ: TreeNodeDisplay[] = [];
@@ -491,7 +488,9 @@ export class NodeSchematic {
         } else {
           tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
-        tnd.setIntroductionStatus(this.introductionLookup[node.index]);
+        if (!treeNode.node.isInferred) {
+          tnd.setIntroductionStatus(this.introductionLookup[node.index]);
+        }
         if (treeNode === this.rootNode) {
           tnd.stepsFromRoot = 0;
           this.rootNodeDisplay = tnd;
@@ -503,12 +502,7 @@ export class NodeSchematic {
         }
         this.maxGenerations = Math.max(this.maxGenerations, tnd.stepsFromRoot);
         this.nodes.push(tnd);
-        // if (tnd.isCollapsed) {
-        //   console.log(`    ${tnd.node.label} is collapsed`, tnd.node.childCount);
-        // }
         if (treeNode.children.length === 0) {
-          tips.push(tnd);
-        } else if (tnd.isCollapsed) {
           tips.push(tnd);
         } else {
           treeNode.children.forEach(tn=>q.push(tn));

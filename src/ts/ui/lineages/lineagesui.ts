@@ -208,6 +208,7 @@ export class LineagesUI extends MccUI {
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
     this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions);
+    this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);
     this.nodeListDisplay.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {
@@ -222,7 +223,6 @@ export class LineagesUI extends MccUI {
   requestDraw() {
     (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
     // console.log('lineagesui calling this.nodeSchematic.setLayout()');
-    this.nodeSchematic.setLayout();
     this.nodeSchematic.requestRender();
     this.nodeDetails.requestDraw();
     this.nodeListDisplay.requestDraw();
