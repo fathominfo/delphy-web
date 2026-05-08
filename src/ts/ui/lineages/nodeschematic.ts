@@ -57,6 +57,7 @@ class TreeNodeDisplay {
   parent: TreeNodeDisplay | null = null;
   children: TreeNodeDisplay[] = [];
   introduction: IntroductionData | null = null;
+  currentMetadataValue = '';
   stepsFromRoot: number;
   tipPlacement: number;
   mutationCount: number;
@@ -71,8 +72,7 @@ class TreeNodeDisplay {
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
-    parent: TreeNodeDisplay | null,
-    nodeHighlightCallback: HoverCallback
+    parent: TreeNodeDisplay | null
   ) {
     this.treeNode = src;
     /* this will be the placement in this display */
@@ -104,6 +104,10 @@ class TreeNodeDisplay {
     the children of the source node might not be displayed here
     */
     this.children.length = 0;
+  }
+
+  setCurrentMetadata(md:string) {
+    this.currentMetadataValue = md;
   }
 
   setIntroductionStatus(introData: IntroductionData | undefined) {
@@ -221,6 +225,7 @@ export class NodeSchematic {
   metadataTransitionCallback: MetadataToggleCallback;
   pairsByDescendant: NodePair[] = [];
   introductionLookup: IntroductionData[] = [];
+  metadataField: string | null = null;
   rootNode: TreeNode | null = null;
   rootNodeDisplay: TreeNodeDisplay | null = null;
   nodes: TreeNodeDisplay[] = [];
@@ -420,7 +425,8 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number, fieldIntroductions: IntroductionData[]) {
+  setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number,
+    fieldIntroductions: IntroductionData[], metadataField: string | null) {
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,
     //   descendant.index, descendant.label, descendant.className);
@@ -428,6 +434,7 @@ export class NodeSchematic {
     this.pairsByDescendant = [];
     /* expand the fieldIntroductions into a lookup */
     this.introductionLookup = [];
+    this.metadataField = metadataField;
     fieldIntroductions.forEach(item=>this.introductionLookup[item.nodeIndex] = item);
     pairs.forEach(pair=>{
       // index the mutations by the descendent
@@ -465,13 +472,18 @@ export class NodeSchematic {
         }
         let tnd: TreeNodeDisplay = previous[node.index];
         if (!tnd) {
-          tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent, this.nodeHighlightCallback);
+          tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent);
         } else {
           tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
         if (!treeNode.node.isInferred) {
           tnd.setIntroductionStatus(this.introductionLookup[node.index]);
         }
+        let mdValue = '';
+        if (this.metadataField && node.metadata) {
+          mdValue = node.metadata[this.metadataField]?.value || '';
+        }
+        tnd.setCurrentMetadata(mdValue);
         if (treeNode === this.rootNode) {
           tnd.stepsFromRoot = 0;
           this.rootNodeDisplay = tnd;
@@ -541,7 +553,7 @@ export class NodeSchematic {
     CAR_CONTROLS.classList.toggle("is-root", node.isRoot && node.isInferred);
     CAR_CONTROLS.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
     CAR_CONTROLS.classList.toggle("is-upper", isUpper);
-    CAR_CONTROLS.classList.toggle("is-intro", isIntro);
+    CAR_CONTROLS.classList.toggle("is-intro", !!this.metadataField && tnd.currentMetadataValue !== '');
     if (node.isTip()) {
       const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
       let name = '';
@@ -556,11 +568,15 @@ export class NodeSchematic {
       tipIdSpan.title = name;
     }
 
+    const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
     if (isIntro) {
       const introData = tnd.introduction as IntroductionData;
-      const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
       (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
       (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = introData.value;
+      transitionEle.classList.remove("no-transition");
+    } else {
+      (transitionEle.querySelector(".md-to") as HTMLSpanElement).textContent = tnd.currentMetadataValue;
+      transitionEle.classList.add("no-transition");
     }
 
     CONTAINER.appendChild(tnd.nameLabel);

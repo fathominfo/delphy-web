@@ -62,7 +62,8 @@ export type ChartData = {
   rootNode: TreeNode | null,
   selectedRootIndex: number,
   peakPrevalence: number,
-  fieldIntroductions: IntroductionData[]
+  fieldIntroductions: IntroductionData[],
+  metadataField: string | null
 }
 
 
@@ -80,7 +81,8 @@ const defaultChartData : ChartData = {
   rootNode: null,
   selectedRootIndex: UNSET,
   peakPrevalence: UNSET,
-  fieldIntroductions: []
+  fieldIntroductions: [],
+  metadataField: null
 };
 
 
@@ -624,6 +626,7 @@ export class CoreLineagesData {
       }
       chartData.minDate = minDate;
       chartData.peakPrevalence = this.peakPrevalenceThreshold;
+      chartData.metadataField = this.filteringByMetadataField;
       chartData.selectedRootIndex = this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index;
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);

@@ -1131,9 +1131,15 @@ details {
     display: none;
     margin: 2px 0;
     background-color: white;
-    .md-from, .md-to {
+    .md-to {
       font-weight: 700;
     }
+    &.no-transition {
+      .md-connect, .md-from {
+        display: none;
+      }
+    }
+
   }
 
   .node-root-action, #subway--node-dismiss {
