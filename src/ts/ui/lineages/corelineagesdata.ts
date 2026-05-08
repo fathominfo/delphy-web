@@ -213,8 +213,8 @@ export class CoreLineagesData {
         const introductions = this.getMetadataTransitionNodes(mccConfig, this.filteringByMetadataField);
         this.metadataTransitionNodes[this.filteringByMetadataField] = introductions;
       }
-      this.selectNodesByImpact();
-      this.selectionTreeData.setData([this.rootNode].concat(this.selectedNodes));
+      this.setAutoNodeSelections();
+      this.setTreeData();
       this.setChartData();
     }
   }
@@ -406,11 +406,6 @@ export class CoreLineagesData {
     }
   }
 
-  selectNodesByImpact() : void {
-    this.setAutoNodeSelections();
-  }
-
-
   getMetadataTransitionNodes(mccConfig: MccConfig, field: string) : number[] {
     // const metadata = mccConfig.metadata;
     // const field = mccConfig.metadataField;
@@ -508,25 +503,19 @@ export class CoreLineagesData {
     newPct += increment ? 1 : -1;
     this.peakPrevalenceThreshold = Math.min(Math.max(0, newPct / 100),1);
     this.filteringByPeakPrevalence = true;
-    if (this.filteringByPeakPrevalence) {
-      this.selectNodesByImpact();
-    } else {
-      this.setAutoNodeSelections();
-    }
+    this.setAutoNodeSelections();
     if (this.selectionTreeData) {
-      if (this.selectedNodes.length === 0) {
-        this.selectedNodes.push(this.rootNode);
-      }
-      this.selectionTreeData.setData(this.selectedNodes);
+
+      this.setTreeData();
       this.setChartData();
     }
   }
 
   updateConfidenceThreshold(confidenceThreshold: number) : void {
     this.confidenceThreshold = confidenceThreshold;
-    this.selectNodesByImpact();
+    this.setAutoNodeSelections();
     if (this.selectionTreeData) {
-      this.selectionTreeData.setData(this.selectedNodes);
+      this.setTreeData();
       this.setChartData();
     }
   }
@@ -572,6 +561,37 @@ export class CoreLineagesData {
     }
     this.setChartData();
   }
+
+
+  setTreeData() : void {
+    const tree = this.summaryTree as SummaryTree;
+    const selectionTree = this.selectionTreeData as SelectionTreeData;
+    const candidateNodes = this.selectedNodes;
+    if (!candidateNodes.map(n=>n.index).includes(this.rootNode.index)) {
+      candidateNodes.unshift(this.rootNode);
+    }
+    const rootIndex = this.rootNode.index;
+    /*
+    if we have set a custom root node,
+    auto selecting nodes by prevalence may include nodes
+    that aren't descendants of the current root. So filter
+    them out.
+    */
+    if (tree.getRootIndex() !== rootIndex) {
+      for (let i = candidateNodes.length - 1; i >= 0; i--) {
+        let index = candidateNodes[i].index;
+        while (index !== UNSET && index !== rootIndex) {
+          index = tree.getParentIndexOf(index);
+        }
+        if (index === UNSET) {
+          candidateNodes.splice(i, 1);
+        }
+      }
+    }
+    selectionTree.setData(candidateNodes);
+
+  }
+
 
   getMinDate() : number {
     if (this.pythia) {
