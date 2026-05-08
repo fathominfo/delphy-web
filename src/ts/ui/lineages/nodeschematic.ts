@@ -440,9 +440,9 @@ export class NodeSchematic {
     We can traverse the entire tree by traversing the children of each node.
   */
   setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number, fieldIntroductions: IntroductionData[]) {
-    const {ancestor, descendant} = pairs[0];
-    console.debug(ancestor.index, ancestor.label, ancestor.className,
-      descendant.index, descendant.label, descendant.className);
+    // const {ancestor, descendant} = pairs[0];
+    // console.debug(ancestor.index, ancestor.label, ancestor.className,
+    //   descendant.index, descendant.label, descendant.className);
     this.rootNode = rootNode;
     this.pairsByDescendant = [];
     /* expand the fieldIntroductions into a lookup */

@@ -214,7 +214,7 @@ export class CoreLineagesData {
         this.metadataTransitionNodes[this.filteringByMetadataField] = introductions;
       }
       this.selectNodesByImpact();
-      this.selectionTreeData.setData(this.selectedNodes);
+      this.selectionTreeData.setData([this.rootNode].concat(this.selectedNodes));
       this.setChartData();
     }
   }
@@ -480,9 +480,11 @@ export class CoreLineagesData {
     });
     shouldShow.forEach(nodeIndex=>{
       if (already[nodeIndex] === undefined) {
-        const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
-        nd.isLocked = true;
-        this.selectedNodes.push(nd);
+        if (nodeIndex !== this.rootNode.index) {
+          const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
+          nd.isLocked = true;
+          this.selectedNodes.push(nd);
+        }
       } else {
         delete already[nodeIndex];
       }
@@ -988,6 +990,7 @@ export class CoreLineagesData {
     const metadata = this.getNodeMetadata(index);
     let generationsFromRoot = UNSET;
     if (index !== UNSET && summaryTree !== null) {
+      generationsFromRoot = 0;
       let parent = index;
       const rootIndex = summaryTree.getRootIndex();
       while (parent !== rootIndex) {
