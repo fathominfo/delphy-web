@@ -157,14 +157,7 @@ class TreeNodeDisplay {
     const rect = nameLabel.querySelector(".name") as SVGRectElement;
     const introOutline = nameLabel.querySelector(".outline") as SVGRectElement;
     rect.setAttribute("data-index", `${node.index}`);
-    if (this.previousNodeClass !== '') {
-      /*
-      we try to reuse DOM objects, but sometimes they have vestigial classes.
-
-      */
-      nameLabel.classList.remove(this.previousNodeClass);
-      this.previousNodeClass = '';
-    }
+    nameLabel.setAttribute("class", "label");
     nameLabel.classList.toggle("mrca", mrca);
     nameLabel.classList.toggle("is-intro", this.introduction !== null);
     const label = mrca ? "" : node.label;
