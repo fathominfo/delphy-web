@@ -507,8 +507,8 @@ export class CoreLineagesData {
     this.filteringByPeakPrevalence = true;
     this.setAutoNodeSelections();
     if (this.selectionTreeData) {
-
       this.setTreeData();
+      this.setMetadataTransitions();
       this.setChartData();
     }
   }
@@ -524,7 +524,6 @@ export class CoreLineagesData {
 
   highlightMetadataTransitions(field: string) : void {
     const mccConfig: MccConfig = this.sharedState.mccConfig;
-    const fieldIntroductions: IntroductionData[] = []
     if (!mccConfig || !mccConfig.metadata) return
     if (field === METADATA_NONE_OPTION) {
       this.filteringByMetadataField = null;
@@ -534,34 +533,43 @@ export class CoreLineagesData {
       this.filteringByMetadataField = field;
       mccConfig.setColorSystem(ColorOption.confidence);
       mccConfig.setMetadataField(field);
-      /* build a list of the current nodes that have introductions */
-      /* start with a lookup of the current metadata values */
-      const nodeValues = mccConfig.getMetadataValues(field);
-      const allNodes = [this.rootNode].concat(this.selectedNodes);
-      const selectedValues: string [] = [];
-      allNodes.forEach(n=>{
-        selectedValues[n.index] = nodeValues[n.index];
-        // console.log(n.index, n.name, nodeValues[n.index]);
-      });
-      const tree = this.summaryTree as SummaryTree;
-      this.selectedNodes.forEach(node=>{
-        const nodeIndex = node.index;
-        const value = nodeValues[nodeIndex];
-        let parentIndex = tree.getParentIndexOf(nodeIndex);
-        while (parentIndex !== UNSET && selectedValues[parentIndex] === undefined) {
-          parentIndex = tree.getParentIndexOf(parentIndex);
-        }
-        if (parentIndex >= 0) {
-          const upstreamValue = nodeValues[parentIndex];
-          if (upstreamValue !== value) {
-            fieldIntroductions.push({nodeIndex, value, upstreamValue});
-          }
-        }
-      }
-      );
-      this.fieldIntroductions = fieldIntroductions;
+      this.setMetadataTransitions();
     }
     this.setChartData();
+  }
+
+  setMetadataTransitions() : void {
+    const field = this.filteringByMetadataField;
+    if (field === null) return;
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const fieldIntroductions: IntroductionData[] = []
+
+    /* build a list of the current nodes that have introductions */
+    /* start with a lookup of the current metadata values */
+    const nodeValues = mccConfig.getMetadataValues(field);
+    const allNodes = [this.rootNode].concat(this.selectedNodes);
+    const selectedValues: string [] = [];
+    allNodes.forEach(n=>{
+      selectedValues[n.index] = nodeValues[n.index];
+      // console.log(n.index, n.name, nodeValues[n.index]);
+    });
+    const tree = this.summaryTree as SummaryTree;
+    this.selectedNodes.forEach(node=>{
+      const nodeIndex = node.index;
+      const value = nodeValues[nodeIndex];
+      let parentIndex = tree.getParentIndexOf(nodeIndex);
+      while (parentIndex !== UNSET && selectedValues[parentIndex] === undefined) {
+        parentIndex = tree.getParentIndexOf(parentIndex);
+      }
+      if (parentIndex >= 0) {
+        const upstreamValue = nodeValues[parentIndex];
+        if (upstreamValue !== value) {
+          fieldIntroductions.push({nodeIndex, value, upstreamValue});
+        }
+      }
+    }
+    );
+    this.fieldIntroductions = fieldIntroductions;
   }
 
 
