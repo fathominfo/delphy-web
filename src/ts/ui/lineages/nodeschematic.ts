@@ -268,14 +268,19 @@ export class NodeSchematic {
       }
       this.highlightIndex = UNSET;
       this.setHighlightNode();
+      this.hideHover();
     });
     CAR_CONTROLS_ROOT_SELECT.addEventListener("click", ()=>{
       const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
       if (tnd) {
         rootSelectCallback(tnd.getIndex());
+        this.hideHover();
       }
     });
-    CAR_CONTROLS_ROOT_RESET.addEventListener('click', () => rootSelectCallback(UNSET));
+    CAR_CONTROLS_ROOT_RESET.addEventListener('click', () => {
+      rootSelectCallback(UNSET);
+      this.hideHover();
+    });
 
     CONTAINER.addEventListener("pointermove", event=>{
       const target = event.target as SVGElement;
@@ -345,6 +350,7 @@ export class NodeSchematic {
     this.nodes.forEach(display=>display.renderConnector());
     /* we want the labels to be above the connectors in the svg */
     this.nodes.forEach(display=>display.reattachLabel());
+    this.setHighlightNode();
   }
 
   setSpacing() {
@@ -524,15 +530,15 @@ export class NodeSchematic {
 
   highlightNode(node: DisplayNode) : void {
     if (node.index !== this.highlightIndex) {
-      this.highlightIndex = node.index;
       requestAnimationFrame(()=>this.setHighlightNode());
     }
+    this.highlightIndex = node.index;
   }
 
 
   setHover(tnd: TreeNodeDisplay) {
     const node = tnd.treeNode.node;
-    const isUpper: boolean = !tnd.parent || tnd.yPos < tnd.parent.yPos;
+    const isUpper = false; //!tnd.parent || tnd.yPos < tnd.parent.yPos;
     const isIntro = tnd.introduction !== null;
     const x = tnd.xPos + tnd.textLabelWidth/2;
     const y = tnd.yPos;
