@@ -63,7 +63,8 @@ export type ChartData = {
   selectedRootIndex: number,
   peakPrevalence: number,
   fieldIntroductions: IntroductionData[],
-  metadataField: string | null
+  metadataField: string | null,
+  isFullyAuto: boolean
 }
 
 
@@ -82,7 +83,8 @@ const defaultChartData : ChartData = {
   selectedRootIndex: UNSET,
   peakPrevalence: UNSET,
   fieldIntroductions: [],
-  metadataField: null
+  metadataField: null,
+  isFullyAuto: false
 };
 
 
@@ -452,9 +454,6 @@ export class CoreLineagesData {
 
 
   private setAutoNodeSelections() : void {
-    // console.log(`adding automatic selections based on '${selectionSource}'`, autoSelected);
-    const already: boolean[] = [];
-    this.selectedNodes.map(node=>already[node.index] = true);
     /* clear previous selections, in case we are altering the criteria here (like node confidence, etc. ) */
     this.selectionReasons.forEach((reasons:Set<string>)=>{
       reasons.delete(AUTO_SELECTED);
@@ -468,6 +467,10 @@ export class CoreLineagesData {
       }
       this.selectionReasons[nodeIndex].add(AUTO_SELECTED);
     });
+    this.updateSelectedNodesFromReasons();
+  }
+
+  private updateSelectedNodesFromReasons() {
     /* what nodes have reason to show up? */
     const shouldShow: number[] = [];
     this.selectionReasons.forEach((reasons, nodeIndex)=>{
@@ -475,6 +478,8 @@ export class CoreLineagesData {
         shouldShow.push(nodeIndex);
       }
     });
+    const already: boolean[] = [];
+    this.selectedNodes.map(node=>already[node.index] = true);
     shouldShow.forEach(nodeIndex=>{
       if (already[nodeIndex] === undefined) {
         if (nodeIndex !== this.rootNode.index) {
@@ -497,6 +502,24 @@ export class CoreLineagesData {
   }
 
 
+  togglePeakPrevalenceSelection(active: boolean) : void {
+    console.log(`togglePeakPrevalenceSelection(${active})`)
+    this.filteringByPeakPrevalence = active;
+    if (active) {
+      this.setAutoNodeSelections();
+    } else {
+      this.selectionReasons.forEach((reasons:Set<string>)=>{
+        reasons.delete(AUTO_SELECTED);
+      });
+      this.updateSelectedNodesFromReasons();
+    }
+    if (this.selectionTreeData) {
+      this.setTreeData();
+      this.setMetadataTransitions();
+      this.setChartData();
+    }
+  }
+
   /*
   expects a number 0-100
   */
@@ -504,7 +527,6 @@ export class CoreLineagesData {
     let newPct = this.peakPrevalenceThreshold * 100;
     newPct += increment ? 1 : -1;
     this.peakPrevalenceThreshold = Math.min(Math.max(0, newPct / 100),1);
-    this.filteringByPeakPrevalence = true;
     this.setAutoNodeSelections();
     if (this.selectionTreeData) {
       this.setTreeData();
@@ -636,6 +658,7 @@ export class CoreLineagesData {
       chartData.peakPrevalence = this.peakPrevalenceThreshold;
       chartData.metadataField = this.filteringByMetadataField;
       chartData.selectedRootIndex = this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index;
+      chartData.isFullyAuto = this.isAutoselectingActive();
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
@@ -947,6 +970,56 @@ export class CoreLineagesData {
     return node;
   }
 
+
+  isAutoselectingActive() : boolean {
+    const peakThreshold = this.peakPrevalenceThreshold;
+    const confidenceThreshold = this.confidenceThreshold
+    const autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
+    let isAuto = true;
+    /* something has been added by curation, not automatically  */
+    // this.selectionReasons.forEach((nodeReasons, nodeIndex)=>{
+    //   /* we removed something from the auto configuration */
+    //   if (!autoSelected.includes(nodeIndex)) {
+    //     isAuto = false;
+    //   }
+    //   /* check whether this is not auto selected */
+    //   let notAuto = true;
+    //   nodeReasons.forEach(entry=>{
+    //     if (entry === AUTO_SELECTED) {
+    //       notAuto = false;
+    //     }
+    //   });
+    //   if (notAuto) {
+    //     isAuto = false;
+    //   }
+    // });
+
+    /* auto selections have something to add for us */
+    const tree = this.summaryTree as SummaryTree;
+    const actualRoot = tree.getRootIndex();
+    const currentRoot = this.rootNode.index;
+    const isCuratedRoot = actualRoot !== currentRoot;
+    autoSelected.forEach(nodeIndex=>{
+      const reasons = this.selectionReasons[nodeIndex];
+      if (reasons === undefined || reasons.size === 0) {
+        /*
+        check that this node is a descendant of the current root
+        */
+        if (isCuratedRoot) {
+          let ancestor = nodeIndex;
+          while (ancestor !== currentRoot && ancestor !== UNSET) {
+            ancestor = tree.getParentIndexOf(ancestor);
+          }
+          if (ancestor === currentRoot) {
+            isAuto = false;
+          }
+        } else {
+          isAuto = false;
+        }
+      }
+    });
+    return isAuto;
+  }
 
   setCredibilityConstrained(constrained: boolean) : void {
     this.constrainHoverByCredibility = constrained;

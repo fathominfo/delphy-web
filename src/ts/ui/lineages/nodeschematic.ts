@@ -9,6 +9,8 @@ const METADATA_FIELD_SELECTOR = "#lineages--metadata-transitions label";
 
 const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
 const COUNT_SPAN = document.querySelector("#lineages--schematic-count") as HTMLSpanElement;
+const AUTO_BUTTON = CONTROLS.querySelector("#lineages--schematic-auto") as HTMLButtonElement;
+const CLEAR_BUTTON = CONTROLS.querySelector("#lineages--schematic-clear") as HTMLButtonElement;
 
 const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#lineages--peak-prevalence-less") as HTMLButtonElement;
 const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#lineages--peak-prevalence-more") as HTMLButtonElement;
@@ -239,7 +241,8 @@ export class NodeSchematic {
     prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE,
     metadataTransitionCallback: MetadataToggleCallback,
     dismissNodeCallback: DismissNodeCallback,
-    rootSelectCallback: NodeCallback
+    rootSelectCallback: NodeCallback,
+    toggleAutoSelectCallback: (active: boolean)=>void
   ) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -255,6 +258,15 @@ export class NodeSchematic {
     PREVALENCE_THRESHOLD_MORE.addEventListener("click", ()=>{
       prevThresholdCallback(true);
     });
+    /*
+    TODO:
+    if this is the behavior we want, then this should be a checkbox.
+    But is this the behavior we want?
+    */
+    AUTO_BUTTON.addEventListener("click", ()=>{
+      const isAuto = AUTO_BUTTON.classList.contains("is-auto");
+      toggleAutoSelectCallback(!isAuto);
+    })
 
     this.metadataTransitionCallback = metadataTransitionCallback;
     CAR_CONTROLS.addEventListener("pointerleave", ()=>{
@@ -427,7 +439,9 @@ export class NodeSchematic {
     We can traverse the entire tree by traversing the children of each node.
   */
   setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number,
-    fieldIntroductions: IntroductionData[], metadataField: string | null) {
+    fieldIntroductions: IntroductionData[], metadataField: string | null,
+    isFullyAuto: boolean
+  ) {
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,
     //   descendant.index, descendant.label, descendant.className);
@@ -442,6 +456,7 @@ export class NodeSchematic {
       this.pairsByDescendant[pair.descendant.index] = pair;
     });
     COUNT_SPAN.textContent = `${nfc(nodeCount)} node${ nodeCount === 1 ? '' : 's'}` ;
+    AUTO_BUTTON.classList.toggle("is-auto", isFullyAuto);
   }
 
   setLayout() {

@@ -46,7 +46,6 @@ export class LineagesUI extends MccUI {
     const updateCallback: UpdateFunction = (data: ChartData)=>this.update(data);
     this.coreData = new CoreLineagesData(sharedState, updateCallback);
     const dismissCallback: DismissNodeCallback = (nodeIndex: number | number[])=>this.handleNodeDismiss(nodeIndex);
-    const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
     const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.updateHighlight(nodeIndex, date, mutation);
     let previousNode = UNSET
     const treeHoverCallback: NodeCallback = (nodeIndex: number)=>{
@@ -66,12 +65,16 @@ export class LineagesUI extends MccUI {
     const metadataTransitionCallback: MetadataToggleCallback = (fieldName: string)=>{
       this.coreData.highlightMetadataTransitions(fieldName);
     };
+    const toggleAutoSelectCallback = (active: boolean)=>{
+      this.coreData.togglePeakPrevalenceSelection(active);
+    };
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightedNode = node;
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback, dismissCallback, rootSelectCallback);
+    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
+      dismissCallback, rootSelectCallback, toggleAutoSelectCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     // this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -204,14 +207,14 @@ export class LineagesUI extends MccUI {
     // const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
     //   nodePairs, rootNode, selectedRootIndex } = chartData;
     const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence,
-      fieldIntroductions, metadataField } = chartData;
+      fieldIntroductions, metadataField, isFullyAuto } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
     // this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField);
+    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);
     // this.nodeListDisplay.highlightNode(highlightNode);
