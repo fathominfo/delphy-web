@@ -608,6 +608,7 @@ export class CoreLineagesData {
       candidateNodes.push(this.highlightNode);
       allNodes.push(this.highlightNode);
     }
+    console.log(candidateNodes.map(n=>n.index));
     const selectedValues: string [] = [];
     allNodes.forEach(n=>{
       selectedValues[n.index] = nodeValues[n.index];
@@ -810,14 +811,9 @@ export class CoreLineagesData {
           */
           const match = minimap.found.filter(treeNode=>treeNode)
             .map(tn=>tn.node)
-            .filter(node=>(node.isInferred || node.isLocked) && node.index === nodeIndex)[0];
+            .filter(node=>node.isLocked && node.index === nodeIndex)[0];
           if (match) {
-            if (match.isInferred) {
-              // set the label from the mrca
-              this.highlightNode.label = match.label;
-            } else {
-              this.highlightNode.copyFrom(match);
-            }
+            this.highlightNode.copyFrom(match);
           } else {
             toMap.push(this.highlightNode);
           }
