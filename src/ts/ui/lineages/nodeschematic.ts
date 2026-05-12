@@ -403,15 +403,9 @@ export class NodeSchematic {
     PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
   }
 
-  setMetadataSelectors(metadataFields : string[]) : void {
+  setMetadataSelectors(metadataFields : string[], current: string | null) : void {
     if (metadataFields.length !== this.metadataFieldCount) {
-      const fieldsChecked: {[_: string]: boolean} = {};
       METADATA_PARENT.querySelectorAll(METADATA_FIELD_SELECTOR).forEach((ele:Element)=>{
-        const input = ele.querySelector("input") as HTMLInputElement;
-        const fieldSpan = ele.querySelector(".lineages--metadata-field") as HTMLSpanElement;
-        const fieldName = (fieldSpan.textContent || '').toLowerCase();
-        const checked = input.checked;
-        fieldsChecked[fieldName] = checked;
         ele.remove();
       });
       let anyChecked = false;
@@ -428,7 +422,7 @@ export class NodeSchematic {
         METADATA_PARENT.appendChild(mdDiv);
         if (checked) anyChecked = true;
       };
-      metadataFields.forEach(field=>addMetadaOption(field, field, fieldsChecked[field.toLowerCase()]));
+      metadataFields.forEach(field=>addMetadaOption(field, field, field === current));
       addMetadaOption(METADATA_NONE_OPTION, 'None', !anyChecked);
       this.metadataFieldCount = metadataFields.length;
     }

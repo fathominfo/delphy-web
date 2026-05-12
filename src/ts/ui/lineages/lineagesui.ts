@@ -144,7 +144,7 @@ export class LineagesUI extends MccUI {
     this.coreData.activate();
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
-    this.nodeSchematic.setMetadataSelectors(metadataFields);
+    this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
     // const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
   }
 
@@ -176,7 +176,7 @@ export class LineagesUI extends MccUI {
     }
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
-    this.nodeSchematic.setMetadataSelectors(metadataFields);
+    this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
   }
 
 

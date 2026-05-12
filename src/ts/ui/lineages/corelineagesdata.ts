@@ -168,6 +168,7 @@ export class CoreLineagesData {
 
   activate() {
     this.pythia = this.sharedState.pythia;
+    this.filteringByMetadataField = this.sharedState.mccConfig.metadataField;
   }
 
   deactivate() {
@@ -219,6 +220,7 @@ export class CoreLineagesData {
       }
       this.setAutoNodeSelections();
       this.setTreeData();
+      this.setMetadataTransitions();
       this.setChartData();
     }
   }
@@ -1167,5 +1169,8 @@ export class CoreLineagesData {
     return this.rootNode;
   }
 
+  getCurrentMetadataField(): string | null {
+    return this.filteringByMetadataField;
+  }
 }
 
