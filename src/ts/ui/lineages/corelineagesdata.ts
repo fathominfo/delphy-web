@@ -602,14 +602,18 @@ export class CoreLineagesData {
     /* build a list of the current nodes that have introductions */
     /* start with a lookup of the current metadata values */
     const nodeValues = mccConfig.getMetadataValues(field);
-    const allNodes = [this.rootNode].concat(this.selectedNodes);
+    const candidateNodes = this.selectedNodes.slice(0);
+    const allNodes = [this.rootNode].concat(candidateNodes);
+    if (this.highlightNode.index !== UNSET && !allNodes.map(n=>n.index).includes(this.highlightNode.index)) {
+      candidateNodes.push(this.highlightNode);
+      allNodes.push(this.highlightNode);
+    }
     const selectedValues: string [] = [];
     allNodes.forEach(n=>{
       selectedValues[n.index] = nodeValues[n.index];
-      // console.log(n.index, n.name, nodeValues[n.index]);
     });
     const tree = this.summaryTree as SummaryTree;
-    this.selectedNodes.forEach(node=>{
+    candidateNodes.forEach(node=>{
       const nodeIndex = node.index;
       const value = nodeValues[nodeIndex];
       let parentIndex = tree.getParentIndexOf(nodeIndex);
@@ -818,48 +822,9 @@ export class CoreLineagesData {
             toMap.push(this.highlightNode);
           }
         }
-
-        // console.log(toMap)
         minimap.setData(toMap);
-        // if (nodeIndex === rootIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = null;
-        //   hint = TreeHint.HoverRoot;
-        // } else if (nodeIndex === mrcaIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = this.mrcaNode;
-        //   hint = TreeHint.HoverMrca;
-        // } else if (nodeIndex === nodeAIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = this.nodeANode;
-        //   hint = TreeHint.HoverNodeA;
-        // } else if (nodeIndex === nodeBIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = this.nodeBNode;
-        //   if (mrcaIndex === UNSET) {
-        //     hint = TreeHint.HoverNodeBDescendant;
-        //   } else {
-        //     hint = TreeHint.HoverNodeBCousin;
-        //   }
-        // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
-        //   /* selecting node 1 */
-        //   nodeAIndex = nodeIndex;
-        //   displayNode = this.nodeANode;
-        //   if (nodeBIndex !== UNSET) {
-        //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-        //   }
-        //   hint = TreeHint.PreviewNodeA;
-        // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
-        //   /* selecting node 2 */
-        //   nodeBIndex = nodeIndex;
-        //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-        //   displayNode = this.nodeBNode;
-        //   if (mrcaIndex === UNSET) {
-        //     hint = TreeHint.PreviewNodeBDescendant;
-        //   } else {
-        //     hint = TreeHint.PreviewNodeBCousin;
-        //   }
       }
+      this.setMetadataTransitions();
       this.setChartData();
     }
   }
