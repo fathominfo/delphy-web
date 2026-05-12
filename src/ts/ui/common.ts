@@ -699,4 +699,4 @@ export const getMedian = (arr:number[])=>{
 
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 export type RANGE_CALLBACK_TYPE = (value: number)=>void;
-export type PREVALENCE_CALLBACK_TYPE = (isTrue: boolean, threshold: number)=>void;
+export type SET_PREVALENCE_CALLBACK_TYPE = (increment: boolean)=>void;

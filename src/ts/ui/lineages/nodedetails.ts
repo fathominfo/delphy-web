@@ -153,7 +153,7 @@ export class NodeDetails {
             if (someUnshown) {
               const span = document.createElement("span");
               span.textContent = `showing top 3 of ${counstCount}`;
-              item.appendChild(span);
+              detailContainer.appendChild(span);
             }
             innerNodeMetadata.appendChild(item);
 

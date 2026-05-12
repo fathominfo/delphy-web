@@ -324,6 +324,7 @@ details {
 }
 .node-metadata-item {
   .tip-counts {
+    display: none;
     margin-bottom: 0.4em;
     > div {
       margin: 0.2em 0;
@@ -716,6 +717,9 @@ details {
 .lineages--node-item {
   height: 40px;
 }
+.lineages--node-item + .lineages--node-item{
+  margin-top: 3px;
+}
 
 
 // ██████╗ ██████╗ ███████╗██╗   ██╗ █████╗ ██╗     ███████╗███╗   ██╗ ██████╗███████╗
@@ -969,20 +973,59 @@ details {
 #lineages--schematic-controls {
   display: flex;
   flex-direction: column;
+  p {margin: 5px 0;}
+  label, button {
+    border: solid 1px var(--selection-text-on);
+    margin : 0 5px;
+    border-radius: 4px;
+    padding: 2px 4px;
+    text-align: center;
+    color: var(--selection-text-on);
+    font-weight: 600;
+    opacity: 0.7;
+    &:has(:checked) {
+      color: var(--selection-text-on);
+      opacity: 1;
+    }
+  }
+  #lineages--schematic-auto {
+    font-weight: 400;
+    &.is-auto {
+      font-weight: 700;
+    }
+  }
+}
+
+
+
+#lineages--peak-prevalence-toggle {
+  button, #lineages--peak-prevalence--readout {
+    font-weight: 600;
+  }
+}
+
+#lineages--metadata-transitions {
+  margin: 10px 0;
+}
+
+
+#lineages--intros-only.na {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 /* LINEAGES / Subway diagram */
 
 #subway {
   position: relative;
-
   height: calc(100% - var(--view-header-height) );
 
   .label, .mut-count {
     opacity: 1;
     transition: opacity 0.15s;
 
-    rect {
+    .name {
       stroke: none;
       rx: 5;
       ry: 5;
@@ -996,8 +1039,20 @@ details {
       pointer-events: none;
     }
 
+    .outline {
+      fill: white;
+      stroke: gray;
+      rx: 7.5;
+      ry: 7.5;
+      opacity: 0;
+    }
+
     &.back {
       opacity: 0.3;
+    }
+
+    &.is-intro .outline {
+      opacity: 1;
     }
   }
 
@@ -1005,18 +1060,18 @@ details {
     text {
       fill: white;
     }
-    &.a rect { fill: var(--a-fill); }
-    &.b rect { fill: var(--b-fill); }
-    &.c rect { fill: var(--c-fill); }
-    &.d rect { fill: var(--d-fill); }
-    &.e rect { fill: var(--e-fill); }
-    &.f rect { fill: var(--f-fill); }
-    &.g rect { fill: var(--g-fill); }
-    &.h rect { fill: var(--h-fill); }
-    &.i rect { fill: var(--i-fill); }
-    &.j rect { fill: var(--j-fill); }
-    &.k rect { fill: var(--k-fill); }
-    &.l rect { fill: var(--l-fill); }
+    &.a .name { fill: var(--a-fill); }
+    &.b .name { fill: var(--b-fill); }
+    &.c .name { fill: var(--c-fill); }
+    &.d .name { fill: var(--d-fill); }
+    &.e .name { fill: var(--e-fill); }
+    &.f .name { fill: var(--f-fill); }
+    &.g .name { fill: var(--g-fill); }
+    &.h .name { fill: var(--h-fill); }
+    &.i .name { fill: var(--i-fill); }
+    &.j .name { fill: var(--j-fill); }
+    &.k .name { fill: var(--k-fill); }
+    &.l .name { fill: var(--l-fill); }
   }
 
   .mut-count, .label.root, .label.mrca {
@@ -1033,9 +1088,14 @@ details {
     }
   }
 
-  .label.mrca rect {
-    pointer-events: none;
+  .label.mrca {
+    .outline {display: none;}
+    rect {
+      pointer-events: none;
+    }
   }
+
+
 
 
 
@@ -1050,27 +1110,101 @@ details {
 
 }
 
-#subway--car-action-container {
-  fill: white;
-  fill-opacity: 0.6;
-  stroke: #aaa;
-  rx: 7;
-  ry: 7;
-}
+#subway-hover {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: auto;
+  height: auto;
+  top: 0;
+  right: 0;
+  // background-color: rgba(255,255,255,0.9);
+  padding: 5px 0 5px 3px;
+  transition: opacity 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  box-sizing: border-box;
+  // margin-right: 18px;
 
-
-// #subway--car-dismiss {
-// }
-
-#subway--car-expansion {
-  .expanded { display: none; }
-  &:has(input:checked) {
-    .expanded { display: inline; }
-    .collapsed { display: none; }
+  &.active {
+    opacity: 1;
+    pointer-events: all;
   }
-  input {
-    appearance: none;
+
+  #subway--detail-tip-name {
+    color: var(--selection-text-on);
+    display: none;
+    font-weight: 700;
   }
+
+  #subway--detail-metadata {
+    color: var(--selection-text-on);
+    display: none;
+    margin: 2px 0;
+    background-color: white;
+    .md-to {
+      font-weight: 700;
+    }
+    max-width: 300px;
+    &.no-transition {
+      .md-connect, .md-from {
+        display: none;
+      }
+    }
+
+  }
+
+  .node-root-action, #subway--node-dismiss {
+    display: block;
+    background-color: white;
+    transition: color .15s;
+    color: var(--selection-text-static);
+    &:hover {
+      color: black; //var(--title-text);
+    }
+  }
+
+  #subway--reset-root {
+    display: none;
+  }
+
+  &.is-upper {
+    padding-bottom: 10px;
+  }
+
+  &.is-tip {
+    #subway--detail-tip-name {display: block;}
+    /* tips cannot be set to root */
+    #subway--set-root, #subway--reset-root {display: none;}
+  }
+
+  &.is-root {
+    /* this is the actual root, so can't dismiss it, or set it as root */
+    #subway--set-root,
+    #subway--reset-root,
+    #subway--node-dismiss {display: none;}
+  }
+
+  &.is-set-root {
+    /*
+    this is an inner node that has been set to root,
+    so can't dismiss it, or set it as root,
+    but we can reset it so the actual root will display as root */
+    #subway--set-root  { display: none; }
+    #subway--reset-root  { display: inline-block; }
+    #subway--node-dismiss {
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
+  &.is-intro {
+    #subway--detail-metadata {
+      display: block;
+    }
+  }
+
 }
 
 
@@ -1814,41 +1948,137 @@ details {
 }
 
 
-  /*
-  color the mrca nodes by the root, since it is not inferred
-  */
+/*
+color the mrca nodes by the root, since it is not inferred
+*/
 
-  .lineages--track-mutations[data-to="mrca"] {
-    path { fill: var(--mrca-timeline-fill); }
-    line { stroke: var(--mrca-timeline-stroke); }
-    .lineages--node-comparison--mutation-name {
-      color: var(--mrca-mutation-text);
-      .site {
-        color : var(--mrca-position-text);
-      }
+.lineages--track-mutations[data-to="mrca"] {
+  path { fill: var(--mrca-timeline-fill); }
+  line { stroke: var(--mrca-timeline-stroke); }
+  .lineages--node-comparison--mutation-name {
+    color: var(--mrca-mutation-text);
+    .site {
+      color : var(--mrca-position-text);
     }
   }
+}
 
-  .lineages--track-mutations[data-to="a"] {
-    path { fill: var(--a-timeline-fill); }
-    line { stroke: var(--a-timeline-stroke); }
-    .lineages--node-comparison--mutation-name {
-      color: var(--a-mutation-text);
-      .site {
-        color : var(--a-position-text);
-      }
+.lineages--track-mutations[data-to="a"] {
+  path { fill: var(--a-timeline-fill); }
+  line { stroke: var(--a-timeline-stroke); }
+  .lineages--node-comparison--mutation-name {
+    color: var(--a-mutation-text);
+    .site {
+      color : var(--a-position-text);
     }
   }
+}
 
-  .lineages--track-mutations[data-to="b"] {
-    path { fill: var(--b-timeline-fill); }
-    line { stroke: var(--b-timeline-stroke); }
-    .lineages--node-comparison--mutation-name {
-      color: var(--b-mutation-text);
-      .site {
-        color : var(--b-position-text);
-      }
+.lineages--track-mutations[data-to="b"] {
+  path { fill: var(--b-timeline-fill); }
+  line { stroke: var(--b-timeline-stroke); }
+  .lineages--node-comparison--mutation-name {
+    color: var(--b-mutation-text);
+    .site {
+      color : var(--b-position-text);
     }
   }
+}
 
 
+
+// #subway--car-actions {
+
+//   #subway--node-detail-fo div {
+//     display: flex;
+//     flex-direction: column;
+//     align-items: end;
+//     width: 80px;
+//   }
+
+//   p {
+//     margin: 3px 0;
+//   }
+
+//   #subway--detail-tip-name {display: none;}
+//   #border {
+//     fill: white;
+//     stroke: gray;
+//   }
+
+//   #subway--detail-tree-mono {display: none;}
+//   #subway--detail-metadata { display: none; }
+
+//   .node-root-action, #subway--node-dismiss {
+//     display: block;
+//     transition: color .15s;
+//     color: var(--selection-static-icon-fill-static);
+//     &:hover {
+//       color: var(--selection-on-icon-fill-on);
+//     }
+//   }
+
+//   #subway--reset-root {
+//     display: none;
+//   }
+
+//   // #subway--node-dismiss {
+//   //   flex-shrink: 0;
+//   //   width: var(--selection-remove-size);
+//   //   height: var(--selection-remove-size);
+//   //   cursor: pointer;
+//   //   position: relative;
+//   //   font-size: 20px;
+//   //   display: block;
+//   //   margin-top: -2px;
+//   //   color: var(--selection-static-icon-fill-static);
+//   //   &:hover {
+//   //     color: var(--selection-on-icon-fill-on);
+//   //   }
+//   // }
+
+
+//   &.is-lower {
+//     #subway--node-detail-fo { y: 14;}
+//   }
+
+
+
+//   &.is-tip {
+//     #subway--detail-tip-name {display: block;}
+//     /* tips cannot be set to root */
+//     #subway--set-root, #subway--reset-root,
+//     #subway--detail-tip-count,
+//     #subway--detail-tree-mono {display: none;}
+//   }
+
+//   &.is-root {
+//     /* this is the actual root, so can't dismiss it, or set it as root */
+//     #subway--set-root,
+//     #subway--reset-root,
+//     #subway--node-dismiss {display: none;}
+//   }
+
+//   &.is-set-root {
+//     /*
+//     this is an inner node that has been set to root,
+//     so can't dismiss it, or set it as root,
+//     but we can reset it so the actual root will display as root */
+//     #subway--set-root  { display: none; }
+//     #subway--reset-root  { display: inline-block; }
+//     #subway--node-dismiss {
+//       pointer-events: none;
+//       opacity: 0;
+//     }
+//   }
+
+//   &.is-intro #subway--detail-metadata { display: block; }
+
+
+//   &:hover {
+//     .node-root-action {
+//       opacity: 1;
+//     }
+//   }
+
+// }

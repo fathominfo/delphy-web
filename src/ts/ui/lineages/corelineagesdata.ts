@@ -4,12 +4,12 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
-import { numericSortReverse, UNDEF, UNSET } from "../common";
+import { ColorOption, numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { getMRCA, getYFunction, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
+import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 import { MccConfig } from "../mccconfig";
@@ -44,6 +44,12 @@ export type HighlightData = {
   mutation: Mutation | null
 };
 
+export interface IntroductionData {
+  nodeIndex: number,
+  value: string,
+  upstreamValue: string
+}
+
 
 export type ChartData = {
   nodeDistributions: BaseTreeSeriesType,
@@ -55,11 +61,14 @@ export type ChartData = {
   nodes: DisplayNode[],
   rootNode: TreeNode | null,
   selectedRootIndex: number,
-  peakPrevalence: number
+  peakPrevalence: number,
+  fieldIntroductions: IntroductionData[],
+  metadataField: string | null,
+  isFullyAuto: boolean
 }
 
 
-export type updateFunction = (_: ChartData)=>void;
+export type UpdateFunction = (_: ChartData)=>void;
 
 
 const defaultChartData : ChartData = {
@@ -72,7 +81,10 @@ const defaultChartData : ChartData = {
   nodes: [],
   rootNode: null,
   selectedRootIndex: UNSET,
-  peakPrevalence: UNSET
+  peakPrevalence: UNSET,
+  fieldIntroductions: [],
+  metadataField: null,
+  isFullyAuto: false
 };
 
 
@@ -81,7 +93,7 @@ const defaultChartData : ChartData = {
 export class CoreLineagesData {
 
   /* interface to push updates */
-  update: updateFunction;
+  update: UpdateFunction;
 
   /* shared data stores that we need */
   sharedState: SharedState;
@@ -115,7 +127,8 @@ export class CoreLineagesData {
   private peakPrevalenceThreshold: number = DEFAULT_PEAK_PREVALENCE;
   private confidenceThreshold: number = DEFAULT_HI_CONFIDENCE;
   private filteringByPeakPrevalence = true;
-  private filteringByMetadataFields: Set<string> = new Set();
+  private filteringByMetadataField: string | null = null;
+  private fieldIntroductions: IntroductionData[] = [];
 
   /*
   bypassed nodes happen when the user selects an inner
@@ -144,7 +157,7 @@ export class CoreLineagesData {
   */
   nullNode: DisplayNode;
 
-  constructor(sharedState: SharedState, update: updateFunction) {
+  constructor(sharedState: SharedState, update: UpdateFunction) {
     this.update = update;
     this.sharedState = sharedState;
     this.nullNode = this.getNodeDisplay(NULL_NODE_CODE, false, false);
@@ -155,6 +168,7 @@ export class CoreLineagesData {
 
   activate() {
     this.pythia = this.sharedState.pythia;
+    this.filteringByMetadataField = this.sharedState.mccConfig.metadataField;
   }
 
   deactivate() {
@@ -200,12 +214,13 @@ export class CoreLineagesData {
         this.autoSelectPeakPrevalence();
       }
       this.metadataTransitionNodes = {};
-      this.filteringByMetadataFields.forEach(field=>{
-        const introductions = this.getMetadataTransitionNodes(mccConfig, field);
-        this.metadataTransitionNodes[field] = introductions;
-      });
-      this.selectNodesByImpact();
-      this.selectionTreeData.setData(this.selectedNodes);
+      if (this.filteringByMetadataField !== null) {
+        const introductions = this.getMetadataTransitionNodes(mccConfig, this.filteringByMetadataField);
+        this.metadataTransitionNodes[this.filteringByMetadataField] = introductions;
+      }
+      this.setAutoNodeSelections();
+      this.setTreeData();
+      this.setMetadataTransitions();
       this.setChartData();
     }
   }
@@ -397,11 +412,6 @@ export class CoreLineagesData {
     }
   }
 
-  selectNodesByImpact() : void {
-    this.setAutoNodeSelections();
-  }
-
-
   getMetadataTransitionNodes(mccConfig: MccConfig, field: string) : number[] {
     // const metadata = mccConfig.metadata;
     // const field = mccConfig.metadataField;
@@ -446,64 +456,23 @@ export class CoreLineagesData {
 
 
   private setAutoNodeSelections() : void {
-    // console.log(`adding automatic selections based on '${selectionSource}'`, autoSelected);
-    const already: boolean[] = [];
-    this.selectedNodes.map(node=>already[node.index] = true);
     /* clear previous selections, in case we are altering the criteria here (like node confidence, etc. ) */
     this.selectionReasons.forEach((reasons:Set<string>)=>{
       reasons.delete(AUTO_SELECTED);
     });
-    let autoSelected: number[] = [];
-    if (this.filteringByMetadataFields.size > 0) {
-      const nodes: boolean[] = [];
-      const lookup: boolean[] = [];
-      Object.values(this.metadataTransitionNodes).forEach((nodeIndices, i)=>{
-        if (i === 0) {
-          /*
-          build a lookup by node index of whether it passes the
-          test of the first metadata field
-          */
-          nodeIndices.forEach(nodeIndex=>nodes[nodeIndex] = true);
-        } else {
-          /*
-          for each node, does it also pass the test of the current metadata field?
-          */
-          lookup.length = 0;
-          nodeIndices.forEach(nodeIndex=>lookup[nodeIndex] = true);
-          nodes.forEach((_, i)=>{
-            if (lookup[i] === undefined){
-              nodes[i] = false;
-            }
-          });
-        }
-      });
-      nodes.forEach((passes, index)=>{
-        if (passes) {
-          autoSelected.push(index);
-        }
-      });
-      if (this.filteringByPeakPrevalence) {
-        const peakThreshold = this.peakPrevalenceThreshold;
-        const confidenceThreshold = this.confidenceThreshold;
-        const {peakPrevalence, nodeConfidence} = this;
-        autoSelected = autoSelected.filter(nodeIndex=>{
-          const pp = peakPrevalence[nodeIndex];
-          const nc = nodeConfidence[nodeIndex];
-          return pp >= peakThreshold
-            && nc >= confidenceThreshold;
-        });
-      }
-    } else if (this.filteringByPeakPrevalence) {
-      const peakThreshold = this.peakPrevalenceThreshold;
-      const confidenceThreshold = this.confidenceThreshold
-      autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
-    }
+    const peakThreshold = this.peakPrevalenceThreshold;
+    const confidenceThreshold = this.confidenceThreshold
+    const autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
     autoSelected.forEach(nodeIndex=>{
       if (this.selectionReasons[nodeIndex] === undefined) {
         this.selectionReasons[nodeIndex] = new Set();
       }
       this.selectionReasons[nodeIndex].add(AUTO_SELECTED);
     });
+    this.updateSelectedNodesFromReasons();
+  }
+
+  private updateSelectedNodesFromReasons() {
     /* what nodes have reason to show up? */
     const shouldShow: number[] = [];
     this.selectionReasons.forEach((reasons, nodeIndex)=>{
@@ -511,11 +480,15 @@ export class CoreLineagesData {
         shouldShow.push(nodeIndex);
       }
     });
+    const already: boolean[] = [];
+    this.selectedNodes.map(node=>already[node.index] = true);
     shouldShow.forEach(nodeIndex=>{
       if (already[nodeIndex] === undefined) {
-        const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
-        nd.isLocked = true;
-        this.selectedNodes.push(nd);
+        if (nodeIndex !== this.rootNode.index) {
+          const nd = this.getNodeDisplay(nodeIndex, false, nodeIndex === this.summaryTree?.getRootIndex());
+          nd.isLocked = true;
+          this.selectedNodes.push(nd);
+        }
       } else {
         delete already[nodeIndex];
       }
@@ -531,64 +504,164 @@ export class CoreLineagesData {
   }
 
 
+  togglePeakPrevalenceSelection(active: boolean) : void {
+    console.log(`togglePeakPrevalenceSelection(${active})`)
+    this.filteringByPeakPrevalence = active;
+    if (active) {
+      this.setAutoNodeSelections();
+    } else {
+      this.selectionReasons.forEach((reasons:Set<string>)=>{
+        reasons.delete(AUTO_SELECTED);
+      });
+      this.updateSelectedNodesFromReasons();
+    }
+    if (this.selectionTreeData) {
+      this.setTreeData();
+      this.setMetadataTransitions();
+      this.setChartData();
+    }
+  }
+
+  clearCurated() : void {
+    this.selectionReasons.forEach((reasons:Set<string>)=>{
+      reasons.delete(SELECTED_BY_USER);
+    });
+    this.updateSelectedNodesFromReasons();
+    if (this.selectionTreeData) {
+      this.setTreeData();
+      this.setMetadataTransitions();
+      this.setChartData();
+    }
+  }
+
+  removeNonTransitions() : void {
+    console.log(`find the nodes that aren't transitions, and clear them`);
+    const lookup: boolean[] = [];
+    this.fieldIntroductions.forEach(intro=>lookup[intro.nodeIndex] = true);
+    /* also include root */
+    lookup[this.rootNode.index] = true;
+    for (let i = this.selectedNodes.length - 1; i >= 0; i--) {
+      const index = this.selectedNodes[i].index;
+      if (lookup[index] === undefined) {
+        this.selectedNodes.splice(i, 1);
+      }
+    }
+    if (this.selectionTreeData) {
+      this.setTreeData();
+      this.setChartData();
+    }
+  }
+
+
   /*
   expects a number 0-100
   */
-  updatePeakPrevalenceThreshold(yes: boolean, minPeak: number) : void {
-    this.peakPrevalenceThreshold = minPeak / 100;
-    this.filteringByPeakPrevalence = yes;
-    if (yes) {
-      this.selectNodesByImpact();
-    } else {
-      this.setAutoNodeSelections();
-    }
+  updatePeakPrevalenceThreshold(increment: boolean) : void {
+    let newPct = this.peakPrevalenceThreshold * 100;
+    newPct += increment ? 1 : -1;
+    this.peakPrevalenceThreshold = Math.min(Math.max(0, newPct / 100),1);
+    this.setAutoNodeSelections();
     if (this.selectionTreeData) {
-      if (this.selectedNodes.length === 0) {
-        this.selectedNodes.push(this.rootNode);
-      }
-      this.selectionTreeData.setData(this.selectedNodes);
+      this.setTreeData();
+      this.setMetadataTransitions();
       this.setChartData();
     }
   }
 
   updateConfidenceThreshold(confidenceThreshold: number) : void {
     this.confidenceThreshold = confidenceThreshold;
-    this.selectNodesByImpact();
+    this.setAutoNodeSelections();
     if (this.selectionTreeData) {
-      this.selectionTreeData.setData(this.selectedNodes);
+      this.setTreeData();
       this.setChartData();
     }
   }
 
-  toggleMetadataTransitions(yes: boolean, field: string) : void {
-    const pythia = this.pythia;
+  highlightMetadataTransitions(field: string) : void {
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     if (!mccConfig || !mccConfig.metadata) return
-    if (yes) {
-      this.filteringByMetadataFields.add(field);
-      if (this.metadataTransitionNodes[field] === undefined) {
-        if (pythia && mccConfig.metadata.getFields().includes(field)) {
-          const introductions = this.getMetadataTransitionNodes(mccConfig, field);
-          this.metadataTransitionNodes[field] = introductions;
-        }
-      } else {
-        console.debug(`somehow, we requested finding nodes by metadata transition…
-          …but there's no metadata available.  
-          `);
-      }
+    if (field === METADATA_NONE_OPTION) {
+      this.filteringByMetadataField = null;
+      this.fieldIntroductions.length = 0;
+      mccConfig.setColorSystem(ColorOption.confidence);
     } else {
-      /* find the nodes that were added by the transition, and clear them */
-      this.filteringByMetadataFields.delete(field);
+      this.filteringByMetadataField = field;
+      mccConfig.setColorSystem(ColorOption.confidence);
+      mccConfig.setMetadataField(field);
+      this.setMetadataTransitions();
     }
-    this.setAutoNodeSelections();
-    if (this.selectionTreeData) {
-      if (this.selectedNodes.length === 0) {
-        this.selectedNodes.push(this.rootNode);
-      }
-      this.selectionTreeData.setData(this.selectedNodes);
-      this.setChartData();
-    }
+    this.setChartData();
   }
+
+  setMetadataTransitions() : void {
+    const field = this.filteringByMetadataField;
+    if (field === null) return;
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const fieldIntroductions: IntroductionData[] = []
+
+    /* build a list of the current nodes that have introductions */
+    /* start with a lookup of the current metadata values */
+    const nodeValues = mccConfig.getMetadataValues(field);
+    const candidateNodes = this.selectedNodes.slice(0);
+    const allNodes = [this.rootNode].concat(candidateNodes);
+    if (this.highlightNode.index !== UNSET && !allNodes.map(n=>n.index).includes(this.highlightNode.index)) {
+      candidateNodes.push(this.highlightNode);
+      allNodes.push(this.highlightNode);
+    }
+    console.log(candidateNodes.map(n=>n.index));
+    const selectedValues: string [] = [];
+    allNodes.forEach(n=>{
+      selectedValues[n.index] = nodeValues[n.index];
+    });
+    const tree = this.summaryTree as SummaryTree;
+    candidateNodes.forEach(node=>{
+      const nodeIndex = node.index;
+      const value = nodeValues[nodeIndex];
+      let parentIndex = tree.getParentIndexOf(nodeIndex);
+      while (parentIndex !== UNSET && selectedValues[parentIndex] === undefined) {
+        parentIndex = tree.getParentIndexOf(parentIndex);
+      }
+      if (parentIndex >= 0) {
+        const upstreamValue = nodeValues[parentIndex];
+        if (upstreamValue !== value) {
+          fieldIntroductions.push({nodeIndex, value, upstreamValue});
+        }
+      }
+    }
+    );
+    this.fieldIntroductions = fieldIntroductions;
+  }
+
+
+  setTreeData() : void {
+    const tree = this.summaryTree as SummaryTree;
+    const selectionTree = this.selectionTreeData as SelectionTreeData;
+    const candidateNodes = this.selectedNodes;
+    if (!candidateNodes.map(n=>n.index).includes(this.rootNode.index)) {
+      candidateNodes.unshift(this.rootNode);
+    }
+    const rootIndex = this.rootNode.index;
+    /*
+    if we have set a custom root node,
+    auto selecting nodes by prevalence may include nodes
+    that aren't descendants of the current root. So filter
+    them out.
+    */
+    if (tree.getRootIndex() !== rootIndex) {
+      for (let i = candidateNodes.length - 1; i >= 0; i--) {
+        let index = candidateNodes[i].index;
+        while (index !== UNSET && index !== rootIndex) {
+          index = tree.getParentIndexOf(index);
+        }
+        if (index === UNSET) {
+          candidateNodes.splice(i, 1);
+        }
+      }
+    }
+    selectionTree.setData(candidateNodes);
+
+  }
+
 
   getMinDate() : number {
     if (this.pythia) {
@@ -612,7 +685,8 @@ export class CoreLineagesData {
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         maxDate = pythia.maxDate,
-        minDate = this.getMinDate();
+        minDate = this.getMinDate(),
+        actualRootIndex = summaryTree.getRootIndex();
       const chartData: ChartData = structuredClone(defaultChartData)
       chartData.maxDate =maxDate;
       if (minimapData?.root) {
@@ -620,6 +694,9 @@ export class CoreLineagesData {
       }
       chartData.minDate = minDate;
       chartData.peakPrevalence = this.peakPrevalenceThreshold;
+      chartData.metadataField = this.filteringByMetadataField;
+      chartData.selectedRootIndex = this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index;
+      chartData.isFullyAuto = this.isAutoselectingActive();
       const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
@@ -627,6 +704,7 @@ export class CoreLineagesData {
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       chartData.nodeDistributions = nodeDistributions;
+      chartData.fieldIntroductions = this.fieldIntroductions.slice();
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
         if (ancestor && ancestor.node.index !== UNSET) {
@@ -662,7 +740,6 @@ export class CoreLineagesData {
       mccRef.release();
       this.update(chartData);
     }
-
   }
 
 
@@ -734,60 +811,16 @@ export class CoreLineagesData {
           */
           const match = minimap.found.filter(treeNode=>treeNode)
             .map(tn=>tn.node)
-            .filter(node=>(node.isInferred || node.isLocked) && node.index === nodeIndex)[0];
+            .filter(node=>node.isLocked && node.index === nodeIndex)[0];
           if (match) {
-            if (match.isInferred) {
-              // set the label from the mrca
-              this.highlightNode.label = match.label;
-            } else {
-              this.highlightNode.copyFrom(match);
-            }
+            this.highlightNode.copyFrom(match);
           } else {
             toMap.push(this.highlightNode);
           }
         }
-
-        // console.log(toMap)
         minimap.setData(toMap);
-        // if (nodeIndex === rootIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = null;
-        //   hint = TreeHint.HoverRoot;
-        // } else if (nodeIndex === mrcaIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = this.mrcaNode;
-        //   hint = TreeHint.HoverMrca;
-        // } else if (nodeIndex === nodeAIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = this.nodeANode;
-        //   hint = TreeHint.HoverNodeA;
-        // } else if (nodeIndex === nodeBIndex) {
-        //   /* new hover on existing node */
-        //   displayNode = this.nodeBNode;
-        //   if (mrcaIndex === UNSET) {
-        //     hint = TreeHint.HoverNodeBDescendant;
-        //   } else {
-        //     hint = TreeHint.HoverNodeBCousin;
-        //   }
-        // } else if (nodeAIndex === UNSET && nodeIndex !== nodeBIndex) {
-        //   /* selecting node 1 */
-        //   nodeAIndex = nodeIndex;
-        //   displayNode = this.nodeANode;
-        //   if (nodeBIndex !== UNSET) {
-        //     mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-        //   }
-        //   hint = TreeHint.PreviewNodeA;
-        // } else if (nodeBIndex === UNSET && nodeIndex !== nodeAIndex) {
-        //   /* selecting node 2 */
-        //   nodeBIndex = nodeIndex;
-        //   mrcaIndex = this.checkMRCA(nodeAIndex, nodeBIndex);
-        //   displayNode = this.nodeBNode;
-        //   if (mrcaIndex === UNSET) {
-        //     hint = TreeHint.PreviewNodeBDescendant;
-        //   } else {
-        //     hint = TreeHint.PreviewNodeBCousin;
-        //   }
       }
+      this.setMetadataTransitions();
       this.setChartData();
     }
   }
@@ -796,19 +829,22 @@ export class CoreLineagesData {
     if (nodeIndex === UNSET || nodeIndex === this.rootNode.index) return;
     const alreadyThereIndex = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
     if (alreadyThereIndex >= 0) {
-      /* clicking on a node that's already there removes it */
-      const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
-      selection.unlock();
-      /*
-      We're assuming that if the user cleared this node, then they
-      don't want to see it, even if it was added due to metadata
-      transitions or it's a high impact node.
-      Note that this will not persist: if the user adjusts the
-      prevalence or confidence criteria, or toggles the metadata
-      display, if this node meets the new criteria, it will be shown
-      again. Should we add a `don't auto select this node again` option?
-      */
-      this.selectionReasons[nodeIndex].clear();
+      // /*
+      // clicking on a node that's already there removes it.
+      // Nahhh.
+      // */
+      // const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
+      // selection.unlock();
+      // /*
+      // We're assuming that if the user cleared this node, then they
+      // don't want to see it, even if it was added due to metadata
+      // transitions or it's a high impact node.
+      // Note that this will not persist: if the user adjusts the
+      // prevalence or confidence criteria, or toggles the metadata
+      // display, if this node meets the new criteria, it will be shown
+      // again. Should we add a `don't auto select this node again` option?
+      // */
+      // this.selectionReasons[nodeIndex].clear();
     } else {
       let selection: DisplayNode = this.highlightNode;
       if (nodeIndex !== this.highlightNode.index) {
@@ -816,13 +852,15 @@ export class CoreLineagesData {
         const minimap = this.selectionTreeData as SelectionTreeData;
         const mrcaTreeNode = minimap.found.filter(treeNode=>{
           return treeNode
-            && treeNode.node.isInferred
             && treeNode.node.index === nodeIndex;
         })[0];
         if (mrcaTreeNode) {
           selection = mrcaTreeNode.node;
         } else {
           selection = this.getNodeDisplay(nodeIndex, false, false);
+          const newNodes = minimap.found.map(tn=>tn.node);
+          newNodes.push(selection);
+          minimap.setData(newNodes);
         }
       }
       selection.lock();
@@ -834,6 +872,7 @@ export class CoreLineagesData {
       /* prep the next hover */
       this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     }
+    this.setMetadataTransitions();
     this.setChartData();
   }
 
@@ -853,6 +892,7 @@ export class CoreLineagesData {
         node.deactivate();
       }
     }
+    this.setMetadataTransitions();
     /* reset the hover */
     this.hoverNode(UNSET, UNSET);
   }
@@ -932,6 +972,59 @@ export class CoreLineagesData {
   }
 
 
+  isAutoselectingActive() : boolean {
+    const peakThreshold = this.peakPrevalenceThreshold;
+    const confidenceThreshold = this.confidenceThreshold
+    const autoSelected = this.getHighImpactConfidentNodes(peakThreshold, confidenceThreshold);
+    let isAuto = true;
+    /* something has been added by curation, not automatically  */
+    // this.selectionReasons.forEach((nodeReasons, nodeIndex)=>{
+    //   /* we removed something from the auto configuration */
+    //   if (!autoSelected.includes(nodeIndex)) {
+    //     isAuto = false;
+    //   }
+    //   /* check whether this is not auto selected */
+    //   let notAuto = true;
+    //   nodeReasons.forEach(entry=>{
+    //     if (entry === AUTO_SELECTED) {
+    //       notAuto = false;
+    //     }
+    //   });
+    //   if (notAuto) {
+    //     isAuto = false;
+    //   }
+    // });
+
+    /* auto selections have something to add for us */
+    const tree = this.summaryTree as SummaryTree;
+    const actualRoot = tree.getRootIndex();
+    const currentRoot = this.rootNode.index;
+    const isCuratedRoot = actualRoot !== currentRoot;
+    autoSelected.forEach(nodeIndex=>{
+      const reasons = this.selectionReasons[nodeIndex];
+      if (reasons === undefined || reasons.size === 0) {
+        /*
+        check that this node is a descendant of the current root
+        */
+        if (isCuratedRoot) {
+          let ancestor = nodeIndex;
+          while (ancestor !== currentRoot && ancestor !== UNSET) {
+            ancestor = tree.getParentIndexOf(ancestor);
+          }
+          if (ancestor === currentRoot) {
+            isAuto = false;
+          }
+        } else {
+          isAuto = false;
+        }
+      }
+    });
+    return isAuto;
+  }
+
+
+
+
   setCredibilityConstrained(constrained: boolean) : void {
     this.constrainHoverByCredibility = constrained;
   }
@@ -1005,6 +1098,7 @@ export class CoreLineagesData {
     const metadata = this.getNodeMetadata(index);
     let generationsFromRoot = UNSET;
     if (index !== UNSET && summaryTree !== null) {
+      generationsFromRoot = 0;
       let parent = index;
       const rootIndex = summaryTree.getRootIndex();
       while (parent !== rootIndex) {
@@ -1043,5 +1137,8 @@ export class CoreLineagesData {
     return this.rootNode;
   }
 
+  getCurrentMetadataField(): string | null {
+    return this.filteringByMetadataField;
+  }
 }
 

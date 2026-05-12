@@ -1,19 +1,19 @@
 import { Mutation, SummaryTree } from '../../pythia/delphy_api';
 import { MccUI } from '../mccui';
-import { DataResolveType, Screens, PREVALENCE_CALLBACK_TYPE, UNSET, ColorOption } from '../common';
+import { DataResolveType, Screens, SET_PREVALENCE_CALLBACK_TYPE, UNSET, ColorOption } from '../common';
 import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
   MetadataToggleCallback,
-  DismissNodeCallback} from './lineagescommon';
-import { NodeListDisplay } from './nodelistdisplay';
+  DismissNodeCallback } from './lineagescommon';
+// import { NodeListDisplay } from './nodelistdisplay';
 // import { NodeTimelines } from './nodetimelines';
 // import { NodePrevalenceChart } from './nodeprevalencechart'
 import autocomplete from 'autocompleter';
 // import { PdfCanvas } from '../../util/pdfcanvas';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
-import { ChartData, CoreLineagesData, updateFunction } from './corelineagesdata';
+import { ChartData, CoreLineagesData, UpdateFunction } from './corelineagesdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
@@ -29,7 +29,7 @@ export class LineagesUI extends MccUI {
   coreData: CoreLineagesData;
   nodeSchematic: NodeSchematic;
   nodeDetails: NodeDetails;
-  nodeListDisplay: NodeListDisplay;
+  // nodeListDisplay: NodeListDisplay;
   previousConfidence: number;
   // nodePrevalenceCanvas: NodePrevalenceChart;
 
@@ -43,10 +43,9 @@ export class LineagesUI extends MccUI {
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#lineages .tree-canvas");
-    const updateCallback: updateFunction = (data: ChartData)=>this.update(data);
+    const updateCallback: UpdateFunction = (data: ChartData)=>this.update(data);
     this.coreData = new CoreLineagesData(sharedState, updateCallback);
     const dismissCallback: DismissNodeCallback = (nodeIndex: number | number[])=>this.handleNodeDismiss(nodeIndex);
-    const nodeZoomCallback: NodeCallback = nodeIndex=>this.handleNodeZoom(nodeIndex);
     const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.updateHighlight(nodeIndex, date, mutation);
     let previousNode = UNSET
     const treeHoverCallback: NodeCallback = (nodeIndex: number)=>{
@@ -57,17 +56,29 @@ export class LineagesUI extends MccUI {
       }
     };
     const nodeSelectCallback: NodeCallback = (nodeIndex: number)=>this.selectNode(nodeIndex);
-    const rootSelectCallback: NodeCallback = (nodeIndex: number)=>this.coreData.selectRoot(nodeIndex);
-    const prevThresholdCallback: PREVALENCE_CALLBACK_TYPE = (usePrev: boolean, prevThreshold: number)=>this.coreData.updatePeakPrevalenceThreshold(usePrev, prevThreshold);
-    const metadataTransitionCallback: MetadataToggleCallback = (findTransitions: boolean, fieldName: string)=>this.coreData.toggleMetadataTransitions(findTransitions, fieldName);
+    const rootSelectCallback: NodeCallback = (nodeIndex: number)=>{
+      /* reset the root of the mcc tree so that we can get the y position of any node */
+      this.mccTreeCanvas.setRootNode(UNSET);
+      this.coreData.selectRoot(nodeIndex);
+    };
+    const prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE = (increment = true)=>this.coreData.updatePeakPrevalenceThreshold(increment);
+    const metadataTransitionCallback: MetadataToggleCallback = (fieldName: string)=>{
+      this.coreData.highlightMetadataTransitions(fieldName);
+    };
+    const toggleAutoSelectCallback = (active: boolean)=>{
+      this.coreData.togglePeakPrevalenceSelection(active);
+    };
+    const clearCuratedCallback = ()=>this.coreData.clearCurated();
+    const introsOnlyCallback = ()=>this.coreData.removeNonTransitions();
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightedNode = node;
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback, dismissCallback);
+    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
+      dismissCallback, rootSelectCallback, toggleAutoSelectCallback, clearCuratedCallback, introsOnlyCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
-    this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
+    // this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
     // this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
@@ -133,7 +144,7 @@ export class LineagesUI extends MccUI {
     this.coreData.activate();
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
-    this.nodeSchematic.setMetadataSelectors(metadataFields);
+    this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
     // const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
   }
 
@@ -165,7 +176,7 @@ export class LineagesUI extends MccUI {
     }
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
-    this.nodeSchematic.setMetadataSelectors(metadataFields);
+    this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
   }
 
 
@@ -197,16 +208,18 @@ export class LineagesUI extends MccUI {
   update(chartData: ChartData): void {
     // const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
     //   nodePairs, rootNode, selectedRootIndex } = chartData;
-    const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence } = chartData;
+    const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence,
+      fieldIntroductions, metadataField, isFullyAuto } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
-    this.nodeListDisplay.setNodes(nodes);
+    // this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length);
+    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField, isFullyAuto);
+    this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);
-    this.nodeListDisplay.highlightNode(highlightNode);
+    // this.nodeListDisplay.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {
       highlightNode = rootNode?.node as DisplayNode;
     }
@@ -219,10 +232,9 @@ export class LineagesUI extends MccUI {
   requestDraw() {
     (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
     // console.log('lineagesui calling this.nodeSchematic.setLayout()');
-    this.nodeSchematic.setLayout();
     this.nodeSchematic.requestRender();
     this.nodeDetails.requestDraw();
-    this.nodeListDisplay.requestDraw();
+    // this.nodeListDisplay.requestDraw();
     // this.nodePrevalenceCanvas.requestDraw();
   }
 
@@ -259,7 +271,7 @@ export class LineagesUI extends MccUI {
     }
     this.nodeDetails.setData(highlightNode);
     this.nodeDetails.requestDraw();
-    this.nodeListDisplay.highlightNode(node);
+    // this.nodeListDisplay.highlightNode(node);
     this.nodeSchematic.highlightNode(node);
     // this.nodePrevalenceCanvas.highlightNode(node, date);
   }
@@ -338,8 +350,5 @@ export class LineagesUI extends MccUI {
       this.sharedState.goTo(Screens.mutations);
     }
   }
-
-
-
 }
 

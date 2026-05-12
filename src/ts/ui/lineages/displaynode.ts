@@ -89,6 +89,7 @@ export class DisplayNode {
       this.label = "Root";
       this.mrcaName = "";
       this.className = this.name.toLowerCase() || '';
+      this.isInferred = isInferred;
     } else if (isInferred) {
       // console.log("set data isInferred");
       // if (this.name === "") {

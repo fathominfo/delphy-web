@@ -89,9 +89,21 @@ export class MccConfig {
     this.updateCallback();
   }
 
-  setMetadataField(field: string, colors: ColorDict) : void {
+  setMetadataField(field: string, colors: ColorDict | null = null) : void {
     this.metadataField = field;
-    this.metadataColors[field] = colors;
+    if (colors) {
+      this.metadataColors[field] = colors;
+    } else {
+      /*
+      TODO
+      we have this weird flow where setting the metadata field requires
+      having the colors. We need to be able to tune the colors, but
+      in general we should be able to set the field without passing in all
+      the colors.
+      */
+      this.setColorKeys(field);
+      return;
+    }
     /*
     if we have all we need, then assume we want to see the
     tree colored by metadata
