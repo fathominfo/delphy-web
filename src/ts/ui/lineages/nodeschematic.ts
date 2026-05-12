@@ -11,6 +11,8 @@ const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls
 const COUNT_SPAN = document.querySelector("#lineages--schematic-count") as HTMLSpanElement;
 const AUTO_BUTTON = CONTROLS.querySelector("#lineages--schematic-auto") as HTMLButtonElement;
 const CLEAR_BUTTON = CONTROLS.querySelector("#lineages--schematic-clear") as HTMLButtonElement;
+const INTROS_ONLY = CONTROLS.querySelector("#lineages--intros-only") as HTMLParagraphElement;
+const INTROS_ONLY_INPUT = INTROS_ONLY.querySelector("button") as HTMLButtonElement;
 
 const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#lineages--peak-prevalence-less") as HTMLButtonElement;
 const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#lineages--peak-prevalence-more") as HTMLButtonElement;
@@ -243,7 +245,8 @@ export class NodeSchematic {
     dismissNodeCallback: DismissNodeCallback,
     rootSelectCallback: NodeCallback,
     toggleAutoSelectCallback: (active: boolean)=>void,
-    clearCuratedCallback: ()=>void
+    clearCuratedCallback: ()=>void,
+    introsOnlyCallback: ()=>void,
   ) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -269,6 +272,7 @@ export class NodeSchematic {
       toggleAutoSelectCallback(!isAuto);
     });
     CLEAR_BUTTON.addEventListener("click", clearCuratedCallback);
+    INTROS_ONLY_INPUT.addEventListener("click", ()=>introsOnlyCallback());
 
     this.metadataTransitionCallback = metadataTransitionCallback;
     CAR_CONTROLS.addEventListener("pointerleave", ()=>{
@@ -452,6 +456,7 @@ export class NodeSchematic {
     /* expand the fieldIntroductions into a lookup */
     this.introductionLookup = [];
     this.metadataField = metadataField;
+    INTROS_ONLY.classList.toggle("na", metadataField === null);
     fieldIntroductions.forEach(item=>this.introductionLookup[item.nodeIndex] = item);
     pairs.forEach(pair=>{
       // index the mutations by the descendent

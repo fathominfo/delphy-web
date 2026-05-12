@@ -532,6 +532,23 @@ export class CoreLineagesData {
     }
   }
 
+  removeNonTransitions() : void {
+    console.log(`find the nodes that aren't transitions, and clear them`);
+    const lookup: boolean[] = [];
+    this.fieldIntroductions.forEach(intro=>lookup[intro.nodeIndex] = true);
+    /* also include root */
+    lookup[this.rootNode.index] = true;
+    for (let i = this.selectedNodes.length - 1; i >= 0; i--) {
+      const index = this.selectedNodes[i].index;
+      if (lookup[index] === undefined) {
+        this.selectedNodes.splice(i, 1);
+      }
+    }
+    if (this.selectionTreeData) {
+      this.setTreeData();
+      this.setChartData();
+    }
+  }
 
 
   /*
