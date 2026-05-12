@@ -829,19 +829,22 @@ export class CoreLineagesData {
     if (nodeIndex === UNSET || nodeIndex === this.rootNode.index) return;
     const alreadyThereIndex = this.selectedNodes.map(node=>node.index).indexOf(nodeIndex);
     if (alreadyThereIndex >= 0) {
-      /* clicking on a node that's already there removes it */
-      const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
-      selection.unlock();
-      /*
-      We're assuming that if the user cleared this node, then they
-      don't want to see it, even if it was added due to metadata
-      transitions or it's a high impact node.
-      Note that this will not persist: if the user adjusts the
-      prevalence or confidence criteria, or toggles the metadata
-      display, if this node meets the new criteria, it will be shown
-      again. Should we add a `don't auto select this node again` option?
-      */
-      this.selectionReasons[nodeIndex].clear();
+      // /*
+      // clicking on a node that's already there removes it.
+      // Nahhh.
+      // */
+      // const selection = this.selectedNodes.splice(alreadyThereIndex, 1)[0];
+      // selection.unlock();
+      // /*
+      // We're assuming that if the user cleared this node, then they
+      // don't want to see it, even if it was added due to metadata
+      // transitions or it's a high impact node.
+      // Note that this will not persist: if the user adjusts the
+      // prevalence or confidence criteria, or toggles the metadata
+      // display, if this node meets the new criteria, it will be shown
+      // again. Should we add a `don't auto select this node again` option?
+      // */
+      // this.selectionReasons[nodeIndex].clear();
     } else {
       let selection: DisplayNode = this.highlightNode;
       if (nodeIndex !== this.highlightNode.index) {
@@ -849,13 +852,15 @@ export class CoreLineagesData {
         const minimap = this.selectionTreeData as SelectionTreeData;
         const mrcaTreeNode = minimap.found.filter(treeNode=>{
           return treeNode
-            && treeNode.node.isInferred
             && treeNode.node.index === nodeIndex;
         })[0];
         if (mrcaTreeNode) {
           selection = mrcaTreeNode.node;
         } else {
           selection = this.getNodeDisplay(nodeIndex, false, false);
+          const newNodes = minimap.found.map(tn=>tn.node);
+          newNodes.push(selection);
+          minimap.setData(newNodes);
         }
       }
       selection.lock();
