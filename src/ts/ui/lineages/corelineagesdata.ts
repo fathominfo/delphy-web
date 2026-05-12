@@ -520,6 +520,20 @@ export class CoreLineagesData {
     }
   }
 
+  clearCurated() : void {
+    this.selectionReasons.forEach((reasons:Set<string>)=>{
+      reasons.delete(SELECTED_BY_USER);
+    });
+    this.updateSelectedNodesFromReasons();
+    if (this.selectionTreeData) {
+      this.setTreeData();
+      this.setMetadataTransitions();
+      this.setChartData();
+    }
+  }
+
+
+
   /*
   expects a number 0-100
   */
@@ -1020,6 +1034,9 @@ export class CoreLineagesData {
     });
     return isAuto;
   }
+
+
+
 
   setCredibilityConstrained(constrained: boolean) : void {
     this.constrainHoverByCredibility = constrained;

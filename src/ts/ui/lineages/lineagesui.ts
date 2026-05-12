@@ -68,13 +68,14 @@ export class LineagesUI extends MccUI {
     const toggleAutoSelectCallback = (active: boolean)=>{
       this.coreData.togglePeakPrevalenceSelection(active);
     };
+    const clearCuratedCallback = ()=>this.coreData.clearCurated();
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
     (this.mccTreeCanvas as LineagesTreeCanvas).highlightedNode = node;
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
-      dismissCallback, rootSelectCallback, toggleAutoSelectCallback);
+      dismissCallback, rootSelectCallback, toggleAutoSelectCallback, clearCuratedCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     // this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;

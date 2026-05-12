@@ -242,7 +242,8 @@ export class NodeSchematic {
     metadataTransitionCallback: MetadataToggleCallback,
     dismissNodeCallback: DismissNodeCallback,
     rootSelectCallback: NodeCallback,
-    toggleAutoSelectCallback: (active: boolean)=>void
+    toggleAutoSelectCallback: (active: boolean)=>void,
+    clearCuratedCallback: ()=>void
   ) {
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -266,7 +267,8 @@ export class NodeSchematic {
     AUTO_BUTTON.addEventListener("click", ()=>{
       const isAuto = AUTO_BUTTON.classList.contains("is-auto");
       toggleAutoSelectCallback(!isAuto);
-    })
+    });
+    CLEAR_BUTTON.addEventListener("click", clearCuratedCallback);
 
     this.metadataTransitionCallback = metadataTransitionCallback;
     CAR_CONTROLS.addEventListener("pointerleave", ()=>{
