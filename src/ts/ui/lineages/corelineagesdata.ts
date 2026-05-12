@@ -906,6 +906,7 @@ export class CoreLineagesData {
       /* prep the next hover */
       this.highlightNode = this.getNodeDisplay(UNSET, false, false);
     }
+    this.setMetadataTransitions();
     this.setChartData();
   }
 
@@ -925,6 +926,7 @@ export class CoreLineagesData {
         node.deactivate();
       }
     }
+    this.setMetadataTransitions();
     /* reset the hover */
     this.hoverNode(UNSET, UNSET);
   }
