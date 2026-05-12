@@ -37,8 +37,8 @@ function onReady(p:Pythia):void {
   goToScreens[Screens.customize] = customizeUI;
 
   viewButtons.push(new NavLabel("Run", runUI, "#runner"));
-  viewButtons.push(new NavLabel("Lineages", lineagesUI, "#lineages"));
-  viewButtons.push(new NavLabel("Mutations", mutationsUI, "#mutations"));
+  viewButtons.push(new NavLabel("Select", lineagesUI, "#lineages"));
+  viewButtons.push(new NavLabel("Analyze", mutationsUI, "#mutations"));
   viewButtons.push(new NavLabel("Customize", customizeUI, "#customize"));
   bindNav(viewButtons);
 
