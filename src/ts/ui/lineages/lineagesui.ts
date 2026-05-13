@@ -5,18 +5,16 @@ import { SharedState } from '../../sharedstate';
 import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
   MetadataToggleCallback,
-  DismissNodeCallback } from './lineagescommon';
-// import { NodeListDisplay } from './nodelistdisplay';
-// import { NodeTimelines } from './nodetimelines';
-// import { NodePrevalenceChart } from './nodeprevalencechart'
+  DismissNodeCallback,
+  MultiNodeCallback} from './lineagescommon';
 import autocomplete from 'autocompleter';
-// import { PdfCanvas } from '../../util/pdfcanvas';
 import { NodeSchematic } from './nodeschematic';
 import { LineagesTreeCanvas } from './lineagestreecanvas';
 import { ChartData, CoreLineagesData, UpdateFunction } from './corelineagesdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
+import { MetadataLegend } from './metadatalegend';
 
 
 
@@ -29,9 +27,8 @@ export class LineagesUI extends MccUI {
   coreData: CoreLineagesData;
   nodeSchematic: NodeSchematic;
   nodeDetails: NodeDetails;
-  // nodeListDisplay: NodeListDisplay;
+  metadataLegend: MetadataLegend;
   previousConfidence: number;
-  // nodePrevalenceCanvas: NodePrevalenceChart;
 
 
   nodeHighlightCallback: HoverCallback;
@@ -70,6 +67,7 @@ export class LineagesUI extends MccUI {
     };
     const clearCuratedCallback = ()=>this.coreData.clearCurated();
     const introsOnlyCallback = ()=>this.coreData.removeNonTransitions();
+    const legendCallback: MultiNodeCallback = (nodeIndices: number[] | null)=>this.highlightNodes(nodeIndices);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
@@ -78,9 +76,8 @@ export class LineagesUI extends MccUI {
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
       dismissCallback, rootSelectCallback, toggleAutoSelectCallback, clearCuratedCallback, introsOnlyCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
-    // this.nodeListDisplay = new NodeListDisplay(dismissCallback, nodeHighlightCallback, nodeZoomCallback, rootSelectCallback);
+    this.metadataLegend = new MetadataLegend(legendCallback);
     this.nodeHighlightCallback = nodeHighlightCallback;
-    // this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.treeHints = Array.from(this.div.querySelectorAll(".tree-hint") as NodeListOf<HTMLElement>);
     this.resetZoomButton = this.div.querySelector(".mcc-zoom-button.reset") as HTMLButtonElement;
     this.previousConfidence = this.sharedState.mccConfig.confidenceThreshold;
@@ -145,6 +142,7 @@ export class LineagesUI extends MccUI {
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
     this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
+    this.metadataLegend.setLegendData(mccConfig);
     // const [minDate, maxDate] = this.mccTreeCanvas.getDateRange();
   }
 
@@ -159,8 +157,6 @@ export class LineagesUI extends MccUI {
   resize(): void {
     super.resize();
     this.nodeSchematic.resize();
-    // this.nodePrevalenceCanvas.resize();
-    // this.nodePrevalenceCanvas.requestDraw();
   }
 
 
@@ -177,6 +173,7 @@ export class LineagesUI extends MccUI {
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
     this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
+    this.metadataLegend.setLegendData(mccConfig);
   }
 
 
@@ -213,29 +210,24 @@ export class LineagesUI extends MccUI {
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
-    // this.nodeListDisplay.setNodes(nodes);
     (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
     this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);
-    // this.nodeListDisplay.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {
       highlightNode = rootNode?.node as DisplayNode;
     }
     this.nodeDetails.setData(highlightNode);
-
-    // this.nodePrevalenceCanvas.setData(nodeDistributions, prevalenceNodes, minDate, maxDate);
+    this.metadataLegend.highlight(highlightNode.index);
     this.requestDraw();
   }
 
   requestDraw() {
     (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
-    // console.log('lineagesui calling this.nodeSchematic.setLayout()');
     this.nodeSchematic.requestRender();
     this.nodeDetails.requestDraw();
-    // this.nodeListDisplay.requestDraw();
-    // this.nodePrevalenceCanvas.requestDraw();
+    this.metadataLegend.requestDraw();
   }
 
 
@@ -261,6 +253,16 @@ export class LineagesUI extends MccUI {
     }
   }
 
+  highlightNodes(nodeIndices: number[] | null) {
+    requestAnimationFrame(()=>{
+      (this.mccTreeCanvas as LineagesTreeCanvas).highlightNodes(nodeIndices);
+      this.nodeSchematic.highlightNodes(nodeIndices);
+    });
+  }
+
+
+
+
   highlightCharts() {
     // const { node, date, mutation } = this.coreData.getHighlights();
     const { node, date } = this.coreData.getHighlights();
@@ -271,9 +273,8 @@ export class LineagesUI extends MccUI {
     }
     this.nodeDetails.setData(highlightNode);
     this.nodeDetails.requestDraw();
-    // this.nodeListDisplay.highlightNode(node);
     this.nodeSchematic.highlightNode(node);
-    // this.nodePrevalenceCanvas.highlightNode(node, date);
+    this.metadataLegend.highlight(node.index);
   }
 
   selectNode(nodeIndex: number): void {

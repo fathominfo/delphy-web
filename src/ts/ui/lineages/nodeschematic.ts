@@ -551,6 +551,16 @@ export class NodeSchematic {
     this.highlightIndex = node.index;
   }
 
+  highlightNodes(nodeIndices: number[] | null) : void {
+    if (nodeIndices === null) {
+      this.nodes.forEach(display=>display.pushBack(false));
+    } else {
+      this.nodes.forEach(display=>display.pushBack(!nodeIndices.includes(display.getIndex())));
+    }
+
+  }
+
+
 
   setHover(tnd: TreeNodeDisplay) {
     const node = tnd.treeNode.node;

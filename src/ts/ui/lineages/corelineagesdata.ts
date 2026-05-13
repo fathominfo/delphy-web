@@ -169,6 +169,10 @@ export class CoreLineagesData {
   activate() {
     this.pythia = this.sharedState.pythia;
     this.filteringByMetadataField = this.sharedState.mccConfig.metadataField;
+    // const mccRef = this.pythia.getMcc();
+    // const tree = mccRef.getMcc();
+    // this.getNodeDisplay(tree.getRootIndex(), true, true, this.rootNode);
+    // mccRef.release();
   }
 
   deactivate() {
@@ -608,7 +612,7 @@ export class CoreLineagesData {
       candidateNodes.push(this.highlightNode);
       allNodes.push(this.highlightNode);
     }
-    console.log(candidateNodes.map(n=>n.index));
+    // console.log(candidateNodes.map(n=>n.index));
     const selectedValues: string [] = [];
     allNodes.forEach(n=>{
       selectedValues[n.index] = nodeValues[n.index];
