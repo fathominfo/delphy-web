@@ -8,6 +8,8 @@ import { DisplayNode } from "./displaynode";
 
 const INFERRED_NODE_RADIUS = 4;
 const SELECTED_NODE_RADIUS = 5.5;
+const HIGHLIGHT_NODE_RADIUS = 3;
+const PUSHBACK_ALPHA = 0.4;
 
 
 
@@ -144,7 +146,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     this.subtreeNode = node;
     if (node.index !== UNSET) {
       const others: DisplayNode[] = this.nodes.filter(n=>n!==node);
-      this.highlightCtx.globalAlpha = 0.5;
+      this.highlightCtx.globalAlpha = PUSHBACK_ALPHA;
       this.renderSubtree();
       this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
       others.forEach(n=>this.drawNode(n));
@@ -159,6 +161,46 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
+
+  /*
+  currently used only for highlighting nodes with the same metadata
+  so we're gonna cheat and assume it's all the same color
+  */
+  highlightNodes(nodeIndices: number[] | null) : void {
+    this.highlightCtx.clearRect(0, 0, this.width, this.height);
+    if (nodeIndices !== null) {
+      const config = this.rootConfigs[this.rootIndex];
+      const ctx = this.highlightCtx;
+      const nodeTimes = this.nodeTimes;
+      const nodeColor = this.nodeColors[nodeIndices[0]];
+      const radius = HIGHLIGHT_NODE_RADIUS;
+      if (!config) return;
+      const others: DisplayNode[] = this.nodes.filter(n=>!nodeIndices.includes(n.index));
+      others.forEach(n=>this.drawNode(n, PUSHBACK_ALPHA));
+      this.highlightCtx.globalAlpha = 1.0;
+      ctx.fillStyle = nodeColor;
+      let x: number, y: number;
+      ctx.beginPath();
+      nodeIndices.forEach(index=>{
+        x = this.getZoomX(nodeTimes[index]);
+        y = this.getZoomY(index);
+        ctx.moveTo(x + radius, y);
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+      })
+      ctx.fill();
+    } else {
+      this.highlightCtx.globalAlpha = 1.0;
+      // this.descendants.forEach(nodePair=>this.drawAncestry(nodePair));
+      this.nodes.forEach(n=>this.drawNode(n));
+    }
+
+  }
+
+
+
+
+
+
   drawAncestry(pair: NodePair): void {
     const ctx = this.highlightCtx;
     const highlightedNode = this.highlightedNode;
@@ -167,7 +209,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     let x = this.getZoomX(mcc.getTimeOf(descendant.index)),
       y = this.getZoomY(descendant.index);
     let py, px;
-    ctx.globalAlpha = highlightedNode === null || highlightedNode.index === UNSET || descendant.index === highlightedNode.index ? 1 : 0.5;
+    ctx.globalAlpha = highlightedNode === null || highlightedNode.index === UNSET || descendant.index === highlightedNode.index ? 1 : PUSHBACK_ALPHA;
     if (this.useMetadataColor) {
       ctx.strokeStyle = this.nodeColors[descendant.index];
     } else {
@@ -192,7 +234,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   }
 
 
-  drawNode(displayNode: DisplayNode | null): void {
+  drawNode(displayNode: DisplayNode | null, alpha=UNSET): void {
     if (displayNode === null) return;
     const index = displayNode.index;
     if (index === UNSET) return;
@@ -213,7 +255,11 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
       outlining = true;
     }
     const strokeColor = displayNode.getStroke();
-    ctx.globalAlpha = highlightedNode === null || highlightedNode.index === UNSET || displayNode.index === highlightedNode.index ? 1 : 0.5;
+    if (alpha===UNSET) {
+      ctx.globalAlpha = highlightedNode === null || highlightedNode.index === UNSET || displayNode.index === highlightedNode.index ? 1 : PUSHBACK_ALPHA;
+    } else {
+      ctx.globalAlpha = alpha;
+    }
     // console.log('drawing ', index, ctx.globalAlpha, displayNode === highlightNode)
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 1;

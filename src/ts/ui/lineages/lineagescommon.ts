@@ -45,6 +45,8 @@ export type OpenMutationPageFncType = (mutation?: Mutation) => void;
 // export type ToggleCallback = (isTrue: boolean)=>void;
 export type MetadataToggleCallback = (fieldName: string)=>void;
 export type KeyEventHandler = (event: KeyboardEvent)=>void;
+export type MultiNodeCallback = (nodeIndices: number[] | null)=>void;
+
 
 export const MATCH_CLASS = "matching";
 export const NO_MATCH_CLASS = "unmatching";

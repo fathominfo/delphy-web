@@ -6,6 +6,7 @@
 
 #lineages .main-content {
   display: flex;
+  padding-bottom: 50px;
 
   .chart {
     .axis.x {
@@ -113,7 +114,7 @@
   display: none;
 }
 
-#lineages--right {
+#lineages--center {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -368,11 +369,6 @@ details {
 // ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝    ╚══════╝╚═╝╚══════╝   ╚═╝
 
 
-.lineages--center {
-  display: flex;
-  flex-direction: column;
-  width: 200px;
-}
 
 #lineages--node-list, #lineages--node-detail {
   display: flex;
@@ -710,8 +706,12 @@ details {
 }
 
 
-#lineages--node-info .metadata {
-  overflow-y: auto;
+#lineages--node-detail {
+  height: 200px;
+  .metadata {
+    max-height: 130px;
+    overflow-y: auto;
+  }
 }
 
 .lineages--node-item {
@@ -1206,6 +1206,58 @@ details {
   }
 
 }
+
+
+#lineages--right {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  height: 100%;
+  overflow: hidden;
+  gap: var(--block-gap);
+}
+
+#lineages--metadata-legend {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  .header {
+    height: 40px;
+  }
+}
+
+
+#lineages--metadata-legend--list {
+  overflow-y: auto;
+
+  flex-grow: 1;
+
+  .legend-item {
+    display: flex;
+    height: 20px;
+    gap: 5px;
+    transition: opacity 0.15s;
+    &.back {
+      opacity: 0.25;
+    }
+  }
+  .swatch {
+    height: 14px;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    // let events be captured by the legend-item
+    pointer-events: none;
+  }
+  .name {
+    flex-grow: 1;
+    // let events be captured by the legend-item
+    pointer-events: none;
+  }
+}
+
+
+
 
 
 
