@@ -515,22 +515,37 @@
         <div class="runner--advanced--section">
           <fieldset class="seed-fieldset">
             <legend><h3>Debug</h3></legend>
-            <div class="inline-unit">
-              <p>
-                Running with <span id="seed-is-random">random</span><span id="seed-is-configured">configured</span> seed <span  id="seed-value"></span>
-                <!-- <input type="number" id="seed-input" name="seed" step="1" autocomplete="off" placeholder="1234567"> -->
-                <button class="copy-button">
-                  <span class="glyph-wrapper">
-                    <div class="button-glyph"></div>
-                  </span>
-                  <span class="tooltip">
-                    <span class="action">Copy seed</span>
-                    <span class="completed">Copied</span>
-                  </span>
-                </button>
-              </p>
+            <p>
+              Running with <span id="seed-is-random">random</span><span id="seed-is-configured">custom</span> seed <span  id="seed-value"></span>
+              <input type="hidden" name="initialSeed" />
+              <button class="copy-button">
+                <span class="glyph-wrapper">
+                  <div class="button-glyph"></div>
+                </span>
+                <span class="tooltip">
+                  <span class="action">Copy seed</span>
+                  <span class="completed">Copied</span>
+                </span>
+              </button>
+            </p>
+            <p id="seed-config-options">
+              Use
+              <label>
+                <span>Random</span>
+                <input type="radio" name="seedConfig" value="random">
+              </label>
+              <label>
+                <span>Custom</span>
+                <input type="radio" name="seedConfig" value="custom">
+              </label>
+              seed.
+            </p>
+            <p>Custom seeds are for debugging errors that don't happen on every run.</p>
+            <label id="custom-seed-input" >
+              <span>Set seed:
+              <input type="number" name="seed" step="1" autocomplete="off" placeholder="">
+            </label>
 
-            </div>
           </fieldset>
         </div>
         <div class="runner--advanced--section">

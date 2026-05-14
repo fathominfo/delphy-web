@@ -155,7 +155,7 @@ export function getEmptyRunParamConfig(): RunParamConfig {
     skygridLowPopBarrierEnabled: true,
     skygridLowPopBarrierLocation: 1.0, // days, > 0
     skygridLowPopBarrierScale: 0.3,     // fraction (0,1)
-    seedIsConfigured:  seedIsConfigured ? 0 : 1,
+    seedIsConfigured: seedIsConfigured ? 1 : 0,
     seed: seed
   };
 }

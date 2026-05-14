@@ -191,7 +191,11 @@ export class RunUI extends UIScreen {
   tauInput: HTMLInputElement;
   minBarrierLocationInput: HTMLInputElement;
   seedReadout: HTMLDivElement;
-  seedValue: HTMLSpanElement;
+  seedValueSpan: HTMLSpanElement;
+  seedValue: HTMLInputElement;
+  seedOptions: HTMLParagraphElement;
+  seedInput: HTMLInputElement;
+
 
   submitAdvancedButton: HTMLButtonElement;
 
@@ -346,7 +350,10 @@ export class RunUI extends UIScreen {
     this.minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
 
     this.seedReadout = this.div.querySelector(".seed-fieldset") as HTMLDivElement;
-    this.seedValue = this.seedReadout.querySelector("#seed-value") as HTMLSpanElement;
+    this.seedValueSpan = this.seedReadout.querySelector("#seed-value") as HTMLSpanElement;
+    this.seedValue = this.seedReadout.querySelector(`input[type="hidden"]`) as HTMLInputElement;
+    this.seedOptions = this.seedReadout.querySelector("#seed-config-options") as HTMLParagraphElement;
+    this.seedInput = this.seedReadout.querySelector("#custom-seed-input input") as HTMLInputElement;
 
     this.oldValues = {};
 
@@ -365,8 +372,7 @@ export class RunUI extends UIScreen {
     copySeedButton.addEventListener("click", event=>{
       event.stopImmediatePropagation();
       event.preventDefault();
-      /* TODO: not super happy about using the DOM as a data store */
-      const seedValue = this.seedValue.textContent || '';
+      const seedValue = this.seedValue.value || '';
       navigator.clipboard.writeText(seedValue).then(()=>copySeedButton.classList.add("completed"));
     });
 
@@ -485,6 +491,13 @@ export class RunUI extends UIScreen {
       const params = this.getAdvancedFormValues();
       this.setPopBarrierLocationPlural(params.skygridLowPopBarrierLocation);
     });
+    this.seedOptions.querySelectorAll("input").forEach((input:HTMLInputElement)=>{
+      input.addEventListener("change", () => {
+        const formData = Object.fromEntries(new FormData(this.advancedForm));
+        this.seedInput.disabled = formData.seedConfig !== "custom";
+      });
+    });
+
 
 
 
@@ -769,7 +782,15 @@ export class RunUI extends UIScreen {
     this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
 
     this.seedReadout.classList.toggle("configured", params.seedIsConfigured === 1);
-    this.seedValue.textContent = `${params.seed}`;
+    this.seedValueSpan.textContent = `${params.seed}`;
+    this.seedValue.value = `${params.seed}`;
+    this.seedOptions.querySelectorAll("input").forEach((input : HTMLInputElement)=>{
+      let checked = false;
+      if (input.value === "random") checked = params.seedIsConfigured === 0;
+      else if (input.value === "custom") checked = params.seedIsConfigured === 1;
+      input.checked = checked;
+    });
+    this.seedInput.disabled = params.seedIsConfigured === 0;
 
 
     this.decideTraceCharts();
@@ -1138,6 +1159,13 @@ export class RunUI extends UIScreen {
 
     const isApobec = formData.isApobec === "on";
     newParams = this.setApobec(newParams, isApobec);
+
+
+    const seedIsConfigured = formData.seedConfig === "custom";
+    const initialSeed = parseInt(formData.initialSeed as string);
+    const customSeed = formData.seed ? parseInt(formData.seed as string) : UNSET;
+    newParams = this.setSeed(newParams, seedIsConfigured, initialSeed, customSeed);
+
     return newParams;
   }
 
@@ -1219,6 +1247,11 @@ export class RunUI extends UIScreen {
       if (!closeEnough(runParams.skygridLowPopBarrierLocation, formParams.skygridLowPopBarrierLocation)) same = false;
       if (!closeEnough(runParams.skygridLowPopBarrierScale,formParams.skygridLowPopBarrierScale)) same = false;
     }
+    if (runParams.seedIsConfigured !== formParams.seedIsConfigured) {
+      same = false;
+    } else if (formParams.seedIsConfigured === 1 && runParams.seed !== formParams.seed) {
+      same = false
+    }
     return !same;
   }
 
@@ -1265,6 +1298,18 @@ export class RunUI extends UIScreen {
   private setPopmodel(runParams: RunParamConfig, isSkygrid:boolean) : RunParamConfig {
     const newParams = copyDict(runParams) as RunParamConfig;
     newParams.popModelIsSkygrid = isSkygrid;
+    return newParams;
+  }
+
+  private setSeed(runParams: RunParamConfig, isConfigured:boolean, initial: number, custom : number | null) : RunParamConfig {
+    const newParams = copyDict(runParams) as RunParamConfig;
+    if (custom !== null && custom > 0  && isConfigured) {
+      newParams.seedIsConfigured = 1;
+      newParams.seed = custom;
+    } else {
+      newParams.seedIsConfigured = 0;
+      newParams.seed = initial;
+    }
     return newParams;
   }
 

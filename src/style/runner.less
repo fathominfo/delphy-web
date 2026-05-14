@@ -1572,6 +1572,27 @@ label:has(#advanced-skygrid-toggle:checked) {
       opacity: 1;
     }
   }
+
+  #seed-config-options {
+    align-items: baseline;
+    label {
+      color: black;
+      opacity: 0.3;
+      transition: opacity 0.15s;
+      &:has(input:checked) {
+        opacity: 1;
+      }
+    }
+  }
+
+  #custom-seed-input {
+    opacity: 1;
+    transition: opacity 0.15s;
+    &:has(input:disabled) {
+      opacity: 0.3;
+    }
+  }
+
 }
 
 /*
