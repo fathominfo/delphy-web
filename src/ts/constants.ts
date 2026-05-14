@@ -4,12 +4,22 @@ import { Mutation, RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLet
 // Set to a nonzero value to reproduce a specific run
 const RANDOM_SEED_OVERRIDE = 0;
 
-export const RANDOM_SEED = (RANDOM_SEED_OVERRIDE as number) !== 0
+export const RANDOM_SEED = RANDOM_SEED_OVERRIDE !== 0
   ? RANDOM_SEED_OVERRIDE
   : (crypto.getRandomValues(new Uint32Array(1))[0] || 1);  // avoid 0, which means "pick randomly" on the C++ side
 
-export const MAX_TREE_SNAPSHOTS = 50;
-export const GENOME_LENGTH = 29891;
+
+export const STAGES = {
+  "initialization" : 0,
+  "selecting" : 1,
+  "loading" : 2,
+  "parsing" : 3,
+  "loaded": 4,
+  "resetting" : 5
+};
+
+
+
 export const MU_FACTOR = 365 * 1e5;
 export const FINAL_POP_SIZE_FACTOR = 1e0 / 365.0;
 export const POP_GROWTH_RATE_FACTOR = 365 * 1e0;
@@ -23,44 +33,10 @@ export type BaseTreeSeriesType = number[][][];
 export type OverlapTally = {index1: number, index2: number, count: number};
 export type NodeDistributionType = {series: BaseTreeSeriesType, overlap: OverlapTally[]};
 
-
-type geneProp = {[prop: string]: number|boolean|string};
-
-export const GENE_POSITIONS: {[mutation_string: string]: geneProp} = {
-  "5UTR" :  {"start": 0,     "end": 265,   "label": "5'", "aa": 89,   "untranslating" : true},
-  "ORF1a":  {"start": 266,   "end": 13442, "label": "1a", "aa": 4392  },
-  "ORF1b":  {"start": 13444, "end": 21555, "label": "1b", "aa": 2704  },
-  "S":      {"start": 21563, "end": 25384, "label": "S", "aa": 1274  },
-  "ORF3a":  {"start": 25393, "end": 26220, "label": "3a", "aa": 276   },
-  "E":      {"start": 26245, "end": 26472, "label": "E", "aa": 76    },
-  "M":      {"start": 26523, "end": 27191, "label": "M", "aa": 223   },
-  "ORF6":   {"start": 27202, "end": 27387, "label": "6", "aa": 62    },
-  "ORF7a":  {"start": 27394, "end": 27759, "label": "7a", "aa": 122   },
-  "ORF7b":  {"start": 27756, "end": 27887, "label": "7b", "aa": 44    },
-  "ORF8":   {"start": 27894, "end": 28259, "label": "8", "aa": 122   },
-  "N":      {"start": 28274, "end": 29533, "label": "N", "aa": 420   },
-  "ORF10":  {"start": 29558, "end": 29674, "label": "10", "aa": 39    },
-  "3UTR":   {"start": 29675, "end": 29677, "label": "3'", "aa": 1,    "untranslating" : true},
-  "Non-coding region" : {"start": 29676, "end": 29811, "label": "ncr", "untranslating" : true},
-};
-
-
-const NUC_LOOKUP:string[] = [];
-const AMBI_NUC_LOOKUP :string[] = [];
-
-export const STAGES = {
-  "initialization" : 0,
-  "selecting" : 1,
-  "loading" : 2,
-  "parsing" : 3,
-  "loaded": 4,
-  "resetting" : 5
-};
-
-
+export const NUC_LOOKUP:string[] = [];
+export const AMBI_NUC_LOOKUP :string[] = [];
 
 {
-
   NUC_LOOKUP[RealSeqLetter_A] = 'A';
   NUC_LOOKUP[RealSeqLetter_C] = 'C';
   NUC_LOOKUP[RealSeqLetter_G] = 'G';
@@ -87,8 +63,8 @@ export const STAGES = {
 
 
 
-const sortMutList = (a:Mutation, b:Mutation)=>a.site - b.site;
-const compareMutationLists = (l1:Array<Mutation>, l2:Array<Mutation>)=>{
+export const sortMutList = (a:Mutation, b:Mutation)=>a.site - b.site;
+export const compareMutationLists = (l1:Array<Mutation>, l2:Array<Mutation>)=>{
   let i1 = 0,
     i2 = 0,
     count = 0;
@@ -129,11 +105,11 @@ const compareMutationLists = (l1:Array<Mutation>, l2:Array<Mutation>)=>{
 };
 
 
-function getMutationName(mutation: Mutation):string {
+export function getMutationName(mutation: Mutation):string {
   return `${NUC_LOOKUP[mutation.from]}${mutation.site + 1}${NUC_LOOKUP[mutation.to]}`;
 }
 
-function getMutationNameParts(mutation: Mutation | string): [string, string, string] {
+export function getMutationNameParts(mutation: Mutation | string): [string, string, string] {
   let from = "", site = "", to = "";
   if (typeof mutation === "string") {
     from = mutation.charAt(0);
@@ -147,32 +123,26 @@ function getMutationNameParts(mutation: Mutation | string): [string, string, str
   return [from, site, to];
 }
 
-function getAllele(alleleIndex: number): string {
+export function getAllele(alleleIndex: number): string {
   return NUC_LOOKUP[alleleIndex];
 }
 
-function siteLabelToIndex(siteLabel: number): number {
+export function siteLabelToIndex(siteLabel: number): number {
   const siteIndex = siteLabel - 1;
   return siteIndex;
 }
 
-function siteIndexToLabel(siteIndex: number): number {
+export function siteIndexToLabel(siteIndex: number): number {
   const siteLabel = siteIndex + 1;
   return siteLabel;
 }
 
 
-const mutationEquals = (m1: Mutation, m2: Mutation)=>m1.site === m2.site && m1.from === m2.from && m1.to === m2.to;
-
-const NUM_ALLELES = 4;
-
-export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts, sortMutList, compareMutationLists, siteIndexToLabel, siteLabelToIndex, mutationEquals, getAllele, NUM_ALLELES};
+export const mutationEquals = (m1: Mutation, m2: Mutation)=>m1.site === m2.site && m1.from === m2.from && m1.to === m2.to;
 
 
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */
 export const copyDict = (obj:object)=>structuredClone(obj);
-
-
 
 export type CoreVersionInfo = {
   version: string,
