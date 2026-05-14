@@ -190,6 +190,8 @@ export class RunUI extends UIScreen {
   doublingInput: HTMLInputElement;
   tauInput: HTMLInputElement;
   minBarrierLocationInput: HTMLInputElement;
+  seedReadout: HTMLDivElement;
+  seedValue: HTMLSpanElement;
 
   submitAdvancedButton: HTMLButtonElement;
 
@@ -343,12 +345,14 @@ export class RunUI extends UIScreen {
     this.tauInput = this.div.querySelector(`#advanced-skygrid-timescale-tau-value input`) as HTMLInputElement;
     this.minBarrierLocationInput = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-location"]`) as HTMLInputElement;
 
+    this.seedReadout = this.div.querySelector(".seed-fieldset") as HTMLDivElement;
+    this.seedValue = this.seedReadout.querySelector("#seed-value") as HTMLSpanElement;
+
     this.oldValues = {};
 
     const alphaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="alpha-value"]`) as HTMLInputElement;
     const betaInput = this.div.querySelector(`#advanced-skygrid-timescale-infer-values input[name="beta-value"]`) as HTMLInputElement;
     const minBarrierScaleInput  = this.div.querySelector(`#advanced-skygrid-barrier-values input[name="low-pop-barrier-scale"]`) as HTMLInputElement;
-
 
     this.constrainInputRange('doublingInput', this.doublingInput, 0, null);
     this.constrainInputRange('tauInput', this.tauInput, 0, null);
@@ -356,6 +360,16 @@ export class RunUI extends UIScreen {
     this.constrainInputRange('betaInput', betaInput, 0, null);
     this.constrainInputRange('barrierLocationInput', this.minBarrierLocationInput, 0, null);
     this.constrainInputRange('barrierScaleInput', minBarrierScaleInput, 0, 100);
+
+    const copySeedButton = this.seedReadout.querySelector(".copy-button") as HTMLButtonElement;
+    copySeedButton.addEventListener("click", event=>{
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      /* TODO: not super happy about using the DOM as a data store */
+      const seedValue = this.seedValue.textContent || '';
+      navigator.clipboard.writeText(seedValue).then(()=>copySeedButton.classList.add("completed"));
+    });
+
 
     this.burninPrompt = new BurninPrompt();
     this.ess = UNSET;
@@ -753,6 +767,10 @@ export class RunUI extends UIScreen {
     this.fixedFinalPopSizeInput.value = `${finalPopSizeFixed}`;
     const popGrowthRateFixed = (params.popGrowthRate * POP_GROWTH_RATE_FACTOR).toFixed(2);
     this.fixedPopGrowthRateInput.value = `${popGrowthRateFixed}`;
+
+    this.seedReadout.classList.toggle("configured", params.seedIsConfigured === 1);
+    this.seedValue.textContent = `${params.seed}`;
+
 
     this.decideTraceCharts();
 

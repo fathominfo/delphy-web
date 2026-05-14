@@ -4,7 +4,9 @@ import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
-import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict, RANDOM_SEED} from '../constants';
+import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType,
+  mutationEquals, NodeDistributionType, OverlapTally,
+  CoreVersionInfo, copyDict} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
@@ -14,6 +16,11 @@ import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
+
+
+let seed: number = getRandomSeed();
+let seedIsConfigured = false;
+
 
 type returnless = ()=>void;
 
@@ -80,7 +87,9 @@ export type RunParamConfig = {
   skygridTauPriorBeta: number,  // > 0
   skygridLowPopBarrierEnabled: boolean,
   skygridLowPopBarrierLocation: number,  // days, > 0
-  skygridLowPopBarrierScale: number  // fraction (0,1)
+  skygridLowPopBarrierScale: number,  // fraction (0,1)
+  seedIsConfigured: number,
+  seed: number
 };
 
 function calcMaxDateOfTree(tree: PhyloTree): number {
@@ -112,6 +121,8 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
   config.skygridStartDate = skygridStartDate;
   config.skygridNumIntervals = skygridNumIntervals;
   config.skygridTau = skygridTau;
+  config.seed = seed;
+  config.seedIsConfigured = seedIsConfigured ? 1 : 0;
   return config;
 }
 
@@ -143,7 +154,9 @@ export function getEmptyRunParamConfig(): RunParamConfig {
     skygridTauPriorBeta: 0.001,   // > 0
     skygridLowPopBarrierEnabled: true,
     skygridLowPopBarrierLocation: 1.0, // days, > 0
-    skygridLowPopBarrierScale: 0.3     // fraction (0,1)
+    skygridLowPopBarrierScale: 0.3,     // fraction (0,1)
+    seedIsConfigured:  seedIsConfigured ? 0 : 1,
+    seed: seed
   };
 }
 
@@ -328,7 +341,22 @@ export class Pythia {
         this.run = null;
       }
       const runTree = this.initialTree.copy();
-      const run = this.run = this.delphy.createRun(runTree, RANDOM_SEED);  // Core takes possession of runTree's contents, leaving it a husk
+
+      seedIsConfigured = runParams.seedIsConfigured === 1;
+      if (seedIsConfigured) {
+        seed = runParams.seed;
+      } else {
+        seed = getRandomSeed();
+      }
+
+      globalDelphy?.delete();
+
+      globalDelphy = new Delphy(seed);
+      this.delphy = globalDelphy;
+
+      console.log(`\nStarting new Delphy run with seed ${seed})`);
+
+      const run = this.run = this.delphy.createRun(runTree, seed);  // Core takes possession of runTree's contents, leaving it a husk
       runTree.delete();
 
       this.resetHist();
@@ -1388,7 +1416,7 @@ export class Pythia {
     {
       const tmpTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
-      const tmpRun = this.delphy.createRun(tmpTree, RANDOM_SEED);
+      const tmpRun = this.delphy.createRun(tmpTree, seed);
       tmpTree.delete();  // tmpRun takes over tmpTree's contents, leaving only a husk
 
       tmpRun.setParamsFromFlatbuffer(pBuff);
@@ -1447,7 +1475,7 @@ export class Pythia {
   // BEASTY OUTPUT
   getBeastOutputs(version:string): {log: ArrayBuffer, trees: ArrayBuffer} {
     const treeCount = this.paramsHist.length;
-    const run = this.delphy.createRun(this.treeHist[0].copy(), RANDOM_SEED);
+    const run = this.delphy.createRun(this.treeHist[0].copy(), seed);
     run.setParamsFromFlatbuffer(this.paramsHist[0]);  // Some options can influence output
     const bout = run.createBeastyOutput(version);
     for (let i = 0; i < treeCount; ++i) {
@@ -1551,10 +1579,10 @@ export function setReadyCallback(fnc:(_:Pythia)=>void):void { // eslint-disable-
 
 Delphy.waitForInit()
   .then(() => {
-    globalDelphy = new Delphy(RANDOM_SEED);
+    globalDelphy = new Delphy(seed);
     console.log(`Delphy core loaded (version ${globalDelphy.getVersionString()}, ` +
                 `build ${globalDelphy.getBuildNumber()}, commit ${globalDelphy.getCommitString()}, ` +
-                `seed ${RANDOM_SEED})`);
+                `seed ${seed})`);
     if (readyCallback) {
       readyCallback(new Pythia());
     }
@@ -1562,3 +1590,8 @@ Delphy.waitForInit()
 
 
 const yieldToMain = ()=>new Promise((resolve:emptyResolveType)=>{setTimeout(resolve, 0)});
+
+
+function getRandomSeed() : number {
+  return (crypto.getRandomValues(new Uint32Array(1))[0] || 1);  // avoid 0, which means "pick randomly" on the C++ side
+}

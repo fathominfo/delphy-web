@@ -1,14 +1,6 @@
 import { AmbSeqLetter } from './delphy/api';
 import { Mutation, RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T } from './pythia/delphy_api';
 
-// Set to a nonzero value to reproduce a specific run
-const RANDOM_SEED_OVERRIDE = 0;
-
-export const RANDOM_SEED = RANDOM_SEED_OVERRIDE !== 0
-  ? RANDOM_SEED_OVERRIDE
-  : (crypto.getRandomValues(new Uint32Array(1))[0] || 1);  // avoid 0, which means "pick randomly" on the C++ side
-
-
 export const STAGES = {
   "initialization" : 0,
   "selecting" : 1,

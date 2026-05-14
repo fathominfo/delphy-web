@@ -1336,10 +1336,10 @@ input.stopping + #run-input--label {
     border: solid 1.5px @RADIO_BUTTON_BORDER;
     padding: 3px 8px;
     border-radius: 3px;
-  }
-  label:has(input[type="radio"]:checked) {
-    border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
-    background-color: @RADIO_BUTTON_SELECTED_FILL;
+    &:checked {
+      border: solid 2px @RADIO_BUTTON_SELECTED_BORDER;
+      background-color: @RADIO_BUTTON_SELECTED_FILL;
+    }
   }
 
 
@@ -1535,8 +1535,44 @@ label:has(#advanced-skygrid-toggle:checked) {
 }
 
 
+.seed-fieldset {
+
+  p {
+    display: flex;
+    gap: 3px;
+  }
+
+  #seed-is-configured { display: none; }
+  &.configured {
+    #seed-is-configured { display: inline; }
+    #seed-is-random { display: none; }
+  }
+
+  #seed-value {
+    font-weight: 700;
+  }
+
+  .copy-button {
+    opacity: 0.5;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    height: 24px;
+    overflow: visible;
+    pointer-events: all;
 
 
+    .glyph-wrapper {
+      display: inline-block;
+      position: relative;
+      top: -10px;
+    }
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
 
 /*
 
