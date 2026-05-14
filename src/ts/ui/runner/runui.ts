@@ -457,7 +457,7 @@ export class RunUI extends UIScreen {
           this.submitAdvancedButton.innerText = "Restart with selected options";
           this.submitAdvancedButton.classList.add("warning-button");
         }
-
+        this.enableAdvancedFormSubmit();
       } else {
         this.advancedFormContainer.classList.remove("active");
       }
@@ -492,9 +492,11 @@ export class RunUI extends UIScreen {
       this.setPopBarrierLocationPlural(params.skygridLowPopBarrierLocation);
     });
     this.seedOptions.querySelectorAll("input").forEach((input:HTMLInputElement)=>{
-      input.addEventListener("change", () => {
+      input.addEventListener("change", (event) => {
+        event.stopImmediatePropagation();
         const formData = Object.fromEntries(new FormData(this.advancedForm));
         this.seedInput.disabled = formData.seedConfig !== "custom";
+        this.enableAdvancedFormSubmit();
       });
     });
 
@@ -678,6 +680,7 @@ export class RunUI extends UIScreen {
     const pythia = this.sharedState.pythia;
     const params = this.getRunParams();
 
+    // console.log("updateParamsUI", params);
     const currentStepSetting = Math.round(Math.log(params.stepsPerSample) / Math.log(10));
 
     (document.querySelector("#step-options") as HTMLSelectElement).value = `${currentStepSetting}`;
@@ -1115,7 +1118,7 @@ export class RunUI extends UIScreen {
     const isSkygrid = formData.popmodel === 'skygrid';
     newParams = this.setPopmodel(newParams, isSkygrid);
     if (isSkygrid) {
-      console.log(formData);
+      // console.log(formData);
       const skygridK = parse_iso_date(formData['skygrid-K'] as string);
       const skygridNumIntervals = parseInt(formData['skygrid-M'] as string);
       const skygridInterpolationIsLogLinear = formData['m-interpolation'] === 'loglin';

@@ -121,8 +121,6 @@ export function makeDefaultRunParamConfig(tree: PhyloTree): RunParamConfig {
   config.skygridStartDate = skygridStartDate;
   config.skygridNumIntervals = skygridNumIntervals;
   config.skygridTau = skygridTau;
-  config.seed = seed;
-  config.seedIsConfigured = seedIsConfigured ? 1 : 0;
   return config;
 }
 
@@ -347,6 +345,7 @@ export class Pythia {
         seed = runParams.seed;
       } else {
         seed = getRandomSeed();
+        runParams.seed = getRandomSeed();
       }
 
       globalDelphy?.delete();
@@ -354,7 +353,7 @@ export class Pythia {
       globalDelphy = new Delphy(seed);
       this.delphy = globalDelphy;
 
-      console.log(`\nStarting new Delphy run with seed ${seed})`);
+      console.log(`\nStarting new Delphy run with seed ${seed}`, seed);
 
       const run = this.run = this.delphy.createRun(runTree, seed);  // Core takes possession of runTree's contents, leaving it a husk
       runTree.delete();
@@ -719,7 +718,6 @@ export class Pythia {
 
     this.runParams = copyDict(runParams) as RunParamConfig;
 
-    // console.debug('setting params', runParams)
     run.setAlphaMoveEnabled(runParams.siteRateHeterogeneityEnabled);
     run.setMpoxHackEnabled(runParams.apobecEnabled);
     run.setMuMoveEnabled(!runParams.mutationRateIsFixed);
@@ -1076,7 +1074,7 @@ export class Pythia {
       const ref = this.mccRefManager.getRef(),
         mcc = ref.getMcc();
       moi = getMccMutationsOfInterest(mcc);
-      // console.degub(`getMutationsOfInterest() elapsed ${Date.now() -  start}`, moi);
+      // console.debug(`getMutationsOfInterest() elapsed ${Date.now() -  start}`, moi);
       ref.release();
     }
     return moi;
