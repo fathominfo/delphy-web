@@ -121,9 +121,7 @@ export class GammaData extends TraceData {
       mag++;
       tens *= 10;
     }
-    console.log(this.logLabels)
-
-
+    // console.log(this.logLabels)
   }
 
   getTickLength(logStep: number): number {
