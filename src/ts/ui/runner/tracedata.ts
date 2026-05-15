@@ -1,5 +1,5 @@
 import { UNSET } from '../common';
-import { GammaDataFunction, HistDataFunction } from './runcommon';
+import { GammaDataFunction, HistDataFunction, ScatterDataFunction } from './runcommon';
 
 export class TraceData {
 
@@ -28,10 +28,10 @@ export class TraceData {
   currentKneeIndex: number;
   settingKnee: boolean;
 
-  getDataFnc : HistDataFunction | GammaDataFunction;
+  getDataFnc : HistDataFunction | GammaDataFunction | ScatterDataFunction;
 
 
-  constructor(label:string, unit='', getDataFnc : HistDataFunction | GammaDataFunction) {
+  constructor(label:string, unit='', getDataFnc : HistDataFunction | GammaDataFunction | ScatterDataFunction) {
     this.label = label;
     this.unit = unit;
     this.getDataFnc = getDataFnc;

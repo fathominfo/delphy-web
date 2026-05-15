@@ -83,6 +83,6 @@ export type requestDrawFnc = ()=>void;
 
 export type HistDataFunction = ()=>number[];
 export type GammaDataFunction = ()=>SkygridPopModel[];
-
+export type ScatterDataFunction = ()=>number[][];
 
 
