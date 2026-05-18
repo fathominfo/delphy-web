@@ -235,6 +235,10 @@ export class ScatterPlotCanvas extends TraceCanvas {
         dot.classList.remove("highlight");
       });
       const hDot = this.dots[nodeIndex];
+      if (!hDot)  {
+        /* inner nodes won't be represented here */
+        return;
+      }
       hDot.classList.remove("back");
       hDot.classList.add("highlight");
       const scatterData = (this.traceData as ScatterData);

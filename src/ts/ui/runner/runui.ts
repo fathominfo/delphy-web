@@ -2,7 +2,6 @@ import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
-import {MccTreeCanvas, instantiateMccTreeCanvas} from '../mcctreecanvas';
 import {HistCanvas} from './histcanvas';
 import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
@@ -20,6 +19,7 @@ import { chartContainer, TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
 import { UIScreen } from '../uiscreen';
 import { enableAnalyticTabs } from '../nav';
+import { RunTree } from './runtree';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -131,12 +131,13 @@ export class RunUI extends UIScreen {
 
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
-  private mccTreeCanvas: MccTreeCanvas;
+  private mccTreeCanvas: RunTree;
   private mccHeader: HTMLSpanElement;
 
   private traceCanvases: TraceCanvas[] = [];
   private defaultCanvases: TraceCanvas[] = [];
   private essCandidates: TraceCanvas[] = [];
+  private scatterPlots: ScatterPlotCanvas[] = [];
   private showAllCanvases = false;
 
 
@@ -150,6 +151,9 @@ export class RunUI extends UIScreen {
   private hideBurnIn: boolean;
   private mccMinDate:SoftFloat;
   private mccTimelineIndices:DateLabel[];
+
+
+  private handleNodeHover: HoverNodeFnc;
 
 
   private burninPrompt: BurninPrompt;
@@ -268,8 +272,24 @@ export class RunUI extends UIScreen {
       this.requestDraw();
     };
 
+
+    this.handleNodeHover = (nodeIndex: number) => {
+      requestAnimationFrame(()=>{
+        if (this.pythia) {
+          const mccRef = this.pythia.getMcc();
+          const tree = mccRef.getMcc();
+          this.mccTreeCanvas.handleHover(nodeIndex, tree);
+          this.scatterPlots.forEach(canvas=>{
+            canvas.handleHover(nodeIndex);
+          });
+          mccRef.release();
+        }
+      });
+    };
     this.mccRef = null;
-    this.mccTreeCanvas = instantiateMccTreeCanvas("#runner--mcc .tree-canvas");
+    const canvas = document.querySelector("#runner--mcc .tree-canvas") as HTMLCanvasElement;
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    this.mccTreeCanvas = new RunTree(canvas, ctx, this.handleNodeHover);
     this.runControl = document.querySelector("#run-control") as HTMLDivElement;
     this.runInput = this.runControl.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
@@ -513,13 +533,6 @@ export class RunUI extends UIScreen {
     this.essCandidates.length = 0;
     chartContainer.innerHTML = '';
 
-    const scatterPlots: ScatterPlotCanvas[] = [];
-    const handleHover: HoverNodeFnc = (nodeIndex: number)=>{
-      scatterPlots.forEach(canvas=>{
-        canvas.handleHover(nodeIndex);
-      })
-    };
-
     try {
       const params = this.getRunParams();
       const toShow = [TraceChart.numMutations];
@@ -627,9 +640,9 @@ export class RunUI extends UIScreen {
         const config : TipCheckConfig = this.traceChartConfig[tc] as TipCheckConfig;
         const { name, dataFnc, subtitle, className } = config;
         const canvas = new ScatterPlotCanvas(name, subtitle,
-          className, dataFnc, tipCount, handleHover);
+          className, dataFnc, tipCount, this.handleNodeHover);
         this.traceCanvases.push(canvas);
-        scatterPlots.push(canvas);
+        this.scatterPlots.push(canvas);
         if (toShow.includes(tc)) {
           this.defaultCanvases.push(canvas);
           canvas.setVisible(true);
@@ -646,6 +659,7 @@ export class RunUI extends UIScreen {
 
 
   }
+
 
 
   enableAdvancedFormSubmit() : void {
