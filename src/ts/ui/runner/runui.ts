@@ -8,7 +8,7 @@ import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
-import { GammaDataFunction, HistDataFunction, hoverListenerType, kneeHoverListenerType, ScatterDataFunction, statHoverListenerType, SummaryStat } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, HoverNodeFnc, kneeHoverListenerType, ScatterDataFunction, statHoverListenerType, SummaryStat } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -295,7 +295,7 @@ export class RunUI extends UIScreen {
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
     this.traceChartConfig[TraceChart.gamma] = { name: `Effective population size`, className: "effective-population-size", subtitle: "Showing Median and 95% HPD", dataFnc: gammaDataFnc};
     const tipCheckFnc: ScatterDataFunction = ()=>this.gatherTipCheckData();
-    this.traceChartConfig[TraceChart.tipCheck] = { name: `Mutation Count vs. Date`, className: "mutcount-date", subtitle: "", dataFnc: tipCheckFnc};
+    this.traceChartConfig[TraceChart.tipCheck] = { name: `Mutation Count vs. Date`, className: "mutcount-date", subtitle: "Tip date and number of mutations should show a correlation", dataFnc: tipCheckFnc};
 
     this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
     this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
@@ -513,13 +513,18 @@ export class RunUI extends UIScreen {
     this.essCandidates.length = 0;
     chartContainer.innerHTML = '';
 
+    const scatterPlots: ScatterPlotCanvas[] = [];
+    const handleHover: HoverNodeFnc = (nodeIndex: number)=>{
+      scatterPlots.forEach(canvas=>{
+        canvas.handleHover(nodeIndex);
+      })
+    };
+
     try {
       const params = this.getRunParams();
       const toShow = [TraceChart.numMutations];
       const gammas = [];
-      const scatterPlots = [];
-
-
+      const scatterPlotConfigs = [];
 
       let availables = [ TraceChart.numMutations];
 
@@ -560,7 +565,7 @@ export class RunUI extends UIScreen {
         gammas.push(TraceChart.gamma);
         toShow.push(TraceChart.gamma);
       }
-      scatterPlots.push(TraceChart.tipCheck);
+      scatterPlotConfigs.push(TraceChart.tipCheck);
       toShow.push(TraceChart.tipCheck);
 
       availables.forEach((tc: TraceChart)=>{
@@ -611,18 +616,20 @@ export class RunUI extends UIScreen {
           canvas.setVisible(false);
         }
       });
-      scatterPlots.forEach((tc: TraceChart)=>{
+      const pythia = this.pythia as Pythia;
+      const mccRef = pythia.getMcc();
+      const mcc = mccRef.getMcc();
+      const treeIndex = mcc.getMasterBaseTreeIndex();
+      const mccTree = mcc.getBaseTree(treeIndex);
+      const tipCount = (mccTree.getSize() + 1) / 2;
+      mccRef.release();
+      scatterPlotConfigs.forEach((tc: TraceChart)=>{
         const config : TipCheckConfig = this.traceChartConfig[tc] as TipCheckConfig;
         const { name, dataFnc, subtitle, className } = config;
-        const pythia = this.pythia as Pythia;
-        const mccRef = pythia.getMcc();
-        const mcc = mccRef.getMcc();
-        const treeIndex = mcc.getMasterBaseTreeIndex();
-        const mccTree = mcc.getBaseTree(treeIndex);
-        const tipCount = (mccTree.getSize() + 1) / 2;
-        mccRef.release();
-        const canvas = new ScatterPlotCanvas(name, subtitle, className, dataFnc, tipCount);
+        const canvas = new ScatterPlotCanvas(name, subtitle,
+          className, dataFnc, tipCount, handleHover);
         this.traceCanvases.push(canvas);
+        scatterPlots.push(canvas);
         if (toShow.includes(tc)) {
           this.defaultCanvases.push(canvas);
           canvas.setVisible(true);

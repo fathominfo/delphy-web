@@ -9,7 +9,6 @@ export class ScatterData extends TraceData {
 
   tipMutationCounts: number[] = [];
   tipDates: number[] = [];
-  postBurnin: number[][] = [];
   countMin: number = UNSET;
   countMax: number = UNSET
   dateMin: number = UNSET;
@@ -28,15 +27,14 @@ export class ScatterData extends TraceData {
 
   setTipData(data:number[][], kneeIndex: number, minDate: number, maxDate: number):void {
     this.setKneeIndex(data.length, kneeIndex);
-    this.postBurnin = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
     this.tipMutationCounts.length = 0;
     this.tipDates.length = 0;
-    this.postBurnin.forEach(([mutCount, date], i)=>{
+    data.forEach(([mutCount, date], i)=>{
       this.tipMutationCounts[i] = mutCount;
       this.tipDates[i] = date;
     });
     const safeCounts = this.tipMutationCounts.filter(n=>Number.isFinite(n));
-    const safeDates = this.tipDates.filter(n=>Number.isFinite(n));
+    // const safeDates = this.tipDates.filter(n=>Number.isFinite(n));
 
     this.countMin = 0; /* use a 0 baseline */
     this.countMax = Math.max(...safeCounts);

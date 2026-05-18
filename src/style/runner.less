@@ -1007,18 +1007,27 @@
       max-width: var(--indicator-pop-module-width);
 
       .displays {
-        padding: var(--chart-displays-timeline-inset-x) 0;
+        padding: 0 0;
         height: var(--trace-chart-width);
       }
 
       .chart {
-        width: fit-content;
+        margin-top: -5px;
+        // width: fit-content;
+        width: 100%;
+        height: 202px;
         gap: 5px;
+
+        .feature {
+          height: 100%;
+          width: 100%;
+        }
         // background-color: yellow;
         .graph.display {
           background-color: white;
-          min-width: var(--pop-chart-graph-width);
-          max-width: var(--pop-chart-graph-width);
+          // min-width: var(--pop-chart-graph-width);
+          // max-width: var(--pop-chart-graph-width);
+          width: 100%;
           height: 100%;
           /*
           Move the chart over so that the trend lines
@@ -1034,56 +1043,77 @@
           margin-left: calc(-1 * var(--pop-chart-highlight-dot-radius));
         }
 
+        .displays {
+          height: 100%;
+          width: 100%;
+        }
 
-        .axis.y {
-          width: calc(var(--pop-chart-yaxis-width) * 2);
-          height: var(--trace-chart-width);
-          overflow: visible;
-          // background-color: pink;
-          line {
-            stroke-width: 0.5;
-            stroke: var(--chart-graph-run-trend-stroke);
-            opacity: 0.7;
-            &.mag {opacity: 1;}
-          }
-          text {
-            font-size: 11px;
-            dominant-baseline: middle;
-            text-anchor: start;
+        .tick {
+          stroke-width: 0.5;
+          stroke: var(--chart-graph-run-trend-stroke);
+        }
+        .tick-label, .hover-count {
+          font-size: 11px;
+          dominant-baseline: middle;
+          font-variant-numeric: tabular-nums;
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+
+        }
+
+        .min-date, .max-date {
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+        }
+        .max-date {
+          text-anchor: end;
+        }
+
+        .min-date, .max-date, .tick-label {
+          opacity: 1;
+          transition: opacity 0.15s;
+          &.back {
+            opacity: 0;
           }
         }
 
-        .axis.x {
-          position: relative;
-          margin-left: 3px;
-          margin-right: 3px;
-          margin-top: 3px;
-          width: calc(var(--pop-chart-graph-width) - 6px);
-          .min-date {flex-grow: 1;}
-          .min-date, .max-date {
-            &.hidden {
-              display: inherit !important;
-              opacity: 0;
-            }
-          }
-          .hover-date {
-            position: absolute;
-            width: 86px;
-            margin-left: -43px;
-            white-space: nowrap;
-          }
-        }
       }
-      // .graph {
-      //   height: var(--trace-chart-height);
-      //   aspect-ratio: 1;
-      // }
       .bg {
         fill: #f0f0f0;
       }
       ellipse.dot {
         fill: #5e5e5e;
         stroke: none;
+        opacity: 1;
+        transition: opacity 0.15s, fill 0.15s;
+
+        &.back {
+          opacity: 0.25;
+          fill: #c1c1c1;
+        }
+        &.highlight {
+          fill: #094e77;
+          rx: 3;
+          ry: 3;
+        }
+      }
+
+      .hover-date, .hover-count {
+        fill: #094e77 !important;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .hover-date {
+        text-anchor: middle;
+      }
+      .hover-count {
+        dominant-baseline: middle;
+      }
+
+      svg.hovering {
+        .hover-date, .hover-count {
+          opacity: 1;
+        }
       }
 
     }
