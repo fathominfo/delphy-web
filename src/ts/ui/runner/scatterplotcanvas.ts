@@ -229,7 +229,8 @@ export class ScatterPlotCanvas extends TraceCanvas {
 
 
   handleHover(nodeIndex: number) : void {
-    if (nodeIndex === UNSET) {
+    const scatterData = (this.traceData as ScatterData);
+    if (nodeIndex === UNSET || scatterData.tipMutationCounts[nodeIndex] === undefined) {
       this.dots.forEach((dot:SVGEllipseElement)=>{
         dot.classList.remove("back");
         dot.classList.remove("highlight");
@@ -250,7 +251,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
       }
       hDot.classList.remove("back");
       hDot.classList.add("highlight");
-      const scatterData = (this.traceData as ScatterData);
+
       const date = scatterData.tipDates[nodeIndex];
       const count = scatterData.tipMutationCounts[nodeIndex];
       const dateXFactor = scatterData.tipCoords[nodeIndex][0];
