@@ -128,13 +128,9 @@ export class ScatterPlotCanvas extends TraceCanvas {
     // const viewBox = `0 -${Y_AXIS_OVERFLOW -1 } ${this.yAxisWidth} ${svgHeight + 4}`;
   }
 
-  // setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
-  //   (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
-  // }
-
-  setRangeData(kneeIndex: number, minDate: number, maxDate: number):void {
+  setTipData(minDate: number, maxDate: number):void {
     const mutsAndDates : number[][] = (this.traceData.getDataFnc as ScatterDataFunction)();
-    (this.traceData as ScatterData).setTipData(mutsAndDates, kneeIndex, minDate, maxDate);
+    (this.traceData as ScatterData).setTipData(mutsAndDates, minDate, maxDate);
   }
 
   handleTreeHighlight(treeIndex: number): void {
@@ -142,19 +138,32 @@ export class ScatterPlotCanvas extends TraceCanvas {
   }
 
   draw():void {
+    this.drawRegression();
     this.drawScatterPlot();
     this.drawLabels();
   }
 
 
+  drawRegression() {
+    const { slope, intercept } = (this.traceData as ScatterData);
+    const { dataWidth, dataHeight, regressionLine } = this;
+    const interceptY = MARGIN.top + intercept * dataHeight;
+    regressionLine.setAttribute("x1", "0");
+    regressionLine.setAttribute("y1", `${ interceptY }`);
+    regressionLine.setAttribute("x2", `${ dataWidth }`);
+    regressionLine.setAttribute("y2", `${ interceptY + slope * dataHeight }`);
+
+  }
+
+
   drawScatterPlot():void {
-    const { tipCoords, slope, intercept } = (this.traceData as ScatterData);
+    const { tipCoords } = (this.traceData as ScatterData);
     const { dataWidth, dataHeight, svg, quadTree } = this;
     quadTree.clear();
     tipCoords.forEach(([x, y], i)=>{
       const dot = this.dots[i];
       x = MARGIN.left + x * dataWidth;
-      y = MARGIN.top + y * dataHeight
+      y = MARGIN.top + (1 - y) * dataHeight
       dot.setAttribute("cx", `${x}`);
       dot.setAttribute("cy", `${y}`);
       dot.setAttribute("rx", `${DOT_RADIUS}`);

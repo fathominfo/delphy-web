@@ -976,7 +976,7 @@ export class RunUI extends UIScreen {
         } else if (canvas instanceof GammaHistCanvas) {
           canvas.setRangeData(kneeIndex);
         } else if (canvas instanceof ScatterPlotCanvas) {
-          canvas.setRangeData(kneeIndex, minDate, maxDate);
+          canvas.setTipData(minDate, maxDate);
         }
       }
     });

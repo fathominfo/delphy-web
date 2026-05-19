@@ -25,8 +25,7 @@ export class ScatterData extends TraceData {
     super(label, unit, getDataFnc);
   }
 
-  setTipData(data:number[][], kneeIndex: number, minDate: number, maxDate: number):void {
-    this.setKneeIndex(data.length, kneeIndex);
+  setTipData(data:number[][], minDate: number, maxDate: number):void {
     this.tipMutationCounts.length = 0;
     this.tipDates.length = 0;
     data.forEach(([mutCount, date], i)=>{
@@ -49,7 +48,7 @@ export class ScatterData extends TraceData {
       const date = this.tipDates[i];
       if (Number.isFinite(count) && Number.isFinite(date)) {
         const x = (date - this.dateMin) / dateRange;
-        const y = 1 - count / this.countMax;
+        const y = count / this.countMax;
         this.tipCoords[i] = [x, y];
       }
     });
@@ -85,6 +84,8 @@ export class ScatterData extends TraceData {
     this.slope = (L * sumXY - sumX * sumY) / (L*sumXsq - sumX * sumX);
     this.intercept = (sumY - this.slope * sumX)/L;
     this.r2 = Math.pow((L*sumXY - sumX*sumY)/Math.sqrt((L*sumXsq-sumX*sumX)*(L*sumYsq-sumY*sumY)),2);
+    this.slope = -1;
+    this.intercept = 0.25;
   }
 
 
