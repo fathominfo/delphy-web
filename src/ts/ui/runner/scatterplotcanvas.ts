@@ -1,5 +1,5 @@
 import { toFullDateString } from "../../pythia/dates";
-import { NO_VALUE, safeLabel, UNSET } from "../common";
+import { UNSET } from "../common";
 import { HoverNodeFnc, ScatterDataFunction } from "./runcommon";
 import { ScatterData } from "./scatterdata";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
@@ -147,11 +147,12 @@ export class ScatterPlotCanvas extends TraceCanvas {
   drawRegression() {
     const { slope, intercept } = (this.traceData as ScatterData);
     const { dataWidth, dataHeight, regressionLine } = this;
-    const interceptY = MARGIN.top + intercept * dataHeight;
+    const interceptY = MARGIN.top + dataHeight - intercept * dataHeight;
+    const endY = interceptY - slope * dataHeight;
     regressionLine.setAttribute("x1", "0");
     regressionLine.setAttribute("y1", `${ interceptY }`);
     regressionLine.setAttribute("x2", `${ dataWidth }`);
-    regressionLine.setAttribute("y2", `${ interceptY + slope * dataHeight }`);
+    regressionLine.setAttribute("y2", `${ endY }`);
 
   }
 
@@ -240,7 +241,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
       this.maxSpan.classList.remove("back");
       this.tickLabels.forEach(({label})=>label.classList.remove("back"));
     } else {
-      this.dots.forEach((dot:SVGEllipseElement, i: number)=>{
+      this.dots.forEach((dot:SVGEllipseElement)=>{
         dot.classList.add("back");
         dot.classList.remove("highlight");
       });

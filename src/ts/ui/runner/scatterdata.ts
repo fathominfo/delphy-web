@@ -1,5 +1,4 @@
-import { toFullDateString } from '../../pythia/dates';
-import { log10, NO_VALUE, numericSort, UNSET } from '../common';
+import { UNSET } from '../common';
 import { ScatterDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
 
@@ -13,11 +12,11 @@ export class ScatterData extends TraceData {
   countMax: number = UNSET
   dateMin: number = UNSET;
   dateMax: number = UNSET;
+  validTips: number[][] = []; /* raw values of date, count */
   tipCoords: number[][] = []; /* scaled 0-1 */
   /* for the linear regression */
   slope: number = UNSET;
   intercept: number = UNSET;
-  r2: number = UNSET;
 
 
 
@@ -42,6 +41,7 @@ export class ScatterData extends TraceData {
     // this.dateMin = Math.min(...safeDates);
     // this.dateMax = Math.max(...safeDates);
 
+    this.validTips.length = 0;
     this.tipCoords.length = 0;
     const dateRange = this.dateMax - this.dateMin;
     this.tipMutationCounts.forEach((count, i)=>{
@@ -49,6 +49,7 @@ export class ScatterData extends TraceData {
       if (Number.isFinite(count) && Number.isFinite(date)) {
         const x = (date - this.dateMin) / dateRange;
         const y = count / this.countMax;
+        this.validTips[i] = [date, count]
         this.tipCoords[i] = [x, y];
       }
     });
@@ -66,26 +67,23 @@ export class ScatterData extends TraceData {
   }
 
 
-  /* based on https://stackoverflow.com/a/31566791 */
+  /* based on https://mathworld.wolfram.com/LeastSquaresFitting.html, lines 12 and 14 */
   setLinearRegression(){
     const L = this.tipCoords.length;
     let sumX = 0;
     let sumY = 0;
     let sumXY = 0;
-    let sumXsq = 0;
-    let sumYsq = 0;
+    let sumX2 = 0;
+    // let sumY2 = 0;
     this.tipCoords.forEach( ([date, count])=>{
       sumX += date;
       sumY += count;
       sumXY += (date*count);
-      sumXsq += (date*date);
-      sumYsq += (count*count);
+      sumX2 += (date*date);
+      // sumY2 += (count*count);
     });
-    this.slope = (L * sumXY - sumX * sumY) / (L*sumXsq - sumX * sumX);
-    this.intercept = (sumY - this.slope * sumX)/L;
-    this.r2 = Math.pow((L*sumXY - sumX*sumY)/Math.sqrt((L*sumXsq-sumX*sumX)*(L*sumYsq-sumY*sumY)),2);
-    this.slope = -1;
-    this.intercept = 0.25;
+    this.slope = (L * sumXY - sumX * sumY) / (L * sumX2 - sumX * sumX);
+    this.intercept = (sumY * sumX2 - sumX * sumXY) / (L * sumX2 - sumX * sumX);
   }
 
 

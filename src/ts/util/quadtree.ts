@@ -36,7 +36,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 const pow = Math.pow;
-const distSquared = (o1: any, o2: any)=>{
+const distSquared = (o1: any, o2: any)=>{ // eslint-disable-line @typescript-eslint/no-explicit-any
   return pow(o1.x - o2.x, 2) + pow(o1.y - o2.y, 2);
 };
 const round = Math.round;
@@ -48,7 +48,7 @@ const DEFAULT_PROXIMITY = 50;
 export type Quadtreeable = {
   x: number,
   y: number,
-  obj: any
+  obj: any    // eslint-disable-line @typescript-eslint/no-explicit-any
 };
 
 
