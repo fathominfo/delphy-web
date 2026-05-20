@@ -40,6 +40,7 @@ type LabelY = {
 };
 
 
+/* here to enable https://academic.oup.com/ve/article/2/1/vew007/1753488 */
 export class ScatterPlotCanvas extends TraceCanvas {
 
   minSpan: SVGTextElement;
@@ -149,19 +150,40 @@ export class ScatterPlotCanvas extends TraceCanvas {
   drawRegression() {
     const { slope, intercept } = (this.traceData as ScatterData);
     const { dataWidth, dataHeight, regressionLine } = this;
-    let interceptY = MARGIN.top + dataHeight - intercept * dataHeight;
-    const endY = interceptY - slope * dataHeight;
+    const interceptY = MARGIN.top + dataHeight - intercept * dataHeight;
+    const endVal = intercept + slope;
     let x1 = 0;
+    let x2 = dataWidth;
+    let y1 = interceptY;
+    let y2 = interceptY - slope * dataHeight;
     if (intercept < 0) {
       /* how much of the range is below 0? */
-      const xIntercept = Math.abs(intercept) / slope;
+      const xIntercept = Math.abs(intercept) / Math.abs(slope);
       x1 = xIntercept * dataWidth;
-      interceptY = MARGIN.top + dataHeight;
+      y1 = MARGIN.top + dataHeight;
+    } else if (intercept > 1) {
+      /* how much of the range is above 1? */
+      const endValAdjusted = endVal - 1;
+      const x1Intercept = 1 - Math.abs(endValAdjusted) / Math.abs(slope);
+      x1 = x1Intercept * dataWidth;
+      y1 = MARGIN.top;
     }
-    regressionLine.setAttribute("x1", `${x1}`);
-    regressionLine.setAttribute("y1", `${ interceptY }`);
-    regressionLine.setAttribute("x2", `${ dataWidth }`);
-    regressionLine.setAttribute("y2", `${ endY }`);
+    if (endVal < 0 ) {
+      const xIntercept = 1 - Math.abs(endVal) / Math.abs(slope);
+      x2 = xIntercept * dataWidth;
+      y2 = MARGIN.top + dataHeight;
+    } else if (endVal > 1) {
+      const xIntercept = 1 - Math.abs(endVal - 1) / Math.abs(slope);
+      x2 = xIntercept * dataWidth;
+      y2 = MARGIN.top;
+    }
+
+
+
+    regressionLine.setAttribute("x1", `${ x1 }`);
+    regressionLine.setAttribute("y1", `${ y1 }`);
+    regressionLine.setAttribute("x2", `${ x2 }`);
+    regressionLine.setAttribute("y2", `${ y2 }`);
   }
 
 
