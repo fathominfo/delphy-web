@@ -1018,6 +1018,14 @@
       min-width: var(--indicator-pop-module-width);
       max-width: var(--indicator-pop-module-width);
 
+
+      .sup {
+        display: inline-block;
+        position: relative;
+        top: -5px;
+        font-size: 10px;
+      }
+
       .displays {
         padding: 0 0;
         height: var(--trace-chart-width);
@@ -1124,6 +1132,10 @@
 
       .regression {
         stroke: var(--chart-graph-run-trend-stroke);
+        transition: opacity 0.15s;
+        &.back {
+          opacity: 0.25;
+        }
       }
 
       svg.hovering {

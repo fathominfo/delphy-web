@@ -274,13 +274,17 @@ export class RunUI extends UIScreen {
 
 
     this.handleNodeHover = (nodeIndex: number) => {
+      let name = '';
+      if (nodeIndex !== UNSET) {
+        name = this.sharedState.getTipId(nodeIndex);
+      }
       requestAnimationFrame(()=>{
         if (this.pythia) {
           const mccRef = this.pythia.getMcc();
           const tree = mccRef.getMcc();
           this.mccTreeCanvas.handleHover(nodeIndex, tree);
           this.scatterPlots.forEach(canvas=>{
-            canvas.handleHover(nodeIndex);
+            canvas.handleHover(nodeIndex, name);
           });
           mccRef.release();
         }

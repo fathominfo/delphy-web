@@ -17,6 +17,8 @@ export class ScatterData extends TraceData {
   /* for the linear regression */
   slope: number = UNSET;
   intercept: number = UNSET;
+  /* https://en.wikipedia.org/wiki/Coefficient_of_determination  */
+  r2: number = UNSET;
 
 
 
@@ -74,16 +76,22 @@ export class ScatterData extends TraceData {
     let sumY = 0;
     let sumXY = 0;
     let sumX2 = 0;
-    // let sumY2 = 0;
+    let sumY2 = 0;
     this.tipCoords.forEach( ([date, count])=>{
       sumX += date;
       sumY += count;
       sumXY += (date*count);
       sumX2 += (date*date);
-      // sumY2 += (count*count);
+      sumY2 += (count*count);
     });
-    this.slope = (L * sumXY - sumX * sumY) / (L * sumX2 - sumX * sumX);
-    this.intercept = (sumY * sumX2 - sumX * sumXY) / (L * sumX2 - sumX * sumX);
+    const xxy = L * sumXY - sumX * sumY;
+    const xx = L * sumX2 - sumX * sumX;
+    const yy = L * sumY2 - sumY * sumY;
+    this.slope = xxy / xx;
+    this.intercept = (sumY * sumX2 - sumX * sumXY) / xx;
+    const r = xxy / Math.sqrt(xx * yy);
+    this.r2 = r * r;
+
   }
 
 
