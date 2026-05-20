@@ -284,7 +284,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
       } else {
         this.maxSpan.classList.remove("back");
       }
-      const countY = MARGIN.top + countYFactor * this.dataHeight;
+      const countY = MARGIN.top + (1-countYFactor) * this.dataHeight;
       this.hoverDate.textContent = `${ toFullDateString(date) }`;
       this.hoverDate.setAttribute("x", `${ dateX }`);
       this.hoverCount.textContent = `${ count }`;
