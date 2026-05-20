@@ -86,7 +86,8 @@ export class Distribution {
           increment = this.bandwidth / 3;
         if (increment > 1) {
           medianDate = Math.floor(medianDate);
-          increment = 1;
+          if (increment < 5) increment = 1;
+          else increment = Math.round(increment);
         }
         for (let d = medianDate; d < this.max; d += increment) {
           const sample = this.getCumulativeProbability(d),
