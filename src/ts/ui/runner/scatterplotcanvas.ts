@@ -39,8 +39,16 @@ type LabelY = {
   y: number
 };
 
-
-/* here to enable https://academic.oup.com/ve/article/2/1/vew007/1753488 */
+/*
+TODO:
+this is sorta framed as a generic scatter plot chart, but in truth
+it is tightly coupled to a plot of tip mutation count vs tip time
+à la TempEst https://academic.oup.com/ve/article/2/1/vew007/1753488.
+If we have the need for another scatter plot, we should be able to
+abstract the ScatterDataFunction to passing in the x and y values
+as parallel arrays, but not gonna go to that trouble until we need to.
+[mark 260521]
+*/
 export class ScatterPlotCanvas extends TraceCanvas {
 
   minSpan: SVGTextElement;
@@ -131,9 +139,10 @@ export class ScatterPlotCanvas extends TraceCanvas {
     // const viewBox = `0 -${Y_AXIS_OVERFLOW -1 } ${this.yAxisWidth} ${svgHeight + 4}`;
   }
 
-  setTipData(minDate: number, maxDate: number):void {
-    const mutsAndDates : number[][] = (this.traceData.getDataFnc as ScatterDataFunction)();
-    (this.traceData as ScatterData).setTipData(mutsAndDates, minDate, maxDate);
+  setTipData(kneeIndex: number, minDate: number, maxDate: number):void {
+    const {mutCountHist, nodeDateHist} = (this.traceData.getDataFnc as ScatterDataFunction)();
+    (this.traceData as ScatterData).setTipData(mutCountHist, nodeDateHist,
+      kneeIndex, minDate, maxDate);
   }
 
   handleTreeHighlight(treeIndex: number): void {
@@ -236,7 +245,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
     minSpan.textContent = toFullDateString(minDate);
     maxSpan.textContent = toFullDateString(maxDate);
     const scatterData = (this.traceData as ScatterData);
-    this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${(scatterData.r2 * 100).toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+    this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
   }
 
 
@@ -273,7 +282,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
       this.maxSpan.classList.remove("back");
       this.regressionLine.classList.remove("back");
       this.tickLabels.forEach(({label})=>label.classList.remove("back"));
-      this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${(scatterData.r2 * 100).toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+      this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
     } else {
       this.regressionLine.classList.add("back");
       this.dots.forEach((dot:SVGEllipseElement)=>{
@@ -316,7 +325,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
       const countY = MARGIN.top + (1-countYFactor) * this.dataHeight;
       this.hoverDate.textContent = `${ toFullDateString(date) }`;
       this.hoverDate.setAttribute("x", `${ dateX }`);
-      this.hoverCount.textContent = `${ count }`;
+      this.hoverCount.textContent = `${ count.toLocaleString(undefined, {maximumFractionDigits: 1}) }`;
       this.hoverCount.setAttribute("y", `${ countY }`);
       this.tickLabels.forEach(({label, y})=>{
         label.classList.toggle("back", Math.abs(y - countY) < LABEL_HEIGHT);

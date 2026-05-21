@@ -26,23 +26,28 @@ export class ScatterData extends TraceData {
     super(label, unit, getDataFnc);
   }
 
-  setTipData(data:number[][], minDate: number, maxDate: number):void {
-    this.tipMutationCounts.length = 0;
-    this.tipDates.length = 0;
-    data.forEach(([mutCount, date], i)=>{
-      this.tipMutationCounts[i] = mutCount;
-      this.tipDates[i] = date;
-    });
+  setTipData(mutCountHist:number[][], nodeDateHist: number[][],
+    kneeIndex: number, minDate: number, maxDate: number):void
+  {
+    const treeCount = mutCountHist.length;
+    const validCount = mutCountHist.length - kneeIndex;
+    const nodeCount = mutCountHist[0].length;
+    const tipCount = (nodeCount + 1) / 2;
+    for (let i = 0; i < tipCount; i++) {
+      let sumCount = 0;
+      let sumDate = 0;
+      for (let t = kneeIndex; t < treeCount; t++) {
+        sumCount += mutCountHist[t][i];
+        sumDate += nodeDateHist[t][i];
+      }
+      this.tipMutationCounts[i] = sumCount / validCount;
+      this.tipDates[i] = sumDate / validCount;
+    }
     const safeCounts = this.tipMutationCounts.filter(n=>Number.isFinite(n));
-    // const safeDates = this.tipDates.filter(n=>Number.isFinite(n));
-
     this.countMin = 0; /* use a 0 baseline */
-    this.countMax = Math.max(...safeCounts);
+    this.countMax = Math.ceil(Math.max(...safeCounts));
     this.dateMin = minDate;
     this.dateMax = maxDate;
-    // this.dateMin = Math.min(...safeDates);
-    // this.dateMax = Math.max(...safeDates);
-
     this.validTips.length = 0;
     this.tipCoords.length = 0;
     const dateRange = this.dateMax - this.dateMin;
@@ -91,7 +96,6 @@ export class ScatterData extends TraceData {
     this.intercept = (sumY * sumX2 - sumX * sumXY) / xx;
     const r = xxy / Math.sqrt(xx * yy);
     this.r2 = r * r;
-
   }
 
 

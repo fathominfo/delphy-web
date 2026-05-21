@@ -1,13 +1,13 @@
 import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
-import {ExpPopModel, SkygridPopModel} from '../../pythia/delphy_api';
+import {ExpPopModel, PhyloTree, SkygridPopModel} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {HistCanvas} from './histcanvas';
 import {DateLabel} from '../datelabel';
 import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
-import { GammaDataFunction, HistDataFunction, hoverListenerType, HoverNodeFnc, kneeHoverListenerType, ScatterDataFunction, statHoverListenerType, SummaryStat } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, HoverNodeFnc, kneeHoverListenerType, ScatterDataFunction, statHoverListenerType, SummaryStat, TempestData } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
@@ -980,39 +980,29 @@ export class RunUI extends UIScreen {
         } else if (canvas instanceof GammaHistCanvas) {
           canvas.setRangeData(kneeIndex);
         } else if (canvas instanceof ScatterPlotCanvas) {
-          canvas.setTipData(minDate, maxDate);
+          canvas.setTipData(kneeIndex, minDate, maxDate);
         }
       }
     });
   }
 
-  private gatherTipCheckData() : number[][] {
+  private gatherTipCheckData() : TempestData {
     const pythia = this.pythia as Pythia;
-    const mccRef = pythia.getMcc();
-    const mcc = mccRef.getMcc();
-    const treeIndex = mcc.getMasterBaseTreeIndex();
-    const mccTree = mcc.getBaseTree(treeIndex);
-    const tipMutsAndDates: number[][] = [];
-    const root = mccTree.getRootIndex();
-    const q = [{node: root, inheritedMutCount: 0}];
-    while (q.length > 0) {
-      const item = q.shift();
-      if (item !== undefined) {
-        const {node, inheritedMutCount} = item;
-        const mutCount = inheritedMutCount + mccTree.getMutationsOf(node).length;
-        const left = mccTree.getLeftChildIndexOf(node);
-        if (left === UNSET) {
-          const date = (mccTree.getMinTimeOf(node) + mccTree.getMaxTimeOf(node)) / 2;
-          tipMutsAndDates.push([mutCount, date]);
-        } else {
-          const right = mccTree.getRightChildIndexOf(node);
-          q.push({node: left, inheritedMutCount: mutCount});
-          q.push({node: right, inheritedMutCount: mutCount});
+    const treeHist = pythia.treeHist;
+    const treeCount = treeHist.length;
+    const mutCountHist = pythia.nodeMutCountHist;
+    const nodeDateHist: number[][] = new Array(treeCount);
+    if (treeCount > 0) {
+      const tipCount = (treeHist[0].getSize() + 1) / 2;
+      treeHist.forEach((tree: PhyloTree, t: number)=>{
+        const tipDates: number[] = new Array(tipCount)
+        for (let i = 0; i < tipCount; i++) {
+          tipDates[i] = (tree.getMinTimeOf(i) + tree.getMaxTimeOf(i)) / 2;
         }
-      }
+        nodeDateHist[t] = tipDates;
+      });
     }
-    mccRef.release();
-    return tipMutsAndDates;
+    return {mutCountHist, nodeDateHist};
   }
 
 
