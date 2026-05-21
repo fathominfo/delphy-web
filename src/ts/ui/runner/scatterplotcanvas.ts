@@ -65,7 +65,8 @@ export class ScatterPlotCanvas extends TraceCanvas {
   hoverDate: SVGTextElement;
   hoverCount: SVGTextElement;
   tickLabels: LabelY[] = [];
-  subTitle: HTMLParagraphElement;
+  subtitleElement: HTMLParagraphElement;
+  subtitle: string;
 
 
 
@@ -78,9 +79,10 @@ export class ScatterPlotCanvas extends TraceCanvas {
       className = label.toLowerCase().replace(/ /g, '-').replace(/[()<>]/g, '');
     }
     super(label, '', className, getDataFnc, SCATTER_TEMPLATE);
-    this.subTitle = this.container.querySelector(".header .subtitle") as HTMLParagraphElement;
+    this.subtitleElement = this.container.querySelector(".header .subtitle") as HTMLParagraphElement;
+    this.subtitle = subtitle;
     if (subtitle !== '') {
-      this.subTitle.innerHTML = subtitle;
+      this.subtitleElement.innerHTML = subtitle;
     }
     this.traceData = new ScatterData(label, '', getDataFnc);
     this.minSpan = this.svg.querySelector(".min-date") as SVGTextElement;
@@ -241,7 +243,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
     minSpan.textContent = toFullDateString(minDate);
     maxSpan.textContent = toFullDateString(maxDate);
     const scatterData = (this.traceData as ScatterData);
-    this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+    // this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
   }
 
 
@@ -278,7 +280,8 @@ export class ScatterPlotCanvas extends TraceCanvas {
       this.maxSpan.classList.remove("back");
       this.regressionLine.classList.remove("back");
       this.tickLabels.forEach(({label})=>label.classList.remove("back"));
-      this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+      // this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+      this.subtitleElement.textContent = this.subtitle;
     } else {
       this.regressionLine.classList.add("back");
       this.dots.forEach((dot:SVGEllipseElement)=>{
@@ -292,7 +295,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
       }
       hDot.classList.remove("back");
       hDot.classList.add("highlight");
-      this.subTitle.innerHTML = `Tip ${nodeName}`;
+      this.subtitleElement.innerHTML = `Tip ${nodeName}`;
 
       const date = scatterData.tipDates[nodeIndex];
       const count = scatterData.tipMutationCounts[nodeIndex];

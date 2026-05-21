@@ -365,7 +365,7 @@ export class RunUI extends UIScreen {
     };
     this.traceChartConfig[TraceChart.tipCheck] = {
       name: `Mutation Count vs. Date`,
-      className: "mutcount-date", subtitle: "Tip date and number of mutations should show a correlation",
+      className: "mutcount-date", subtitle: "Correlation of tip date and number of mutations",
       dataFnc: tipCheckFnc
     };
     this.traceChartConfig[TraceChart.logPosterior] = {
