@@ -1,6 +1,6 @@
 import { getPercentLabel, UNSET } from '../common';
 import { DisplayNode } from './displaynode';
-import { HoverCallback, NodeCallback } from './lineagescommon';
+import { HoverCallback, NodeCallback } from './selectcommon';
 
 const DEBUG = false;
 
@@ -24,7 +24,7 @@ export class NodeDetails {
   rootSelectCallback: NodeCallback;
 
   constructor(dismissCallback: NodeCallback, nodeHighlightCallback: HoverCallback, rootSelectCallback: NodeCallback) {
-    this.div = document.querySelector(".lineages--node-info") as HTMLDivElement;
+    this.div = document.querySelector(".select--node-info") as HTMLDivElement;
     this.nodeName = this.div.querySelector(".node-name") as HTMLSpanElement;
 
     const tipDiv = this.div.querySelector(".node-info--tip") as HTMLDivElement;

@@ -9,8 +9,7 @@ import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./lineagescommon";
-import { NodeMutationsData } from "./nodemutationsdata";
+import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 import { MccConfig } from "../mccconfig";
 
@@ -56,7 +55,6 @@ export type ChartData = {
   prevalenceNodes : DisplayNode[],
   minDate: number,
   maxDate: number
-  nodeComparisonData: NodeMutationsData[],
   nodePairs: NodePair[],
   nodes: DisplayNode[],
   rootNode: TreeNode | null,
@@ -76,7 +74,6 @@ const defaultChartData : ChartData = {
   prevalenceNodes: [],
   minDate: UNSET,
   maxDate: UNSET,
-  nodeComparisonData: [],
   nodePairs: [],
   nodes: [],
   rootNode: null,
@@ -90,7 +87,7 @@ const defaultChartData : ChartData = {
 
 
 
-export class CoreLineagesData {
+export class CoreSelectData {
 
   /* interface to push updates */
   update: UpdateFunction;
@@ -729,11 +726,6 @@ export class CoreLineagesData {
       });
       // console.log(`${currentNodes.length} nodes`, currentIndices)
       chartData.nodes = currentNodes;
-      chartData.nodeComparisonData = chartData.nodePairs.map(np=>{
-        const ancestorSeries: Distribution = np.ancestor.series as Distribution;
-        const descendantSeries: Distribution = np.descendant.series as Distribution;
-        return new NodeMutationsData(np, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
-      });
       /*
       add an empty node before the root to represent the uninfected population
       in the prevalence chart

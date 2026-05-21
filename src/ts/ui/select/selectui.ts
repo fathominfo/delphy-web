@@ -6,11 +6,11 @@ import { HoverCallback, NodeCallback,
   OpenMutationPageFncType, TreeHint,  TREE_HINT_CLASSES,
   MetadataToggleCallback,
   DismissNodeCallback,
-  MultiNodeCallback} from './lineagescommon';
+  MultiNodeCallback} from './selectcommon';
 import autocomplete from 'autocompleter';
 import { NodeSchematic } from './nodeschematic';
-import { LineagesTreeCanvas } from './lineagestreecanvas';
-import { ChartData, CoreLineagesData, UpdateFunction } from './corelineagesdata';
+import { SelectTreeCanvas } from './selecttreecanvas';
+import { ChartData, CoreSelectData, UpdateFunction } from './coreselectdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
@@ -23,8 +23,8 @@ const AC_SUGGESTION_TEMPLATE = document.querySelector(".autocomplete-suggestion"
 AC_SUGGESTION_TEMPLATE.remove();
 
 
-export class LineagesUI extends MccUI {
-  coreData: CoreLineagesData;
+export class SelectUI extends MccUI {
+  coreData: CoreSelectData;
   nodeSchematic: NodeSchematic;
   nodeDetails: NodeDetails;
   metadataLegend: MetadataLegend;
@@ -39,9 +39,9 @@ export class LineagesUI extends MccUI {
 
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector, "#lineages .tree-canvas");
+    super(sharedState, divSelector, "#select .tree-canvas");
     const updateCallback: UpdateFunction = (data: ChartData)=>this.update(data);
-    this.coreData = new CoreLineagesData(sharedState, updateCallback);
+    this.coreData = new CoreSelectData(sharedState, updateCallback);
     const dismissCallback: DismissNodeCallback = (nodeIndex: number | number[])=>this.handleNodeDismiss(nodeIndex);
     const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>this.updateHighlight(nodeIndex, date, mutation);
     let previousNode = UNSET
@@ -70,9 +70,9 @@ export class LineagesUI extends MccUI {
     const legendCallback: MultiNodeCallback = (nodeIndices: number[] | null)=>this.highlightNodes(nodeIndices);
     const canvas = this.mccTreeCanvas.getCanvas();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.mccTreeCanvas = new LineagesTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
+    this.mccTreeCanvas = new SelectTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
-    (this.mccTreeCanvas as LineagesTreeCanvas).highlightedNode = node;
+    (this.mccTreeCanvas as SelectTreeCanvas).highlightedNode = node;
     this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
       dismissCallback, rootSelectCallback, toggleAutoSelectCallback, clearCuratedCallback, introsOnlyCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
@@ -85,7 +85,7 @@ export class LineagesUI extends MccUI {
     const lookupForm = document.querySelector(".id-lookup form") as HTMLFormElement;
     lookupForm.addEventListener("submit", e => e.preventDefault());
 
-    const constrainHoverByCredibilityInput = document.querySelector("#lineages--constrain-selection") as HTMLInputElement;
+    const constrainHoverByCredibilityInput = document.querySelector("#select--constrain-selection") as HTMLInputElement;
     constrainHoverByCredibilityInput.addEventListener('change', ()=>{
       this.coreData.setCredibilityConstrained(constrainHoverByCredibilityInput.checked);
     });
@@ -210,7 +210,7 @@ export class LineagesUI extends MccUI {
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
-    (this.mccTreeCanvas as LineagesTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
+    (this.mccTreeCanvas as SelectTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
     this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
@@ -224,7 +224,7 @@ export class LineagesUI extends MccUI {
   }
 
   requestDraw() {
-    (this.mccTreeCanvas as LineagesTreeCanvas).requestDrawSelection();
+    (this.mccTreeCanvas as SelectTreeCanvas).requestDrawSelection();
     this.nodeSchematic.requestRender();
     this.nodeDetails.requestDraw();
     this.metadataLegend.requestDraw();
@@ -255,7 +255,7 @@ export class LineagesUI extends MccUI {
 
   highlightNodes(nodeIndices: number[] | null) {
     requestAnimationFrame(()=>{
-      (this.mccTreeCanvas as LineagesTreeCanvas).highlightNodes(nodeIndices);
+      (this.mccTreeCanvas as SelectTreeCanvas).highlightNodes(nodeIndices);
       this.nodeSchematic.highlightNodes(nodeIndices);
     });
   }
@@ -266,7 +266,7 @@ export class LineagesUI extends MccUI {
   highlightCharts() {
     // const { node, date, mutation } = this.coreData.getHighlights();
     const { node, date } = this.coreData.getHighlights();
-    (this.mccTreeCanvas as LineagesTreeCanvas).highlightNode(node, date);
+    (this.mccTreeCanvas as SelectTreeCanvas).highlightNode(node, date);
     let highlightNode = node;
     if (highlightNode === null || highlightNode.index === UNSET) {
       highlightNode = this.coreData.getRootNode();

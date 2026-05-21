@@ -1,22 +1,22 @@
 import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
-import { IntroductionData } from "./corelineagesdata";
+import { IntroductionData } from "./coreselectdata";
 import { DisplayNode } from "./displaynode";
-import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./lineagescommon";
+import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./selectcommon";
 import { TreeNode } from "./selectiontreedata";
 
 
-const METADATA_FIELD_SELECTOR = "#lineages--metadata-transitions label";
+const METADATA_FIELD_SELECTOR = "#select--metadata-transitions label";
 
-const CONTROLS = document.querySelector("#lineages #lineages--schematic-controls") as HTMLDivElement;
-const COUNT_SPAN = document.querySelector("#lineages--schematic-count") as HTMLSpanElement;
-const AUTO_BUTTON = CONTROLS.querySelector("#lineages--schematic-auto") as HTMLButtonElement;
-const CLEAR_BUTTON = CONTROLS.querySelector("#lineages--schematic-clear") as HTMLButtonElement;
-const INTROS_ONLY = CONTROLS.querySelector("#lineages--intros-only") as HTMLParagraphElement;
+const CONTROLS = document.querySelector("#select #select--schematic-controls") as HTMLDivElement;
+const COUNT_SPAN = document.querySelector("#select--schematic-count") as HTMLSpanElement;
+const AUTO_BUTTON = CONTROLS.querySelector("#select--schematic-auto") as HTMLButtonElement;
+const CLEAR_BUTTON = CONTROLS.querySelector("#select--schematic-clear") as HTMLButtonElement;
+const INTROS_ONLY = CONTROLS.querySelector("#select--intros-only") as HTMLParagraphElement;
 const INTROS_ONLY_INPUT = INTROS_ONLY.querySelector("button") as HTMLButtonElement;
 
-const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#lineages--peak-prevalence-less") as HTMLButtonElement;
-const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#lineages--peak-prevalence-more") as HTMLButtonElement;
-const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#lineages--peak-prevalence--readout") as HTMLSpanElement
+const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#select--peak-prevalence-less") as HTMLButtonElement;
+const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#select--peak-prevalence-more") as HTMLButtonElement;
+const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#select--peak-prevalence-readout") as HTMLSpanElement
 const METADATA_TRANSITION_TEMPLATE = CONTROLS.querySelector(METADATA_FIELD_SELECTOR) as HTMLDivElement;
 const METADATA_PARENT = METADATA_TRANSITION_TEMPLATE.parentNode as HTMLDivElement;
 METADATA_TRANSITION_TEMPLATE.remove();
@@ -413,7 +413,7 @@ export class NodeSchematic {
         if (mdField.toLowerCase() === "id" || mdField.toLowerCase() === "accession" ) return;
         const mdDiv = METADATA_TRANSITION_TEMPLATE.cloneNode(true) as HTMLDivElement;
         const input = mdDiv.querySelector("input") as HTMLInputElement;
-        const fieldSpan = mdDiv.querySelector(".lineages--metadata-field") as HTMLSpanElement;
+        const fieldSpan = mdDiv.querySelector(".select--metadata-field") as HTMLSpanElement;
         fieldSpan.textContent = label;
         input.checked = !!checked;
         input.addEventListener("input", ()=>{

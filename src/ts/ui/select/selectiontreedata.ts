@@ -1,7 +1,7 @@
 import { SummaryTree } from "../../pythia/delphy_api";
 import { UNSET } from "../common";
 import { DisplayNode } from "./displaynode";
-import { getMRCA, getYFunction } from "./lineagescommon";
+import { getMRCA, getYFunction } from "./selectcommon";
 
 
 export type MRCANodeCreator = (nodeIndex: number  )=>DisplayNode;

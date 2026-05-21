@@ -1,12 +1,12 @@
 import { ColorDict, ColorOption, MetadataColorOption, UNSET } from "../common";
 import { MccConfig } from "../mccconfig";
 import { NodeMetadata } from "../nodemetadata";
-import { MultiNodeCallback } from "./lineagescommon";
+import { MultiNodeCallback } from "./selectcommon";
 
 
 const ITEM_SELECTOR = ".legend-item";
-const LEGEND = document.getElementById("lineages--metadata-legend") as HTMLDivElement;
-const CONTAINER = LEGEND.querySelector("#lineages--metadata-legend--list") as HTMLDivElement;
+const LEGEND = document.getElementById("select--metadata-legend") as HTMLDivElement;
+const CONTAINER = LEGEND.querySelector("#select--metadata-legend--list") as HTMLDivElement;
 const TEMPLATE = CONTAINER.querySelector(ITEM_SELECTOR) as HTMLDivElement;
 TEMPLATE.remove();
 

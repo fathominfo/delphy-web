@@ -48,7 +48,7 @@ export class MutationRow {
   getNodeRelativeSize: (tipCount: number) => number;
   updateHoverRow: RowFunctionType;
   updateHoverNode: NodeFunctionType;
-  goToLineages: NodeFunctionType;
+  goToSelect: NodeFunctionType;
   shiftRow: (row: MutationRow, direction: number) => void;
   setMutationActive: (name: string, active: boolean) => void;
   minDate: number;
@@ -73,7 +73,7 @@ export class MutationRow {
     getNodeRelativeSize: (tipCount: number) => number,
     updateHoverRow: RowFunctionType,
     updateHoverNode: NodeFunctionType,
-    goToLineages: NodeFunctionType,
+    goToSelect: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
     setMutationActive: (name: string, active: boolean) => void,
     minDate: number, maxDate: number,
@@ -137,7 +137,7 @@ export class MutationRow {
 
     this.updateHoverRow = updateHoverRow;
     this.updateHoverNode = updateHoverNode;
-    this.goToLineages = goToLineages;
+    this.goToSelect = goToSelect;
 
     const nameDiv:HTMLDivElement|null = this.rowDiv.querySelector(".mutation-name");
     if (!nameDiv) {
@@ -215,7 +215,7 @@ export class MutationRow {
         const nodeHtml = NODE_DETAIL_TEMPLATE.cloneNode(true) as HTMLElement;
         nodeHtml.addEventListener("mouseover", () => this.updateHoverNode(node.index));
         nodeHtml.addEventListener("mouseout", () => this.updateHoverNode());
-        nodeHtml.addEventListener("click", () => this.goToLineages(node.index));
+        nodeHtml.addEventListener("click", () => this.goToSelect(node.index));
         nodeList.appendChild(nodeHtml);
         nodeHtml.setAttribute("data-node-index", `${node.index}`);
         const prevalence = node.count / totalCount;

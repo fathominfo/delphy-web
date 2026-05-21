@@ -3,7 +3,7 @@ import { PdfCanvas } from "../../util/pdfcanvas";
 import { ColorOption, getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
-import { NodeCallback, NodePair } from "./lineagescommon";
+import { NodeCallback, NodePair } from "./selectcommon";
 import { DisplayNode } from "./displaynode";
 
 const INFERRED_NODE_RADIUS = 4;
@@ -13,7 +13,7 @@ const PUSHBACK_ALPHA = 0.4;
 
 
 
-export class LineagesTreeCanvas extends MccTreeCanvas {
+export class SelectTreeCanvas extends MccTreeCanvas {
   nodes: DisplayNode[] = [];
   descendants: NodePair[] = [];
   subtreeNode: DisplayNode | null = null;
@@ -124,7 +124,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
   _other_ than the tree.
 
   However! The DisplayNode object that gets passed in ultimately
-  comes from CoreLineagesData, and it is a persistent object
+  comes from CoreSelectData, and it is a persistent object
   whose inner data changes. So whether it's 1) passing in an
   object, or 2) checking whether the highlightedNode has a
   match in this.nodes, both are misleading. Not sure if we can
@@ -215,7 +215,7 @@ export class LineagesTreeCanvas extends MccTreeCanvas {
     } else {
       ctx.strokeStyle = descendant.getStroke();
     }
-    ctx.lineWidth = parseFloat(getCSSValue("--lineages-tree-descent-stroke-weight"));
+    ctx.lineWidth = parseFloat(getCSSValue("--select-tree-descent-stroke-weight"));
     ctx.beginPath();
     ctx.moveTo(x, y);
     let parentIndex = mcc.getParentIndexOf(descendant.index);

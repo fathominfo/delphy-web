@@ -18,7 +18,7 @@ export enum ColorOption {
 }
 export enum Screens {
   run = 1,
-  lineages = 2,
+  select = 2,
   mutations = 3,
   customize = 4,
   about = 5

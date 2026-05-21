@@ -117,7 +117,7 @@
   --tree-container-width-basis: calc(var(--unit) * 38);
   --tree-container-min-width: calc(var(--unit) * 24);
   --tree-container-max-width: calc(var(--unit) * 48);
-  --lineages-tree-container-max-width: 50vh;
+  --select-tree-container-max-width: 50vh;
   --date-text-offset: calc(var(--unit) / 4);
   --date-text-height: calc(var(--unit) * 2);
   --date-text-gap: calc(var(--unit) / 4);
@@ -263,8 +263,6 @@
   --pointer-box-width: calc(var(--unit) * 3);
   --pointer-box-height: calc(var(--unit) * 2);
   --pointer-shape-size: calc(var(--unit) * 2);
-  --lineages-selections-max: 4;
-  --lineages-list-rows-min: 5;
   --dual-gap: calc(var(--unit) * 4);
   --duo-gap: var(--view-gap);
   /* --duo-list-gap: var(--unit); */
@@ -348,16 +346,10 @@
   --axis-date-text-height: calc(var(--unit) * 2);
   --axis-date-one-line-height: calc(var(--unit) + (var(--chart-stroke-weight) / 2));
   --axis-date-two-line-height: calc(var(--axis-date-text-height) + (var(--chart-stroke-weight) / 2));
-  --lineages-prevalence-chart-height: calc((var(--selection-height) * var(--lineages-selections-max)) + (var(--selections-gap) * (var(--lineages-selections-max) - 1)));
-  --lineages-prevalence-chart-feature-height: calc(100% - var(--axis-dates-height));
-  /* --lineages-chart-yaxis-width: calc(var(--unit) * 2.8125); */
-  --lineages-chart-yaxis-width: calc(var(--unit) * 5.875);
-  --lineages-prevalence-chart-feature-zindex: 1;
-  --lineages-prevalence-chart-support-zindex: 0;
+  --select-chart-yaxis-width: calc(var(--unit) * 5.875);
   --subway-overflow-y: calc(var(--subway-row-height) * 1.5);
   --subway-offset-y: calc(var(--subway-overflow-y) * 0.05);
-  --lineages-emergence-timeline-height: calc(var(--subway-height) + var(--subway-overflow-y));
-  --mutation-emergence-mutation-width: calc(var(--lineages-chart-yaxis-width) - var(--block-gap));
+  --mutation-emergence-mutation-width: calc(var(--select-chart-yaxis-width) - var(--block-gap));
   --mutation-emergence-mutation-space-right: calc(var(--unit) * 0.25);
   --mutation-emergence-mutation-space-right-external: var(--mutation-emergence-mutation-space-right) * 2;
   --mutation-emergence-mutation-gap: 0.025rem;
@@ -367,9 +359,6 @@
   --mutation-emergence-timeline-width: calc(100% - var(--mutation-emergence-mutation-width) - (var(--chart-displays-timeline-inset-x) * 2));
   --guide-stroke-weight: var(--chart-stroke-weight);
   --guide-date-stroke-weight: var(--chart-tick-stroke-weight);
-  --lineages-prevalence-trend-stroke-weight: calc(var(--guide-date-stroke-weight) * 0.75);
-  --lineages-prevalence-mcc-trend-stroke-weight: calc(var(--guide-date-stroke-weight) * 1.5);
-  --lineages-emergence-pointer-stroke-weight: var(--guide-date-stroke-weight);
   --preview-button-padding-y: calc(var(--unit) * 0.5);
   --preview-button-padding-x: calc(var(--unit) * 0.75);
   --view-min-width: calc(var(--tree-container-min-width) + var(--view-gap) + var(--indicator-module-width));
@@ -377,11 +366,8 @@
   --header-min-width: calc(var(--view-min-width) + (var(--view-margin-x) * 2));
   --header-max-width: calc(var(--view-max-width) + (var(--view-margin-x) * 2));
   --extension-max-width: var(--nav-width);
-  // --body-max-width: calc(var(--nav-width) + (var(--view-margin-x) * 2) + var(--view-max-width) + var(--extension-max-width));
   --body-max-width: 1600px;
   --run-svg-tree-branches-offset-y: calc(var(--unit) * 0.075);
-  --lineages-svg-tree-branches-offset-y: calc(var(--unit) * 0.15);
-  --lineages-svg-tree-branches-added-weight: 0.25px;
   --patrick-size: calc(var(--unit) * 20);
 
   --view-fill: #ffffff;
@@ -860,49 +846,16 @@
   --range-fill-opacity: var(--guide-range-date-opacity);
   --range-fill-color: #eff3f6;
   --range-fill: rgb(from var(--range-fill-color) r g b / var(--range-fill-opacity));
-  --lineages-prevalence-shape-opacity: 0.375;
-  --lineages-prevalence-mcc-shape-opacity: 0.25;
-  --lineages-prevalence-mcc-shape-opacity-matching: var(--lineages-prevalence-shape-opacity);
-  --lineages-emergence-dist-opacity: 0.375;
-  --lineages-mutation-opacity: 1;
-  --lineages-mutation-active-opacity: 1;
-  --lineages-mutation-inactive-opacity: 0.25;
-  --lineages-timeline-dist-opacity: 0.375;
-  --lineages-timeline-active-dist-opacity: 0.75;
-  --lineages-timeline-inactive-dist-opacity: 0.1875;
-  --lineages-timeline-pointer-opacity: var(--lineages-timeline-dist-opacity);
-  --lineages-timeline-active-pointer-opacity: var(--lineages-timeline-active-dist-opacity);
-  --lineages-timeline-inactive-pointer-opacity: var(--lineages-timeline-inactive-dist-opacity);
-  --lineages-timeline-label-opacity: 1;
-  --lineages-timeline-active-label-opacity: 1;
-  --lineages-timeline-inactive-label-opacity: 0.5;
-  --lineages-timeline-semiactive-label-opacity: 0.5;
-  --lineages-timeline-guide-opacity: var(--guide-opacity);
-  --lineages-timeline-active-guide-opacity: calc(var(--guide-opacity) * 1.5);
-  --lineages-timeline-semiactive-guide-opacity: calc(var(--guide-opacity) * 1.25);
-  --lineages-timeline-inactive-guide-opacity: calc(var(--lineages-timeline-guide-opacity) * 0.5);
-  --lineages-tag-opacity: var(--lineages-mutation-opacity);
-  --lineages-tag-active-opacity: var(--lineages-mutation-active-opacity);
-  --lineages-tag-inactive-opacity: var(--lineages-mutation-inactive-opacity);
-  --lineages-tag-semiactive-opacity: 0.5;
-  --lineages-prevalence-trend-opacity: 1;
-  --lineages-prevalence-mcc-trend-opacity: 0.5;
-  --lineages-emergence-pointer-opacity: 0.5;
-  --lineages-timeline-pointer-opacity: 0.5;
+  --select-emergence-dist-opacity: 0.375;
+  --select-mutation-opacity: 1;
+  --select-timeline-dist-opacity: 0.25;
+  --select-timeline-active-dist-opacity: 0.75;
+  --select-timeline-pointer-opacity: var(--select-timeline-dist-opacity);
+  --select-timeline-pointer-opacity: 0.5;
   --selection-unmatching-opacity: 0.5;
   --subway-line-unmatching-opacity: 0.4;
-  --lineages-svg-tree-element-unmatching-opacity: 0.15;
-  --lineages-svg-tree-sibling-unmatching-opacity: 0.3;
-  --lineages-svg-tree-sibling-matching-opacity: 1;
-  --lineages-tree-descent-stroke-weight: 2;
-  --lineages-prevalence-group-unmatching-opacity: 0.3;
-  --lineages-emergence-group-unmatching-opacity: 0.3;
-  --lineages-list-unmatching-opacity: 0.5;
-  --lineages-list-semimatching-opacity: 0.3;
-  --schematic-segment-unmatching-opacity: 0.3;
   --guide-range-date-semimatching-opacity: calc(var(--guide-range-date-opacity) * 0.5);
   --guide-date-unmatching-opacity: calc(var(--guide-date-opacity) * 0.3);
-  --lineages-opacity-maximizer: 2;
   --html-fill: #021b23;
   --extension-fill: var(--nav-fill);
   --intro-extension-fill: var(--html-fill);
@@ -1338,7 +1291,7 @@ nav {
   flex-direction: column;
   gap: var(--block-gap);
   position: relative;
-  max-width: calc(var(--lineages-prevalence-chart-height) * 4);
+  // max-width: calc(var(--lineages-prevalence-chart-height) * 4);
   h2, h4 {
     margin: unset;
   }
@@ -1826,7 +1779,7 @@ building custom inputs on top of native inputs. */
   position: absolute;
   top: 0;
   left: 0;
-  height: calc(var(--lineages-prevalence-chart-feature-height) + var(--axis-dates-height));
+  // height: calc(var(--lineages-prevalence-chart-feature-height) + var(--axis-dates-height));
   opacity: 0;
   transition: opacity var(--axis-transition) ease-out;
   pointer-events: none;

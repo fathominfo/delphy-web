@@ -465,7 +465,7 @@ export class MutationsUI extends MccUI {
       const mutationData = {moi, name, times, nodes, minDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
-        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
+        this.updateHoverRow, this.updateHoverNode, this.goToSelect, this.shiftRow, this.setMutationActive,
         minDate, maxDate, this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
       this.rows.forEach(row => row.updateRows(this.rows));
@@ -554,10 +554,10 @@ export class MutationsUI extends MccUI {
     this.requestDrawHighlights();
   }
 
-  goToLineages: NodeFunctionType = (nodeIndex?: number) => {
+  goToSelect: NodeFunctionType = (nodeIndex?: number) => {
     if (nodeIndex) {
       this.sharedState.setNodeSelection([nodeIndex]);
-      this.sharedState.goTo(Screens.lineages);
+      this.sharedState.goTo(Screens.select);
     }
   }
 
