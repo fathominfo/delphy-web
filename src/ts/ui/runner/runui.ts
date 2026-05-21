@@ -1101,7 +1101,7 @@ export class RunUI extends UIScreen {
         if (canvas instanceof HistCanvas) {
           canvas.setData(kneeIndex, mccIndex, hideBurnIn, sampleIndex, stepsPerSample, steps);
         } else if (canvas instanceof GammaHistCanvas) {
-          canvas.setRangeData(kneeIndex);
+          canvas.setRangeData(kneeIndex, minDate);
         } else if (canvas instanceof ScatterPlotCanvas) {
           canvas.setTipData(kneeIndex, minDate, maxDate);
         }
