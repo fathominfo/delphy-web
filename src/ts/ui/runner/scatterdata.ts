@@ -1,3 +1,4 @@
+import { toFullDateString } from '../../pythia/dates';
 import { UNSET } from '../common';
 import { ScatterDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
@@ -8,10 +9,8 @@ export class ScatterData extends TraceData {
 
   tipMutationCounts: number[] = [];
   tipDates: number[] = [];
-  countMin: number = UNSET;
-  countMax: number = UNSET
-  dateMin: number = UNSET;
-  dateMax: number = UNSET;
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
   validTips: number[][] = []; /* raw values of date, count */
   tipCoords: number[][] = []; /* scaled 0-1 */
   /* for the linear regression */
@@ -44,18 +43,18 @@ export class ScatterData extends TraceData {
       this.tipDates[i] = sumDate / validCount;
     }
     const safeCounts = this.tipMutationCounts.filter(n=>Number.isFinite(n));
-    this.countMin = 0; /* use a 0 baseline */
-    this.countMax = Math.ceil(Math.max(...safeCounts));
-    this.dateMin = minDate;
-    this.dateMax = maxDate;
+    this.dataMin = 0; /* use a 0 baseline */
+    this.dataMax = Math.ceil(Math.max(...safeCounts));
+    this.minDate = minDate;
+    this.maxDate = maxDate;
     this.validTips.length = 0;
     this.tipCoords.length = 0;
-    const dateRange = this.dateMax - this.dateMin;
+    const dateRange = this.maxDate - this.minDate;
     this.tipMutationCounts.forEach((count, i)=>{
       const date = this.tipDates[i];
       if (Number.isFinite(count) && Number.isFinite(date)) {
-        const x = (date - this.dateMin) / dateRange;
-        const y = count / this.countMax;
+        const x = (date - this.minDate) / dateRange;
+        const y = count / this.dataMax;
         this.validTips[i] = [date, count]
         this.tipCoords[i] = [x, y];
       }
@@ -63,15 +62,6 @@ export class ScatterData extends TraceData {
     this.setLinearRegression();
   }
 
-
-
-  get minDate() : number {
-    return this.tipDates[0];
-  }
-
-  get maxDate() : number {
-    return this.tipDates[this.tipDates.length-1];
-  }
 
 
   /* based on https://mathworld.wolfram.com/LeastSquaresFitting.html, lines 12 and 14 */

@@ -217,8 +217,8 @@ export class ScatterPlotCanvas extends TraceCanvas {
 
   drawLabels():void {
     const { yAxisHeight, minSpan, maxSpan, dataHeight, svg } = this;
-    const { countMin, countMax, minDate, maxDate } = this.traceData as ScatterData;
-    const countRange = countMax - countMin;
+    const { dataMin, dataMax, minDate, maxDate } = this.traceData as ScatterData;
+    const countRange = dataMax - dataMin;
     const labelHeight = LABEL_HEIGHT * countRange;
     const labelsOK = yAxisHeight >= labelHeight;
     svg.querySelectorAll(TICK_SELECTOR).forEach(ele=>ele.remove());
@@ -228,20 +228,17 @@ export class ScatterPlotCanvas extends TraceCanvas {
       const y = MARGIN.top + (1 - i / countRange) * dataHeight;
       this.addTick(y);
       if (labelsOK) {
-        const label = this.addText(`${countMin + i}`, y);
+        const label = this.addText(`${dataMin + i}`, y);
         this.tickLabels.push({label, y});
       }
     }
     if (!labelsOK) {
-      let label = this.addText(`${countMin}`, this.dataHeight + MARGIN.top);
+      let label = this.addText(`${dataMin}`, this.dataHeight + MARGIN.top);
       this.tickLabels.push({label, y: this.dataHeight + MARGIN.top});
-      label = this.addText(`${countMax}`, MARGIN.top);
+      label = this.addText(`${dataMax}`, MARGIN.top);
       this.tickLabels.push({label, y: MARGIN.top});
     }
 
-    /* label the top tick */
-
-    // this.addText(`${safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM)} years`, 0);
     minSpan.textContent = toFullDateString(minDate);
     maxSpan.textContent = toFullDateString(maxDate);
     const scatterData = (this.traceData as ScatterData);
