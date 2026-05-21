@@ -1,17 +1,23 @@
 import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
 import {ExpPopModel, PhyloTree, SkygridPopModel} from '../../pythia/delphy_api';
-import {MU_FACTOR, FINAL_POP_SIZE_FACTOR, POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
+import {MU_FACTOR, FINAL_POP_SIZE_FACTOR,
+  POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {HistCanvas} from './histcanvas';
 import {DateLabel} from '../datelabel';
-import {nfc, getTimelineIndices, getTimestampString, getPercentLabel, UNSET, safeLabel} from '../common';
+import {nfc, getTimelineIndices, getTimestampString,
+  getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
-import { GammaDataFunction, HistDataFunction, hoverListenerType, HoverNodeFnc, kneeHoverListenerType, ScatterDataFunction, statHoverListenerType, SummaryStat, TempestData } from './runcommon';
+import { GammaDataFunction, HistDataFunction, hoverListenerType, HoverNodeFnc,
+  kneeHoverListenerType, ScatterDataFunction, statHoverListenerType,
+  SummaryStat, TempestData } from './runcommon';
 import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
-import { convertSkygridDaysToTau, convertSkygridTauToDays, makeDefaultRunParamConfig, Pythia, RunParamConfig, tauConfigOption } from '../../pythia/pythia';
+import { convertSkygridDaysToTau, convertSkygridTauToDays,
+  makeDefaultRunParamConfig, Pythia,
+  RunParamConfig, tauConfigOption } from '../../pythia/pythia';
 import { parse_iso_date, toDateString } from '../../pythia/dates';
 import { GammaHistCanvas } from './gammahistcanvas';
 import { ScatterPlotCanvas } from './scatterplotcanvas';
@@ -214,7 +220,8 @@ export class RunUI extends UIScreen {
   hoverHandler: hoverListenerType;
   statHoverHandler: statHoverListenerType;
 
-  traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig | HistChartNoESSConfig | PopChartConfig | TipCheckConfig} = {};
+  traceChartConfig: {[_: string] : HistChartConfig | HistChartCustomLabelConfig
+    | HistChartNoESSConfig | PopChartConfig | TipCheckConfig} = {};
 
 
 
@@ -309,30 +316,143 @@ export class RunUI extends UIScreen {
     this.runControlHandler = ()=> this.set_running();
     this.stepSelector = (document.querySelector("#step-options") as HTMLSelectElement);
     // hkyPi{A,C,G,T} -> HKY Long-term Nucleotide Content (π_A)
-
-    this.traceChartConfig[TraceChart.numMutations] = { name: "Number of Mutations", unit: "mutations", className: "mut-count", dataFnc: ()=>(this.pythia as Pythia).numMutationsHist, isDiscrete: true, noESSReason : "Not included in Minimum ESS calculations: this is a discrete variable with very few possible values"};
-    this.traceChartConfig[TraceChart.mu] = { name: "Mutation Rate μ", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "mut-rate", dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR), isDiscrete: false};
-    this.traceChartConfig[TraceChart.muStar] = { name: "APOBEC Mutation Rate", unit: "&times; 10<sup>&minus;5</sup> mutations / site / year", className: "apobec-mut-rate", dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR), isDiscrete: false};
-    this.traceChartConfig[TraceChart.minDate] = { name: "Root Date (tMRCA)", unit: "", className: "root-date", dataFnc: ()=>(this.pythia as Pythia).minDateHist, isDiscrete: false, labelFunction: n=>toDateString(n), stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`};
     const growthRateFnc = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as ExpPopModel).g / POP_GROWTH_FACTOR);
-    this.traceChartConfig[TraceChart.growthRate] = { name: "Growth rate", unit: "doublings / year", className: "growth-rate", dataFnc: growthRateFnc, isDiscrete: false};
     const gammaDataFnc: GammaDataFunction = ()=>(this.pythia as Pythia).popModelHist.map(popModel => (popModel as SkygridPopModel));
-    this.traceChartConfig[TraceChart.gamma] = { name: `Effective population size`, className: "effective-population-size", subtitle: "Showing Median and 95% HPD", dataFnc: gammaDataFnc};
     const tipCheckFnc: ScatterDataFunction = ()=>this.gatherTipCheckData();
-    this.traceChartConfig[TraceChart.tipCheck] = { name: `Mutation Count vs. Date`, className: "mutcount-date", subtitle: "Tip date and number of mutations should show a correlation", dataFnc: tipCheckFnc};
-
-    this.traceChartConfig[TraceChart.logPosterior] = { name: "ln(Posterior)", unit: '', className: "ln-post", dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.evolutionaryTime] = { name: "Total Evolutionary Time", unit: "years", className: "tot-time", dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR), isDiscrete: false};
-    this.traceChartConfig[TraceChart.logG] = { name: "ln(Genetic Prior)", unit: '', className: "ln-gen-prior", dataFnc: ()=>(this.pythia as Pythia).logGHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.alpha] = { name: "Rate Spread α", unit: '', className: "alpha", dataFnc: ()=>(this.pythia as Pythia).alphaHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.logCoalescentPrior] = { name: "ln(Coalescent Prior)", unit: '', className: "ln-coal-prior", dataFnc: ()=>(this.pythia as Pythia).logCoalescentPriorHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.logOtherPriors] = { name: "ln(Other Priors)", unit: '', className: "ln-others", dataFnc: ()=>(this.pythia as Pythia).logOtherPriorsHist, isDiscrete: false};
-    this.traceChartConfig[TraceChart.hkyKappa] = { name: "HKY Ts/Tv Ratio κ", unit: '', className: "kappa", dataFnc: ()=>(this.pythia as Pythia).hkyKappaHist, isDiscrete: false};
     const pctLabelFnc = (n:number)=>`${safeLabel(n)}<span class="pct">%</span>`;
-    this.traceChartConfig[TraceChart.hkyPiA] = { name: "HKY Base Freq. π<sub>A</sub>", unit: '', className: "hkya", dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.hkyPiC] = { name: "HKY Base Freq. π<sub>C</sub>", unit: '', className: "hkyc", dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.hkyPiG] = { name: "HKY Base Freq. π<sub>G</sub>", unit: '', className: "hkyg", dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
-    this.traceChartConfig[TraceChart.hkyPiT] = { name: "HKY Base Freq. π<sub>T</sub>", unit: '', className: "hkyt", dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100), isDiscrete: false, labelFunction: pctLabelFnc, stdErrLabelFunction: pctLabelFnc};
+    this.traceChartConfig[TraceChart.numMutations] = {
+      name: "Number of Mutations",
+      unit: "mutations",
+      className: "mut-count",
+      dataFnc: ()=>(this.pythia as Pythia).numMutationsHist,
+      isDiscrete: true,
+      noESSReason : "Not included in Minimum ESS calculations: this is a discrete variable with very few possible values"
+    };
+    this.traceChartConfig[TraceChart.mu] = {
+      name: "Mutation Rate μ",
+      unit: "&times; 10<sup>&minus;5</sup> mutations / site / year",
+      className: "mut-rate",
+      dataFnc: ()=>(this.pythia as Pythia).muHist.map(n=>n*MU_FACTOR),
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.muStar] = {
+      name: "APOBEC Mutation Rate",
+      unit: "&times; 10<sup>&minus;5</sup> mutations / site / year",
+      className: "apobec-mut-rate",
+      dataFnc: ()=>(this.pythia as Pythia).muStarHist.map(n=>n*MU_FACTOR),
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.minDate] = {
+      name: "Root Date (tMRCA)",
+      unit: "",
+      className: "root-date",
+      dataFnc: ()=>(this.pythia as Pythia).minDateHist,
+      isDiscrete: false,
+      labelFunction: n=>toDateString(n),
+      stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`
+    };
+    this.traceChartConfig[TraceChart.growthRate] = {
+      name: "Growth rate",
+      unit: "doublings / year",
+      className: "growth-rate",
+      dataFnc: growthRateFnc,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.gamma] = {
+      name: `Effective population size`,
+      className: "effective-population-size", subtitle: "Showing Median and 95% HPD",
+      dataFnc: gammaDataFnc
+    };
+    this.traceChartConfig[TraceChart.tipCheck] = {
+      name: `Mutation Count vs. Date`,
+      className: "mutcount-date", subtitle: "Tip date and number of mutations should show a correlation",
+      dataFnc: tipCheckFnc
+    };
+    this.traceChartConfig[TraceChart.logPosterior] = {
+      name: "ln(Posterior)",
+      unit: '',
+      className: "ln-post",
+      dataFnc: ()=>(this.pythia as Pythia).logPosteriorHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.evolutionaryTime] = {
+      name: "Total Evolutionary Time",
+      unit: "years",
+      className: "tot-time",
+      dataFnc: ()=>(this.pythia as Pythia).totalBranchLengthHist.map(t=>t/DAYS_PER_YEAR),
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.logG] = {
+      name: "ln(Genetic Prior)",
+      unit: '',
+      className: "ln-gen-prior",
+      dataFnc: ()=>(this.pythia as Pythia).logGHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.alpha] = {
+      name: "Rate Spread α",
+      unit: '',
+      className: "alpha",
+      dataFnc: ()=>(this.pythia as Pythia).alphaHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.logCoalescentPrior] = {
+      name: "ln(Coalescent Prior)",
+      unit: '',
+      className: "ln-coal-prior",
+      dataFnc: ()=>(this.pythia as Pythia).logCoalescentPriorHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.logOtherPriors] = {
+      name: "ln(Other Priors)",
+      unit: '',
+      className: "ln-others",
+      dataFnc: ()=>(this.pythia as Pythia).logOtherPriorsHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.hkyKappa] = {
+      name: "HKY Ts/Tv Ratio κ",
+      unit: '',
+      className: "kappa",
+      dataFnc: ()=>(this.pythia as Pythia).hkyKappaHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.hkyPiA] = {
+      name: "HKY Base Freq. π<sub>A</sub>",
+      unit: '',
+      className: "hkya",
+      dataFnc: ()=>(this.pythia as Pythia).hkyPiAHist.map(n=>n*100),
+      isDiscrete: false,
+      labelFunction: pctLabelFnc,
+      stdErrLabelFunction: pctLabelFnc
+    };
+    this.traceChartConfig[TraceChart.hkyPiC] = {
+      name: "HKY Base Freq. π<sub>C</sub>",
+      unit: '',
+      className: "hkyc",
+      dataFnc: ()=>(this.pythia as Pythia).hkyPiCHist.map(n=>n*100),
+      isDiscrete: false,
+      labelFunction: pctLabelFnc,
+      stdErrLabelFunction: pctLabelFnc
+    };
+    this.traceChartConfig[TraceChart.hkyPiG] = {
+      name: "HKY Base Freq. π<sub>G</sub>",
+      unit: '',
+      className: "hkyg",
+      dataFnc: ()=>(this.pythia as Pythia).hkyPiGHist.map(n=>n*100),
+      isDiscrete: false,
+      labelFunction: pctLabelFnc,
+      stdErrLabelFunction: pctLabelFnc
+    };
+    this.traceChartConfig[TraceChart.hkyPiT] = {
+      name: "HKY Base Freq. π<sub>T</sub>",
+      unit: '',
+      className: "hkyt",
+      dataFnc: ()=>(this.pythia as Pythia).hkyPiTHist.map(n=>n*100),
+      isDiscrete: false,
+      labelFunction: pctLabelFnc,
+      stdErrLabelFunction: pctLabelFnc
+    };
 
 
     this.decideTraceCharts();
@@ -431,7 +551,9 @@ export class RunUI extends UIScreen {
       this.sharedState.mccConfig.setConfidence(pct);
       this.setCladeCred();
     }
-    this.credibilityInput = new BlockSlider((this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement), credibilityCallback);
+    this.credibilityInput = new BlockSlider(
+      this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement,
+      credibilityCallback);
 
     this.stepSelector.addEventListener('input', ()=>{
       const power = parseInt(this.stepSelector.value);
@@ -597,7 +719,8 @@ export class RunUI extends UIScreen {
         /* if there is no `unit` defined, this is a PopChartConfig, not trace chart, so skip it */
         if (config.unit === undefined) return;
         const { name, unit, className, dataFnc, isDiscrete } = config as HistChartConfig;
-        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete, this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
+        const canvas = new HistCanvas(name, unit, className, dataFnc, isDiscrete,
+          this.curatedKneeHandler, this.hoverHandler, this.statHoverHandler);
         if (config.labelFunction !== undefined) {
           /* this is a HistChartCustomLabelConfig */
           canvas.formatLabel = (config as HistChartCustomLabelConfig).labelFunction;
