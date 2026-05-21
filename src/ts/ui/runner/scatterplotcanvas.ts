@@ -1,5 +1,5 @@
 import { toFullDateString } from "../../pythia/dates";
-import { UNSET } from "../common";
+import { nicenum, UNSET } from "../common";
 import { HoverNodeFnc, ScatterDataFunction } from "./runcommon";
 import { ScatterData } from "./scatterdata";
 import { chartContainer, TraceCanvas } from "./tracecanvas";
@@ -18,7 +18,8 @@ const TICK_LABEL_TEMPLATE = SCATTER_TEMPLATE.querySelector(TICK_LABEL_SELECTOR) 
 TICK_LABEL_TEMPLATE.remove();
 
 
-const LABEL_HEIGHT = 13;
+const LABEL_SPACING = 50;
+const LABEL_HEIGHT = 15;
 const DATE_LABEL_WIDTH = 86;
 const HALF_DATE_LABEL_WIDTH = DATE_LABEL_WIDTH / 2;
 const TICK_LENGTH = 5;
@@ -216,29 +217,27 @@ export class ScatterPlotCanvas extends TraceCanvas {
 
 
   drawLabels():void {
-    const { yAxisHeight, minSpan, maxSpan, dataHeight, svg } = this;
+    const { minSpan, maxSpan, dataHeight, svg } = this;
     const { dataMin, dataMax, minDate, maxDate } = this.traceData as ScatterData;
     const countRange = dataMax - dataMin;
-    const labelHeight = LABEL_HEIGHT * countRange;
-    const labelsOK = yAxisHeight >= labelHeight;
     svg.querySelectorAll(TICK_SELECTOR).forEach(ele=>ele.remove());
     svg.querySelectorAll(TICK_LABEL_SELECTOR).forEach(ele=>ele.remove());
     this.tickLabels.length = 0;
-    for (let i = 0; i <= countRange; i++) {
+    const minSpacePerTick = 5;
+    const tickCount = Math.floor(dataHeight / minSpacePerTick);
+    const tickInterval = nicenum(Math.ceil(countRange / tickCount));
+    const tickSpacing = (tickInterval / countRange) * dataHeight;
+    const labelInterval = tickSpacing >= LABEL_SPACING ? 1 : 5;
+    let drawnTicks = 0;
+    for (let i = 0; i <= countRange; i += tickInterval) {
       const y = MARGIN.top + (1 - i / countRange) * dataHeight;
       this.addTick(y);
-      if (labelsOK) {
+      if (drawnTicks % labelInterval === 0) {
         const label = this.addText(`${dataMin + i}`, y);
         this.tickLabels.push({label, y});
       }
+      drawnTicks++;
     }
-    if (!labelsOK) {
-      let label = this.addText(`${dataMin}`, this.dataHeight + MARGIN.top);
-      this.tickLabels.push({label, y: this.dataHeight + MARGIN.top});
-      label = this.addText(`${dataMax}`, MARGIN.top);
-      this.tickLabels.push({label, y: MARGIN.top});
-    }
-
     minSpan.textContent = toFullDateString(minDate);
     maxSpan.textContent = toFullDateString(maxDate);
     const scatterData = (this.traceData as ScatterData);

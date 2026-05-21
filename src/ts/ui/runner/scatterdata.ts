@@ -1,5 +1,5 @@
 import { toFullDateString } from '../../pythia/dates';
-import { UNSET } from '../common';
+import { nicenum, UNSET } from '../common';
 import { ScatterDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
 
@@ -44,7 +44,7 @@ export class ScatterData extends TraceData {
     }
     const safeCounts = this.tipMutationCounts.filter(n=>Number.isFinite(n));
     this.dataMin = 0; /* use a 0 baseline */
-    this.dataMax = Math.ceil(Math.max(...safeCounts));
+    this.dataMax = nicenum(Math.ceil(Math.max(...safeCounts)));
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.validTips.length = 0;
