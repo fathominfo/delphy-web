@@ -5,13 +5,14 @@ import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
-import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
+// import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
 import { assembleInheritanceTree, getParents, isTip, NodeParentIndex } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
 import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
+import { gatherBaseTreeMutationsOfInterest, MutationOfInterest } from './mutationsofinterest';
 
 
 export type readyCallbackType = (_:Pythia)=>void;
@@ -179,12 +180,13 @@ export class Pythia {
   minDateHist: number[] = [];
   paramsHist: ArrayBuffer[] = [];
   treeHist: PhyloTree[] = [];
+  mutationOfInterestHist: MutationOfInterest[][] = []
   kneeIndex = 0;
 
   runReadyCallback: ()=>void;
   fileFormat: sequenceFileFormat;
   maxDate: number;
-  tipCounts: TipsByNodeIndex;
+  nodeTips: TipsByNodeIndex;
   /*
   for each node in each base tree in the mcc,
   what is the corresponding node in the mcc?
@@ -211,7 +213,7 @@ export class Pythia {
     this.fileFormat = sequenceFileFormat.UNSUPPORTED;
     /* dates are measured as # of days from 2020-01-01 */
     this.maxDate = UNSET;
-    this.tipCounts = [];
+    this.nodeTips = [];
     this.mccNodeBackLinks = [];
     this.coreVersion = {
       "version" : this.delphy.getVersionString(),
@@ -410,7 +412,7 @@ export class Pythia {
       if (oldRef) {
         oldRef.release();
       }
-      this.tipCounts.length = 0;
+      this.nodeTips.length = 0;
       this.mccNodeBackLinks.length = 0;
     }
   }
@@ -557,6 +559,7 @@ export class Pythia {
       this.treeHist.forEach((tree:PhyloTree)=>tree.delete());
     }
     this.treeHist = [];
+    this.mutationOfInterestHist = [];
     this.kneeIndex = 0;
   }
 
@@ -597,6 +600,18 @@ export class Pythia {
       minDate = Math.min(minDate, tree.getTimeOf(i));
     }
     this.minDateHist.push(minDate);
+    const tipCount = (count + 1) / 2;
+    const tipCounts: number[] = new Array(count).fill(0);
+    for (let i = 0; i < tipCount; i++) {
+      let p = i;
+      while (p !== -1) {
+        tipCounts[p]++;
+        p = tree.getParentIndexOf(p);
+      }
+    }
+    const mois = gatherBaseTreeMutationsOfInterest(tree, tipCounts);
+    this.mutationOfInterestHist.push(mois);
+    console.log(mois.filter(moi=>moi.instances.length > 2).map(moi=>[moi.site, moi.instances.length, moi.features]));
   }
 
 
@@ -874,23 +889,23 @@ export class Pythia {
 
 
   getMccNodeTipCount(nodeIndex: number) : number {
-    if (this.tipCounts.length === 0 && this.mccRefManager) {
+    if (this.nodeTips.length === 0 && this.mccRefManager) {
       const ref = this.mccRefManager.getRef(),
         mcc = ref.getMcc();
-      this.tipCounts = this.gatherNodeTips(mcc);
+      this.nodeTips = this.gatherNodeTips(mcc);
       ref.release();
     }
-    return this.tipCounts[nodeIndex].length;
+    return this.nodeTips[nodeIndex].length;
   }
 
   getMccNodeTips(nodeIndex: number) : number[] {
-    if (this.tipCounts.length === 0 && this.mccRefManager) {
+    if (this.nodeTips.length === 0 && this.mccRefManager) {
       const ref = this.mccRefManager.getRef(),
         mcc = ref.getMcc();
-      this.tipCounts = this.gatherNodeTips(mcc);
+      this.nodeTips = this.gatherNodeTips(mcc);
       ref.release();
     }
-    return this.tipCounts[nodeIndex];
+    return this.nodeTips[nodeIndex];
   }
 
 
@@ -1054,18 +1069,18 @@ export class Pythia {
   /*
   mutations of interest
   */
-  getMutationsOfInterest(): MutationOfInterestSet | null {
-    let moi : MutationOfInterestSet | null = null;
-    if (this.mccRefManager) {
-      // const start = Date.now();
-      const ref = this.mccRefManager.getRef(),
-        mcc = ref.getMcc();
-      moi = getMccMutationsOfInterest(mcc);
-      // console.degub(`getMutationsOfInterest() elapsed ${Date.now() -  start}`, moi);
-      ref.release();
-    }
-    return moi;
-  }
+  // getMutationsOfInterest(): MutationOfInterestSet | null {
+  //   let moi : MutationOfInterestSet | null = null;
+  //   if (this.mccRefManager) {
+  //     // const start = Date.now();
+  //     const ref = this.mccRefManager.getRef(),
+  //       mcc = ref.getMcc();
+  //     moi = getMccMutationsOfInterest(mcc);
+  //     // console.degub(`getMutationsOfInterest() elapsed ${Date.now() -  start}`, moi);
+  //     ref.release();
+  //   }
+  //   return moi;
+  // }
 
 
   getMutationDistributionInfo(mutation: Mutation, summaryTree: SummaryTree): MutationDistInfo {

@@ -4,7 +4,7 @@ import { NavLabel, bindNav, activateView, getCurrentView } from  "./ui/nav";
 import { UIScreen } from './ui/uiscreen';
 import { RunUI } from './ui/runner/runui';
 import { SelectUI } from './ui/select/selectui';
-import { MutationsUI } from './ui/mutations/mutationsui';
+// import { MutationsUI } from './ui/mutations/mutationsui';
 import { CustomizeUI } from './ui/customize/customizeui';
 import { Screens, NavigateFunctionType } from './ui/common';
 import { SharedState } from './sharedstate';
@@ -28,17 +28,17 @@ function onReady(p:Pythia):void {
   const sharedState = new SharedState(p, goTo);
   const runUI = new RunUI(sharedState, "#runner");
   const selectUI = new SelectUI(sharedState, "#select");
-  const mutationsUI = new MutationsUI(sharedState, "#mutations");
+  // const mutationsUI = new MutationsUI(sharedState, "#mutations");
   const customizeUI = new CustomizeUI(sharedState, "#customize");
 
   goToScreens[Screens.run] = runUI;
   goToScreens[Screens.select] = selectUI;
-  goToScreens[Screens.mutations] = mutationsUI;
+  // goToScreens[Screens.mutations] = mutationsUI;
   goToScreens[Screens.customize] = customizeUI;
 
   viewButtons.push(new NavLabel("Run", runUI, "#runner"));
   viewButtons.push(new NavLabel("Select", selectUI, "#select"));
-  viewButtons.push(new NavLabel("Analyze", mutationsUI, "#mutations"));
+  // viewButtons.push(new NavLabel("Analyze", mutationsUI, "#mutations"));
   viewButtons.push(new NavLabel("Customize", customizeUI, "#customize"));
   bindNav(viewButtons);
 

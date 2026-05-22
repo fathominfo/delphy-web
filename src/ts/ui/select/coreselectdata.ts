@@ -9,9 +9,10 @@ import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
-import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
+import { getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 import { MccConfig } from "../mccconfig";
+import { getMRCA } from "../../pythia/pythiacommon";
 
 
 
