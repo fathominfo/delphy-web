@@ -84,8 +84,6 @@ export class SelectTreeCanvas extends MccTreeCanvas {
         selectionCallback(nodeIndex);
       }
     });
-
-
   }
 
 
@@ -95,6 +93,9 @@ export class SelectTreeCanvas extends MccTreeCanvas {
     if (this.configuredRootNode !== configuredRootNode) {
       this.configuredRootNode = configuredRootNode;
       this.setRootNode(configuredRootNode);
+      if (this.mccConfig) {
+        this.mccConfig.configuredRoot = configuredRootNode;
+      }
       // const [ minDate, maxDate ] = this.getDateRange();
       // const timlineIndices = getTimelineIndices(minDate, maxDate);
       this.draw();
