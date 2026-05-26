@@ -22,9 +22,18 @@ export type Introduction = {
 }
 
 
+export type TreeIntroduction = {
+  mutation: Mutation;
+  nodeIndex: number;
+  affectedTipCount: number;
+  treeIndex: number
+};
+
+
 export type AggregateMOI = {
   site: number,
-  featureSupport: {[_: string]: number}
+  featureSupport: {[_: string]: number},
+  instances: TreeIntroduction[]
 };
 
 
@@ -51,7 +60,9 @@ function gatherTreeMutations(tree: PhyloTree, tipCounts: number[]): MutationOfIn
   const candidates: MutationOfInterest[] = [],
     nodeCount = tree.getSize()
   for (i = 0; i < nodeCount; i++) {
-    tree.forEachMutationOf(i, (m:Mutation)=>siteTallier(i, m, tipCounts[i], candidates));
+    tree.forEachMutationOf(i, (m:Mutation)=>{
+      siteTallier(i, m, tipCounts[i], candidates);
+    });
   }
   return candidates;
 }
@@ -60,11 +71,26 @@ function gatherTreeMutations(tree: PhyloTree, tipCounts: number[]): MutationOfIn
 
 function setFeatures(moi: MutationOfInterest, tree: PhyloTree) : void {
   const instances = moi.instances;
-  const instanceLookup: Introduction[] = [];
+  const instanceLookup: Introduction[][] = [];
   const ancestors: number[] = [];
   instances.forEach(inst=>{
     ancestors[inst.nodeIndex] = UNSET;
-    instanceLookup[inst.nodeIndex] = inst;
+    if (instanceLookup[inst.nodeIndex] === undefined) {
+      instanceLookup[inst.nodeIndex] = [inst];
+    } else {
+      const nodeInstances = instanceLookup[inst.nodeIndex];
+      nodeInstances.push(inst);
+      nodeInstances.sort((a,b)=>a.mutation.time - b.mutation.time);
+      for (let i = 1; i < nodeInstances.length; i++) {
+        const startMut = nodeInstances[i - 1].mutation.from;
+        const endMut = nodeInstances[i].mutation.to;
+        if (startMut === endMut) {
+          moi.features.add(FeatureOfInterest.Reversal);
+        } else {
+          moi.features.add(FeatureOfInterest.SameSite);
+        }
+      }
+    }
   });
   instances.forEach((inst)=>{
     const index = inst.nodeIndex;
@@ -80,9 +106,11 @@ function setFeatures(moi: MutationOfInterest, tree: PhyloTree) : void {
       rooties.push(index);
     } else {
       /* is this a reversal or just another mutation? */
-      const mut1 = instanceLookup[index].mutation;
-      const mut2 = instanceLookup[anc].mutation;
-      if (mut1.from === mut2.to && mut1.to === mut2.from) {
+      const nodeMutations = instanceLookup[index].map(inst=>inst.mutation);
+      const ancMUtations = instanceLookup[anc].map(inst=>inst.mutation);
+      const mut1 = ancMUtations[ancMUtations.length-1];
+      const mut2 = nodeMutations[0];
+      if (mut1.to === mut2.from && mut1.from === mut2.to) {
         moi.features.add(FeatureOfInterest.Reversal);
       } else {
         moi.features.add(FeatureOfInterest.SameSite);
@@ -93,12 +121,11 @@ function setFeatures(moi: MutationOfInterest, tree: PhyloTree) : void {
     /*
     do we have the same mutation introduced multiple times?
     Tally the times that the mutation.to appears.
-    Note that the `.to` property on the mutation is an
-    integer between 0 and 3 (inclusive).
+    Note that the `0 <= mutation.to <= 3`.
     */
     const mutTos: number[] = new Array(4).fill(0);
     rooties.forEach(index=>{
-      const toLetter = instanceLookup[index].mutation.to;
+      const toLetter = instanceLookup[index][0].mutation.to;
       mutTos[toLetter]++;
     });
     const foundMuts = mutTos.filter(count=>count>0);
@@ -127,15 +154,18 @@ export function gatherBaseTreeMutationsOfInterest(tree: PhyloTree, tipCounts: nu
 /* pass in pythia.mutationOfInterestHist.slice(kneeIndex) */
 export function tallyMutationsOfInterest(treeMutations: MutationOfInterest[][]) : AggregateMOI[] {
   const sitesWithSupport: AggregateMOI[] = [];
-  treeMutations.forEach((moiList: MutationOfInterest[])=>{
+  treeMutations.forEach((moiList: MutationOfInterest[], treeIndex)=>{
     moiList.forEach(moi=>{
       const site = moi.site;
       let featureSupport: {[_:string]: number};
+      let instances: TreeIntroduction[];
       if (sitesWithSupport[site] === undefined) {
-        featureSupport = {}
-        sitesWithSupport[site] = {site, featureSupport};
+        featureSupport = {};
+        instances = [];
+        sitesWithSupport[site] = {site, featureSupport, instances};
       } else {
         featureSupport = sitesWithSupport[site].featureSupport;
+        instances = sitesWithSupport[site].instances;
       }
       moi.features.forEach(feet=>{
         if (featureSupport[feet] === undefined) {
@@ -144,7 +174,14 @@ export function tallyMutationsOfInterest(treeMutations: MutationOfInterest[][]) 
           featureSupport[feet]++;
         }
       });
+      moi.instances.forEach(inst=>{
+        const { mutation, nodeIndex, affectedTipCount } = inst;
+        const treeInst : TreeIntroduction = {
+          mutation, nodeIndex, affectedTipCount, treeIndex
+        }
+        instances.push(treeInst);
+      });
     });
   });
-  return sitesWithSupport;
+  return sitesWithSupport.filter(agg=>!!agg);
 }

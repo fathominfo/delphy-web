@@ -13,6 +13,7 @@ import { getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHin
 import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 import { MccConfig } from "../mccconfig";
 import { getMRCA } from "../../pythia/pythiacommon";
+import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 
 
 
@@ -735,6 +736,15 @@ export class CoreSelectData {
       prevalenceNodes.unshift(this.nullNode);
       chartData.prevalenceNodes = prevalenceNodes;
       mccRef.release();
+
+      const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
+      const ofInterest = tallyMutationsOfInterest(moiHist);
+      console.log('ofInterest')
+      ofInterest.forEach(({site, featureSupport, instances})=>{
+        console.log(site, Object.entries(featureSupport).map(([k,v])=>`${k}:${v}`).join(), instances);
+      });
+
+
       this.update(chartData);
     }
   }

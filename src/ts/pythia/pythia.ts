@@ -611,7 +611,7 @@ export class Pythia {
     }
     const mois = gatherBaseTreeMutationsOfInterest(tree, tipCounts);
     this.mutationOfInterestHist.push(mois);
-    console.log(mois.filter(moi=>moi.instances.length > 2).map(moi=>[moi.site, moi.instances.length, moi.features]));
+    // console.log(mois.filter(moi=>moi.instances.length > 2).map(moi=>[moi.site, moi.instances.length, moi.features]));
   }
 
 
