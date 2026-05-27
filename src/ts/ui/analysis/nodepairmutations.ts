@@ -10,6 +10,7 @@ import { Mutation } from '../../pythia/delphy_api';
 import { SeriesHoverCallback } from '../timedistributionchart';
 import { DisplayNode } from '../displaynode';
 import { NodeTimeDistributionChart, NodeSVGSeriesGroup } from './nodetimedistributionchart';
+import { AggregateMOI } from '../../pythia/mutationsofinterest';
 
 
 
@@ -325,6 +326,7 @@ export class NodeMutations {
 
   nodeHighlightCallback: HoverCallback;
   charts: NodePairMutationList[];
+  mutationsOfInterest: AggregateMOI[] = [];
 
   constructor(nodeHighlightCallback: HoverCallback) {
     this.nodeHighlightCallback = nodeHighlightCallback;
@@ -337,7 +339,10 @@ export class NodeMutations {
   }
 
 
-  setData(nodeComparisonData: NodeMutationsData[]): NodePairMutationList[] {
+  setData(nodeComparisonData: NodeMutationsData[],
+    mutationsOfInterest: AggregateMOI[]
+  ): NodePairMutationList[] {
+    this.mutationsOfInterest = mutationsOfInterest;
     nodeComparisonContainer.innerHTML = '';
     const sorted = nodeComparisonData.sort((a, b)=>{
       let diff = a.ancestorType.generationsFromRoot - b.ancestorType.generationsFromRoot;

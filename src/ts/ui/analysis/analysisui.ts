@@ -1,5 +1,6 @@
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
+import { AggregateMOI, tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { UNSET } from "../common";
@@ -15,8 +16,6 @@ import { NodePrevalenceChart } from "./nodeprevalencechart";
 import { NodeTimelines } from "./nodetimelines";
 
 
-
-
 export class AnalysisUI extends UIScreen {
 
   nodeSchematic: NodeSchematic;
@@ -26,6 +25,7 @@ export class AnalysisUI extends UIScreen {
   highlightNode: number = UNSET;
   highlightDate: number = Number.MAX_SAFE_INTEGER;
   highlightMutation: Mutation | null = null;
+
 
 
   constructor(sharedState: SharedState, divSelector: string) {
@@ -129,13 +129,13 @@ export class AnalysisUI extends UIScreen {
     const nodeDistributions = nodePrevalenceData.series;
     /* we want the default distribution to come first, so take it off the end and put it first */
     nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
+    const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
+    const mutationsOfInterest = tallyMutationsOfInterest(moiHist);
     this.nodeSchematic.setData(this.sharedState.schematicData);
     this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate);
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
-    this.nodeMutationCharts.setData(nodeComparisonData);
-
-
+    this.nodeMutationCharts.setData(nodeComparisonData, mutationsOfInterest);
     mccRef.release();
   }
 

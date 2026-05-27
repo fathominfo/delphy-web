@@ -12,7 +12,7 @@ import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata
 import { getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
 import { MccConfig } from "../mccconfig";
 import { getMRCA } from "../../pythia/pythiacommon";
-import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
+// import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { SchematicDataBuilder, MRCANodeCreator, SchematicNode } from "../schematicdata";
 import { NodeSchematicData } from "../nodeschematic";
 
@@ -744,12 +744,12 @@ export class CoreSelectData {
       this.sharedState.schematicData = chartData.schematicData;
       mccRef.release();
 
-      const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
-      const ofInterest = tallyMutationsOfInterest(moiHist);
-      console.log('ofInterest')
-      ofInterest.forEach(({site, featureSupport, instances})=>{
-        console.log(site, Object.entries(featureSupport).map(([k,v])=>`${k}:${v}`).join(), instances);
-      });
+      // const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
+      // const ofInterest = tallyMutationsOfInterest(moiHist);
+      // console.log('ofInterest')
+      // ofInterest.forEach(({site, featureSupport, instances})=>{
+      //   console.log(site, Object.entries(featureSupport).map(([k,v])=>`${k}:${v}`).join(), instances);
+      // });
 
 
       this.update(chartData);

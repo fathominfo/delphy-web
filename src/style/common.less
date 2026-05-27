@@ -369,7 +369,41 @@
   --extension-max-width: var(--nav-width);
   --body-max-width: 1600px;
   --run-svg-tree-branches-offset-y: calc(var(--unit) * 0.075);
-  --patrick-size: calc(var(--unit) * 20);
+
+  --lineages-chart-yaxis-width: calc(var(--unit) * 5.875);
+  --lineages-emergence-dist-opacity: 0.375;
+  --lineages-emergence-timeline-height: calc(var(--subway-height) + var(--subway-overflow-y));
+  --lineages-mutation-active-opacity: 1;
+  --lineages-mutation-inactive-opacity: 0.25;
+  --lineages-mutation-opacity: 1;
+  --lineages-prevalence-chart-feature-height: calc(100% - var(--axis-dates-height));
+  --lineages-prevalence-chart-feature-zindex: 1;
+  --lineages-prevalence-chart-height: calc((var(--selection-height) * var(--lineages-selections-max)) + (var(--selections-gap) * (var(--lineages-selections-max) - 1)));
+  --lineages-prevalence-chart-support-zindex: 0;
+
+  --lineages-prevalence-mcc-trend-opacity: 0.5;
+  --lineages-prevalence-mcc-trend-stroke-weight: calc(var(--guide-date-stroke-weight) * 1.5);
+  --lineages-prevalence-shape-opacity: 0.375;
+  --lineages-prevalence-trend-opacity: 1;
+  --lineages-prevalence-trend-stroke-weight: calc(var(--guide-date-stroke-weight) * 0.75);
+  --lineages-tag-active-opacity: var(--lineages-mutation-active-opacity);
+  --lineages-tag-inactive-opacity: var(--lineages-mutation-inactive-opacity);
+  --lineages-tag-opacity: var(--lineages-mutation-opacity);
+  --lineages-tag-semiactive-opacity: 0.5;
+  --lineages-timeline-active-dist-opacity: 0.75;
+  --lineages-timeline-active-guide-opacity: calc(var(--guide-opacity) * 1.5);
+  --lineages-timeline-active-label-opacity: 1;
+  --lineages-timeline-guide-opacity: var(--guide-opacity);
+  --lineages-timeline-inactive-guide-opacity: calc(var(--lineages-timeline-guide-opacity) * 0.5);
+  --lineages-timeline-inactive-label-opacity: 0.5;
+  --lineages-timeline-label-opacity: 1;
+  --lineages-timeline-pointer-opacity: 0.5;
+  --lineages-timeline-semiactive-guide-opacity: calc(var(--guide-opacity) * 1.25);
+  --lineages-timeline-semiactive-label-opacity: 0.5;
+
+
+
+
 
   --view-fill: #ffffff;
   --view-text: #4a626c;
@@ -854,9 +888,11 @@
   --select-timeline-pointer-opacity: var(--select-timeline-dist-opacity);
   --select-timeline-pointer-opacity: 0.5;
   --selection-unmatching-opacity: 0.5;
+  --list-semimatching-opacity: 0.3;
   --subway-line-unmatching-opacity: 0.4;
   --guide-range-date-semimatching-opacity: calc(var(--guide-range-date-opacity) * 0.5);
   --guide-date-unmatching-opacity: calc(var(--guide-date-opacity) * 0.3);
+  --group-unmatching-opacity: 0.3;
   --html-fill: #021b23;
   --extension-fill: var(--nav-fill);
   --intro-extension-fill: var(--html-fill);

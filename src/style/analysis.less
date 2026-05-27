@@ -88,7 +88,7 @@
   g {
 
     &.unmatching {
-      opacity: var(--lineages-prevalence-group-unmatching-opacity);
+      opacity: var(--group-unmatching-opacity);
     }
 
 
@@ -583,14 +583,14 @@
   }
 
   .duo {
-    .unmatching {opacity: var(--lineages-list-unmatching-opacity)}
+    .unmatching {opacity: var(--selection-unmatching-opacity)}
 
     .matching {
       .timeline .guide {opacity: var(--lineages-timeline-semiactive-guide-opacity)}
 
       .unmatching {
         .mutation, .timeline {
-          opacity: var(--lineages-list-semimatching-opacity);
+          opacity: var(--list-semimatching-opacity);
         }
       }
     }
@@ -804,7 +804,7 @@
   }
 
   &.unmatching {
-    opacity: var(--lineages-list-unmatching-opacity);
+    opacity: var(--selection-unmatching-opacity);
   }
 
 }

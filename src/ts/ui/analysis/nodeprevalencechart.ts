@@ -231,6 +231,7 @@ export class NodePrevalenceChart {
 
   highlightNode(nodeIndex: number, date:number) : void {
     requestAnimationFrame(()=>{
+      console.log(nodeIndex, date);
       if (nodeIndex === UNSET) {
         Object.values(this.svgGroups).forEach((group)=>{
           group.toggleClass("matching", false);
