@@ -29,10 +29,11 @@ export class SchematicNode {
       this.children.splice(index, 1);
     }
   }
-
 }
 
-export class SchematicData {
+
+
+export class SchematicDataBuilder {
 
   root: SchematicNode | null = null;
   found: SchematicNode[] = [];
@@ -135,15 +136,7 @@ export class SchematicData {
         console.warn(`the schematic tree building is not binary`, treeNode);
       }
     });
-    // tips.forEach(n=>{
-    //   if (this.getY(n.node.index) === undefined) {
-    //     const s = this.getY(n.node.index);
-    //     console.log("miksi?", s);
-
-    //   }
-    // })
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
-    // console.log('selectionTreeData tips',  tips.map(n=>`${n.node.name} ${n.node.index} ${this.getY(n.node.index)}`));
     const numTips = tips.length;
     const midTips = numTips / 2;
     tips.forEach((tn, i)=>{
@@ -182,13 +175,6 @@ export class SchematicData {
         tn.tipPlacement = 0;
       }
     }
-
-    // console.log('selection tree data ready');
-    // this.found.forEach(tn=>console.log(`   ${tn.node.index} ${tn.node.name} ${tn.xPos} ${tn.yPos} ${tn.stepsFromRoot} `));
-
-
-
-
   }
 
 

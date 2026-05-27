@@ -10,8 +10,9 @@ import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
-import { SchematicData, MRCANodeCreator, SchematicNode } from "../schematicdata";
+import { SchematicDataBuilder, MRCANodeCreator, SchematicNode } from "../schematicdata";
 import { MccConfig } from "../mccconfig";
+import { NodeSchematicData } from "../nodeschematic";
 
 
 
@@ -60,9 +61,9 @@ export type ChartData = {
   rootNode: SchematicNode | null,
   selectedRootIndex: number,
   peakPrevalence: number,
-  fieldIntroductions: IntroductionData[],
   metadataField: string | null,
-  isFullyAuto: boolean
+  isFullyAuto: boolean,
+  schematicData: NodeSchematicData | null
 }
 
 
@@ -79,9 +80,9 @@ const defaultChartData : ChartData = {
   rootNode: null,
   selectedRootIndex: UNSET,
   peakPrevalence: UNSET,
-  fieldIntroductions: [],
   metadataField: null,
-  isFullyAuto: false
+  isFullyAuto: false,
+  schematicData: null
 };
 
 
@@ -98,7 +99,6 @@ export class CoreSelectData {
   nodeMetadata: NodeMetadata | null = null;
   tipIds: string[] = [];
   isApobecEnabled = false;
-
 
 
   /*
@@ -138,7 +138,7 @@ export class CoreSelectData {
     inferred nodes
     highlight node
   */
-  private selectionTreeData: SchematicData | null = null;
+  private selectionTreeData: SchematicDataBuilder | null = null;
   private selectable = true;
   private constrainHoverByCredibility = false;
 
@@ -205,7 +205,7 @@ export class CoreSelectData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.selectionTreeData = new SchematicData(summaryTree, childCounts, mrcaMaker, this.getY);
+      this.selectionTreeData = new SchematicDataBuilder(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
@@ -636,7 +636,7 @@ export class CoreSelectData {
 
   setTreeData() : void {
     const tree = this.summaryTree as SummaryTree;
-    const selectionTree = this.selectionTreeData as SchematicData;
+    const selectionTree = this.selectionTreeData as SchematicDataBuilder;
     const candidateNodes = this.selectedNodes;
     if (!candidateNodes.map(n=>n.index).includes(this.rootNode.index)) {
       candidateNodes.unshift(this.rootNode);
@@ -682,7 +682,7 @@ export class CoreSelectData {
     const pythia = this.pythia;
     if (pythia) {
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.selectionTreeData as SchematicData;
+      const minimapData = this.selectionTreeData as SchematicDataBuilder;
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         maxDate = pythia.maxDate,
@@ -705,7 +705,6 @@ export class CoreSelectData {
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       chartData.nodeDistributions = nodeDistributions;
-      chartData.fieldIntroductions = this.fieldIntroductions.slice();
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
         if (ancestor && ancestor.node.index !== UNSET) {
@@ -733,6 +732,14 @@ export class CoreSelectData {
       const prevalenceNodes = currentNodes.slice(0);
       prevalenceNodes.unshift(this.nullNode);
       chartData.prevalenceNodes = prevalenceNodes;
+
+      chartData.schematicData = {
+        pairs: chartData.nodePairs,
+        rootNode: chartData.rootNode,
+        fieldIntroductions: this.fieldIntroductions.slice(),
+        metadataField: this.filteringByMetadataField
+      };
+      this.sharedState.schematicData = chartData.schematicData;
       mccRef.release();
       this.update(chartData);
     }
@@ -755,7 +762,7 @@ export class CoreSelectData {
       return false;
     }
     // console.log(`setting highlight node to ${nodeIndex}`)
-    const minimap = this.selectionTreeData as SchematicData;
+    const minimap = this.selectionTreeData as SchematicDataBuilder;
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
@@ -795,7 +802,7 @@ export class CoreSelectData {
         */
         return;
       } else {
-        const minimap = this.selectionTreeData as SchematicData;
+        const minimap = this.selectionTreeData as SchematicDataBuilder;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
           // _hint = TreeHint.Zoom;
@@ -845,7 +852,7 @@ export class CoreSelectData {
       let selection: DisplayNode = this.highlightNode;
       if (nodeIndex !== this.highlightNode.index) {
         /* could the node be an MRCA? That would not be in currentNodes */
-        const minimap = this.selectionTreeData as SchematicData;
+        const minimap = this.selectionTreeData as SchematicDataBuilder;
         const mrcaTreeNode = minimap.found.filter(treeNode=>{
           return treeNode
             && treeNode.node.index === nodeIndex;
@@ -933,7 +940,7 @@ export class CoreSelectData {
         if (!found) this.bypassNode(i);
       });
     }
-    const minimap = this.selectionTreeData as SchematicData;
+    const minimap = this.selectionTreeData as SchematicDataBuilder;
     const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
     minimap.setData(toMap);
     this.setChartData();

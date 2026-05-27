@@ -3,6 +3,7 @@ import { MccConfig, ConfigExport } from './ui/mccconfig';
 import { Mutation } from './pythia/delphy_api';
 import { NavigateFunctionType, UNSET } from './ui/common';
 import { RecordQuality } from './recordquality';
+import { NodeSchematicData } from './ui/nodeschematic';
 
 
 
@@ -81,5 +82,15 @@ export class SharedState {
   markMutationsUpdated() : void {
     this.mutationsNeedReloading = false;
   }
+
+  set schematicData(data: NodeSchematicData) {
+    this.mccConfig.schematicData = data;
+  }
+
+  get schematicData() : NodeSchematicData  {
+    return this.mccConfig.schematicData as NodeSchematicData;
+  }
+
+
 
 }

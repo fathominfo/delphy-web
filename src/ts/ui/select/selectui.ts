@@ -16,7 +16,7 @@ import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
 import { MetadataLegend } from './metadatalegend';
 import { SchematicEditor } from './schematiceditor';
-
+import { NodeSchematicData } from '../nodeschematic';
 
 
 
@@ -205,16 +205,14 @@ export class SelectUI extends MccUI {
   }
 
   update(chartData: ChartData): void {
-    // const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
-    //   nodePairs, rootNode, selectedRootIndex } = chartData;
     const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence,
-      fieldIntroductions, metadataField, isFullyAuto } = chartData;
+      metadataField, isFullyAuto, schematicData } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
     (this.mccTreeCanvas as SelectTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode, fieldIntroductions, metadataField);
+    this.nodeSchematic.setData(schematicData as NodeSchematicData);
     this.nodeSchematic.setControlsData(nodes.length, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);

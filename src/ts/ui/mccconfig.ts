@@ -8,6 +8,7 @@ import { ColorChooser, UNDEF_COLOR } from './colorchooser';
 import { NodeMetadata, FieldTipCount } from './nodemetadata';
 import { SummaryTree } from '../pythia/delphy_api';
 import { BlockSlider } from '../util/blockslider';
+import { NodeSchematicData } from './nodeschematic';
 
 
 type ChangeHandler = (event:Event)=>void;
@@ -38,6 +39,8 @@ export class MccConfig {
 
   metadataColorsDirty: boolean;
   configuredRoot: number = UNSET;
+
+  schematicData: NodeSchematicData | null = null;
 
 
 

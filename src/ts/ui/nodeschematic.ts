@@ -196,6 +196,14 @@ export class SchematicNodeDisplay {
 }
 
 
+
+export type NodeSchematicData = {
+  pairs: NodePair[],
+  rootNode: SchematicNode | null,
+  fieldIntroductions: IntroductionData[],
+  metadataField: string | null
+}
+
 /*
 this draws a simple schematic to show the relations
 between nodes in the tree. The current intent is that
@@ -352,9 +360,9 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: SchematicNode | null,
-    fieldIntroductions: IntroductionData[], metadataField: string | null
-  ) {
+  setData(schematicData: NodeSchematicData) {
+    const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
+
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,
     //   descendant.index, descendant.label, descendant.className);
