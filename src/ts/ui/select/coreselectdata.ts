@@ -5,7 +5,7 @@ import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from "../../util/treeutils";
 import { ColorOption, numericSortReverse, UNDEF, UNSET } from "../common";
-import { DisplayNode, NULL_NODE_CODE } from "./displaynode";
+import { DisplayNode, NULL_NODE_CODE } from "../displaynode";
 import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";

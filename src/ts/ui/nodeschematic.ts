@@ -1,6 +1,6 @@
 import { UNSET } from "./common";
 import { IntroductionData } from "./select/coreselectdata";
-import { DisplayNode } from "./select/displaynode";
+import { DisplayNode } from "./displaynode";
 import { HoverCallback, NodePair, NodeRelationType } from "./select/selectcommon";
 import { SchematicNode } from "./schematicdata";
 

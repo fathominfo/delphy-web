@@ -2,7 +2,7 @@ import { SoftFloat } from "../../util/softfloat";
 import { UNSET } from "../common";
 import { Distribution } from "../distribution";
 import { SVGSeriesGroup, TimeDistributionChart } from "../timedistributionchart";
-import { DisplayNode } from "./displaynode";
+import { DisplayNode } from "../displaynode";
 
 
 const FRAME_DURATION = 50; // ms

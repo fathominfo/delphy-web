@@ -1,0 +1,954 @@
+
+
+#analysis {
+
+	.subway-hover button {
+		display: none;
+	}
+}
+
+
+
+#analysis--prevalence {
+  h3 {
+    margin-bottom: 8px;
+  }
+
+  .chart {
+    height: var(--lineages-prevalence-chart-height);
+    width: 100%;
+
+    .feature {
+      height: var(--lineages-prevalence-chart-feature-height);
+      z-index: var(--lineages-prevalence-chart-feature-zindex);
+    }
+
+    .axis.y {
+      width: var(--lineages-chart-yaxis-width);
+      height: 100%;
+      z-index: 1;
+      padding: var(--chart-stroke-weight) 0;
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      background-color: transparent;
+      box-sizing: border-box;
+    }
+  }
+
+}
+
+
+#analysis--prevalence--chart-container {
+  height: 100%;
+  flex: 1;
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  padding: var(--chart-displays-timeline-inset-x);
+  background-color: var(--chart-stroke);
+  border-radius: var(--chart-outer-corner);
+  box-sizing: border-box;
+}
+
+#analysis--prevalence--chart {
+  width: 100%;
+  border-radius: var(--chart-inner-corner);
+  background: var(--view-fill);
+  height: 100%;
+
+  .shape {
+    fill: none;
+    stroke: none;
+    opacity: var(--lineages-prevalence-shape-opacity);
+  }
+  .trend {
+    fill: none;
+    stroke: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: var(--lineages-prevalence-trend-stroke-weight);
+    opacity: var(--lineages-prevalence-trend-opacity);
+  }
+
+
+  g {
+
+    &.unmatching {
+      opacity: var(--lineages-prevalence-group-unmatching-opacity);
+    }
+
+
+    &.root {
+      .shape { fill: var(--root-timeline-fill); }
+      .trend { stroke: var(--root-timeline-stroke); }
+    }
+    &.mrca {
+      .shape { fill: var(--mrca-timeline-fill);}
+      .trend { stroke: var(--mrca-timeline-stroke); }
+    }
+    &.a {
+      .shape { fill: var(--a-timeline-fill); }
+      .trend { stroke: var(--a-timeline-stroke); }
+    }
+    &.b {
+      .shape { fill: var(--b-timeline-fill); }
+      .trend { stroke: var(--b-timeline-stroke); }
+    }
+    &.c {
+      .shape { fill: var(--c-timeline-fill); }
+      .trend { stroke: var(--c-timeline-stroke); }
+    }
+    &.d {
+      .shape { fill: var(--d-timeline-fill); }
+      .trend { stroke: var(--d-timeline-stroke); }
+    }
+    &.e {
+      .shape { fill: var(--e-timeline-fill); }
+      .trend { stroke: var(--e-timeline-stroke); }
+    }
+    &.f {
+      .shape { fill: var(--f-timeline-fill); }
+      .trend { stroke: var(--f-timeline-stroke); }
+    }
+    &.g {
+      .shape { fill: var(--g-timeline-fill); }
+      .trend { stroke: var(--g-timeline-stroke); }
+    }
+    &.h {
+      .shape { fill: var(--h-timeline-fill); }
+      .trend { stroke: var(--h-timeline-stroke); }
+    }
+    &.i {
+      .shape { fill: var(--i-timeline-fill); }
+      .trend { stroke: var(--i-timeline-stroke); }
+    }
+    &.j {
+      .shape { fill: var(--j-timeline-fill); }
+      .trend { stroke: var(--j-timeline-stroke); }
+    }
+    &.k {
+      .shape { fill: var(--k-timeline-fill); }
+      .trend { stroke: var(--k-timeline-stroke); }
+    }
+    &.l {
+      .shape { fill: var(--l-timeline-fill); }
+      .trend { stroke: var(--l-timeline-stroke); }
+    }
+  }
+
+  &.median .trend {
+    stroke-width: var(--lineages-prevalence-mcc-trend-stroke-weight);
+    stroke-dasharray: 0.75%;
+    stroke-dashoffset: 0.75%;
+    opacity: var(--lineages-prevalence-mcc-trend-opacity);
+  }
+
+}
+
+
+
+#analysis--prevalence--date-labels {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  z-index: var(--lineages-prevalence-chart-support-zindex);
+
+
+  .axis.x {
+    width: 100%;
+    height: 100%;
+    margin-right: 0;
+  }
+}
+
+
+
+
+// ████████╗██╗███╗   ███╗███████╗██╗     ██╗███╗   ██╗███████╗███████╗
+// ╚══██╔══╝██║████╗ ████║██╔════╝██║     ██║████╗  ██║██╔════╝██╔════╝
+//    ██║   ██║██╔████╔██║█████╗  ██║     ██║██╔██╗ ██║█████╗  ███████╗
+//    ██║   ██║██║╚██╔╝██║██╔══╝  ██║     ██║██║╚██╗██║██╔══╝  ╚════██║
+//    ██║   ██║██║ ╚═╝ ██║███████╗███████╗██║██║ ╚████║███████╗███████║
+//    ╚═╝   ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
+
+
+#analysis--node-timelines {
+
+
+  .chart {
+    .displays {
+      flex: 1;
+      padding-top: 0;
+      padding-bottom: 0;
+      background-color: transparent;
+      height: var(--lineages-emergence-timeline-height);
+    }
+
+
+    .axis.x {
+      position: relative;
+
+      .tag {
+        position: absolute;
+        top: 0;
+        opacity: var(--lineages-tag-opacity);
+        width: 50px;
+        margin-left: -30px;
+        text-align: center;
+
+
+        &.matching {
+          // opacity: var(--lineages-tag-opacity);
+          &.active     {opacity: var(--lineages-tag-active-opacity);}
+          &.inactive   {opacity: var(--lineages-tag-semiactive-opacity);}
+        }
+
+        &.unmatching {
+          opacity: var(--lineages-tag-semiactive-opacity);
+          &.active   {opacity: var(--lineages-tag-active-opacity);}
+          &.inactive {opacity: var(--lineages-tag-inactive-opacity);}
+        }
+
+        &.active {
+          opacity: var(--lineages-tag-active-opacity);
+        }
+
+        &.inactive {
+          opacity: var(--lineages-tag-inactive-opacity);
+        }
+
+
+      }
+    }
+
+    .axis.y {
+      width: var(--lineages-chart-yaxis-width);
+
+      .values {
+        align-items: flex-start;
+      }
+
+      .text {
+        z-index: 1;
+        background-color: var(--view-fill);
+        padding: 2px 4px 2px 0;
+        white-space: nowrap;
+      }
+      .tick {
+        display: none;
+      }
+    }
+
+
+    .display {
+      width: 100%;
+      border-radius: var(--chart-inner-corner);
+      background: var(--view-fill);
+
+      .timeline {
+        position: absolute;
+        height: 100%;
+        align-items: flex-end;
+        pointer-events: none; // let events pass through to the SVG chart
+
+        .label {
+          position: absolute;
+          &.active     {opacity: var(--lineages-timeline-active-label-opacity);}
+          &.inactive   {opacity: var(--lineages-timeline-inactive-label-opacity);}
+          &.unmatching {opacity: var(--lineages-timeline-semiactive-label-opacity);}
+        }
+      }
+    }
+
+
+    .tracker {
+      position: absolute;
+      top: 0;
+      width: var(--guide-date-stroke-weight);
+      height: 100%;
+      border-radius: var(--guide-date-stroke-weight);
+      background-color: var(--guide-date-stroke);
+      opacity: 0;
+      transform: translateX(-50%);
+
+      &.active {
+        opacity: var(--guide-date-opacity);
+      }
+
+    }
+
+    .label.date.root      {color: var(--root-text)}
+    .label.date.mrca      {color: var(--mrca-text)}
+    .label.date.a    {color: var(--a-text)}
+    .label.date.b    {color: var(--b-text)}
+    .label.date.c    {color: var(--c-text)}
+    .label.date.d    {color: var(--d-text)}
+    .label.date.e    {color: var(--e-text)}
+    .label.date.f    {color: var(--f-text)}
+    .label.date.g    {color: var(--g-text)}
+    .label.date.h    {color: var(--h-text)}
+    .label.date.i    {color: var(--i-text)}
+    .label.date.j    {color: var(--j-text)}
+    .label.date.k    {color: var(--k-text)}
+    .label.date.l    {color: var(--l-text)}
+    .label.date.m    {color: var(--m-text)}
+
+    .tag.root     {color: var(--root-timeline-text)}
+    .tag.mrca     {color: var(--mrca-timeline-text)}
+    .tag.a        {color: var(--a-timeline-text)}
+    .tag.b        {color: var(--b-timeline-text)}
+    .tag.c        {color: var(--c-timeline-text)}
+    .tag.d        {color: var(--d-timeline-text)}
+    .tag.e        {color: var(--e-timeline-text)}
+    .tag.f        {color: var(--f-timeline-text)}
+    .tag.g        {color: var(--g-timeline-text)}
+    .tag.h        {color: var(--h-timeline-text)}
+    .tag.i        {color: var(--i-timeline-text)}
+    .tag.j        {color: var(--j-timeline-text)}
+    .tag.k        {color: var(--k-timeline-text)}
+    .tag.l        {color: var(--l-timeline-text)}
+    .tag.m        {color: var(--m-timeline-text)}
+
+  }
+
+  h1 {
+    //color: rgb(142, 142, 142);
+    //font-weight: 700;
+    font-weight: bold; //normal;
+    margin-bottom: 0.5em;
+  }
+
+  .analysis--node-overlap-item {
+    display: block;
+    font-size: 12px;
+    color: @midGrey;
+    font-weight: 500;
+    line-height: 1.25em;
+    margin-top: 6px;
+
+    .root-message {
+      display: none;
+    }
+
+
+    &.is-root {
+      display: block;
+      // font-size: 12px;
+      // color: @midGrey;
+      // font-weight: normal;
+      // line-height: 1.1em;
+      .non-root-message {display: none;}
+      .root-message {display: inline;}
+    }
+
+    .lnoi-1, .lnoi-2 {font-weight: 700;}
+
+  }
+
+
+  .series-group-container {
+
+    .series.group.tip {
+      path {display: none;}
+      line {opacity: var(--guide-range-date-opacity);}
+    }
+
+  }
+}
+
+
+
+.series-group-container {
+
+  * {
+    transition-property: fill, stroke, opacity, transform;
+    transition-duration: var(--transition);
+    transition-timing-function: ease-out;
+  }
+
+  .series.group.matching {
+    path {
+      opacity: var(--lineages-timeline-active-dist-opacity);
+    }
+  }
+
+
+  path {
+    opacity: var(--lineages-emergence-dist-opacity);
+    stroke: none;
+  }
+
+  line {
+    opacity: var(--lineages-timeline-pointer-opacity);
+    fill: none;
+  }
+
+  .root, [data-node="root"] {
+    path { fill: var(--root-timeline-fill); }
+    line { stroke: var(--root-timeline-stroke); }
+  }
+  .mrca, [data-node="mrca"] {
+    path { fill: var(--mrca-timeline-fill); }
+    line { stroke: var(--mrca-timeline-stroke); }
+  }
+  .a, [data-node="a"] {
+    path { fill: var(--a-timeline-fill); }
+    line  { stroke: var(--a-timeline-stroke); }
+  }
+  .b, [data-node="b"] {
+    path { fill: var(--b-timeline-fill); }
+    line  { stroke: var(--b-timeline-stroke); }
+  }
+  .c, [data-node="c"] {
+    path { fill: var(--c-timeline-fill); }
+    line  { stroke: var(--c-timeline-stroke); }
+  }
+  .d, [data-node="d"] {
+    path { fill: var(--d-timeline-fill); }
+    line  { stroke: var(--d-timeline-stroke); }
+  }
+  .e, [data-node="e"] {
+    path { fill: var(--e-timeline-fill); }
+    line  { stroke: var(--e-timeline-stroke); }
+  }
+  .f, [data-node="f"] {
+    path { fill: var(--f-timeline-fill); }
+    line  { stroke: var(--f-timeline-stroke); }
+  }
+  .g, [data-node="g"] {
+    path { fill: var(--g-timeline-fill); }
+    line  { stroke: var(--g-timeline-stroke); }
+  }
+  .h, [data-node="h"] {
+    path { fill: var(--h-timeline-fill); }
+    line  { stroke: var(--h-timeline-stroke); }
+  }
+  .i, [data-node="i"] {
+    path { fill: var(--i-timeline-fill); }
+    line  { stroke: var(--i-timeline-stroke); }
+  }
+  .j, [data-node="j"] {
+    path { fill: var(--j-timeline-fill); }
+    line  { stroke: var(--j-timeline-stroke); }
+  }
+  .k, [data-node="k"] {
+    path { fill: var(--k-timeline-fill); }
+    line  { stroke: var(--k-timeline-stroke); }
+  }
+  .l, [data-node="l"] {
+    path { fill: var(--l-timeline-fill); }
+    line  { stroke: var(--l-timeline-stroke); }
+  }
+}
+
+
+
+
+
+
+
+.analysis--time-chart,
+.analysis--node-comparison--time-chart {
+  height: 60px;
+  // padding-left: @chartLeftMargin;
+
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+
+
+
+
+
+
+
+// ███╗   ███╗██╗   ██╗████████╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
+// ████╗ ████║██║   ██║╚══██╔══╝██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+// ██╔████╔██║██║   ██║   ██║   ███████║   ██║   ██║██║   ██║██╔██╗ ██║███████╗
+// ██║╚██╔╝██║██║   ██║   ██║   ██╔══██║   ██║   ██║██║   ██║██║╚██╗██║╚════██║
+// ██║ ╚═╝ ██║╚██████╔╝   ██║   ██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║███████║
+// ╚═╝     ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+
+
+
+#analysis--list {
+  /* temporary */
+  max-height: 300px;
+  overflow-y: scroll;
+  /* end temporary */
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--duo-list-gap);
+  width: 100%;
+  align-items: flex-end;
+
+
+  .left {
+    justify-content: space-between;
+    align-items: flex-end;
+    flex: unset;
+    width: var(--duo-left-width);
+  }
+
+  .right {
+    flex: 1;
+  }
+
+
+  [data-to="mrca"] {
+    color: var(--mrca-mutation-text);
+    .header .title h4 {color: var(--mrca-mutation-text);}
+    .mutation {color: var(--mrca-mutation-text);}
+    .mutation .site {color: var(--mrca-position-text);}
+    .range .guide.date.start {background-color: var(--mrca-timeline-stroke);}
+    .timeline .dummy .dist {fill: var(--mrca-timeline-fill);}
+    .timeline .dummy .pointer {stroke: var(--mrca-timeline-stroke);}
+  }
+
+  [data-to="a"] {
+    color: var(--a-mutation-text);
+    .header .title h4      {color: var(--a-mutation-text)}
+    .mutation      {color: var(--a-mutation-text)}
+    .mutation .site      {color: var(--a-position-text)}
+    .range .guide.date.end    {background-color: var(--a-timeline-stroke)}
+    .timeline .dummy .dist {fill: var(--a-timeline-fill)}
+    .timeline .dummy .pointer {stroke: var(--a-timeline-stroke)}
+  }
+
+  [data-to="b"] {
+    color: var(--b-mutation-text);
+  .header .title h4      {color: var(--b-mutation-text)}
+  .mutation      {color: var(--b-mutation-text)}
+  .mutation .site      {color: var(--b-position-text)}
+  .range .guide.date.end    {background-color: var(--b-timeline-stroke)}
+  .timeline .dummy .dist {fill: var(--b-timeline-fill)}
+  .timeline .dummy .pointer {stroke: var(--b-timeline-stroke)}
+  }
+
+  [data-from="mrca"] .range .guide.date.start {background-color: var(--mrca-timeline-stroke)}
+  [data-from="a"] .range .guide.date.start    {background-color: var(--a-timeline-stroke)}
+  [data-from="b"] .range .guide.date.start    {background-color: var(--b-timeline-stroke)}
+  [data-to="mrca"] .range .guide.date.end {background-color: var(--mrca-timeline-stroke)}
+
+  .mutation {
+    color: var(--node-mutation-text);
+    opacity: var(--lineages-mutation-opacity);
+    .site {
+      color: var(--node-position-text);
+    }
+
+    &.active   {opacity: var(--lineages-mutation-active-opacity)}
+    &.inactive {opacity: var(--lineages-mutation-inactive-opacity)}
+  }
+
+  .timeline {
+    .label          {opacity: var(--lineages-timeline-label-opacity)}
+    .guide          {opacity: var(--lineages-timeline-guide-opacity)}
+    .label[data-lineage="root"] {color: var(--root-timeline-text)}
+    .label[data-lineage="mrca"] {color: var(--mrca-timeline-text)}
+    .label[data-lineage="a"] {color: var(--a-timeline-text)}
+    .label[data-lineage="b"] {color: var(--b-timeline-text)}
+    &.active {
+      .label   {opacity: var(--lineages-timeline-active-label-opacity)}
+      .guide   {opacity: var(--lineages-timeline-active-guide-opacity)}
+    }
+    &.inactive {
+      .label {opacity: var(--lineages-timeline-inactive-label-opacity)}
+      .guide {opacity: var(--lineages-timeline-inactive-guide-opacity)}
+    }
+  }
+
+  .duo {
+    .unmatching {opacity: var(--lineages-list-unmatching-opacity)}
+
+    .matching {
+      .timeline .guide {opacity: var(--lineages-timeline-semiactive-guide-opacity)}
+
+      .unmatching {
+        .mutation, .timeline {
+          opacity: var(--lineages-list-semimatching-opacity);
+        }
+      }
+    }
+  }
+
+
+}
+
+#analysis--track-mutations-container {
+  width: 100%;
+}
+
+#list--titles {
+  padding: var(--duo-list-connector-height) 0;
+
+}
+
+
+.analysis--track-mutations {
+
+  transition: all 0.15s;
+
+
+  // .analysis--node-overlap-item {
+  //   display: block;
+  //   font-size: 12px;
+  //   color: @midGrey;
+  //   font-weight: 500;
+  //   line-height: 1.25em;
+  //   margin-top: 6px;
+
+  //   .root-message {
+  //     display: none;
+  //   }
+
+
+  //   &.is-root {
+  //     display: block;
+  //     // font-size: 12px;
+  //     // color: @midGrey;
+  //     // font-weight: normal;
+  //     // line-height: 1.1em;
+  //     .non-root-message {display: none;}
+  //     .root-message {display: inline;}
+  //   }
+
+  //   .lnoi-1, .lnoi-2 {font-weight: 700;}
+
+  // }
+
+  // &.single {
+  //   .analysis--node-comparison--descendant-node,
+  //   .analysis--node-comparison--descendant-connector,
+  //   .analysis--node-comparison--mutation-header,
+  //   .analysis--node-overlap-item {
+  //     display: none;
+  //   }
+  // }
+
+
+  .header {
+    .schematic {
+      min-width: var(--duo-list-duo-left-header-schematic-width);
+      max-width: var(--duo-list-duo-left-header-schematic-width);
+      height: var(--duo-list-duo-left-header-schematic-height);
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+      overflow: visible;
+
+      .division {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        height: 100%;
+        overflow: visible;
+      }
+
+
+      .segment {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 50%;
+        overflow: visible;
+        opacity: var(--schematic-segment-unmatching-opacity);
+      }
+
+      .trail {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .segment[data-trail="center"] .trail {
+        height: 0;
+        border-top: var(--schematic-stroke-weight-static) solid;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .segment[data-trail="up"] .trail {
+        border-top: var(--schematic-stroke-weight-static) solid;
+        border-left: var(--schematic-stroke-weight-static) solid;
+        border-right: none;
+        border-bottom: none;
+        border-radius: var(--schematic-corner) 0 0 0;
+      }
+
+      .segment[data-trail="down"] .trail {
+        border-top: none;
+        border-left: var(--schematic-stroke-weight-static) solid;
+        border-right: none;
+        border-bottom: var(--schematic-stroke-weight-static) solid;
+        border-radius: 0 0 0 var(--schematic-corner);
+      }
+
+      .point {
+        position: absolute;
+        width: var(--schematic-point-size-static);
+        height: var(--schematic-point-size-static);
+        border-radius: var(--schematic-point-size-static);
+        box-sizing: border-box;
+        transform: translate(-50%, -50%);
+        &.from {left: 0}
+        &.to {left: 100%}
+      }
+
+      .segment[data-trail="up"] {
+        .point.from {top: 100%}
+        .point.to {top: 0}
+      }
+      .segment[data-trail="center"] {
+        .point.from {top: 50%}
+        .point.to {top: 50%}
+      }
+      .segment[data-trail="down"]   {
+        .point.from {top: 0}
+        .point.to {top: 100%}
+      }
+
+      .segment[data-to="mrca"] {
+        .trail {border-color: var(--mrca-stroke);}
+        .point {background-color: var(--root-stroke)}
+      }
+      .segment[data-to="a"] {
+        .trail      {border-color: var(--a-stroke)}
+        .point      {background-color: var(--a-stroke)}
+      }
+      .segment[data-to="b"] {
+        .trail      {border-color: var(--b-stroke)}
+        .point      {background-color: var(--b-stroke)}
+      }
+    }
+  }
+
+
+
+  &[data-to="mrca"] .schematic .segment[data-to="mrca"] .point.to {
+    background-color: var(--mrca-fill);
+    border-color: var(--mrca-stroke);
+  }
+
+  &[data-to="mrca"] .schematic .segment[data-to="mrca"] {
+    .point.to {
+      width: var(--schematic-point-size-on);
+      height: var(--schematic-point-size-on);
+      border-radius: var(--schematic-point-size-on);
+      background-color: var(--mrca-stroke);
+      border: none;
+    }
+  }
+  &[data-to="a"] .schematic .segment[data-to="a"] {
+    .point.to {
+      background-color: var(--a-fill);
+      border-color: var(--a-stroke);
+    }
+  }
+  &[data-to="b"] .schematic .segment[data-to="b"] {
+    .point.to {
+      background-color: var(--b-fill);
+      border-color: var(--b-stroke);
+    }
+  }
+
+  &[data-to="mrca"] .schematic .segment[data-to="mrca"],
+  &[data-to="a"] .schematic .segment[data-to="a"],
+  &[data-to="b"] .schematic .segment[data-to="b"] {
+    opacity: 1;
+    z-index: 1;
+    .point.to {
+      width: var(--schematic-point-size-on-destination);
+      height: var(--schematic-point-size-on-destination);
+      border: var(--schematic-stroke-weight-static) solid;
+      border-radius: var(--schematic-point-size-on-destination);
+    }
+  }
+
+  &.unmatching {
+    opacity: var(--lineages-list-unmatching-opacity);
+  }
+
+}
+
+.analysis--mutation-timeline {
+  gap: unset;
+}
+
+.analysis--node-comparison--mutation-header {
+
+}
+
+.analysis--node-comparison--mutation-count {
+  font-weight: bolder;
+}
+
+.analysis--mutation-timeline .date-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  padding: 0 0 0 calc(var(--block-gap) + var(--mutation-emergence-mutation-width));
+  pointer-events: none;
+  z-index: 1;
+
+  .hover {
+    opacity: 0;
+    &.active {
+      opacity: var(--date-reference-line-opacity);
+    }
+  }
+
+}
+
+.analysis--node-comparison--mutation {
+  display: flex;
+  height: var(--duo-list-row-height);
+  gap: var(--block-gap);
+
+  &.is-apobec .analysis--node-comparison--mutation-is-apobec {
+    display: block;
+  }
+}
+
+.analysis--node-comparison--mutation-labels {
+  position: relative;
+  font-size: smaller;
+}
+.analysis--node-comparison--mutation-name {
+  color: black;
+  margin: 0;
+  text-decoration: none;
+}
+
+.analysis--node-comparison--mutation-is-apobec {
+  display: none;
+  font-family: MDSystemNarrow, RobotoCondensed, sans-serif;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-size: 10px;
+  color: #777;
+  position: absolute;
+  top: 4px;
+  left: -45px;
+}
+
+
+.analysis--node-comparison--mutation-prevalence {
+  display: none;
+  margin: 0;
+  font-size: smaller;
+  span {font-weight: bolder;}
+  color: rgb(161, 161, 161);
+}
+
+.analysis--mutation-time-chart-container {
+  width: 100%;
+  height: 100%;
+}
+
+.analysis--mutation-time-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.analysis--node-comparison--time-chart,
+.analysis--mutation-time-chart-container {
+  position: relative;
+
+  .time-chart--readout {
+    position: absolute;
+    z-index: 1;
+    top: unset;
+    bottom: 0;
+    left: var(--start-pct);
+    width: auto;
+    height: auto;
+    font-family: var(--Inter);
+    font-weight: 600;
+    font-size: calc(var(--unit) * 0.75);
+    letter-spacing: 0.00625rem;
+    padding: 0 0 0 3px;
+    pointer-events: none;
+
+    .time-chart--series {
+      display: none;
+    }
+  }
+}
+
+.analysis--node-comparison--time-chart {
+  .time-chart--readout {
+    // transform: translate(@chartLeftMargin, 0);
+    // transform: translate(@chartLeftMargin, 100%);
+  }
+}
+
+
+  /*
+  color the mrca nodes by the root, since it is not inferred
+  */
+
+  .analysis--track-mutations[data-to="mrca"] {
+    path { fill: var(--mrca-timeline-fill); }
+    line { stroke: var(--mrca-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--mrca-mutation-text);
+      .site {
+        color : var(--mrca-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="a"] {
+    path { fill: var(--a-timeline-fill); }
+    line { stroke: var(--a-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--a-mutation-text);
+      .site {
+        color : var(--a-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="b"] {
+    path { fill: var(--b-timeline-fill); }
+    line { stroke: var(--b-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--b-mutation-text);
+      .site {
+        color : var(--b-position-text);
+      }
+    }
+  }
+
+

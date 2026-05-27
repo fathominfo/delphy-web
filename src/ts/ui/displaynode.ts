@@ -1,6 +1,6 @@
-import { getCSSValue, UNSET } from "../common";
-import { Distribution } from "../distribution";
-import { NodeMetadataValues } from "../nodemetadata";
+import { getCSSValue, UNSET } from "./common";
+import { Distribution } from "./distribution";
+import { NodeMetadataValues } from "./nodemetadata";
 
 const MAX_NODE_COUNT = 18_277; //Math.pow(26, 3) + Math.pow(26, 2) + 26 - 1;
 const NUMS_IN_USE: boolean[] = new Array(MAX_NODE_COUNT);

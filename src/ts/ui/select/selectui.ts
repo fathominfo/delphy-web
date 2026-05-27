@@ -12,7 +12,7 @@ import autocomplete from 'autocompleter';
 import { SelectTreeCanvas } from './selecttreecanvas';
 import { ChartData, CoreSelectData, UpdateFunction } from './coreselectdata';
 import { NodeDetails } from './nodedetails';
-import { DisplayNode } from './displaynode';
+import { DisplayNode } from '../displaynode';
 import { MccConfig } from '../mccconfig';
 import { MetadataLegend } from './metadatalegend';
 import { SchematicEditor } from './schematiceditor';

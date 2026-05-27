@@ -1,5 +1,5 @@
 import { getPercentLabel, UNSET } from '../common';
-import { DisplayNode } from './displaynode';
+import { DisplayNode } from '../displaynode';
 import { HoverCallback, NodeCallback } from './selectcommon';
 
 const DEBUG = false;

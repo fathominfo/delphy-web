@@ -1,7 +1,7 @@
 import { getMRCA } from "../pythia/pythiacommon";
 import { SummaryTree } from "../pythia/delphy_api";
 import { UNSET } from "./common";
-import { DisplayNode } from "./select/displaynode";
+import { DisplayNode } from "./displaynode";
 import { getYFunction } from "./select/selectcommon";
 
 

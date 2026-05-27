@@ -4,7 +4,7 @@ import { ColorOption, getCSSValue, UNSET } from "../common";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { NodeCallback, NodePair } from "./selectcommon";
-import { DisplayNode } from "./displaynode";
+import { DisplayNode } from "../displaynode";
 
 const INFERRED_NODE_RADIUS = 4;
 const SELECTED_NODE_RADIUS = 5.5;

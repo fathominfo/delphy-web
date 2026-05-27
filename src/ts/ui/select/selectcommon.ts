@@ -1,6 +1,6 @@
 import { Mutation } from '../../pythia/delphy_api';
 import { MutationDistribution } from '../../pythia/mutationdistribution';
-import { DisplayNode } from './displaynode';
+import { DisplayNode } from '../displaynode';
 
 export enum NodeRelationType {
   singleDescendant = 1,
