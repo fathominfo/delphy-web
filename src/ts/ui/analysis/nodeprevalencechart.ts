@@ -113,6 +113,7 @@ export class NodePrevalenceChart {
 
 
   setData(nodeDist: BaseTreeSeriesType, nodes: DisplayNode[], minDate: number, maxDate: number) {
+    console.log(nodeDist)
     this.dist = nodeDist; // tree, series, day
     this.treeCount = nodeDist.length;
     this.seriesCount = nodeDist[0].length;
@@ -286,8 +287,13 @@ export class NodePrevalenceChart {
     const dataMapping: {[_:string]: boolean} = {};
     Object.values(nodes).forEach((nd, i)=>{
       const className = nd.className;
-      const fillCoords: string = this.getMeanAreaCoords(i);
-      const strokeCoords: string = this.getMeanTopCoords(i);
+      /*
+      the first set of coordinates corresponds to the
+      population preroot, so grab the ith+1 set of coords
+      to plot
+      */
+      const fillCoords: string = this.getMeanAreaCoords(i+1);
+      const strokeCoords: string = this.getMeanTopCoords(i+1);
       dataMapping[className] = true;
       let svgGroup = svgGroups[className];
       if (svgGroup === undefined) {
@@ -375,8 +381,13 @@ export class NodePrevalenceChart {
     const dataMapping: {[_:string]: boolean} = {};
     Object.values(nodes).forEach((nd, i)=>{
       const className = nd.className;
-      const fillCoords: string = this.getHPDAreaCoords(i);
-      const strokeCoords: string = this.getMedianCoords(i);
+      /*
+      the first set of coordinates corresponds to the
+      population preroot, so grab the ith+1 set of coords
+      to plot
+      */
+      const fillCoords: string = this.getHPDAreaCoords(i+1);
+      const strokeCoords: string = this.getMedianCoords(i+1);
       dataMapping[className] = true;
       let svgGroup = svgGroups[className];
       if (svgGroup === undefined) {

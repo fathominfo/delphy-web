@@ -67,11 +67,10 @@ export class AnalysisUI extends UIScreen {
     const nodes: DisplayNode[] = [schematicData.rootNode.node];
     schematicData.pairs.forEach(pair=>{
       const desc = pair.descendant;
-      if (desc.index !== UNSET) {
+      if (desc.index !== UNSET && desc.className !== 'mrca') {
         nodes.push(pair.descendant);
       }
     });
-    const nodeComparisonData: NodeMutationsData[] = [];
     /*
     build pairs of ancestor -> descendant nodes, skipping any branching
     placeholder nodes
@@ -81,10 +80,11 @@ export class AnalysisUI extends UIScreen {
     const processNext = (node: SchematicNode, ancestor: SchematicNode | null = null,
       relation: NodeRelationType = NodeRelationType.singleDescendant
     )=>{
-      if (ancestor) {
+      if (ancestor && node.node.className !== 'mrca') {
         pairs.push({anc: ancestor, desc: node, relation});
       }
-      if (node.node.index !== UNSET) {
+      const display: DisplayNode = node.node;
+      if (display.index !== UNSET && display.className !== 'mrca') {
         const L = node.children.length;
         node.children.forEach((desc, i)=>{
           const rel = L === 1 ? NodeRelationType.singleDescendant
@@ -112,15 +112,15 @@ export class AnalysisUI extends UIScreen {
         processNext(desc, anc, relation);
       }
     }
-    console.log(pairs);
-    pairs.forEach(({anc, desc, relation})=>{
+    console.log(pairs.map(p=>`${p.anc.node.className}->${p.desc.node.className}`))
+    const nodeComparisonData: NodeMutationsData[] = pairs.map(({anc, desc, relation})=>{
       const ancestorSeries: Distribution = anc.node.series as Distribution;
       const descendantSeries: Distribution = desc.node.series as Distribution;
       const nodePair = this.assembleNodePair(anc.node, desc.node, relation, summaryTree);
-
       return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
     });
     const currentIndices = nodes.map(n=>n.index);
+    console.log('currentIndices', currentIndices)
     const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
     console.log(nodePrevalenceData)
     const nodeDistributions = nodePrevalenceData.series;

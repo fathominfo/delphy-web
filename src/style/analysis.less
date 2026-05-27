@@ -2,12 +2,21 @@
 
 #analysis {
 
+	#analysis--left {
+		min-width: var(--tree-container-min-width);
+		max-width: var(--select-tree-container-max-width);
+		flex-grow: 1;
+	}
+
 	.subway-hover button {
 		display: none;
 	}
+
 }
 
-
+#analysis--node-layout {
+	height: 100%;
+}
 
 #analysis--prevalence {
   h3 {
@@ -502,6 +511,7 @@
     align-items: flex-end;
     flex: unset;
     width: var(--duo-left-width);
+	display: none;
   }
 
   .right {
