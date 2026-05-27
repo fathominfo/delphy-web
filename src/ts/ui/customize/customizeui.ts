@@ -10,7 +10,7 @@ import { MccTreeCanvas } from '../mcctreecanvas';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
-import { ColumnSummary } from '../nodemetadata';
+import { ColumnSummary } from '../metadata';
 
 /* global NodeListOf */
 

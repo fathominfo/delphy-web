@@ -1,17 +1,17 @@
-import { SummaryTree } from "../../pythia/delphy_api";
-import { getMRCA } from "../../pythia/pythiacommon";
-import { UNSET } from "../common";
-import { DisplayNode } from "./displaynode";
-import { getYFunction } from "./selectcommon";
+import { getMRCA } from "../pythia/pythiacommon";
+import { SummaryTree } from "../pythia/delphy_api";
+import { UNSET } from "./common";
+import { DisplayNode } from "./select/displaynode";
+import { getYFunction } from "./select/selectcommon";
 
 
 export type MRCANodeCreator = (nodeIndex: number  )=>DisplayNode;
 
 
-export class TreeNode {
+export class SchematicNode {
   node: DisplayNode;
-  parent: TreeNode | null = null;
-  children: TreeNode[] = [];
+  parent: SchematicNode | null = null;
+  children: SchematicNode[] = [];
   stepsFromRoot = 0;
   tipPlacement = 0;
 
@@ -19,24 +19,25 @@ export class TreeNode {
     this.node = node;
   }
 
-  addChild(node: TreeNode): void {
+  addChild(node: SchematicNode): void {
     this.children.push(node);
     node.parent = this;
   }
 
-  removeChild(node: TreeNode): void {
+  removeChild(node: SchematicNode): void {
     const index = this.children.indexOf(node);
     if (index >= 0) {
       this.children.splice(index, 1);
     }
   }
-
 }
 
-export class SelectionTreeData {
 
-  root: TreeNode | null = null;
-  found: TreeNode[] = [];
+
+export class SchematicDataBuilder {
+
+  root: SchematicNode | null = null;
+  found: SchematicNode[] = [];
   tree: SummaryTree;
   nodeChildCount: number[];
   mrcaMaker: MRCANodeCreator;
@@ -63,12 +64,12 @@ export class SelectionTreeData {
     // console.log('building tree', nodes.map(n=>n.index).join(','));
     nodes.sort((a: DisplayNode, b: DisplayNode)=>a.generationsFromRoot - b.generationsFromRoot);
     this.found = [];
-    this.root = new TreeNode(nodes.shift() as DisplayNode);
+    this.root = new SchematicNode(nodes.shift() as DisplayNode);
     this.found[this.root.node.index] = this.root;
 
     nodes.forEach(n=>{
       let ancestor = n.index;
-      const tn = new TreeNode(n);
+      const tn = new SchematicNode(n);
       /* find the parent nodes among all the current nodes */
       while (this.found[ancestor] === undefined && ancestor !== UNSET) {
         ancestor = tree.getParentIndexOf(ancestor);
@@ -85,7 +86,7 @@ export class SelectionTreeData {
         be an MRCA for the nodes that is not this particular
         ancestor
         */
-        const mrcas: [TreeNode, number][] = ancestorTreeNode.children.map(other=>{
+        const mrcas: [SchematicNode, number][] = ancestorTreeNode.children.map(other=>{
           const mrcaIndex = getMRCA(n.index, other.node.index, tree, nodeChildCount);
           return [other, mrcaIndex];
         });
@@ -97,7 +98,7 @@ export class SelectionTreeData {
             and update the relationships
             */
             const mrca: DisplayNode = mrcaMaker(mrcaIndex);
-            const mrcaTreeNode = new TreeNode(mrca);
+            const mrcaTreeNode = new SchematicNode(mrca);
             ancestorTreeNode.removeChild(other);
             ancestorTreeNode.addChild(mrcaTreeNode);
             mrcaTreeNode.addChild(other);
@@ -128,30 +129,22 @@ export class SelectionTreeData {
     });
 
 
-    const tips: TreeNode[] = [];
-    this.found.forEach((treeNode: TreeNode)=>{
+    const tips: SchematicNode[] = [];
+    this.found.forEach((treeNode: SchematicNode)=>{
       if (treeNode.children.length === 0) {
         tips.push(treeNode);
       } else if (treeNode.children.length > 2) {
         console.warn(`the schematic tree building is not binary`, treeNode);
       }
     });
-    // tips.forEach(n=>{
-    //   if (this.getY(n.node.index) === undefined) {
-    //     const s = this.getY(n.node.index);
-    //     console.log("miksi?", s);
-
-    //   }
-    // })
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
-    // console.log('selectionTreeData tips',  tips.map(n=>`${n.node.name} ${n.node.index} ${this.getY(n.node.index)}`));
     const numTips = tips.length;
     const midTips = numTips / 2;
     tips.forEach((tn, i)=>{
       tn.tipPlacement = i - midTips;
     });
 
-    const q: TreeNode[] = [this.root];
+    const q: SchematicNode[] = [this.root];
     /*
     build a queue starting with root,
     followed by the children of each generation
@@ -169,7 +162,7 @@ export class SelectionTreeData {
       i++;
     }
     while (q.length > 0) {
-      const tn = q.pop() as TreeNode;
+      const tn = q.pop() as SchematicNode;
       const childCount = tn.children.length;
       /*
       given the way the queue is built up, each child will
@@ -183,17 +176,10 @@ export class SelectionTreeData {
         tn.tipPlacement = 0;
       }
     }
-
-    // console.log('selection tree data ready');
-    // this.found.forEach(tn=>console.log(`   ${tn.node.index} ${tn.node.name} ${tn.xPos} ${tn.yPos} ${tn.stepsFromRoot} `));
-
-
-
-
   }
 
 
-  collectDescendantSelections(tn: TreeNode, tips: string[]): void{
+  collectDescendantSelections(tn: SchematicNode, tips: string[]): void{
     if (tn.node.isInferred) {
       tn.children.forEach(c=>this.collectDescendantSelections(c, tips));
     } else {
@@ -203,7 +189,7 @@ export class SelectionTreeData {
 
 
 
-  getMRCAName(tnd: TreeNode): string {
+  getMRCAName(tnd: SchematicNode): string {
     const tips: string[] = [];
     this.collectDescendantSelections(tnd, tips);
     tips.sort();
@@ -212,7 +198,7 @@ export class SelectionTreeData {
   }
 
 
-  getRoot() : TreeNode {
+  getRoot() : SchematicNode {
     if (this.root === null) {
       throw new Error("can't access root tree node before setting data");
     }

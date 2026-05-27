@@ -8,14 +8,15 @@ import { HoverCallback, NodeCallback,
   DismissNodeCallback,
   MultiNodeCallback} from './selectcommon';
 import autocomplete from 'autocompleter';
-import { NodeSchematic } from './nodeschematic';
+
 import { SelectTreeCanvas } from './selecttreecanvas';
 import { ChartData, CoreSelectData, UpdateFunction } from './coreselectdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
 import { MetadataLegend } from './metadatalegend';
-
+import { SchematicEditor } from './schematiceditor';
+import { NodeSchematicData } from '../nodeschematic';
 
 
 
@@ -25,7 +26,7 @@ AC_SUGGESTION_TEMPLATE.remove();
 
 export class SelectUI extends MccUI {
   coreData: CoreSelectData;
-  nodeSchematic: NodeSchematic;
+  nodeSchematic: SchematicEditor;
   nodeDetails: NodeDetails;
   metadataLegend: MetadataLegend;
   previousConfidence: number;
@@ -73,7 +74,8 @@ export class SelectUI extends MccUI {
     this.mccTreeCanvas = new SelectTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
     (this.mccTreeCanvas as SelectTreeCanvas).highlightedNode = node;
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
+    const subwayContainer = document.querySelector("#select--node-layout .subway") as HTMLDivElement;
+    this.nodeSchematic = new SchematicEditor(subwayContainer, nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
       dismissCallback, rootSelectCallback, toggleAutoSelectCallback, clearCuratedCallback, introsOnlyCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.metadataLegend = new MetadataLegend(legendCallback);
@@ -203,16 +205,15 @@ export class SelectUI extends MccUI {
   }
 
   update(chartData: ChartData): void {
-    // const { nodes, nodeDistributions, prevalenceNodes, minDate, maxDate,
-    //   nodePairs, rootNode, selectedRootIndex } = chartData;
     const { nodes, nodePairs, rootNode, selectedRootIndex, peakPrevalence,
-      fieldIntroductions, metadataField, isFullyAuto } = chartData;
+      metadataField, isFullyAuto, schematicData } = chartData;
     const {node} = this.coreData.getHighlights();
     const actualNodes = nodes.filter(dnc=>dnc.index !== UNSET);
     let highlightNode = node;
     (this.mccTreeCanvas as SelectTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField, isFullyAuto);
+    this.nodeSchematic.setData(schematicData as NodeSchematicData);
+    this.nodeSchematic.setControlsData(nodes.length, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {

@@ -60,7 +60,7 @@ export class MetadataLegend  {
         /* get tip counts for metadata */
         const header = (nodeMetadata as NodeMetadata).metadata.header;
         const colIndex = header.indexOf(this.field);
-        this.sortedValues = nodeMetadata.columnSummaries[colIndex].sorted;
+        this.sortedValues = nodeMetadata.metadata.columnSummaries[colIndex].sorted;
         const values: NodesByValue = {};
         this.nodeValues = [];
         nodeMetadata.nodeValues.forEach((nodeRow, i)=>{

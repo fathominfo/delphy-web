@@ -10,10 +10,11 @@ import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
-import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
 import { MccConfig } from "../mccconfig";
 import { getMRCA } from "../../pythia/pythiacommon";
 import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
+import { SchematicDataBuilder, MRCANodeCreator, SchematicNode } from "../schematicdata";
+import { NodeSchematicData } from "../nodeschematic";
 
 
 
@@ -59,12 +60,12 @@ export type ChartData = {
   maxDate: number
   nodePairs: NodePair[],
   nodes: DisplayNode[],
-  rootNode: TreeNode | null,
+  rootNode: SchematicNode | null,
   selectedRootIndex: number,
   peakPrevalence: number,
-  fieldIntroductions: IntroductionData[],
   metadataField: string | null,
-  isFullyAuto: boolean
+  isFullyAuto: boolean,
+  schematicData: NodeSchematicData | null
 }
 
 
@@ -81,9 +82,9 @@ const defaultChartData : ChartData = {
   rootNode: null,
   selectedRootIndex: UNSET,
   peakPrevalence: UNSET,
-  fieldIntroductions: [],
   metadataField: null,
-  isFullyAuto: false
+  isFullyAuto: false,
+  schematicData: null
 };
 
 
@@ -100,7 +101,6 @@ export class CoreSelectData {
   nodeMetadata: NodeMetadata | null = null;
   tipIds: string[] = [];
   isApobecEnabled = false;
-
 
 
   /*
@@ -140,7 +140,7 @@ export class CoreSelectData {
     inferred nodes
     highlight node
   */
-  private selectionTreeData: SelectionTreeData | null = null;
+  private selectionTreeData: SchematicDataBuilder | null = null;
   private selectable = true;
   private constrainHoverByCredibility = false;
 
@@ -207,7 +207,7 @@ export class CoreSelectData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.selectionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
+      this.selectionTreeData = new SchematicDataBuilder(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
@@ -638,7 +638,7 @@ export class CoreSelectData {
 
   setTreeData() : void {
     const tree = this.summaryTree as SummaryTree;
-    const selectionTree = this.selectionTreeData as SelectionTreeData;
+    const selectionTree = this.selectionTreeData as SchematicDataBuilder;
     const candidateNodes = this.selectedNodes;
     if (!candidateNodes.map(n=>n.index).includes(this.rootNode.index)) {
       candidateNodes.unshift(this.rootNode);
@@ -684,7 +684,7 @@ export class CoreSelectData {
     const pythia = this.pythia;
     if (pythia) {
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.selectionTreeData as SelectionTreeData;
+      const minimapData = this.selectionTreeData as SchematicDataBuilder;
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         maxDate = pythia.maxDate,
@@ -700,14 +700,13 @@ export class CoreSelectData {
       chartData.metadataField = this.filteringByMetadataField;
       chartData.selectedRootIndex = this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index;
       chartData.isFullyAuto = this.isAutoselectingActive();
-      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
+      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: SchematicNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
       const nodeDistributions = nodePrevalenceData.series;
       /* we want the default distribution to come first, so take it off the end and put it first */
       nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
       chartData.nodeDistributions = nodeDistributions;
-      chartData.fieldIntroductions = this.fieldIntroductions.slice();
       minimapData.found.forEach(treeNode=>{
         const ancestor = treeNode.parent;
         if (ancestor && ancestor.node.index !== UNSET) {
@@ -715,7 +714,7 @@ export class CoreSelectData {
           if (descendant.index === UNSET) return;
           let relation: NodeRelationType = NodeRelationType.singleDescendant;
           if (ancestor.children.length > 1) {
-            const other: TreeNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
+            const other: SchematicNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
             if (getY(other.node.index) > getY(descendant.index)) {
               relation = NodeRelationType.upperDescendant;
             } else {
@@ -735,6 +734,14 @@ export class CoreSelectData {
       const prevalenceNodes = currentNodes.slice(0);
       prevalenceNodes.unshift(this.nullNode);
       chartData.prevalenceNodes = prevalenceNodes;
+
+      chartData.schematicData = {
+        pairs: chartData.nodePairs,
+        rootNode: chartData.rootNode,
+        fieldIntroductions: this.fieldIntroductions.slice(),
+        metadataField: this.filteringByMetadataField
+      };
+      this.sharedState.schematicData = chartData.schematicData;
       mccRef.release();
 
       const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
@@ -766,7 +773,7 @@ export class CoreSelectData {
       return false;
     }
     // console.log(`setting highlight node to ${nodeIndex}`)
-    const minimap = this.selectionTreeData as SelectionTreeData;
+    const minimap = this.selectionTreeData as SchematicDataBuilder;
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
@@ -806,7 +813,7 @@ export class CoreSelectData {
         */
         return;
       } else {
-        const minimap = this.selectionTreeData as SelectionTreeData;
+        const minimap = this.selectionTreeData as SchematicDataBuilder;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
           // _hint = TreeHint.Zoom;
@@ -856,7 +863,7 @@ export class CoreSelectData {
       let selection: DisplayNode = this.highlightNode;
       if (nodeIndex !== this.highlightNode.index) {
         /* could the node be an MRCA? That would not be in currentNodes */
-        const minimap = this.selectionTreeData as SelectionTreeData;
+        const minimap = this.selectionTreeData as SchematicDataBuilder;
         const mrcaTreeNode = minimap.found.filter(treeNode=>{
           return treeNode
             && treeNode.node.index === nodeIndex;
@@ -944,7 +951,7 @@ export class CoreSelectData {
         if (!found) this.bypassNode(i);
       });
     }
-    const minimap = this.selectionTreeData as SelectionTreeData;
+    const minimap = this.selectionTreeData as SchematicDataBuilder;
     const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
     minimap.setData(toMap);
     this.setChartData();

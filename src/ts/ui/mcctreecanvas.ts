@@ -222,6 +222,7 @@ export class MccTreeCanvas {
   setConfig(mccConfig : MccConfig) : void {
     this.mccConfig = mccConfig;
     this.confidenceThreshold = mccConfig.confidenceThreshold;
+    this.rootIndex = mccConfig.configuredRoot;
     this.colorsUnSet = true;
   }
 
