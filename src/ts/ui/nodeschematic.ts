@@ -1,41 +1,24 @@
-import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
-import { IntroductionData } from "./coreselectdata";
-import { DisplayNode } from "./displaynode";
-import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./selectcommon";
-import { TreeNode } from "./selectiontreedata";
+import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "./common";
+import { IntroductionData } from "./select/coreselectdata";
+import { DisplayNode } from "./select/displaynode";
+import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./select/selectcommon";
+import { TreeNode } from "./schematicdata";
 
 
-const METADATA_FIELD_SELECTOR = "#select--metadata-transitions label";
-
-const CONTROLS = document.querySelector("#select #select--schematic-controls") as HTMLDivElement;
-const COUNT_SPAN = document.querySelector("#select--schematic-count") as HTMLSpanElement;
-const AUTO_BUTTON = CONTROLS.querySelector("#select--schematic-auto") as HTMLButtonElement;
-const CLEAR_BUTTON = CONTROLS.querySelector("#select--schematic-clear") as HTMLButtonElement;
-const INTROS_ONLY = CONTROLS.querySelector("#select--intros-only") as HTMLParagraphElement;
-const INTROS_ONLY_INPUT = INTROS_ONLY.querySelector("button") as HTMLButtonElement;
-
-const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#select--peak-prevalence-less") as HTMLButtonElement;
-const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#select--peak-prevalence-more") as HTMLButtonElement;
-const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#select--peak-prevalence-readout") as HTMLSpanElement
-const METADATA_TRANSITION_TEMPLATE = CONTROLS.querySelector(METADATA_FIELD_SELECTOR) as HTMLDivElement;
-const METADATA_PARENT = METADATA_TRANSITION_TEMPLATE.parentNode as HTMLDivElement;
-METADATA_TRANSITION_TEMPLATE.remove();
-const WRAPPER = document.querySelector("#subway") as HTMLDivElement;
-const CONTAINER = WRAPPER.querySelector("svg") as SVGElement;
-const LABEL_TEMPLATE = CONTAINER.querySelector(".label") as SVGGElement;
-const MUTATION_COUNT_TEMPLATE = CONTAINER.querySelector(".mut-count") as SVGGElement;
-const CONNECTOR_TEMPLATE = CONTAINER.querySelector(".connector") as SVGLineElement;
-const CAR_CONTROLS = document.querySelector("#subway-hover") as HTMLDivElement;
-const CAR_CONTROLS_DISMISS = CAR_CONTROLS.querySelector("#subway--node-dismiss") as HTMLButtonElement;
-const CAR_CONTROLS_ROOT_SELECT = CAR_CONTROLS.querySelector("#subway--set-root") as HTMLButtonElement;
-const CAR_CONTROLS_ROOT_RESET = CAR_CONTROLS.querySelector("#subway--reset-root") as HTMLButtonElement;
 
 
 const CONTROL_W = 80;
 const CONTROL_H = 70;
 
 
-[LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE, CONNECTOR_TEMPLATE].forEach(el=>el.remove());
+const SUBWAY_TEMPLATE = document.querySelector("#select--node-layout .subway svg") as SVGElement;
+const LABEL_TEMPLATE = SUBWAY_TEMPLATE.querySelector(".label") as SVGGElement;
+const MUTATION_COUNT_TEMPLATE = SUBWAY_TEMPLATE.querySelector(".mut-count") as SVGGElement;
+const CONNECTOR_TEMPLATE = SUBWAY_TEMPLATE.querySelector(".connector") as SVGLineElement;
+const SUBWAY_HOVER = document.querySelector("#select--node-layout .subway-hover") as HTMLDivElement;
+
+[SUBWAY_TEMPLATE, SUBWAY_HOVER, LABEL_TEMPLATE, MUTATION_COUNT_TEMPLATE,
+  CONNECTOR_TEMPLATE].forEach(el=>el.remove());
 
 const MARGIN  = {
   top: CONTROL_H,
@@ -54,7 +37,7 @@ const TEXT_LABEL_MIN_WIDTH = 20;
 const TEXT_PADDING = 5;
 
 
-class TreeNodeDisplay {
+export class TreeNodeDisplay {
   treeNode: TreeNode;
   xPos: number = UNSET;
   yPos: number = UNSET;
@@ -73,10 +56,12 @@ class TreeNodeDisplay {
   textLabelHeight: number = TEXT_LABEL_HEIGHT;
   isTip = false;
   previousNodeClass = '';
+  subway: SVGElement;
 
   constructor(src: TreeNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
-    parent: TreeNodeDisplay | null
+    parent: TreeNodeDisplay | null,
+    subway: SVGElement
   ) {
     this.treeNode = src;
     /* this will be the placement in this display */
@@ -87,6 +72,7 @@ class TreeNodeDisplay {
     this.nameLabel = LABEL_TEMPLATE.cloneNode(true) as SVGGElement;
     this.mutLabel = MUTATION_COUNT_TEMPLATE.cloneNode(true) as SVGGElement;
     this.parent = parent;
+    this.subway = subway;
     this.connector = CONNECTOR_TEMPLATE.cloneNode(true) as SVGPathElement;
     this.isTip = src.children.length === 0;
   }
@@ -148,7 +134,7 @@ class TreeNodeDisplay {
       else xEnd += parent.textLabelWidth / 2;
       const d = `M${ xStart } 0 L${ xEnd } 0 ${ xEnd } ${ yEnd }`;
       this.connector.setAttribute("d", d);
-      CONTAINER.appendChild(this.connector);
+      this.subway.appendChild(this.connector);
       this.connector.classList.add(this.treeNode.node.className);
     }
   }
@@ -174,7 +160,7 @@ class TreeNodeDisplay {
       rect.setAttribute("fill", color);
       nameLabel.classList.remove(node.className);
     }
-    CONTAINER.appendChild(this.nameLabel);
+    this.subway.appendChild(this.nameLabel);
     if (mrca) {
       this.textLabelWidth = 0;
       this.textLabelHeight = 0;
@@ -190,7 +176,7 @@ class TreeNodeDisplay {
   }
 
   reattachLabel() {
-    CONTAINER.appendChild(this.nameLabel);
+    this.subway.appendChild(this.nameLabel);
   }
 
   pushBack(pushIt: boolean) : void {
@@ -219,7 +205,6 @@ export class NodeSchematic {
   hasMRCA: boolean;
   highlightIndex: number = UNSET;
   nodeHighlightCallback: HoverCallback;
-  metadataTransitionCallback: MetadataToggleCallback;
   pairsByDescendant: NodePair[] = [];
   introductionLookup: IntroductionData[] = [];
   metadataField: string | null = null;
@@ -237,70 +222,27 @@ export class NodeSchematic {
   metadataFieldCount = 0;
   colorByMetadata = false;
   nodeMetadataColors: string[] = [];
+  wrapper: HTMLDivElement;
+  container: SVGElement;
+  hoverDiv: HTMLDivElement;
 
 
-  constructor(nodeHighlightCallback: HoverCallback,
-    prevThresholdCallback: SET_PREVALENCE_CALLBACK_TYPE,
-    metadataTransitionCallback: MetadataToggleCallback,
-    dismissNodeCallback: DismissNodeCallback,
-    rootSelectCallback: NodeCallback,
-    toggleAutoSelectCallback: (active: boolean)=>void,
-    clearCuratedCallback: ()=>void,
-    introsOnlyCallback: ()=>void,
-  ) {
+
+
+  constructor( wrapper: HTMLDivElement, nodeHighlightCallback: HoverCallback) {
+    this.wrapper = wrapper;
+    this.container = SUBWAY_TEMPLATE.cloneNode(true) as SVGElement;
+    this.hoverDiv = SUBWAY_HOVER.cloneNode(true) as HTMLDivElement;
+    this.wrapper.appendChild(this.container);
+    this.wrapper.appendChild(this.hoverDiv);
     this.hasMRCA = false;
     this.nodeHighlightCallback = nodeHighlightCallback;
-    // PREVALENCE_THRESHOLD_SLIDER.addEventListener("input", ()=>{
-    //   prevThresholdCallback(true, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
-    // });
-    // // PREVALENCE_THRESHOLD_TOGGLE.addEventListener("input", ()=>{
-    //   prevThresholdCallback(PREVALENCE_THRESHOLD_TOGGLE.checked, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
-    // });
-    PREVALENCE_THRESHOLD_LESS.addEventListener("click", ()=>{
-      prevThresholdCallback(false);
-    });
-    PREVALENCE_THRESHOLD_MORE.addEventListener("click", ()=>{
-      prevThresholdCallback(true);
-    });
-    /*
-    TODO:
-    if this is the behavior we want, then this should be a checkbox.
-    But is this the behavior we want?
-    */
-    AUTO_BUTTON.addEventListener("click", ()=>{
-      const isAuto = AUTO_BUTTON.classList.contains("is-auto");
-      toggleAutoSelectCallback(!isAuto);
-    });
-    CLEAR_BUTTON.addEventListener("click", clearCuratedCallback);
-    INTROS_ONLY_INPUT.addEventListener("click", ()=>introsOnlyCallback());
-
-    this.metadataTransitionCallback = metadataTransitionCallback;
-    CAR_CONTROLS.addEventListener("pointerleave", ()=>{
+    this.hoverDiv.addEventListener("pointerleave", ()=>{
       nodeHighlightCallback(UNSET, UNSET, null);
       this.hideHover();
     });
-    CAR_CONTROLS_DISMISS.addEventListener("click", ()=>{
-      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
-      if (tnd) {
-        dismissNodeCallback(this.highlightIndex);
-      }
-      this.highlightIndex = UNSET;
-      this.setHighlightNode();
-      this.hideHover();
-    });
-    CAR_CONTROLS_ROOT_SELECT.addEventListener("click", ()=>{
-      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
-      if (tnd) {
-        rootSelectCallback(tnd.getIndex());
-        this.hideHover();
-      }
-    });
-    CAR_CONTROLS_ROOT_RESET.addEventListener('click', () => {
-      rootSelectCallback(UNSET);
-      this.hideHover();
-    });
 
-    CONTAINER.addEventListener("pointermove", event=>{
+    this.container.addEventListener("pointermove", event=>{
       const target = event.target as SVGElement;
       const nodeIndex = target.getAttribute("data-index");
       // if (target instanceof SVGRectElement) {
@@ -325,7 +267,7 @@ export class NodeSchematic {
 
 
   resize() {
-    const { offsetWidth, offsetHeight } = WRAPPER;
+    const { offsetWidth, offsetHeight } = this.wrapper;
     this.width = offsetWidth;
     /*
     The wrapper div is 3 px taller than the svg.
@@ -335,9 +277,9 @@ export class NodeSchematic {
     // console.log('resize calling this.nodeSchematic.setLayout()')
     this.setLayout();
     requestAnimationFrame(()=>{
-      CONTAINER.setAttribute("viewBox", `0 0 ${ this.width} ${ this.height}`);
-      CONTAINER.setAttribute("width", `${ this.width}`);
-      CONTAINER.setAttribute("height", `${ this.height}`);
+      this.container.setAttribute("viewBox", `0 0 ${ this.width} ${ this.height}`);
+      this.container.setAttribute("width", `${ this.width}`);
+      this.container.setAttribute("height", `${ this.height}`);
       this.render();
     });
   }
@@ -351,7 +293,7 @@ export class NodeSchematic {
   render() {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
-    CONTAINER.innerHTML = '';
+    this.container.innerHTML = '';
     const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
     this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
     /*
@@ -398,35 +340,7 @@ export class NodeSchematic {
   }
 
 
-  setPrevalenceSelectors(prevalenceActive: boolean, peakPrevalence: number) : void {
-    const pct = getPercentLabel(peakPrevalence);
-    PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
-  }
 
-  setMetadataSelectors(metadataFields : string[], current: string | null) : void {
-    if (metadataFields.length !== this.metadataFieldCount) {
-      METADATA_PARENT.querySelectorAll(METADATA_FIELD_SELECTOR).forEach((ele:Element)=>{
-        ele.remove();
-      });
-      let anyChecked = false;
-      const addMetadaOption = (mdField:string, label: string, checked=false)=>{
-        if (mdField.toLowerCase() === "id" || mdField.toLowerCase() === "accession" ) return;
-        const mdDiv = METADATA_TRANSITION_TEMPLATE.cloneNode(true) as HTMLDivElement;
-        const input = mdDiv.querySelector("input") as HTMLInputElement;
-        const fieldSpan = mdDiv.querySelector(".select--metadata-field") as HTMLSpanElement;
-        fieldSpan.textContent = label;
-        input.checked = !!checked;
-        input.addEventListener("input", ()=>{
-          this.metadataTransitionCallback(mdField);
-        });
-        METADATA_PARENT.appendChild(mdDiv);
-        if (checked) anyChecked = true;
-      };
-      metadataFields.forEach(field=>addMetadaOption(field, field, field === current));
-      addMetadaOption(METADATA_NONE_OPTION, 'None', !anyChecked);
-      this.metadataFieldCount = metadataFields.length;
-    }
-  }
 
   setColorMethod(colorByMetadata: boolean, nodeMetadataColors: string[]) {
     this.colorByMetadata = colorByMetadata;
@@ -438,9 +352,8 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null, nodeCount: number,
-    fieldIntroductions: IntroductionData[], metadataField: string | null,
-    isFullyAuto: boolean
+  setData(pairs: NodePair[], rootNode: TreeNode | null,
+    fieldIntroductions: IntroductionData[], metadataField: string | null
   ) {
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,
@@ -450,14 +363,11 @@ export class NodeSchematic {
     /* expand the fieldIntroductions into a lookup */
     this.introductionLookup = [];
     this.metadataField = metadataField;
-    INTROS_ONLY.classList.toggle("na", metadataField === null);
     fieldIntroductions.forEach(item=>this.introductionLookup[item.nodeIndex] = item);
     pairs.forEach(pair=>{
       // index the mutations by the descendent
       this.pairsByDescendant[pair.descendant.index] = pair;
     });
-    COUNT_SPAN.textContent = `${nfc(nodeCount)} node${ nodeCount === 1 ? '' : 's'}` ;
-    AUTO_BUTTON.classList.toggle("is-auto", isFullyAuto);
   }
 
   setLayout() {
@@ -489,7 +399,7 @@ export class NodeSchematic {
         }
         let tnd: TreeNodeDisplay = previous[node.index];
         if (!tnd) {
-          tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent);
+          tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent, this.container);
         } else {
           tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
@@ -568,21 +478,21 @@ export class NodeSchematic {
     const isIntro = tnd.introduction !== null;
     const x = tnd.xPos + tnd.textLabelWidth/2;
     const y = tnd.yPos;
-    CAR_CONTROLS.style.right = `${this.width - x}px`;
+    this.hoverDiv.style.right = `${this.width - x}px`;
     if (isUpper) {
-      CAR_CONTROLS.style.top = `unset`;
-      CAR_CONTROLS.style.bottom = `${this.height - y + tnd.textLabelHeight/2}px`;
+      this.hoverDiv.style.top = `unset`;
+      this.hoverDiv.style.bottom = `${this.height - y + tnd.textLabelHeight/2}px`;
     } else {
-      CAR_CONTROLS.style.top = `${y + tnd.textLabelHeight/2}px`;
-      CAR_CONTROLS.style.bottom = `unset`;
+      this.hoverDiv.style.top = `${y + tnd.textLabelHeight/2}px`;
+      this.hoverDiv.style.bottom = `unset`;
     }
-    CAR_CONTROLS.classList.toggle("is-tip", node.isTip());
-    CAR_CONTROLS.classList.toggle("is-root", node.isRoot && node.isInferred);
-    CAR_CONTROLS.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
-    CAR_CONTROLS.classList.toggle("is-upper", isUpper);
-    CAR_CONTROLS.classList.toggle("is-intro", !!this.metadataField && tnd.currentMetadataValue !== '');
+    this.hoverDiv.classList.toggle("is-tip", node.isTip());
+    this.hoverDiv.classList.toggle("is-root", node.isRoot && node.isInferred);
+    this.hoverDiv.classList.toggle("is-set-root", node.isRoot && !node.isInferred);
+    this.hoverDiv.classList.toggle("is-upper", isUpper);
+    this.hoverDiv.classList.toggle("is-intro", !!this.metadataField && tnd.currentMetadataValue !== '');
     if (node.isTip()) {
-      const tipIdSpan = CAR_CONTROLS.querySelector("#subway--detail-tip-name span") as HTMLSpanElement;
+      const tipIdSpan = this.hoverDiv.querySelector(".subway--detail-tip-name span") as HTMLSpanElement;
       let name = '';
       if (node.metadata !== null) {
         if (node.metadata.id !== undefined) {
@@ -595,7 +505,7 @@ export class NodeSchematic {
       tipIdSpan.title = name;
     }
 
-    const transitionEle = CAR_CONTROLS.querySelector("#subway--detail-metadata") as HTMLParagraphElement;
+    const transitionEle = this.hoverDiv.querySelector(".subway--detail-metadata") as HTMLParagraphElement;
     if (isIntro) {
       const introData = tnd.introduction as IntroductionData;
       (transitionEle.querySelector(".md-from") as HTMLSpanElement).textContent = introData.upstreamValue;
@@ -606,13 +516,13 @@ export class NodeSchematic {
       transitionEle.classList.add("no-transition");
     }
 
-    CONTAINER.appendChild(tnd.nameLabel);
-    CAR_CONTROLS.classList.add("active");
+    this.container.appendChild(tnd.nameLabel);
+    this.hoverDiv.classList.add("active");
   }
 
 
   hideHover() {
-    CAR_CONTROLS.classList.remove("active");
+    this.hoverDiv.classList.remove("active");
   }
 
 

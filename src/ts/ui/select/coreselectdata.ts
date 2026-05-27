@@ -10,7 +10,7 @@ import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
-import { SelectionTreeData, MRCANodeCreator, TreeNode } from "./selectiontreedata";
+import { SchematicData, MRCANodeCreator, TreeNode } from "../schematicdata";
 import { MccConfig } from "../mccconfig";
 
 
@@ -138,7 +138,7 @@ export class CoreSelectData {
     inferred nodes
     highlight node
   */
-  private selectionTreeData: SelectionTreeData | null = null;
+  private selectionTreeData: SchematicData | null = null;
   private selectable = true;
   private constrainHoverByCredibility = false;
 
@@ -205,7 +205,7 @@ export class CoreSelectData {
       this.tipIds = this.sharedState.getTipIds();
       this.isApobecEnabled = isApobecEnabled;
       const mrcaMaker : MRCANodeCreator = (nodeIndex: number)=>this.getNodeDisplay(nodeIndex, true, false);
-      this.selectionTreeData = new SelectionTreeData(summaryTree, childCounts, mrcaMaker, this.getY);
+      this.selectionTreeData = new SchematicData(summaryTree, childCounts, mrcaMaker, this.getY);
       if (rootIndex !== this.rootNode.index) {
         this.getNodeDisplay(rootIndex, true, true, this.rootNode);
       }
@@ -636,7 +636,7 @@ export class CoreSelectData {
 
   setTreeData() : void {
     const tree = this.summaryTree as SummaryTree;
-    const selectionTree = this.selectionTreeData as SelectionTreeData;
+    const selectionTree = this.selectionTreeData as SchematicData;
     const candidateNodes = this.selectedNodes;
     if (!candidateNodes.map(n=>n.index).includes(this.rootNode.index)) {
       candidateNodes.unshift(this.rootNode);
@@ -682,7 +682,7 @@ export class CoreSelectData {
     const pythia = this.pythia;
     if (pythia) {
       const summaryTree = this.summaryTree as SummaryTree;
-      const minimapData = this.selectionTreeData as SelectionTreeData;
+      const minimapData = this.selectionTreeData as SchematicData;
       const getY = this.getY as getYFunction;
       const mccRef = pythia.getMcc(),
         maxDate = pythia.maxDate,
@@ -755,7 +755,7 @@ export class CoreSelectData {
       return false;
     }
     // console.log(`setting highlight node to ${nodeIndex}`)
-    const minimap = this.selectionTreeData as SelectionTreeData;
+    const minimap = this.selectionTreeData as SchematicData;
 
     let displayNode: DisplayNode | null = null;
     if (nodeIndex === UNSET) {
@@ -795,7 +795,7 @@ export class CoreSelectData {
         */
         return;
       } else {
-        const minimap = this.selectionTreeData as SelectionTreeData;
+        const minimap = this.selectionTreeData as SchematicData;
         const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
         if (nodeIndex === UNSET) {
           // _hint = TreeHint.Zoom;
@@ -845,7 +845,7 @@ export class CoreSelectData {
       let selection: DisplayNode = this.highlightNode;
       if (nodeIndex !== this.highlightNode.index) {
         /* could the node be an MRCA? That would not be in currentNodes */
-        const minimap = this.selectionTreeData as SelectionTreeData;
+        const minimap = this.selectionTreeData as SchematicData;
         const mrcaTreeNode = minimap.found.filter(treeNode=>{
           return treeNode
             && treeNode.node.index === nodeIndex;
@@ -933,7 +933,7 @@ export class CoreSelectData {
         if (!found) this.bypassNode(i);
       });
     }
-    const minimap = this.selectionTreeData as SelectionTreeData;
+    const minimap = this.selectionTreeData as SchematicData;
     const toMap: DisplayNode[] = [this.rootNode].concat(this.selectedNodes);
     minimap.setData(toMap);
     this.setChartData();

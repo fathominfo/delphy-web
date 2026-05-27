@@ -8,13 +8,14 @@ import { HoverCallback, NodeCallback,
   DismissNodeCallback,
   MultiNodeCallback} from './selectcommon';
 import autocomplete from 'autocompleter';
-import { NodeSchematic } from './nodeschematic';
+
 import { SelectTreeCanvas } from './selecttreecanvas';
 import { ChartData, CoreSelectData, UpdateFunction } from './coreselectdata';
 import { NodeDetails } from './nodedetails';
 import { DisplayNode } from './displaynode';
 import { MccConfig } from '../mccconfig';
 import { MetadataLegend } from './metadatalegend';
+import { SchematicEditor } from './schematiceditor';
 
 
 
@@ -25,7 +26,7 @@ AC_SUGGESTION_TEMPLATE.remove();
 
 export class SelectUI extends MccUI {
   coreData: CoreSelectData;
-  nodeSchematic: NodeSchematic;
+  nodeSchematic: SchematicEditor;
   nodeDetails: NodeDetails;
   metadataLegend: MetadataLegend;
   previousConfidence: number;
@@ -73,7 +74,8 @@ export class SelectUI extends MccUI {
     this.mccTreeCanvas = new SelectTreeCanvas(canvas, ctx, this.highlightCanvas, this.highlightCtx, treeHoverCallback, nodeSelectCallback);
     const { node } = this.coreData.getHighlights();
     (this.mccTreeCanvas as SelectTreeCanvas).highlightedNode = node;
-    this.nodeSchematic = new NodeSchematic(nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
+    const subwayContainer = document.querySelector("#select--node-layout .subway") as HTMLDivElement;
+    this.nodeSchematic = new SchematicEditor(subwayContainer, nodeHighlightCallback, prevThresholdCallback, metadataTransitionCallback,
       dismissCallback, rootSelectCallback, toggleAutoSelectCallback, clearCuratedCallback, introsOnlyCallback);
     this.nodeDetails = new NodeDetails(dismissCallback, nodeHighlightCallback, rootSelectCallback);
     this.metadataLegend = new MetadataLegend(legendCallback);
@@ -212,7 +214,8 @@ export class SelectUI extends MccUI {
     let highlightNode = node;
     (this.mccTreeCanvas as SelectTreeCanvas).setNodes(actualNodes, nodePairs, selectedRootIndex);
     this.nodeSchematic.setPrevalenceSelectors(true, peakPrevalence);
-    this.nodeSchematic.setData(nodePairs, rootNode, nodes.length, fieldIntroductions, metadataField, isFullyAuto);
+    this.nodeSchematic.setData(nodePairs, rootNode, fieldIntroductions, metadataField);
+    this.nodeSchematic.setControlsData(nodes.length, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
     this.nodeSchematic.highlightNode(highlightNode);
     if (highlightNode === null || highlightNode.index === UNSET) {

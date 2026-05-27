@@ -732,7 +732,7 @@ details {
 
 /* Subway diagram */
 
-#subway {
+.subway {
   position: relative;
   height: calc(100% - var(--view-header-height) );
 
@@ -825,7 +825,7 @@ details {
 
 }
 
-#subway-hover {
+.subway-hover {
   position: absolute;
   opacity: 0;
   pointer-events: none;
@@ -847,13 +847,13 @@ details {
     pointer-events: all;
   }
 
-  #subway--detail-tip-name {
+  .subway--detail-tip-name {
     color: var(--selection-text-on);
     display: none;
     font-weight: 700;
   }
 
-  #subway--detail-metadata {
+  .subway--detail-metadata {
     color: var(--selection-text-on);
     display: none;
     margin: 2px 0;
@@ -870,7 +870,7 @@ details {
 
   }
 
-  .node-root-action, #subway--node-dismiss {
+  .node-root-action, .subway--node-dismiss {
     display: block;
     background-color: white;
     transition: color .15s;
@@ -880,7 +880,7 @@ details {
     }
   }
 
-  #subway--reset-root {
+  .subway--reset-root {
     display: none;
   }
 
@@ -889,16 +889,16 @@ details {
   }
 
   &.is-tip {
-    #subway--detail-tip-name {display: block;}
+    .subway--detail-tip-name {display: block;}
     /* tips cannot be set to root */
-    #subway--set-root, #subway--reset-root {display: none;}
+    .subway--set-root, .subway--reset-root {display: none;}
   }
 
   &.is-root {
     /* this is the actual root, so can't dismiss it, or set it as root */
-    #subway--set-root,
-    #subway--reset-root,
-    #subway--node-dismiss {display: none;}
+    .subway--set-root,
+    .subway--reset-root,
+    .subway--node-dismiss {display: none;}
   }
 
   &.is-set-root {
@@ -906,16 +906,16 @@ details {
     this is an inner node that has been set to root,
     so can't dismiss it, or set it as root,
     but we can reset it so the actual root will display as root */
-    #subway--set-root  { display: none; }
-    #subway--reset-root  { display: inline-block; }
-    #subway--node-dismiss {
+    .subway--set-root  { display: none; }
+    .subway--reset-root  { display: inline-block; }
+    .subway--node-dismiss {
       pointer-events: none;
       opacity: 0;
     }
   }
 
   &.is-intro {
-    #subway--detail-metadata {
+    .subway--detail-metadata {
       display: block;
     }
   }
@@ -1079,16 +1079,16 @@ details {
 //     margin: 3px 0;
 //   }
 
-//   #subway--detail-tip-name {display: none;}
+//   .subway--detail-tip-name {display: none;}
 //   #border {
 //     fill: white;
 //     stroke: gray;
 //   }
 
 //   #subway--detail-tree-mono {display: none;}
-//   #subway--detail-metadata { display: none; }
+//   .subway--detail-metadata { display: none; }
 
-//   .node-root-action, #subway--node-dismiss {
+//   .node-root-action, .subway--node-dismiss {
 //     display: block;
 //     transition: color .15s;
 //     color: var(--selection-static-icon-fill-static);
@@ -1097,11 +1097,11 @@ details {
 //     }
 //   }
 
-//   #subway--reset-root {
+//   .subway--reset-root {
 //     display: none;
 //   }
 
-//   // #subway--node-dismiss {
+//   // .subway--node-dismiss {
 //   //   flex-shrink: 0;
 //   //   width: var(--selection-remove-size);
 //   //   height: var(--selection-remove-size);
@@ -1124,18 +1124,18 @@ details {
 
 
 //   &.is-tip {
-//     #subway--detail-tip-name {display: block;}
+//     .subway--detail-tip-name {display: block;}
 //     /* tips cannot be set to root */
-//     #subway--set-root, #subway--reset-root,
+//     .subway--set-root, .subway--reset-root,
 //     #subway--detail-tip-count,
 //     #subway--detail-tree-mono {display: none;}
 //   }
 
 //   &.is-root {
 //     /* this is the actual root, so can't dismiss it, or set it as root */
-//     #subway--set-root,
-//     #subway--reset-root,
-//     #subway--node-dismiss {display: none;}
+//     .subway--set-root,
+//     .subway--reset-root,
+//     .subway--node-dismiss {display: none;}
 //   }
 
 //   &.is-set-root {
@@ -1143,15 +1143,15 @@ details {
 //     this is an inner node that has been set to root,
 //     so can't dismiss it, or set it as root,
 //     but we can reset it so the actual root will display as root */
-//     #subway--set-root  { display: none; }
-//     #subway--reset-root  { display: inline-block; }
-//     #subway--node-dismiss {
+//     .subway--set-root  { display: none; }
+//     .subway--reset-root  { display: inline-block; }
+//     .subway--node-dismiss {
 //       pointer-events: none;
 //       opacity: 0;
 //     }
 //   }
 
-//   &.is-intro #subway--detail-metadata { display: block; }
+//   &.is-intro .subway--detail-metadata { display: block; }
 
 
 //   &:hover {
