@@ -84,7 +84,7 @@ export class NodeTimelines {
   maxDate: number = UNSET;
   highlighedtNodeIndex: number = UNSET;
   highlightedDate: number = UNSET;
-  nodeLabels: {[className: string]: NodeLabels} = {};
+  nodeLabels: NodeLabels[] = [];
   hoverCallback: HoverCallback;
 
   constructor(nodeHighlightCallback: HoverCallback) {
@@ -142,10 +142,10 @@ export class NodeTimelines {
         if (dn !== null && dist) {
           const className = dn.className;
           displaying[className] = true;
-          let labels = this.nodeLabels[className];
+          let labels = this.nodeLabels[dn.index];
           if (labels === undefined) {
             labels = new NodeLabels(dn, this.hoverCallback);
-            this.nodeLabels[className] = labels;
+            this.nodeLabels[dn.index] = labels;
           } else {
             labels.show();
           }
@@ -164,23 +164,23 @@ export class NodeTimelines {
   }
 
 
-  highlightNode(node: DisplayNode, date: number) : void {
+  highlightNode(nodeIndex: number, date: number) : void {
     if (!this.data) return;
 
-    if (node.index !== this.highlighedtNodeIndex) {
-      nodeComparisonContainer.classList.toggle("highlighting", node.index !== UNSET);
+    if (nodeIndex !== this.highlighedtNodeIndex) {
+      nodeComparisonContainer.classList.toggle("highlighting", nodeIndex !== UNSET);
 
-      this.nodeTimesCanvas.setMatching(node);
+      this.nodeTimesCanvas.setMatching(nodeIndex);
       Object.values(this.nodeLabels).forEach(nl=>nl.unhighlight());
 
       nodeComparisonContainer.classList.remove("highlighting");
-      if (node.index !== UNSET) {
-        const labels = this.nodeLabels[node.className];
+      if (nodeIndex !== UNSET) {
+        const labels = this.nodeLabels[nodeIndex];
         if (labels !== undefined) {
           labels.highlight();
         }
       }
-      this.highlighedtNodeIndex = node.index;
+      this.highlighedtNodeIndex = nodeIndex;
     }
     if (date !== this.highlightedDate) {
       this.highlightedDate = date;

@@ -229,17 +229,17 @@ export class NodePrevalenceChart {
   }
 
 
-  highlightNode(node: DisplayNode, date:number) : void {
+  highlightNode(nodeIndex: number, date:number) : void {
     requestAnimationFrame(()=>{
-      if (node.index === UNSET) {
+      if (nodeIndex === UNSET) {
         Object.values(this.svgGroups).forEach((group)=>{
           group.toggleClass("matching", false);
           group.toggleClass("unmatching", false);
         });
       } else {
         Object.values(this.svgGroups).forEach((group)=>{
-          group.toggleClass("matching", node.index === group.node.index);
-          group.toggleClass("unmatching", node.index !== group.node.index);
+          group.toggleClass("matching", nodeIndex === group.node.index);
+          group.toggleClass("unmatching", nodeIndex !== group.node.index);
         });
       }
       if (date === UNSET) {
@@ -383,7 +383,7 @@ export class NodePrevalenceChart {
       const className = nd.className;
       /*
       the first set of coordinates corresponds to the
-      population preroot, so grab the ith+1 set of coords
+      population before the root, so grab the i+1 set of coords
       to plot
       */
       const fillCoords: string = this.getHPDAreaCoords(i+1);

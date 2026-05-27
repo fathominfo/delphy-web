@@ -23,6 +23,9 @@ export class AnalysisUI extends UIScreen {
   nodePrevalenceCanvas: NodePrevalenceChart;
   nodeTimelines: NodeTimelines;
   nodeMutationCharts: NodeMutations;
+  highlightNode: number = UNSET;
+  highlightDate: number = Number.MAX_SAFE_INTEGER;
+  highlightMutation: Mutation | null = null;
 
 
   constructor(sharedState: SharedState, divSelector: string) {
@@ -147,10 +150,18 @@ export class AnalysisUI extends UIScreen {
 
 
   updateHighlight(nodeIndex: number, date: number, mutation: Mutation | null) {
-    console.log(nodeIndex, date, mutation);
-    // if (this.coreData.checkNewHighlight(nodeIndex, date, mutation)) {
-    //   this.highlightCharts();
-    // }
+    if (nodeIndex !== this.highlightNode
+      || date !== this.highlightDate
+      || mutation !== this.highlightMutation
+    ) {
+      this.highlightNode = nodeIndex;
+      this.highlightDate = date;
+      this.highlightMutation = mutation;
+      this.nodeSchematic.highlightNode(nodeIndex);
+      this.nodePrevalenceCanvas.highlightNode(nodeIndex, date);
+      this.nodeTimelines.highlightNode(nodeIndex, date);
+      this.nodeMutationCharts.highlightNode(nodeIndex, date, mutation);
+    }
   }
 
 }

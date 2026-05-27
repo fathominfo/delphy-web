@@ -462,11 +462,11 @@ export class NodeSchematic {
   }
 
 
-  highlightNode(node: DisplayNode) : void {
-    if (node.index !== this.highlightIndex) {
+  highlightNode(nodeIndex: number) : void {
+    if (nodeIndex !== this.highlightIndex) {
       requestAnimationFrame(()=>this.setHighlightNode());
     }
-    this.highlightIndex = node.index;
+    this.highlightIndex = nodeIndex;
   }
 
   highlightNodes(nodeIndices: number[] | null) : void {

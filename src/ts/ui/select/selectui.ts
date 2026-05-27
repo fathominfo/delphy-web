@@ -215,7 +215,7 @@ export class SelectUI extends MccUI {
     this.nodeSchematic.setData(schematicData as NodeSchematicData);
     this.nodeSchematic.setControlsData(nodes.length, metadataField, isFullyAuto);
     this.nodeSchematic.setLayout();
-    this.nodeSchematic.highlightNode(highlightNode);
+    this.nodeSchematic.highlightNode(highlightNode ? highlightNode.index : UNSET);
     if (highlightNode === null || highlightNode.index === UNSET) {
       highlightNode = rootNode?.node as DisplayNode;
     }
@@ -274,7 +274,7 @@ export class SelectUI extends MccUI {
     }
     this.nodeDetails.setData(highlightNode);
     this.nodeDetails.requestDraw();
-    this.nodeSchematic.highlightNode(node);
+    this.nodeSchematic.highlightNode(node.index);
     this.metadataLegend.highlight(node.index);
   }
 

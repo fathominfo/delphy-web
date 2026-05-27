@@ -281,13 +281,13 @@ export class NodePairMutationList {
   }
 
 
-  highlightNode(node: DisplayNode, date: number, mutation: Mutation | null) : void {
+  highlightNode(nodeIndex: number, date: number, mutation: Mutation | null) : void {
     const classList = this.div.classList;
-    let matched = node === this.data.descendantType;
+    let matched = nodeIndex === this.data.nodePair.descendant.index;
     this.mutationTimelines.forEach(mt=>{
       matched = mt.checkMutationMatch(mutation, date) || matched;
     });
-    if (node.index === UNSET) {
+    if (nodeIndex === UNSET) {
       classList.remove(MATCH_CLASS);
       classList.remove(NO_MATCH_CLASS);
     } else if (matched) {
@@ -362,10 +362,10 @@ export class NodeMutations {
     return this.charts;
   }
 
-  highlightNode(node: DisplayNode, date: number, mutation: Mutation|null) {
+  highlightNode(nodeIndex: number, date: number, mutation: Mutation|null) {
     // console.log(`highlight ${node} `);
     this.charts.forEach(chart=>{
-      chart.highlightNode(node, date, mutation);
+      chart.highlightNode(nodeIndex, date, mutation);
     });
 
   }

@@ -71,8 +71,8 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
     });
   }
 
-  setMatching(matchNode:DisplayNode | null) {
-    if (matchNode === null || matchNode.index === UNSET) {
+  setMatching(nodeIndex:number) {
+    if (nodeIndex === UNSET) {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         nodeGroup.toggleClass("matching", false);
@@ -82,7 +82,7 @@ export class NodeTimeDistributionChart extends TimeDistributionChart {
       this.svgGroups.forEach((group: SVGSeriesGroup)=>{
         const nodeGroup = (group as NodeSVGSeriesGroup);
         const node = nodeGroup.node;
-        if (node?.index === matchNode.index) {
+        if (node?.index === nodeIndex) {
           nodeGroup.toggleClass("matching", true);
           nodeGroup.toggleClass("unmatching", false);
         } else {
