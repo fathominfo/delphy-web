@@ -1,12 +1,14 @@
 import { SharedState } from "../../sharedstate";
-import { MccUI } from "../mccui";
+import { UIScreen } from "../uiscreen";
 
 
 
 
-export class AnalysisUI extends MccUI {
+export class AnalysisUI extends UIScreen {
+
+
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector, "#analysis .tree-canvas");
+    super(sharedState, divSelector);
   }
 }

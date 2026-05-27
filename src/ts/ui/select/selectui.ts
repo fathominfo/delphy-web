@@ -349,7 +349,7 @@ export class SelectUI extends MccUI {
   goToMutations: OpenMutationPageFncType = (mutation?: Mutation) => {
     if (mutation) {
       this.sharedState.addMutation(mutation);
-      this.sharedState.goTo(Screens.mutations);
+      this.sharedState.goTo(Screens.analysis);
     }
   }
 }

@@ -6,89 +6,95 @@
     </header>
     <div class="main-content visualizations--container">
 
-      <section id="analysis--right" class="charts--container dual">
-        <div id="analysis--overview" class="duo">
-          <div id="analysis--node-list" class="block left">
-            <div class="header">
-              <div class="title">
-                <h3>Nodes</h3>
-              </div>
+      <section id="analysis--left" class="charts--container">
+        <div id="analysis--node-layout"  class="block left" data-duo="left" >
+
+          <div class="header">
+            <div class="title">
+              <h3>Selected nodes</h3>
+              <span id="analysis--schematic-count"></span>
             </div>
           </div>
-          <div id="analysis--prevalence" class="block right">
 
-            <div class="header">
-              <div class="title" data-tooltip="outside">
-                <h4>Lineage prevalence over time</h4>
-                <button class="info">
-                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
-                    <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
-                  </svg>
-                </button>
-              </div>
-              <form id="prevalence-display-opt" class="mode toggles">
-                <label data-destination-mode="mean" class="toggle off">
-                  <h4>Mean</h4>
-                  <input type="radio" name="prevalence-display" value="mean" checked />
-                </label>
-                <label data-destination-mode="mcc" class="toggle">
-                  <h4>Median and 95% HPD</h4>
-                  <input type="radio" name="prevalence-display" value="distribution" />
-                </label>
-              </form>
+          <div class="subway"></div>
+        </div>
+      </section>
+
+      <section id="analysis-center">
+
+        <div id="analysis--prevalence" class="block right">
+
+          <div class="header">
+            <div class="title" data-tooltip="outside">
+              <h4>Lineage prevalence over time</h4>
+              <button class="info">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
+                  <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
+                </svg>
+              </button>
             </div>
-            <div class="chart">
-              <div class="feature">
-                <div class="y axis">
-                  <div class="values">
-                    <span class="value p0" ><span class="text"><span class="val">0%</span></span><span class="tick"></span></span>
-                    <span class="value p025" ><span class="text"><span class="val">25%</span></span><span class="tick"></span></span>
-                    <span class="value p05" ><span class="text"><span class="val">50%</span></span><span class="tick"></span></span>
-                    <span class="value p075" ><span class="text"><span class="val">75%</span></span><span class="tick"></span></span>
-                    <span class="value p1" ><span class="text"><span class="val">100%</span></span><span class="tick"></span></span>
-                  </div>
+            <form id="prevalence-display-opt" class="mode toggles">
+              <label data-destination-mode="mean" class="toggle off">
+                <h4>Mean</h4>
+                <input type="radio" name="prevalence-display" value="mean" checked />
+              </label>
+              <label data-destination-mode="mcc" class="toggle">
+                <h4>Median and 95% HPD</h4>
+                <input type="radio" name="prevalence-display" value="distribution" />
+              </label>
+            </form>
+          </div>
+          <div class="chart">
+            <div class="feature">
+              <div class="y axis">
+                <div class="values">
+                  <span class="value p0" ><span class="text"><span class="val">0%</span></span><span class="tick"></span></span>
+                  <span class="value p025" ><span class="text"><span class="val">25%</span></span><span class="tick"></span></span>
+                  <span class="value p05" ><span class="text"><span class="val">50%</span></span><span class="tick"></span></span>
+                  <span class="value p075" ><span class="text"><span class="val">75%</span></span><span class="tick"></span></span>
+                  <span class="value p1" ><span class="text"><span class="val">100%</span></span><span class="tick"></span></span>
                 </div>
-                <div id="analysis--prevalence--chart-container">
-                  <svg id="analysis--prevalence--chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
-                    <g class="group">
-                      <path class="shape" d=""></path>
-                      <path class="trend" d=""></path>
-                    </g>
-                  </svg>
-                  <div class="tracker-dates">
-                    <div class="tracker-date hover" data-stamp="" style="left: 57.8595%;">
-                      <div class="tracker"></div>
-                      <div class="line"></div>
-                      <div class="text">
-                        <span class="cal">
-                          <span class="day">10</span>
-                          <span class="month">Feb</span>
-                        </span>
-                        <span class="year">2020</span>
-                      </div>
+              </div>
+              <div id="analysis--prevalence--chart-container">
+                <svg id="analysis--prevalence--chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 120" preserveAspectRatio="none">
+                  <g class="group">
+                    <path class="shape" d=""></path>
+                    <path class="trend" d=""></path>
+                  </g>
+                </svg>
+                <div class="tracker-dates">
+                  <div class="tracker-date hover" data-stamp="" style="left: 57.8595%;">
+                    <div class="tracker"></div>
+                    <div class="line"></div>
+                    <div class="text">
+                      <span class="cal">
+                        <span class="day">10</span>
+                        <span class="month">Feb</span>
+                      </span>
+                      <span class="year">2020</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div id="analysis--prevalence--date-labels" class="support">
-                <div class="x axis">
-                  <div class="axis-dates">
-                    <div class="axis-date reference" style="left: 0%;">
-                      <div class="line"></div>
-                      <div class="text">
-                        <span class="cal">
-                          <span class="month"></span>
-                        </span>
-                        <span class="year"></span>
-                      </div>
+            </div>
+            <div id="analysis--prevalence--date-labels" class="support">
+              <div class="x axis">
+                <div class="axis-dates">
+                  <div class="axis-date reference" style="left: 0%;">
+                    <div class="line"></div>
+                    <div class="text">
+                      <span class="cal">
+                        <span class="month"></span>
+                      </span>
+                      <span class="year"></span>
                     </div>
-                    <div class="axis-date marker" style="left: 25%;">
-                      <div class="line"></div>
-                      <div class="text">
-                        <span class="cal">
-                          <span class="month"></span>
-                        </span>
-                      </div>
+                  </div>
+                  <div class="axis-date marker" style="left: 25%;">
+                    <div class="line"></div>
+                    <div class="text">
+                      <span class="cal">
+                        <span class="month"></span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -96,30 +102,8 @@
             </div>
           </div>
         </div>
+
         <div id="analysis--relationships" class="duo">
-          <div id="analysis--node-layout"  class="block left" data-duo="left" >
-
-            <div class="header">
-              <div class="title">
-                <h4>Node diagram</h4>
-              </div>
-            </div>
-
-            <div id="subway">
-              <svg width="256" height="160" viewBox="0 0 256 160">
-                <path class="connector" d="M0 0 L-45 0 -45 -15"></path>
-                <g class="label">
-                  <rect x="-11" y="-10" width="22" height="20"></rect>
-                  <text x="0" y="0">A</text>
-                </g>
-                <g class="mut-count">
-                  <rect x="-56" y="-10" width="22" height="20"></rect>
-                  <text x="-45" y="0">15</text>
-                </g>
-              </svg>
-            </div>
-          </div>
-
           <div id="analysis--node-timelines" class="block right time-based" data-duo="right" data-element="lineage-emergence">
             <div class="header">
               <div class="title" data-tooltip="outside">
@@ -271,6 +255,5 @@
         </div>
       </section>
     </div>
-
 
   </div>

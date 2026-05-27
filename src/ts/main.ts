@@ -15,6 +15,7 @@ import { setQCPanel } from './ui/qcpanel';
 import { MccUI } from './ui/mccui';
 import { SummaryTree } from './pythia/delphy_api';
 import { Metadata } from './ui/metadata';
+import { AnalysisUI } from './ui/analysis/analysisui';
 
 
 
@@ -28,17 +29,17 @@ function onReady(p:Pythia):void {
   const sharedState = new SharedState(p, goTo);
   const runUI = new RunUI(sharedState, "#runner");
   const selectUI = new SelectUI(sharedState, "#select");
-  // const mutationsUI = new MutationsUI(sharedState, "#mutations");
+  const analysisUI = new AnalysisUI(sharedState, "#analysis");
   const customizeUI = new CustomizeUI(sharedState, "#customize");
 
   goToScreens[Screens.run] = runUI;
   goToScreens[Screens.select] = selectUI;
-  // goToScreens[Screens.mutations] = mutationsUI;
+  goToScreens[Screens.analysis] = analysisUI;
   goToScreens[Screens.customize] = customizeUI;
 
   viewButtons.push(new NavLabel("Run", runUI, "#runner"));
   viewButtons.push(new NavLabel("Select", selectUI, "#select"));
-  // viewButtons.push(new NavLabel("Analyze", mutationsUI, "#mutations"));
+  viewButtons.push(new NavLabel("Analyze", analysisUI, "#analysis"));
   viewButtons.push(new NavLabel("Customize", customizeUI, "#customize"));
   bindNav(viewButtons);
 
