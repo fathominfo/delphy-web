@@ -10,7 +10,7 @@ import { Distribution } from "../distribution";
 import { MccTreeCanvas } from "../mcctreecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { getMRCA, getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
-import { SchematicData, MRCANodeCreator, TreeNode } from "../schematicdata";
+import { SchematicData, MRCANodeCreator, SchematicNode } from "../schematicdata";
 import { MccConfig } from "../mccconfig";
 
 
@@ -57,7 +57,7 @@ export type ChartData = {
   maxDate: number
   nodePairs: NodePair[],
   nodes: DisplayNode[],
-  rootNode: TreeNode | null,
+  rootNode: SchematicNode | null,
   selectedRootIndex: number,
   peakPrevalence: number,
   fieldIntroductions: IntroductionData[],
@@ -698,7 +698,7 @@ export class CoreSelectData {
       chartData.metadataField = this.filteringByMetadataField;
       chartData.selectedRootIndex = this.rootNode.index === actualRootIndex ? UNSET : this.rootNode.index;
       chartData.isFullyAuto = this.isAutoselectingActive();
-      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: TreeNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
+      const currentNodes = minimapData.found.filter(n=>n).map((treeNode: SchematicNode)=>treeNode.node).filter(n=>n.isRoot || !n.isInferred);
       const currentIndices = currentNodes.map(n=>n.index).filter(i=>i!==UNSET);
       const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
       const nodeDistributions = nodePrevalenceData.series;
@@ -713,7 +713,7 @@ export class CoreSelectData {
           if (descendant.index === UNSET) return;
           let relation: NodeRelationType = NodeRelationType.singleDescendant;
           if (ancestor.children.length > 1) {
-            const other: TreeNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
+            const other: SchematicNode = ancestor.children.filter(tn=>tn.node!==descendant)[0];
             if (getY(other.node.index) > getY(descendant.index)) {
               relation = NodeRelationType.upperDescendant;
             } else {

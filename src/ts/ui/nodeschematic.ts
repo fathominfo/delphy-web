@@ -1,8 +1,8 @@
-import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "./common";
+import { UNSET } from "./common";
 import { IntroductionData } from "./select/coreselectdata";
 import { DisplayNode } from "./select/displaynode";
-import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair, NodeRelationType } from "./select/selectcommon";
-import { TreeNode } from "./schematicdata";
+import { HoverCallback, NodePair, NodeRelationType } from "./select/selectcommon";
+import { SchematicNode } from "./schematicdata";
 
 
 
@@ -37,12 +37,12 @@ const TEXT_LABEL_MIN_WIDTH = 20;
 const TEXT_PADDING = 5;
 
 
-export class TreeNodeDisplay {
-  treeNode: TreeNode;
+export class SchematicNodeDisplay {
+  treeNode: SchematicNode;
   xPos: number = UNSET;
   yPos: number = UNSET;
-  parent: TreeNodeDisplay | null = null;
-  children: TreeNodeDisplay[] = [];
+  parent: SchematicNodeDisplay | null = null;
+  children: SchematicNodeDisplay[] = [];
   introduction: IntroductionData | null = null;
   currentMetadataValue = '';
   stepsFromRoot: number;
@@ -58,9 +58,9 @@ export class TreeNodeDisplay {
   previousNodeClass = '';
   subway: SVGElement;
 
-  constructor(src: TreeNode, mutCount: number,
+  constructor(src: SchematicNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
-    parent: TreeNodeDisplay | null,
+    parent: SchematicNodeDisplay | null,
     subway: SVGElement
   ) {
     this.treeNode = src;
@@ -78,9 +78,9 @@ export class TreeNodeDisplay {
   }
 
 
-  setStateFromNode(src: TreeNode, mutCount: number,
+  setStateFromNode(src: SchematicNode, mutCount: number,
     relation: NodeRelationType | typeof UNSET,
-    parent: TreeNodeDisplay | null
+    parent: SchematicNodeDisplay | null
   ) {
     this.previousNodeClass = this.treeNode.node.className;
     this.treeNode = src;
@@ -106,7 +106,7 @@ export class TreeNodeDisplay {
 
   getIndex(): number { return this.treeNode.node.index; }
 
-  addDescendant(desc: TreeNodeDisplay) {
+  addDescendant(desc: SchematicNodeDisplay) {
     this.children.push(desc);
   }
 
@@ -208,9 +208,9 @@ export class NodeSchematic {
   pairsByDescendant: NodePair[] = [];
   introductionLookup: IntroductionData[] = [];
   metadataField: string | null = null;
-  rootNode: TreeNode | null = null;
-  rootNodeDisplay: TreeNodeDisplay | null = null;
-  nodes: TreeNodeDisplay[] = [];
+  rootNode: SchematicNode | null = null;
+  rootNodeDisplay: SchematicNodeDisplay | null = null;
+  nodes: SchematicNodeDisplay[] = [];
   stepCount = 0;
   width: number = UNSET;
   height: number = UNSET;
@@ -352,7 +352,7 @@ export class NodeSchematic {
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
-  setData(pairs: NodePair[], rootNode: TreeNode | null,
+  setData(pairs: NodePair[], rootNode: SchematicNode | null,
     fieldIntroductions: IntroductionData[], metadataField: string | null
   ) {
     // const {ancestor, descendant} = pairs[0];
@@ -371,19 +371,19 @@ export class NodeSchematic {
   }
 
   setLayout() {
-    const lookup: TreeNodeDisplay[] = [];
-    const previous: TreeNodeDisplay[] = [];
+    const lookup: SchematicNodeDisplay[] = [];
+    const previous: SchematicNodeDisplay[] = [];
     this.nodes.forEach(tnd=>previous[tnd.getIndex()] = tnd);
     this.stepCount = 0;
     this.nodes.length = 0;
-    const tips: TreeNodeDisplay[] = [];
+    const tips: SchematicNodeDisplay[] = [];
     this.maxGenerations = 0;
     // console.log(`\n          setLayout`);
     if (this.rootNode) {
       const q = [this.rootNode];
-      const displayQ: TreeNodeDisplay[] = [];
+      const displayQ: SchematicNodeDisplay[] = [];
       while (q.length > 0) {
-        const treeNode = q.shift() as TreeNode;
+        const treeNode = q.shift() as SchematicNode;
         const node = treeNode.node;
         const pair = this.pairsByDescendant[node.index];
         // console.log(`handling ${node.index} ${node.label}`);
@@ -397,9 +397,9 @@ export class NodeSchematic {
         if (treeNode.parent) {
           parent = lookup[treeNode.parent.node.index];
         }
-        let tnd: TreeNodeDisplay = previous[node.index];
+        let tnd: SchematicNodeDisplay = previous[node.index];
         if (!tnd) {
-          tnd = new TreeNodeDisplay(treeNode, mutationCount, relationType, parent, this.container);
+          tnd = new SchematicNodeDisplay(treeNode, mutationCount, relationType, parent, this.container);
         } else {
           tnd.setStateFromNode(treeNode, mutationCount, relationType, parent );
         }
@@ -440,11 +440,11 @@ export class NodeSchematic {
 
 
       while (displayQ.length > 0) {
-        const tnd: TreeNodeDisplay = displayQ.shift() as TreeNodeDisplay;
+        const tnd: SchematicNodeDisplay = displayQ.shift() as SchematicNodeDisplay;
         if (tnd) {
           const count = tnd.children.length;
           if (count > 0) {
-            tnd.tipPlacement = tnd.children.reduce((tot: number, child: TreeNodeDisplay)=>tot+child.tipPlacement, 0) / count;
+            tnd.tipPlacement = tnd.children.reduce((tot: number, child: SchematicNodeDisplay)=>tot+child.tipPlacement, 0) / count;
           }
         }
       }
@@ -472,7 +472,7 @@ export class NodeSchematic {
 
 
 
-  setHover(tnd: TreeNodeDisplay) {
+  setHover(tnd: SchematicNodeDisplay) {
     const node = tnd.treeNode.node;
     const isUpper = false; //!tnd.parent || tnd.yPos < tnd.parent.yPos;
     const isIntro = tnd.introduction !== null;

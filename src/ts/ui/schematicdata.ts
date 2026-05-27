@@ -7,10 +7,10 @@ import { getMRCA, getYFunction } from "./select/selectcommon";
 export type MRCANodeCreator = (nodeIndex: number  )=>DisplayNode;
 
 
-export class TreeNode {
+export class SchematicNode {
   node: DisplayNode;
-  parent: TreeNode | null = null;
-  children: TreeNode[] = [];
+  parent: SchematicNode | null = null;
+  children: SchematicNode[] = [];
   stepsFromRoot = 0;
   tipPlacement = 0;
 
@@ -18,12 +18,12 @@ export class TreeNode {
     this.node = node;
   }
 
-  addChild(node: TreeNode): void {
+  addChild(node: SchematicNode): void {
     this.children.push(node);
     node.parent = this;
   }
 
-  removeChild(node: TreeNode): void {
+  removeChild(node: SchematicNode): void {
     const index = this.children.indexOf(node);
     if (index >= 0) {
       this.children.splice(index, 1);
@@ -34,8 +34,8 @@ export class TreeNode {
 
 export class SchematicData {
 
-  root: TreeNode | null = null;
-  found: TreeNode[] = [];
+  root: SchematicNode | null = null;
+  found: SchematicNode[] = [];
   tree: SummaryTree;
   nodeChildCount: number[];
   mrcaMaker: MRCANodeCreator;
@@ -62,12 +62,12 @@ export class SchematicData {
     // console.log('building tree', nodes.map(n=>n.index).join(','));
     nodes.sort((a: DisplayNode, b: DisplayNode)=>a.generationsFromRoot - b.generationsFromRoot);
     this.found = [];
-    this.root = new TreeNode(nodes.shift() as DisplayNode);
+    this.root = new SchematicNode(nodes.shift() as DisplayNode);
     this.found[this.root.node.index] = this.root;
 
     nodes.forEach(n=>{
       let ancestor = n.index;
-      const tn = new TreeNode(n);
+      const tn = new SchematicNode(n);
       /* find the parent nodes among all the current nodes */
       while (this.found[ancestor] === undefined && ancestor !== UNSET) {
         ancestor = tree.getParentIndexOf(ancestor);
@@ -84,7 +84,7 @@ export class SchematicData {
         be an MRCA for the nodes that is not this particular
         ancestor
         */
-        const mrcas: [TreeNode, number][] = ancestorTreeNode.children.map(other=>{
+        const mrcas: [SchematicNode, number][] = ancestorTreeNode.children.map(other=>{
           const mrcaIndex = getMRCA(n.index, other.node.index, tree, nodeChildCount);
           return [other, mrcaIndex];
         });
@@ -96,7 +96,7 @@ export class SchematicData {
             and update the relationships
             */
             const mrca: DisplayNode = mrcaMaker(mrcaIndex);
-            const mrcaTreeNode = new TreeNode(mrca);
+            const mrcaTreeNode = new SchematicNode(mrca);
             ancestorTreeNode.removeChild(other);
             ancestorTreeNode.addChild(mrcaTreeNode);
             mrcaTreeNode.addChild(other);
@@ -127,8 +127,8 @@ export class SchematicData {
     });
 
 
-    const tips: TreeNode[] = [];
-    this.found.forEach((treeNode: TreeNode)=>{
+    const tips: SchematicNode[] = [];
+    this.found.forEach((treeNode: SchematicNode)=>{
       if (treeNode.children.length === 0) {
         tips.push(treeNode);
       } else if (treeNode.children.length > 2) {
@@ -150,7 +150,7 @@ export class SchematicData {
       tn.tipPlacement = i - midTips;
     });
 
-    const q: TreeNode[] = [this.root];
+    const q: SchematicNode[] = [this.root];
     /*
     build a queue starting with root,
     followed by the children of each generation
@@ -168,7 +168,7 @@ export class SchematicData {
       i++;
     }
     while (q.length > 0) {
-      const tn = q.pop() as TreeNode;
+      const tn = q.pop() as SchematicNode;
       const childCount = tn.children.length;
       /*
       given the way the queue is built up, each child will
@@ -192,7 +192,7 @@ export class SchematicData {
   }
 
 
-  collectDescendantSelections(tn: TreeNode, tips: string[]): void{
+  collectDescendantSelections(tn: SchematicNode, tips: string[]): void{
     if (tn.node.isInferred) {
       tn.children.forEach(c=>this.collectDescendantSelections(c, tips));
     } else {
@@ -202,7 +202,7 @@ export class SchematicData {
 
 
 
-  getMRCAName(tnd: TreeNode): string {
+  getMRCAName(tnd: SchematicNode): string {
     const tips: string[] = [];
     this.collectDescendantSelections(tnd, tips);
     tips.sort();
@@ -211,7 +211,7 @@ export class SchematicData {
   }
 
 
-  getRoot() : TreeNode {
+  getRoot() : SchematicNode {
     if (this.root === null) {
       throw new Error("can't access root tree node before setting data");
     }

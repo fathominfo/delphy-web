@@ -1,8 +1,7 @@
 import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
-import { NodeSchematic, TreeNodeDisplay } from "../nodeschematic";
-import { TreeNode } from "../schematicdata";
-import { IntroductionData } from "./coreselectdata";
-import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION, MetadataToggleCallback, NodeCallback, NodePair } from "./selectcommon";
+import { NodeSchematic, SchematicNodeDisplay } from "../nodeschematic";
+import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION,
+  MetadataToggleCallback, NodeCallback } from "./selectcommon";
 
 const METADATA_FIELD_SELECTOR = "#select--metadata-transitions label";
 
@@ -66,7 +65,7 @@ export class SchematicEditor extends NodeSchematic {
     const resetRootButton = this.hoverDiv.querySelector(".subway--reset-root") as HTMLButtonElement;
 
     dismissButton.addEventListener("click", ()=>{
-      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
+      const tnd: SchematicNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
       if (tnd) {
         dismissNodeCallback(this.highlightIndex);
       }
@@ -75,7 +74,7 @@ export class SchematicEditor extends NodeSchematic {
       this.hideHover();
     });
     setRootButton.addEventListener("click", ()=>{
-      const tnd: TreeNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
+      const tnd: SchematicNodeDisplay | undefined = this.nodes.filter(n=>n.getIndex() === this.highlightIndex)[0];
       if (tnd) {
         rootSelectCallback(tnd.getIndex());
         this.hideHover();
