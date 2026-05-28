@@ -179,7 +179,20 @@
   .axis.x {
     width: 100%;
     height: 100%;
+    margin-left: var(--lineages-chart-yaxis-width);
     margin-right: 0;
+  }
+
+  .tracker-date.hover {
+    opacity: 0;
+    transition: opacity 0.15s;
+    .line, .text {
+      top: 0;
+    }
+
+    &.active {
+      opacity: 1;
+    }
   }
 }
 

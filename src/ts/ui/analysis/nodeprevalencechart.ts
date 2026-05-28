@@ -47,7 +47,6 @@ export class NodePrevalenceChart {
   nodeHighlightCallback: HoverCallback;
   nodes: DisplayNode[] = [];
   svg: SVGElement;
-  dateHoverContainer: HTMLDivElement;
   dateHoverDiv: HTMLDivElement;
   svgGroups: {[_:string] : SVGPrevalenceMeanGroup} = {};
   dateAxis: HTMLDivElement;
@@ -76,8 +75,7 @@ export class NodePrevalenceChart {
   constructor(nodeHighlightCallback: HoverCallback) {
     const container = document.querySelector("#analysis--prevalence") as HTMLDivElement;
     this.svg = container.querySelector("#analysis--prevalence--chart") as SVGElement;
-    this.dateHoverContainer = container.querySelector(".tracker-dates") as HTMLDivElement;
-    this.dateHoverDiv = this.dateHoverContainer.querySelector(".tracker-date") as HTMLDivElement;
+    this.dateHoverDiv = container.querySelector(".tracker-date") as HTMLDivElement;
     this.dateAxis = container.querySelector(".axis-dates") as HTMLDivElement;
     this.referenceDateTemplate = this.dateAxis.querySelector(".axis-date.reference") as HTMLDivElement;
     this.referenceDateTemplate.remove();
@@ -220,11 +218,6 @@ export class NodePrevalenceChart {
   }
 
   handleMouseout = () => {
-    if (this.hoverDate !== UNSET) {
-      this.hoverDate = UNSET;
-      this.highlightDisplayNode = null;
-      this.requestDraw();
-    }
     this.nodeHighlightCallback(UNSET, UNSET, null);
   }
 
@@ -244,12 +237,16 @@ export class NodePrevalenceChart {
         });
       }
       if (date === UNSET) {
-        this.dateHoverContainer.classList.remove("active");
+        this.dateHoverDiv.classList.remove("active");
+        this.dateAxisEntries.forEach(({div})=>{
+          div.classList.remove("off");
+        });
+
       } else {
         setDateLabel(date, this.dateHoverDiv);
         const pct = 100 * (date - this.minDate) / (this.maxDate - this.minDate);
         this.dateHoverDiv.style.left = `${pct}%`;
-        this.dateHoverContainer.classList.add("active");
+        this.dateHoverDiv.classList.add("active");
         // hide overlapping labels
         const widthInPct = DATE_LABEL_WIDTH_PX / this.width * 100;
         let isOverlapping = false;
@@ -480,6 +477,7 @@ export class NodePrevalenceChart {
   setAxisDates() {
     const { scale, entries } = getNiceDateInterval(this.minDate, this.maxDate);
     this.dateAxis.innerHTML = '';
+    this.dateAxis.appendChild(this.dateHoverDiv);
     entries.pop(); // don't show the last date here
     this.dateAxisEntries.length = 0;
     entries.forEach(labelData=>{
