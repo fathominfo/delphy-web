@@ -122,7 +122,7 @@ export class AnalysisUI extends UIScreen {
         processNext(desc, anc, relation);
       }
     }
-    console.log(pairs.map(p=>`${p.anc.node.className}->${p.desc.node.className}`))
+    // console.log(pairs.map(p=>`${p.anc.node.label}->${p.desc.node.label}`))
     const nodeComparisonData: NodeMutationsData[] = pairs.map(({anc, desc, relation})=>{
       const ancestorSeries: Distribution = anc.node.series as Distribution;
       const descendantSeries: Distribution = desc.node.series as Distribution;
@@ -130,9 +130,9 @@ export class AnalysisUI extends UIScreen {
       return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
     });
     const currentIndices = nodes.map(n=>n.index);
-    console.log('currentIndices', currentIndices)
+    // console.log('currentIndices', currentIndices);`
     const nodePrevalenceData = pythia.getPopulationNodeDistribution(currentIndices, minDate, maxDate, summaryTree);
-    console.log(nodePrevalenceData)
+    // console.log(nodePrevalenceData)
     const nodeDistributions = nodePrevalenceData.series;
     /* we want the default distribution to come first, so take it off the end and put it first */
     nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));

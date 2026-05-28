@@ -37,6 +37,10 @@ export class SVGPrevalenceMeanGroup {
   toggleClass(className: string, on=true) {
     this.g.classList.toggle(className, on);
   }
+
+  remove() {
+    this.g.remove();
+  }
 }
 
 
@@ -45,10 +49,11 @@ export class NodePrevalenceChart {
   hoverDate: number = UNSET;
   highlightDisplayNode: DisplayNode | null = null;
   nodeHighlightCallback: HoverCallback;
-  nodes: DisplayNode[] = [];
   svg: SVGElement;
   dateHoverDiv: HTMLDivElement;
-  svgGroups: {[_:string] : SVGPrevalenceMeanGroup} = {};
+  /* `nodes` and `svgGroups` are sparse arrays indexed by the node index */
+  nodes: DisplayNode[] = [];
+  svgGroups: SVGPrevalenceMeanGroup[] = [];
   dateAxis: HTMLDivElement;
   referenceDateTemplate: HTMLDivElement;
   dateTemplate: HTMLDivElement;
@@ -111,7 +116,7 @@ export class NodePrevalenceChart {
 
 
   setData(nodeDist: BaseTreeSeriesType, nodes: DisplayNode[], minDate: number, maxDate: number) {
-    console.log(nodeDist)
+    // console.log(nodeDist)
     this.dist = nodeDist; // tree, series, day
     this.treeCount = nodeDist.length;
     this.seriesCount = nodeDist[0].length;
@@ -226,15 +231,18 @@ export class NodePrevalenceChart {
     requestAnimationFrame(()=>{
       console.log(nodeIndex, date);
       if (nodeIndex === UNSET) {
-        Object.values(this.svgGroups).forEach((group)=>{
+        this.svgGroups.forEach((group)=>{
           group.toggleClass("matching", false);
           group.toggleClass("unmatching", false);
         });
       } else {
-        Object.values(this.svgGroups).forEach((group)=>{
+        this.svgGroups.forEach((group)=>{
           group.toggleClass("matching", nodeIndex === group.node.index);
           group.toggleClass("unmatching", nodeIndex !== group.node.index);
         });
+        /* move the highlighted group to the top */
+        const theOne: SVGGElement = this.svgGroups[nodeIndex].g;
+        CONTAINER.appendChild(theOne);
       }
       if (date === UNSET) {
         this.dateHoverDiv.classList.remove("active");
@@ -282,9 +290,9 @@ export class NodePrevalenceChart {
 
   drawMeansChart() : void {
     const { nodes, svgGroups } = this;
-    const dataMapping: {[_:string]: boolean} = {};
+    const currentNodes: boolean[] = [];
     Object.values(nodes).forEach((nd, i)=>{
-      const className = nd.className;
+      const nodeIndex = nd.index;
       /*
       the first set of coordinates corresponds to the
       population preroot, so grab the ith+1 set of coords
@@ -292,11 +300,11 @@ export class NodePrevalenceChart {
       */
       const fillCoords: string = this.getMeanAreaCoords(i+1);
       const strokeCoords: string = this.getMeanTopCoords(i+1);
-      dataMapping[className] = true;
-      let svgGroup = svgGroups[className];
+      currentNodes[nodeIndex] = true;
+      let svgGroup = svgGroups[nodeIndex];
       if (svgGroup === undefined) {
         svgGroup = new SVGPrevalenceMeanGroup(nd);
-        svgGroups[className] = svgGroup;
+        svgGroups[nodeIndex] = svgGroup;
       } else {
         svgGroup.setNode(nd);
       }
@@ -304,10 +312,10 @@ export class NodePrevalenceChart {
       svgGroup.shape.setAttribute("d", fillCoords);
       svgGroup.trend.setAttribute("d", strokeCoords);
     });
-    /* hide any svgs for nodes that are not in the current list */
-    Object.entries(svgGroups).forEach(([nodeType, group])=>{
-      if (dataMapping[nodeType] === undefined) {
-        group.toggleClass("hidden", true);
+    /* remove any svgs for nodes that are not in the current list */
+    svgGroups.forEach((group, i)=>{
+      if (currentNodes[i] === undefined) {
+        group.remove();
       }
     });
   }
@@ -322,6 +330,14 @@ export class NodePrevalenceChart {
       ys: number[];
     let path = '';
     const L: number = averageYPositions[index].length;
+    /*
+    TODO:
+    currently every lineage has an outline that extends
+    all the way from the left to the right, even when
+    it has no chance of starting back then. This is an
+    artifact of the way we draw it. We should add a check
+    for 0 height, and not draw the shape at that point.
+    */
     if (prevIndex < 0) {
       path = `M0 0 L ${width} 0`;
     } else {
@@ -376,9 +392,9 @@ export class NodePrevalenceChart {
 
   drawMedianAndHPD() : void {
     const { nodes, svgGroups } = this;
-    const dataMapping: {[_:string]: boolean} = {};
+    const currentNodes: boolean[] = [];
     Object.values(nodes).forEach((nd, i)=>{
-      const className = nd.className;
+      const nodeIndex = nd.index;
       /*
       the first set of coordinates corresponds to the
       population before the root, so grab the i+1 set of coords
@@ -386,22 +402,23 @@ export class NodePrevalenceChart {
       */
       const fillCoords: string = this.getHPDAreaCoords(i+1);
       const strokeCoords: string = this.getMedianCoords(i+1);
-      dataMapping[className] = true;
-      let svgGroup = svgGroups[className];
+      currentNodes[nodeIndex] = true;
+      let svgGroup = svgGroups[nodeIndex];
       if (svgGroup === undefined) {
         svgGroup = new SVGPrevalenceMeanGroup(nd);
-        svgGroups[className] = svgGroup;
+        svgGroups[nodeIndex] = svgGroup;
       }
       svgGroup.toggleClass("hidden", false);
       svgGroup.shape.setAttribute("d", fillCoords);
       svgGroup.trend.setAttribute("d", strokeCoords);
     });
     /* hide any svgs for nodes that are not in the current list */
-    Object.entries(svgGroups).forEach(([nodeType, group])=>{
-      if (dataMapping[nodeType] === undefined) {
-        group.toggleClass("hidden", true);
+    svgGroups.forEach((group, i)=>{
+      if (currentNodes[i] === undefined) {
+        group.remove();
       }
     });
+
   }
 
 
