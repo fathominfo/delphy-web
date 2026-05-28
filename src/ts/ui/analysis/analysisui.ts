@@ -47,6 +47,13 @@ export class AnalysisUI extends UIScreen {
   resize(): void {
     super.resize();
     this.nodeSchematic.resize();
+    /*
+    TODO
+    the x-axis of the prevalence chart, node timelines, and mutations
+    should all be aligned. It probably makes sense to set the width of
+    one of the charts, and then pass that value to the other two in
+    order to make sure they are all pixel perfect aligned. [mark 260528]
+    */
     this.nodePrevalenceCanvas.resize();
     this.nodePrevalenceCanvas.requestDraw();
     this.nodeTimelines.resize();
