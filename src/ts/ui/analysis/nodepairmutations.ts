@@ -166,9 +166,8 @@ export class NodePairMutationList {
     // this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
 
-    const fromType = this.data.ancestorType.name.toLowerCase();
-    let toType = this.data.descendantType?.name;
-    if (toType) toType = toType.toLowerCase();
+    const fromType = this.data.ancestorType.className;
+    const toType = this.data.descendantType?.className;
     this.div.setAttribute("data-from", fromType);
     this.div.setAttribute("data-to", toType || '');
 

@@ -550,40 +550,262 @@
   }
 
 
-  [data-to="mrca"] {
-    color: var(--mrca-mutation-text);
-    .header .title h4 {color: var(--mrca-mutation-text);}
-    .mutation {color: var(--mrca-mutation-text);}
-    .mutation .site {color: var(--mrca-position-text);}
-    .range .guide.date.start {background-color: var(--mrca-timeline-stroke);}
-    .timeline .dummy .dist {fill: var(--mrca-timeline-fill);}
-    .timeline .dummy .pointer {stroke: var(--mrca-timeline-stroke);}
-  }
-
   [data-to="a"] {
     color: var(--a-mutation-text);
-    .header .title h4      {color: var(--a-mutation-text)}
-    .mutation      {color: var(--a-mutation-text)}
-    .mutation .site      {color: var(--a-position-text)}
-    .range .guide.date.end    {background-color: var(--a-timeline-stroke)}
-    .timeline .dummy .dist {fill: var(--a-timeline-fill)}
-    .timeline .dummy .pointer {stroke: var(--a-timeline-stroke)}
+    .header .title h4      {
+      color: var(--a-mutation-text);
+    }
+    .mutation {
+      color: var(--a-mutation-text);
+      .site {
+        color: var(--a-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--a-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--a-timeline-fill);}
+      .pointer {stroke: var(--a-timeline-stroke);}
+    }
   }
+
 
   [data-to="b"] {
     color: var(--b-mutation-text);
-  .header .title h4      {color: var(--b-mutation-text)}
-  .mutation      {color: var(--b-mutation-text)}
-  .mutation .site      {color: var(--b-position-text)}
-  .range .guide.date.end    {background-color: var(--b-timeline-stroke)}
-  .timeline .dummy .dist {fill: var(--b-timeline-fill)}
-  .timeline .dummy .pointer {stroke: var(--b-timeline-stroke)}
+    .header .title h4      {
+      color: var(--b-mutation-text);
+    }
+    .mutation {
+      color: var(--b-mutation-text);
+      .site {
+        color: var(--b-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--b-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--b-timeline-fill);}
+      .pointer {stroke: var(--b-timeline-stroke);}
+    }
   }
 
-  [data-from="mrca"] .range .guide.date.start {background-color: var(--mrca-timeline-stroke)}
-  [data-from="a"] .range .guide.date.start    {background-color: var(--a-timeline-stroke)}
-  [data-from="b"] .range .guide.date.start    {background-color: var(--b-timeline-stroke)}
-  [data-to="mrca"] .range .guide.date.end {background-color: var(--mrca-timeline-stroke)}
+
+
+  [data-to="c"] {
+    color: var(--c-mutation-text);
+    .header .title h4      {
+      color: var(--c-mutation-text);
+    }
+    .mutation {
+      color: var(--c-mutation-text);
+      .site {
+        color: var(--c-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--c-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--c-timeline-fill);}
+      .pointer {stroke: var(--c-timeline-stroke);}
+    }
+  }
+
+  [data-to="d"] {
+    color: var(--d-mutation-text);
+    .header .title h4      {
+      color: var(--d-mutation-text);
+    }
+    .mutation {
+      color: var(--d-mutation-text);
+      .site {
+        color: var(--d-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--d-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--d-timeline-fill);}
+      .pointer {stroke: var(--d-timeline-stroke);}
+    }
+  }
+
+  [data-to="e"]  {
+    color: var(--e-mutation-text);
+    .header .title h4      {
+      color: var(--e-mutation-text);
+    }
+    .mutation {
+      color: var(--e-mutation-text);
+      .site {
+        color: var(--e-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--e-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--e-timeline-fill);}
+      .pointer {stroke: var(--e-timeline-stroke);}
+    }
+  }
+
+  [data-to="f"]  {
+    color: var(--f-mutation-text);
+    .header .title h4      {
+      color: var(--f-mutation-text);
+    }
+    .mutation {
+      color: var(--f-mutation-text);
+      .site {
+        color: var(--f-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--f-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--f-timeline-fill);}
+      .pointer {stroke: var(--f-timeline-stroke);}
+    }
+  }
+
+  [data-to="g"]  {
+    color: var(--g-mutation-text);
+    .header .title h4      {
+      color: var(--g-mutation-text);
+    }
+    .mutation {
+      color: var(--g-mutation-text);
+      .site {
+        color: var(--g-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--g-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--g-timeline-fill);}
+      .pointer {stroke: var(--g-timeline-stroke);}
+    }
+  }
+
+  [data-to="h"]  {
+    color: var(--h-mutation-text);
+    .header .title h4      {
+      color: var(--h-mutation-text);
+    }
+    .mutation {
+      color: var(--h-mutation-text);
+      .site {
+        color: var(--h-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--h-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--h-timeline-fill);}
+      .pointer {stroke: var(--h-timeline-stroke);}
+    }
+  }
+
+  [data-to="i"]  {
+    color: var(--i-mutation-text);
+    .header .title h4      {
+      color: var(--i-mutation-text);
+    }
+    .mutation {
+      color: var(--i-mutation-text);
+      .site {
+        color: var(--i-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--i-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--i-timeline-fill);}
+      .pointer {stroke: var(--i-timeline-stroke);}
+    }
+  }
+
+  [data-to="j"]  {
+    color: var(--j-mutation-text);
+    .header .title h4      {
+      color: var(--j-mutation-text);
+    }
+    .mutation {
+      color: var(--j-mutation-text);
+      .site {
+        color: var(--j-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--j-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--j-timeline-fill);}
+      .pointer {stroke: var(--j-timeline-stroke);}
+    }
+  }
+
+  [data-to="k"]  {
+    color: var(--k-mutation-text);
+    .header .title h4      {
+      color: var(--k-mutation-text);
+    }
+    .mutation {
+      color: var(--k-mutation-text);
+      .site {
+        color: var(--k-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--k-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--k-timeline-fill);}
+      .pointer {stroke: var(--k-timeline-stroke);}
+    }
+  }
+
+  [data-to="l"]  {
+    color: var(--l-mutation-text);
+    .header .title h4      {
+      color: var(--l-mutation-text);
+    }
+    .mutation {
+      color: var(--l-mutation-text);
+      .site {
+        color: var(--l-position-text);
+      }
+    }
+    .range .guide.date.end    {
+      background-color: var(--l-timeline-stroke);
+    }
+    .timeline .dummy {
+      .dist {fill: var(--l-timeline-fill);}
+      .pointer {stroke: var(--l-timeline-stroke);}
+    }
+  }
+
+
+  [data-from="a"] .range .guide.date.start { background-color: var(--a-timeline-stroke); }
+  [data-from="b"] .range .guide.date.start { background-color: var(--b-timeline-stroke); }
+  [data-from="c"] .range .guide.date.start { background-color: var(--c-timeline-stroke); }
+  [data-from="d"] .range .guide.date.start { background-color: var(--d-timeline-stroke); }
+  [data-from="e"] .range .guide.date.start { background-color: var(--e-timeline-stroke); }
+  [data-from="f"] .range .guide.date.start { background-color: var(--f-timeline-stroke); }
+  [data-from="g"] .range .guide.date.start { background-color: var(--g-timeline-stroke); }
+  [data-from="h"] .range .guide.date.start { background-color: var(--h-timeline-stroke); }
+  [data-from="i"] .range .guide.date.start { background-color: var(--i-timeline-stroke); }
+  [data-from="j"] .range .guide.date.start { background-color: var(--j-timeline-stroke); }
+  [data-from="k"] .range .guide.date.start { background-color: var(--k-timeline-stroke); }
+  [data-from="l"] .range .guide.date.start { background-color: var(--l-timeline-stroke); }
 
   .mutation {
     color: var(--node-mutation-text);
@@ -777,53 +999,144 @@
         .point.to {top: 100%}
       }
 
-      .segment[data-to="mrca"] {
-        .trail {border-color: var(--mrca-stroke);}
-        .point {background-color: var(--root-stroke)}
-      }
       .segment[data-to="a"] {
-        .trail      {border-color: var(--a-stroke)}
-        .point      {background-color: var(--a-stroke)}
+        .trail      {border-color: var(--a-stroke);}
+        .point      {background-color: var(--a-stroke);}
       }
       .segment[data-to="b"] {
-        .trail      {border-color: var(--b-stroke)}
-        .point      {background-color: var(--b-stroke)}
+        .trail      {border-color: var(--b-stroke);}
+        .point      {background-color: var(--b-stroke);}
+      }
+      .segment[data-to="c"] {
+        .trail      {border-color: var(--c-stroke);}
+        .point      {background-color: var(--c-stroke);}
+      }
+      .segment[data-to="d"] {
+        .trail      {border-color: var(--d-stroke);}
+        .point      {background-color: var(--d-stroke);}
+      }
+      .segment[data-to="e"] {
+        .trail      {border-color: var(--e-stroke);}
+        .point      {background-color: var(--e-stroke);}
+      }
+      .segment[data-to="f"] {
+        .trail      {border-color: var(--f-stroke);}
+        .point      {background-color: var(--f-stroke);}
+      }
+      .segment[data-to="g"] {
+        .trail      {border-color: var(--g-stroke);}
+        .point      {background-color: var(--g-stroke);}
+      }
+      .segment[data-to="h"] {
+        .trail      {border-color: var(--h-stroke);}
+        .point      {background-color: var(--h-stroke);}
+      }
+      .segment[data-to="i"] {
+        .trail      {border-color: var(--i-stroke);}
+        .point      {background-color: var(--i-stroke);}
+      }
+      .segment[data-to="j"] {
+        .trail      {border-color: var(--j-stroke);}
+        .point      {background-color: var(--j-stroke);}
+      }
+      .segment[data-to="k"] {
+        .trail      {border-color: var(--k-stroke);}
+        .point      {background-color: var(--k-stroke);}
+      }
+      .segment[data-to="l"] {
+        .trail      {border-color: var(--l-stroke);}
+        .point      {background-color: var(--l-stroke);}
       }
     }
   }
 
 
 
-  &[data-to="mrca"] .schematic .segment[data-to="mrca"] .point.to {
-    background-color: var(--mrca-fill);
-    border-color: var(--mrca-stroke);
-  }
-
-  &[data-to="mrca"] .schematic .segment[data-to="mrca"] {
-    .point.to {
-      width: var(--schematic-point-size-on);
-      height: var(--schematic-point-size-on);
-      border-radius: var(--schematic-point-size-on);
-      background-color: var(--mrca-stroke);
-      border: none;
-    }
-  }
   &[data-to="a"] .schematic .segment[data-to="a"] {
-    .point.to {
-      background-color: var(--a-fill);
-      border-color: var(--a-stroke);
-    }
+      .point.to {
+        background-color: var(--a-fill);
+        border-color: var(--a-stroke);
+      }
   }
   &[data-to="b"] .schematic .segment[data-to="b"] {
-    .point.to {
-      background-color: var(--b-fill);
-      border-color: var(--b-stroke);
-    }
+      .point.to {
+        background-color: var(--b-fill);
+        border-color: var(--b-stroke);
+      }
+  }
+  &[data-to="c"] .schematic .segment[data-to="c"] {
+      .point.to {
+        background-color: var(--c-fill);
+        border-color: var(--c-stroke);
+      }
+  }
+  &[data-to="d"] .schematic .segment[data-to="d"] {
+      .point.to {
+        background-color: var(--d-fill);
+        border-color: var(--d-stroke);
+      }
+  }
+  &[data-to="e"] .schematic .segment[data-to="e"] {
+      .point.to {
+        background-color: var(--e-fill);
+        border-color: var(--e-stroke);
+      }
+  }
+  &[data-to="f"] .schematic .segment[data-to="f"] {
+      .point.to {
+        background-color: var(--f-fill);
+        border-color: var(--f-stroke);
+      }
+  }
+  &[data-to="g"] .schematic .segment[data-to="g"] {
+      .point.to {
+        background-color: var(--g-fill);
+        border-color: var(--g-stroke);
+      }
+  }
+  &[data-to="h"] .schematic .segment[data-to="h"] {
+      .point.to {
+        background-color: var(--h-fill);
+        border-color: var(--h-stroke);
+      }
+  }
+  &[data-to="i"] .schematic .segment[data-to="i"] {
+      .point.to {
+        background-color: var(--i-fill);
+        border-color: var(--i-stroke);
+      }
+  }
+  &[data-to="j"] .schematic .segment[data-to="j"] {
+      .point.to {
+        background-color: var(--j-fill);
+        border-color: var(--j-stroke);
+      }
+  }
+  &[data-to="k"] .schematic .segment[data-to="k"] {
+      .point.to {
+        background-color: var(--k-fill);
+        border-color: var(--k-stroke);
+      }
+  }
+  &[data-to="l"] .schematic .segment[data-to="l"] {
+      .point.to {
+        background-color: var(--l-fill);
+        border-color: var(--l-stroke);
+      }
   }
 
-  &[data-to="mrca"] .schematic .segment[data-to="mrca"],
   &[data-to="a"] .schematic .segment[data-to="a"],
-  &[data-to="b"] .schematic .segment[data-to="b"] {
+  &[data-to="b"] .schematic .segment[data-to="b"],
+  &[data-to="c"] .schematic .segment[data-to="c"],
+  &[data-to="d"] .schematic .segment[data-to="d"],
+  &[data-to="e"] .schematic .segment[data-to="e"],
+  &[data-to="f"] .schematic .segment[data-to="f"],
+  &[data-to="g"] .schematic .segment[data-to="g"],
+  &[data-to="h"] .schematic .segment[data-to="h"],
+  &[data-to="i"] .schematic .segment[data-to="i"],
+  &[data-to="j"] .schematic .segment[data-to="j"],
+  &[data-to="k"] .schematic .segment[data-to="k"],
+  &[data-to="l"] .schematic .segment[data-to="l"] {
     opacity: 1;
     z-index: 1;
     .point.to {
@@ -991,5 +1304,116 @@
       }
     }
   }
+
+  .analysis--track-mutations[data-to="c"] {
+    path { fill: var(--c-timeline-fill); }
+    line { stroke: var(--c-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--c-mutation-text);
+      .site {
+        color : var(--c-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="d"] {
+    path { fill: var(--d-timeline-fill); }
+    line { stroke: var(--d-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--d-mutation-text);
+      .site {
+        color : var(--d-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="e"] {
+    path { fill: var(--e-timeline-fill); }
+    line { stroke: var(--e-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--e-mutation-text);
+      .site {
+        color : var(--e-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="f"] {
+    path { fill: var(--f-timeline-fill); }
+    line { stroke: var(--f-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--f-mutation-text);
+      .site {
+        color : var(--f-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="g"] {
+    path { fill: var(--g-timeline-fill); }
+    line { stroke: var(--g-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--g-mutation-text);
+      .site {
+        color : var(--g-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="h"] {
+    path { fill: var(--h-timeline-fill); }
+    line { stroke: var(--h-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--h-mutation-text);
+      .site {
+        color : var(--h-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="i"] {
+    path { fill: var(--i-timeline-fill); }
+    line { stroke: var(--i-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--i-mutation-text);
+      .site {
+        color : var(--i-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="j"] {
+    path { fill: var(--j-timeline-fill); }
+    line { stroke: var(--j-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--j-mutation-text);
+      .site {
+        color : var(--j-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="k"] {
+    path { fill: var(--k-timeline-fill); }
+    line { stroke: var(--k-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--k-mutation-text);
+      .site {
+        color : var(--k-position-text);
+      }
+    }
+  }
+
+  .analysis--track-mutations[data-to="l"] {
+    path { fill: var(--l-timeline-fill); }
+    line { stroke: var(--l-timeline-stroke); }
+    .analysis--node-comparison--mutation-name {
+      color: var(--l-mutation-text);
+      .site {
+        color : var(--l-position-text);
+      }
+    }
+  }
+
 
 
