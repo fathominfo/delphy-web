@@ -536,6 +536,8 @@ export class HistCanvas extends TraceCanvas {
     burnInMarker.classList.toggle("hidden", burnInHeight === 0);
     burnInMarker.setAttribute("y1", `${activeTop}`);
     burnInMarker.setAttribute("y2", `${activeTop}`);
+    if (burnInPath.endsWith("L")) burnInPath = burnInPath.substring(0, burnInPath.length - 1);
+    if (activePath.endsWith("L")) activePath = activePath.substring(0, activePath.length - 1);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
     burnInTrend.style.strokeWidth = `${trendWeight}`;
@@ -664,7 +666,7 @@ export class HistCanvas extends TraceCanvas {
     counts.forEach((n, i)=>{
       const value = edges[i];
       const barProb = Math.max(0, n / sumCounts);
-      const size = barProb / maxProb * histoHeight;
+      const size = barProb / maxProb * histoHeight || 0;
       const top = histoHeight - size;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
       const x = (value - displayMin) / valRange * this.histoWidth;
@@ -682,9 +684,9 @@ export class HistCanvas extends TraceCanvas {
     // let btot = 0;
     probs.forEach((probability, i)=>{
       const value = values[i];
-      const size = Math.max(0, probability / maxProb * histoHeight);
+      const size = Math.max(0, probability / maxProb * histoHeight) || 0;
       const top = histoHeight - size;
-      const x = (value - displayMin) / valRange * histoWidth;
+      const x = (value - displayMin) / valRange * histoWidth ;
       if (d === '') {
         d = `M${x} ${top} L `;
       } else {
@@ -705,10 +707,14 @@ export class HistCanvas extends TraceCanvas {
         const pdf = kde.pdf(highlightValue);
         const cdf = kde.cdf(highlightValue);
         const prob = step * pdf;
-        const ht = Math.max(0, prob / maxProb * histoHeight);
+        const ht = Math.max(0, prob / maxProb * histoHeight) || 0;
         const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
-        highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        if (highlightD.toLowerCase().startsWith("m")) {
+          highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        } else {
+          highlightD = `M${x} ${y} L${x} ${histoHeight}`;
+        }
         const highlightPath = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
         highlightPath.setAttribute('d', highlightD);
         highlightPath.classList.add("cdf");
