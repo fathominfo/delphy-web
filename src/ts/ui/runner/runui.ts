@@ -514,18 +514,33 @@ export class RunUI extends UIScreen {
       const toShow = [TraceChart.numMutations];
       const gammas = [];
 
-
-
       let availables = [ TraceChart.numMutations];
-
+      const mutationRateIndex = ESSExcludes.indexOf(TraceChart.mu);
+      const apobecMutationRateIndex = ESSExcludes.indexOf(TraceChart.muStar);
       if (!params.mutationRateIsFixed) {
         if (params.apobecEnabled) {
           toShow.push(TraceChart.muStar);
           availables.push(TraceChart.muStar);
+          /* make sure that muStar feeds into the ESS calculations */
+          if (apobecMutationRateIndex >= 0) {
+            ESSExcludes.splice(apobecMutationRateIndex, 1);
+          }
         } else {
           toShow.push(TraceChart.mu);
+          /* make sure that mu feeds into the ESS calculations */
+          if (mutationRateIndex >= 0) {
+            ESSExcludes.splice(mutationRateIndex, 1);
+          }
         }
         availables.push(TraceChart.mu);
+      } else {
+        /* remove mu and muStar from the ESS calculations */
+        if (mutationRateIndex < 0) {
+          ESSExcludes.push(TraceChart.mu);
+        }
+        if (apobecMutationRateIndex < 0) {
+          ESSExcludes.push(TraceChart.muStar);
+        }
       }
       toShow.push(TraceChart.minDate);
       availables.push(TraceChart.minDate);
