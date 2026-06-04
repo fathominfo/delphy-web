@@ -80,6 +80,7 @@ type PopChartConfig = {
 type TipCheckConfig = {
   name: string,
   subtitle: string,
+  yAxisLabel: string,
   dataFnc: ScatterDataFunction,
   className: string
 };
@@ -365,7 +366,9 @@ export class RunUI extends UIScreen {
     };
     this.traceChartConfig[TraceChart.tipCheck] = {
       name: `Mutation Count vs. Date`,
-      className: "mutcount-date", subtitle: "Correlation of tip date and number of mutations",
+      className: "mutcount-date",
+      subtitle: "Correlation of tip date and mean number of mutations",
+      yAxisLabel: "mutations",
       dataFnc: tipCheckFnc
     };
     this.traceChartConfig[TraceChart.logPosterior] = {
@@ -765,8 +768,8 @@ export class RunUI extends UIScreen {
       mccRef.release();
       scatterPlotConfigs.forEach((tc: TraceChart)=>{
         const config : TipCheckConfig = this.traceChartConfig[tc] as TipCheckConfig;
-        const { name, dataFnc, subtitle, className } = config;
-        const canvas = new ScatterPlotCanvas(name, subtitle,
+        const { name, dataFnc, subtitle, yAxisLabel, className } = config;
+        const canvas = new ScatterPlotCanvas(name, subtitle, yAxisLabel,
           className, dataFnc, tipCount, this.handleNodeHover);
         this.traceCanvases.push(canvas);
         this.scatterPlots.push(canvas);

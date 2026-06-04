@@ -71,8 +71,8 @@ export class ScatterPlotCanvas extends TraceCanvas {
 
 
 
-  constructor(label:string, subtitle: string, className: string,
-    getDataFnc: ScatterDataFunction, tipCount: number,
+  constructor(label:string, subtitle: string, yAxisLabel: string,
+    className: string, getDataFnc: ScatterDataFunction, tipCount: number,
     hoverCallback: HoverNodeFnc
   ) {
     if (className === '') {
@@ -84,6 +84,8 @@ export class ScatterPlotCanvas extends TraceCanvas {
     if (subtitle !== '') {
       this.subtitleElement.innerHTML = subtitle;
     }
+    const yAxisEle = this.container.querySelector(".header .y-axis-label") as HTMLParagraphElement;
+    yAxisEle.textContent = yAxisLabel;
     this.traceData = new ScatterData(label, '', getDataFnc);
     this.minSpan = this.svg.querySelector(".min-date") as SVGTextElement;
     this.maxSpan = this.svg.querySelector(".max-date") as SVGTextElement;
@@ -134,6 +136,9 @@ export class ScatterPlotCanvas extends TraceCanvas {
     this.maxSpan.setAttribute("y", `${this.height}`);
     this.hoverCount.setAttribute("x", `${this.width - MARGIN.right + TICK_LENGTH + TICK_GAP * 2}`);
     this.hoverDate.setAttribute("y", `${this.height}`);
+    const x = this.width - MARGIN.right + TICK_GAP - 9;
+    this.subtitleElement.style.width = `${x}px`;
+
   }
 
   protected setSizes(): void {
