@@ -3,7 +3,7 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { AggregateMOI, tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { UNSET } from "../common";
+import { UNSET, ColorOption } from "../common";
 import { DisplayNode } from "../displaynode";
 import { Distribution } from "../distribution";
 import { NodeSchematic } from "../nodeschematic";
@@ -138,6 +138,8 @@ export class AnalysisUI extends UIScreen {
     nodeDistributions.forEach(treeSeries=>treeSeries.unshift(treeSeries.pop() as number[]));
     const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
     const mutationsOfInterest = tallyMutationsOfInterest(moiHist);
+
+    this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata, this.sharedState.metadataColors)
     this.nodeSchematic.setData(this.sharedState.schematicData);
     this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate);
     this.nodeTimelines.setData(nodes);
