@@ -48,6 +48,15 @@ export const GENE_POSITIONS: {[mutation_string: string]: geneProp} = {
 const NUC_LOOKUP:string[] = [];
 const AMBI_NUC_LOOKUP :string[] = [];
 
+
+// export const NEEDS_RUNNING = 1;
+// export const TREES_ALREADY_RAN = 2;
+
+export enum TreesRunState {
+  NEEDS_RUNNING = 1,
+  TREES_ALREADY_RAN = 2
+}
+
 export const STAGES = {
   "initialization" : 0,
   "selecting" : 1,

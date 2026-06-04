@@ -4,7 +4,9 @@ import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
-import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict, RANDOM_SEED} from '../constants';
+import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType,
+  mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict,
+  TreesRunState, RANDOM_SEED} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
@@ -225,7 +227,7 @@ export class Pythia {
   }
 
   initRunFromFasta(fastaBytesJs:ArrayBuffer,
-    runReadyCallback:()=>void,
+    runReadyCallback:(n:number)=>void,
     errCallback:(msg:string)=>void,
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
@@ -244,11 +246,12 @@ export class Pythia {
       initTreeProgressCallback,
       warningCallback
     );
-    return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback, config);
+    const runCallback = ()=>runReadyCallback(TreesRunState.NEEDS_RUNNING);
+    return this.initRunFromTreePromise(treePromise, runCallback, errCallback, config);
   }
 
   initRunFromMaple(mapleBytesJs:ArrayBuffer,
-    runReadyCallback:()=>void,
+    runReadyCallback:(n:number)=>void,
     errCallback:(msg:string)=>void,
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
@@ -265,7 +268,8 @@ export class Pythia {
       initTreeProgressCallback,
       warningCallback
     );
-    return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback, config);
+    const runCallback = ()=>runReadyCallback(TreesRunState.NEEDS_RUNNING);
+    return this.initRunFromTreePromise(treePromise, runCallback, errCallback, config);
   }
 
   initRunFromTreePromise(futureTree:Promise<PhyloTree>, runReadyCallback:()=>void,
@@ -1258,9 +1262,11 @@ export class Pythia {
 
 
 
-  async initRunFromSaveFile(raw: ArrayBuffer, runReadyCallback:()=>void, progressCallback:(progress:number, total:number)=>void): Promise<ConfigExport> {
+  async initRunFromSaveFile(raw: ArrayBuffer, runReadyCallback:(n:number)=>void,
+    progressCallback:(progress:number, total:number)=>void
+  ): Promise<ConfigExport> {
     const startTime = Date.now();
-    this.runReadyCallback = runReadyCallback;
+    this.runReadyCallback = ()=>runReadyCallback(TreesRunState.TREES_ALREADY_RAN);
     let pos = 0;
     /*
     To read a float from the file, we load a buffer of 4 8 bit chunks,

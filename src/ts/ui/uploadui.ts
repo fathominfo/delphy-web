@@ -1,4 +1,4 @@
-import { noop, STAGES } from '../constants';
+import { noop, STAGES, TreesRunState } from '../constants';
 import { isBadSafari, setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
 import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';
@@ -64,7 +64,7 @@ const activateProgressBar = (showit=true)=>{
   statusContainer.classList.toggle("progressing", showit);
 }
 
-let runCallback = ()=>console.debug('runCallback not assigned'),
+let runCallback = (n:number)=>console.debug(`runCallback not assigned${n || ''}`),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
 
 
@@ -151,7 +151,9 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
+function bindUpload(p:Pythia, sstate:SharedState, callback : (ran:TreesRunState)=>void,
+  setConfig : configCallbackType
+) {
   pythia = p;
   qc = sstate.qc;
   runCallback = callback;
