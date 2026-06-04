@@ -32,8 +32,8 @@ const MAX_NODE_X_SPACING = 45;
 const MIN_NODE_Y_SPACING = 22;
 const MAX_NODE_Y_SPACING = 40;
 
-const TEXT_LABEL_HEIGHT = 20;
-const TEXT_LABEL_MIN_WIDTH = 20;
+const TEXT_LABEL_HEIGHT = 6;
+const TEXT_LABEL_MIN_WIDTH = 6;
 const TEXT_PADDING = 5;
 
 
@@ -139,7 +139,53 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderLabel(color='') {
+  renderIntroductionLabel(color = '') {
+    const { nameLabel } = this;
+    const textNode = nameLabel.querySelector("text") as SVGTextElement;
+    const fullText = this.introduction?.value ?? "";
+
+    const MAX_WIDTH = 50; // px
+    const LINE_HEIGHT = 13;
+    const baseY = -(this.textLabelHeight * 2.5);
+    const baseX = -(this.textLabelWidth * 2);
+
+    while (textNode.firstChild) textNode.removeChild(textNode.firstChild);
+
+    textNode.setAttribute("x", `${baseX}`);
+    textNode.style.setProperty("fill", color, "important");
+
+    const words = fullText.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+
+    for (const word of words) {
+      const candidate = currentLine ? `${currentLine} ${word}` : word;
+      textNode.textContent = candidate;
+      const measuredWidth = textNode.getComputedTextLength();
+      textNode.textContent = ""; // reset
+
+      if (measuredWidth > MAX_WIDTH && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = candidate;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    const totalHeight = (lines.length - 1) * LINE_HEIGHT;
+    const adjustedY = baseY - totalHeight;
+
+    lines.forEach((line, i) => {
+      const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+      tspan.setAttribute("x", `${baseX}`);
+      tspan.setAttribute("y", `${adjustedY + i * LINE_HEIGHT}`);
+      tspan.textContent = line;
+      textNode.appendChild(tspan);
+    });
+  }
+
+  renderLabel(maxChildNodes: number, color = '') {
     const node = this.treeNode.node;
     const { nameLabel } = this;
     const mrca = node.isInferred && !node.isRoot;
@@ -152,7 +198,7 @@ export class SchematicNodeDisplay {
     nameLabel.classList.toggle("is-intro", this.introduction !== null);
     const label = mrca ? "" : node.label;
     // const label = `${node.index}`;
-    textNode.textContent = label;
+    textNode.textContent = node.isRoot ? label : ""
     if (color === '') {
       rect.setAttribute("fill", '');
       nameLabel.classList.add(node.className);
@@ -165,14 +211,38 @@ export class SchematicNodeDisplay {
       this.textLabelWidth = 0;
       this.textLabelHeight = 0;
     } else {
-      const tw = textNode.getComputedTextLength();
-      this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
-      this.textLabelHeight = TEXT_LABEL_HEIGHT;
+      if (node.isRoot) {
+        const tw = textNode.getComputedTextLength();
+        this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
+        rect.setAttribute("rx", "5");
+        rect.setAttribute("ry", "5");
+      } else {
+        // calculating node sizes based on:
+        // option A: tips that belong to this lineage but not any sub-lineage
+        const directChildTips = node.childCount - this.treeNode.children.reduce((total, child) => total += child.node.childCount, 0)
+        const calculatedWidth = 50 * directChildTips / maxChildNodes;
+
+        // option B: all the tips that belong to this node
+        // const calculatedWidth = 20 * node.childCount / maxChildNodes;
+        this.textLabelWidth = Math.max(5, Math.min(25, calculatedWidth))
+        this.textLabelHeight = this.textLabelWidth;
+        rect.setAttribute("height", `${this.textLabelHeight}`);
+        rect.setAttribute("y", `${-(this.textLabelHeight) / 2}`);
+        rect.setAttribute("rx", `${this.textLabelWidth / 2}`);
+        rect.setAttribute("ry", `${this.textLabelWidth / 2}`);
+      }
     }
-    rect.setAttribute("width", `${ this.textLabelWidth}`);
-    rect.setAttribute("x", `${ -(this.textLabelWidth) / 2}`);
-    introOutline.setAttribute("width", `${ this.textLabelWidth + 8}`);
-    introOutline.setAttribute("x", `${ -(this.textLabelWidth + 8) / 2}`);
+    rect.setAttribute("width", `${this.textLabelWidth}`);
+    rect.setAttribute("x", `${-(this.textLabelWidth) / 2}`);
+
+    introOutline.setAttribute("width", `${this.textLabelWidth + 2}`);
+    introOutline.setAttribute("height", `${this.textLabelWidth + 2}`);
+    introOutline.setAttribute("x", `${-(this.textLabelWidth + 2) / 2}`);
+    introOutline.setAttribute("y", `${-(this.textLabelWidth + 2) / 2}`);
+    introOutline.setAttribute("rx", "7.5");
+    introOutline.setAttribute("ry", "7.5");
+
+    if (this.introduction) { this.renderIntroductionLabel(color) }
   }
 
   reattachLabel() {
@@ -225,6 +295,7 @@ export class NodeSchematic {
   xSpacing = MAX_NODE_X_SPACING;
   ySpacing = MAX_NODE_Y_SPACING;
   maxGenerations = UNSET;
+  maxChildNodes = UNSET;
   tipRange = UNSET;
   rootPositon = UNSET;
   metadataFieldCount = 0;
@@ -310,10 +381,10 @@ export class NodeSchematic {
     if (colorByMetadata) {
       this.nodes.forEach(display=>{
         const color: string = nodeMetadataColors[display.getIndex()];
-        display.renderLabel(color);
+        display.renderLabel(this.maxChildNodes, color);
       });
     } else {
-      this.nodes.forEach(display=>display.renderLabel());
+      this.nodes.forEach(display => display.renderLabel(this.maxChildNodes));
     }
     this.nodes.forEach(display=>display.renderConnector());
     /* we want the labels to be above the connectors in the svg */
@@ -386,6 +457,7 @@ export class NodeSchematic {
     this.nodes.length = 0;
     const tips: SchematicNodeDisplay[] = [];
     this.maxGenerations = 0;
+    this.maxChildNodes = 0;
     // console.log(`\n          setLayout`);
     if (this.rootNode) {
       const q = [this.rootNode];
@@ -429,6 +501,7 @@ export class NodeSchematic {
           console.warn(`we had a node with no parent that is not root!`)
         }
         this.maxGenerations = Math.max(this.maxGenerations, tnd.stepsFromRoot);
+        this.maxChildNodes = Math.max(this.maxChildNodes, tnd.treeNode.node.childCount)
         this.nodes.push(tnd);
         if (treeNode.children.length === 0) {
           tips.push(tnd);
