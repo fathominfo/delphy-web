@@ -6,7 +6,7 @@ import { HoverNodeFnc } from "./runcommon";
 import { SummaryTree } from "../../pythia/delphy_api";
 
 
-const HIGHLIGHT_RADIUS = 2;
+const HIGHLIGHT_RADIUS = 3;
 const TAU = Math.PI * 2;
 
 export class RunTree extends MccTreeCanvas {

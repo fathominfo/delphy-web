@@ -311,10 +311,11 @@
 
   .mcc_highlight {
     top: 0;
-    background-color: rgba(255,255,255, 0);
-    transition: background-color 0.15s;
+    background-color: white;
+    transition: opacity 0.15s;
+    opacity: 0;
     &.highlighting {
-      background-color: rgba(255,255,255, 0.8);
+      opacity: 0.45;
     }
   }
 
@@ -1018,6 +1019,27 @@
       min-width: var(--indicator-pop-module-width);
       max-width: var(--indicator-pop-module-width);
 
+
+      .subtitle-row {
+        display: flex;
+        color:  #5e5e5e;
+        margin: 0.5em 0;
+        .subtitle {
+          margin: 0 !important;
+          flex-grow: 1;
+        }
+        .y-axis-label {
+          margin: 0 !important;
+          flex-grow: 1;
+          text-align: right;
+          padding-right: 15px;
+          font-size: 11px;
+          dominant-baseline: middle;
+          font-variant-numeric: tabular-nums;
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+        }
+      }
 
       .sup {
         display: inline-block;
