@@ -10,7 +10,6 @@ import { SchematicNode } from "./schematicdata";
 const CONTROL_W = 80;
 const CONTROL_H = 70;
 
-
 const SUBWAY_TEMPLATE = document.querySelector("#select--node-layout .subway svg") as SVGElement;
 const LABEL_TEMPLATE = SUBWAY_TEMPLATE.querySelector(".label") as SVGGElement;
 const MUTATION_COUNT_TEMPLATE = SUBWAY_TEMPLATE.querySelector(".mut-count") as SVGGElement;
@@ -36,6 +35,13 @@ const TEXT_LABEL_HEIGHT = 6;
 const TEXT_LABEL_MIN_WIDTH = 6;
 const TEXT_PADDING = 5;
 
+const INTRO_LABEL_BG = `<filter x="0" y="0" width="100%" height="100%" id="intro-label-bg">
+        <feFlood flood-color="white" flood-opacity="0.7" result="bg"/>
+        <feMerge>
+          <feMergeNode in="bg"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>`
 
 export class SchematicNodeDisplay {
   treeNode: SchematicNode;
@@ -110,8 +116,8 @@ export class SchematicNodeDisplay {
     this.children.push(desc);
   }
 
-  position(_width: number, height: number, xSpacing: number, ySpacing: number) {
-    this.xPos = MARGIN.left + this.stepsFromRoot * xSpacing;
+  position(getXpos: (index: number) => number, height: number, ySpacing: number) {
+    this.xPos = getXpos(this.getIndex());
     this.yPos = this.tipPlacement * ySpacing + height / 2;
     const elements = [this.nameLabel];
     if (!this.treeNode.node.isRoot) {
@@ -139,110 +145,87 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderIntroductionLabel(color = '') {
+  renderIntroductionLabel(fontsize: number, color = '', position = 'top') {
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
-    const fullText = this.introduction?.value ?? "";
-
-    const MAX_WIDTH = 50; // px
-    const LINE_HEIGHT = 13;
-    const baseY = -(this.textLabelHeight * 2.5);
-    const baseX = -(this.textLabelWidth * 2);
-
     while (textNode.firstChild) textNode.removeChild(textNode.firstChild);
 
-    textNode.setAttribute("x", `${baseX}`);
-    textNode.style.setProperty("fill", color, "important");
+    const svgRoot = textNode.closest("svg")!;
 
-    const words = fullText.split(" ");
-    const lines: string[] = [];
-    let currentLine = "";
-
-    for (const word of words) {
-      const candidate = currentLine ? `${currentLine} ${word}` : word;
-      textNode.textContent = candidate;
-      const measuredWidth = textNode.getComputedTextLength();
-      textNode.textContent = ""; // reset
-
-      if (measuredWidth > MAX_WIDTH && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = candidate;
+    if (!svgRoot.querySelector("#intro-label-bg")) {
+      const svgNS = "http://www.w3.org/2000/svg";
+      let defs = svgRoot.querySelector("defs");
+      if (!defs) {
+        defs = document.createElementNS(svgNS, "defs");
+        svgRoot.prepend(defs);
       }
+      defs.innerHTML += INTRO_LABEL_BG;
     }
-    if (currentLine) lines.push(currentLine);
+    const labelText = this.introduction?.value ?? "";
+    textNode.style.setProperty("fill", color, "important");
+    textNode.style.filter = "url(#intro-label-bg)";
+    textNode.style.fontSize = `${fontsize}px`;
 
-    const totalHeight = (lines.length - 1) * LINE_HEIGHT;
-    const adjustedY = baseY - totalHeight;
-
-    lines.forEach((line, i) => {
-      const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-      tspan.setAttribute("x", `${baseX}`);
-      tspan.setAttribute("y", `${adjustedY + i * LINE_HEIGHT}`);
-      tspan.textContent = line;
-      textNode.appendChild(tspan);
-    });
+    if (position === "right") {
+      textNode.textContent = labelText;
+      textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2}`);
+      textNode.setAttribute("y", `0`);
+    } else {
+      const baseY = -(this.textLabelHeight * 2.5 + fontsize / 2);
+      textNode.textContent = labelText;
+      textNode.setAttribute("x", `${-(labelText.length / 2)}`);
+      textNode.setAttribute("y", `${baseY}`);
+    }
   }
 
-  renderLabel(maxChildNodes: number, color = '') {
+  renderLabel(maxChildNodes: number, color = '', introLabelPos = "right") {
     const node = this.treeNode.node;
     const { nameLabel } = this;
     const mrca = node.isInferred && !node.isRoot;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
-    const rect = nameLabel.querySelector(".name") as SVGRectElement;
-    const introOutline = nameLabel.querySelector(".outline") as SVGRectElement;
-    rect.setAttribute("data-index", `${node.index}`);
+    const circle = nameLabel.querySelector(".name") as SVGEllipseElement;
+    const introOutline = nameLabel.querySelector(".outline") as SVGEllipseElement;
+    circle.setAttribute("data-index", `${node.index}`);
     nameLabel.setAttribute("class", "label");
     nameLabel.classList.toggle("mrca", mrca);
     nameLabel.classList.toggle("is-intro", this.introduction !== null);
-    const label = mrca ? "" : node.label;
-    // const label = `${node.index}`;
-    textNode.textContent = node.isRoot ? label : ""
+    textNode.textContent = ""
     if (color === '') {
-      rect.setAttribute("fill", '');
+      circle.setAttribute("fill", '');
       nameLabel.classList.add(node.className);
     } else {
-      rect.setAttribute("fill", color);
+      circle.setAttribute("fill", color);
       nameLabel.classList.remove(node.className);
     }
+    circle.setAttribute("stroke", darkenColor(color, 30));
+    circle.setAttribute("stroke-width", "1.5");
     this.subway.appendChild(this.nameLabel);
     if (mrca) {
       this.textLabelWidth = 0;
       this.textLabelHeight = 0;
     } else {
-      if (node.isRoot) {
-        const tw = textNode.getComputedTextLength();
-        this.textLabelWidth = Math.max(TEXT_LABEL_MIN_WIDTH, tw + TEXT_PADDING * 2);
-        rect.setAttribute("rx", "5");
-        rect.setAttribute("ry", "5");
-      } else {
-        // calculating node sizes based on:
-        // option A: tips that belong to this lineage but not any sub-lineage
-        const directChildTips = node.childCount - this.treeNode.children.reduce((total, child) => total += child.node.childCount, 0)
-        const calculatedWidth = 50 * directChildTips / maxChildNodes;
-
-        // option B: all the tips that belong to this node
-        // const calculatedWidth = 20 * node.childCount / maxChildNodes;
-        this.textLabelWidth = Math.max(5, Math.min(25, calculatedWidth))
-        this.textLabelHeight = this.textLabelWidth;
-        rect.setAttribute("height", `${this.textLabelHeight}`);
-        rect.setAttribute("y", `${-(this.textLabelHeight) / 2}`);
-        rect.setAttribute("rx", `${this.textLabelWidth / 2}`);
-        rect.setAttribute("ry", `${this.textLabelWidth / 2}`);
-      }
+      // calculating node size based on
+      // # of tips that belong to this lineage but not any sub-lineage
+      const directChildTips = node.childCount - this.treeNode.children.reduce((total, child) => total += child.node.childCount, 0)
+      const calculatedWidth = 25 * directChildTips / maxChildNodes;
+      this.textLabelWidth = Math.max(3, Math.min(15, calculatedWidth))
+      this.textLabelHeight = this.textLabelWidth;
+      circle.setAttribute("ry", `${this.textLabelHeight}`);
+      circle.setAttribute("cy", `0`);
     }
-    rect.setAttribute("width", `${this.textLabelWidth}`);
-    rect.setAttribute("x", `${-(this.textLabelWidth) / 2}`);
+    circle.setAttribute("rx", `${this.textLabelWidth}`);
+    circle.setAttribute("cx", `0`);
 
-    introOutline.setAttribute("width", `${this.textLabelWidth + 2}`);
-    introOutline.setAttribute("height", `${this.textLabelWidth + 2}`);
-    introOutline.setAttribute("x", `${-(this.textLabelWidth + 2) / 2}`);
-    introOutline.setAttribute("y", `${-(this.textLabelWidth + 2) / 2}`);
-    introOutline.setAttribute("rx", "7.5");
-    introOutline.setAttribute("ry", "7.5");
+    const outlineMargin = 3;
+    introOutline.setAttribute("stroke", darkenColor(color, 30));
+    introOutline.setAttribute("rx", `${this.textLabelWidth + outlineMargin}`);
+    introOutline.setAttribute("ry", `${this.textLabelWidth + outlineMargin}`);
+    introOutline.setAttribute("cx", `0`);
+    introOutline.setAttribute("cy", `0`);
 
-    if (this.introduction) { this.renderIntroductionLabel(color) }
+    if (this.introduction) {
+      this.renderIntroductionLabel(12, color, introLabelPos)
+    }
   }
 
   reattachLabel() {
@@ -271,7 +254,10 @@ export type NodeSchematicData = {
   pairs: NodePair[],
   rootNode: SchematicNode | null,
   fieldIntroductions: IntroductionData[],
-  metadataField: string | null
+  metadataField: string | null,
+  nodeTimes: number[],
+  minDate: number,
+  maxDate: number
 }
 
 /*
@@ -304,8 +290,9 @@ export class NodeSchematic {
   wrapper: HTMLDivElement;
   container: SVGElement;
   hoverDiv: HTMLDivElement;
-
-
+  nodeTimes: number[] = [];
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
 
 
   constructor( wrapper: HTMLDivElement, nodeHighlightCallback: HoverCallback) {
@@ -373,15 +360,23 @@ export class NodeSchematic {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     this.container.innerHTML = '';
-    const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
-    this.nodes.forEach(display=>display.position(width, height, xSpacing, ySpacing));
+    const getXpos = (index: number) => this.getXpos(index);
+    const { ySpacing, colorByMetadata, nodeMetadataColors } = this;
+    const introLabelPos = new Map<number, 'right' | 'top'>();
+    this.nodes.forEach(node => node.position(getXpos, height, ySpacing))
+
+    this.nodes.forEach((a, index) => {
+      const hasNodeToRight = this.nodes.some(b => b !== a && b.xPos > a.xPos && Math.abs(b.yPos - a.yPos) < 15);
+      introLabelPos.set(index, hasNodeToRight ? 'top' : 'right');
+    });
+
     /*
     we need to attach and measure the label before rendering the connectors
     */
     if (colorByMetadata) {
-      this.nodes.forEach(display=>{
+      this.nodes.forEach((display, i) => {
         const color: string = nodeMetadataColors[display.getIndex()];
-        display.renderLabel(this.maxChildNodes, color);
+        display.renderLabel(this.maxChildNodes, color, introLabelPos.get(i));
       });
     } else {
       this.nodes.forEach(display => display.renderLabel(this.maxChildNodes));
@@ -426,13 +421,27 @@ export class NodeSchematic {
     this.nodeMetadataColors = nodeMetadataColors;
   }
 
+
+  getXpos(nodeIndex: number): number {
+    const { minDate, maxDate, width } = this;
+    const availableWidth = width - MARGIN.left - MARGIN.right;
+    const t = this.nodeTimes[nodeIndex];
+    const pct = (t - minDate) / (maxDate - minDate);
+    return MARGIN.left + pct * availableWidth;
+  }
+
   /*
   @param pairs: contains mutation data for each track that we will display.
   @param rootNode: the root node of the tree we will display.
     We can traverse the entire tree by traversing the children of each node.
   */
   setData(schematicData: NodeSchematicData) {
-    const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
+    // const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
+    const { pairs, rootNode, fieldIntroductions, metadataField,
+      nodeTimes, minDate, maxDate } = schematicData;
+    this.nodeTimes = nodeTimes;
+    this.minDate = minDate;
+    this.maxDate = maxDate;
 
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,
@@ -609,4 +618,19 @@ export class NodeSchematic {
 
 }
 
+function darkenColor(color: string, amount = 30): string {
+  if (!color || color === '') return '';
+  if (color.startsWith('#')) {
+    const num = parseInt(color.slice(1), 16);
+    const r = Math.max(0, (num >> 16) - amount);
+    const g = Math.max(0, ((num >> 8) & 0xff) - amount);
+    const b = Math.max(0, (num & 0xff) - amount);
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
 
+  if (color.startsWith('rgb')) {
+    return color.replace(/(\d+)/g, (_, n) => String(Math.max(0, +n - amount)));
+  }
+
+  return color;
+}
