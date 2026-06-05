@@ -4,6 +4,7 @@ import { Mutation } from './pythia/delphy_api';
 import { NavigateFunctionType, UNSET } from './ui/common';
 import { RecordQuality } from './recordquality';
 import { NodeSchematicData } from './ui/nodeschematic';
+import { Genome } from './pythia/genome';
 
 
 
@@ -20,6 +21,7 @@ export class SharedState {
   kneeIsCurated: boolean;
   qc: RecordQuality;
   descriptor: string | null;
+  genome: Genome | null;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
@@ -33,6 +35,7 @@ export class SharedState {
     this.mutationsNeedReloading = false;
     this.qc = new RecordQuality();
     this.descriptor = null;
+    this.genome = null;
   }
 
 

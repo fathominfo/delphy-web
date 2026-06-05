@@ -280,21 +280,9 @@
 
   }
 
-}
-
-.upload-wrapper {
-  position: relative;
-  margin-top: 1em;
-  margin-bottom: 1em;
-
-  label {
-    .uploader-icon {
-      display: none;
-    }
-  }
 
   &.not-loaded {
-    label {
+    .upload-wrapper label {
       height: 100%;
       text-align: center;
       align-items: center;
@@ -310,6 +298,11 @@
         text-align: left;
       }
     }
+
+    .load-result {
+      display: none;
+    }
+
   }
 
   &.loading .loading-wrapper {
@@ -317,6 +310,22 @@
     pointer-events: all;
   }
 
+}
+
+.upload-wrapper {
+  position: relative;
+  margin-top: 1em;
+  margin-bottom: 1em;
+
+  label {
+    .uploader-icon {
+      display: none;
+    }
+  }
+}
+
+.file-upload + .file-upload {
+  margin-top: 4em;
 }
 
 .loading-wrapper {
@@ -392,6 +401,15 @@
     font-size: 0.8em;
   }
 }
+
+
+#customize--genome table {
+  thead, tbody {
+    .str { text-align: left; }
+    .num { text-align: right; }
+  }
+}
+
 
 .color-system--details {
   flex: 1;

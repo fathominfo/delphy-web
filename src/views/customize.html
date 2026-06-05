@@ -61,9 +61,9 @@
     <section id="customize--right">
 
       <div class="customize--column">
-        <div id="customize--metadata" class="file-upload">
+        <div id="customize--metadata" class="file-upload not-loaded">
           <h2>Metadata</h2>
-          <div class="upload-wrapper not-loaded">
+          <div class="upload-wrapper">
             <label>
               <input type="file" name="metadata-file-input" accept=".csv, .tsv">
               <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
@@ -76,7 +76,7 @@
               <div class="loading-wrapper--inner">Loading…</div>
             </div>
           </div>
-          <div class="hidden load-result">
+          <div class="load-result">
             <h3>Column headings</h3>
             <div class="column-heading">
               <details>
@@ -96,9 +96,9 @@
         </div>
 
 
-        <div id="customize--genome" class="file-upload">
+        <div id="customize--genome" class="file-upload not-loaded">
           <h2>Genome</h2>
-          <div class="upload-wrapper not-loaded ">
+          <div class="upload-wrapper">
             <label>
               <input type="file" name="genome-file-input" accept=".gff3">
               <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
@@ -110,27 +110,26 @@
               <div class="loading-wrapper--inner">Loading…</div>
             </div>
           </div>
-          <div class="hidden load-result">
-            <h3>Column headings</h3>
+          <div class="load-result">
             <table>
               <thead>
                 <tr>
-                  <th>feature type</th>
-                  <th>start</th>
-                  <th>stop</th>
-                  <th>strand</th>
-                  <th>phase</th>
-                  <th>name</th>
+                  <th class="str">feature type</th>
+                  <th class="num">start</th>
+                  <th class="num">stop</th>
+                  <th class="num">strand</th>
+                  <th class="num">phase</th>
+                  <th class="str">name</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
+                  <td class="str"></td>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="str"></td>
                 </tr>
               </tbody>
             </table>

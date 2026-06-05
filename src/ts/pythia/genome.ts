@@ -1,4 +1,4 @@
-import { UNSET } from "../ui/common";
+import { nfc, UNSET } from "../ui/common";
 
 
 /*
@@ -47,10 +47,11 @@ export class Feature {
     // console.log(`parsing line "${gff3Line}"`)
     const tokens = gff3Line.trim().split(GFF3_DELIMITER);
     this.featureType = tokens[2];
-    this.start = parseInt(tokens[3]);
-    this.end = parseInt(tokens[4]);
+    /* in gff3, sequences are `1` indexed, but we'll want to have them 0 indexed */
+    this.start = parseInt(tokens[3]) - 1;
+    this.end = parseInt(tokens[4]) - 1;
     this.strand = tokens[6] === '-' ? Strand.REVERSE : Strand.FORWARD;
-    this.phase = parseInt(tokens[7]);
+    this.phase = parseInt(tokens[7]) || 0;
     /* look for something nameworthy among the attributes */
     let name = '';
     tokens[8].split(';').forEach((attribute)=>{
@@ -62,10 +63,33 @@ export class Feature {
     this.name = name;
     return this;
   }
+
+  getReadableStart() : string {
+    return nfc(this.start + 1);
+  }
+
+  getReadableEnd() : string {
+    return nfc(this.end + 1);
+  }
+
+  getReadableStrand() : string {
+    return this.strand === Strand.REVERSE ? '-' : '+';
+  }
+
+  getReadablePhase() : string {
+    return `${this.phase}`;
+  }
+
 }
 
 export class Genome {
+  fileName = '';
   features: Feature[] = [];
+
+  constructor(fileName:string) {
+    this.fileName = fileName;
+  }
+
   fromGff3(gff3: string) : Genome {
     this.features.length = 0;
     const lines = gff3.split('\n');

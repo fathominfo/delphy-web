@@ -18,6 +18,9 @@ import { Genome } from '../../pythia/genome';
 const COLUMN_HEADING_TEMP = document.querySelector(".column-heading") as HTMLElement;
 COLUMN_HEADING_TEMP.remove();
 
+const GENOME_ROW_TEMPLATE = document.querySelector("#customize--genome .load-result tbody tr") as HTMLElement;
+GENOME_ROW_TEMPLATE.remove();
+
 const LEGEND_KEY_TEMP = document.querySelector(".legend-key") as HTMLElement;
 LEGEND_KEY_TEMP.remove();
 
@@ -420,11 +423,11 @@ export class CustomizeUI extends MccUI {
   }
 
   showMetadataLoading() : void {
-    (this.div.querySelector("#customize--metadata .upload-wrapper") as HTMLElement).classList.add("loading");
+    (this.div.querySelector("#customize--metadata") as HTMLElement).classList.add("loading");
   }
 
   endMetadataLoading() : void {
-    const metadataLoader = this.div.querySelector("#customize--metadata .upload-wrapper") as HTMLElement;
+    const metadataLoader = this.div.querySelector("#customize--metadata") as HTMLElement;
     metadataLoader.classList.remove("loading");
     if (this.sharedState.mccConfig.hasMetadata()) {
       metadataLoader.classList.remove("not-loaded");
@@ -437,19 +440,16 @@ export class CustomizeUI extends MccUI {
   }
 
   showGenomeConfigLoading() : void {
-    (this.div.querySelector("#customize--genome .upload-wrapper") as HTMLElement).classList.add("loading");
+    (this.div.querySelector("#customize--genome") as HTMLElement).classList.add("loading");
   }
 
   endGenomeConfigLoading() : void {
-    const metadataLoader = this.div.querySelector("#customize--genome .upload-wrapper") as HTMLElement;
-    metadataLoader.classList.remove("loading");
-    if (this.sharedState.mccConfig.hasMetadata()) {
-      metadataLoader.classList.remove("not-loaded");
-      (metadataLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
-      const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
-      input.disabled = false;
-      input.click();
-      this.setMetadataDisplay();
+    const genomeLoader = this.div.querySelector("#customize--genome") as HTMLElement;
+    genomeLoader.classList.remove("loading");
+    if (this.sharedState.genome) {
+      genomeLoader.classList.remove("not-loaded");
+      (genomeLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.genome.fileName}`;
+      this.setGenomeDisplay();
     }
   }
 
@@ -585,6 +585,23 @@ export class CustomizeUI extends MccUI {
     });
   }
 
+  setGenomeDisplay() : void {
+    const genome = this.sharedState.genome;
+    if (genome && genome.features.length > 0) {
+      const tbody = document.querySelector("#customize--genome .load-result tbody") as HTMLElement;
+      genome.features.forEach(feature=>{
+        const row = GENOME_ROW_TEMPLATE.cloneNode(true) as HTMLTableRowElement;
+        const cells = row.querySelectorAll("td");
+        cells[0].textContent = feature.featureType;
+        cells[1].textContent = feature.getReadableStart()
+        cells[2].textContent = feature.getReadableEnd()
+        cells[3].textContent = feature.getReadableStrand()
+        cells[4].textContent = feature.getReadablePhase()
+        cells[5].textContent = feature.name;
+        tbody.appendChild(row);
+      });
+    }
+  }
 
 
   parseMetadataFile(file: File) {
@@ -596,7 +613,7 @@ export class CustomizeUI extends MccUI {
     try {
       reader.addEventListener("load", ()=>{
         const text = reader.result as string;
-        new Genome().fromGff3(text);
+        this.sharedState.genome = new Genome(file.name).fromGff3(text);
         this.endGenomeConfigLoading();
       });
       reader.readAsText(file);
