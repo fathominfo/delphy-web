@@ -313,7 +313,8 @@ export class CustomizeUI extends MccUI {
 
 
     // metadata
-    const upload = this.div.querySelector("#metadata-file-input") as HTMLInputElement;
+    const metadataLoadDiv = this.div.querySelector("#customize--metadata") as HTMLDivElement;
+    const upload = metadataLoadDiv.querySelector("input") as HTMLInputElement;
     upload.value = "";
     upload.addEventListener("change", () => {
       const files = upload.files;
@@ -322,7 +323,7 @@ export class CustomizeUI extends MccUI {
         this.parseMetadataFile(files[0]);
       }
     });
-    const uploadArea = this.div.querySelector("#metadata-file-label") as HTMLElement;
+    const uploadArea = this.div.querySelector("label") as HTMLElement;
     uploadArea.addEventListener("drop", e => {
       e.preventDefault();
       e.stopPropagation();
@@ -410,14 +411,15 @@ export class CustomizeUI extends MccUI {
   }
 
   showMetadataLoading() : void {
-    (this.div.querySelector("#metadata-file") as HTMLElement).classList.add("loading");
+    (this.div.querySelector("#customize--metadata .upload-wrapper") as HTMLElement).classList.add("loading");
   }
 
   endMetadataLoading() : void {
-    (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("loading");
+    const metadataLoader = this.div.querySelector("#customize--metadata .upload-wrapper") as HTMLElement;
+    metadataLoader.classList.remove("loading");
     if (this.sharedState.mccConfig.hasMetadata()) {
-      (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("no-metadata");
-      (this.div.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
+      metadataLoader.classList.remove("not-loaded");
+      (metadataLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
       const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
       input.disabled = false;
       input.click();
@@ -428,7 +430,7 @@ export class CustomizeUI extends MccUI {
 
   setMetadataDisplay(): void {
     if (!this.metadataLoaded) {
-      const columnsContainer = this.div.querySelector("#metadata-column-headings") as HTMLElement;
+      const columnsContainer = this.div.querySelector("#customize--metadata .load-result") as HTMLElement;
       if (!this.sharedState.mccConfig.hasMetadata()) {
         columnsContainer.classList.add("hidden");
       } else {

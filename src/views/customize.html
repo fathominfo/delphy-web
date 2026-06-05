@@ -60,38 +60,85 @@
     </section>
     <section id="customize--right">
 
-      <div id="customize--metadata" class="customize--column">
-        <h2>Metadata</h2>
-        <div id="metadata-file" class="no-metadata">
-          <input type="file" id="metadata-file-input" name="metadata-file-input" accept=".csv, .tsv">
-          <label for="metadata-file-input" id="metadata-file-label">
-            <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
-            <div class="uploader-text">
-              Click here or drag to load a metadata file (.csv, .tsv).
-              <br/><br/>One column should be titled "ID", corresponding to the ids in the fasta file.
+      <div class="customize--column">
+        <div id="customize--metadata" class="file-upload">
+          <h2>Metadata</h2>
+          <div class="upload-wrapper not-loaded">
+            <label>
+              <input type="file" name="metadata-file-input" accept=".csv, .tsv">
+              <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+              <div class="uploader-text">
+                Click here or drag to load a metadata file (.csv, .tsv).
+                <br/><br/>One column should be titled "ID", corresponding to the ids in the fasta file.
+              </div>
+            </label>
+            <div class="loading-wrapper">
+              <div class="loading-wrapper--inner">Loading…</div>
             </div>
-          </label>
-          <div id="metadata-loading">
-            <div id="metadata-loading--inner">Loading…</div>
           </div>
-        </div>
-        <div id="metadata-column-headings" class="hidden">
-          <h3>Column headings</h3>
-          <div class="column-heading">
-            <details>
-              <summary>
-                <div class="name"></div>
-                <div class="count"></div>
-              </summary>
-              <div class="values">
-                <div class="value">
+          <div class="hidden load-result">
+            <h3>Column headings</h3>
+            <div class="column-heading">
+              <details>
+                <summary>
                   <div class="name"></div>
                   <div class="count"></div>
+                </summary>
+                <div class="values">
+                  <div class="value">
+                    <div class="name"></div>
+                    <div class="count"></div>
+                  </div>
                 </div>
-              </div>
-            </details>
+              </details>
+            </div>
           </div>
         </div>
+
+
+        <div id="customize--sequence" class="file-upload">
+          <h2>Sequence</h2>
+          <div class="upload-wrapper not-loaded ">
+            <label>
+              <input type="file" name="sequence-file-input" accept=".gff3">
+              <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+              <div class="uploader-text">
+                Click here or drag to load a .gff3 file.
+              </div>
+            </label>
+            <div class="loading-wrapper">
+              <div class="loading-wrapper--inner">Loading…</div>
+            </div>
+          </div>
+          <div class="hidden load-result">
+            <h3>Column headings</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>feature type</th>
+                  <th>start</th>
+                  <th>stop</th>
+                  <th>strand</th>
+                  <th>phase</th>
+                  <th>name</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
       </div>
 
       <div id="customize--color" class="customize--column">
