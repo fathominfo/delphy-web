@@ -11,6 +11,7 @@ import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
 import { ColumnSummary } from '../metadata';
+import { Genome } from '../../pythia/genome';
 
 /* global NodeListOf */
 
@@ -314,16 +315,16 @@ export class CustomizeUI extends MccUI {
 
     // metadata
     const metadataLoadDiv = this.div.querySelector("#customize--metadata") as HTMLDivElement;
-    const upload = metadataLoadDiv.querySelector("input") as HTMLInputElement;
-    upload.value = "";
-    upload.addEventListener("change", () => {
-      const files = upload.files;
+    const uploadMetadata = metadataLoadDiv.querySelector("input") as HTMLInputElement;
+    uploadMetadata.value = "";
+    uploadMetadata.addEventListener("change", () => {
+      const files = uploadMetadata.files;
       if (files) {
         this.showMetadataLoading();
         this.parseMetadataFile(files[0]);
       }
     });
-    const uploadArea = this.div.querySelector("label") as HTMLElement;
+    let uploadArea = metadataLoadDiv.querySelector("label") as HTMLElement;
     uploadArea.addEventListener("drop", e => {
       e.preventDefault();
       e.stopPropagation();
@@ -336,23 +337,31 @@ export class CustomizeUI extends MccUI {
       }
     });
 
-    // // topology
-    // (this.div.querySelectorAll("#customize--tree-topology .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-    //   const topology = el.value === TOPOLOGY_MCC ? Topology.mcc : Topology.bestof;
-    //   el.addEventListener("input", () => this.setTopology(topology));
-    // });
+    // metadata
+    const genomeLoadDiv = this.div.querySelector("#customize--genome") as HTMLDivElement;
+    const uploadGenome = genomeLoadDiv.querySelector("input") as HTMLInputElement;
+    uploadGenome.value = "";
+    uploadGenome.addEventListener("change", () => {
+      const files = uploadGenome.files;
+      if (files) {
+        this.showGenomeConfigLoading();
+        this.parseGenomeConfigFile(files[0]);
+      }
+    });
+    uploadArea = genomeLoadDiv.querySelector("label") as HTMLElement;
+    uploadArea.addEventListener("drop", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.showGenomeConfigLoading();
+      if (e.dataTransfer) {
+        const files = e.dataTransfer.files;
+        if (files) {
+          this.parseGenomeConfigFile(files[0]);
+        }
+      }
+    });
 
-    // // presentation
-    // (this.div.querySelectorAll("#customize--tree-presentation .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-    //   const presentation = el.value === PRESENTATION_ALL ? Presentation.all : Presentation.umbrella;
-    //   el.addEventListener("input", () => this.setPresentation(presentation));
-    // });
 
-    // // spacing
-    // (this.div.querySelectorAll("#customize--tree-spacing .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-    //   const spacing = el.value === Y_EVEN_SPACING ? YSpacing.even : YSpacing.genetic;
-    //   el.addEventListener("input", () => this.setSpacing(spacing));
-    // });
   }
 
 
@@ -416,6 +425,23 @@ export class CustomizeUI extends MccUI {
 
   endMetadataLoading() : void {
     const metadataLoader = this.div.querySelector("#customize--metadata .upload-wrapper") as HTMLElement;
+    metadataLoader.classList.remove("loading");
+    if (this.sharedState.mccConfig.hasMetadata()) {
+      metadataLoader.classList.remove("not-loaded");
+      (metadataLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
+      const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
+      input.disabled = false;
+      input.click();
+      this.setMetadataDisplay();
+    }
+  }
+
+  showGenomeConfigLoading() : void {
+    (this.div.querySelector("#customize--genome .upload-wrapper") as HTMLElement).classList.add("loading");
+  }
+
+  endGenomeConfigLoading() : void {
+    const metadataLoader = this.div.querySelector("#customize--genome .upload-wrapper") as HTMLElement;
     metadataLoader.classList.remove("loading");
     if (this.sharedState.mccConfig.hasMetadata()) {
       metadataLoader.classList.remove("not-loaded");
@@ -565,6 +591,20 @@ export class CustomizeUI extends MccUI {
     parseMetadataFile(file, this.sharedState.mccConfig, this.mccTreeCanvas, ()=>this.endMetadataLoading());
   }
 
+  parseGenomeConfigFile(file: File) {
+    const reader = new FileReader();
+    try {
+      reader.addEventListener("load", ()=>{
+        const text = reader.result as string;
+        new Genome().fromGff3(text);
+        this.endGenomeConfigLoading();
+      });
+      reader.readAsText(file);
+    } catch (err) {
+      console.log(err);
+      alert("error loading genome configuration file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
+    }
+  }
 
 
   // setTopology(topology: Topology) {
