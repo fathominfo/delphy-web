@@ -4,21 +4,31 @@ import { getMutationName, getMutationNameParts } from '../../constants';
 import { getPercentLabel, UNSET } from '../common';
 import { Distribution } from '../distribution';
 import { DisplayNode } from '../displaynode';
+import { AAMutation, Genome } from '../../pythia/genome';
 
 
 
 export class MutationTimelineData {
   mutation: MutationDistribution;
-  nameParts: [string, string, string];
+  nameParts: [string, string, string] | AAMutation;
   name: string;
   className: string;
   series: Distribution;
   isApobecRun: boolean;
 
-  constructor(mutation: MutationDistribution, isApobecRun: boolean) {
+  constructor(mutation: MutationDistribution, isApobecRun: boolean, genome: Genome | null) {
     this.mutation = mutation;
-    this.nameParts = getMutationNameParts(mutation.mutation);
-    this.name = getMutationName(mutation.mutation);
+    let aaData: AAMutation | null = null;
+    if (genome !== null) {
+      aaData = genome.getAAData(mutation.mutation);
+    }
+    if (aaData) {
+      this.name = aaData.label;
+      this.nameParts = aaData;
+    } else {
+      this.name = getMutationName(mutation.mutation);
+      this.nameParts = getMutationNameParts(mutation.mutation);
+    }
     this.className = "mutation";
     this.series = new Distribution(mutation.times);
     this.isApobecRun = isApobecRun;
@@ -42,7 +52,8 @@ export class NodeMutationsData {
   thresholdLabel = "";
 
   constructor(nodePair: NodePair, ancestorMedianDate: number,
-    descendantMedianDate: number, minDate: number, maxDate: number, isApobecRun: boolean) {
+    descendantMedianDate: number, minDate: number, maxDate: number,
+    isApobecRun: boolean, genome: Genome | null) {
     this.nodePair = nodePair;
     this.minDate = minDate;
     this.maxDate = maxDate;
@@ -53,15 +64,15 @@ export class NodeMutationsData {
     this.ancestorMedianDate = ancestorMedianDate;
     this.descendantMedianDate = descendantMedianDate;
 
-    this.setMutations(isApobecRun);
+    this.setMutations(isApobecRun, genome);
 
   }
 
 
-  setMutations(isApobecRun: boolean):void {
+  setMutations(isApobecRun: boolean, genome: Genome | null):void {
     const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
     this.mutationCount = shownMutations.length;
-    this.mutationTimelineData = shownMutations.map((md:MutationDistribution)=>new MutationTimelineData(md, isApobecRun));
+    this.mutationTimelineData = shownMutations.map((md:MutationDistribution)=>new MutationTimelineData(md, isApobecRun, genome));
     this.thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
     if (mutationPrevalenceThreshold < 1.0) {
       this.thresholdLabel += ' or more'

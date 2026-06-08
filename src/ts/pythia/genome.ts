@@ -1,3 +1,4 @@
+import { NUC_LOOKUP } from "../constants";
 import { RealSeqLetter } from "../delphy/api";
 import { nfc, UNSET } from "../ui/common";
 import { Mutation, RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T } from "./delphy_api";
@@ -84,6 +85,20 @@ export class Feature {
 
 }
 
+
+
+export type AAMutation = {
+  mutation: Mutation;
+  from: string;
+  to: string;
+  protein: string;
+  position: number;
+  codon: RealSeqLetter[];
+  isSynonymous: boolean;
+  label: string;
+};
+
+
 export class Genome {
   fileName = '';
   features: Feature[] = [];
@@ -125,7 +140,7 @@ export class Genome {
     }
   }
 
-  getAAName(mutation: Mutation) : string | null {
+  getAAData(mutation: Mutation) : AAMutation | null {
     if (!this.ready()) {
       return null;
     }
@@ -141,15 +156,34 @@ export class Genome {
       const codonStart = Math.floor(genePos / 3) * 3;
       const letters = this.refSequence.slice(codonStart, codonStart + 3);
       const codonPosition = genePos % 3;
+      const fromAA = getAAName(letters);
       letters[codonPosition] = mutation.to;
-      return toAA(letters);
+      const toAA = getAAName(letters);
+      const codon: RealSeqLetter[] = [];
+      const isSynonymous = fromAA === toAA;
+      letters.forEach(l=>codon.push(l));
+      let label = `${feature.name}:${fromAA}${codonPosition}${toAA}`;
+      if (isSynonymous) {
+        label += `(${NUC_LOOKUP[mutation.from]}->${NUC_LOOKUP[mutation.to]})`;
+      }
+      const aaData = {
+        mutation: mutation,
+        from: fromAA,
+        to: toAA,
+        protein: feature.name,
+        position: codonPosition,
+        codon: codon,
+        label: label,
+        isSynonymous: isSynonymous
+      };
+      return aaData;
     }
     return null;
   }
+
 }
 
-
-export const toAA = (letters:Uint8Array) : string => {
+export const getAAName = (letters:Uint8Array) : string => {
   const [i1, i2, i3] = letters;
   return AMINO_ACIDS[i1][i2][i3];
 }
@@ -166,6 +200,8 @@ const C = RealSeqLetter_C;
 const G = RealSeqLetter_G;
 const T = RealSeqLetter_T;
 
+const AA_ABBREV_LOOKUP:{[_:string]: string} = {}
+const AA_NAME_LOOKUP:{[_:string]: string} = {};
 
 const AMINO_ACIDS: string[][][] = [];
 for (let i = 0; i < 4; i++) {
@@ -175,72 +211,102 @@ for (let i = 0; i < 4; i++) {
   }
 }
 
-AMINO_ACIDS[ A ][ A ][ A ] = 'lys'
-AMINO_ACIDS[ A ][ A ][ C ] = 'asn'
-AMINO_ACIDS[ A ][ A ][ G ] = 'lys'
-AMINO_ACIDS[ A ][ A ][ T ] = 'asn'
-AMINO_ACIDS[ A ][ C ][ A ] = 'thr'
-AMINO_ACIDS[ A ][ C ][ C ] = 'thr'
-AMINO_ACIDS[ A ][ C ][ G ] = 'thr'
-AMINO_ACIDS[ A ][ C ][ T ] = 'thr'
-AMINO_ACIDS[ A ][ G ][ A ] = 'arg'
-AMINO_ACIDS[ A ][ G ][ C ] = 'ser'
-AMINO_ACIDS[ A ][ G ][ G ] = 'arg'
-AMINO_ACIDS[ A ][ G ][ T ] = 'ser'
-AMINO_ACIDS[ A ][ T ][ A ] = 'ile'
-AMINO_ACIDS[ A ][ T ][ C ] = 'ile'
-AMINO_ACIDS[ A ][ T ][ G ] = 'met'
-AMINO_ACIDS[ A ][ T ][ T ] = 'ile'
+// AMINO_ACIDS[ A ][ A ][ A ] = 'lys'
+// AMINO_ACIDS[ A ][ A ][ C ] = 'asn'
+// AMINO_ACIDS[ A ][ A ][ G ] = 'lys'
+// AMINO_ACIDS[ A ][ A ][ T ] = 'asn'
+// AMINO_ACIDS[ A ][ C ][ A ] = 'thr'
+// AMINO_ACIDS[ A ][ C ][ C ] = 'thr'
+// AMINO_ACIDS[ A ][ C ][ G ] = 'thr'
+// AMINO_ACIDS[ A ][ C ][ T ] = 'thr'
+// AMINO_ACIDS[ A ][ G ][ A ] = 'arg'
+// AMINO_ACIDS[ A ][ G ][ C ] = 'ser'
+// AMINO_ACIDS[ A ][ G ][ G ] = 'arg'
+// AMINO_ACIDS[ A ][ G ][ T ] = 'ser'
+// AMINO_ACIDS[ A ][ T ][ A ] = 'ile'
+// AMINO_ACIDS[ A ][ T ][ C ] = 'ile'
+// AMINO_ACIDS[ A ][ T ][ G ] = 'met'
+// AMINO_ACIDS[ A ][ T ][ T ] = 'ile'
 
-AMINO_ACIDS[ C ][ A ][ A ] = 'gln'
-AMINO_ACIDS[ C ][ A ][ C ] = 'his'
-AMINO_ACIDS[ C ][ A ][ G ] = 'gln'
-AMINO_ACIDS[ C ][ A ][ T ] = 'his'
-AMINO_ACIDS[ C ][ C ][ A ] = 'pro'
-AMINO_ACIDS[ C ][ C ][ C ] = 'pro'
-AMINO_ACIDS[ C ][ C ][ G ] = 'pro'
-AMINO_ACIDS[ C ][ C ][ T ] = 'pro'
-AMINO_ACIDS[ C ][ G ][ A ] = 'arg'
-AMINO_ACIDS[ C ][ G ][ C ] = 'arg'
-AMINO_ACIDS[ C ][ G ][ G ] = 'arg'
-AMINO_ACIDS[ C ][ G ][ T ] = 'arg'
-AMINO_ACIDS[ C ][ T ][ A ] = 'leu'
-AMINO_ACIDS[ C ][ T ][ C ] = 'leu'
-AMINO_ACIDS[ C ][ T ][ G ] = 'leu'
-AMINO_ACIDS[ C ][ T ][ T ] = 'leu'
+// AMINO_ACIDS[ C ][ A ][ A ] = 'gln'
+// AMINO_ACIDS[ C ][ A ][ C ] = 'his'
+// AMINO_ACIDS[ C ][ A ][ G ] = 'gln'
+// AMINO_ACIDS[ C ][ A ][ T ] = 'his'
+// AMINO_ACIDS[ C ][ C ][ A ] = 'pro'
+// AMINO_ACIDS[ C ][ C ][ C ] = 'pro'
+// AMINO_ACIDS[ C ][ C ][ G ] = 'pro'
+// AMINO_ACIDS[ C ][ C ][ T ] = 'pro'
+// AMINO_ACIDS[ C ][ G ][ A ] = 'arg'
+// AMINO_ACIDS[ C ][ G ][ C ] = 'arg'
+// AMINO_ACIDS[ C ][ G ][ G ] = 'arg'
+// AMINO_ACIDS[ C ][ G ][ T ] = 'arg'
+// AMINO_ACIDS[ C ][ T ][ A ] = 'leu'
+// AMINO_ACIDS[ C ][ T ][ C ] = 'leu'
+// AMINO_ACIDS[ C ][ T ][ G ] = 'leu'
+// AMINO_ACIDS[ C ][ T ][ T ] = 'leu'
 
-AMINO_ACIDS[ G ][ A ][ A ] = 'glu'
-AMINO_ACIDS[ G ][ A ][ C ] = 'asp'
-AMINO_ACIDS[ G ][ A ][ G ] = 'glu'
-AMINO_ACIDS[ G ][ A ][ T ] = 'asp'
-AMINO_ACIDS[ G ][ C ][ A ] = 'ala'
-AMINO_ACIDS[ G ][ C ][ C ] = 'ala'
-AMINO_ACIDS[ G ][ C ][ G ] = 'ala'
-AMINO_ACIDS[ G ][ C ][ T ] = 'ala'
-AMINO_ACIDS[ G ][ G ][ A ] = 'gly'
-AMINO_ACIDS[ G ][ G ][ C ] = 'gly'
-AMINO_ACIDS[ G ][ G ][ G ] = 'gly'
-AMINO_ACIDS[ G ][ G ][ T ] = 'gly'
-AMINO_ACIDS[ G ][ T ][ A ] = 'val'
-AMINO_ACIDS[ G ][ T ][ C ] = 'val'
-AMINO_ACIDS[ G ][ T ][ G ] = 'val'
-AMINO_ACIDS[ G ][ T ][ T ] = 'val'
+// AMINO_ACIDS[ G ][ A ][ A ] = 'glu'
+// AMINO_ACIDS[ G ][ A ][ C ] = 'asp'
+// AMINO_ACIDS[ G ][ A ][ G ] = 'glu'
+// AMINO_ACIDS[ G ][ A ][ T ] = 'asp'
+// AMINO_ACIDS[ G ][ C ][ A ] = 'ala'
+// AMINO_ACIDS[ G ][ C ][ C ] = 'ala'
+// AMINO_ACIDS[ G ][ C ][ G ] = 'ala'
+// AMINO_ACIDS[ G ][ C ][ T ] = 'ala'
+// AMINO_ACIDS[ G ][ G ][ A ] = 'gly'
+// AMINO_ACIDS[ G ][ G ][ C ] = 'gly'
+// AMINO_ACIDS[ G ][ G ][ G ] = 'gly'
+// AMINO_ACIDS[ G ][ G ][ T ] = 'gly'
+// AMINO_ACIDS[ G ][ T ][ A ] = 'val'
+// AMINO_ACIDS[ G ][ T ][ C ] = 'val'
+// AMINO_ACIDS[ G ][ T ][ G ] = 'val'
+// AMINO_ACIDS[ G ][ T ][ T ] = 'val'
 
-AMINO_ACIDS[ T ][ A ][ A ] = 'stop'
-AMINO_ACIDS[ T ][ A ][ C ] = 'tyr'
-AMINO_ACIDS[ T ][ A ][ G ] = 'stop'
-AMINO_ACIDS[ T ][ A ][ T ] = 'tyr'
-AMINO_ACIDS[ T ][ C ][ A ] = 'ser'
-AMINO_ACIDS[ T ][ C ][ C ] = 'ser'
-AMINO_ACIDS[ T ][ C ][ G ] = 'ser'
-AMINO_ACIDS[ T ][ C ][ T ] = 'ser'
-AMINO_ACIDS[ T ][ G ][ A ] = 'stop'
-AMINO_ACIDS[ T ][ G ][ C ] = 'cys'
-AMINO_ACIDS[ T ][ G ][ G ] = 'trp'
-AMINO_ACIDS[ T ][ G ][ T ] = 'cys'
-AMINO_ACIDS[ T ][ T ][ A ] = 'leu'
-AMINO_ACIDS[ T ][ T ][ C ] = 'phe'
-AMINO_ACIDS[ T ][ T ][ G ] = 'leu'
-AMINO_ACIDS[ T ][ T ][ T ] = 'phe'
+// AMINO_ACIDS[ T ][ A ][ A ] = 'stop'
+// AMINO_ACIDS[ T ][ A ][ C ] = 'tyr'
+// AMINO_ACIDS[ T ][ A ][ G ] = 'stop'
+// AMINO_ACIDS[ T ][ A ][ T ] = 'tyr'
+// AMINO_ACIDS[ T ][ C ][ A ] = 'ser'
+// AMINO_ACIDS[ T ][ C ][ C ] = 'ser'
+// AMINO_ACIDS[ T ][ C ][ G ] = 'ser'
+// AMINO_ACIDS[ T ][ C ][ T ] = 'ser'
+// AMINO_ACIDS[ T ][ G ][ A ] = 'stop'
+// AMINO_ACIDS[ T ][ G ][ C ] = 'cys'
+// AMINO_ACIDS[ T ][ G ][ G ] = 'trp'
+// AMINO_ACIDS[ T ][ G ][ T ] = 'cys'
+// AMINO_ACIDS[ T ][ T ][ A ] = 'leu'
+// AMINO_ACIDS[ T ][ T ][ C ] = 'phe'
+// AMINO_ACIDS[ T ][ T ][ G ] = 'leu'
+// AMINO_ACIDS[ T ][ T ][ T ] = 'phe'
 
-console.log(JSON.stringify(AMINO_ACIDS))
+// console.log(JSON.stringify(AMINO_ACIDS))
+
+
+const toIndex = (letter:string) : number => {
+  let n = UNSET;
+  switch (letter) {
+  case 'A': n = A; break;
+  case 'C': n = C; break;
+  case 'G': n = G; break;
+  case 'T': n = T; break;
+  }
+  return n;
+}
+
+fetch("./assets/data/aa.tsv").then(req=>req.text()).then(tsv=>{
+  const lines = tsv.split('\n');
+  lines.forEach(line=>{
+    if (line.length > 0) {
+      const [codon, name, abbrev, letter] = line.split('\t');
+      const i1 = toIndex(codon.charAt(0));
+      const i2 = toIndex(codon.charAt(1));
+      const i3 = toIndex(codon.charAt(2));
+      console.log(codon, i1, i2, i3);
+      AMINO_ACIDS[ i1 ][ i2 ][ i3 ] = letter;
+      AA_ABBREV_LOOKUP[letter] = abbrev;
+      AA_NAME_LOOKUP[letter] = name;
+    }
+  });
+  console.log(AMINO_ACIDS);
+});
+

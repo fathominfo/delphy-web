@@ -127,7 +127,8 @@ export class AnalysisUI extends UIScreen {
       const ancestorSeries: Distribution = anc.node.series as Distribution;
       const descendantSeries: Distribution = desc.node.series as Distribution;
       const nodePair = this.assembleNodePair(anc.node, desc.node, relation, summaryTree);
-      return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
+      return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median,
+        minDate, maxDate, this.isApobecEnabled, this.sharedState.genome);
     });
     const currentIndices = nodes.map(n=>n.index);
     // console.log('currentIndices', currentIndices);`

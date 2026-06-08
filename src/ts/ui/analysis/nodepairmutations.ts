@@ -60,10 +60,15 @@ class MutationTimeline {
     }
 
     const {nameParts, series} = this.data;
-
-    (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts[0];
-    (nameLabel.querySelector(".site") as HTMLElement).innerText = nameParts[1];
-    (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts[2];
+    if (nameParts instanceof Array) {
+      (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts[0];
+      (nameLabel.querySelector(".site") as HTMLElement).innerText = nameParts[1];
+      (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts[2];
+    } else {
+      (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = `${nameParts.protein}:${nameParts.from}`;
+      (nameLabel.querySelector(".site") as HTMLElement).innerText = `${nameParts.position}`;
+      (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts.to;
+    }
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series]);
