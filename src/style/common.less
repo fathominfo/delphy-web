@@ -1281,6 +1281,22 @@ nav {
     width: var(--mutation-emergence-mutation-site-width);
     text-align: center;
   }
+
+  .allele-region {
+    display: none;
+    &:after {
+      content: ':';
+    }
+  }
+  .synonymous {
+    display: none;
+  }
+
+
+  &.amino-acid {
+    .allele-region { display: inline-block; }
+    &.synonymous .synonymous { display: inline-block; }
+  }
 }
 
 .autocomplete {

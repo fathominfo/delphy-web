@@ -11,6 +11,7 @@ import { SeriesHoverCallback } from '../timedistributionchart';
 import { DisplayNode } from '../displaynode';
 import { NodeTimeDistributionChart, NodeSVGSeriesGroup } from './nodetimedistributionchart';
 import { AggregateMOI } from '../../pythia/mutationsofinterest';
+import { NUC_LOOKUP } from '../../constants';
 
 
 
@@ -64,10 +65,20 @@ class MutationTimeline {
       (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts[0];
       (nameLabel.querySelector(".site") as HTMLElement).innerText = nameParts[1];
       (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts[2];
+      nameLabel.classList.remove("amino-acid");
     } else {
-      (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = `${nameParts.protein}:${nameParts.from}`;
+      (nameLabel.querySelector(".allele-region") as HTMLElement).innerText = nameParts.protein;
+      (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts.from;
       (nameLabel.querySelector(".site") as HTMLElement).innerText = `${nameParts.position}`;
       (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts.to;
+      nameLabel.classList.add("amino-acid");
+      if (nameParts.isSynonymous) {
+        nameLabel.classList.add("synonymous");
+        (nameLabel.querySelector(".nuc-from") as HTMLElement).innerText = NUC_LOOKUP[nameParts.mutation.from];
+        (nameLabel.querySelector(".nuc-to") as HTMLElement).innerText = NUC_LOOKUP[nameParts.mutation.to];
+      } else {
+        nameLabel.classList.remove("synonymous");
+      }
     }
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
