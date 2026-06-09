@@ -33,6 +33,7 @@ const MAX_NODE_Y_SPACING = 40;
 
 const TEXT_LABEL_HEIGHT = 6;
 const TEXT_LABEL_MIN_WIDTH = 6;
+const LABEL_FONTSIZE = 12;
 const TEXT_PADDING = 5;
 
 const INTRO_LABEL_BG = `<filter x="0" y="0" width="100%" height="100%" id="intro-label-bg">
@@ -145,7 +146,7 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderIntroductionLabel(fontsize: number, color = '', position = 'top') {
+  renderIntroductionLabel(color = '', position = 'top') {
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
     while (textNode.firstChild) textNode.removeChild(textNode.firstChild);
@@ -164,14 +165,14 @@ export class SchematicNodeDisplay {
     const labelText = this.introduction?.value ?? "";
     textNode.style.setProperty("fill", color, "important");
     textNode.style.filter = "url(#intro-label-bg)";
-    textNode.style.fontSize = `${fontsize}px`;
+    textNode.style.fontSize = `${LABEL_FONTSIZE}px`;
 
     if (position === "right") {
       textNode.textContent = labelText;
-      textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2}`);
+      textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2 + TEXT_PADDING}`);
       textNode.setAttribute("y", `0`);
-    } else {
-      const baseY = -(this.textLabelHeight * 2.5 + fontsize / 2);
+    } else { // top
+      const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
       textNode.textContent = labelText;
       textNode.setAttribute("x", `${-(labelText.length / 2)}`);
       textNode.setAttribute("y", `${baseY}`);
@@ -224,7 +225,7 @@ export class SchematicNodeDisplay {
     introOutline.setAttribute("cy", `0`);
 
     if (this.introduction) {
-      this.renderIntroductionLabel(12, color, introLabelPos)
+      this.renderIntroductionLabel(color, introLabelPos)
     }
   }
 
@@ -360,11 +361,10 @@ export class NodeSchematic {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     this.container.innerHTML = '';
-    const getXpos = (index: number) => this.getXpos(index);
     const { ySpacing, colorByMetadata, nodeMetadataColors } = this;
     const introLabelPos = new Map<number, 'right' | 'top'>();
+    const getXpos = (index: number) => this.getXpos(index);
     this.nodes.forEach(node => node.position(getXpos, height, ySpacing))
-
     this.nodes.forEach((a, index) => {
       const hasNodeToRight = this.nodes.some(b => b !== a && b.xPos > a.xPos && Math.abs(b.yPos - a.yPos) < 15);
       introLabelPos.set(index, hasNodeToRight ? 'top' : 'right');
@@ -427,7 +427,8 @@ export class NodeSchematic {
     const availableWidth = width - MARGIN.left - MARGIN.right;
     const t = this.nodeTimes[nodeIndex];
     const pct = (t - minDate) / (maxDate - minDate);
-    return MARGIN.left + pct * availableWidth;
+    const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
+    return MARGIN.left + pctDrawOptimized * availableWidth;
   }
 
   /*
