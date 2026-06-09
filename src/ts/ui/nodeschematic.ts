@@ -146,7 +146,7 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderIntroductionLabel(color = '', position = 'top') {
+  renderIntroductionLabel(color = '', position = 'right') {
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
     while (textNode.firstChild) textNode.removeChild(textNode.firstChild);
@@ -205,7 +205,7 @@ export class SchematicNodeDisplay {
       this.textLabelWidth = 0;
       this.textLabelHeight = 0;
     } else {
-      // calculating node size based on
+      // calculate node size based on
       // # of tips that belong to this lineage but not any sub-lineage
       const directChildTips = node.childCount - this.treeNode.children.reduce((total, child) => total += child.node.childCount, 0)
       const calculatedWidth = 25 * directChildTips / maxChildNodes;
@@ -620,6 +620,7 @@ export class NodeSchematic {
 }
 
 function darkenColor(color: string, amount = 30): string {
+// darker colors for node outlines
   if (!color || color === '') return '';
   if (color.startsWith('#')) {
     const num = parseInt(color.slice(1), 16);
