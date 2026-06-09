@@ -746,9 +746,9 @@ export class CoreSelectData {
         rootNode: chartData.rootNode,
         fieldIntroductions: this.fieldIntroductions.slice(),
         metadataField: this.filteringByMetadataField,
-        nodeTimes,
-        minDate: chartData.minDate,
-        maxDate: chartData.maxDate
+        // nodeTimes,
+        // minDate: chartData.minDate,
+        // maxDate: chartData.maxDate
       };
       this.sharedState.schematicData = chartData.schematicData;
       mccRef.release();

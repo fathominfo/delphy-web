@@ -40,7 +40,15 @@ export class AnalysisUI extends UIScreen {
 
   activate(): void {
     super.activate();
+    this.sharedState.mccConfig.setListener(()=>this.handleConfigChange());
     this.setData();
+  }
+
+  handleConfigChange() {
+    const mccConfig = this.sharedState.mccConfig;
+    // get the mcc colors from the mcc config
+    // pass them to the node schematic
+
   }
 
 
@@ -139,7 +147,7 @@ export class AnalysisUI extends UIScreen {
     const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
     const mutationsOfInterest = tallyMutationsOfInterest(moiHist);
 
-    this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata, this.sharedState.metadataColors)
+    this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata, this.sharedState.metadataColors);
     this.nodeSchematic.setData(this.sharedState.schematicData);
     this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate);
     this.nodeTimelines.setData(nodes);

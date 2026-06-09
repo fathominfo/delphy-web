@@ -137,14 +137,12 @@ export class MccUI extends UIScreen {
         const summary: SummaryTree = mccRef.getMcc();
         const nodeConfidence: number[] = mccRef.getNodeConfidence();
         const mccConfig = this.sharedState.mccConfig;
-        if (mccConfig) {
-          mccConfig.updateInnerNodeMetadata(summary);
-          let input = this.div.querySelector(COLOR_META_SELECTOR) as HTMLInputElement;
-          if (input) {
-            input.checked = mccConfig.colorOption === ColorOption.metadata;
-            input = this.div.querySelector(COLOR_CONF_SELECTOR) as HTMLInputElement;
-            input.checked = mccConfig.colorOption === ColorOption.confidence;
-          }
+        mccConfig.updateInnerNodeMetadata(summary);
+        let input = this.div.querySelector(COLOR_META_SELECTOR) as HTMLInputElement;
+        if (input) {
+          input.checked = mccConfig.colorOption === ColorOption.metadata;
+          input = this.div.querySelector(COLOR_CONF_SELECTOR) as HTMLInputElement;
+          input.checked = mccConfig.colorOption === ColorOption.confidence;
         }
         this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence);
         requestAnimationFrame(()=>document.body.classList.remove("summarizing"));

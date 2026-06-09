@@ -117,8 +117,12 @@ export class SchematicNodeDisplay {
     this.children.push(desc);
   }
 
-  position(getXpos: (index: number) => number, height: number, ySpacing: number) {
-    this.xPos = getXpos(this.getIndex());
+  position(width: number, height: number, ySpacing: number) {
+    // this.xPos = getXpos(this.getIndex());
+    // const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
+    // return MARGIN.left + pctDrawOptimized * availableWidth;
+    const pct = 0.1 + this.treeNode.xFactor * 0.7;
+    this.xPos = MARGIN.left + pct * width;
     this.yPos = this.tipPlacement * ySpacing + height / 2;
     const elements = [this.nameLabel];
     if (!this.treeNode.node.isRoot) {
@@ -255,10 +259,11 @@ export type NodeSchematicData = {
   pairs: NodePair[],
   rootNode: SchematicNode | null,
   fieldIntroductions: IntroductionData[],
-  metadataField: string | null,
-  nodeTimes: number[],
-  minDate: number,
-  maxDate: number
+  metadataField: string | null
+  // ,
+  // nodeTimes: number[],
+  // minDate: number,
+  // maxDate: number
 }
 
 /*
@@ -291,9 +296,9 @@ export class NodeSchematic {
   wrapper: HTMLDivElement;
   container: SVGElement;
   hoverDiv: HTMLDivElement;
-  nodeTimes: number[] = [];
-  minDate: number = UNSET;
-  maxDate: number = UNSET;
+  // nodeTimes: number[] = [];
+  // minDate: number = UNSET;
+  // maxDate: number = UNSET;
 
 
   constructor( wrapper: HTMLDivElement, nodeHighlightCallback: HoverCallback) {
@@ -363,8 +368,7 @@ export class NodeSchematic {
     this.container.innerHTML = '';
     const { ySpacing, colorByMetadata, nodeMetadataColors } = this;
     const introLabelPos = new Map<number, 'right' | 'top'>();
-    const getXpos = (index: number) => this.getXpos(index);
-    this.nodes.forEach(node => node.position(getXpos, height, ySpacing))
+    this.nodes.forEach(node => node.position(width, height, ySpacing))
     this.nodes.forEach((a, index) => {
       const hasNodeToRight = this.nodes.some(b => b !== a && b.xPos > a.xPos && Math.abs(b.yPos - a.yPos) < 15);
       introLabelPos.set(index, hasNodeToRight ? 'top' : 'right');
@@ -415,21 +419,22 @@ export class NodeSchematic {
 
 
 
-
+  // TODO: set the color state based on the MccConfig.
+  // That will need to be routed via the parent page (analysisui, selectui, etc)
   setColorMethod(colorByMetadata: boolean, nodeMetadataColors: string[]) {
     this.colorByMetadata = colorByMetadata;
     this.nodeMetadataColors = nodeMetadataColors;
   }
 
 
-  getXpos(nodeIndex: number): number {
-    const { minDate, maxDate, width } = this;
-    const availableWidth = width - MARGIN.left - MARGIN.right;
-    const t = this.nodeTimes[nodeIndex];
-    const pct = (t - minDate) / (maxDate - minDate);
-    const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
-    return MARGIN.left + pctDrawOptimized * availableWidth;
-  }
+  // getXpos(nodeIndex: number): number {
+  //   const { minDate, maxDate, width } = this;
+  //   const availableWidth = width - MARGIN.left - MARGIN.right;
+  //   const t = this.nodeTimes[nodeIndex];
+  //   const pct = (t - minDate) / (maxDate - minDate);
+  //   const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
+  //   return MARGIN.left + pctDrawOptimized * availableWidth;
+  // }
 
   /*
   @param pairs: contains mutation data for each track that we will display.
@@ -438,11 +443,10 @@ export class NodeSchematic {
   */
   setData(schematicData: NodeSchematicData) {
     // const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
-    const { pairs, rootNode, fieldIntroductions, metadataField,
-      nodeTimes, minDate, maxDate } = schematicData;
-    this.nodeTimes = nodeTimes;
-    this.minDate = minDate;
-    this.maxDate = maxDate;
+    const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
+    // this.nodeTimes = nodeTimes;
+    // this.minDate = minDate;
+    // this.maxDate = maxDate;
 
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,

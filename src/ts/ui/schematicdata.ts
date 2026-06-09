@@ -14,6 +14,7 @@ export class SchematicNode {
   children: SchematicNode[] = [];
   stepsFromRoot = 0;
   tipPlacement = 0;
+  xFactor = UNSET; // between 0 and 1
 
   constructor(node: DisplayNode) {
     this.node = node;
@@ -42,6 +43,7 @@ export class SchematicDataBuilder {
   nodeChildCount: number[];
   mrcaMaker: MRCANodeCreator;
   getY: getYFunction;
+
 
   constructor(tree:SummaryTree, nodeChildCount: number[],
     mrcaMaker: MRCANodeCreator, getY: getYFunction) {
@@ -130,12 +132,17 @@ export class SchematicDataBuilder {
 
 
     const tips: SchematicNode[] = [];
+    let minDate = Number.MAX_SAFE_INTEGER;
+    let maxDate = Number.MIN_SAFE_INTEGER;
     this.found.forEach((treeNode: SchematicNode)=>{
       if (treeNode.children.length === 0) {
         tips.push(treeNode);
       } else if (treeNode.children.length > 2) {
         console.warn(`the schematic tree building is not binary`, treeNode);
       }
+      const date = tree.getTimeOf(treeNode.node.index);
+      minDate = Math.min(date, minDate);
+      maxDate = Math.max(date, maxDate);
     });
     tips.sort((a, b)=>this.getY(a.node.index) - this.getY(b.node.index));
     const numTips = tips.length;
@@ -152,6 +159,8 @@ export class SchematicDataBuilder {
     let i = 0;
     while (i < q.length) {
       const tn = q[i];
+      const date = tree.getTimeOf(tn.node.index);
+      tn.xFactor = (date - minDate) / (maxDate - minDate);
       if (!tn.parent) {
         tn.stepsFromRoot = 0;
       } else {
