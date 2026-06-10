@@ -42,25 +42,25 @@ export class AnalysisUI extends UIScreen {
     super.activate();
     this.sharedState.mccConfig.setListener(() => this.handleConfigChange());
     this.setData();
-    this.colorSchematicByMetadata();
+    this.setSchematicColor();
   }
 
   handleConfigChange() {
-    this.colorSchematicByMetadata();
+    this.setSchematicColor();
   }
 
-  colorSchematicByMetadata() {
-    // get the mcc colors from the mcc config
-    // pass them to the node schematic
+  setSchematicColor() {
+    /*
+    Node colors are driven by css when we aren't using metadata,
+    and are set by the js when there _is_ metadata [mark and karlie 260610]
+    */
     const mccConfig = this.sharedState.mccConfig;
-
-    if (mccConfig.nodeMetadata && mccConfig.colorOption === ColorOption.metadata && mccConfig.metadataField) { // mccConfig.metadataField
-      // the dictionary of metadata value -> color
+    if (mccConfig.nodeMetadata && mccConfig.colorOption === ColorOption.metadata && mccConfig.metadataField) {
       const nodeMDValues = mccConfig.getMetadataValues();
       const nodeColors = nodeMDValues.map(value => mccConfig.getMetadataColor(value));
-      this.nodeSchematic.setColorMethod(mccConfig.colorOption === ColorOption.metadata, nodeColors)
+      this.nodeSchematic.setColorMethod(true, nodeColors)
     } else {
-      console.log("We aren't coloring by metadata!")
+      this.nodeSchematic.setColorMethod(false,  [])
     }
   }
 
@@ -160,7 +160,7 @@ export class AnalysisUI extends UIScreen {
     const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
     const mutationsOfInterest = tallyMutationsOfInterest(moiHist);
 
-    this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata,  [])
+    // this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata,  [])
     this.nodeSchematic.setData(this.sharedState.schematicData);
     this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate);
     this.nodeTimelines.setData(nodes);
