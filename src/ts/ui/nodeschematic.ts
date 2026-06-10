@@ -7,7 +7,7 @@ import { SchematicNode } from "./schematicdata";
 
 
 
-const CONTROL_W = 80;
+const CONTROL_W = 20;
 const CONTROL_H = 70;
 
 const SUBWAY_TEMPLATE = document.querySelector("#select--node-layout .subway svg") as SVGElement;
@@ -109,7 +109,7 @@ export class SchematicNodeDisplay {
   }
 
   position(width: number, height: number, ySpacing: number) {
-    const pct = 0.1 + this.treeNode.xFactor * 0.7;
+    const pct = 0.1 + this.treeNode.xFactor * 0.5;
     this.xPos = MARGIN.left + pct * width;
     this.yPos = this.tipPlacement * ySpacing + height / 2;
     const elements = [this.nameLabel];
@@ -138,17 +138,25 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderIntroductionLabel(color = '', position = 'right') {
+  renderIntroductionLabel(color = '', position = 'none') {
+    if (position === "none") return
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
     const labelText = this.introduction?.value ?? "";
+
+    // const MAX_LABEL_CHAR = 10;
+    // if (labelText.length > MAX_LABEL_CHAR) {
+    //   labelText = labelText.split(/[-\s]/)[0];
+    //   if (labelText.length > MAX_LABEL_CHAR) labelText = `${labelText.slice(0, 7)}...`;
+    // }
+
     textNode.style.setProperty("fill", color, "important");
 
     if (position === "right") {
       textNode.textContent = labelText;
       textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2 + TEXT_PADDING}`);
       textNode.setAttribute("y", `0`);
-    } else { // top
+    } else if(position==="top"){ // top
       const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
       textNode.textContent = labelText;
       textNode.setAttribute("x", `${-(labelText.length / 2)}`);
@@ -210,11 +218,11 @@ export class SchematicNodeDisplay {
     introOutline.setAttribute("cx", `0`);
     introOutline.setAttribute("cy", `0`);
 
+    const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
+    bgRect.style.display = "none";
+
     if (this.introduction) {
       this.renderIntroductionLabel(color, introLabelPos)
-    } else {
-      const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
-      bgRect.style.display = "none";
     }
   }
 
@@ -245,10 +253,6 @@ export type NodeSchematicData = {
   rootNode: SchematicNode | null,
   fieldIntroductions: IntroductionData[],
   metadataField: string | null
-  // ,
-  // nodeTimes: number[],
-  // minDate: number,
-  // maxDate: number
 }
 
 /*
@@ -344,16 +348,68 @@ export class NodeSchematic {
   }
 
 
+  getTextWidth(text: string, fontSize: number, fontFamily = 'sans-serif'): number {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.position = 'absolute';
+    svg.style.visibility = 'hidden';
+    svg.style.pointerEvents = 'none';
+
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    el.setAttribute('font-size', String(fontSize));
+    el.setAttribute('font-family', fontFamily);
+    el.textContent = text;
+
+    svg.appendChild(el);
+    document.body.appendChild(svg);
+
+    const width = el.getBBox().width;
+
+    document.body.removeChild(svg);
+    return width;
+  }
+
   render() {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     this.container.innerHTML = '';
     const { ySpacing, colorByMetadata, nodeMetadataColors } = this;
-    const introLabelPos = new Map<number, 'right' | 'top'>();
-    this.nodes.forEach(node => node.position(width, height, ySpacing))
-    this.nodes.forEach((a, index) => {
-      const hasNodeToRight = this.nodes.some(b => b !== a && b.xPos > a.xPos && Math.abs(b.yPos - a.yPos) < 15);
-      introLabelPos.set(index, hasNodeToRight ? 'top' : 'right');
+    const introLabelPos = new Map<number, 'right' | 'top' | 'none'>();
+    const introLabelWidth = new Map<number, number>();
+
+    this.nodes.forEach(node => node.position(width, height, ySpacing));
+    this.nodes.forEach((node, index) => {
+      introLabelWidth.set(index, node.introduction ? this.getTextWidth(node.introduction.value, LABEL_FONTSIZE) : 0);
+    });
+
+    const getLabelBounds = (node: SchematicNodeDisplay, index: number, side: 'right' | 'top' | 'none') => {
+      const w = introLabelWidth.get(index) ?? 0;
+      const h = LABEL_FONTSIZE;
+      if (side === 'right') return { x: node.xPos, y: node.yPos - h / 2, w, h };
+      else return { x: node.xPos - w / 2, y: node.yPos - h, w, h };
+    };
+
+    const overlaps = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+    this.nodes.forEach((node, index) => {
+      if (!node.introduction) return;
+
+      const hasNodeToRight = this.nodes.some(
+        a => a !== node && a.xPos > node.xPos && Math.abs(a.yPos - node.yPos) < 15
+      );
+      const side = hasNodeToRight ? 'top' : 'right';
+      const bounds = getLabelBounds(node, index, side);
+
+      // check against all already-placed labels (upstream nodes)
+      const isOverlapping = Array.from(introLabelPos.entries()).some(([prevIndex, prevSide]) => {
+        const prevNode = this.nodes[prevIndex];
+        if (!prevNode.introduction) return false;
+        const prevBounds = getLabelBounds(prevNode, prevIndex, prevSide);
+        return overlaps(bounds, prevBounds);
+      });
+
+      if (!isOverlapping) introLabelPos.set(index, side);
+      else introLabelPos.set(index, "none")
     });
 
     /*
