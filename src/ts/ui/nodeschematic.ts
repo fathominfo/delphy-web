@@ -413,8 +413,6 @@ export class NodeSchematic {
 
 
 
-  // TODO: set the color state based on the MccConfig.
-  // That will need to be routed via the parent page (analysisui, selectui, etc)
   setColorMethod(colorByMetadata: boolean, nodeMetadataColors: string[]) {
     this.colorByMetadata = colorByMetadata;
     this.nodeMetadataColors = nodeMetadataColors;

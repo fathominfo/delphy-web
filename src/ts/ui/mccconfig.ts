@@ -139,6 +139,11 @@ export class MccConfig {
     return clr;
   }
 
+  getNodeColors(): string[] {
+    const nodeMDValues = this.getMetadataValues();
+    const nodeColors = this.colorOption === ColorOption.metadata ? nodeMDValues.map(value => this.getMetadataColor(value)) : [];
+    return nodeColors;
+  }
 
   bind(div:HTMLDivElement | null) : void {
     if (div) {

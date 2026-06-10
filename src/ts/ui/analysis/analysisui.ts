@@ -40,7 +40,8 @@ export class AnalysisUI extends UIScreen {
 
   activate(): void {
     super.activate();
-    this.sharedState.mccConfig.setListener(() => this.handleConfigChange());
+    // In the future if we want to toggle node colors between metadata and credibility palettes [kz 260610]
+    // this.sharedState.mccConfig.setListener(() => this.handleConfigChange());
     this.setData();
     this.setSchematicColor();
   }
@@ -55,13 +56,7 @@ export class AnalysisUI extends UIScreen {
     and are set by the js when there _is_ metadata [mark and karlie 260610]
     */
     const mccConfig = this.sharedState.mccConfig;
-    if (mccConfig.nodeMetadata && mccConfig.colorOption === ColorOption.metadata && mccConfig.metadataField) {
-      const nodeMDValues = mccConfig.getMetadataValues();
-      const nodeColors = nodeMDValues.map(value => mccConfig.getMetadataColor(value));
-      this.nodeSchematic.setColorMethod(true, nodeColors)
-    } else {
-      this.nodeSchematic.setColorMethod(false,  [])
-    }
+    this.nodeSchematic.setColorMethod(mccConfig.colorOption === ColorOption.metadata, mccConfig.getNodeColors())
   }
 
 
