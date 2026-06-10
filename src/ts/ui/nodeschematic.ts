@@ -33,8 +33,8 @@ const MAX_NODE_Y_SPACING = 40;
 
 const TEXT_LABEL_HEIGHT = 6;
 const TEXT_LABEL_MIN_WIDTH = 6;
-const LABEL_FONTSIZE = 12;
-const TEXT_PADDING = 5;
+const LABEL_FONTSIZE = 11;
+const TEXT_PADDING = LABEL_FONTSIZE / 2;
 export class SchematicNodeDisplay {
   treeNode: SchematicNode;
   xPos: number = UNSET;
@@ -141,9 +141,14 @@ export class SchematicNodeDisplay {
   renderIntroductionLabel(color = '', position = 'right') {
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
-    const labelText = this.introduction?.value ?? "";
-    textNode.style.setProperty("fill", color, "important");
+    // textNode.style.setProperty("fill", color, "important");
+    let labelText = this.introduction?.value ?? "";
 
+    const MAX_LABEL_CHAR = 12;
+    if (labelText.length > MAX_LABEL_CHAR) {
+      labelText = labelText.split(/[-,;./|:_\u2013\u2014]/)[0].trim();
+      if (labelText.length > MAX_LABEL_CHAR) labelText = `${labelText.slice(0, 7)}...`;
+    }
     if (position === "right") {
       textNode.textContent = labelText;
       textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2 + TEXT_PADDING}`);
@@ -156,9 +161,10 @@ export class SchematicNodeDisplay {
     }
 
     const bbox = textNode.getBBox();
-    const pad = { x: 2, y: 2 };
+    const pad = { x: 4, y: 2 };
     const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
     bgRect.style.display = "";
+    bgRect.setAttribute("fill", color)
     bgRect.setAttribute("x", `${bbox.x - pad.x}`);
     bgRect.setAttribute("y", `${bbox.y - pad.y}`);
     bgRect.setAttribute("width", `${bbox.width + pad.x * 2}`);
@@ -245,10 +251,6 @@ export type NodeSchematicData = {
   rootNode: SchematicNode | null,
   fieldIntroductions: IntroductionData[],
   metadataField: string | null
-  // ,
-  // nodeTimes: number[],
-  // minDate: number,
-  // maxDate: number
 }
 
 /*
@@ -406,16 +408,6 @@ export class NodeSchematic {
     this.nodeMetadataColors = nodeMetadataColors;
   }
 
-
-  // getXpos(nodeIndex: number): number {
-  //   const { minDate, maxDate, width } = this;
-  //   const availableWidth = width - MARGIN.left - MARGIN.right;
-  //   const t = this.nodeTimes[nodeIndex];
-  //   const pct = (t - minDate) / (maxDate - minDate);
-  //   const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
-  //   return MARGIN.left + pctDrawOptimized * availableWidth;
-  // }
-
   /*
   @param pairs: contains mutation data for each track that we will display.
   @param rootNode: the root node of the tree we will display.
@@ -424,9 +416,6 @@ export class NodeSchematic {
   setData(schematicData: NodeSchematicData) {
     // const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
     const { pairs, rootNode, fieldIntroductions, metadataField } = schematicData;
-    // this.nodeTimes = nodeTimes;
-    // this.minDate = minDate;
-    // this.maxDate = maxDate;
 
     // const {ancestor, descendant} = pairs[0];
     // console.debug(ancestor.index, ancestor.label, ancestor.className,
