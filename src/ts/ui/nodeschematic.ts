@@ -1,6 +1,6 @@
 import { UNSET } from "./common";
 import { IntroductionData } from "./select/coreselectdata";
-import { DisplayNode } from "./displaynode";
+import { darkenColor } from "./common";
 import { HoverCallback, NodePair, NodeRelationType } from "./select/selectcommon";
 import { SchematicNode } from "./schematicdata";
 
@@ -35,15 +35,6 @@ const TEXT_LABEL_HEIGHT = 6;
 const TEXT_LABEL_MIN_WIDTH = 6;
 const LABEL_FONTSIZE = 12;
 const TEXT_PADDING = 5;
-
-const INTRO_LABEL_BG = `<filter x="0" y="0" width="100%" height="100%" id="intro-label-bg">
-        <feFlood flood-color="white" flood-opacity="0.7" result="bg"/>
-        <feMerge>
-          <feMergeNode in="bg"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>`
-
 export class SchematicNodeDisplay {
   treeNode: SchematicNode;
   xPos: number = UNSET;
@@ -150,22 +141,8 @@ export class SchematicNodeDisplay {
   renderIntroductionLabel(color = '', position = 'right') {
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
-    while (textNode.firstChild) textNode.removeChild(textNode.firstChild);
-
-    const svgRoot = textNode.closest("svg")!;
-
-    if (!svgRoot.querySelector("#intro-label-bg")) {
-      const svgNS = "http://www.w3.org/2000/svg";
-      let defs = svgRoot.querySelector("defs");
-      if (!defs) {
-        defs = document.createElementNS(svgNS, "defs");
-        svgRoot.prepend(defs);
-      }
-      defs.innerHTML += INTRO_LABEL_BG;
-    }
     const labelText = this.introduction?.value ?? "";
     textNode.style.setProperty("fill", color, "important");
-    textNode.style.filter = "url(#intro-label-bg)";
     textNode.style.fontSize = `${LABEL_FONTSIZE}px`;
 
     if (position === "right") {
@@ -178,6 +155,15 @@ export class SchematicNodeDisplay {
       textNode.setAttribute("x", `${-(labelText.length / 2)}`);
       textNode.setAttribute("y", `${baseY}`);
     }
+
+    const bbox = textNode.getBBox();
+    const pad = { x: 2, y: 2 };
+    const rect = nameLabel.querySelector(".label-bg") as SVGRectElement;
+    rect.setAttribute("x", `${bbox.x - pad.x}`);
+    rect.setAttribute("y", `${bbox.y - pad.y}`);
+    rect.setAttribute("width", `${bbox.width + pad.x * 2}`);
+    rect.setAttribute("height", `${bbox.height + pad.y * 2}`);
+    nameLabel.insertBefore(rect, textNode);
   }
 
   renderLabel(maxChildNodes: number, color = '', introLabelPos = "right") {
@@ -613,22 +599,4 @@ export class NodeSchematic {
   }
 
 
-}
-
-function darkenColor(color: string, amount = 30): string {
-// darker colors for node outlines
-  if (!color || color === '') return '';
-  if (color.startsWith('#')) {
-    const num = parseInt(color.slice(1), 16);
-    const r = Math.max(0, (num >> 16) - amount);
-    const g = Math.max(0, ((num >> 8) & 0xff) - amount);
-    const b = Math.max(0, (num & 0xff) - amount);
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-  }
-
-  if (color.startsWith('rgb')) {
-    return color.replace(/(\d+)/g, (_, n) => String(Math.max(0, +n - amount)));
-  }
-
-  return color;
 }

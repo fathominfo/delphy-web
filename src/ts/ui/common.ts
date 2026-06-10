@@ -697,6 +697,23 @@ export const getMedian = (arr:number[])=>{
   return median;
 }
 
+export const darkenColor = (color: string, amount = 30): string => {
+  if (!color || color === '') return '';
+  if (color.startsWith('#')) {
+    const num = parseInt(color.slice(1), 16);
+    const r = Math.max(0, (num >> 16) - amount);
+    const g = Math.max(0, ((num >> 8) & 0xff) - amount);
+    const b = Math.max(0, (num & 0xff) - amount);
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
+
+  if (color.startsWith('rgb')) {
+    return color.replace(/(\d+)/g, (_, n) => String(Math.max(0, +n - amount)));
+  }
+
+  return color;
+}
+
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 export type RANGE_CALLBACK_TYPE = (value: number)=>void;
 export type SET_PREVALENCE_CALLBACK_TYPE = (increment: boolean)=>void;
