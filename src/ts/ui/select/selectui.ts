@@ -339,7 +339,6 @@ export class SelectUI extends MccUI {
   protected requestTreeDraw(): void {
     super.requestTreeDraw();
     const metadataColors = this.mccTreeCanvas.nodeColors.slice(0);
-    this.sharedState.metadataColors = metadataColors;
     const colorByMetadata = this.sharedState.mccConfig.colorOption === ColorOption.metadata;
     this.nodeSchematic.setColorMethod(colorByMetadata, metadataColors);
     requestAnimationFrame(()=>this.nodeSchematic.render());

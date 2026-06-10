@@ -12,9 +12,6 @@ export class SharedState {
   pythia: Pythia;
   mccConfig: MccConfig;
   nodeList: number[];
-  // TODO: get rid of this and get the color state
-  // from the MccConfig
-  metadataColors: string[];
   mutationList: Mutation[];
   hideBurnIn: boolean;
   goTo: NavigateFunctionType;
@@ -28,7 +25,6 @@ export class SharedState {
     this.pythia = pythia;
     this.mccConfig = new MccConfig(goTo);
     this.nodeList = [];
-    this.metadataColors = [];
     this.mutationList = [];
     this.hideBurnIn = false;
     this.kneeIsCurated = false;

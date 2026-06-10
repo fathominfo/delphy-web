@@ -118,9 +118,6 @@ export class SchematicNodeDisplay {
   }
 
   position(width: number, height: number, ySpacing: number) {
-    // this.xPos = getXpos(this.getIndex());
-    // const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
-    // return MARGIN.left + pctDrawOptimized * availableWidth;
     const pct = 0.1 + this.treeNode.xFactor * 0.7;
     this.xPos = MARGIN.left + pct * width;
     this.yPos = this.tipPlacement * ySpacing + height / 2;
@@ -296,9 +293,6 @@ export class NodeSchematic {
   wrapper: HTMLDivElement;
   container: SVGElement;
   hoverDiv: HTMLDivElement;
-  // nodeTimes: number[] = [];
-  // minDate: number = UNSET;
-  // maxDate: number = UNSET;
 
 
   constructor( wrapper: HTMLDivElement, nodeHighlightCallback: HoverCallback) {

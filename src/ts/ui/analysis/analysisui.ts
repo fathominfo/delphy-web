@@ -40,15 +40,24 @@ export class AnalysisUI extends UIScreen {
 
   activate(): void {
     super.activate();
-    this.sharedState.mccConfig.setListener(()=>this.handleConfigChange());
+    this.sharedState.mccConfig.setListener(() => this.handleConfigChange());
     this.setData();
+    this.colorSchematicByMetadata();
   }
 
   handleConfigChange() {
-    const mccConfig = this.sharedState.mccConfig;
+    this.colorSchematicByMetadata();
+  }
+
+  colorSchematicByMetadata() {
     // get the mcc colors from the mcc config
     // pass them to the node schematic
-
+    const mccConfig = this.sharedState.mccConfig;
+    if (mccConfig.nodeMetadata && this.nodeSchematic.metadataField) { // mccConfig.metadataField
+      const colors = mccConfig.metadataColors[this.nodeSchematic.metadataField];
+      const nodeColors = mccConfig.nodeMetadata.nodeValues.map(node => colors[node[mccConfig.colorOption - 1].value].color)
+      this.nodeSchematic.setColorMethod(mccConfig.colorOption === ColorOption.metadata, nodeColors)
+    }
   }
 
 
@@ -147,7 +156,7 @@ export class AnalysisUI extends UIScreen {
     const moiHist = pythia.mutationOfInterestHist.slice(pythia.kneeIndex);
     const mutationsOfInterest = tallyMutationsOfInterest(moiHist);
 
-    this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata, this.sharedState.metadataColors);
+    this.nodeSchematic.setColorMethod(this.sharedState.mccConfig.colorOption === ColorOption.metadata,  [])
     this.nodeSchematic.setData(this.sharedState.schematicData);
     this.nodePrevalenceCanvas.setData(nodeDistributions, nodes, minDate, maxDate);
     this.nodeTimelines.setData(nodes);
