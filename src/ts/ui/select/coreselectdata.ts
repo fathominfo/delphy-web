@@ -728,11 +728,6 @@ export class CoreSelectData {
       // console.log(`${currentNodes.length} nodes`, currentIndices)
       chartData.nodes = currentNodes;
 
-      const nodeCount = summaryTree.getSize();
-      const nodeTimes: number[] = new Array(nodeCount);
-      for (let i = 0; i < nodeCount; i++) {
-        nodeTimes[i] = summaryTree.getTimeOf(i);
-      }
       /*
       add an empty node before the root to represent the uninfected population
       in the prevalence chart
@@ -745,10 +740,7 @@ export class CoreSelectData {
         pairs: chartData.nodePairs,
         rootNode: chartData.rootNode,
         fieldIntroductions: this.fieldIntroductions.slice(),
-        metadataField: this.filteringByMetadataField,
-        // nodeTimes,
-        // minDate: chartData.minDate,
-        // maxDate: chartData.maxDate
+        metadataField: this.filteringByMetadataField
       };
       this.sharedState.schematicData = chartData.schematicData;
       mccRef.release();
