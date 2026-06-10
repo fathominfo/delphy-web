@@ -143,7 +143,6 @@ export class SchematicNodeDisplay {
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
     const labelText = this.introduction?.value ?? "";
     textNode.style.setProperty("fill", color, "important");
-    textNode.style.fontSize = `${LABEL_FONTSIZE}px`;
 
     if (position === "right") {
       textNode.textContent = labelText;
@@ -158,12 +157,12 @@ export class SchematicNodeDisplay {
 
     const bbox = textNode.getBBox();
     const pad = { x: 2, y: 2 };
-    const rect = nameLabel.querySelector(".label-bg") as SVGRectElement;
-    rect.setAttribute("x", `${bbox.x - pad.x}`);
-    rect.setAttribute("y", `${bbox.y - pad.y}`);
-    rect.setAttribute("width", `${bbox.width + pad.x * 2}`);
-    rect.setAttribute("height", `${bbox.height + pad.y * 2}`);
-    nameLabel.insertBefore(rect, textNode);
+    const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
+    bgRect.style.display = "";
+    bgRect.setAttribute("x", `${bbox.x - pad.x}`);
+    bgRect.setAttribute("y", `${bbox.y - pad.y}`);
+    bgRect.setAttribute("width", `${bbox.width + pad.x * 2}`);
+    bgRect.setAttribute("height", `${bbox.height + pad.y * 2}`);
   }
 
   renderLabel(maxChildNodes: number, color = '', introLabelPos = "right") {
@@ -213,6 +212,9 @@ export class SchematicNodeDisplay {
 
     if (this.introduction) {
       this.renderIntroductionLabel(color, introLabelPos)
+    } else {
+      const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
+      bgRect.style.display = "none";
     }
   }
 
