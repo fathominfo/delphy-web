@@ -53,10 +53,14 @@ export class AnalysisUI extends UIScreen {
     // get the mcc colors from the mcc config
     // pass them to the node schematic
     const mccConfig = this.sharedState.mccConfig;
-    if (mccConfig.nodeMetadata && this.nodeSchematic.metadataField) { // mccConfig.metadataField
-      const colors = mccConfig.metadataColors[this.nodeSchematic.metadataField];
-      const nodeColors = mccConfig.nodeMetadata.nodeValues.map(node => colors[node[mccConfig.colorOption - 1].value].color)
+
+    if (mccConfig.nodeMetadata && mccConfig.colorOption === ColorOption.metadata && mccConfig.metadataField) { // mccConfig.metadataField
+      // the dictionary of metadata value -> color
+      const nodeMDValues = mccConfig.getMetadataValues();
+      const nodeColors = nodeMDValues.map(value => mccConfig.getMetadataColor(value));
       this.nodeSchematic.setColorMethod(mccConfig.colorOption === ColorOption.metadata, nodeColors)
+    } else {
+      console.log("We aren't coloring by metadata!")
     }
   }
 
