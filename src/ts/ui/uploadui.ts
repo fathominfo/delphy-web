@@ -6,6 +6,7 @@ import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 import { parse_iso_date } from '../pythia/dates';
+import { findMatchingRefSequence } from '../pythia/genome';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -507,6 +508,44 @@ const checkFiles = (files: File[] | FileList)=>{
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
           if (fastaBytesJs) {
+            /* grab the first fasta */
+            let header = '';
+            let seq = '';
+            let c = '';
+            let inHeader = false;
+            let inSeq = false;
+            let complete = false;
+            const asUint8 = new Uint8Array(fastaBytesJs);
+            for (let i = 0; i < asUint8.byteLength && !complete; i++) {
+              c = String.fromCharCode(asUint8[i]).toUpperCase();
+              switch (c) {
+              case '>' : {
+                if (header === '') {
+                  inHeader = true;
+                } else {
+                  inSeq = false;
+                  complete = true;
+                }
+              }
+                break;
+              case('\n'): {
+                if (inHeader) {
+                  inHeader = false;
+                  inSeq = true;
+                }
+                break;
+              }
+              default: {
+                if (inSeq) seq += c;
+                else if (inHeader) header += c;
+                break;
+              }
+              }
+            }
+
+            const genConf = findMatchingRefSequence(seq);
+            console.log(header, genConf);
+
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);

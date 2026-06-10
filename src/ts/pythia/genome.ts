@@ -32,6 +32,20 @@ const GFF3_DELIMITER = '\t';
 const LIKELY_NAME_FIELDS = new Set(["name", "gene", "gene_name"]);
 const MINIMUM_CHAR_COUNT_TO_HAVE_9_COLUMNS = 17;
 
+type RefSeqConfig = {
+  taxon: number,
+  abbrev: string,
+  name: string,
+  accession: string,
+  ref_path: string,
+  gff_path: string
+};
+
+
+type SeqLookup = {[_: string]: [accession: string, sequence: string] | SeqLookup };
+
+let refSeqs: {[_:string] : RefSeqConfig } = {};
+let seqLookup: SeqLookup = {};
 
 export enum Strand {
   FORWARD = 1,
@@ -310,3 +324,42 @@ fetch("./assets/data/aa.tsv").then(req=>req.text()).then(tsv=>{
   console.log(AMINO_ACIDS);
 });
 
+fetch("./assets/data/references.json").then(req=>req.json()).then(data=>{
+  refSeqs = {};
+  data.config.forEach((conf: RefSeqConfig)=>{
+    refSeqs[conf.accession] = conf;
+  });
+  seqLookup = data.sequences;
+});
+
+export const findMatchingRefSequence = (sequence: string) : RefSeqConfig | null => {
+  let store = seqLookup;
+  let i = 0;
+  let c = '';
+  let tmp: [accession: string, sequence: string] | SeqLookup;
+  let accession : string  | null = null;
+  while (accession === null && i < sequence.length) {
+    c = sequence.charAt(i);
+    if (store[c] === undefined) {
+      /* we don't have a matching sequence */
+      break;
+    } else {
+      tmp = store[c];
+      if (tmp instanceof Array) {
+        const [acc, seq] = tmp;
+        if (seq === sequence) {
+          /* we have a match! */
+          accession = acc;
+        }
+      } else {
+        store = tmp;
+        i++;
+      }
+    }
+  }
+  let config: RefSeqConfig | null = null;
+  if (accession) {
+    config = refSeqs[accession] || null;
+  }
+  return config;
+};
