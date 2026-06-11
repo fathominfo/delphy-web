@@ -274,11 +274,22 @@ fetch("./assets/data/reference_sequences.json").then(req=>req.json()).then(data=
   });
 });
 
-export const findMatchingRefSequence = (sequence: string) : RefSeqConfig | RefSeqConfigWithSegment | null => {
+
+export type RefSequenceMatch = {
+  config: RefSeqConfig | RefSeqConfigWithSegment | null,
+  score: number
+};
+
+
+export const findRefSequenceCandidates = (sequence: string) : (RefSeqConfig | RefSeqConfigWithSegment)[] => {
   const L = sequence.length;
   const candidates = Object.values(refSeqs).filter((conf: RefSeqConfig | RefSeqConfigWithSegment)=>{
     return conf.sequence.length === L;
   });
+  return candidates;
+};
+
+export const findMatchingRefSequence = (sequence: string) : RefSequenceMatch => {
   /*
 
 
@@ -289,24 +300,36 @@ export const findMatchingRefSequence = (sequence: string) : RefSeqConfig | RefSe
 
 
   */
-  let bestScore = Number.MAX_SAFE_INTEGER;
+  let bestScore: [number, string, string][] | null = null;
   let bestCandidate = UNSET;
+  const L = sequence.length;
+  const candidates = findRefSequenceCandidates(sequence);
   candidates.forEach((conf: RefSeqConfig | RefSeqConfigWithSegment, n: number)=>{
     const seq = conf.sequence;
-    let misMatches = 0;
+    const misMatches: [number, string, string][] = [];
     for (let i = 0; i < L; i++) {
-      if (sequence.charAt(i) !== seq.charAt(i)) misMatches++;
+      if (sequence.charAt(i) !== seq.charAt(i)) misMatches.push([i, sequence.charAt(i), seq.charAt(i)]);
     }
-    if (misMatches < bestScore) {
+    if (bestScore === null || (misMatches.length < bestScore.length)) {
       bestCandidate = n;
       bestScore = misMatches;
     }
   });
-
   let config: RefSeqConfig | RefSeqConfigWithSegment | null = null;
-  if (bestCandidate !== UNSET) {
+  if (bestScore !== null) {
+    bestScore = bestScore as [number, string, string][];
     config = candidates[bestCandidate];
-    console.log(`best candidate has ${bestScore} mismatched nucleotides`, config);
+    console.log(`best candidate has ${bestScore.length} mismatched nucleotides`, config);
+    let L = bestScore.length;
+    if (L > 10) {
+      console.debug(`     showing first 10 of ${L}:`);
+      L = 10;
+    }
+    for (let i = 0; i < L; i++) {
+      const [index, c1, c2] = bestScore[i];
+      console.debug(`     ${index}: ${c1} != ${c2}`);
+    }
   }
-  return config;
+  const score = bestScore === null ? UNSET : bestScore.length;
+  return { config, score };
 };

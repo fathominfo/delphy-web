@@ -1,4 +1,4 @@
-import { noop, STAGES } from '../constants';
+import { noop, NUC_LOOKUP, STAGES } from '../constants';
 import { isBadSafari, setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
 import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';
@@ -152,9 +152,10 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
+function bindUpload(p:Pythia, sharedstate:SharedState,
+  callback : ()=>void, setConfig : configCallbackType) {
   pythia = p;
-  qc = sstate.qc;
+  qc = sharedstate.qc;
   runCallback = callback;
   configCallback = setConfig;
   uploadDiv.classList.remove('disabled');
@@ -163,7 +164,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   document.body.addEventListener("drop", (event:DragEvent)=>{
     setStage(STAGES.loading);
     uploadDiv.classList.add('loading');
-    handleFileUpload(event).then(()=>{
+    handleFileUpload(event, sharedstate).then(()=>{
       setStage(STAGES.parsing);
       uploadDiv.classList.remove('loading');
       uploadDiv.classList.add('parsing');
@@ -293,13 +294,13 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
             stageCallback, parseProgressCallback, initTreeProgressCallback,
             loadWarningCallback, runParams)
             .then(fetchMetadata);
-          checkForMatchingRefSeq(bytesJs);
+          checkForMatchingRefSeq(bytesJs, sharedstate);
         } else {
           pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, analysisProgressCallback,
             initTreeProgressCallback, loadWarningCallback, runParams)
             .then(fetchMetadata);
-          checkForMatchingRefSeq(bytesJs);
+          checkForMatchingRefSeq(bytesJs, sharedstate);
         }
       })
   });
@@ -326,7 +327,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         fileLabel.classList.add("disabled");
         fileInput.blur();
         uploadDiv.classList.add('loading');
-        checkFiles(fileInput.files);
+        checkFiles(fileInput.files, sharedstate);
       }
     });
   }
@@ -339,7 +340,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   });
   urlForm.addEventListener("submit", (event:SubmitEvent)=>{
     event.preventDefault();
-    loadNow(urlInput.value);
+    loadNow(urlInput.value, sharedstate);
     return false;
   });
   let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
@@ -358,7 +359,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     ref https://github.com/fathominfo/delphy-web/issues/52 [mark 260115]
     */
     if (!/&/.test(dataUrl)) {
-      loadNow(dataUrl);
+      loadNow(dataUrl, sharedstate);
     } else {
       window.location.href = window.location.origin;
     }
@@ -370,7 +371,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
 
 
-const loadNow = (url:string)=>{
+const loadNow = (url:string, sharedstate: SharedState)=>{
   setStage(STAGES.loading);
   hideOthers(urlDiv);
   urlDiv.classList.add("opening");
@@ -404,7 +405,7 @@ const loadNow = (url:string)=>{
         const fname = url.split('/').pop() || '';
         const asFile = new File([blob], fname);
         // blob.text().then(txt=>console.log(txt));
-        checkFiles([asFile]);
+        checkFiles([asFile], sharedstate);
       })
       .catch((err:TypeError)=>{
         console.log(err);
@@ -458,7 +459,7 @@ const handleDragLeave = ()=>{
   uploadDiv.classList.remove("dragging");
 }
 
-const handleFileUpload = (event: DragEvent)=>{
+const handleFileUpload = (event: DragEvent, sharedstate: SharedState)=>{
   hideOthers(fileLabel);
   return new Promise(()=>{
     if (event && event.dataTransfer) {
@@ -467,7 +468,7 @@ const handleFileUpload = (event: DragEvent)=>{
       uploadDiv.classList.add('loading');
       setStage(STAGES.loading);
       const files = event.dataTransfer.files;
-      checkFiles(files);
+      checkFiles(files, sharedstate);
     }
   });
 }
@@ -479,7 +480,7 @@ const displayParsingState = ()=>{
   uploadDiv.classList.add('parsing');
 }
 
-const checkFiles = (files: File[] | FileList)=>{
+const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
   if (files) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i],
@@ -498,7 +499,24 @@ const checkFiles = (files: File[] | FileList)=>{
               showSimpleProgress(action, t, p);
             };
             pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
-              .then(mccConfig=>configCallback(mccConfig as ConfigExport, fname));
+              .then(mccConfig=>{
+                configCallback(mccConfig as ConfigExport, fname);
+                // get the root sequence
+                const mccRef = pythia.getMcc();
+                const mcc = mccRef.getMcc();
+                const tree = mcc.getBaseTree(mcc.getMasterBaseTreeIndex());
+                const rootSequenceCoded: Uint8Array | string[] = tree.getRootSequence();
+                /*
+
+                Why can't I do the type conversion implicitly with
+                const rootSequence = rootSequenceCoded.map(c=>NUC_LOOKUP[c]);
+                */
+                let rootSequence = '';
+                rootSequenceCoded.forEach((c:number) => rootSequence += NUC_LOOKUP[c]);
+                mccRef.release();
+                sharedstate.bestRefSequenceGuess = findMatchingRefSequence(rootSequence);
+                console.log('delphy', sharedstate.bestRefSequenceGuess);
+              });
           } else {
             alert(`could not read file.`);
           }
@@ -513,7 +531,7 @@ const checkFiles = (files: File[] | FileList)=>{
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
-            checkForMatchingRefSeq(fastaBytesJs);
+            checkForMatchingRefSeq(fastaBytesJs, sharedstate);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -528,7 +546,7 @@ const checkFiles = (files: File[] | FileList)=>{
             pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
-            checkForMatchingRefSeq(mapleBytesJs);
+            checkForMatchingRefSeq(mapleBytesJs, sharedstate);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -549,7 +567,7 @@ const checkFiles = (files: File[] | FileList)=>{
                 pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
                   stageCallback, parseProgressCallback, analysisProgressCallback,
                   initTreeProgressCallback, loadWarningCallback, null);
-                checkForMatchingRefSeq(fastaBytesJs);
+                checkForMatchingRefSeq(fastaBytesJs, sharedstate);
               }
             });
             reader.readAsArrayBuffer(file);
@@ -569,7 +587,7 @@ const checkFiles = (files: File[] | FileList)=>{
 }
 
 
-function checkForMatchingRefSeq(fileBytes: ArrayBuffer) {
+function checkForMatchingRefSeq(fileBytes: ArrayBuffer, sharedstate: SharedState) {
   /* grab the first fasta */
   let header = '';
   let seq = '';
@@ -605,8 +623,8 @@ function checkForMatchingRefSeq(fileBytes: ArrayBuffer) {
     }
   }
 
-  const genConf = findMatchingRefSequence(seq);
-  console.log(header, genConf);
+  sharedstate.bestRefSequenceGuess = findMatchingRefSequence(seq);
+  console.log(header, sharedstate.bestRefSequenceGuess);
 }
 
 
