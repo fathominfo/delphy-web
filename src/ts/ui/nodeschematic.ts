@@ -108,17 +108,25 @@ export class SchematicNodeDisplay {
     this.children.push(desc);
   }
 
-  position(width: number, height: number, ySpacing: number) {
-    const pct = 0.1 + this.treeNode.xFactor * 0.5;
-    this.xPos = MARGIN.left + pct * width;
+  position(width: number, height: number, xSpacing: number, ySpacing: number, labelWidth = 0) {
+    // const pct = 0.1 + this.treeNode.xFactor * 0.5;
+    // this.xPos = MARGIN.left + pct * width;
+
+    this.xPos = MARGIN.left + 1 + (this.parent?.xPos ?? 0) + labelWidth / 4;
     this.yPos = this.tipPlacement * ySpacing + height / 2;
+
     const elements = [this.nameLabel];
+
     if (!this.treeNode.node.isRoot) {
       elements.push(this.mutLabel);
       elements.push(this.connector);
     }
-    elements.forEach(el=>{
-      el.setAttribute("transform", `translate(${ this.xPos }, ${ this.yPos })`)
+
+    elements.forEach(el => {
+      el.setAttribute(
+        "transform",
+        `translate(${this.xPos}, ${this.yPos})`
+      );
     });
   }
 
@@ -156,21 +164,32 @@ export class SchematicNodeDisplay {
       textNode.textContent = labelText;
       textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2 + TEXT_PADDING}`);
       textNode.setAttribute("y", `0`);
-    } else if(position==="top"){ // top
+    } else if (position === "top") {
       const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
       textNode.textContent = labelText;
-      textNode.setAttribute("x", `${-(labelText.length / 2)}`);
+      textNode.setAttribute("x", `${-this.textLabelWidth / 2}`);
+      textNode.setAttribute("y", `${baseY}`);
+    } else if (position === "bottom") {
+      const baseY = this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING;
+      textNode.textContent = labelText;
+      textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
+      textNode.setAttribute("y", `${baseY}`);
+    } else { // "none"
+      // return;
+      const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
+      textNode.textContent = labelText;
+      textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
       textNode.setAttribute("y", `${baseY}`);
     }
 
-    const bbox = textNode.getBBox();
-    const pad = { x: 2, y: 2 };
-    const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
-    bgRect.style.display = "";
-    bgRect.setAttribute("x", `${bbox.x - pad.x}`);
-    bgRect.setAttribute("y", `${bbox.y - pad.y}`);
-    bgRect.setAttribute("width", `${bbox.width + pad.x * 2}`);
-    bgRect.setAttribute("height", `${bbox.height + pad.y * 2}`);
+    // const bbox = textNode.getBBox();
+    // const pad = { x: 2, y: 2 };
+    // const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
+    // // bgRect.style.display = "";
+    // bgRect.setAttribute("x", `${bbox.x - pad.x}`);
+    // bgRect.setAttribute("y", `${bbox.y - pad.y}`);
+    // bgRect.setAttribute("width", `${bbox.width + pad.x * 2}`);
+    // bgRect.setAttribute("height", `${bbox.height + pad.y * 2}`);
   }
 
   renderLabel(maxChildNodes: number, color = '', introLabelPos = "right") {
@@ -222,6 +241,7 @@ export class SchematicNodeDisplay {
     bgRect.style.display = "none";
 
     if (this.introduction) {
+      console.log(introLabelPos)
       this.renderIntroductionLabel(color, introLabelPos)
     }
   }
@@ -372,60 +392,127 @@ export class NodeSchematic {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
     this.container.innerHTML = '';
-    const { ySpacing, colorByMetadata, nodeMetadataColors } = this;
-    const introLabelPos = new Map<number, 'right' | 'top' | 'none'>();
-    const introLabelWidth = new Map<number, number>();
-
-    this.nodes.forEach(node => node.position(width, height, ySpacing));
-    this.nodes.forEach((node, index) => {
-      introLabelWidth.set(index, node.introduction ? this.getTextWidth(node.introduction.value, LABEL_FONTSIZE) : 0);
+    const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
+    this.nodes.forEach(node => {
+      const parentLabel = node.parent?.introduction?.value ?? "";
+      const currentLabel = node.introduction?.value ?? ""
+      node.position(width, height, xSpacing, ySpacing, this.getTextWidth(parentLabel + currentLabel, LABEL_FONTSIZE))
     });
 
-    const getLabelBounds = (node: SchematicNodeDisplay, index: number, side: 'right' | 'top' | 'none') => {
-      const w = introLabelWidth.get(index) ?? 0;
-      const h = LABEL_FONTSIZE;
-      if (side === 'right') return { x: node.xPos, y: node.yPos - h / 2, w, h };
-      else return { x: node.xPos - w / 2, y: node.yPos - h, w, h };
+    const introLabelPos = new Map<number, "right" | "top" | "bottom">();
+
+    type Bounds = {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
     };
 
-    const overlaps = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
-      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    const intersects = (a: Bounds, b: Bounds) => {
+      return !(
+        a.x + a.w < b.x ||
+        b.x + b.w < a.x ||
+        a.y + a.h < b.y ||
+        b.y + b.h < a.y
+      );
+    };
+
+    const getLabelBounds = (
+      node: SchematicNodeDisplay,
+      side: "right" | "top" | "bottom"
+    ): Bounds => {
+      const w = this.getTextWidth(node.introduction?.value ?? "", LABEL_FONTSIZE);
+
+      const h = LABEL_FONTSIZE;
+      const pad = 4;
+
+      switch (side) {
+      case "right":
+        return {
+          x: node.xPos + pad,
+          y: node.yPos - h / 2,
+          w,
+          h,
+        };
+
+      case "top":
+        return {
+          x: node.xPos - w / 2,
+          y: node.yPos - h - pad,
+          w,
+          h,
+        };
+
+      case "bottom":
+        return {
+          x: node.xPos - w / 2,
+          y: node.yPos + pad,
+          w,
+          h,
+        };
+      }
+    };
+
+    const nodeBounds = this.nodes.map(node => ({
+      node,
+      bounds: {
+        x: node.xPos ,
+        y: node.yPos,
+        w: 10,
+        h: 10,
+      },
+    }));
+
+    const placedLabels: Bounds[] = [];
 
     this.nodes.forEach((node, index) => {
       if (!node.introduction) return;
 
-      const hasNodeToRight = this.nodes.some(
-        a => a !== node && a.xPos > node.xPos && Math.abs(a.yPos - node.yPos) < 15
-      );
-      const side = hasNodeToRight ? 'top' : 'right';
-      const bounds = getLabelBounds(node, index, side);
+      const candidates: Array<"right" | "top" | "bottom"> = ["right", "top", "bottom"];
+      let chosen: "right" | "top" | "bottom" = "top";
 
-      // check against all already-placed labels (upstream nodes)
-      const isOverlapping = Array.from(introLabelPos.entries()).some(([prevIndex, prevSide]) => {
-        const prevNode = this.nodes[prevIndex];
-        if (!prevNode.introduction) return false;
-        const prevBounds = getLabelBounds(prevNode, prevIndex, prevSide);
-        return overlaps(bounds, prevBounds);
-      });
+      for (const side of candidates) {
+        chosen = side;
+        const bounds = getLabelBounds(node, side);
+        const overlapsLabel = placedLabels.some(existing => {
+          return intersects(bounds, existing)});
+        const overlapsNode = nodeBounds.some(other =>
+          other.node !== node &&
+          intersects(bounds, other.bounds)
+        );
 
-      if (!isOverlapping) introLabelPos.set(index, side);
-      else introLabelPos.set(index, "none")
+        if (!overlapsLabel && !overlapsNode) {
+          placedLabels.push(bounds);
+          break;
+        }
+      }
+      introLabelPos.set(index, chosen);
     });
 
     /*
-    we need to attach and measure the label before rendering the connectors
-    */
+        we need to attach and measure the label before rendering the connectors
+        */
     if (colorByMetadata) {
       this.nodes.forEach((display, i) => {
         const color: string = nodeMetadataColors[display.getIndex()];
-        display.renderLabel(this.maxChildNodes, color, introLabelPos.get(i));
+        // display.renderLabel(this.maxChildNodes, color, "top");//introLabelPos.get(i)
+        display.renderLabel(
+          this.maxChildNodes,
+          color,
+          introLabelPos.get(i) ?? "right"
+        );
       });
     } else {
-      this.nodes.forEach(display => display.renderLabel(this.maxChildNodes));
+      // this.nodes.forEach(display => display.renderLabel(this.maxChildNodes));
+      this.nodes.forEach(display => display.renderLabel(
+        this.maxChildNodes,
+        undefined,
+        introLabelPos.get(display.getIndex()) ?? "right")
+      );
     }
-    this.nodes.forEach(display=>display.renderConnector());
+    this.nodes.forEach(display => display.renderConnector());
     /* we want the labels to be above the connectors in the svg */
-    this.nodes.forEach(display=>display.reattachLabel());
+    this.nodes.forEach(display => display.reattachLabel());
     this.setHighlightNode();
   }
 
@@ -439,7 +526,7 @@ export class NodeSchematic {
     // ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING, this.ySpacing), MIN_NODE_Y_SPACING);
     xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING), MIN_NODE_X_SPACING);
     ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING), MIN_NODE_Y_SPACING);
-    this.xSpacing = xSpacing;
+    // this.xSpacing = xSpacing;
     this.ySpacing = ySpacing;
   }
 
@@ -461,16 +548,6 @@ export class NodeSchematic {
     this.colorByMetadata = colorByMetadata;
     this.nodeMetadataColors = nodeMetadataColors;
   }
-
-
-  // getXpos(nodeIndex: number): number {
-  //   const { minDate, maxDate, width } = this;
-  //   const availableWidth = width - MARGIN.left - MARGIN.right;
-  //   const t = this.nodeTimes[nodeIndex];
-  //   const pct = (t - minDate) / (maxDate - minDate);
-  //   const pctDrawOptimized = Math.max(0.1, (Math.min(0.8, pct)));
-  //   return MARGIN.left + pctDrawOptimized * availableWidth;
-  // }
 
   /*
   @param pairs: contains mutation data for each track that we will display.
