@@ -468,7 +468,7 @@ export class NodeSchematic {
     this.nodes.forEach((node, index) => {
       if (!node.introduction) return;
 
-      const candidates: Array<"right" | "top" | "bottom"> = ["right", "top", "bottom"];
+      const candidates: Array<"right" | "top" | "bottom"> = ["top", "right", "bottom"];
       let chosen: "right" | "top" | "bottom" = "top";
 
       for (const side of candidates) {
