@@ -112,7 +112,7 @@ export class SchematicNodeDisplay {
     // const pct = 0.1 + this.treeNode.xFactor * 0.5;
     // this.xPos = MARGIN.left + pct * width;
 
-    this.xPos = MARGIN.left + 1 + (this.parent?.xPos ?? 0) + labelWidth / 4;
+    this.xPos = MARGIN.left + (this.parent?.xPos ?? 0) + labelWidth;
     this.yPos = this.tipPlacement * ySpacing + height / 2;
 
     const elements = [this.nameLabel];
@@ -146,7 +146,7 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderIntroductionLabel(color = '', position = 'none') {
+  renderIntroductionLabel(color = '', position = 'top') {
     if (position === "none") return
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
@@ -167,17 +167,7 @@ export class SchematicNodeDisplay {
     } else if (position === "top") {
       const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
       textNode.textContent = labelText;
-      textNode.setAttribute("x", `${-this.textLabelWidth / 2}`);
-      textNode.setAttribute("y", `${baseY}`);
-    } else if (position === "bottom") {
-      const baseY = this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING;
-      textNode.textContent = labelText;
-      textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
-      textNode.setAttribute("y", `${baseY}`);
-    } else { // "none"
-      // return;
-      const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
-      textNode.textContent = labelText;
+      // textNode.setAttribute("x", `${-this.textLabelWidth / 2}`);
       textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
       textNode.setAttribute("y", `${baseY}`);
     }
@@ -241,7 +231,6 @@ export class SchematicNodeDisplay {
     bgRect.style.display = "none";
 
     if (this.introduction) {
-      console.log(introLabelPos)
       this.renderIntroductionLabel(color, introLabelPos)
     }
   }
@@ -395,100 +384,15 @@ export class NodeSchematic {
     const { xSpacing, ySpacing, colorByMetadata, nodeMetadataColors } = this;
     this.nodes.forEach(node => {
       const parentLabel = node.parent?.introduction?.value ?? "";
-      const currentLabel = node.introduction?.value ?? ""
-      node.position(width, height, xSpacing, ySpacing, this.getTextWidth(parentLabel + currentLabel, LABEL_FONTSIZE))
+      // const currentLabel = node.introduction?.value ?? ""
+      node.position(width, height, xSpacing, ySpacing, this.getTextWidth(parentLabel, LABEL_FONTSIZE))
     });
 
-    const introLabelPos = new Map<number, "right" | "top" | "bottom">();
-
-    type Bounds = {
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-    };
-
-    const intersects = (a: Bounds, b: Bounds) => {
-      return !(
-        a.x + a.w < b.x ||
-        b.x + b.w < a.x ||
-        a.y + a.h < b.y ||
-        b.y + b.h < a.y
-      );
-    };
-
-    const getLabelBounds = (
-      node: SchematicNodeDisplay,
-      side: "right" | "top" | "bottom"
-    ): Bounds => {
-      const w = this.getTextWidth(node.introduction?.value ?? "", LABEL_FONTSIZE);
-
-      const h = LABEL_FONTSIZE;
-      const pad = 4;
-
-      switch (side) {
-      case "right":
-        return {
-          x: node.xPos + pad,
-          y: node.yPos - h / 2,
-          w,
-          h,
-        };
-
-      case "top":
-        return {
-          x: node.xPos - w / 2,
-          y: node.yPos - h - pad,
-          w,
-          h,
-        };
-
-      case "bottom":
-        return {
-          x: node.xPos - w / 2,
-          y: node.yPos + pad,
-          w,
-          h,
-        };
-      }
-    };
-
-    const nodeBounds = this.nodes.map(node => ({
-      node,
-      bounds: {
-        x: node.xPos ,
-        y: node.yPos,
-        w: 10,
-        h: 10,
-      },
-    }));
-
-    const placedLabels: Bounds[] = [];
-
+    const introLabelPos = new Map<number, "right" | "top">();
     this.nodes.forEach((node, index) => {
       if (!node.introduction) return;
-
-      const candidates: Array<"right" | "top" | "bottom"> = ["right", "top", "bottom"];
-      let chosen: "right" | "top" | "bottom" = "top";
-
-      for (const side of candidates) {
-        chosen = side;
-        const bounds = getLabelBounds(node, side);
-        const overlapsLabel = placedLabels.some(existing => {
-          return intersects(bounds, existing)});
-        const overlapsNode = nodeBounds.some(other =>
-          other.node !== node &&
-          intersects(bounds, other.bounds)
-        );
-
-        if (!overlapsLabel && !overlapsNode) {
-          placedLabels.push(bounds);
-          break;
-        }
-      }
-      introLabelPos.set(index, chosen);
+      introLabelPos.set(index, node.children.length === 1 ? "top" : "right");
     });
-
     /*
         we need to attach and measure the label before rendering the connectors
         */
@@ -499,7 +403,7 @@ export class NodeSchematic {
         display.renderLabel(
           this.maxChildNodes,
           color,
-          introLabelPos.get(i) ?? "right"
+          introLabelPos.get(i)
         );
       });
     } else {
@@ -507,7 +411,7 @@ export class NodeSchematic {
       this.nodes.forEach(display => display.renderLabel(
         this.maxChildNodes,
         undefined,
-        introLabelPos.get(display.getIndex()) ?? "right")
+        introLabelPos.get(display.getIndex()))
       );
     }
     this.nodes.forEach(display => display.renderConnector());
