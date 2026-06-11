@@ -1,7 +1,8 @@
 import { NUC_LOOKUP } from "../constants";
 import { RealSeqLetter } from "../delphy/api";
 import { nfc, UNSET } from "../ui/common";
-import { Mutation, RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T } from "./delphy_api";
+import { Mutation, RealSeqLetter_A, RealSeqLetter_C,
+  RealSeqLetter_G, RealSeqLetter_T } from "./delphy_api";
 
 
 /*
@@ -210,13 +211,18 @@ export const getAAName = (letters:Uint8Array) : string => {
   return AMINO_ACIDS[i1][i2][i3];
 }
 
+/*
+shorter names are nice here
+We're taking advantage of the values of the
+RealSeqLetters, using them as indices
+in our arrays. As defined in `delphy_api`:
 
-// export const RealSeqLetter_A = 0;
-// export const RealSeqLetter_C = 1;
-// export const RealSeqLetter_G = 2;
-// export const RealSeqLetter_T = 3;
+  RealSeqLetter_A = 0
+  RealSeqLetter_C = 1
+  RealSeqLetter_G = 2
+  RealSeqLetter_T = 3
 
-/* shorter names are nice here */
+*/
 const A = RealSeqLetter_A;
 const C = RealSeqLetter_C;
 const G = RealSeqLetter_G;
@@ -232,77 +238,6 @@ for (let i = 0; i < 4; i++) {
     AMINO_ACIDS[i][j] = [];
   }
 }
-
-// AMINO_ACIDS[ A ][ A ][ A ] = 'lys'
-// AMINO_ACIDS[ A ][ A ][ C ] = 'asn'
-// AMINO_ACIDS[ A ][ A ][ G ] = 'lys'
-// AMINO_ACIDS[ A ][ A ][ T ] = 'asn'
-// AMINO_ACIDS[ A ][ C ][ A ] = 'thr'
-// AMINO_ACIDS[ A ][ C ][ C ] = 'thr'
-// AMINO_ACIDS[ A ][ C ][ G ] = 'thr'
-// AMINO_ACIDS[ A ][ C ][ T ] = 'thr'
-// AMINO_ACIDS[ A ][ G ][ A ] = 'arg'
-// AMINO_ACIDS[ A ][ G ][ C ] = 'ser'
-// AMINO_ACIDS[ A ][ G ][ G ] = 'arg'
-// AMINO_ACIDS[ A ][ G ][ T ] = 'ser'
-// AMINO_ACIDS[ A ][ T ][ A ] = 'ile'
-// AMINO_ACIDS[ A ][ T ][ C ] = 'ile'
-// AMINO_ACIDS[ A ][ T ][ G ] = 'met'
-// AMINO_ACIDS[ A ][ T ][ T ] = 'ile'
-
-// AMINO_ACIDS[ C ][ A ][ A ] = 'gln'
-// AMINO_ACIDS[ C ][ A ][ C ] = 'his'
-// AMINO_ACIDS[ C ][ A ][ G ] = 'gln'
-// AMINO_ACIDS[ C ][ A ][ T ] = 'his'
-// AMINO_ACIDS[ C ][ C ][ A ] = 'pro'
-// AMINO_ACIDS[ C ][ C ][ C ] = 'pro'
-// AMINO_ACIDS[ C ][ C ][ G ] = 'pro'
-// AMINO_ACIDS[ C ][ C ][ T ] = 'pro'
-// AMINO_ACIDS[ C ][ G ][ A ] = 'arg'
-// AMINO_ACIDS[ C ][ G ][ C ] = 'arg'
-// AMINO_ACIDS[ C ][ G ][ G ] = 'arg'
-// AMINO_ACIDS[ C ][ G ][ T ] = 'arg'
-// AMINO_ACIDS[ C ][ T ][ A ] = 'leu'
-// AMINO_ACIDS[ C ][ T ][ C ] = 'leu'
-// AMINO_ACIDS[ C ][ T ][ G ] = 'leu'
-// AMINO_ACIDS[ C ][ T ][ T ] = 'leu'
-
-// AMINO_ACIDS[ G ][ A ][ A ] = 'glu'
-// AMINO_ACIDS[ G ][ A ][ C ] = 'asp'
-// AMINO_ACIDS[ G ][ A ][ G ] = 'glu'
-// AMINO_ACIDS[ G ][ A ][ T ] = 'asp'
-// AMINO_ACIDS[ G ][ C ][ A ] = 'ala'
-// AMINO_ACIDS[ G ][ C ][ C ] = 'ala'
-// AMINO_ACIDS[ G ][ C ][ G ] = 'ala'
-// AMINO_ACIDS[ G ][ C ][ T ] = 'ala'
-// AMINO_ACIDS[ G ][ G ][ A ] = 'gly'
-// AMINO_ACIDS[ G ][ G ][ C ] = 'gly'
-// AMINO_ACIDS[ G ][ G ][ G ] = 'gly'
-// AMINO_ACIDS[ G ][ G ][ T ] = 'gly'
-// AMINO_ACIDS[ G ][ T ][ A ] = 'val'
-// AMINO_ACIDS[ G ][ T ][ C ] = 'val'
-// AMINO_ACIDS[ G ][ T ][ G ] = 'val'
-// AMINO_ACIDS[ G ][ T ][ T ] = 'val'
-
-// AMINO_ACIDS[ T ][ A ][ A ] = 'stop'
-// AMINO_ACIDS[ T ][ A ][ C ] = 'tyr'
-// AMINO_ACIDS[ T ][ A ][ G ] = 'stop'
-// AMINO_ACIDS[ T ][ A ][ T ] = 'tyr'
-// AMINO_ACIDS[ T ][ C ][ A ] = 'ser'
-// AMINO_ACIDS[ T ][ C ][ C ] = 'ser'
-// AMINO_ACIDS[ T ][ C ][ G ] = 'ser'
-// AMINO_ACIDS[ T ][ C ][ T ] = 'ser'
-// AMINO_ACIDS[ T ][ G ][ A ] = 'stop'
-// AMINO_ACIDS[ T ][ G ][ C ] = 'cys'
-// AMINO_ACIDS[ T ][ G ][ G ] = 'trp'
-// AMINO_ACIDS[ T ][ G ][ T ] = 'cys'
-// AMINO_ACIDS[ T ][ T ][ A ] = 'leu'
-// AMINO_ACIDS[ T ][ T ][ C ] = 'phe'
-// AMINO_ACIDS[ T ][ T ][ G ] = 'leu'
-// AMINO_ACIDS[ T ][ T ][ T ] = 'phe'
-
-// console.log(JSON.stringify(AMINO_ACIDS))
-
 
 const toIndex = (letter:string) : number => {
   let n = UNSET;
@@ -323,13 +258,13 @@ fetch("./assets/data/aa.tsv").then(req=>req.text()).then(tsv=>{
       const i1 = toIndex(codon.charAt(0));
       const i2 = toIndex(codon.charAt(1));
       const i3 = toIndex(codon.charAt(2));
-      console.log(codon, i1, i2, i3);
+      // console.log(codon, i1, i2, i3);
       AMINO_ACIDS[ i1 ][ i2 ][ i3 ] = letter;
       AA_ABBREV_LOOKUP[letter] = abbrev;
       AA_NAME_LOOKUP[letter] = name;
     }
   });
-  console.log(AMINO_ACIDS);
+  // console.log(AMINO_ACIDS);
 });
 
 fetch("./assets/data/reference_sequences.json").then(req=>req.json()).then(data=>{
