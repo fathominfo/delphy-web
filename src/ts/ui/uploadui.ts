@@ -293,11 +293,13 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
             stageCallback, parseProgressCallback, initTreeProgressCallback,
             loadWarningCallback, runParams)
             .then(fetchMetadata);
+          checkForMatchingRefSeq(bytesJs);
         } else {
           pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, analysisProgressCallback,
             initTreeProgressCallback, loadWarningCallback, runParams)
             .then(fetchMetadata);
+          checkForMatchingRefSeq(bytesJs);
         }
       })
   });
@@ -508,47 +510,10 @@ const checkFiles = (files: File[] | FileList)=>{
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
           if (fastaBytesJs) {
-            /* grab the first fasta */
-            let header = '';
-            let seq = '';
-            let c = '';
-            let inHeader = false;
-            let inSeq = false;
-            let complete = false;
-            const asUint8 = new Uint8Array(fastaBytesJs);
-            for (let i = 0; i < asUint8.byteLength && !complete; i++) {
-              c = String.fromCharCode(asUint8[i]).toUpperCase();
-              switch (c) {
-              case '>' : {
-                if (header === '') {
-                  inHeader = true;
-                } else {
-                  inSeq = false;
-                  complete = true;
-                }
-              }
-                break;
-              case('\n'): {
-                if (inHeader) {
-                  inHeader = false;
-                  inSeq = true;
-                }
-                break;
-              }
-              default: {
-                if (inSeq) seq += c;
-                else if (inHeader) header += c;
-                break;
-              }
-              }
-            }
-
-            const genConf = findMatchingRefSequence(seq);
-            console.log(header, genConf);
-
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
+            checkForMatchingRefSeq(fastaBytesJs);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -563,6 +528,7 @@ const checkFiles = (files: File[] | FileList)=>{
             pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
+            checkForMatchingRefSeq(mapleBytesJs);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -583,6 +549,7 @@ const checkFiles = (files: File[] | FileList)=>{
                 pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
                   stageCallback, parseProgressCallback, analysisProgressCallback,
                   initTreeProgressCallback, loadWarningCallback, null);
+                checkForMatchingRefSeq(fastaBytesJs);
               }
             });
             reader.readAsArrayBuffer(file);
@@ -599,6 +566,47 @@ const checkFiles = (files: File[] | FileList)=>{
       }
     }
   }
+}
+
+
+function checkForMatchingRefSeq(fileBytes: ArrayBuffer) {
+  /* grab the first fasta */
+  let header = '';
+  let seq = '';
+  let c = '';
+  let inHeader = false;
+  let inSeq = false;
+  let complete = false;
+  const asUint8 = new Uint8Array(fileBytes);
+  for (let i = 0; i < asUint8.byteLength && !complete; i++) {
+    c = String.fromCharCode(asUint8[i]).toUpperCase();
+    switch (c) {
+    case '>' : {
+      if (header === '') {
+        inHeader = true;
+      } else {
+        inSeq = false;
+        complete = true;
+      }
+    }
+      break;
+    case('\n'): {
+      if (inHeader) {
+        inHeader = false;
+        inSeq = true;
+      }
+      break;
+    }
+    default: {
+      if (inSeq) seq += c;
+      else if (inHeader) header += c;
+      break;
+    }
+    }
+  }
+
+  const genConf = findMatchingRefSequence(seq);
+  console.log(header, genConf);
 }
 
 

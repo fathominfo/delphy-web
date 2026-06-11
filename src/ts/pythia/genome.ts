@@ -37,15 +37,23 @@ type RefSeqConfig = {
   abbrev: string,
   name: string,
   accession: string,
-  ref_path: string,
+  sequence: string,
   gff_path: string
 };
 
+type RefSeqConfigWithSegment = {
+  taxon: number,
+  abbrev: string,
+  name: string,
+  accession: string,
+  sequence: string,
+  gff_path: string,
+  segment: string
+};
 
-type SeqLookup = {[_: string]: [accession: string, sequence: string] | SeqLookup };
 
-let refSeqs: {[_:string] : RefSeqConfig } = {};
-let seqLookup: SeqLookup = {};
+let refSeqs: {[_:string] : RefSeqConfig | RefSeqConfigWithSegment} = {};
+
 
 export enum Strand {
   FORWARD = 1,
@@ -324,42 +332,46 @@ fetch("./assets/data/aa.tsv").then(req=>req.text()).then(tsv=>{
   console.log(AMINO_ACIDS);
 });
 
-fetch("./assets/data/references.json").then(req=>req.json()).then(data=>{
+fetch("./assets/data/reference_sequences.json").then(req=>req.json()).then(data=>{
   refSeqs = {};
-  data.config.forEach((conf: RefSeqConfig)=>{
+  data.forEach((conf: RefSeqConfig | RefSeqConfigWithSegment)=>{
     refSeqs[conf.accession] = conf;
   });
-  seqLookup = data.sequences;
 });
 
-export const findMatchingRefSequence = (sequence: string) : RefSeqConfig | null => {
-  let store = seqLookup;
-  let i = 0;
-  let c = '';
-  let tmp: [accession: string, sequence: string] | SeqLookup;
-  let accession : string  | null = null;
-  while (accession === null && i < sequence.length) {
-    c = sequence.charAt(i);
-    if (store[c] === undefined) {
-      /* we don't have a matching sequence */
-      break;
-    } else {
-      tmp = store[c];
-      if (tmp instanceof Array) {
-        const [acc, seq] = tmp;
-        if (seq === sequence) {
-          /* we have a match! */
-          accession = acc;
-        }
-      } else {
-        store = tmp;
-        i++;
-      }
+export const findMatchingRefSequence = (sequence: string) : RefSeqConfig | RefSeqConfigWithSegment | null => {
+  const L = sequence.length;
+  const candidates = Object.values(refSeqs).filter((conf: RefSeqConfig | RefSeqConfigWithSegment)=>{
+    return conf.sequence.length === L;
+  });
+  /*
+
+
+  TODO:
+  this scoring system is completely naive, and does not account for
+  any shifting or deleting. It merely sums up mismatched letters at
+  the exact same positions.
+
+
+  */
+  let bestScore = Number.MAX_SAFE_INTEGER;
+  let bestCandidate = UNSET;
+  candidates.forEach((conf: RefSeqConfig | RefSeqConfigWithSegment, n: number)=>{
+    const seq = conf.sequence;
+    let misMatches = 0;
+    for (let i = 0; i < L; i++) {
+      if (sequence.charAt(i) !== seq.charAt(i)) misMatches++;
     }
-  }
-  let config: RefSeqConfig | null = null;
-  if (accession) {
-    config = refSeqs[accession] || null;
+    if (misMatches < bestScore) {
+      bestCandidate = n;
+      bestScore = misMatches;
+    }
+  });
+
+  let config: RefSeqConfig | RefSeqConfigWithSegment | null = null;
+  if (bestCandidate !== UNSET) {
+    config = candidates[bestCandidate];
+    console.log(`best candidate has ${bestScore} mismatched nucleotides`, config);
   }
   return config;
 };
