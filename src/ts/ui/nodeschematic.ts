@@ -172,7 +172,7 @@ export class SchematicNodeDisplay {
     } else if (position === "bottom") {
       const baseY = this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING;
       textNode.textContent = labelText;
-      textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
+      textNode.setAttribute("x", `${-this.textLabelWidth / 2}`);
       textNode.setAttribute("y", `${baseY}`);
     } else { // "none"
       // return;
