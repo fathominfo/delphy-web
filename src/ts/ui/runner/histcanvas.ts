@@ -625,7 +625,8 @@ export class HistCanvas extends TraceCanvas {
     */
     const minVal = edges[0];
     const maxVal = edges[edges.length-1] + binSize;
-    const distStep = (maxVal - minVal) / this.width * 3;
+    // const distStep = (maxVal - minVal) / this.width * 3;
+    const distStep = (displayMax - displayMin) / this.width;
     const probs: number[] = [];
     const values: number[] = [];
     const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
@@ -643,7 +644,7 @@ export class HistCanvas extends TraceCanvas {
           histoSize: ${histoSize}, N: ${N} binSize: ${binSize}`);
         return;
       }
-      for (let val = minVal; val <= maxVal; val+= distStep) {
+      for (let val = displayMin; val <= displayMax; val+= distStep) {
         const pdf = kde.pdf(val);
         const prob = step * pdf;
         probs.push(prob);
