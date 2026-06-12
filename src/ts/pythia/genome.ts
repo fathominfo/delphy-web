@@ -1,5 +1,6 @@
 import { NUC_LOOKUP } from "../constants";
 import { RealSeqLetter } from "../delphy/api";
+import { SharedState } from "../sharedstate";
 import { nfc, UNSET } from "../ui/common";
 import { Mutation, RealSeqLetter_A, RealSeqLetter_C,
   RealSeqLetter_G, RealSeqLetter_T } from "./delphy_api";
@@ -126,6 +127,7 @@ export class Genome {
   fileName = '';
   features: Feature[] = [];
   refSequence: Uint8Array = new Uint8Array;
+  // config: RefSeqConfig | RefSeqConfigWithSegment | null = null;
 
   constructor(fileName:string) {
     this.fileName = fileName;
@@ -333,3 +335,250 @@ export const findMatchingRefSequence = (sequence: string) : RefSequenceMatch => 
   const score = bestScore === null ? UNSET : bestScore.length;
   return { config, score };
 };
+
+/* classes that drive the display state of the genome data interface */
+const suggesting = "suggesting";
+const choosing = "choosing";
+const confirmed = "confirmed";
+
+export const initRefDiv = (div: HTMLDivElement, sharedState: SharedState)=>{
+  (div.querySelector(".reference--suggesting button") as HTMLButtonElement).addEventListener("click", ()=>{
+    openRefSelector(sharedState, suggesting).then(()=>setRefDivStatus(div, sharedState));
+  });
+  (div.querySelector(".reference--selected button") as HTMLButtonElement).addEventListener("click", ()=>{
+    openRefSelector(sharedState, confirmed).then(()=>setRefDivStatus(div, sharedState));
+  });
+  (div.querySelector(".reference--none button") as HTMLButtonElement).addEventListener("click", ()=>{
+    openRefSelector(sharedState, choosing).then(()=>setRefDivStatus(div, sharedState));
+  });
+};
+
+export const setRefDivStatus = (div: HTMLDivElement, sharedState: SharedState)=>{
+  const { genome, bestRefSequenceGuess } = sharedState;
+  if (genome) {
+    div.classList.add("selected");
+    div.classList.remove("suggesting");
+  } else if (bestRefSequenceGuess !== null && bestRefSequenceGuess.config !== null) {
+    div.classList.add("suggesting");
+    div.classList.remove("selected");
+    const name = bestRefSequenceGuess.config.name;
+    const label = div.querySelector(".reference--suggesting button") as HTMLElement;
+    label.textContent = name;
+  }
+};
+
+
+
+
+/*
+
+██╗███╗   ██╗████████╗███████╗██████╗ ███████╗ █████╗  ██████╗███████╗
+██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝
+██║██╔██╗ ██║   ██║   █████╗  ██████╔╝█████╗  ███████║██║     █████╗
+██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗██╔══╝  ██╔══██║██║     ██╔══╝
+██║██║ ╚████║   ██║   ███████╗██║  ██║██║     ██║  ██║╚██████╗███████╗
+╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝
+
+
+html elements and methods for the uploader
+
+*/
+
+
+const wrapper = document.querySelector("#reference-chooser-wrapper") as HTMLDivElement;
+const inner = wrapper.querySelector("#reference-chooser") as HTMLDivElement;
+const genomeConfigDisplay = inner.querySelector("#gff-load-result tbody") as HTMLElement;
+const genomeConfigRow = genomeConfigDisplay.querySelector("tr") as HTMLElement;
+genomeConfigRow.remove();
+
+const dismissButton = inner.querySelector(".dismiss") as HTMLButtonElement;
+const suggestingDiv = inner.querySelector("#reference-suggesting") as HTMLDivElement;
+const confirmButton = suggestingDiv.querySelector(`input[value="yes"]`) as HTMLButtonElement;
+const rejectButton = suggestingDiv.querySelector(`input[value="no"]`) as HTMLButtonElement;
+const selectingDiv = inner.querySelector("#reference-selecting") as HTMLDivElement;
+const uploadingDiv = inner.querySelector("#reference-uploading") as HTMLDivElement;
+const gffUpload = uploadingDiv.querySelector("#reference-gff") as HTMLInputElement;
+const gffUploadArea = gffUpload.querySelector("label") as HTMLLabelElement;
+const gffUploadInput = gffUpload.querySelector("input") as HTMLInputElement;
+const seqUpload = inner.querySelector("#reference-refseq") as HTMLDivElement;
+const seqUploadArea = seqUpload.querySelector("label") as HTMLLabelElement;
+const seqUploadInput = seqUpload.querySelector("input") as HTMLInputElement;
+
+
+
+
+const closeRefSelector = ()=>wrapper.classList.remove("active");
+const confirmSuggestion = (sharedState: SharedState) : Promise<void>=>{
+  const config: RefSeqConfig = sharedState.bestRefSequenceGuess?.config as RefSeqConfig;
+  const fullPath = `assets/data/${config.gff_path}`;
+  return new Promise(resolve=>{
+    fetch(fullPath).then(resp=>resp.text()).then(gff=>{
+      const genome = new Genome(config.accession).fromGff3(gff);
+      genome.initRefSequence(config.sequence);
+      sharedState.genome = genome;
+      resolve();
+    });
+  });
+};
+
+/*
+if delphy got the guess wrong,
+then offer choice to either
+choose the reference sequence from a list,
+or upload a gff file and a sequence
+*/
+const rejectSuggestion = ()=>{
+  inner.classList.add("choosing");
+  inner.classList.remove("suggesting");
+};
+
+let stagedGenome: Genome | null = null;
+const stagedSequence: string | null = null;
+
+const parseGenomeConfigFile = (file: File, sharedState: SharedState) : Promise<void>=>{
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    try {
+      reader.addEventListener("load", ()=>{
+        const text = reader.result as string;
+        stagedGenome = new Genome(file.name).fromGff3(text);
+        gffUpload.classList.remove("loading");
+        gffUpload.classList.remove("not-loaded");
+        (gffUpload.querySelector(".uploader-text") as HTMLElement).innerText = `${file.name}`;
+        setGenomeDisplay();
+        resolve();
+      });
+      reader.readAsText(file);
+    } catch (err) {
+      console.log(err);
+      alert("error loading genome configuration file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
+      reject();
+    }
+  });
+}
+
+
+/*
+showGenomeConfigLoading() : void {
+    (this.div.querySelector("#customize--genome") as HTMLElement).classList.add("loading");
+  }
+
+  endGenomeConfigLoading() : void {
+    const genomeLoader = this.div.querySelector("#customize--genome") as HTMLElement;
+    genomeLoader.classList.remove("loading");
+    if (this.stagedGenome) {
+      genomeLoader.classList.remove("not-loaded");
+      (genomeLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.stagedGenome.fileName}`;
+      this.setGenomeDisplay();
+    }
+  }
+
+  showRefSeqLoading() : void {
+    (this.div.querySelector("#customize--refseq") as HTMLElement).classList.add("loading");
+  }
+
+  endRefSeqLoading() : void {
+    const refSeqLoader = this.div.querySelector("#customize--refseq") as HTMLElement;
+    refSeqLoader.classList.remove("loading");
+    if (this.stagedRefSequence) {
+      refSeqLoader.classList.remove("not-loaded");
+      (refSeqLoader.querySelector(".uploader-text") as HTMLElement).innerText = this.stagedRefSequence;
+      if (this.stagedGenome) {
+        this.stagedGenome.initRefSequence(this.stagedRefSequence);
+      }
+    }
+  }
+
+*/
+
+const setGenomeDisplay = () : void =>{
+  if (stagedGenome && stagedGenome.features.length > 0) {
+    genomeConfigDisplay.innerHTML = '';
+    stagedGenome.features.forEach(feature=>{
+      const row = genomeConfigRow.cloneNode(true) as HTMLTableRowElement;
+      const cells = row.querySelectorAll("td");
+      cells[0].textContent = feature.featureType;
+      cells[1].textContent = feature.getReadableStart();
+      cells[2].textContent = feature.getReadableEnd();
+      cells[3].textContent = feature.getReadableStrand();
+      cells[4].textContent = feature.getReadablePhase();
+      cells[5].textContent = feature.name;
+      genomeConfigDisplay.appendChild(row);
+    });
+  }
+}
+
+
+
+rejectButton.addEventListener("click", rejectSuggestion);
+
+export const openRefSelector = (sharedState: SharedState, selectorState: string): Promise<void>=>{
+  const { genome, bestRefSequenceGuess } = sharedState;
+  [suggesting, choosing, confirmed].forEach(className=>inner.classList.toggle(className, className === selectorState));
+  if (bestRefSequenceGuess && bestRefSequenceGuess.config) {
+    const config = bestRefSequenceGuess.config as RefSeqConfigWithSegment;
+    const nameSpan = suggestingDiv.querySelector(".ncbi-name") as HTMLSpanElement;
+    const accSpan = suggestingDiv.querySelector(".ncbi-acc") as HTMLSpanElement;
+    const segmentSpan = suggestingDiv.querySelector(".segment") as HTMLSpanElement;
+    nameSpan.textContent = config.name;
+    accSpan.textContent = config.accession;
+    if (config.segment) {
+      segmentSpan.textContent = `segment ${config.segment}`;
+      segmentSpan.classList.remove("hidden");
+    } else {
+      segmentSpan.classList.add("hidden");
+    }
+    suggestingDiv.classList.remove("hidden");
+  } else {
+    suggestingDiv.classList.add("hidden");
+  }
+
+
+
+
+  wrapper.classList.add("active");
+  return new Promise(resolve=>{
+    const unbind = ()=>{
+      confirmButton.removeEventListener("click", confirmer);
+      dismissButton.removeEventListener("click", unbind);
+      gffUploadInput.addEventListener("change", handleGffFileUpload);
+      gffUploadArea.addEventListener("drop", handleGffFileDrag);
+      resolve();
+    };
+    const confirmer = ()=>{
+      confirmSuggestion(sharedState).then(()=>{
+        unbind();
+        closeRefSelector();
+      });
+    };
+    const handleGffFileUpload = () => {
+      const files = gffUpload.files;
+      if (files) {
+        gffUpload.classList.add("loading");
+        parseGenomeConfigFile(files[0], sharedState);
+      }
+    };
+    const handleGffFileDrag = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      gffUpload.classList.add("loading");
+      if (e.dataTransfer) {
+        const files = e.dataTransfer.files;
+        if (files) {
+          parseGenomeConfigFile(files[0], sharedState);
+        }
+      }
+    };
+
+
+    confirmButton.addEventListener("click", confirmer);
+    dismissButton.addEventListener("click", unbind);
+    gffUploadInput.addEventListener("change", handleGffFileUpload);
+    gffUploadArea.addEventListener("drop", handleGffFileDrag);
+  });
+
+};
+
+
+
+

@@ -299,6 +299,54 @@ header .option-set {
 
 
 
+.reference-sequence {
+
+  .reference--suggesting,
+  .reference--selected,
+  .reference--identified {
+    display: none;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  button {
+    color: inherit;
+    font-size: inherit;
+    flex-grow: 1;
+    line-height: calc(var(--unit) * 2);
+    border-width: var(--header-option-stroke-weight);
+    color: var(--header-option-text-static);
+    background-color: var(--header-option-fill-static);
+    border: var(--header-option-stroke-weight) solid var(--header-option-stroke-static);
+    transition: all var(--transition) ease-out;
+    padding-left: var(--header-option-padding-x);
+    padding-right: var(--header-option-padding-x);
+    &:hover {
+      color: var(--header-option-text-on);
+      background-color: var(--header-option-fill-on);
+      border-color: var(--header-option-stroke-on);
+    }
+  }
+
+  &.suggesting {
+    .reference--suggesting { display: block; }
+    .reference--none { display: none; }
+  }
+
+  &.selected {
+    .reference--selected { display: block; }
+    .reference--none { display: none; }
+  }
+
+  &.identified {
+    .reference--identified { display: block; }
+    .reference--unidentified { display: none; }
+  }
+
+}
 
 
 
