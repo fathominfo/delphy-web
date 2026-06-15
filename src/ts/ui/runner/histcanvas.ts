@@ -712,7 +712,19 @@ export class HistCanvas extends TraceCanvas {
         const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
         if (highlightD.toLowerCase().startsWith("m")) {
-          highlightD += `${x} ${y} ${x} ${histoHeight}`;
+          // highlightD += `${x} ${y} ${x} ${histoHeight}`;
+          const match = highlightD.match(/^M([-\d.]+)\s+([-\d.]+)/);
+          if (match) {
+            const firstX = Number(match[1]);
+
+            highlightD =
+              `M${firstX} ${histoHeight} ` + // start at bottom baseline
+              `L${firstX} ${match[2]} ${// up to first curve point
+                highlightD.slice(match[0].length)
+              } L${x} ${y}` +
+              ` L${x} ${histoHeight}` +
+              ` Z`;
+          }
         } else {
           highlightD = `M${x} ${y} L${x} ${histoHeight}`;
         }
