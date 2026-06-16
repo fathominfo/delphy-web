@@ -716,10 +716,11 @@ export class HistCanvas extends TraceCanvas {
           const match = highlightD.match(/^M([-\d.]+)\s+([-\d.]+)/);
           if (match) {
             const firstX = Number(match[1]);
+            const firstY = Number(match[2]);
 
             highlightD =
               `M${firstX} ${histoHeight} ` + // start at bottom baseline
-              `L${firstX} ${match[2]} ${// up to first curve point
+              `L${firstX} ${firstY} ${// up to first curve point
                 highlightD.slice(match[0].length)
               } L${x} ${y}` +
               ` L${x} ${histoHeight}` +
