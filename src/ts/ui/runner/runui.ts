@@ -264,8 +264,10 @@ export class RunUI extends UIScreen {
     this.runControl = document.querySelector("#run-control") as HTMLDivElement;
     this.runInput = this.runControl.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
-    this.treeCountText = document.querySelector("#run-trees") as HTMLSpanElement;
-    this.mccTreeCountText = document.querySelector("#run-mcc") as HTMLSpanElement;
+
+    this.treeCountText = document.querySelector("#total-tree-count") as HTMLSpanElement;
+    this.mccTreeCountText = document.querySelector("#sample-tree-count") as HTMLSpanElement;
+
     this.mccHeader = this.div.querySelector("#runner--mcc .header") as HTMLSpanElement;
     this.stepCountPluralText = document.querySelector("#run-steps .plural") as HTMLSpanElement;
     this.essWrapper = document.querySelector("#ess-wrapper") as HTMLDivElement;
@@ -940,11 +942,11 @@ export class RunUI extends UIScreen {
       const {stepCount, ess}  = this;
       // const {maxDate} = this.pythia;
       let treeCount = 0;
-      // let mccCount = 0;
+      let mccCount = 0;
       if (this.mccRef) {
         /* for safety, add extra ref while drawing */
         const drawRef = this.pythia.getMcc();
-        // const mcc = drawRef.getMcc();
+        const mcc = drawRef.getMcc();
         try {
           // this.mccTreeCanvas.draw();
           this.mccTreeCanvas.draw(this.mccMinDate.value, this.pythia.maxDate, this.mccTimelineIndices);
@@ -952,7 +954,7 @@ export class RunUI extends UIScreen {
           console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
         }
         treeCount = this.pythia.getBaseTreeCount();
-        // mccCount = mcc.getNumBaseTrees();
+        mccCount = mcc.getNumBaseTrees();
         drawRef.release();
         this.mccRef.release();
       } else {
@@ -960,8 +962,8 @@ export class RunUI extends UIScreen {
       }
       this.traceCanvases.filter(canvas=>canvas.isVisible).forEach(canvas=>canvas.draw());
       this.stepCountText.innerHTML = `${nfc(stepCount)}`;
-      // this.treeCountText.innerHTML = `${nfc(treeCount)}`;
-      // this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
+      this.treeCountText.innerHTML = `${nfc(treeCount)}`;
+      this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
       let stepCountPlural = 's';
       if (stepCount === 1) {
         stepCountPlural = '';
@@ -996,8 +998,8 @@ export class RunUI extends UIScreen {
       this.essMeter.setAttribute("data-stage", essClass);
       this.stepCountPluralText.innerHTML = stepCountPlural;
 
-      // const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
-      // treeCountPluralText.classList.toggle("hidden", treeCount === 1);
+      const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
+      treeCountPluralText.classList.toggle("hidden", treeCount === 1);
     }
   }
 
