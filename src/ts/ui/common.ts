@@ -714,6 +714,14 @@ export const darkenColor = (color: string, amount = 30): string => {
   return color;
 }
 
+export const truncateLabel = (label: string, maxLength: number): string => {
+  if (label.length > maxLength) {
+    label = label.split(/[-\s]/)[0];
+    if (label.length > maxLength) label = label.slice(0, 7);
+  }
+  return `${label}...`;
+}
+
 export type LISTENER_CALLBACK_TYPE = ()=>void;
 export type RANGE_CALLBACK_TYPE = (value: number)=>void;
 export type SET_PREVALENCE_CALLBACK_TYPE = (increment: boolean)=>void;

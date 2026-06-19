@@ -1,6 +1,6 @@
 import { UNSET } from "./common";
 import { IntroductionData } from "./select/coreselectdata";
-import { darkenColor } from "./common";
+import { darkenColor, truncateLabel } from "./common";
 import { HoverCallback, NodePair, NodeRelationType } from "./select/selectcommon";
 import { SchematicNode } from "./schematicdata";
 
@@ -34,7 +34,10 @@ const MAX_NODE_Y_SPACING = 40;
 const TEXT_LABEL_HEIGHT = 6;
 const TEXT_LABEL_MIN_WIDTH = 6;
 const LABEL_FONTSIZE = 10;
-const TEXT_PADDING = 5;
+const TEXT_PADDING = 7;
+const MAX_LABEL_CHAR = 10;
+
+type Bounds = { x: number; y: number; w: number; h: number; }
 export class SchematicNodeDisplay {
   treeNode: SchematicNode;
   xPos: number = UNSET;
@@ -109,9 +112,11 @@ export class SchematicNodeDisplay {
   }
 
   position(width: number, height: number, xSpacing: number, ySpacing: number, labelWidth = 0) {
-    // const pct = 0.1 + this.treeNode.xFactor * 0.5;
-    // this.xPos = MARGIN.left + pct * width;
-    this.xPos = MARGIN.left + 1 + (this.parent?.xPos ?? 0) + labelWidth / 3;
+    const pct = 0.1 + this.treeNode.xFactor * 0.5;
+    this.xPos = MARGIN.left + pct * width;
+
+    // positioning nodes based on label width
+    // this.xPos = MARGIN.left + 1 + (this.parent?.xPos ?? 0) + labelWidth / 3;
     this.yPos = this.tipPlacement * ySpacing + height / 2;
 
     const elements = [this.nameLabel];
@@ -145,56 +150,23 @@ export class SchematicNodeDisplay {
     }
   }
 
-  renderIntroductionLabel(color = '', position = 'none') {
-    if (position === "none") return
+  renderIntroductionLabel(color = '', position = "right") {
     const { nameLabel } = this;
     const textNode = nameLabel.querySelector("text") as SVGTextElement;
-    const labelText = this.introduction?.value ?? "";
-
-    // const MAX_LABEL_CHAR = 10;
-    // if (labelText.length > MAX_LABEL_CHAR) {
-    //   labelText = labelText.split(/[-\s]/)[0];
-    //   if (labelText.length > MAX_LABEL_CHAR) labelText = `${labelText.slice(0, 7)}...`;
-    // }
-
+    const labelText = truncateLabel(this.introduction?.value ?? "", MAX_LABEL_CHAR);
+    textNode.textContent = labelText;
     textNode.style.setProperty("fill", color, "important");
-
-    if (position === "right") {
-      textNode.textContent = labelText;
-      textNode.setAttribute("x", `${this.textLabelWidth * 2 + textNode.getComputedTextLength() / 2 + TEXT_PADDING}`);
-      textNode.setAttribute("y", `0`);
-    } else if (position === "top") {
-      const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
-      textNode.textContent = labelText;
-      //left align
-      // textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
-      //centered
-      textNode.setAttribute("x", `${-this.textLabelWidth / 2}`);
-      textNode.setAttribute("y", `${baseY}`);
-    } else if (position === "bottom") {
-      const baseY = this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING;
-      textNode.textContent = labelText;
-      //left
-      // textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
-      //centered
-      textNode.setAttribute("x", `${-this.textLabelWidth / 2}`);
-      textNode.setAttribute("y", `${baseY}`);
-    } else { // "none"
-      // return;
-      const baseY = -(this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING);
-      textNode.textContent = labelText;
-      textNode.setAttribute("x", `${textNode.getComputedTextLength() / 2 - this.textLabelWidth}`);
-      textNode.setAttribute("y", `${baseY}`);
+    let labelX = 0, labelY = 0;
+    if (position === "top" || position === "bottom") {
+      labelX = -this.textLabelWidth / 2;
+      labelY = this.textLabelHeight * 2 + LABEL_FONTSIZE / 2 + TEXT_PADDING;
+      if (position === "top") labelY *= -1;
+    } else { //"right"
+      labelX = this.textLabelWidth / 2 + textNode.getComputedTextLength() / 2 + TEXT_PADDING;
+      labelY = 0;
     }
-
-    // const bbox = textNode.getBBox();
-    // const pad = { x: 2, y: 2 };
-    // const bgRect = nameLabel.querySelector(".label-bg") as SVGRectElement;
-    // // bgRect.style.display = "";
-    // bgRect.setAttribute("x", `${bbox.x - pad.x}`);
-    // bgRect.setAttribute("y", `${bbox.y - pad.y}`);
-    // bgRect.setAttribute("width", `${bbox.width + pad.x * 2}`);
-    // bgRect.setAttribute("height", `${bbox.height + pad.y * 2}`);
+    textNode.setAttribute("x", `${labelX}`);
+    textNode.setAttribute("y", `${labelY}`);
   }
 
   renderLabel(maxChildNodes: number, color = '', introLabelPos = "right") {
@@ -246,7 +218,6 @@ export class SchematicNodeDisplay {
     bgRect.style.display = "none";
 
     if (this.introduction) {
-      console.log(introLabelPos)
       this.renderIntroductionLabel(color, introLabelPos)
     }
   }
@@ -393,6 +364,38 @@ export class NodeSchematic {
     return width;
   }
 
+  getLabelBounds(node: SchematicNodeDisplay, side: "right" | "top" | "bottom"): Bounds {
+    const w = this.getTextWidth(node.introduction?.value ?? "", LABEL_FONTSIZE);
+    const h = LABEL_FONTSIZE;
+    const pad = 4;
+
+    switch (side) {
+    case "right":
+      return {
+        x: node.xPos + pad, y: node.yPos - h / 2, w, h,
+      };
+
+    case "top":
+      return {
+        x: node.xPos - w / 2, y: node.yPos - h - pad, w, h,
+      };
+
+    case "bottom":
+      return {
+        x: node.xPos - w / 2, y: node.yPos + pad, w, h,
+      };
+    }
+  }
+
+  intersects(a: Bounds, b: Bounds) {
+    return !(
+      a.x + a.w < b.x ||
+        b.x + b.w < a.x ||
+        a.y + a.h < b.y ||
+        b.y + b.h < a.y
+    );
+  }
+
   render() {
     const { width, height } = this;
     // console.log('render minimap', width, height, this.stepCount, this.tipCount);
@@ -401,80 +404,17 @@ export class NodeSchematic {
     this.nodes.forEach(node => {
       const parentLabel = node.parent?.introduction?.value ?? "";
       const currentLabel = node.introduction?.value ?? ""
-      node.position(width, height, xSpacing, ySpacing, this.getTextWidth(parentLabel + currentLabel, LABEL_FONTSIZE))
+      const w = this.getTextWidth(parentLabel + currentLabel, LABEL_FONTSIZE);
+      node.position(width, height, xSpacing, ySpacing, w)
     });
 
     const introLabelPos = new Map<number, "right" | "top" | "bottom">();
-
-    type Bounds = {
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-    };
-
-    const intersects = (a: Bounds, b: Bounds) => {
-      return !(
-        a.x + a.w < b.x ||
-        b.x + b.w < a.x ||
-        a.y + a.h < b.y ||
-        b.y + b.h < a.y
-      );
-    };
-
-    const getLabelBounds = (
-      node: SchematicNodeDisplay,
-      side: "right" | "top" | "bottom"
-    ): Bounds => {
-      const w = this.getTextWidth(node.introduction?.value ?? "", LABEL_FONTSIZE);
-
-      const h = LABEL_FONTSIZE;
-      const pad = 4;
-
-      switch (side) {
-      case "right":
-        return {
-          x: node.xPos + pad,
-          y: node.yPos - h / 2,
-          w,
-          h,
-        };
-
-      case "top":
-        return {
-          x: node.xPos - w / 2,
-          y: node.yPos - h - pad,
-          w,
-          h,
-        };
-
-      case "bottom":
-        return {
-          x: node.xPos - w / 2,
-          y: node.yPos + pad,
-          w,
-          h,
-        };
-      }
-    };
-
-    const nodeBounds = this.nodes.map(node => ({
-      node,
-      bounds: {
-        x: node.xPos ,
-        y: node.yPos,
-        w: 10,
-        h: 10,
-      },
-    }));
-
     const placedLabels: Bounds[] = [];
 
     this.nodes.forEach((node, index) => {
       if (!node.introduction) return;
-
       let positions: Array<"right" | "top" | "bottom">;
-      let chosenPos: "top" | "bottom" | "right";
+      let chosenPos: "top" | "right" | "bottom";
       if (node.children.length !== 1) {
         // if there are two or 0 children, try right -> top -> bottom
         positions = ["right", "top", "bottom"];
@@ -487,10 +427,9 @@ export class NodeSchematic {
 
       for (const side of positions) {
         chosenPos = side;
-        const bounds = getLabelBounds(node, side);
-        const overlapsLabel = placedLabels.some(existing => intersects(bounds, existing));
-        const overlapsNode = nodeBounds.some(other => other.node !== node && intersects(bounds, other.bounds));
-        if (!overlapsLabel && !overlapsNode) {
+        const bounds = this.getLabelBounds(node, side);
+        const overlapsLabel = placedLabels.some(existing => this.intersects(bounds, existing));
+        if (!overlapsLabel) {
           placedLabels.push(bounds);
           break;
         }
