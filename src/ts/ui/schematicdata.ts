@@ -160,7 +160,7 @@ export class SchematicDataBuilder {
     while (i < q.length) {
       const tn = q[i];
       const date = tree.getTimeOf(tn.node.index);
-      tn.xFactor = (date - minDate) / (maxDate - minDate);
+      tn.xFactor = maxDate > minDate ? (date - minDate) / (maxDate - minDate) : UNSET;
       if (!tn.parent) {
         tn.stepsFromRoot = 0;
       } else {
