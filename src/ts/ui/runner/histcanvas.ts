@@ -625,7 +625,7 @@ export class HistCanvas extends TraceCanvas {
     */
     const minVal = edges[0];
     const maxVal = edges[edges.length-1] + binSize;
-    // const distStep = (maxVal - minVal) / this.width * 3;
+    // const distStep = (maxVal - minVal) / this.width;
     const distStep = (displayMax - displayMin) / this.width;
     const probs: number[] = [];
     const values: number[] = [];
@@ -711,21 +711,24 @@ export class HistCanvas extends TraceCanvas {
         const ht = Math.max(0, prob / maxProb * histoHeight) || 0;
         const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
-        if (highlightD.toLowerCase().startsWith("m")) {
-          // highlightD += `${x} ${y} ${x} ${histoHeight}`;
-          const match = highlightD.match(/^M([-\d.]+)\s+([-\d.]+)/);
-          if (match) {
-            const firstX = Number(match[1]);
-            const firstY = Number(match[2]);
-
-            highlightD =
-              `M${firstX} ${histoHeight} ` + // start at bottom baseline
-              `L${firstX} ${firstY} ${// up to first curve point
-                highlightD.slice(match[0].length)
-              } L${x} ${y}` +
-              ` L${x} ${histoHeight}` +
-              ` Z`;
-          }
+        const match = highlightD.match(/^M([-\d.]+)\s/);
+        if (match) {
+          /*
+          The fill area differs from the probability curve in that
+          in needs to start from the bottom of the chart. In most cases,
+          the probability curve starts from the bottom, but we sometimes
+          see it starting higher. It probably shouldn't, but until we
+          fix that, we can at least fix the display.
+          Parse the path of the highlight area to get the first
+          coordinate pair, and then add a coordinate pair at the same
+          x position, but at the bottom of the chart.
+          */
+          const firstX = match[1];
+          highlightD =
+            `M${firstX} ${histoHeight} L${
+              /* remove the 'M' that was there before */
+              highlightD.slice(1)
+            } ${x} ${y} ${x} ${histoHeight}`;
         } else {
           highlightD = `M${x} ${y} L${x} ${histoHeight}`;
         }
