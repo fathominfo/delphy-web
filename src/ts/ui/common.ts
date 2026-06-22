@@ -718,8 +718,9 @@ export const truncateLabel = (label: string, maxLength: number): string => {
   if (label.length > maxLength) {
     label = label.split(/[-\s]/)[0];
     if (label.length > maxLength) label = label.slice(0, 7);
+    label = `${label}...`;
   }
-  return `${label}...`;
+  return label
 }
 
 export type LISTENER_CALLBACK_TYPE = ()=>void;

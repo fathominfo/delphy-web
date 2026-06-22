@@ -7,6 +7,12 @@ import { MultiNodeCallback } from "./selectcommon";
 const ITEM_SELECTOR = ".legend-item";
 const LEGEND = document.getElementById("select--metadata-legend") as HTMLDivElement;
 const CONTAINER = LEGEND.querySelector("#select--metadata-legend--list") as HTMLDivElement;
+
+const SCHEMATIC_METADATA_CONTAINER = LEGEND.querySelector("#schematic--metadata") as HTMLDivElement;
+const [SCHEMATIC_HEADER, MCC_HEADER] = Array.from(CONTAINER.querySelectorAll<HTMLDivElement>(".title"));
+const MCC_METADATA_CONTAINER = LEGEND.querySelector("#mcc--metadata")as HTMLDivElement;
+const LEGEND_DIVIDER = LEGEND.querySelector(".legend-divider") as HTMLDivElement;
+
 const TEMPLATE = CONTAINER.querySelector(ITEM_SELECTOR) as HTMLDivElement;
 TEMPLATE.remove();
 
@@ -22,6 +28,7 @@ export class MetadataLegend  {
   displayNeedsUpdate = false;
   valueNodes: NodesByValue = {};
   nodeValues: string[] = [];
+  schematicsMetadata: string[] = [];
 
   constructor(highlightCallback: MultiNodeCallback) {
     const itemClass = ITEM_SELECTOR.substring(1);
@@ -84,6 +91,11 @@ export class MetadataLegend  {
     this.displayNeedsUpdate = true;
   }
 
+  setCallouts(schematicMetadata: string[]) {
+    this.schematicsMetadata =  schematicMetadata;
+    this.displayNeedsUpdate = true;
+  }
+
   requestDraw() {
     if (this.displayNeedsUpdate) {
       this.displayNeedsUpdate = false;
@@ -91,21 +103,36 @@ export class MetadataLegend  {
     }
   }
 
+  addLegendItem(value: string, container: HTMLDivElement, colors: ColorDict) {
+    const mdColor: MetadataColorOption = colors[value];
+    if (mdColor.active) {
+      const item = TEMPLATE.cloneNode(true) as HTMLDivElement;
+      (item.querySelector(".swatch") as HTMLDivElement).style.backgroundColor = mdColor.color;
+      (item.querySelector(".name") as HTMLSpanElement).textContent = value;
+      item.setAttribute("data-value", value);
+      container.append(item);
+    }
+  }
 
   render() {
     const {showingMetadata, colors, sortedValues} = this;
     CONTAINER.innerHTML = '';
+    SCHEMATIC_METADATA_CONTAINER.innerHTML = '';
+    MCC_METADATA_CONTAINER.innerHTML = '';
+
     if (showingMetadata) {
+      CONTAINER.append(SCHEMATIC_HEADER, LEGEND_DIVIDER, MCC_HEADER);
+      SCHEMATIC_HEADER.after(SCHEMATIC_METADATA_CONTAINER);
+      MCC_HEADER.after(MCC_METADATA_CONTAINER);
+
+      this.schematicsMetadata.forEach(value => {
+        this.addLegendItem(value, SCHEMATIC_METADATA_CONTAINER, colors)
+      })
+
       /* get tip counts for metadata */
-      sortedValues.forEach(([value])=>{
-        const mdColor: MetadataColorOption = colors[value];
-        if (mdColor.active) {
-          const item = TEMPLATE.cloneNode(true) as HTMLDivElement;
-          (item.querySelector(".swatch") as HTMLDivElement).style.backgroundColor = mdColor.color;
-          (item.querySelector(".name") as HTMLSpanElement).textContent = value;
-          item.setAttribute("data-value", value);
-          CONTAINER.append(item);
-        }
+      sortedValues.forEach(([value]) => {
+        if (this.schematicsMetadata.includes(value)) return;
+        this.addLegendItem(value, MCC_METADATA_CONTAINER, colors)
       });
     }
     LEGEND.classList.toggle("hidden", !showingMetadata);

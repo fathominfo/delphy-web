@@ -35,7 +35,8 @@ const TEXT_LABEL_HEIGHT = 6;
 const TEXT_LABEL_MIN_WIDTH = 6;
 const LABEL_FONTSIZE = 10;
 const TEXT_PADDING = 7;
-const MAX_LABEL_CHAR = 10;
+let MAX_LABEL_CHAR = 10;
+
 
 type Bounds = { x: number; y: number; w: number; h: number; }
 export class SchematicNodeDisplay {
@@ -319,6 +320,15 @@ export class NodeSchematic {
     });
   }
 
+  getIntroMetadatFields(): string[] {
+    const fields = new Set(
+      this.nodes
+        .map(node => node.introduction?.value)
+        .filter((value): value is string => !!value)
+    );
+    const deduped = new Set(fields)
+    return [...deduped]
+  }
 
   resize() {
     const { offsetWidth, offsetHeight } = this.wrapper;
@@ -344,6 +354,7 @@ export class NodeSchematic {
   }
 
 
+  //TODO: MOVE THIS KARLIE
   getTextWidth(text: string, fontSize: number, fontFamily = 'sans-serif'): number {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.style.position = 'absolute';
@@ -471,6 +482,7 @@ export class NodeSchematic {
     // console.log(MIN_NODE_X_SPACING, MAX_NODE_X_SPACING, this.xSpacing, xSpacing );
     // xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING, this.xSpacing), MIN_NODE_X_SPACING);
     // ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING, this.ySpacing), MIN_NODE_Y_SPACING);
+    MAX_LABEL_CHAR = Math.ceil(2 * xSpacing / LABEL_FONTSIZE);
     xSpacing = Math.max(Math.min(xSpacing, MAX_NODE_X_SPACING), MIN_NODE_X_SPACING);
     ySpacing = Math.max(Math.min(ySpacing, MAX_NODE_Y_SPACING), MIN_NODE_Y_SPACING);
     // this.xSpacing = xSpacing;

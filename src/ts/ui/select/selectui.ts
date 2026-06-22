@@ -176,6 +176,7 @@ export class SelectUI extends MccUI {
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
     this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
     this.metadataLegend.setLegendData(mccConfig);
+    this.metadataLegend.setCallouts(this.nodeSchematic.getIntroMetadatFields())
   }
 
 
@@ -220,6 +221,7 @@ export class SelectUI extends MccUI {
       highlightNode = rootNode?.node as DisplayNode;
     }
     this.nodeDetails.setData(highlightNode);
+    this.metadataLegend.setCallouts(this.nodeSchematic.getIntroMetadatFields())
     this.metadataLegend.highlight(highlightNode.index);
     this.requestDraw();
   }
