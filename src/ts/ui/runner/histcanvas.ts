@@ -625,7 +625,8 @@ export class HistCanvas extends TraceCanvas {
     */
     const minVal = edges[0];
     const maxVal = edges[edges.length-1] + binSize;
-    const distStep = (maxVal - minVal) / this.width * 3;
+    // const distStep = (maxVal - minVal) / this.width;
+    const distStep = (displayMax - displayMin) / this.width;
     const probs: number[] = [];
     const values: number[] = [];
     const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
@@ -643,7 +644,7 @@ export class HistCanvas extends TraceCanvas {
           histoSize: ${histoSize}, N: ${N} binSize: ${binSize}`);
         return;
       }
-      for (let val = minVal; val <= maxVal; val+= distStep) {
+      for (let val = displayMin; val <= displayMax; val+= distStep) {
         const pdf = kde.pdf(val);
         const prob = step * pdf;
         probs.push(prob);
@@ -710,8 +711,24 @@ export class HistCanvas extends TraceCanvas {
         const ht = Math.max(0, prob / maxProb * histoHeight) || 0;
         const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
-        if (highlightD.toLowerCase().startsWith("m")) {
-          highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        const match = highlightD.match(/^M([-\d.]+)\s/);
+        if (match) {
+          /*
+          The fill area differs from the probability curve in that
+          in needs to start from the bottom of the chart. In most cases,
+          the probability curve starts from the bottom, but we sometimes
+          see it starting higher. It probably shouldn't, but until we
+          fix that, we can at least fix the display.
+          Parse the path of the highlight area to get the first
+          coordinate pair, and then add a coordinate pair at the same
+          x position, but at the bottom of the chart.
+          */
+          const firstX = match[1];
+          highlightD =
+            `M${firstX} ${histoHeight} L${
+              /* remove the 'M' that was there before */
+              highlightD.slice(1)
+            } ${x} ${y} ${x} ${histoHeight}`;
         } else {
           highlightD = `M${x} ${y} L${x} ${histoHeight}`;
         }

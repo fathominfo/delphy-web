@@ -1408,6 +1408,10 @@ export class Pythia {
     const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
     this.run = await this.instantiateRun(firstTree, runParams);
+    // reset the first params
+    this.resetHist();
+    this.run.setParamsFromFlatbuffer(pBuff);
+    this.sampleCurrentTree();
 
     for (let i = 1; i < treeCount; i++) {
       progressCallback(i, treeCount);
@@ -1418,7 +1422,6 @@ export class Pythia {
       tree.delete();
 
       this.run.setParamsFromFlatbuffer(pBuff);
-
       this.sampleCurrentTree();
 
       await yieldToMain();
