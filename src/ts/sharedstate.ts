@@ -69,6 +69,10 @@ export class SharedState {
     return this.tipIds.slice();
   }
 
+  getTipId(nodeIndex: number) : string {
+    return this.tipIds[nodeIndex];
+  }
+
   resetSelections() : void {
     this.nodeList.length = 0;
     this.mutationsNeedReloading = this.mutationList.length > 0;

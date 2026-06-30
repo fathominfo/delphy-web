@@ -7,7 +7,7 @@ import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict, RANDOM_SEED} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
-import {BackLink, MccNodeBackLinks} from './pythiacommon';
+import {BackLink, getMutationCounts, MccNodeBackLinks} from './pythiacommon';
 import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
@@ -178,6 +178,7 @@ export class Pythia {
   popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
+  nodeMutCountHist: number[][] = [];
   paramsHist: ArrayBuffer[] = [];
   treeHist: PhyloTree[] = [];
   kneeIndex = 0;
@@ -582,6 +583,7 @@ export class Pythia {
     this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
+    this.nodeMutCountHist = [];
     this.paramsHist = [];
     if (this.treeHist) {
       this.treeHist.forEach((tree:PhyloTree)=>tree.delete());
@@ -621,6 +623,7 @@ export class Pythia {
         this.paramsHist.pop();
         this.treeHist.pop();
         this.minDateHist.pop();
+        this.nodeMutCountHist.pop();
       }
       this.stepsHist.push(step);
       if (this.run.isMpoxHackEnabled()) {
@@ -657,6 +660,8 @@ export class Pythia {
       minDate = Math.min(minDate, tree.getTimeOf(i));
     }
     this.minDateHist.push(minDate);
+    const tipMutations = getMutationCounts(tree);
+    this.nodeMutCountHist.push(tipMutations);
   }
 
 

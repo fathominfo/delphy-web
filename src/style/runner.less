@@ -309,6 +309,18 @@
     height: calc(100% - 75px);
   }
 
+  .mcc_highlight {
+    top: 0;
+    background-color: white;
+    transition: opacity 0.15s;
+    opacity: 0;
+    &.highlighting {
+      opacity: 0.45;
+    }
+  }
+
+
+
   .model--trees--label {
     font-weight: 400;
   }
@@ -1003,6 +1015,160 @@
           }
         }
       }
+    }
+
+    &.scatter {
+
+      min-width: var(--indicator-pop-module-width);
+      max-width: var(--indicator-pop-module-width);
+
+
+      .subtitle-row {
+        display: flex;
+        color:  #5e5e5e;
+        margin: 0.5em 0;
+        .subtitle {
+          margin: 0 !important;
+          flex-grow: 1;
+        }
+        .y-axis-label {
+          margin: 0 !important;
+          flex-grow: 1;
+          text-align: right;
+          padding-right: 15px;
+          font-size: 11px;
+          dominant-baseline: middle;
+          font-variant-numeric: tabular-nums;
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+        }
+      }
+
+      .sup {
+        display: inline-block;
+        position: relative;
+        top: -5px;
+        font-size: 10px;
+      }
+
+      .displays {
+        padding: 0 0;
+        height: var(--trace-chart-width);
+      }
+
+      .chart {
+        margin-top: -5px;
+        // width: fit-content;
+        width: 100%;
+        height: 202px;
+        gap: 5px;
+
+        .feature {
+          height: 100%;
+          width: 100%;
+        }
+        // background-color: yellow;
+        .graph.display {
+          background-color: white;
+          // min-width: var(--pop-chart-graph-width);
+          // max-width: var(--pop-chart-graph-width);
+          width: 100%;
+          height: 100%;
+          /*
+          Move the chart over so that the trend lines
+          visually align with the charts above. We need
+          to do this because the svg element is a little wider
+          than the data inside it, because if we didn't,
+          the highlight dots would get clipped at either edge.
+          Related entries in this file are for
+            #runner--panel--modules {padding}
+          and
+            #runner--bottom {gap}
+          */
+          margin-left: calc(-1 * var(--pop-chart-highlight-dot-radius));
+        }
+
+        .displays {
+          height: 100%;
+          width: 100%;
+        }
+
+        .tick {
+          stroke-width: 0.5;
+          stroke: var(--chart-graph-run-trend-stroke);
+        }
+        .tick-label, .hover-count {
+          font-size: 11px;
+          dominant-baseline: middle;
+          font-variant-numeric: tabular-nums;
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+
+        }
+
+        .min-date, .max-date {
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+        }
+        .max-date {
+          text-anchor: end;
+        }
+
+        .min-date, .max-date, .tick-label {
+          opacity: 1;
+          transition: opacity 0.15s;
+          &.back {
+            opacity: 0;
+          }
+        }
+
+      }
+      .bg {
+        fill: #f0f0f0;
+      }
+      ellipse.dot {
+        fill: #5e5e5e;
+        stroke: none;
+        opacity: 1;
+        transition: opacity 0.15s, fill 0.15s;
+
+        &.back {
+          opacity: 0.25;
+          fill: #c1c1c1;
+        }
+        &.highlight {
+          fill: #094e77;
+          rx: 3;
+          ry: 3;
+        }
+      }
+
+      .hover-date, .hover-count {
+        fill: #094e77 !important;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .hover-date {
+        text-anchor: middle;
+      }
+      .hover-count {
+        dominant-baseline: middle;
+      }
+
+      .regression {
+        stroke: var(--chart-graph-run-trend-stroke);
+        transition: opacity 0.15s;
+        &.back {
+          opacity: 0.25;
+        }
+      }
+
+      svg.hovering {
+        .hover-date, .hover-count {
+          opacity: 1;
+        }
+      }
+
     }
   }
 
