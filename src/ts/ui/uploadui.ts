@@ -112,11 +112,27 @@ const warningsLabelAddendum = () => {
     // console.log(`Read ${numSeqsSoFar} sequences so far `
     //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
   },
-  initTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
-    const label = `Building initial tree${
-      warningsLabelAddendum()}`;
-    // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
-    showProgress(label, totalTips, tipsSoFar);
+  guideTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
+    showProgress(`Building guide tree${warningsLabelAddendum()}`, totalTips, tipsSoFar);
+  },
+  refinedTreeProgressCallback = (round:number, tipsSoFar:number, totalTips:number) => {
+    showProgress(`Refining guide tree (round ${round})${warningsLabelAddendum()}`, totalTips, tipsSoFar);
+  },
+  sprRefineProgressCallback = (attempt:number, maxAttempts:number, curMuts:number) => {
+    showProgress(`Optimizing tree: ${curMuts} mutations${warningsLabelAddendum()}`, maxAttempts, attempt);
+  },
+  // Keep in sync with the Rooting_substage enum in core/utree.h
+  rootingSubstageLabels: {[id: number]: string} = {
+    1: "bottom-up timing",
+    2: "top-down timing",
+    3: "root candidate evaluation"
+  },
+  rootingProgressCallback = (substageId:number, substage:number, numSubstages:number, nodes:number, total:number) => {
+    const what = rootingSubstageLabels[substageId] ?? "rooting and timing";
+    // Global fraction across all passes so the bar advances monotonically (scaled to `total`
+    // so showProgress renders it as a percentage).
+    const soFar = Math.round(((substage - 1) + (total > 0 ? nodes / total : 0)) / numSubstages * total);
+    showProgress(`Rooting and timing: ${what}${warningsLabelAddendum()}`, total, soFar);
   },
   loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     qc.parseWarning(seqId, warningCode, detail);
@@ -288,13 +304,17 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         qc.reset();
         if (fileToLoad.endsWith(".maple")) {
           pythia.initRunFromMaple(bytesJs, runCallback, errCallback,
-            stageCallback, parseProgressCallback, initTreeProgressCallback,
+            stageCallback, parseProgressCallback,
+            guideTreeProgressCallback, refinedTreeProgressCallback,
+            sprRefineProgressCallback, rootingProgressCallback,
             loadWarningCallback, runParams)
             .then(fetchMetadata);
         } else {
           pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, analysisProgressCallback,
-            initTreeProgressCallback, loadWarningCallback, runParams)
+            guideTreeProgressCallback, refinedTreeProgressCallback,
+            sprRefineProgressCallback, rootingProgressCallback,
+            loadWarningCallback, runParams)
             .then(fetchMetadata);
         }
       })
@@ -508,7 +528,9 @@ const checkFiles = (files: File[] | FileList)=>{
           if (fastaBytesJs) {
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
-              initTreeProgressCallback, loadWarningCallback, null);
+              guideTreeProgressCallback, refinedTreeProgressCallback,
+              sprRefineProgressCallback, rootingProgressCallback,
+              loadWarningCallback, null);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -522,7 +544,9 @@ const checkFiles = (files: File[] | FileList)=>{
           if (mapleBytesJs) {
             pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback,
-              initTreeProgressCallback, loadWarningCallback, null);
+              guideTreeProgressCallback, refinedTreeProgressCallback,
+              sprRefineProgressCallback, rootingProgressCallback,
+              loadWarningCallback, null);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -542,7 +566,9 @@ const checkFiles = (files: File[] | FileList)=>{
               if (fastaBytesJs) {
                 pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
                   stageCallback, parseProgressCallback, analysisProgressCallback,
-                  initTreeProgressCallback, loadWarningCallback, null);
+                  guideTreeProgressCallback, refinedTreeProgressCallback,
+                  sprRefineProgressCallback, rootingProgressCallback,
+                  loadWarningCallback, null);
               }
             });
             reader.readAsArrayBuffer(file);

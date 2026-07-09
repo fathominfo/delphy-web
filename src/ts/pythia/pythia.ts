@@ -230,7 +230,10 @@ export class Pythia {
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
-    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    guideTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    refinedTreeProgressCallback:(round:number, tipsSoFar:number, totalTips:number)=>void,
+    sprRefineProgressCallback:(attempt:number, maxAttempts:number, curMuts:number)=>void,
+    rootingProgressCallback:(substageId:number, substage:number, numSubstages:number, nodes:number, total:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void, // eslint-disable-line @typescript-eslint/no-explicit-any
     config: RunParamConfig | null
   ):Promise<void> { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -241,7 +244,10 @@ export class Pythia {
       stageCallback,
       parseProgressCallback,
       analysisProgressCallback,
-      initTreeProgressCallback,
+      guideTreeProgressCallback,
+      refinedTreeProgressCallback,
+      sprRefineProgressCallback,
+      rootingProgressCallback,
       warningCallback
     );
     return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback, config);
@@ -252,7 +258,10 @@ export class Pythia {
     errCallback:(msg:string)=>void,
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
-    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    guideTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    refinedTreeProgressCallback:(round:number, tipsSoFar:number, totalTips:number)=>void,
+    sprRefineProgressCallback:(attempt:number, maxAttempts:number, curMuts:number)=>void,
+    rootingProgressCallback:(substageId:number, substage:number, numSubstages:number, nodes:number, total:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void, // eslint-disable-line @typescript-eslint/no-explicit-any
     config: RunParamConfig | null
   ):Promise<void> {
@@ -262,7 +271,10 @@ export class Pythia {
       mapleBytesJs,
       stageCallback,
       parseProgressCallback,
-      initTreeProgressCallback,
+      guideTreeProgressCallback,
+      refinedTreeProgressCallback,
+      sprRefineProgressCallback,
+      rootingProgressCallback,
       warningCallback
     );
     return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback, config);
