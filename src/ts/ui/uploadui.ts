@@ -133,10 +133,25 @@ const warningsLabelAddendum = () => {
     // so showProgress renders it as a percentage).
     const soFar = Math.round(((substage - 1) + (total > 0 ? nodes / total : 0)) / numSubstages * total);
     showProgress(`Rooting and timing: ${what}${warningsLabelAddendum()}`, total, soFar);
+    if (substageId === 3 && nodes === total) {
+      showCatchallSpinner();
+    }
   },
   loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     qc.parseWarning(seqId, warningCode, detail);
+  },
+  showCatchallSpinner = ()=>{
+    activateProgressBar(true);
+    progressLabel.innerHTML = "Preparing run";
+    (document.querySelector("#uploader--progress-frame") as HTMLDivElement).classList.add("hidden");
+    (document.querySelector("#uploader--progress-spinner") as HTMLDivElement).classList.remove("hidden");
+  },
+  resetProgressIndicator = ()=>{
+    progressLabel.innerHTML = "";
+    (document.querySelector("#uploader--progress-frame") as HTMLDivElement).classList.remove("hidden");
+    (document.querySelector("#uploader--progress-spinner") as HTMLDivElement).classList.add("hidden");
   };
+
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{
@@ -302,6 +317,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
         qc.reset();
+        resetProgressIndicator();
         if (fileToLoad.endsWith(".maple")) {
           pythia.initRunFromMaple(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback,
@@ -525,6 +541,7 @@ const checkFiles = (files: File[] | FileList)=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
+          resetProgressIndicator();
           if (fastaBytesJs) {
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
@@ -541,6 +558,7 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.add('parsing');
           const mapleBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
+          resetProgressIndicator();
           if (mapleBytesJs) {
             pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback,
@@ -563,6 +581,7 @@ const checkFiles = (files: File[] | FileList)=>{
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
               qc.reset();
+              resetProgressIndicator();
               if (fastaBytesJs) {
                 pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
                   stageCallback, parseProgressCallback, analysisProgressCallback,

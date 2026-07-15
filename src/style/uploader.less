@@ -848,6 +848,7 @@
   border-radius: 4px;
   display: grid;
   opacity: 0;
+  // opacity: 1;
   .smoothly(opacity);
   .t15();
 
@@ -878,7 +879,9 @@
 #uploader--progress-container {
   width: 100%;
   display: none;
+  // display: block;
   padding: 0 30px 30px;
+  position: relative;
 }
 #uploader--progress-frame {
   width: 100%;
@@ -898,7 +901,33 @@
   margin: 10px auto;
   font-style: italic;
   color: fade(white, 50%);
-
+}
+#uploader--progress-spinner {
+  height: 36px;
+  width: 36px;
+  position: absolute;
+  right: 65px;
+  bottom: 8px;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0);
+    transform-origin: center;
+  }
+  100% {
+    transform: rotate(360deg);
+    transform-origin: center;
+  }
+}
+#uploader--progress-spun {
+  animation-duration: 1.0s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-name: spin;
+  stroke: fade(@del, 60%);
+  stroke-width: 2px;
+  fill: none;
 }
 
 
