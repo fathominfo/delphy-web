@@ -602,6 +602,8 @@ export class HistCanvas extends TraceCanvas {
     const { counts, edges, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
+    if (displayMin === displayMax) return;
+
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
     we need to calculate how much room the histogram takes.
@@ -647,8 +649,12 @@ export class HistCanvas extends TraceCanvas {
       for (let val = displayMin; val <= displayMax; val+= distStep) {
         const pdf = kde.pdf(val);
         const prob = step * pdf;
-        probs.push(prob);
-        values.push(val);
+        try {
+          probs.push(prob);
+          values.push(val);
+        } catch (err) {
+          console.warn(`error calculating probabilities (displayMin}: ${displayMin}, displayMax: ${displayMax}, distStep: ${distStep}`, err);
+        }
       }
     }
     // const probs =  bins.map((pdf, i)=>{
