@@ -6,7 +6,7 @@ import { DistributionSeries, TimeDistributionCanvas } from '../timedistributionc
 import { Mutation } from '../../pythia/delphy_api';
 import { HighlightableTimeDistributionCanvas, HoverCallback } from './highlightabletimedistributioncanvas';
 
-const MAX_MUTATIONS_PER_NODE = 10;
+// const MAX_MUTATIONS_PER_NODE = 10;
 
 const nodeComparisonTemplate = document.querySelector(".lineages--node-comparison") as HTMLDivElement;
 const nodeComparisonContainer = nodeComparisonTemplate?.parentNode as HTMLDivElement;
@@ -214,13 +214,13 @@ export class NodeComparison {
   }
 
   setMutations(isApobecRun: boolean):void {
-    let shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
+    const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
     const count = shownMutations.length,
       minDate = this.minDate,
       maxDate = this.maxDate;
-    if (shownMutations.length > MAX_MUTATIONS_PER_NODE) {
-      shownMutations = shownMutations.slice(0, MAX_MUTATIONS_PER_NODE);
-    }
+    // if (shownMutations.length > MAX_MUTATIONS_PER_NODE) {
+    //   shownMutations = shownMutations.slice(0, MAX_MUTATIONS_PER_NODE);
+    // }
     this.mutationTimelines = shownMutations.map((md:MutationDistribution)=>{
       const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, isApobecRun);
       mt.appendTo(this.mutationContainer);
