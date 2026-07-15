@@ -14,11 +14,21 @@ export class RecordQuality {
   invalidStateSequences: {[seqid: string]: InvalidStateWarning[] } = {};
   invalidGapSequences: {[seqid: string]: InvalidGapWarning[] } = {};
   invalidMutationSequences: {[seqid: string]: InvalidMutationWarning[] } = {};
+  /*
+  placeholder code for issue # 98
+  https://github.com/fathominfo/delphy-web/issues/98
+  */
+  missingDataSequences: {[seqid: string]: number } = {};
   other: {[seqId: string]: any[] } = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
   ambiguousSiteCount = 0;
   invalidStateCount = 0;
   invalidGapCount = 0;
   invalidMutationCount = 0;
+  /*
+  placeholder code for issue # 98
+  https://github.com/fathominfo/delphy-web/issues/98
+  */
+  missingDataCount = 0;
 
   reset() {
     this.noDateSequences = [];
@@ -34,6 +44,9 @@ export class RecordQuality {
 
     this.invalidMutationSequences = {};
     this.invalidMutationCount = 0;
+
+    this.missingDataSequences = {};
+    this.missingDataCount = 0;
 
     this.other = {};
   }
@@ -77,6 +90,17 @@ export class RecordQuality {
       this.invalidMutationCount++;
       console.warn(`WARNING (sequence '${seqId}') - Invalid mutation from ${detail.from} to ${detail.to} at site ${detail.site+1}`);
       break;
+    /*
+    placeholder code for issue # 98
+    https://github.com/fathominfo/delphy-web/issues/98
+    */
+    // case SequenceWarningCode.MissingData:
+    //   if (this.missingDataSequences[seqId] === undefined) {
+    //     this.missingDataSequences[seqId] = detail.missingCount;
+    //     this.invalidMutationCount++;
+    //   }
+    //   console.warn(`WARNING (sequence '${seqId}') - missing data at ${detail.missingCount} sites`);
+    //   break;
     default:
       if (this.other[seqId] === undefined) {
         this.other[seqId] = [];
