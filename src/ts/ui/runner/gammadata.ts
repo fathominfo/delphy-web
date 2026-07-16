@@ -176,6 +176,10 @@ export class GammaData extends TraceData {
     const hpdMinY = 1-(hpdMin-displayMin) / range;
     const hpdMaxY = 1-(hpdMax-displayMin) / range;
 
+    median = gammaToYears(median);
+    hpdMin = gammaToYears(hpdMin);
+    hpdMax = gammaToYears(hpdMax);
+
     const dateLabel = toFullDateString(dateIndex);
     this.highlightData = { median, medianY, hpdMin, hpdMinY, hpdMax, hpdMaxY,
       dateIndex, dateX, dateLabel };
