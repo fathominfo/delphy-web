@@ -36,6 +36,7 @@ export class GammaData extends TraceData {
   /* stores the median and 95% HPD for each knot */
   knotStats: number[][] = [];
   dates: number[] = [];
+  minDate: number = UNSET;
   isLogLinear = false;
   yearsMin: number = NO_VALUE;
   yearsMax: number = NO_VALUE;
@@ -50,10 +51,13 @@ export class GammaData extends TraceData {
     super(label, unit, getDataFnc);
   }
 
-  setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number):void {
-
+  setRangeData(data:number[][], dates: number[], isLogLinear: boolean,
+    kneeIndex: number, minDate: number
+  ) : void {
     this.rangeData = data;
     this.dates = dates;
+    this.minDate = minDate;
+    // this.minDate = this.dates[0];
     this.isLogLinear = isLogLinear;
     this.setKneeIndex(data.length, kneeIndex);
     this.postBurnin = this.savedKneeIndex > 0 ? data.slice(this.savedKneeIndex) : data;
@@ -130,9 +134,9 @@ export class GammaData extends TraceData {
   }
 
 
-  get minDate() : number {
-    return this.dates[0];
-  }
+  // get minDate() : number {
+  //   return this.dates[0];
+  // }
 
   get maxDate() : number {
     return this.dates[this.dates.length-1];

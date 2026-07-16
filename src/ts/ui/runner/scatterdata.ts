@@ -1,0 +1,93 @@
+import { toFullDateString } from '../../pythia/dates';
+import { nicenum, UNSET } from '../common';
+import { ScatterDataFunction } from './runcommon';
+import { TraceData } from './tracedata';
+
+
+
+export class ScatterData extends TraceData {
+
+  tipMutationCounts: number[] = [];
+  tipDates: number[] = [];
+  minDate: number = UNSET;
+  maxDate: number = UNSET;
+  validTips: number[][] = []; /* raw values of date, count */
+  tipCoords: number[][] = []; /* scaled 0-1 */
+  /* for the linear regression */
+  slope: number = UNSET;
+  intercept: number = UNSET;
+  /* https://en.wikipedia.org/wiki/Coefficient_of_determination  */
+  r2: number = UNSET;
+
+
+
+  constructor(label:string, unit='', getDataFnc: ScatterDataFunction) {
+    super(label, unit, getDataFnc);
+  }
+
+  setTipData(mutCountHist:number[][], nodeDateHist: number[][],
+    kneeIndex: number, minDate: number, maxDate: number):void
+  {
+    const treeCount = mutCountHist.length;
+    const validCount = mutCountHist.length - kneeIndex;
+    const nodeCount = mutCountHist[0].length;
+    const tipCount = (nodeCount + 1) / 2;
+    for (let i = 0; i < tipCount; i++) {
+      let sumCount = 0;
+      let sumDate = 0;
+      for (let t = kneeIndex; t < treeCount; t++) {
+        sumCount += mutCountHist[t][i];
+        sumDate += nodeDateHist[t][i];
+      }
+      this.tipMutationCounts[i] = sumCount / validCount;
+      this.tipDates[i] = sumDate / validCount;
+    }
+    const safeCounts = this.tipMutationCounts.filter(n=>Number.isFinite(n));
+    this.dataMin = 0; /* use a 0 baseline */
+    this.dataMax = nicenum(Math.ceil(Math.max(...safeCounts)));
+    this.minDate = minDate;
+    this.maxDate = maxDate;
+    this.validTips.length = 0;
+    this.tipCoords.length = 0;
+    const dateRange = this.maxDate - this.minDate;
+    this.tipMutationCounts.forEach((count, i)=>{
+      const date = this.tipDates[i];
+      if (Number.isFinite(count) && Number.isFinite(date)) {
+        const x = (date - this.minDate) / dateRange;
+        const y = count / this.dataMax;
+        this.validTips[i] = [date, count]
+        this.tipCoords[i] = [x, y];
+      }
+    });
+    this.setLinearRegression();
+  }
+
+
+
+  /* based on https://mathworld.wolfram.com/LeastSquaresFitting.html, lines 12 and 14 */
+  setLinearRegression(){
+    const L = this.tipCoords.length;
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumX2 = 0;
+    let sumY2 = 0;
+    this.tipCoords.forEach( ([date, count])=>{
+      sumX += date;
+      sumY += count;
+      sumXY += (date*count);
+      sumX2 += (date*date);
+      sumY2 += (count*count);
+    });
+    const xxy = L * sumXY - sumX * sumY;
+    const xx = L * sumX2 - sumX * sumX;
+    const yy = L * sumY2 - sumY * sumY;
+    this.slope = xxy / xx;
+    this.intercept = (sumY * sumX2 - sumX * sumXY) / xx;
+    const r = xxy / Math.sqrt(xx * yy);
+    this.r2 = r * r;
+  }
+
+
+}
+

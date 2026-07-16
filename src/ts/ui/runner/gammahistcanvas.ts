@@ -120,12 +120,12 @@ export class GammaHistCanvas extends TraceCanvas {
   //   (this.traceData as GammaData).setRangeData(data, dates, isLogLinear, kneeIndex, sampleIndex);
   // }
 
-  setRangeData(kneeIndex: number):void {
+  setRangeData(kneeIndex: number, minDate: number):void {
     const popModelHist : SkygridPopModel[] = (this.traceData.getDataFnc as GammaDataFunction)();
     const gamma = popModelHist.map(popModel=>popModel.gamma);
     const xHist = popModelHist[0].x;
     const isLogLinear = popModelHist[0].type === SkygridPopModelType.LogLinear;
-    (this.traceData as GammaData).setRangeData(gamma, xHist, isLogLinear, kneeIndex);
+    (this.traceData as GammaData).setRangeData(gamma, xHist, isLogLinear, kneeIndex, minDate);
   }
 
   handleTreeHighlight(treeIndex: number): void {

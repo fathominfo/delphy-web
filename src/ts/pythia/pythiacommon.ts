@@ -1,3 +1,7 @@
+import { Tree } from "../delphy/api";
+import { UNSET } from "../ui/common";
+import { PhyloTree } from "./delphy_api";
+
 export type BackLink = {nodeIndex: number, isExactMatch: boolean};
 
 export type MccNodeBackLinks = BackLink[][];
@@ -47,4 +51,27 @@ export class TipList {
     return this.tips.length;
   }
 
+}
+
+
+
+export const getMutationCounts = (tree: PhyloTree): number[] =>{
+  const mutCounts: number[] = [];
+  const root = tree.getRootIndex();
+  const q = [{nodeIndex: root, inheritedMutCount: 0}];
+  while (q.length > 0) {
+    const item = q.shift();
+    if (item !== undefined) {
+      const {nodeIndex, inheritedMutCount} = item;
+      const mutCount = inheritedMutCount + tree.getMutationsOf(nodeIndex).length;
+      mutCounts[nodeIndex] = mutCount;
+      const left = tree.getLeftChildIndexOf(nodeIndex);
+      if (left !== UNSET) {
+        const right = tree.getRightChildIndexOf(nodeIndex);
+        q.push({nodeIndex: left, inheritedMutCount: mutCount});
+        q.push({nodeIndex: right, inheritedMutCount: mutCount});
+      }
+    }
+  }
+  return mutCounts;
 }
