@@ -6,6 +6,7 @@ import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 import { parse_iso_date } from '../pythia/dates';
+import { UNSET } from './common';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -25,27 +26,72 @@ type DemoOption = {
   metadata_col : number
 };
 
+
+
+const uploadDiv = document.querySelector("#uploader") as HTMLDivElement;
+const fileStepContainer = uploadDiv.querySelector("#uploader--data-file") as HTMLDivElement;
+const fileStepTemplate = fileStepContainer?.querySelector(".uploader--data-step") as HTMLDivElement;
+fileStepTemplate.remove();
+
+class ProgressStep {
+  container: HTMLDivElement;
+  checkBox: HTMLSpanElement;
+  bar: HTMLDivElement;
+  label: HTMLSpanElement;
+  spinner: HTMLDivElement;
+  spinning: boolean;
+  unit: string;
+  total = UNSET;
+
+  constructor(name: string, unit: string, spinning=false) {
+    this.container = fileStepTemplate.cloneNode(true) as HTMLDivElement;
+    (this.container.querySelector(".uploader--data-step-name") as HTMLSpanElement).textContent = name;
+    this.checkBox = this.container.querySelector(".uploader--data-step-checked") as HTMLSpanElement;
+    this.bar = this.container.querySelector(".uploader--progress") as HTMLDivElement;
+    this.label = this.container.querySelector(".uploader--data-step-label") as HTMLSpanElement;
+    this.spinner = this.container.querySelector(".uploader--progress-spinner") as HTMLDivElement;
+    this.unit = unit;
+    this.spinning = spinning;
+    fileStepContainer.append(this.container);
+  }
+
+
+  start(total: number) {
+    this.total = total;
+    if (this.spinning) { this.spinner.classList.remove("hidden");}
+    else { this.bar.classList.remove("hidden");}
+  }
+
+  update(soFar: number) {
+    const label = `${soFar} / ${this.total} ${this.unit}`;
+    this.label.textContent = label;
+    if (soFar === 0) {
+      this.bar.classList.add("hidden");
+      this.spinner.classList.add("hidden");
+    } else if (soFar === this.total) {
+      this.bar.classList.add("hidden");
+      this.spinner.classList.add("hidden");
+      this.checkBox.classList.remove("hidden");
+    } else {
+      const pct = 100 * soFar / this.total;
+      progressBar.style.width = `${pct}%`;
+      progressLabel.innerHTML = label;
+    }
+  }
+}
+
+
 let pythia : Pythia;
 let qc: RecordQuality;
 
-const showFormatHints = ()=>{
-  info.classList.remove("hidden");
-}
-setShowFormat(showFormatHints);
-
-const maybeUploadDiv = document.querySelector("#uploader");
-if (!maybeUploadDiv) {
-  throw new Error("could not find the uploader div in the html");
-}
-const uploadDiv = maybeUploadDiv as HTMLDivElement;
-const demoDiv = uploadDiv.querySelector("#uploader--demo") as HTMLInputElement;
+// const demoDiv = uploadDiv.querySelector("#uploader--demo") as HTMLInputElement;
 const fileLabel = uploadDiv.querySelector("#uploader--file-input--label") as HTMLLabelElement;
 const urlDiv = uploadDiv.querySelector("#uploader--url-message") as HTMLDivElement;
 
 /* show a progress bar when possible */
-const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
-const progressBar = document.querySelector("#uploader--progress") as HTMLDivElement;
-const progressLabel = document.querySelector("#uploader--progress-label") as HTMLDivElement;
+const statusContainer = uploadDiv.querySelector("#uploader--status") as HTMLDivElement;
+const progressBar = uploadDiv.querySelector(".uploader--progress") as HTMLDivElement;
+const progressLabel = uploadDiv.querySelector(".uploader--progress-label") as HTMLDivElement;
 const showProgress = (label:string, total: number, soFar: number)=>{
   if (soFar === 0 || soFar === total) {
     activateProgressBar(false);
@@ -62,10 +108,13 @@ const showSimpleProgress = (unit: string, total: number, soFar: number)=>{
 };
 const activateProgressBar = (showit=true)=>{
   statusContainer.classList.toggle("progressing", showit);
-}
+};
+
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
+
+
 
 
 const warningsLabelAddendum = () => {
@@ -143,13 +192,13 @@ const warningsLabelAddendum = () => {
   showCatchallSpinner = ()=>{
     activateProgressBar(true);
     progressLabel.innerHTML = "Preparing run";
-    (document.querySelector("#uploader--progress-frame") as HTMLDivElement).classList.add("hidden");
-    (document.querySelector("#uploader--progress-spinner") as HTMLDivElement).classList.remove("hidden");
+    (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.add("hidden");
+    (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.remove("hidden");
   },
   resetProgressIndicator = ()=>{
     progressLabel.innerHTML = "";
-    (document.querySelector("#uploader--progress-frame") as HTMLDivElement).classList.remove("hidden");
-    (document.querySelector("#uploader--progress-spinner") as HTMLDivElement).classList.add("hidden");
+    (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.remove("hidden");
+    (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.add("hidden");
   };
 
 const errCallback = (msg:string)=>{
@@ -180,6 +229,13 @@ window.addEventListener("keydown", e => {
     }
   }
 });
+
+
+const showFormatHints = ()=>{
+  info.classList.remove("hidden");
+}
+setShowFormat(showFormatHints);
+
 
 
 function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
@@ -288,7 +344,8 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
-    hideOthers(demoDiv);
+    hideEntryPoints();
+    initFileUpload();
     uploadDiv.classList.add('loading');
     let fetchMetadata = noop;
     if (fileData.metadata_col >= 0) {
@@ -353,7 +410,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     fileInput?.addEventListener("change", ()=>{
       if (fileInput.files) {
         setStage(STAGES.loading);
-        hideOthers(fileLabel);
+        hideEntryPoints();
         fileLabel.classList.add("opening");
         fileLabel.classList.add("disabled");
         fileInput.blur();
@@ -404,7 +461,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
 const loadNow = (url:string)=>{
   setStage(STAGES.loading);
-  hideOthers(urlDiv);
+  hideEntryPoints();
   urlDiv.classList.add("opening");
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
@@ -491,7 +548,8 @@ const handleDragLeave = ()=>{
 }
 
 const handleFileUpload = (event: DragEvent)=>{
-  hideOthers(fileLabel);
+  hideEntryPoints();
+  initFileUpload();
   return new Promise(()=>{
     if (event && event.dataTransfer) {
       event.preventDefault();
@@ -503,6 +561,22 @@ const handleFileUpload = (event: DragEvent)=>{
     }
   });
 }
+
+
+const initFileUpload = ()=>{
+  const steps: ProgressStep[] = [];
+  steps.push(new ProgressStep("parsing", "trees parsed"));
+  steps.push(new ProgressStep("analyzing", ""));
+  steps.push(new ProgressStep("building guide tree", ""));
+  steps.push(new ProgressStep("refining guide tree", ""));
+  steps.push(new ProgressStep("optimizing tree", ""));
+  steps.push(new ProgressStep("rooting and timing: bottom-up", ""));
+  steps.push(new ProgressStep("rooting and timing: top-down", ""));
+  steps.push(new ProgressStep("rooting and timing: root candidate", ""));
+  steps.push(new ProgressStep("preparing delphy run", "", true));
+};
+
+
 
 
 const displayParsingState = ()=>{
@@ -607,30 +681,11 @@ const checkFiles = (files: File[] | FileList)=>{
 }
 
 
-function hideOthers(originEle: HTMLElement) {
-  const collapsingVertically = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
-  const collapsingHorizontally = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
-  requestAnimationFrame(()=>{
-    collapsingVertically.forEach(ele=>{
-      const ht = ele.offsetHeight;
-      ele.style.height = `${ht}px`;
-      ele.classList.add('collapsing');
-    });
-    collapsingHorizontally.forEach(ele=>{
-      const width = ele.offsetWidth;
-      ele.style.height = `${width}px`;
-      ele.classList.add('collapsing');
-    });
-    requestAnimationFrame(()=>{
-      collapsingVertically.forEach(ele=>ele.style.height = `0`);
-      collapsingHorizontally.forEach(ele=>ele.style.width = `0`);
-      if (originEle === demoDiv) {
-        const openers = document.querySelector("#uploader--file-url-pathways") as HTMLDivElement;
-        openers.classList.add('hidden');
-      }
-    });
-  });
+function hideEntryPoints() {
+  uploadDiv.classList.add("uploading");
 }
+
+
 
 
 export { bindUpload, hideUpload, loadNow };

@@ -37,7 +37,7 @@
 
       </section>
 
-      <section class="uploader--entry-points">
+      <section id="uploader--entry-points">
 
         <section id="uploader--file-url">
           <h2>Run your own data</h2>
@@ -150,20 +150,35 @@
           <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
           <p id="uploader--status-parse" class="uploader--status-message">Parsing…</p>
           <p id="uploader--status-error" class="uploader--status-message">Error!</p>
-          <div id="uploader--progress-container">
-            <div id="uploader--progress-label">0 / 0 trees loaded</div>
-            <div id="uploader--progress-frame">
-              <div id="uploader--progress"></div>
+        </div>
+
+
+
+      </section>
+
+      <section id="uploader--progress-container">
+        <p>Uploading <span id="uploader--file-name">file name</span></p>
+        <div id="uploader--dphy-file">
+          <div class="uploader--progress-label">0 / 0 trees loaded</div>
+          <div class="uploader--progress-frame">
+            <div class="uploader--progress"></div>
+          </div>
+        </div>
+        <div id="uploader--data-file">
+          <div class="uploader--data-step">
+            <span class="uploader--data-step-name"></span>
+            <span class="uploader--data-step-checked hidden">✅</span>
+            <div class="uploader--progress-frame hidden">
+              <div class="uploader--progress"></div>
             </div>
-            <div id="uploader--progress-spinner" class="hidden">
-              <svg id="uploader--progress-spun" class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+            <span class="uploader--data-step-label"></span>
+            <div class="uploader--progress-spinner hidden">
+              <svg class="uploader--progress-spun" class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
                 <path  d="m18 9 a9 9 0 1 0 9 9"></path>
               </svg>
             </div>
           </div>
         </div>
-
-
       </section>
 
     </div>

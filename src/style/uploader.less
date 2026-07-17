@@ -16,6 +16,15 @@
 #uploader {
   height: 100%;
   width: 100%;
+
+  &.uploading {
+    #uploader--entry-points {
+      display: none;
+    }
+    #uploader--progress-container {
+      display: block;
+    }
+  }
 }
 #uploader--content-div {
   display: flex;
@@ -164,7 +173,7 @@
 
 
 
-.uploader--entry-points {
+#uploader--entry-points {
   width: 100%;
   height: 100%;
   display: flex;
@@ -179,6 +188,17 @@
   }
 
 }
+
+#uploader--progress-container {
+  width: 100%;
+  height: 100%;
+  display: none;
+  padding: 0 30px 30px;
+  position: relative;
+
+}
+
+
 
 #uploader--file-url {
   margin-bottom: 40px;
@@ -866,7 +886,6 @@
   &.progressing {
     margin-bottom: 15px;
     opacity: 1;
-    #uploader--progress-container {display: block;}
     p {display: none;}
   }
 }
@@ -876,25 +895,18 @@
 }
 
 
-#uploader--progress-container {
-  width: 100%;
-  display: none;
-  // display: block;
-  padding: 0 30px 30px;
-  position: relative;
-}
-#uploader--progress-frame {
+.uploader--progress-frame {
   width: 100%;
   height: 25px;
   background-color: fade(@del, 20%);
   position: relative;
 }
-#uploader--progress {
+.uploader--progress {
   width: 50%;
   height: 100%;
   background-color: fade(@del, 60%);
 }
-#uploader--progress-label {
+.uploader--progress-label {
   padding: 5px 0px;
   text-align: right;
   width: 14em;
@@ -902,7 +914,7 @@
   font-style: italic;
   color: fade(white, 50%);
 }
-#uploader--progress-spinner {
+.uploader--progress-spinner {
   width: 100%;
   height: 25px;
   position: relative;
@@ -917,7 +929,7 @@
     transform-origin: center;
   }
 }
-#uploader--progress-spun {
+.uploader--progress-spun {
   animation-duration: 1.0s;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
