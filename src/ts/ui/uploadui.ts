@@ -256,9 +256,6 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       }
     };
 
-  const runCallback = ()=>console.log('meh');
-
-
   if (isMaple) {
     return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
       stageCallback, parseProgressCallback, analysisProgressCallback,
