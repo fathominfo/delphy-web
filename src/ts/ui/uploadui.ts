@@ -236,7 +236,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       if (substageId === 1) step = rootingBottomUpStep;
       else if (substageId === 2) step = rootingTopDownStep;
       else if (substageId === 3) step = rootingCandidateStep;
-      const label = `${nfc(nodes)} nodes${ nodes === 1 ? '' : 's' }`;
+      const label = `${nfc(nodes)} node${ nodes === 1 ? '' : 's' }`;
       const isComplete = step.updateBar(nodes, total);
       step.setLabel(label);
       // console.log(`Rooting and timing: ${substageId}`, step.name, nodes, total);
