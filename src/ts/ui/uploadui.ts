@@ -47,13 +47,14 @@ type DemoOption = {
 
 
 const uploadDiv = document.querySelector("#uploader") as HTMLDivElement;
+const dphyStepContainer = uploadDiv.querySelector("#uploader--dphy-file") as HTMLDivElement;
 const fileStepContainer = uploadDiv.querySelector("#uploader--data-file") as HTMLDivElement;
-const fileStepTemplate = fileStepContainer?.querySelector(".uploader--data-step") as HTMLDivElement;
-fileStepTemplate.remove();
+const stepTemplate = fileStepContainer?.querySelector(".uploader--data-step") as HTMLDivElement;
+stepTemplate.remove();
 
 class ProgressStep {
   name: string;
-  container: HTMLDivElement;
+  div: HTMLDivElement;
   checkBox: HTMLSpanElement;
   bar: HTMLDivElement;
   barFrame: HTMLDivElement;
@@ -65,22 +66,22 @@ class ProgressStep {
   // total = UNSET;
 
   // constructor(name: string, unit: string, unitSingular: string, spinning=false) {
-  constructor(name: string, spinning=false) {
-    this.container = fileStepTemplate.cloneNode(true) as HTMLDivElement;
+  constructor(container: HTMLDivElement, name: string, spinning=false) {
+    this.div = stepTemplate.cloneNode(true) as HTMLDivElement;
     this.name = name;
-    (this.container.querySelector(".uploader--data-step-name") as HTMLSpanElement).textContent = name;
-    this.checkBox = this.container.querySelector(".uploader--data-step-checked") as HTMLSpanElement;
-    this.barFrame = this.container.querySelector(".uploader--progress-frame") as HTMLDivElement;
-    this.bar = this.container.querySelector(".uploader--progress") as HTMLDivElement;
-    this.label = this.container.querySelector(".uploader--data-step-label") as HTMLSpanElement;
-    this.spinner = this.container.querySelector(".uploader--progress-spinner") as HTMLDivElement;
+    (this.div.querySelector(".uploader--data-step-name") as HTMLSpanElement).textContent = name;
+    this.checkBox = this.div.querySelector(".uploader--data-step-checked") as HTMLSpanElement;
+    this.barFrame = this.div.querySelector(".uploader--progress-frame") as HTMLDivElement;
+    this.bar = this.div.querySelector(".uploader--progress") as HTMLDivElement;
+    this.label = this.div.querySelector(".uploader--data-step-label") as HTMLSpanElement;
+    this.spinner = this.div.querySelector(".uploader--progress-spinner") as HTMLDivElement;
     // this.unit = unit;
     // this.unitSingular = unitSingular;
     this.spinning = spinning;
     if (spinning) {
       this.label.classList.add("hidden");
     }
-    fileStepContainer.append(this.container);
+    container.append(this.div);
   }
 
   show() {
@@ -118,8 +119,26 @@ class ProgressStep {
 
 
 
-const initDphyUpload = ()=>{
-  new ProgressStep("parsing");
+const initDphyUpload = (filePath: string, pythia : Pythia, jsBytes: ArrayBuffer)=>{
+  const fileName = filePath.split('/').pop() as string;
+  dphyStepContainer.classList.remove("hidden");
+  (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
+  dphyStepContainer.innerHTML = '';
+  const parsingStep = new ProgressStep(dphyStepContainer, "Parsing");
+  const preparingStep = new ProgressStep(dphyStepContainer, "Preparing delphy run", true);
+  parsingStep.show();
+  const parseProgressCallback = (trees: number, total: number) => {
+    const label = `${nfc(trees)} ${trees === 1 ? 'tree' : 'trees'  } loaded`;
+    const isComplete = parsingStep.updateBar(trees, total);
+    parsingStep.setLabel(label);
+    if (isComplete) {
+      parsingStep.complete();
+      preparingStep.show();
+    }
+  };
+  pythia.initRunFromSaveFile(jsBytes, runCallback, parseProgressCallback)
+    .then(mccConfig=>configCallback(mccConfig as ConfigExport));
+
 
 };
 
@@ -128,18 +147,19 @@ const initDphyUpload = ()=>{
 
 const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsBytes: ArrayBuffer): Promise<void>=>{
   const fileName = filePath.split('/').pop() as string;
+  fileStepContainer.classList.remove("hidden");
   (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
   fileStepContainer.innerHTML = '';
-  console.log('launching upload sequence')
-  const parsingStep = new ProgressStep("parsing");
-  const analyzingStep = new ProgressStep("analyzing");
-  const buildingStep = new ProgressStep("build guide tree");
-  const refiningStep = new ProgressStep("refine guide tree");
-  const optimizingStep = new ProgressStep("optimize tree");
-  const rootingBottomUpStep = new ProgressStep("rooting and timing: bottom-up");
-  const rootingTopDownStep = new ProgressStep("rooting and timing: top-down");
-  const rootingCandidateStep = new ProgressStep("rooting and timing: root candidate");
-  const preparingStep = new ProgressStep("preparing delphy run", true);
+  // console.log('launching upload sequence')
+  const parsingStep = new ProgressStep(fileStepContainer, "parsing");
+  const analyzingStep = new ProgressStep(fileStepContainer, "analyzing");
+  const buildingStep = new ProgressStep(fileStepContainer, "build guide tree");
+  const refiningStep = new ProgressStep(fileStepContainer, "refine guide tree");
+  const optimizingStep = new ProgressStep(fileStepContainer, "optimize tree");
+  const rootingBottomUpStep = new ProgressStep(fileStepContainer, "rooting and timing: bottom-up");
+  const rootingTopDownStep = new ProgressStep(fileStepContainer, "rooting and timing: top-down");
+  const rootingCandidateStep = new ProgressStep(fileStepContainer, "rooting and timing: root candidate");
+  const preparingStep = new ProgressStep(fileStepContainer, "preparing delphy run", true);
 
   const steps = [
     parsingStep,
@@ -197,11 +217,11 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       optimizingStep.setLabel(label);
     },
     // Keep in sync with the Rooting_substage enum in core/utree.h
-    rootingSubstageLabels: {[id: number]: string} = {
-      1: "bottom-up timing",
-      2: "top-down timing",
-      3: "root candidate evaluation"
-    },
+    // rootingSubstageLabels: {[id: number]: string} = {
+    //   1: "bottom-up timing",
+    //   2: "top-down timing",
+    //   3: "root candidate evaluation"
+    // },
     rootingProgressCallback = (substageId:number, substage:number, numSubstages:number, nodes:number, total:number) => {
       // const what = rootingSubstageLabels[substageId] ?? "rooting and timing";
       // Global fraction across all passes so the bar advances monotonically (scaled to `total`
@@ -229,18 +249,14 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
     }
 
 
-  const notRunning = ()=>{
-    console.log("not Running");
-  };
-
   if (isMaple) {
-    return pythia.initRunFromMaple(jsBytes, notRunning /*runCallback*/, errCallback,
+    return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
       stageCallback, parseProgressCallback, analysisProgressCallback,
       guideTreeProgressCallback, refinedTreeProgressCallback,
       sprRefineProgressCallback, rootingProgressCallback,
       loadWarningCallback, null);
   } else {
-    return pythia.initRunFromFasta(jsBytes, notRunning /*runCallback*/, errCallback,
+    return pythia.initRunFromFasta(jsBytes, runCallback, errCallback,
       stageCallback, parseProgressCallback, analysisProgressCallback,
       guideTreeProgressCallback, refinedTreeProgressCallback,
       sprRefineProgressCallback, rootingProgressCallback,
@@ -265,21 +281,6 @@ const urlDiv = uploadDiv.querySelector("#uploader--url-message") as HTMLDivEleme
 
 /* show a progress bar when possible */
 const statusContainer = uploadDiv.querySelector("#uploader--status") as HTMLDivElement;
-const progressBar = uploadDiv.querySelector(".uploader--progress") as HTMLDivElement;
-const progressLabel = uploadDiv.querySelector(".uploader--progress-label") as HTMLDivElement;
-const showSimpleProgress = (unit: string, total: number, soFar: number)=>{
-  const label = `${soFar} / ${total} ${unit}`;
-
-  if (soFar === 0 || soFar === total) {
-    statusContainer.classList.remove("progressing");
-  } else {
-    statusContainer.classList.add("progressing");
-    const pct = 100 * soFar / total;
-    progressBar.style.width = `${pct}%`;
-    progressLabel.innerHTML = label;
-  }
-
-};
 
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
@@ -318,18 +319,18 @@ const warningsLabelAddendum = () => {
   return result;
 };
 const loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    qc.parseWarning(seqId, warningCode, detail);
-  },
-  showCatchallSpinner = ()=>{
-    progressLabel.innerHTML = "Preparing run";
-    (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.add("hidden");
-    (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.remove("hidden");
-  },
-  resetProgressIndicator = ()=>{
-    progressLabel.innerHTML = "";
-    (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.remove("hidden");
-    (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.add("hidden");
-  };
+  qc.parseWarning(seqId, warningCode, detail);
+};
+  // showCatchallSpinner = ()=>{
+  //   progressLabel.innerHTML = "Preparing run";
+  //   (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.add("hidden");
+  //   (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.remove("hidden");
+  // },
+  // resetProgressIndicator = ()=>{
+  //   progressLabel.innerHTML = "";
+  //   (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.remove("hidden");
+  //   (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.add("hidden");
+  // };
 
 const errCallback = (msg:string)=>{
   console.log(msg);
@@ -503,7 +504,6 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         uploadDiv.classList.remove('loading');
         uploadDiv.classList.add('parsing');
         qc.reset();
-        resetProgressIndicator();
         if (fileToLoad.endsWith(".maple")) {
           initFileUpload(fileToLoad, pythia, true, bytesJs).then(fetchMetadata);
         } else {
@@ -698,14 +698,9 @@ const checkFiles = (files: File[] | FileList)=>{
         /* we are loading a saved run */
         reader.addEventListener('load', event=>{
           displayParsingState();
-          const bytesJs = event.target?.result;
+          const bytesJs = event.target?.result as ArrayBuffer;
           if (bytesJs) {
-            const progressCallback = (p:number, t:number)=>{
-              const action = `${p === 1 ? 'tree' : 'trees'  } loaded`;
-              showSimpleProgress(action, t, p);
-            };
-            pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
-              .then(mccConfig=>configCallback(mccConfig as ConfigExport));
+            initDphyUpload(fname, pythia, bytesJs);
           } else {
             alert(`could not read file.`);
           }
@@ -716,7 +711,6 @@ const checkFiles = (files: File[] | FileList)=>{
           displayParsingState();
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
-          resetProgressIndicator();
           if (fastaBytesJs) {
             initFileUpload(fname, pythia, false, fastaBytesJs);
           }
@@ -729,7 +723,6 @@ const checkFiles = (files: File[] | FileList)=>{
           uploadDiv.classList.add('parsing');
           const mapleBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
-          resetProgressIndicator();
           if (mapleBytesJs) {
             initFileUpload(fname, pythia, true, mapleBytesJs);
           }
@@ -748,7 +741,6 @@ const checkFiles = (files: File[] | FileList)=>{
             reader.addEventListener('load', event=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
               qc.reset();
-              resetProgressIndicator();
               if (fastaBytesJs) {
                 initFileUpload(fname, pythia, false, fastaBytesJs);
               }
