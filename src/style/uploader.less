@@ -186,7 +186,21 @@
     // color: @del;
     margin-bottom: 1em;
   }
+}
 
+
+.uploader--data-step {
+  display: flex;
+  gap: 1em;
+}
+
+.uploader--data-step-name {
+  width: 15em;
+}
+
+.uploader--data-step-label {
+  font-variant-numeric: tabular-nums;
+  width: 230px;
 }
 
 #uploader--progress-container {
@@ -195,8 +209,9 @@
   display: none;
   padding: 0 30px 30px;
   position: relative;
-
 }
+
+
 
 
 
@@ -276,6 +291,17 @@
   pointer-events: none;
   cursor: default;
 }
+
+
+
+
+// ██╗   ██╗██████╗ ██╗
+// ██║   ██║██╔══██╗██║
+// ██║   ██║██████╔╝██║
+// ██║   ██║██╔══██╗██║
+// ╚██████╔╝██║  ██║███████╗
+//  ╚═════╝ ╚═╝  ╚═╝╚══════╝
+
 
 
 #uploader--url-input {
@@ -896,13 +922,13 @@
 
 
 .uploader--progress-frame {
-  width: 100%;
+  width: 200px;
   height: 25px;
   background-color: fade(@del, 20%);
   position: relative;
 }
 .uploader--progress {
-  width: 50%;
+  width: 0%;
   height: 100%;
   background-color: fade(@del, 60%);
 }
@@ -915,8 +941,9 @@
   color: fade(white, 50%);
 }
 .uploader--progress-spinner {
-  width: 100%;
+  width: 50px;
   height: 25px;
+  margin-left: 13px;
   position: relative;
 }
 @keyframes spin {
