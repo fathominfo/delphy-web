@@ -152,7 +152,21 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
   fileStepContainer.innerHTML = '';
   // console.log('launching upload sequence')
   const parsingStep = new ProgressStep(fileStepContainer, "parsing");
-  const analyzingStep = new ProgressStep(fileStepContainer, "analyzing");
+  const steps = [parsingStep];
+  let analysisProgressCallback: (numSeqsSoFar: number, totalSeqs: number) => void;
+  if (isMaple) {
+    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {};
+  } else {
+    const analyzingStep = new ProgressStep(fileStepContainer, "analyzing");
+    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
+      const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
+      const isComplete = analyzingStep.updateBar(numSeqsSoFar, totalSeqs);
+      analyzingStep.setLabel(label);
+      // console.log(`Read ${numSeqsSoFar} sequences so far `
+      //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
+    };
+    steps.push(analyzingStep);
+  }
   const buildingStep = new ProgressStep(fileStepContainer, "build guide tree");
   const refiningStep = new ProgressStep(fileStepContainer, "refine guide tree");
   const optimizingStep = new ProgressStep(fileStepContainer, "optimize tree");
@@ -160,10 +174,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
   const rootingTopDownStep = new ProgressStep(fileStepContainer, "rooting and timing: top-down");
   const rootingCandidateStep = new ProgressStep(fileStepContainer, "rooting and timing: root candidate");
   const preparingStep = new ProgressStep(fileStepContainer, "preparing delphy run", true);
-
-  const steps = [
-    parsingStep,
-    analyzingStep,
+  [
     buildingStep,
     refiningStep,
     optimizingStep,
@@ -171,30 +182,24 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
     rootingTopDownStep,
     rootingCandidateStep,
     preparingStep
-  ];
+  ].forEach(s=>steps.push(s));
   let stepIndex = -1;
 
   parsingStep.show();
-  const stageCallback = (stage: number)=>{
-      if (steps[stepIndex]) {
-        steps[stepIndex].complete();
-      }
+  const forceCompletePriorSteps = ()=>{
+      for (let i = stepIndex; i >= 0; i--) steps[i].complete();
+    },
+
+    stageCallback = (stage: number)=>{
+      forceCompletePriorSteps();
       stepIndex++;
       console.log(`Entering stage ${stage}`);
       steps[stepIndex].show();
-
     },
     parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
       const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
       const isComplete = parsingStep.updateBar(bytesSoFar, totalBytes);
       parsingStep.setLabel(label);
-      // console.log(`Read ${numSeqsSoFar} sequences so far `
-      //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
-    },
-    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
-      const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
-      const isComplete = analyzingStep.updateBar(numSeqsSoFar, totalSeqs);
-      analyzingStep.setLabel(label);
       // console.log(`Read ${numSeqsSoFar} sequences so far `
       //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
     },
@@ -237,16 +242,21 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       // console.log(`Rooting and timing: ${substageId}`, step.name, nodes, total);
       if (isComplete) {
         console.log(`Rooting and timing: ${substageId} complete`);
-        step.complete();
         if (substageId === 1) {
           rootingTopDownStep.show();
+          stepIndex = steps.indexOf(rootingBottomUpStep);
         } else if (substageId === 2) {
+          stepIndex = steps.indexOf(rootingTopDownStep);
           rootingCandidateStep.show();
         } else if (substageId === 3) {
+          stepIndex = steps.indexOf(rootingCandidateStep);
           preparingStep.show();
         }
+        forceCompletePriorSteps();
       }
-    }
+    };
+
+  const runCallback = ()=>console.log('meh');
 
 
   if (isMaple) {
