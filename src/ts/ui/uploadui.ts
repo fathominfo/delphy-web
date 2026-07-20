@@ -50,6 +50,9 @@ const uploadDiv = document.querySelector("#uploader") as HTMLDivElement;
 const dphyStepContainer = uploadDiv.querySelector("#uploader--dphy-file") as HTMLDivElement;
 const fileStepContainer = uploadDiv.querySelector("#uploader--data-file") as HTMLDivElement;
 const stepTemplate = fileStepContainer?.querySelector(".uploader--data-step") as HTMLDivElement;
+const qcContainer = uploadDiv.querySelector("#uploader--file-qc") as HTMLDivElement;
+const qcSummary = qcContainer.querySelector("#uploader--qc-summary") as HTMLDivElement;
+
 stepTemplate.remove();
 
 class ProgressStep {
@@ -162,6 +165,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
       const isComplete = analyzingStep.updateBar(numSeqsSoFar, totalSeqs);
       analyzingStep.setLabel(label);
+      checkQC();
       // console.log(`Read ${numSeqsSoFar} sequences so far `
       //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
     };
@@ -189,7 +193,13 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
   const forceCompletePriorSteps = ()=>{
       for (let i = stepIndex; i >= 0; i--) steps[i].complete();
     },
-
+    checkQC = ()=>{
+      const warnings = tallyQCWarnings();
+      if (warnings.length > 0) {
+        qcContainer.classList.remove("hidden");
+        qcSummary.innerHTML = warnings;
+      }
+    },
     stageCallback = (stage: number)=>{
       forceCompletePriorSteps();
       stepIndex++;
@@ -200,6 +210,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
       const isComplete = parsingStep.updateBar(bytesSoFar, totalBytes);
       parsingStep.setLabel(label);
+      checkQC();
       // console.log(`Read ${numSeqsSoFar} sequences so far `
       //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
     },
@@ -208,18 +219,21 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       const label = `${nfc(tipsSoFar)} tip${ tipsSoFar === 1 ? '' : 's' }`;
       const isComplete = buildingStep.updateBar(tipsSoFar, totalTips);
       buildingStep.setLabel(label);
+      checkQC();
     },
     refinedTreeProgressCallback = (round:number, tipsSoFar:number, totalTips:number) => {
       // showProgress(`Refining guide tree (round ${round})`, totalTips, tipsSoFar);
       const label = `${nfc(tipsSoFar)} tip${ tipsSoFar === 1 ? '' : 's' }`;
       const isComplete = refiningStep.updateBar(tipsSoFar, totalTips);
       refiningStep.setLabel(label);
+      checkQC();
     },
     sprRefineProgressCallback = (attempt:number, maxAttempts:number, curMuts:number) => {
       // showProgress(`Optimizing tree: ${curMuts} mutations`, maxAttempts, attempt);
       const label = `${nfc(curMuts)} mutation${ curMuts === 1 ? '' : 's' }`;
       const isComplete = optimizingStep.updateBar(attempt, maxAttempts);
       optimizingStep.setLabel(label);
+      checkQC();
     },
     // Keep in sync with the Rooting_substage enum in core/utree.h
     // rootingSubstageLabels: {[id: number]: string} = {
@@ -253,8 +267,12 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
           preparingStep.show();
         }
         forceCompletePriorSteps();
+        checkQC();
       }
     };
+
+  const runCallback = ()=>console.log('meh');
+
 
   if (isMaple) {
     return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
@@ -296,7 +314,7 @@ let runCallback = ()=>console.debug('runCallback not assigned'),
 
 
 
-const warningsLabelAddendum = () => {
+const tallyQCWarnings = () => {
   let result = "";
   let c;
   if (qc.hasAmbiguousSites()) {

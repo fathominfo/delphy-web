@@ -921,6 +921,57 @@
   font-style: italic;
 }
 
+#uploader--uploading-file {
+  display: flex;
+}
+
+
+#uploader--file-qc {
+  margin-top: 1em;
+  position: relative;
+}
+
+
+
+#uploader--qc-summary {
+  position: absolute;
+  min-height: 1em;
+  min-width: 200px;
+
+}
+
+#uploader--qc-button {
+  // color: #971717;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 20px;
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  // background-color: #f5f5f5;
+  // color: #999;
+  padding: 0 15px;
+  height: 48px;
+  cursor: pointer;
+
+  &::before {
+    content: "!";
+    padding: 0;
+    position: relative;
+    top: -2px;
+    left: -5px;
+    // border: solid 1.5px #971717;
+    border: solid 1.5px white;
+    font-weight: 700;
+    font-size: 12px;
+    display: inline-block;
+    height: 19px;
+    width: 19px;
+    border-radius: 12px;
+  }
+}
 
 .uploader--progress-frame {
   width: 200px;
