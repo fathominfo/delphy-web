@@ -772,6 +772,85 @@ export class RunUI extends UIScreen {
   // }
 
 
+  launchPrintingSequence() : void {
+    if (!this.pythia) return;
+    const printCols = 10;
+    const printRows = 10;
+    const printCount = printCols * printRows;
+    console.log(`
+      launchPrintingSequence
+      `);
+    // const ref = this.pythia.getMcc();
+    // const mcc = ref.getMcc();
+    const mccIndex = this.pythia.getMccIndex();
+    let start = Math.max(mccIndex - printCount/2, this.pythia.kneeIndex);
+    const end = Math.min(start + printCount, this.pythia.getBaseTreeCount());
+    if (end - start < printCount) {
+      start = Math.max(end - printCount, this.pythia.kneeIndex);
+    }
+    if (end - start < printCount) {
+      console.warn(`
+        not enough trees to print. stopping. 
+        `);
+      return;
+    }
+    const frames: number[] = [];
+    for (let i = start; i < end; i++) {
+      frames.push(i);
+    }
 
+    const canvas = document.createElement("canvas") as HTMLCanvasElement;
+    const treeWidth = this.treeCanvas.width;
+    const treeHeight = this.treeCanvas.height;
+    canvas.setAttribute("width", `${treeWidth * printCols}`);
+    canvas.setAttribute("height", `${treeHeight * printRows}`);
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let rows = 0;
+    let cols = 0;
+    const printTree = ()=>{
+      const index = frames.shift();
+      if (index !== undefined) {
+        this.printBaseTree(index, ctx);
+        cols++;
+        if (cols === printCols) {
+          cols = 0;
+          rows++;
+        }
+        ctx.resetTransform();
+        ctx.translate(cols * treeWidth, rows * treeHeight);
+        setTimeout(()=>requestAnimationFrame(()=>printTree()), 60);
+      } else {
+        console.log(`printing complete`);
+        const link = document.createElement('a');
+        const body = document.querySelector("body") as HTMLBodyElement;
+        link.setAttribute('download', `${printCount}_trees.png`);
+        link.setAttribute('href', canvas.toDataURL("image/png").replace("image/png", "image/octet-stream"));
+        body.appendChild(link);
+        link.click();
+        console.log(`image saved`);
+        setTimeout(()=>link.remove(), 10_000);
+        // const image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+        // window.location.href=image; // it will save locally
+      }
+    };
+
+    printTree();
+
+  }
+
+
+  printBaseTree(treeIndex: number, ctx: CanvasRenderingContext2D) : void {
+    if (!this.pythia) return;
+    if (!this.mccRef) return;
+    console.log(`printBaseTree(${treeIndex})`);
+    this.baseTree = this.pythia.treeHist[treeIndex];
+    if (!this.baseTree) return;
+    // const run = this.pythia.run;
+    const tree = this.baseTree;
+    const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
+    const nodeConfidence = this.mccRef.getNodeConfidence();
+    this.treeCanvas.positionTreeNodes(tree, nodeConfidence);
+    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, ctx);
+  }
 
 }

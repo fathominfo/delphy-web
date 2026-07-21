@@ -465,7 +465,6 @@ export class TreeCanvas {
     ctx.globalAlpha = 1;
     this.drawTimelineLines(dates);
     this.drawTimelineLabels(dates, pdf);
-
   }
 
   drawTimelineLines(dates:DateLabel[]):void {
@@ -726,6 +725,26 @@ export class TreeCanvas {
   getCanvas():HTMLCanvasElement|PdfCanvas {
     return this.canvas;
   }
+
+
+
+  drawJpeg(earliest:number, latest:number, ctx: CanvasRenderingContext2D) {
+    if (earliest === undefined) earliest = this.minDate;
+    if (latest === undefined) latest = this.maxDate;
+    const {width, height, nodeYs} = this,
+      nodeCount = nodeYs.length;
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "white";
+    ctx.lineCap = 'round';
+    ctx.lineWidth = BRANCH_WEIGHT;
+    ctx.globalAlpha = this.maxOpacity;
+    for (let i = 0; i < nodeCount; i++) {
+      this.drawNodeBranch(i, ctx);
+    }
+    ctx.globalAlpha = 1;
+  }
+
 
 }
 

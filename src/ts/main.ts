@@ -75,6 +75,8 @@ function onReady(p:Pythia):void {
         about.classList.remove("active");
         toggleAboutButton.classList.remove("active");
       }
+    } else if (e.key === "p") {
+      runUI.launchPrintingSequence();
     }
   })
 
@@ -144,5 +146,7 @@ const loadListener = ()=>{
     });
 }
 document.addEventListener('DOMContentLoaded', loadListener);
+
+
 
 
