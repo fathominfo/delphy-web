@@ -727,8 +727,11 @@ export class TreeCanvas {
   }
 
 
-
-  drawJpeg(earliest:number, latest:number, ctx: CanvasRenderingContext2D) {
+  drawJpeg(earliest:number, latest:number,
+    nodeConfidence: number[], tipCounts: number[],
+    confidenceThreshold: number, maxCladeSize: number,
+    ctx: CanvasRenderingContext2D
+  ) {
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
     const {width, height, nodeYs} = this,
@@ -737,12 +740,34 @@ export class TreeCanvas {
     ctx.fillRect(0, 0, width, height);
     ctx.strokeStyle = "white";
     ctx.lineCap = 'round';
-    ctx.lineWidth = BRANCH_WEIGHT;
-    ctx.globalAlpha = this.maxOpacity;
-    for (let i = 0; i < nodeCount; i++) {
-      this.drawNodeBranch(i, ctx);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let index = 0; index < nodeCount; index++) {
+      let drawIt = confidenceThreshold === UNSET;
+      if (!drawIt) {
+        drawIt = nodeConfidence[index] >= confidenceThreshold
+          && tipCounts[index] <= maxCladeSize;
+      }
+      if (!drawIt) continue;
+      const children = this.nodeChildren[index],
+        parent = this.nodeParents[index],
+        nodeX = this.getZoomX(this.nodeTimes[index]);
+      if (parent !== UNSET) {
+        const nodeY = this.getZoomY(index),
+          parentX = this.getZoomX(this.nodeTimes[parent]);
+        ctx.moveTo(nodeX, nodeY);
+        ctx.lineTo(parentX, nodeY);
+      }
+      if (children.length > 0) {
+        const left = children[0],
+          right = children[1],
+          leftY = this.getZoomY(left),
+          rightY = this.getZoomY(right);
+        ctx.moveTo(nodeX, leftY);
+        ctx.lineTo(nodeX, rightY);
+      }
     }
-    ctx.globalAlpha = 1;
+    ctx.stroke();
   }
 
 

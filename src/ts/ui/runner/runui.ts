@@ -15,6 +15,8 @@ import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { RunParamConfig } from '../../pythia/pythia';
+import { CladeScores, getCladeScores, getMccBaseTreeCount, getTreeClades, getTreeScore } from '../../pythia/cladescoring';
+import { getTipCounts } from '../../util/treeutils';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -776,7 +778,13 @@ export class RunUI extends UIScreen {
     if (!this.pythia) return;
     const printCols = 10;
     const printRows = 10;
+    // const printCols = 3;
+    // const printRows = 3;
     const printCount = printCols * printRows;
+
+    const confidenceThreshold = 0.9999;
+    const maxCladeSizePct = 0.01;
+
     console.log(`
       launchPrintingSequence
       `);
@@ -794,43 +802,89 @@ export class RunUI extends UIScreen {
         `);
       return;
     }
-    const frames: number[] = [];
+    const baseTreeIndices: number[] = [];
+    const tipCounts: number[][] = [];
     for (let i = start; i < end; i++) {
-      frames.push(i);
+      baseTreeIndices.push(i);
+      const tree = this.pythia.treeHist[i];
+      tipCounts[i] = getTipCounts(tree);
     }
+    const mccTreeCount = getMccBaseTreeCount(this.pythia);
+    const baseTreeClades = getTreeClades(this.pythia);
+    const cladeScores = getCladeScores(baseTreeClades, mccTreeCount);
+    /*
+    first slot in baseTreeClades might be empty, since it could fall
+    in the burn-in period. But the last will not be empty.
+    */
+    const nodeCount = baseTreeClades[baseTreeClades.length - 1].length;
+    const tipCount = (nodeCount + 1) / 2;
+    const maxCladeSize = tipCount * maxCladeSizePct;
+    const treeScores: number[] = baseTreeClades.map((cladeList:string[])=>getTreeScore(cladeList, cladeScores, tipCount));
+    // const safeTreeScores = treeScores.filter(n=>Number.isFinite(n));
+    const safeTreeScores = treeScores.slice(start, end);
+    const minTreeScore = Math.min.apply(null, safeTreeScores);
+    const maxTreeScore = Math.max.apply(null, safeTreeScores);
+    const treeScoreRange = maxTreeScore - minTreeScore;
+    console.log(`tree scores range from ${ minTreeScore } - ${ maxTreeScore} (${ treeScoreRange })`);
 
-    const canvas = document.createElement("canvas") as HTMLCanvasElement;
+
     const treeWidth = this.treeCanvas.width;
     const treeHeight = this.treeCanvas.height;
-    canvas.setAttribute("width", `${treeWidth * printCols}`);
-    canvas.setAttribute("height", `${treeHeight * printRows}`);
-    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    const createLayer = (): [HTMLCanvasElement, CanvasRenderingContext2D]=> {
+      const canvas_ = document.createElement("canvas") as HTMLCanvasElement;
+      canvas_.setAttribute("width", `${treeWidth * printCols}`);
+      canvas_.setAttribute("height", `${treeHeight * printRows}`);
+      const ctx_ = canvas_.getContext("2d") as CanvasRenderingContext2D;
+      return [canvas_, ctx_];
+    }
+    const [canvas, ctx] = createLayer();
+    const [confCanvas, confCtx] = createLayer();
+    const [scoreCanvas, scoreCtx] = createLayer();
     let rows = 0;
     let cols = 0;
+
+    const setTreePosition = (ctx_: CanvasRenderingContext2D)=>{
+      ctx_.resetTransform();
+      ctx_.translate(cols * treeWidth, (rows + 1) * treeHeight);
+      ctx_.scale(1, -1);
+    };
+
     const printTree = ()=>{
-      const index = frames.shift();
+      const index = baseTreeIndices.shift();
       if (index !== undefined) {
-        this.printBaseTree(index, ctx);
+        setTreePosition(ctx);
+        setTreePosition(confCtx);
+        setTreePosition(scoreCtx);
+        const treeScore = (treeScores[index] - minTreeScore) / treeScoreRange;
+        const treeScoreGrayscale = 255 * treeScore;
+
+        console.log(`printing tree ${baseTreeIndices.length} score ${treeScore}, col ${cols}, row ${rows} at ${cols * treeWidth}, ${rows * treeHeight} on canvas ${canvas.width} ${canvas.height}`);
+        this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, tipCounts[index], maxCladeSize, ctx, confCtx);
+        scoreCtx.fillStyle = `rgb(${ treeScoreGrayscale }, ${ treeScoreGrayscale }, ${ treeScoreGrayscale })`;
+        scoreCtx.fillRect(0, 0, treeWidth, treeHeight);
         cols++;
         if (cols === printCols) {
           cols = 0;
           rows++;
         }
-        ctx.resetTransform();
-        ctx.translate(cols * treeWidth, rows * treeHeight);
         setTimeout(()=>requestAnimationFrame(()=>printTree()), 60);
       } else {
         console.log(`printing complete`);
-        const link = document.createElement('a');
         const body = document.querySelector("body") as HTMLBodyElement;
-        link.setAttribute('download', `${printCount}_trees.png`);
-        link.setAttribute('href', canvas.toDataURL("image/png").replace("image/png", "image/octet-stream"));
-        body.appendChild(link);
-        link.click();
-        console.log(`image saved`);
-        setTimeout(()=>link.remove(), 10_000);
-        // const image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-        // window.location.href=image; // it will save locally
+        const download = (canvas: HTMLCanvasElement, title: string)=>{
+          const link = document.createElement('a');
+          link.setAttribute('download', `${title}.png`);
+          link.setAttribute('href', canvas.toDataURL("image/png").replace("image/png", "image/octet-stream"));
+          body.appendChild(link);
+          link.click();
+          console.log(`${title}.png saved`);
+          setTimeout(()=>link.remove(), 10_000);
+        }
+        download(canvas, `${printCount}_trees`);
+        download(confCanvas, `${printCount}_trees_hiconf`);
+        download(scoreCanvas, `${printCount}_tree_scores`);
+        // this.div.appendChild(canvas);
+        // this.div.appendChild(confCanvas);
       }
     };
 
@@ -839,18 +893,30 @@ export class RunUI extends UIScreen {
   }
 
 
-  printBaseTree(treeIndex: number, ctx: CanvasRenderingContext2D) : void {
+  printBaseTree(
+    treeIndex: number,
+    clades: string[],
+    cladeScores: CladeScores,
+    confidenceThreshold: number,
+    tipCounts: number[],
+    maxCladeSize: number,
+    ctx: CanvasRenderingContext2D,
+    confCtx: CanvasRenderingContext2D
+  ) : void {
     if (!this.pythia) return;
     if (!this.mccRef) return;
-    console.log(`printBaseTree(${treeIndex})`);
+    // console.log(`printBaseTree(${treeIndex})`);
     this.baseTree = this.pythia.treeHist[treeIndex];
     if (!this.baseTree) return;
-    // const run = this.pythia.run;
     const tree = this.baseTree;
     const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
-    const nodeConfidence = this.mccRef.getNodeConfidence();
+    /* set node confidence */
+    const nodeConfidence: number[] = new Array(clades.length);
+    clades.forEach((clade, i)=>nodeConfidence[i] = cladeScores[clade]);
     this.treeCanvas.positionTreeNodes(tree, nodeConfidence);
-    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, ctx);
+    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, UNSET, UNSET, ctx);
+    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, confidenceThreshold, maxCladeSize, confCtx);
   }
 
 }
+
