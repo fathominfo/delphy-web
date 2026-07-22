@@ -728,13 +728,15 @@ export class TreeCanvas {
 
 
   drawJpeg(earliest:number, latest:number,
-    nodeConfidence: number[], tipCounts: number[],
-    confidenceThreshold: number, maxCladeSize: number,
+    nodeConfidence: number[],
+    confidenceThreshold: number,
+    minimumCladeDate: number,
     ctx: CanvasRenderingContext2D
   ) {
+    if (!this.tree) return;
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
-    const {width, height, nodeYs} = this,
+    const {width, height, nodeYs, tree} = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, width, height);
@@ -742,17 +744,14 @@ export class TreeCanvas {
     ctx.lineCap = 'round';
     ctx.lineWidth = 1;
     ctx.beginPath();
+    const checkDrawable = (index:number)=>tree.getTimeOf(index) >= minimumCladeDate && nodeConfidence[index] >= confidenceThreshold;
     for (let index = 0; index < nodeCount; index++) {
-      let drawIt = confidenceThreshold === UNSET;
-      if (!drawIt) {
-        drawIt = nodeConfidence[index] >= confidenceThreshold
-          && tipCounts[index] <= maxCladeSize;
-      }
+      const drawIt = confidenceThreshold === UNSET || checkDrawable(index);
       if (!drawIt) continue;
       const children = this.nodeChildren[index],
         parent = this.nodeParents[index],
         nodeX = this.getZoomX(this.nodeTimes[index]);
-      if (parent !== UNSET) {
+      if (parent !== UNSET && checkDrawable(parent)) {
         const nodeY = this.getZoomY(index),
           parentX = this.getZoomX(this.nodeTimes[parent]);
         ctx.moveTo(nodeX, nodeY);

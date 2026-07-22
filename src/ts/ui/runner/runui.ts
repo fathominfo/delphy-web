@@ -783,7 +783,8 @@ export class RunUI extends UIScreen {
     const printCount = printCols * printRows;
 
     const confidenceThreshold = 0.9999;
-    const maxCladeSizePct = 0.01;
+    // const maxCladeSizePct = 0.01;
+    const minDatePct = 0.4;
 
     console.log(`
       launchPrintingSequence
@@ -818,7 +819,7 @@ export class RunUI extends UIScreen {
     */
     const nodeCount = baseTreeClades[baseTreeClades.length - 1].length;
     const tipCount = (nodeCount + 1) / 2;
-    const maxCladeSize = tipCount * maxCladeSizePct;
+    // const maxCladeSize = tipCount * maxCladeSizePct;
     const treeScores: number[] = baseTreeClades.map((cladeList:string[])=>getTreeScore(cladeList, cladeScores, tipCount));
     // const safeTreeScores = treeScores.filter(n=>Number.isFinite(n));
     const safeTreeScores = treeScores.slice(start, end);
@@ -857,9 +858,9 @@ export class RunUI extends UIScreen {
         setTreePosition(scoreCtx);
         const treeScore = (treeScores[index] - minTreeScore) / treeScoreRange;
         const treeScoreGrayscale = 255 * treeScore;
-
         console.log(`printing tree ${baseTreeIndices.length} score ${treeScore}, col ${cols}, row ${rows} at ${cols * treeWidth}, ${rows * treeHeight} on canvas ${canvas.width} ${canvas.height}`);
-        this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, tipCounts[index], maxCladeSize, ctx, confCtx);
+        // this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, tipCounts[index], maxCladeSize, ctx, confCtx);
+        this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, minDatePct, ctx, confCtx);
         scoreCtx.fillStyle = `rgb(${ treeScoreGrayscale }, ${ treeScoreGrayscale }, ${ treeScoreGrayscale })`;
         scoreCtx.fillRect(0, 0, treeWidth, treeHeight);
         cols++;
@@ -898,8 +899,9 @@ export class RunUI extends UIScreen {
     clades: string[],
     cladeScores: CladeScores,
     confidenceThreshold: number,
-    tipCounts: number[],
-    maxCladeSize: number,
+    minCladeDatePct: number,
+    // tipCounts: number[],
+    // maxCladeSize: number,
     ctx: CanvasRenderingContext2D,
     confCtx: CanvasRenderingContext2D
   ) : void {
@@ -910,12 +912,17 @@ export class RunUI extends UIScreen {
     if (!this.baseTree) return;
     const tree = this.baseTree;
     const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
+    const minCladeDate = earliestBaseDate + (this.pythia.maxDate - earliestBaseDate) * minCladeDatePct;
+    console.log(`printBaseTree(${treeIndex})   dates    ${earliestBaseDate} ${minCladeDate}  ${this.pythia.maxDate}`);
     /* set node confidence */
     const nodeConfidence: number[] = new Array(clades.length);
     clades.forEach((clade, i)=>nodeConfidence[i] = cladeScores[clade]);
     this.treeCanvas.positionTreeNodes(tree, nodeConfidence);
-    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, UNSET, UNSET, ctx);
-    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, confidenceThreshold, maxCladeSize, confCtx);
+    // this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, UNSET, UNSET, ctx);
+    // this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, confidenceThreshold, maxCladeSize, confCtx);
+    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, UNSET, UNSET, ctx);
+    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, confidenceThreshold, minCladeDate, confCtx);
+
   }
 
 }
