@@ -108,7 +108,8 @@ export const getTreeScore = (cladeList: string[], cladeScores: CladeScores, firs
   for (let i = firstCladeIndex; i < cladeList.length; i++) {
     const clade = cladeList[i];
     const cladeScore = cladeScores[clade];
-    score += Math.log(1 + cladeScore);
+    const lnScore = Math.log(cladeScore);
+    score += lnScore;
   }
   return score;
 };
