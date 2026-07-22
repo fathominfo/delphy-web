@@ -15,7 +15,8 @@ import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { RunParamConfig } from '../../pythia/pythia';
-import { CladeScores, getCladeScores, getMccBaseTreeCount, getTreeClades, getTreeScore } from '../../pythia/cladescoring';
+// import { CladeScores, getCladeScores, getMccBaseTreeCount, getTreeClades, getTreeScore } from '../../pythia/cladescoring';
+import { getCladeScores, getMccBaseTreeCount, getTreeClades, getTreeScore } from '../../pythia/cladescoring';
 import { getTipCounts } from '../../util/treeutils';
 
 const DAYS_PER_YEAR = 365;
@@ -782,9 +783,17 @@ export class RunUI extends UIScreen {
     // const printRows = 3;
     const printCount = printCols * printRows;
 
-    const confidenceThreshold = 0.9999;
-    // const maxCladeSizePct = 0.01;
-    const minDatePct = 0.4;
+    // const mutationSite = 16886; // lemieux C16887T
+    // const mutationSite = 186983; // parker G186984A
+    // const mutationSite = 121319; // parker C121320T
+    // const mutationSite = 187427; // otoole C187428T
+    // const mutationSite = 364; // rambaut h3n2 T365C
+    // const mutationSite = 9278; // andersen h5n1 C9279T
+    const mutationSite = 3017; // dudas T3018C
+
+    // const confidenceThreshold = 0.9999;
+    // const maxCladeSizePct = 0.15;
+    // const minDatePct = 0.4;
 
     console.log(`
       launchPrintingSequence
@@ -860,7 +869,8 @@ export class RunUI extends UIScreen {
         const treeScoreGrayscale = 255 * treeScore;
         console.log(`printing tree ${baseTreeIndices.length} score ${treeScore}, col ${cols}, row ${rows} at ${cols * treeWidth}, ${rows * treeHeight} on canvas ${canvas.width} ${canvas.height}`);
         // this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, tipCounts[index], maxCladeSize, ctx, confCtx);
-        this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, minDatePct, ctx, confCtx);
+        // this.printBaseTree(index, baseTreeClades[index], cladeScores, confidenceThreshold, minDatePct, ctx, confCtx);
+        this.printBaseTree(index, mutationSite, ctx, confCtx);
         scoreCtx.fillStyle = `rgb(${ treeScoreGrayscale }, ${ treeScoreGrayscale }, ${ treeScoreGrayscale })`;
         scoreCtx.fillRect(0, 0, treeWidth, treeHeight);
         cols++;
@@ -896,10 +906,11 @@ export class RunUI extends UIScreen {
 
   printBaseTree(
     treeIndex: number,
-    clades: string[],
-    cladeScores: CladeScores,
-    confidenceThreshold: number,
-    minCladeDatePct: number,
+    // clades: string[],
+    mutationSite: number,
+    // cladeScores: CladeScores,
+    // confidenceThreshold: number,
+    // minCladeDatePct: number,
     // tipCounts: number[],
     // maxCladeSize: number,
     ctx: CanvasRenderingContext2D,
@@ -912,16 +923,21 @@ export class RunUI extends UIScreen {
     if (!this.baseTree) return;
     const tree = this.baseTree;
     const earliestBaseDate = tree.getTimeOf(tree.getRootIndex());
-    const minCladeDate = earliestBaseDate + (this.pythia.maxDate - earliestBaseDate) * minCladeDatePct;
-    console.log(`printBaseTree(${treeIndex})   dates    ${earliestBaseDate} ${minCladeDate}  ${this.pythia.maxDate}`);
+    // const minCladeDate = earliestBaseDate + (this.pythia.maxDate - earliestBaseDate) * minCladeDatePct;
+    // console.log(`printBaseTree(${treeIndex})   dates    ${earliestBaseDate} ${minCladeDate}  ${this.pythia.maxDate}`);
     /* set node confidence */
-    const nodeConfidence: number[] = new Array(clades.length);
-    clades.forEach((clade, i)=>nodeConfidence[i] = cladeScores[clade]);
+    const nodeConfidence: number[] = new Array(tree.getSize()).fill(0);
+    // clades.forEach((clade, i)=>nodeConfidence[i] = cladeScores[clade]);
     this.treeCanvas.positionTreeNodes(tree, nodeConfidence);
+
     // this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, UNSET, UNSET, ctx);
     // this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, tipCounts, confidenceThreshold, maxCladeSize, confCtx);
-    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, UNSET, UNSET, ctx);
-    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, confidenceThreshold, minCladeDate, confCtx);
+
+    // this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, UNSET, UNSET, ctx);
+    // this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, nodeConfidence, confidenceThreshold, minCladeDate, confCtx);
+
+    this.treeCanvas.drawJpeg(earliestBaseDate, this.pythia.maxDate, ctx);
+    this.treeCanvas.drawHighlightsJpeg(earliestBaseDate, this.pythia.maxDate, mutationSite, confCtx);
 
   }
 

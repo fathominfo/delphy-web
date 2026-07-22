@@ -1,4 +1,4 @@
-import {Tree } from '../pythia/delphy_api';
+import {Mutation, PhyloTree, Tree } from '../pythia/delphy_api';
 import {MccUmbrella} from '../pythia/mccumbrella';
 import {DateLabel} from './datelabel';
 import {
@@ -727,16 +727,64 @@ export class TreeCanvas {
   }
 
 
-  drawJpeg(earliest:number, latest:number,
-    nodeConfidence: number[],
-    confidenceThreshold: number,
-    minimumCladeDate: number,
-    ctx: CanvasRenderingContext2D
-  ) {
+  // drawJpeg(earliest:number, latest:number,
+  //   nodeConfidence: number[],
+  //   // tipCounts: number[],
+  //   // confidenceThreshold: number,
+  //   // maxCladeSize: number,
+  //   // minimumCladeDate: number,
+  //   mutationSite: number,
+  //   ctx: CanvasRenderingContext2D
+  // ) {
+  //   if (!this.tree) return;
+  //   if (earliest === undefined) earliest = this.minDate;
+  //   if (latest === undefined) latest = this.maxDate;
+  //   const {width, height, nodeYs, tree} = this,
+  //     // const {width, height, nodeYs} = this,
+  //     nodeCount = nodeYs.length;
+  //   ctx.fillStyle = 'black';
+  //   ctx.fillRect(0, 0, width, height);
+  //   ctx.strokeStyle = "white";
+  //   ctx.lineCap = 'round';
+  //   ctx.lineWidth = 1;
+  //   ctx.beginPath();
+  //   const checkDrawable = (index:number)=>nodeConfidence[index] >= confidenceThreshold
+  //     && tree.getTimeOf(index) >= minimumCladeDate;
+  //     // && tipCounts[index] <= maxCladeSize;
+  //   for (let index = 0; index < nodeCount; index++) {
+  //     const drawIt = confidenceThreshold === UNSET || checkDrawable(index);
+  //     if (!drawIt) continue;
+  //     const children = this.nodeChildren[index],
+  //       parent = this.nodeParents[index],
+  //       nodeX = this.getZoomX(this.nodeTimes[index]);
+  //     if (parent !== UNSET ) {
+  //       if (confidenceThreshold === UNSET || checkDrawable(parent)) {
+  //         const nodeY = this.getZoomY(index),
+  //           parentX = this.getZoomX(this.nodeTimes[parent]);
+  //         ctx.moveTo(nodeX, nodeY);
+  //         ctx.lineTo(parentX, nodeY);
+  //       // } else if (children.length > 0) {
+  //       //   console.log( 'how' )
+  //       }
+
+  //     }
+  //     if (children.length > 0) {
+  //       const left = children[0],
+  //         right = children[1],
+  //         leftY = this.getZoomY(left),
+  //         rightY = this.getZoomY(right);
+  //       ctx.moveTo(nodeX, leftY);
+  //       ctx.lineTo(nodeX, rightY);
+  //     }
+  //   }
+  //   ctx.stroke();
+  // }
+
+  drawJpeg(earliest:number, latest:number, ctx: CanvasRenderingContext2D) {
     if (!this.tree) return;
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
-    const {width, height, nodeYs, tree} = this,
+    const {width, height, nodeYs} = this,
       nodeCount = nodeYs.length;
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, width, height);
@@ -744,14 +792,11 @@ export class TreeCanvas {
     ctx.lineCap = 'round';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    const checkDrawable = (index:number)=>tree.getTimeOf(index) >= minimumCladeDate && nodeConfidence[index] >= confidenceThreshold;
     for (let index = 0; index < nodeCount; index++) {
-      const drawIt = confidenceThreshold === UNSET || checkDrawable(index);
-      if (!drawIt) continue;
       const children = this.nodeChildren[index],
         parent = this.nodeParents[index],
         nodeX = this.getZoomX(this.nodeTimes[index]);
-      if (parent !== UNSET && checkDrawable(parent)) {
+      if (parent !== UNSET ) {
         const nodeY = this.getZoomY(index),
           parentX = this.getZoomX(this.nodeTimes[parent]);
         ctx.moveTo(nodeX, nodeY);
@@ -769,6 +814,72 @@ export class TreeCanvas {
     ctx.stroke();
   }
 
+
+  drawHighlightsJpeg(earliest:number, latest:number,
+    mutationSite: number,
+    ctx: CanvasRenderingContext2D
+  ) {
+    if (!this.tree) return;
+    if (earliest === undefined) earliest = this.minDate;
+    if (latest === undefined) latest = this.maxDate;
+    const {width, height, tree} = this;
+    /*
+    find mutations at that genome site across all nodes in the tree
+    */
+    const nodesWithMut: number[] = [];
+    let n = 0;
+    const checkMut = (mut: Mutation)=>{
+      if (mut.site === mutationSite) {
+        nodesWithMut.push(n);
+      }
+    };
+    for (n = 0; n < tree.getSize(); n++) {
+      (tree as PhyloTree).forEachMutationOf(n, checkMut);
+    }
+
+    /* also highlight descendants */
+    const highlightable: number[] = [];
+    const q: number[] = nodesWithMut.slice(0);
+    while (q.length > 0) {
+      const index = q.shift();
+      if (index !== undefined) {
+        highlightable.push(index);
+        const left = tree.getLeftChildIndexOf(index);
+        if (left !== UNSET) {
+          q.push(left);
+          q.push(tree.getRightChildIndexOf(index));
+        }
+      }
+    }
+
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "white";
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    highlightable.forEach(index=>{
+      const children = this.nodeChildren[index],
+        parent = this.nodeParents[index],
+        nodeX = this.getZoomX(this.nodeTimes[index]);
+      if (parent !== UNSET ) {
+        const nodeY = this.getZoomY(index),
+          parentX = this.getZoomX(this.nodeTimes[parent]);
+        ctx.moveTo(nodeX, nodeY);
+        ctx.lineTo(parentX, nodeY);
+      }
+      if (children.length > 0) {
+        const left = children[0],
+          right = children[1],
+          leftY = this.getZoomY(left),
+          rightY = this.getZoomY(right);
+        ctx.moveTo(nodeX, leftY);
+        ctx.lineTo(nodeX, rightY);
+      }
+    });
+    ctx.stroke();
+  }
 
 }
 
