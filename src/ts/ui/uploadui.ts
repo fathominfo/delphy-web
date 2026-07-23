@@ -268,7 +268,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       }
     };
 
-  const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
+  // const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
 
   if (isMaple) {
     return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
