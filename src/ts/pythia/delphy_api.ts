@@ -277,7 +277,6 @@ export class Delphy {
     mapleBytes: ArrayBuffer,
     stageProgressHook: (stage: number) => void = () => void 0,
     readProgressHook: (seqsSoFar: number, bytesSoFar: number, totalBytes: number) => void = () => void 0,
-    _analysisProgressHook: (seqsSoFar: number, totalSeqs: number) => void = () => void 0,
     guideTreeProgressHook: (tipsSoFar: number, totalTips: number) => void = () => void 0,
     refinedTreeProgressHook: (round: number, tipsSoFar: number, totalTips: number) => void = () => void 0,
     sprRefineProgressHook: (attempt: number, maxAttempts: number, curMuts: number) => void = () => void 0,
