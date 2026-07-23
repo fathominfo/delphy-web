@@ -159,24 +159,21 @@
       <section id="uploader--progress-container">
         <p>Uploading <span id="uploader--file-name">file name</span></p>
         <div id="uploader--dphy-file" class="hidden">
-          <div class="uploader--progress-label">0 / 0 trees loaded</div>
-          <div class="uploader--progress-frame">
-            <div class="uploader--progress"></div>
-          </div>
-          <div class="uploader--progress-spinner hidden">
-            <svg class="uploader--progress-spun" class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
-              <path  d="m18 9 a9 9 0 1 0 9 9"></path>
-            </svg>
-          </div>
         </div>
         <div id="uploader--data-file" class="hidden">
           <div class="uploader--data-step">
             <span class="uploader--data-step-name"></span>
-            <span class="uploader--data-step-checked hidden">✅</span>
+            <span class="uploader--data-step-label"></span>
+            <!-- <span class="uploader--data-step-checked hidden">✅</span> -->
             <div class="uploader--progress-frame hidden">
               <div class="uploader--progress"></div>
             </div>
-            <span class="uploader--data-step-label"></span>
+            <div class="uploader--progress-disc hidden" style="--pct: 0%;"></div>
+            <span class="uploader--data-step-checked hidden">
+              <svg width="24" height="24" viewbox="0 0 24 24">
+                <path d="M5 13 L12 19 21 5">
+              </svg>
+            </span>
             <div class="uploader--progress-spinner hidden">
               <svg class="uploader--progress-spun" class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
                 <path  d="m18 9 a9 9 0 1 0 9 9"></path>
@@ -185,7 +182,7 @@
           </div>
         </div>
         <div id="uploader--file-qc" class="hidden">
-          <button id="uploader--qc-button" class="">Data Issues</button>
+          <div id="uploader--qc-button" class="">Data Issues</div>
           <div id="uploader--qc-summary">None</div>
         </div>
 

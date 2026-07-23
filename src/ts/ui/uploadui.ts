@@ -6,7 +6,7 @@ import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 import { parse_iso_date } from '../pythia/dates';
-import { nfc, UNSET } from './common';
+import { nfc } from './common';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -61,6 +61,7 @@ class ProgressStep {
   checkBox: HTMLSpanElement;
   bar: HTMLDivElement;
   barFrame: HTMLDivElement;
+  disc: HTMLDivElement;
   label: HTMLSpanElement;
   spinner: HTMLDivElement;
   spinning: boolean;
@@ -76,6 +77,7 @@ class ProgressStep {
     this.checkBox = this.div.querySelector(".uploader--data-step-checked") as HTMLSpanElement;
     this.barFrame = this.div.querySelector(".uploader--progress-frame") as HTMLDivElement;
     this.bar = this.div.querySelector(".uploader--progress") as HTMLDivElement;
+    this.disc = this.div.querySelector(".uploader--progress-disc") as HTMLDivElement;
     this.label = this.div.querySelector(".uploader--data-step-label") as HTMLSpanElement;
     this.spinner = this.div.querySelector(".uploader--progress-spinner") as HTMLDivElement;
     // this.unit = unit;
@@ -90,7 +92,9 @@ class ProgressStep {
   show() {
     console.log(this.name, 'show');
     if (this.spinning) { this.spinner.classList.remove("hidden");}
-    else this.barFrame.classList.remove("hidden");
+    // else this.barFrame.classList.remove("hidden");
+    else this.disc.classList.remove("hidden");
+    this.div.classList.add("progressing");
   }
 
   /* assumes success */
@@ -98,8 +102,10 @@ class ProgressStep {
     console.log(`${this.name} complete`);
     this.bar.style.width = `100%`;
     this.barFrame.classList.add("hidden");
+    this.disc.classList.add("hidden");
     this.spinner.classList.add("hidden");
     this.checkBox.classList.remove("hidden");
+    this.div.classList.remove("progressing");
   }
 
   setLabel(label: string) {
@@ -113,7 +119,8 @@ class ProgressStep {
   updateBar(soFar: number, total: number): boolean {
     if (Number.isFinite(total)) {
       const pct = 100 * soFar / total;
-      this.bar.style.width = `${pct}%`;
+      // this.bar.style.width = `${pct}%`;
+      this.disc.style.setProperty('--pct', `${pct}%`);
       return soFar === total;
     }
     return false;
@@ -154,30 +161,32 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
   (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
   fileStepContainer.innerHTML = '';
   // console.log('launching upload sequence')
-  const parsingStep = new ProgressStep(fileStepContainer, "parsing");
+  const parsingStep = new ProgressStep(fileStepContainer, "Parsing");
   const steps = [parsingStep];
   let analysisProgressCallback: (numSeqsSoFar: number, totalSeqs: number) => void;
   if (isMaple) {
-    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {};
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
+      // looks like delphy core doesn't take an analysis callback for maple files
+    };
+    /* eslint-enable @typescript-eslint/no-unused-vars */
   } else {
-    const analyzingStep = new ProgressStep(fileStepContainer, "analyzing");
+    const analyzingStep = new ProgressStep(fileStepContainer, "Analyzing");
     analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
       const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
-      const isComplete = analyzingStep.updateBar(numSeqsSoFar, totalSeqs);
+      analyzingStep.updateBar(numSeqsSoFar, totalSeqs);
       analyzingStep.setLabel(label);
       checkQC();
-      // console.log(`Read ${numSeqsSoFar} sequences so far `
-      //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
     };
     steps.push(analyzingStep);
   }
-  const buildingStep = new ProgressStep(fileStepContainer, "build guide tree");
-  const refiningStep = new ProgressStep(fileStepContainer, "refine guide tree");
-  const optimizingStep = new ProgressStep(fileStepContainer, "optimize tree");
-  const rootingBottomUpStep = new ProgressStep(fileStepContainer, "rooting and timing: bottom-up");
-  const rootingTopDownStep = new ProgressStep(fileStepContainer, "rooting and timing: top-down");
-  const rootingCandidateStep = new ProgressStep(fileStepContainer, "rooting and timing: root candidate");
-  const preparingStep = new ProgressStep(fileStepContainer, "preparing delphy run", true);
+  const buildingStep = new ProgressStep(fileStepContainer, "Build guide tree");
+  const refiningStep = new ProgressStep(fileStepContainer, "Refine guide tree");
+  const optimizingStep = new ProgressStep(fileStepContainer, "Optimize tree");
+  const rootingBottomUpStep = new ProgressStep(fileStepContainer, "Rooting and timing: bottom-up");
+  const rootingTopDownStep = new ProgressStep(fileStepContainer, "Rooting and timing: top-down");
+  const rootingCandidateStep = new ProgressStep(fileStepContainer, "Rooting and timing: root candidate");
+  const preparingStep = new ProgressStep(fileStepContainer, "Preparing delphy run", true);
   [
     buildingStep,
     refiningStep,
@@ -208,30 +217,28 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
     },
     parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
       const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
-      const isComplete = parsingStep.updateBar(bytesSoFar, totalBytes);
+      parsingStep.updateBar(bytesSoFar, totalBytes);
       parsingStep.setLabel(label);
       checkQC();
-      // console.log(`Read ${numSeqsSoFar} sequences so far `
-      //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
     },
     guideTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
       // showProgress(`Building guide tree`, totalTips, tipsSoFar);
       const label = `${nfc(tipsSoFar)} tip${ tipsSoFar === 1 ? '' : 's' }`;
-      const isComplete = buildingStep.updateBar(tipsSoFar, totalTips);
+      buildingStep.updateBar(tipsSoFar, totalTips);
       buildingStep.setLabel(label);
       checkQC();
     },
     refinedTreeProgressCallback = (round:number, tipsSoFar:number, totalTips:number) => {
       // showProgress(`Refining guide tree (round ${round})`, totalTips, tipsSoFar);
       const label = `${nfc(tipsSoFar)} tip${ tipsSoFar === 1 ? '' : 's' }`;
-      const isComplete = refiningStep.updateBar(tipsSoFar, totalTips);
+      refiningStep.updateBar(tipsSoFar, totalTips);
       refiningStep.setLabel(label);
       checkQC();
     },
     sprRefineProgressCallback = (attempt:number, maxAttempts:number, curMuts:number) => {
       // showProgress(`Optimizing tree: ${curMuts} mutations`, maxAttempts, attempt);
       const label = `${nfc(curMuts)} mutation${ curMuts === 1 ? '' : 's' }`;
-      const isComplete = optimizingStep.updateBar(attempt, maxAttempts);
+      optimizingStep.updateBar(attempt, maxAttempts);
       optimizingStep.setLabel(label);
       checkQC();
     },
@@ -271,12 +278,12 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       }
     };
 
-  const runCallback = ()=>console.log('meh');
-
+  // const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
 
   if (isMaple) {
     return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
-      stageCallback, parseProgressCallback, analysisProgressCallback,
+      stageCallback, parseProgressCallback,
+      // analysisProgressCallback,
       guideTreeProgressCallback, refinedTreeProgressCallback,
       sprRefineProgressCallback, rootingProgressCallback,
       loadWarningCallback, null);
@@ -304,14 +311,8 @@ let qc: RecordQuality;
 const fileLabel = uploadDiv.querySelector("#uploader--file-input--label") as HTMLLabelElement;
 const urlDiv = uploadDiv.querySelector("#uploader--url-message") as HTMLDivElement;
 
-/* show a progress bar when possible */
-const statusContainer = uploadDiv.querySelector("#uploader--status") as HTMLDivElement;
-
-
 let runCallback = ()=>console.debug('runCallback not assigned'),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
-
-
 
 
 const tallyQCWarnings = () => {
@@ -319,27 +320,27 @@ const tallyQCWarnings = () => {
   let c;
   if (qc.hasAmbiguousSites()) {
     c = qc.getAmbiguousSiteCount();
-    result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
+    result += `<p> ${c} ambiguous site${c === 1 ? '':'s'} masked</p>`;
   }
   if (qc.hasMissingDates()) {
     c = qc.getNoDateCount();
-    result += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
+    result += `<p> ${c} unusable date${c === 1 ? '' : 's'}</p>`;
   }
   if (qc.hasInvalidStates()) {
     c = qc.getInvalidStateSequenceCount();
-    result += `<br/> ${c} invalid state${c === 1 ? '' : 's'}`;
+    result += `<p> ${c} invalid state${c === 1 ? '' : 's'}</p>`;
   }
   if (qc.hasInvalidGaps()) {
     c = qc.getInvalidGapSequenceCount();
-    result += `<br/> ${c} invalid gap${c === 1 ? '' : 's'}`;
+    result += `<p> ${c} invalid gap${c === 1 ? '' : 's'}</p>`;
   }
   if (qc.hasInvalidMutations()) {
     c = qc.getInvalidMutationSequenceCount();
-    result += `<br/> ${c} invalid mutation${c === 1 ? '' : 's'}`;
+    result += `<p> ${c} invalid mutation${c === 1 ? '' : 's'}</p>`;
   }
   if (qc.hasOther()) {
     c = qc.getOtherCount();
-    result += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
+    result += `<p> ${c} sequence${c === 1 ? '': 's'} with other data issues</p>`;
   }
   return result;
 };
