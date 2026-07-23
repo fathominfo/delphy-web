@@ -764,10 +764,11 @@ const checkFiles = (files: File[] | FileList)=>{
             reader.readAsArrayBuffer(file);
           } else {
             alert(`This program doesn't handle '.${extension}' files. Please upload a fasta (with a ".fa" or ".fasta" extension) or a saved Delphy (.dphy) run.`);
-            uploadDiv.classList.remove('loading');
-            uploadDiv.classList.remove('parsing');
-            uploadDiv.classList.remove('direct-loading');
-            setStage(STAGES.initialization);
+            window.location.reload();
+            // uploadDiv.classList.remove('loading');
+            // uploadDiv.classList.remove('parsing');
+            // uploadDiv.classList.remove('direct-loading');
+            // setStage(STAGES.initialization);
           }
         }
         reader.addEventListener('load', onload);
