@@ -902,6 +902,37 @@
 
 
 
+#uploader--progress-container {
+  width: 100%;
+  height: 100%;
+  display: none;
+  padding: 0 30px 30px;
+  position: relative;
+  &> p {
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 25px;
+    margin: 0 0 1em 19px;
+    color: @del;
+    #uploader--file-name {
+      color: white;
+    }
+  }
+}
+
+
+#uploader--dphy-file, #uploader--data-file {
+  // background-color: rgba(173, 213, 255, 0.1);
+  background-color: rgb(25, 93, 168);
+  color: #e0efff;
+  border-width: 1px;
+  font-weight: 400;
+  padding: 25px 20px;
+  line-height: 30px;
+  border-radius: 15px;
+}
+
+
 
 .uploader--data-step {
   display: flex;
@@ -929,12 +960,10 @@
 
   &.complete {
     .uploader--data-step-label {display: inline-block;}
-    .uploader--progress-frame, .uploader--progress-disc {
-      display: none;
-    }
-    .uploader--data-step-checked {
-      display: inline-block;
-    }
+    .uploader--progress-frame { display: none; }
+    .uploader--progress-disc { display: none; }
+    // .uploader--progress-disc { display: inline-block; }
+    .uploader--data-step-checked { display: inline-block; }
   }
 }
 
@@ -950,36 +979,6 @@
   font-size: 18px;
 }
 
-#uploader--progress-container {
-  width: 100%;
-  height: 100%;
-  display: none;
-  padding: 0 30px 30px;
-  position: relative;
-  &> p {
-    font-weight: 700;
-    font-size: 20px;
-    line-height: 25px;
-    margin: 0 0 1em 19px;
-    color: @del;
-    #uploader--file-name {
-      color: white;
-    }
-  }
-}
-
-
-#uploader--dphy-file, #uploader--data-file {
-  background-color: rgba(173, 213, 255, 0.1);
-  color: #e0efff;
-  border-width: 1px;
-  font-weight: 400;
-  padding: 25px 20px;
-  line-height: 30px;
-  border-radius: 15px;
-}
-
-
 
 .uploader--progress-disc {
   display: inline-block;
@@ -987,6 +986,17 @@
   border-radius: 12px;
   aspect-ratio: 1;
   background: conic-gradient( #e0efff 0% var(--pct), fade(@del, 50%) var(--pct) 100%);
+  position: relative;
+}
+
+.uploader--progress-disc-inner {
+  position: absolute;
+  height: 16px;
+  border-radius: 8px;
+  aspect-ratio: 1;
+  background-color: rgb(25, 93, 168);
+  top: 4px;
+  left: 4px;
 }
 
 .uploader--data-step-checked {
@@ -1044,8 +1054,8 @@
   animation-name: spin;
   height: 36px;
   width: 36px;
-  stroke: fade(@del, 60%);
-  stroke-width: 2px;
+  stroke: #e0efff; //fade(@del, 60%);
+  stroke-width: 4px;
   fill: none;
   position: absolute;
   right: 35px;
@@ -1055,14 +1065,9 @@
 
 
 #uploader--file-qc {
-  margin-top: 1em;
-  position: relative;
-}
-
-
-
-#uploader--file-qc {
-  background-color: rgba(173, 213, 255, 0.2);
+  margin-top: 2em;
+  // background-color: rgba(173, 213, 255, 0.2);
+  background-color: rgb(42, 105, 178);
   color: white;
   border-radius: 15px;
   padding: 25px 20px;
