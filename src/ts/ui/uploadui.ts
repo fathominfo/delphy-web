@@ -80,36 +80,26 @@ class ProgressStep {
     this.disc = this.div.querySelector(".uploader--progress-disc") as HTMLDivElement;
     this.label = this.div.querySelector(".uploader--data-step-label") as HTMLSpanElement;
     this.spinner = this.div.querySelector(".uploader--progress-spinner") as HTMLDivElement;
-    // this.unit = unit;
-    // this.unitSingular = unitSingular;
     this.spinning = spinning;
-    if (spinning) {
-      this.label.classList.add("hidden");
-    }
+    this.div.classList.toggle("spinner", spinning);
     container.append(this.div);
   }
 
   show() {
     console.log(this.name, 'show');
-    if (this.spinning) { this.spinner.classList.remove("hidden");}
-    // else this.barFrame.classList.remove("hidden");
-    else this.disc.classList.remove("hidden");
     this.div.classList.add("progressing");
   }
 
   /* assumes success */
   complete() {
     console.log(`${this.name} complete`);
-    this.bar.style.width = `100%`;
-    this.barFrame.classList.add("hidden");
-    this.disc.classList.add("hidden");
-    this.spinner.classList.add("hidden");
-    this.checkBox.classList.remove("hidden");
+    // this.bar.style.width = `100%`;
+    this.disc.style.setProperty('--pct', `100%`);
     this.div.classList.remove("progressing");
+    this.div.classList.add("complete");
   }
 
   setLabel(label: string) {
-    // const label = `${soFar} / ${this.total} ${soFar === 1 ? this.unitSingular : this.unit}`;
     this.label.innerHTML = label;
   }
 
@@ -278,7 +268,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       }
     };
 
-  // const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
+  const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
 
   if (isMaple) {
     return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
