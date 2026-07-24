@@ -6,6 +6,7 @@ import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 import { parse_iso_date } from '../pythia/dates';
+import { nfc } from './common';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -25,102 +26,322 @@ type DemoOption = {
   metadata_col : number
 };
 
+// type PythiaRunFileCallback = (
+//   fastaBytesJs:ArrayBuffer,
+//   runReadyCallback:()=>void,
+//   errCallback:(msg:string)=>void,
+//   stageCallback:(stage:number)=>void,
+//   parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
+//   analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
+//   guideTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+//   refinedTreeProgressCallback:(round:number, tipsSoFar:number, totalTips:number)=>void,
+//   sprRefineProgressCallback:(attempt:number, maxAttempts:number, curMuts:number)=>void,
+//   rootingProgressCallback:(substageId:number, substage:number, numSubstages:number, nodes:number, total:number)=>void,
+//   warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void, // eslint-disable-line @typescript-eslint/no-explicit-any
+//   config: RunParamConfig | null
+// )=>Promise<void>;
+
+
+
+
+
+
+const uploadDiv = document.querySelector("#uploader") as HTMLDivElement;
+const dphyStepContainer = uploadDiv.querySelector("#uploader--dphy-file") as HTMLDivElement;
+const fileStepContainer = uploadDiv.querySelector("#uploader--data-file") as HTMLDivElement;
+const stepTemplate = fileStepContainer?.querySelector(".uploader--data-step") as HTMLDivElement;
+const qcContainer = uploadDiv.querySelector("#uploader--file-qc") as HTMLDivElement;
+const qcSummary = qcContainer.querySelector("#uploader--qc-summary") as HTMLDivElement;
+
+stepTemplate.remove();
+
+class ProgressStep {
+  name: string;
+  div: HTMLDivElement;
+  checkBox: HTMLSpanElement;
+  disc: HTMLDivElement;
+  label: HTMLSpanElement;
+  spinner: HTMLDivElement;
+  spinning: boolean;
+  // unit: string;
+  // unitSingular: string;
+  // total = UNSET;
+
+  // constructor(name: string, unit: string, unitSingular: string, spinning=false) {
+  constructor(container: HTMLDivElement, name: string, spinning=false) {
+    this.div = stepTemplate.cloneNode(true) as HTMLDivElement;
+    this.name = name;
+    (this.div.querySelector(".uploader--data-step-name") as HTMLSpanElement).textContent = name;
+    this.checkBox = this.div.querySelector(".uploader--data-step-checked") as HTMLSpanElement;
+    this.disc = this.div.querySelector(".uploader--progress-disc") as HTMLDivElement;
+    this.label = this.div.querySelector(".uploader--data-step-label") as HTMLSpanElement;
+    this.spinner = this.div.querySelector(".uploader--progress-spinner") as HTMLDivElement;
+    this.spinning = spinning;
+    this.div.classList.toggle("spinner", spinning);
+    container.append(this.div);
+  }
+
+  show() {
+    console.log(this.name, 'show');
+    this.div.classList.add("progressing");
+  }
+
+  /* assumes success */
+  complete() {
+    console.log(`${this.name} complete`);
+    this.disc.style.setProperty('--pct', `100%`);
+    this.div.classList.remove("progressing");
+    this.div.classList.add("complete");
+  }
+
+  setLabel(label: string) {
+    this.label.innerHTML = label;
+  }
+
+  /*
+  returns an indication of whether the step is complete
+  */
+  updateBar(soFar: number, total: number): boolean {
+    if (Number.isFinite(total)) {
+      const pct = 100 * soFar / total;
+      this.disc.style.setProperty('--pct', `${pct}%`);
+      return soFar === total;
+    }
+    return false;
+  }
+}
+
+
+
+const initDphyUpload = (filePath: string, pythia : Pythia, jsBytes: ArrayBuffer)=>{
+  const fileName = filePath.split('/').pop() as string;
+  dphyStepContainer.classList.remove("hidden");
+  (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
+  dphyStepContainer.innerHTML = '';
+  const parsingStep = new ProgressStep(dphyStepContainer, "Parsing");
+  const preparingStep = new ProgressStep(dphyStepContainer, "Preparing delphy run", true);
+  parsingStep.show();
+  const parseProgressCallback = (trees: number, total: number) => {
+    const label = `${nfc(trees)} ${trees === 1 ? 'tree' : 'trees'  } loaded`;
+    const isComplete = parsingStep.updateBar(trees, total);
+    parsingStep.setLabel(label);
+    if (isComplete) {
+      parsingStep.complete();
+      preparingStep.show();
+    }
+  };
+  pythia.initRunFromSaveFile(jsBytes, runCallback, parseProgressCallback)
+    .then(mccConfig=>configCallback(mccConfig as ConfigExport));
+
+
+};
+
+
+
+
+const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsBytes: ArrayBuffer): Promise<void>=>{
+  const fileName = filePath.split('/').pop() as string;
+  fileStepContainer.classList.remove("hidden");
+  (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
+  fileStepContainer.innerHTML = '';
+  // console.log('launching upload sequence')
+  const parsingStep = new ProgressStep(fileStepContainer, "Parsing");
+  const steps = [parsingStep];
+  let analysisProgressCallback: (numSeqsSoFar: number, totalSeqs: number) => void;
+  if (isMaple) {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
+      // looks like delphy core doesn't take an analysis callback for maple files
+    };
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+  } else {
+    const analyzingStep = new ProgressStep(fileStepContainer, "Analyzing");
+    analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
+      const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed`;
+      analyzingStep.updateBar(numSeqsSoFar, totalSeqs);
+      analyzingStep.setLabel(label);
+      checkQC();
+    };
+    steps.push(analyzingStep);
+  }
+  const buildingStep = new ProgressStep(fileStepContainer, "Build guide tree");
+  const refiningStep = new ProgressStep(fileStepContainer, "Refine guide tree");
+  const optimizingStep = new ProgressStep(fileStepContainer, "Optimize tree");
+  const rootingBottomUpStep = new ProgressStep(fileStepContainer, "Rooting and timing: bottom-up");
+  const rootingTopDownStep = new ProgressStep(fileStepContainer, "Rooting and timing: top-down");
+  const rootingCandidateStep = new ProgressStep(fileStepContainer, "Rooting and timing: root candidate");
+  const preparingStep = new ProgressStep(fileStepContainer, "Preparing delphy run", true);
+  [
+    buildingStep,
+    refiningStep,
+    optimizingStep,
+    rootingBottomUpStep,
+    rootingTopDownStep,
+    rootingCandidateStep,
+    preparingStep
+  ].forEach(s=>steps.push(s));
+  let stepIndex = -1;
+
+  parsingStep.show();
+  const forceCompletePriorSteps = ()=>{
+      for (let i = stepIndex; i >= 0; i--) steps[i].complete();
+    },
+    checkQC = ()=>{
+      const warnings = tallyQCWarnings();
+      if (warnings.length > 0) {
+        qcContainer.classList.remove("hidden");
+        qcSummary.innerHTML = warnings;
+      }
+    },
+    stageCallback = (stage: number)=>{
+      forceCompletePriorSteps();
+      stepIndex++;
+      console.log(`Entering stage ${stage}`);
+      steps[stepIndex].show();
+    },
+    parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
+      const label = `${nfc(numSeqsSoFar)} sequence${ numSeqsSoFar === 1 ? '' : 's' } read`;
+      parsingStep.updateBar(bytesSoFar, totalBytes);
+      parsingStep.setLabel(label);
+      checkQC();
+    },
+    guideTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
+      // showProgress(`Building guide tree`, totalTips, tipsSoFar);
+      const label = `${nfc(tipsSoFar)} tip${ tipsSoFar === 1 ? '' : 's' }`;
+      buildingStep.updateBar(tipsSoFar, totalTips);
+      buildingStep.setLabel(label);
+      checkQC();
+    },
+    refinedTreeProgressCallback = (round:number, tipsSoFar:number, totalTips:number) => {
+      // showProgress(`Refining guide tree (round ${round})`, totalTips, tipsSoFar);
+      const label = `${nfc(tipsSoFar)} tip${ tipsSoFar === 1 ? '' : 's' }`;
+      refiningStep.updateBar(tipsSoFar, totalTips);
+      refiningStep.setLabel(label);
+      checkQC();
+    },
+    sprRefineProgressCallback = (attempt:number, maxAttempts:number, curMuts:number) => {
+      // showProgress(`Optimizing tree: ${curMuts} mutations`, maxAttempts, attempt);
+      const label = `${nfc(curMuts)} mutation${ curMuts === 1 ? '' : 's' }`;
+      optimizingStep.updateBar(attempt, maxAttempts);
+      optimizingStep.setLabel(label);
+      checkQC();
+    },
+    // Keep in sync with the Rooting_substage enum in core/utree.h
+    // rootingSubstageLabels: {[id: number]: string} = {
+    //   1: "bottom-up timing",
+    //   2: "top-down timing",
+    //   3: "root candidate evaluation"
+    // },
+    rootingProgressCallback = (substageId:number, substage:number, numSubstages:number, nodes:number, total:number) => {
+      // const what = rootingSubstageLabels[substageId] ?? "rooting and timing";
+      // Global fraction across all passes so the bar advances monotonically (scaled to `total`
+      // so showProgress renders it as a percentage).
+      // const soFar = Math.round(((substage - 1) + (total > 0 ? nodes / total : 0)) / numSubstages * total);
+      let step: ProgressStep = rootingBottomUpStep;
+      if (substageId === 1) step = rootingBottomUpStep;
+      else if (substageId === 2) step = rootingTopDownStep;
+      else if (substageId === 3) step = rootingCandidateStep;
+      const label = `${nfc(nodes)} node${ nodes === 1 ? '' : 's' }`;
+      const isComplete = step.updateBar(nodes, total);
+      step.setLabel(label);
+      // console.log(`Rooting and timing: ${substageId}`, step.name, nodes, total);
+      if (isComplete) {
+        console.log(`Rooting and timing: ${substageId} complete`);
+        if (substageId === 1) {
+          rootingTopDownStep.show();
+          stepIndex = steps.indexOf(rootingBottomUpStep);
+        } else if (substageId === 2) {
+          stepIndex = steps.indexOf(rootingTopDownStep);
+          rootingCandidateStep.show();
+        } else if (substageId === 3) {
+          stepIndex = steps.indexOf(rootingCandidateStep);
+          preparingStep.show();
+        }
+        forceCompletePriorSteps();
+        checkQC();
+      }
+    };
+
+  // const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
+
+  if (isMaple) {
+    return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,
+      stageCallback, parseProgressCallback,
+      // analysisProgressCallback,
+      guideTreeProgressCallback, refinedTreeProgressCallback,
+      sprRefineProgressCallback, rootingProgressCallback,
+      loadWarningCallback, null);
+  } else {
+    return pythia.initRunFromFasta(jsBytes, runCallback, errCallback,
+      stageCallback, parseProgressCallback, analysisProgressCallback,
+      guideTreeProgressCallback, refinedTreeProgressCallback,
+      sprRefineProgressCallback, rootingProgressCallback,
+      loadWarningCallback, null);
+  }
+};
+
+
+
+
+
+
+
+
+
 let pythia : Pythia;
 let qc: RecordQuality;
 
-const showFormatHints = ()=>{
-  info.classList.remove("hidden");
-}
-setShowFormat(showFormatHints);
-
-const maybeUploadDiv = document.querySelector("#uploader");
-if (!maybeUploadDiv) {
-  throw new Error("could not find the uploader div in the html");
-}
-const uploadDiv = maybeUploadDiv as HTMLDivElement;
-const demoDiv = uploadDiv.querySelector("#uploader--demo") as HTMLInputElement;
+// const demoDiv = uploadDiv.querySelector("#uploader--demo") as HTMLInputElement;
 const fileLabel = uploadDiv.querySelector("#uploader--file-input--label") as HTMLLabelElement;
 const urlDiv = uploadDiv.querySelector("#uploader--url-message") as HTMLDivElement;
-
-/* show a progress bar when possible */
-const statusContainer = document.querySelector("#uploader--status") as HTMLDivElement;
-const progressBar = document.querySelector("#uploader--progress") as HTMLDivElement;
-const progressLabel = document.querySelector("#uploader--progress-label") as HTMLDivElement;
-const showProgress = (label:string, total: number, soFar: number)=>{
-  if (soFar === 0 || soFar === total) {
-    activateProgressBar(false);
-  } else {
-    activateProgressBar(true);
-    const pct = 100 * soFar / total;
-    progressBar.style.width = `${pct}%`;
-    progressLabel.innerHTML = label;
-  }
-};
-const showSimpleProgress = (unit: string, total: number, soFar: number)=>{
-  const label = `${soFar} / ${total} ${unit}`;
-  showProgress(label, total, soFar);
-};
-const activateProgressBar = (showit=true)=>{
-  statusContainer.classList.toggle("progressing", showit);
-}
 
 let runCallback = ()=>console.debug('runCallback not assigned'),
   configCallback = (config: ConfigExport)=>console.debug('configCallback not assigned', config);
 
 
-const warningsLabelAddendum = () => {
-    let result = "";
-    let c;
-    if (qc.hasAmbiguousSites()) {
-      c = qc.getAmbiguousSiteCount();
-      result += `<br/> ${c} ambiguous site${c === 1 ? '':'s'} masked`;
-    }
-    if (qc.hasMissingDates()) {
-      c = qc.getNoDateCount();
-      result += `<br/> ${c} unusable date${c === 1 ? '' : 's'}`;
-    }
-    if (qc.hasInvalidStates()) {
-      c = qc.getInvalidStateSequenceCount();
-      result += `<br/> ${c} invalid state${c === 1 ? '' : 's'}`;
-    }
-    if (qc.hasInvalidGaps()) {
-      c = qc.getInvalidGapSequenceCount();
-      result += `<br/> ${c} invalid gap${c === 1 ? '' : 's'}`;
-    }
-    if (qc.hasInvalidMutations()) {
-      c = qc.getInvalidMutationSequenceCount();
-      result += `<br/> ${c} invalid mutation${c === 1 ? '' : 's'}`;
-    }
-    if (qc.hasOther()) {
-      c = qc.getOtherCount();
-      result += `<br/> ${c} sequence${c === 1 ? '': 's'} with other data issues`;
-    }
-    return result;
-  },
-  stageCallback = (stage: number)=>console.log(`Entering stage ${stage}`),
-  parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
-    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } read${
-      warningsLabelAddendum()}`;
-    showProgress(label, totalBytes, bytesSoFar);
-    // console.log(`Read ${numSeqsSoFar} sequences so far `
-    //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
-  },
-  analysisProgressCallback = (numSeqsSoFar: number, totalSeqs: number) => {
-    const label = `${numSeqsSoFar} sequence${ numSeqsSoFar === 1 ? '' : 's' } analyzed${
-      warningsLabelAddendum()}`;
-    showProgress(label, totalSeqs, numSeqsSoFar);
-    // console.log(`Read ${numSeqsSoFar} sequences so far `
-    //   + `(${bytesSoFar} of ${totalBytes} bytes = ${100.0*bytesSoFar/totalBytes}%)`);
-  },
-  initTreeProgressCallback = (tipsSoFar:number, totalTips:number) => {
-    const label = `Building initial tree${
-      warningsLabelAddendum()}`;
-    // console.log(`Building initial tree: completed ${tipsSoFar} / ${totalTips} so far`);
-    showProgress(label, totalTips, tipsSoFar);
-  },
-  loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    qc.parseWarning(seqId, warningCode, detail);
-  };
+const tallyQCWarnings = () => {
+  let result = "";
+  let c;
+  if (qc.hasAmbiguousSites()) {
+    c = qc.getAmbiguousSiteCount();
+    result += `<p> ${c} ambiguous site${c === 1 ? '':'s'} masked</p>`;
+  }
+  if (qc.hasMissingDates()) {
+    c = qc.getNoDateCount();
+    result += `<p> ${c} unusable date${c === 1 ? '' : 's'}</p>`;
+  }
+  if (qc.hasInvalidStates()) {
+    c = qc.getInvalidStateSequenceCount();
+    result += `<p> ${c} invalid state${c === 1 ? '' : 's'}</p>`;
+  }
+  if (qc.hasInvalidGaps()) {
+    c = qc.getInvalidGapSequenceCount();
+    result += `<p> ${c} invalid gap${c === 1 ? '' : 's'}</p>`;
+  }
+  if (qc.hasInvalidMutations()) {
+    c = qc.getInvalidMutationSequenceCount();
+    result += `<p> ${c} invalid mutation${c === 1 ? '' : 's'}</p>`;
+  }
+  if (qc.hasOther()) {
+    c = qc.getOtherCount();
+    result += `<p> ${c} sequence${c === 1 ? '': 's'} with other data issues</p>`;
+  }
+  return result;
+};
+const loadWarningCallback = (seqId: string, warningCode: SequenceWarningCode, detail: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  qc.parseWarning(seqId, warningCode, detail);
+};
+  // showCatchallSpinner = ()=>{
+  //   progressLabel.innerHTML = "Preparing run";
+  //   (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.add("hidden");
+  //   (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.remove("hidden");
+  // },
+  // resetProgressIndicator = ()=>{
+  //   progressLabel.innerHTML = "";
+  //   (document.querySelector(".uploader--progress-frame") as HTMLDivElement).classList.remove("hidden");
+  //   (document.querySelector(".uploader--progress-spinner") as HTMLDivElement).classList.add("hidden");
+  // };
+
 const errCallback = (msg:string)=>{
   console.log(msg);
   requestAnimationFrame(()=>{
@@ -149,6 +370,13 @@ window.addEventListener("keydown", e => {
     }
   }
 });
+
+
+const showFormatHints = ()=>{
+  info.classList.remove("hidden");
+}
+setShowFormat(showFormatHints);
+
 
 
 function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
@@ -257,7 +485,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
     console.log(`loading demo file ${fileToLoad}`);
     setStage(STAGES.loading);
-    hideOthers(demoDiv);
+    hideEntryPoints();
     uploadDiv.classList.add('loading');
     let fetchMetadata = noop;
     if (fileData.metadata_col >= 0) {
@@ -287,15 +515,9 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         uploadDiv.classList.add('parsing');
         qc.reset();
         if (fileToLoad.endsWith(".maple")) {
-          pythia.initRunFromMaple(bytesJs, runCallback, errCallback,
-            stageCallback, parseProgressCallback, initTreeProgressCallback,
-            loadWarningCallback, runParams)
-            .then(fetchMetadata);
+          initFileUpload(fileToLoad, pythia, true, bytesJs).then(fetchMetadata);
         } else {
-          pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
-            stageCallback, parseProgressCallback, analysisProgressCallback,
-            initTreeProgressCallback, loadWarningCallback, runParams)
-            .then(fetchMetadata);
+          initFileUpload(fileToLoad, pythia, false, bytesJs).then(fetchMetadata);
         }
       })
   });
@@ -317,7 +539,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     fileInput?.addEventListener("change", ()=>{
       if (fileInput.files) {
         setStage(STAGES.loading);
-        hideOthers(fileLabel);
+        hideEntryPoints();
         fileLabel.classList.add("opening");
         fileLabel.classList.add("disabled");
         fileInput.blur();
@@ -368,7 +590,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
 const loadNow = (url:string)=>{
   setStage(STAGES.loading);
-  hideOthers(urlDiv);
+  hideEntryPoints();
   urlDiv.classList.add("opening");
   uploadDiv.classList.add('loading');
   uploadDiv.classList.add('direct-loading');
@@ -455,7 +677,7 @@ const handleDragLeave = ()=>{
 }
 
 const handleFileUpload = (event: DragEvent)=>{
-  hideOthers(fileLabel);
+  hideEntryPoints();
   return new Promise(()=>{
     if (event && event.dataTransfer) {
       event.preventDefault();
@@ -467,7 +689,6 @@ const handleFileUpload = (event: DragEvent)=>{
     }
   });
 }
-
 
 const displayParsingState = ()=>{
   setStage(STAGES.parsing);
@@ -487,14 +708,9 @@ const checkFiles = (files: File[] | FileList)=>{
         /* we are loading a saved run */
         reader.addEventListener('load', event=>{
           displayParsingState();
-          const bytesJs = event.target?.result;
+          const bytesJs = event.target?.result as ArrayBuffer;
           if (bytesJs) {
-            const progressCallback = (p:number, t:number)=>{
-              const action = `${p === 1 ? 'tree' : 'trees'  } loaded`;
-              showSimpleProgress(action, t, p);
-            };
-            pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
-              .then(mccConfig=>configCallback(mccConfig as ConfigExport));
+            initDphyUpload(fname, pythia, bytesJs);
           } else {
             alert(`could not read file.`);
           }
@@ -506,9 +722,7 @@ const checkFiles = (files: File[] | FileList)=>{
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
           if (fastaBytesJs) {
-            pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
-              stageCallback, parseProgressCallback, analysisProgressCallback,
-              initTreeProgressCallback, loadWarningCallback, null);
+            initFileUpload(fname, pythia, false, fastaBytesJs);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -520,9 +734,7 @@ const checkFiles = (files: File[] | FileList)=>{
           const mapleBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
           if (mapleBytesJs) {
-            pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
-              stageCallback, parseProgressCallback,
-              initTreeProgressCallback, loadWarningCallback, null);
+            initFileUpload(fname, pythia, true, mapleBytesJs);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -540,18 +752,17 @@ const checkFiles = (files: File[] | FileList)=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
               qc.reset();
               if (fastaBytesJs) {
-                pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
-                  stageCallback, parseProgressCallback, analysisProgressCallback,
-                  initTreeProgressCallback, loadWarningCallback, null);
+                initFileUpload(fname, pythia, false, fastaBytesJs);
               }
             });
             reader.readAsArrayBuffer(file);
           } else {
             alert(`This program doesn't handle '.${extension}' files. Please upload a fasta (with a ".fa" or ".fasta" extension) or a saved Delphy (.dphy) run.`);
-            uploadDiv.classList.remove('loading');
-            uploadDiv.classList.remove('parsing');
-            uploadDiv.classList.remove('direct-loading');
-            setStage(STAGES.initialization);
+            window.location.reload();
+            // uploadDiv.classList.remove('loading');
+            // uploadDiv.classList.remove('parsing');
+            // uploadDiv.classList.remove('direct-loading');
+            // setStage(STAGES.initialization);
           }
         }
         reader.addEventListener('load', onload);
@@ -562,30 +773,11 @@ const checkFiles = (files: File[] | FileList)=>{
 }
 
 
-function hideOthers(originEle: HTMLElement) {
-  const collapsingVertically = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
-  const collapsingHorizontally = [demoDiv, fileLabel, urlDiv].filter(ele=>ele !== originEle);
-  requestAnimationFrame(()=>{
-    collapsingVertically.forEach(ele=>{
-      const ht = ele.offsetHeight;
-      ele.style.height = `${ht}px`;
-      ele.classList.add('collapsing');
-    });
-    collapsingHorizontally.forEach(ele=>{
-      const width = ele.offsetWidth;
-      ele.style.height = `${width}px`;
-      ele.classList.add('collapsing');
-    });
-    requestAnimationFrame(()=>{
-      collapsingVertically.forEach(ele=>ele.style.height = `0`);
-      collapsingHorizontally.forEach(ele=>ele.style.width = `0`);
-      if (originEle === demoDiv) {
-        const openers = document.querySelector("#uploader--file-url-pathways") as HTMLDivElement;
-        openers.classList.add('hidden');
-      }
-    });
-  });
+function hideEntryPoints() {
+  uploadDiv.classList.add("uploading");
 }
+
+
 
 
 export { bindUpload, hideUpload, loadNow };

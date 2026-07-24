@@ -16,6 +16,15 @@
 #uploader {
   height: 100%;
   width: 100%;
+
+  &.uploading {
+    #uploader--entry-points {
+      display: none;
+    }
+    #uploader--progress-container {
+      display: block;
+    }
+  }
 }
 #uploader--content-div {
   display: flex;
@@ -164,7 +173,7 @@
 
 
 
-.uploader--entry-points {
+#uploader--entry-points {
   width: 100%;
   height: 100%;
   display: flex;
@@ -177,8 +186,10 @@
     // color: @del;
     margin-bottom: 1em;
   }
-
 }
+
+
+
 
 #uploader--file-url {
   margin-bottom: 40px;
@@ -256,6 +267,17 @@
   pointer-events: none;
   cursor: default;
 }
+
+
+
+
+// ██╗   ██╗██████╗ ██╗
+// ██║   ██║██╔══██╗██║
+// ██║   ██║██████╔╝██║
+// ██║   ██║██╔══██╗██║
+// ╚██████╔╝██║  ██║███████╗
+//  ╚═════╝ ╚═╝  ╚═╝╚══════╝
+
 
 
 #uploader--url-input {
@@ -848,6 +870,7 @@
   border-radius: 4px;
   display: grid;
   opacity: 0;
+  // opacity: 1;
   .smoothly(opacity);
   .t15();
 
@@ -865,7 +888,6 @@
   &.progressing {
     margin-bottom: 15px;
     opacity: 1;
-    #uploader--progress-container {display: block;}
     p {display: none;}
   }
 }
@@ -874,32 +896,220 @@
   font-style: italic;
 }
 
+#uploader--uploading-file {
+  display: flex;
+}
+
+
 
 #uploader--progress-container {
   width: 100%;
+  height: 100%;
   display: none;
   padding: 0 30px 30px;
-}
-#uploader--progress-frame {
-  width: 100%;
-  height: 25px;
-  background-color: fade(@del, 20%);
   position: relative;
+  &> p {
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 25px;
+    margin: 0 0 1em 19px;
+    color: @del;
+    #uploader--file-name {
+      color: white;
+    }
+  }
 }
-#uploader--progress {
-  width: 50%;
-  height: 100%;
-  background-color: fade(@del, 60%);
-}
-#uploader--progress-label {
-  padding: 5px 0px;
-  text-align: right;
-  width: 14em;
-  margin: 10px auto;
-  font-style: italic;
-  color: fade(white, 50%);
 
+
+#uploader--dphy-file, #uploader--data-file {
+  // background-color: rgba(173, 213, 255, 0.1);
+  background-color: rgb(25, 93, 168);
+  color: #e0efff;
+  border-width: 1px;
+  font-weight: 400;
+  padding: 25px 20px;
+  line-height: 30px;
+  border-radius: 15px;
 }
+
+
+
+.uploader--data-step {
+  display: flex;
+  gap: 1em;
+  // min-width: 736px;
+  min-width: 560px;
+  opacity: 0.6;
+
+  .uploader--data-step-label, .uploader--progress-frame, .uploader--progress-disc,
+  .uploader--data-step-checked, .uploader--progress-spinner {
+    display: none;
+  }
+
+
+  &.progressing {
+    opacity: 1.0;
+    .uploader--data-step-name {color: white; font-weight: 500;}
+    .uploader--data-step-label {display: inline-block;}
+    .uploader--progress-disc { display: inline-block;}
+    &.spinner {
+      .uploader--progress-disc { display: none;}
+      .uploader--progress-spinner {display: flex;}
+    }
+  }
+
+  &.complete {
+    .uploader--data-step-label {display: inline-block;}
+    .uploader--progress-frame { display: none; }
+    .uploader--progress-disc { display: none;}
+    // .uploader--progress-disc { display: inline-block; }
+    .uploader--data-step-checked {
+       display: inline-block;
+       stroke-linecap: round;
+       stroke-linejoin: round;
+     }
+     }
+}
+
+.uploader--progress-icon-container {
+  width: 1em;
+  height: 30px;
+  align-items: center;
+  display: flex;
+}
+
+
+.uploader--progress-disc {
+  display: inline-block;
+  height: 20px;
+  border-radius: 50%;
+  aspect-ratio: 1;
+  background: conic-gradient( #e0efff 0% var(--pct), fade(@del, 50%) var(--pct) 100%);
+  position: relative;
+  right: -5px;
+  top: -3px;
+}
+
+.uploader--progress-disc-inner {
+  position: absolute;
+  height: 14px;
+  border-radius: 50%;
+  aspect-ratio: 1;
+  background-color: rgb(25, 93, 168);
+  top: 3px;
+  left: 3px;
+}
+
+.uploader--data-step-checked {
+  width: 0;
+
+  path {
+    stroke-width: 3;
+    stroke: fade(#e0efff, 70%);
+    fill: none;
+  }
+}
+
+
+// an infinite spinner for when there is no measurable progress
+.uploader--progress-spinner {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0);
+    transform-origin: center;
+  }
+  100% {
+    transform: rotate(360deg);
+    transform-origin: center;
+  }
+}
+.uploader--progress-spun {
+  animation-duration: 1.0s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-name: spin;
+  height: 32px;
+  width: 32px;
+  stroke: #e0efff; //fade(@del, 60%);
+  stroke-width: 3px;
+  fill: none;
+  position: relative;
+  top: -3px;
+}
+
+
+
+.uploader--data-step-name {
+  width: 17em;
+  font-size: 16px;
+}
+
+.uploader--data-step-label {
+  font-variant-numeric: tabular-nums;
+  width: 230px;
+  color: @del;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+#uploader--file-qc {
+  margin-top: 2em;
+  // background-color: rgba(173, 213, 255, 0.2);
+  background-color: rgb(42, 105, 178);
+  color: white;
+  border-radius: 15px;
+  padding: 25px 20px;
+}
+
+#uploader--qc-summary {
+  min-height: 1em;
+  min-width: 200px;
+  font-size: 16px;
+  p {
+    text-align: right;
+    margin: 0;
+    // color: @del;
+
+  }
+}
+
+#uploader--qc-button {
+  position: absolute;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 20px;
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  padding: 0;
+  height: auto;
+  margin-left: 5px;
+
+  &::before {
+    content: "!";
+    padding: 0;
+    position: relative;
+    top: -1px;
+    left: -8px;
+    // border: solid 1.5px #971717;
+    border: solid 1.5px white;
+    font-weight: 700;
+    font-size: 12px;
+    display: inline-block;
+    height: 19px;
+    width: 19px;
+    border-radius: 12px;
+    text-align: center;
+  }
+}
+
 
 
 @media (max-width: 1000px) {

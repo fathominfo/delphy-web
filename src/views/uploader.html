@@ -37,7 +37,7 @@
 
       </section>
 
-      <section class="uploader--entry-points">
+      <section id="uploader--entry-points">
 
         <section id="uploader--file-url">
           <h2>Run your own data</h2>
@@ -150,14 +150,43 @@
           <p id="uploader--status-load" class="uploader--status-message">Loading…</p>
           <p id="uploader--status-parse" class="uploader--status-message">Parsing…</p>
           <p id="uploader--status-error" class="uploader--status-message">Error!</p>
-          <div id="uploader--progress-container">
-            <div id="uploader--progress-label">0 / 0 trees loaded</div>
-            <div id="uploader--progress-frame">
-              <div id="uploader--progress"></div>
-            </div>
-          </div>
         </div>
 
+
+
+      </section>
+
+      <section id="uploader--progress-container">
+        <p>Uploading <span id="uploader--file-name">file name</span></p>
+        <div id="uploader--dphy-file" class="hidden">
+        </div>
+        <div id="uploader--data-file" class="hidden">
+          <div class="uploader--data-step">
+           <div class="uploader--progress-icon-container">
+            <div class="uploader--progress-disc" style="--pct: 0%;">
+              <div class="uploader--progress-disc-inner"></div>
+            </div>
+            <span class="uploader--data-step-checked">
+              <svg width="24" height="24" viewbox="0 0 36 36">
+                <!-- <path d="M5 13 L12 19 21 5" > -->
+                  <path d="M 12.6 21.84 L 18.9 28.14 L 30.24 14.7" />
+             </svg>
+            </span>
+            <div class="uploader--progress-spinner">
+              <svg class="uploader--progress-spun" class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+                <path  d="m18 9 a9 9 0 1 0 9 9"></path>
+              </svg>
+            </div>
+             </div>
+
+            <span class="uploader--data-step-name"></span>
+            <span class="uploader--data-step-label"></span>
+          </div>
+        </div>
+        <div id="uploader--file-qc" class="hidden">
+          <div id="uploader--qc-button" class="">Data Issues</div>
+          <div id="uploader--qc-summary">None</div>
+        </div>
 
       </section>
 
