@@ -59,8 +59,6 @@ class ProgressStep {
   name: string;
   div: HTMLDivElement;
   checkBox: HTMLSpanElement;
-  bar: HTMLDivElement;
-  barFrame: HTMLDivElement;
   disc: HTMLDivElement;
   label: HTMLSpanElement;
   spinner: HTMLDivElement;
@@ -75,8 +73,6 @@ class ProgressStep {
     this.name = name;
     (this.div.querySelector(".uploader--data-step-name") as HTMLSpanElement).textContent = name;
     this.checkBox = this.div.querySelector(".uploader--data-step-checked") as HTMLSpanElement;
-    this.barFrame = this.div.querySelector(".uploader--progress-frame") as HTMLDivElement;
-    this.bar = this.div.querySelector(".uploader--progress") as HTMLDivElement;
     this.disc = this.div.querySelector(".uploader--progress-disc") as HTMLDivElement;
     this.label = this.div.querySelector(".uploader--data-step-label") as HTMLSpanElement;
     this.spinner = this.div.querySelector(".uploader--progress-spinner") as HTMLDivElement;
@@ -93,7 +89,6 @@ class ProgressStep {
   /* assumes success */
   complete() {
     console.log(`${this.name} complete`);
-    // this.bar.style.width = `100%`;
     this.disc.style.setProperty('--pct', `100%`);
     this.div.classList.remove("progressing");
     this.div.classList.add("complete");
@@ -109,7 +104,6 @@ class ProgressStep {
   updateBar(soFar: number, total: number): boolean {
     if (Number.isFinite(total)) {
       const pct = 100 * soFar / total;
-      // this.bar.style.width = `${pct}%`;
       this.disc.style.setProperty('--pct', `${pct}%`);
       return soFar === total;
     }
@@ -268,7 +262,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       }
     };
 
-  const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
+  // const runCallback = ()=>console.warn(`bypassing navigation to Run screen in order to test the upload screen. `);
 
   if (isMaple) {
     return pythia.initRunFromMaple(jsBytes, runCallback, errCallback,

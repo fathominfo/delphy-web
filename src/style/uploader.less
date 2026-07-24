@@ -977,18 +977,6 @@
   align-items: center;
   display: flex;
 }
-.uploader--data-step-name {
-  width: 17em;
-  font-size: 16px;
-}
-
-.uploader--data-step-label {
-  font-variant-numeric: tabular-nums;
-  width: 230px;
-  color: @del;
-  font-weight: 400;
-  font-size: 16px;
-}
 
 
 .uploader--progress-disc {
@@ -999,6 +987,7 @@
   background: conic-gradient( #e0efff 0% var(--pct), fade(@del, 50%) var(--pct) 100%);
   position: relative;
   right: -5px;
+  top: -3px;
 }
 
 .uploader--progress-disc-inner {
@@ -1022,30 +1011,8 @@
 }
 
 
-
-.uploader--progress-frame {
-  width: 200px;
-  height: 25px;
-  background-color: fade(@del, 20%);
-  position: relative;
-}
-.uploader--progress {
-  width: 0%;
-  height: 100%;
-  background-color: fade(@del, 60%);
-}
-.uploader--progress-label {
-  padding: 5px 0px;
-  text-align: right;
-  width: 14em;
-  margin: 10px auto;
-  font-style: italic;
-  color: fade(white, 50%);
-}
+// an infinite spinner for when there is no measurable progress
 .uploader--progress-spinner {
-  // width: 50px;
-  // height: 25px;
-  // margin-left: 13px;
   position: relative;
   display: flex;
   align-items: center;
@@ -1071,12 +1038,24 @@
   stroke: #e0efff; //fade(@del, 60%);
   stroke-width: 3px;
   fill: none;
-  // position: absolute;
-  // right: -16px;
+  position: relative;
+  top: -3px;
 }
 
 
 
+.uploader--data-step-name {
+  width: 17em;
+  font-size: 16px;
+}
+
+.uploader--data-step-label {
+  font-variant-numeric: tabular-nums;
+  width: 230px;
+  color: @del;
+  font-weight: 400;
+  font-size: 16px;
+}
 
 #uploader--file-qc {
   margin-top: 2em;
