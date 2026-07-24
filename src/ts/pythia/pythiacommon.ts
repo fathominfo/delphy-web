@@ -1,4 +1,3 @@
-import { Tree } from "../delphy/api";
 import { UNSET } from "../ui/common";
 import { PhyloTree } from "./delphy_api";
 

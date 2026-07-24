@@ -247,7 +247,7 @@ export class ScatterPlotCanvas extends TraceCanvas {
     }
     minSpan.textContent = toFullDateString(minDate);
     maxSpan.textContent = toFullDateString(maxDate);
-    const scatterData = (this.traceData as ScatterData);
+    // const scatterData = (this.traceData as ScatterData);
     // this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
   }
 
