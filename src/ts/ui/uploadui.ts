@@ -139,7 +139,9 @@ const initDphyUpload = (filePath: string, pythia : Pythia, jsBytes: ArrayBuffer)
 
 
 
-const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsBytes: ArrayBuffer): Promise<void>=>{
+const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean,
+  jsBytes: ArrayBuffer, runParams: RunParamConfig | null
+): Promise<void>=>{
   const fileName = filePath.split('/').pop() as string;
   fileStepContainer.classList.remove("hidden");
   (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
@@ -270,13 +272,13 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean, jsB
       // analysisProgressCallback,
       guideTreeProgressCallback, refinedTreeProgressCallback,
       sprRefineProgressCallback, rootingProgressCallback,
-      loadWarningCallback, null);
+      loadWarningCallback, runParams);
   } else {
     return pythia.initRunFromFasta(jsBytes, runCallback, errCallback,
       stageCallback, parseProgressCallback, analysisProgressCallback,
       guideTreeProgressCallback, refinedTreeProgressCallback,
       sprRefineProgressCallback, rootingProgressCallback,
-      loadWarningCallback, null);
+      loadWarningCallback, runParams);
   }
 };
 
@@ -515,9 +517,9 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         uploadDiv.classList.add('parsing');
         qc.reset();
         if (fileToLoad.endsWith(".maple")) {
-          initFileUpload(fileToLoad, pythia, true, bytesJs).then(fetchMetadata);
+          initFileUpload(fileToLoad, pythia, true, bytesJs, runParams).then(fetchMetadata);
         } else {
-          initFileUpload(fileToLoad, pythia, false, bytesJs).then(fetchMetadata);
+          initFileUpload(fileToLoad, pythia, false, bytesJs, runParams).then(fetchMetadata);
         }
       })
   });
@@ -722,7 +724,7 @@ const checkFiles = (files: File[] | FileList)=>{
           const fastaBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
           if (fastaBytesJs) {
-            initFileUpload(fname, pythia, false, fastaBytesJs);
+            initFileUpload(fname, pythia, false, fastaBytesJs, null);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -734,7 +736,7 @@ const checkFiles = (files: File[] | FileList)=>{
           const mapleBytesJs = event.target?.result as ArrayBuffer;
           qc.reset();
           if (mapleBytesJs) {
-            initFileUpload(fname, pythia, true, mapleBytesJs);
+            initFileUpload(fname, pythia, true, mapleBytesJs, null);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -752,7 +754,7 @@ const checkFiles = (files: File[] | FileList)=>{
               const fastaBytesJs = event.target?.result as ArrayBuffer;
               qc.reset();
               if (fastaBytesJs) {
-                initFileUpload(fname, pythia, false, fastaBytesJs);
+                initFileUpload(fname, pythia, false, fastaBytesJs, null);
               }
             });
             reader.readAsArrayBuffer(file);
