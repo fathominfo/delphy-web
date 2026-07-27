@@ -1154,6 +1154,16 @@ export class Pythia {
     return candidates;
   }
 
+  getMccRootSequence() : Uint8Array {
+    const mccRef = this.getMcc();
+    const mcc = mccRef.getMcc();
+    const baseTreeIndex = mcc.getMasterBaseTreeIndex();
+    const baseTree = this.treeHist[baseTreeIndex];
+    const refSeq = baseTree.getRootSequence();
+    mccRef.release();
+    return refSeq;
+  }
+
 
 
 

@@ -48,7 +48,8 @@ class MutationTimeline {
   constructor(data: MutationTimelineData, minDate: number, maxDate: number,
     hoverCallback: SeriesHoverCallback) {
     this.data = data;
-    const {mutation} = data;
+    // is this AA or nuc?
+    const {mutation, nameParts, series} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
     this.div.classList.toggle('is-apobec', data.mutation.isApobecCtx && data.isApobecRun);
     this.readout = this.div.querySelector(".time-chart--readout") as HTMLDivElement;
@@ -59,8 +60,6 @@ class MutationTimeline {
     if (!nameLabel || !prevalenceLabel) {
       throw new Error('could not find elements for mutation data for node comparison');
     }
-
-    const {nameParts, series} = this.data;
     if (nameParts instanceof Array) {
       (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts[0];
       (nameLabel.querySelector(".site") as HTMLElement).innerText = nameParts[1];
@@ -74,8 +73,10 @@ class MutationTimeline {
       nameLabel.classList.add("amino-acid");
       if (nameParts.isSynonymous) {
         nameLabel.classList.add("synonymous");
-        (nameLabel.querySelector(".nuc-from") as HTMLElement).innerText = NUC_LOOKUP[nameParts.mutation.from];
-        (nameLabel.querySelector(".nuc-to") as HTMLElement).innerText = NUC_LOOKUP[nameParts.mutation.to];
+        const fromCodon = nameParts.fromCodon.map(n=>NUC_LOOKUP[n]).join('');
+        const toCodon = nameParts.toCodon.map(n=>NUC_LOOKUP[n]).join('');
+        (nameLabel.querySelector(".nuc-from") as HTMLElement).innerText = fromCodon;
+        (nameLabel.querySelector(".nuc-to") as HTMLElement).innerText = toCodon;
       } else {
         nameLabel.classList.remove("synonymous");
       }

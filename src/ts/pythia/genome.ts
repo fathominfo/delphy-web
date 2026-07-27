@@ -1,6 +1,6 @@
 import { NUC_LOOKUP } from "../constants";
 import { RealSeqLetter } from "../delphy/api";
-import { SharedState } from "../sharedstate";
+// import { SharedState } from "../sharedstate";
 import { nfc, UNSET } from "../ui/common";
 import { Mutation, RealSeqLetter_A, RealSeqLetter_C,
   RealSeqLetter_G, RealSeqLetter_T } from "./delphy_api";
@@ -117,7 +117,8 @@ export type AAMutation = {
   to: string;
   protein: string;
   position: number;
-  codon: RealSeqLetter[];
+  fromCodon: RealSeqLetter[],
+  toCodon: RealSeqLetter[];
   isSynonymous: boolean;
   label: string;
 };
@@ -149,6 +150,11 @@ export class Genome {
     return this;
   }
 
+  /*
+  deprecated? Converts a string of acgt to a numerically encoded
+  array. But we aren't loading ref sequences any more, so prolly
+  not needed.
+  */
   initRefSequence(seq: string) : void {
     let letter: string;
     let nuc: RealSeqLetter = RealSeqLetter_A; // init to something
@@ -182,11 +188,15 @@ export class Genome {
       const letters = this.refSequence.slice(codonStart, codonStart + 3);
       const codonPosition = genePos % 3;
       const fromAA = getAAName(letters);
-      letters[codonPosition] = mutation.to;
       const toAA = getAAName(letters);
-      const codon: RealSeqLetter[] = [];
+      const fromCodon: RealSeqLetter[] = [];
+      const toCodon: RealSeqLetter[] = [];
       const isSynonymous = fromAA === toAA;
-      letters.forEach(l=>codon.push(l));
+      letters.forEach(l=>{
+        fromCodon.push(l);
+        toCodon.push(l);
+      });
+      toCodon[codonPosition] = mutation.to;
       let label = `${feature.name}:${fromAA}${codonPosition}${toAA}`;
       if (isSynonymous) {
         label += `(${NUC_LOOKUP[mutation.from]}->${NUC_LOOKUP[mutation.to]})`;
@@ -196,8 +206,9 @@ export class Genome {
         from: fromAA,
         to: toAA,
         protein: feature.name,
-        position: codonPosition,
-        codon: codon,
+        position: codonStart,
+        fromCodon: fromCodon,
+        toCodon: toCodon,
         label: label,
         isSynonymous: isSynonymous
       };
@@ -286,7 +297,7 @@ export type RefSequenceMatch = {
 export const findRefSequenceCandidates = (sequence: string) : RefSequenceMatch[] => {
   const L = sequence.length;
   const candidates: RefSequenceMatch[] = [];
-  Object.entries(refSeqs).forEach(([string, conf])=>{
+  Object.entries(refSeqs).forEach(([_, conf])=>{ // eslint-disable-line @typescript-eslint/no-unused-vars
     const seq = conf.sequence;
     if (seq.length === L) {
       const misMatches: [number, string, string][] = [];
@@ -329,7 +340,6 @@ export const findRefSequenceCandidates = (sequence: string) : RefSequenceMatch[]
 export const findMatchingRefSequence = (sequence: string) : RefSequenceMatch => {
   let bestScore: number = UNSET;
   let bestConfig: RefSeqConfig | RefSeqConfigWithSegment | null = null;
-  const L = sequence.length;
   const candidates = findRefSequenceCandidates(sequence);
   if (candidates.length > 0) {
     const {config, score} = candidates[0];
@@ -340,35 +350,35 @@ export const findMatchingRefSequence = (sequence: string) : RefSequenceMatch => 
 };
 
 /* classes that drive the display state of the genome data interface */
-const suggesting = "suggesting";
-const choosing = "choosing";
-const confirmed = "confirmed";
+// const suggesting = "suggesting";
+// const choosing = "choosing";
+// const confirmed = "confirmed";
 
-export const initRefDiv = (div: HTMLDivElement, sharedState: SharedState)=>{
-  (div.querySelector(".reference--suggesting button") as HTMLButtonElement).addEventListener("click", ()=>{
-    openRefSelector(sharedState, suggesting).then(()=>setRefDivStatus(div, sharedState));
-  });
-  (div.querySelector(".reference--selected button") as HTMLButtonElement).addEventListener("click", ()=>{
-    openRefSelector(sharedState, confirmed).then(()=>setRefDivStatus(div, sharedState));
-  });
-  (div.querySelector(".reference--none button") as HTMLButtonElement).addEventListener("click", ()=>{
-    openRefSelector(sharedState, choosing).then(()=>setRefDivStatus(div, sharedState));
-  });
-};
+// export const initRefDiv = (div: HTMLDivElement, sharedState: SharedState)=>{
+//   (div.querySelector(".reference--suggesting button") as HTMLButtonElement).addEventListener("click", ()=>{
+//     openRefSelector(sharedState, suggesting).then(()=>setRefDivStatus(div, sharedState));
+//   });
+//   (div.querySelector(".reference--selected button") as HTMLButtonElement).addEventListener("click", ()=>{
+//     openRefSelector(sharedState, confirmed).then(()=>setRefDivStatus(div, sharedState));
+//   });
+//   (div.querySelector(".reference--none button") as HTMLButtonElement).addEventListener("click", ()=>{
+//     openRefSelector(sharedState, choosing).then(()=>setRefDivStatus(div, sharedState));
+//   });
+// };
 
-export const setRefDivStatus = (div: HTMLDivElement, sharedState: SharedState)=>{
-  const { genome, bestRefSequenceGuess } = sharedState;
-  if (genome) {
-    div.classList.add("selected");
-    div.classList.remove("suggesting");
-  } else if (bestRefSequenceGuess !== null && bestRefSequenceGuess.config !== null) {
-    div.classList.add("suggesting");
-    div.classList.remove("selected");
-    const name = bestRefSequenceGuess.config.name;
-    const label = div.querySelector(".reference--suggesting button") as HTMLElement;
-    label.textContent = name;
-  }
-};
+// export const setRefDivStatus = (div: HTMLDivElement, sharedState: SharedState)=>{
+//   const { genome, bestRefSequenceGuess } = sharedState;
+//   if (genome) {
+//     div.classList.add("selected");
+//     div.classList.remove("suggesting");
+//   } else if (bestRefSequenceGuess !== null && bestRefSequenceGuess.config !== null) {
+//     div.classList.add("suggesting");
+//     div.classList.remove("selected");
+//     const name = bestRefSequenceGuess.config.name;
+//     const label = div.querySelector(".reference--suggesting button") as HTMLElement;
+//     label.textContent = name;
+//   }
+// };
 
 
 
@@ -394,15 +404,15 @@ const genomeConfigDisplay = inner.querySelector("#gff-load-result tbody") as HTM
 const genomeConfigRow = genomeConfigDisplay.querySelector("tr") as HTMLElement;
 genomeConfigRow.remove();
 
-const dismissButton = inner.querySelector(".dismiss") as HTMLButtonElement;
+// const dismissButton = inner.querySelector(".dismiss") as HTMLButtonElement;
 const suggestingDiv = inner.querySelector("#reference-suggesting") as HTMLDivElement;
-const confirmButton = suggestingDiv.querySelector(`input[value="yes"]`) as HTMLButtonElement;
+// const confirmButton = suggestingDiv.querySelector(`input[value="yes"]`) as HTMLButtonElement;
 const rejectButton = suggestingDiv.querySelector(`input[value="no"]`) as HTMLButtonElement;
-const selectingDiv = inner.querySelector("#reference-selecting") as HTMLDivElement;
-const uploadingDiv = inner.querySelector("#reference-uploading") as HTMLDivElement;
-const gffUpload = uploadingDiv.querySelector("#reference-gff") as HTMLInputElement;
-const gffUploadArea = gffUpload.querySelector("label") as HTMLLabelElement;
-const gffUploadInput = gffUpload.querySelector("input") as HTMLInputElement;
+// const selectingDiv = inner.querySelector("#reference-selecting") as HTMLDivElement;
+// const uploadingDiv = inner.querySelector("#reference-uploading") as HTMLDivElement;
+// const gffUpload = uploadingDiv.querySelector("#reference-gff") as HTMLInputElement;
+// const gffUploadArea = gffUpload.querySelector("label") as HTMLLabelElement;
+// const gffUploadInput = gffUpload.querySelector("input") as HTMLInputElement;
 // const seqUpload = inner.querySelector("#reference-refseq") as HTMLDivElement;
 // const seqUploadArea = seqUpload.querySelector("label") as HTMLLabelElement;
 // const seqUploadInput = seqUpload.querySelector("input") as HTMLInputElement;
@@ -410,19 +420,19 @@ const gffUploadInput = gffUpload.querySelector("input") as HTMLInputElement;
 
 
 
-const closeRefSelector = ()=>wrapper.classList.remove("active");
-const confirmSuggestion = (sharedState: SharedState) : Promise<void>=>{
-  const config: RefSeqConfig = sharedState.bestRefSequenceGuess?.config as RefSeqConfig;
-  const fullPath = `assets/data/${config.gff_path}`;
-  return new Promise(resolve=>{
-    fetch(fullPath).then(resp=>resp.text()).then(gff=>{
-      const genome = new Genome(config.accession).fromGff3(gff);
-      genome.initRefSequence(config.sequence);
-      sharedState.genome = genome;
-      resolve();
-    });
-  });
-};
+// const closeRefSelector = ()=>wrapper.classList.remove("active");
+// const confirmSuggestion = (sharedState: SharedState) : Promise<void>=>{
+//   const config: RefSeqConfig = sharedState.bestRefSequenceGuess?.config as RefSeqConfig;
+//   const fullPath = `assets/data/${config.gff_path}`;
+//   return new Promise(resolve=>{
+//     fetch(fullPath).then(resp=>resp.text()).then(gff=>{
+//       const genome = new Genome(config.accession).fromGff3(gff);
+//       genome.initRefSequence(config.sequence);
+//       sharedState.genome = genome;
+//       resolve();
+//     });
+//   });
+// };
 
 /*
 if delphy got the guess wrong,
@@ -435,30 +445,30 @@ const rejectSuggestion = ()=>{
   inner.classList.remove("suggesting");
 };
 
-let stagedGenome: Genome | null = null;
-const stagedSequence: string | null = null;
+// const stagedGenome: Genome | null = null;
+// const stagedSequence: string | null = null;
 
-const parseGenomeConfigFile = (file: File, sharedState: SharedState) : Promise<void>=>{
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    try {
-      reader.addEventListener("load", ()=>{
-        const text = reader.result as string;
-        stagedGenome = new Genome(file.name).fromGff3(text);
-        gffUpload.classList.remove("loading");
-        gffUpload.classList.remove("not-loaded");
-        (gffUpload.querySelector(".uploader-text") as HTMLElement).innerText = `${file.name}`;
-        setGenomeDisplay();
-        resolve();
-      });
-      reader.readAsText(file);
-    } catch (err) {
-      console.log(err);
-      alert("error loading genome configuration file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
-      reject();
-    }
-  });
-}
+// const parseGenomeConfigFile = (file: File) : Promise<void>=>{
+//   return new Promise((resolve, reject)=>{
+//     const reader = new FileReader();
+//     try {
+//       reader.addEventListener("load", ()=>{
+//         const text = reader.result as string;
+//         stagedGenome = new Genome(file.name).fromGff3(text);
+//         gffUpload.classList.remove("loading");
+//         gffUpload.classList.remove("not-loaded");
+//         (gffUpload.querySelector(".uploader-text") as HTMLElement).innerText = `${file.name}`;
+//         setGenomeDisplay();
+//         resolve();
+//       });
+//       reader.readAsText(file);
+//     } catch (err) {
+//       console.log(err);
+//       alert("error loading genome configuration file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
+//       reject();
+//     }
+//   });
+// }
 
 
 /*
@@ -494,93 +504,93 @@ showGenomeConfigLoading() : void {
 
 */
 
-const setGenomeDisplay = () : void =>{
-  if (stagedGenome && stagedGenome.features.length > 0) {
-    genomeConfigDisplay.innerHTML = '';
-    stagedGenome.features.forEach(feature=>{
-      const row = genomeConfigRow.cloneNode(true) as HTMLTableRowElement;
-      const cells = row.querySelectorAll("td");
-      cells[0].textContent = feature.featureType;
-      cells[1].textContent = feature.getReadableStart();
-      cells[2].textContent = feature.getReadableEnd();
-      cells[3].textContent = feature.getReadableStrand();
-      cells[4].textContent = feature.getReadablePhase();
-      cells[5].textContent = feature.name;
-      genomeConfigDisplay.appendChild(row);
-    });
-  }
-}
+// const setGenomeDisplay = () : void =>{
+//   if (stagedGenome && stagedGenome.features.length > 0) {
+//     genomeConfigDisplay.innerHTML = '';
+//     stagedGenome.features.forEach(feature=>{
+//       const row = genomeConfigRow.cloneNode(true) as HTMLTableRowElement;
+//       const cells = row.querySelectorAll("td");
+//       cells[0].textContent = feature.featureType;
+//       cells[1].textContent = feature.getReadableStart();
+//       cells[2].textContent = feature.getReadableEnd();
+//       cells[3].textContent = feature.getReadableStrand();
+//       cells[4].textContent = feature.getReadablePhase();
+//       cells[5].textContent = feature.name;
+//       genomeConfigDisplay.appendChild(row);
+//     });
+//   }
+// }
 
 
 
 rejectButton.addEventListener("click", rejectSuggestion);
 
-export const openRefSelector = (sharedState: SharedState, selectorState: string): Promise<void>=>{
-  const { genome, bestRefSequenceGuess } = sharedState;
-  [suggesting, choosing, confirmed].forEach(className=>inner.classList.toggle(className, className === selectorState));
-  if (bestRefSequenceGuess && bestRefSequenceGuess.config) {
-    const config = bestRefSequenceGuess.config as RefSeqConfigWithSegment;
-    const nameSpan = suggestingDiv.querySelector(".ncbi-name") as HTMLSpanElement;
-    const accSpan = suggestingDiv.querySelector(".ncbi-acc") as HTMLSpanElement;
-    const segmentSpan = suggestingDiv.querySelector(".segment") as HTMLSpanElement;
-    nameSpan.textContent = config.name;
-    accSpan.textContent = config.accession;
-    if (config.segment) {
-      segmentSpan.textContent = `segment ${config.segment}`;
-      segmentSpan.classList.remove("hidden");
-    } else {
-      segmentSpan.classList.add("hidden");
-    }
-    suggestingDiv.classList.remove("hidden");
-  } else {
-    suggestingDiv.classList.add("hidden");
-  }
+// export const openRefSelector = (sharedState: SharedState, selectorState: string): Promise<void>=>{
+//   const { genome, bestRefSequenceGuess } = sharedState;
+//   [suggesting, choosing, confirmed].forEach(className=>inner.classList.toggle(className, className === selectorState));
+//   if (bestRefSequenceGuess && bestRefSequenceGuess.config) {
+//     const config = bestRefSequenceGuess.config as RefSeqConfigWithSegment;
+//     const nameSpan = suggestingDiv.querySelector(".ncbi-name") as HTMLSpanElement;
+//     const accSpan = suggestingDiv.querySelector(".ncbi-acc") as HTMLSpanElement;
+//     const segmentSpan = suggestingDiv.querySelector(".segment") as HTMLSpanElement;
+//     nameSpan.textContent = config.name;
+//     accSpan.textContent = config.accession;
+//     if (config.segment) {
+//       segmentSpan.textContent = `segment ${config.segment}`;
+//       segmentSpan.classList.remove("hidden");
+//     } else {
+//       segmentSpan.classList.add("hidden");
+//     }
+//     suggestingDiv.classList.remove("hidden");
+//   } else {
+//     suggestingDiv.classList.add("hidden");
+//   }
 
 
 
 
-  wrapper.classList.add("active");
-  return new Promise(resolve=>{
-    const unbind = ()=>{
-      confirmButton.removeEventListener("click", confirmer);
-      dismissButton.removeEventListener("click", unbind);
-      gffUploadInput.addEventListener("change", handleGffFileUpload);
-      gffUploadArea.addEventListener("drop", handleGffFileDrag);
-      resolve();
-    };
-    const confirmer = ()=>{
-      confirmSuggestion(sharedState).then(()=>{
-        unbind();
-        closeRefSelector();
-      });
-    };
-    const handleGffFileUpload = () => {
-      const files = gffUpload.files;
-      if (files) {
-        gffUpload.classList.add("loading");
-        parseGenomeConfigFile(files[0], sharedState);
-      }
-    };
-    const handleGffFileDrag = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      gffUpload.classList.add("loading");
-      if (e.dataTransfer) {
-        const files = e.dataTransfer.files;
-        if (files) {
-          parseGenomeConfigFile(files[0], sharedState);
-        }
-      }
-    };
+//   wrapper.classList.add("active");
+//   return new Promise(resolve=>{
+//     const unbind = ()=>{
+//       confirmButton.removeEventListener("click", confirmer);
+//       dismissButton.removeEventListener("click", unbind);
+//       gffUploadInput.addEventListener("change", handleGffFileUpload);
+//       gffUploadArea.addEventListener("drop", handleGffFileDrag);
+//       resolve();
+//     };
+//     const confirmer = ()=>{
+//       confirmSuggestion(sharedState).then(()=>{
+//         unbind();
+//         closeRefSelector();
+//       });
+//     };
+//     const handleGffFileUpload = () => {
+//       const files = gffUpload.files;
+//       if (files) {
+//         gffUpload.classList.add("loading");
+//         parseGenomeConfigFile(files[0], sharedState);
+//       }
+//     };
+//     const handleGffFileDrag = (e: DragEvent) => {
+//       e.preventDefault();
+//       e.stopPropagation();
+//       gffUpload.classList.add("loading");
+//       if (e.dataTransfer) {
+//         const files = e.dataTransfer.files;
+//         if (files) {
+//           parseGenomeConfigFile(files[0], sharedState);
+//         }
+//       }
+//     };
 
 
-    confirmButton.addEventListener("click", confirmer);
-    dismissButton.addEventListener("click", unbind);
-    gffUploadInput.addEventListener("change", handleGffFileUpload);
-    gffUploadArea.addEventListener("drop", handleGffFileDrag);
-  });
+//     confirmButton.addEventListener("click", confirmer);
+//     dismissButton.addEventListener("click", unbind);
+//     gffUploadInput.addEventListener("change", handleGffFileUpload);
+//     gffUploadArea.addEventListener("drop", handleGffFileDrag);
+//   });
 
-};
+// };
 
 
 

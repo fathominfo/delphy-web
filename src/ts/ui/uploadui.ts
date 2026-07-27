@@ -1,4 +1,4 @@
-import { noop, NUC_LOOKUP, STAGES } from '../constants';
+import { noop, STAGES } from '../constants';
 import { isBadSafari, setShowFormat, setStage } from '../errors';
 import { SharedState } from '../sharedstate';
 import {getEmptyRunParamConfig, Pythia, RunParamConfig} from '../pythia/pythia';

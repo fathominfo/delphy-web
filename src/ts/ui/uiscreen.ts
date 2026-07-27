@@ -1,4 +1,3 @@
-import { initRefDiv, setRefDivStatus } from '../pythia/genome';
 import {Pythia} from '../pythia/pythia';
 import {SharedState} from '../sharedstate';
 import { getPercentLabel } from './common';
@@ -10,7 +9,7 @@ export class UIScreen {
   resizeHandler: ()=>void;
   isApobecEnabled: boolean;
   isActive = false;
-  refSeqDiv: HTMLDivElement | null = null;
+  // refSeqDiv: HTMLDivElement | null = null;
 
 
 
@@ -24,10 +23,10 @@ export class UIScreen {
     this.resizeHandler = ()=>this.resize();
     this.pythia = null;
     this.isApobecEnabled = false;
-    this.refSeqDiv = this.div.querySelector(".reference-sequence") as HTMLDivElement;
-    if (this.refSeqDiv) {
-      initRefDiv(this.refSeqDiv, this.sharedState);
-    }
+    // this.refSeqDiv = this.div.querySelector(".reference-sequence") as HTMLDivElement;
+    // if (this.refSeqDiv) {
+    //   initRefDiv(this.refSeqDiv, this.sharedState);
+    // }
   }
 
   resize() {} // eslint-disable-line @typescript-eslint/no-empty-function
@@ -42,9 +41,9 @@ export class UIScreen {
     this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
       (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
     });
-    if (this.refSeqDiv) {
-      setRefDivStatus(this.refSeqDiv, this.sharedState);
-    }
+    // if (this.refSeqDiv) {
+    //   setRefDivStatus(this.refSeqDiv, this.sharedState);
+    // }
   }
 
   deactivate() {

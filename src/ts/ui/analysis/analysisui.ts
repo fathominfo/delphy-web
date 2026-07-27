@@ -1,6 +1,6 @@
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
-import { AggregateMOI, tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
+import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { UNSET } from "../common";
@@ -41,6 +41,9 @@ export class AnalysisUI extends UIScreen {
   activate(): void {
     super.activate();
     this.setData();
+    if (this.sharedState.genome && this.pythia) {
+      this.sharedState.genome.refSequence = this.pythia.getMccRootSequence();
+    }
   }
 
 

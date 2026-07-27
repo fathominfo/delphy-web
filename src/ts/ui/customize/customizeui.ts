@@ -12,7 +12,6 @@ import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
 import { ColumnSummary } from '../metadata';
 import { Genome, RefSeqConfig, RefSequenceMatch } from '../../pythia/genome';
-import { Pythia } from '../../pythia/pythia';
 
 /* global NodeListOf */
 
@@ -77,9 +76,6 @@ export class CustomizeUI extends MccUI {
   selectAllCallback: selectAllCallbackType | null;
 
   metadataLoaded = false;
-
-  stagedGenome: Genome | null = null;
-  stagedRefSequence: string | null = null;
 
   candidates: RefSequenceMatch[] = [];
 
@@ -398,42 +394,14 @@ export class CustomizeUI extends MccUI {
       if (value === '') return;
       console.log('genomeSelect', value);
       const selection = this.candidates.filter(({config})=>config && config.accession === value)[0];
+      console.log(selection)
       const config = selection.config as RefSeqConfig;
       this.showGenomeConfigLoading();
       fetch (`assets/data/${config.gff_path}`).then(resp=>resp.text()).then((text)=>{
-        this.stagedGenome = new Genome(config.gff_path).fromGff3(text);
-        this.shareGenomeConfig();
+        this.sharedState.genome = new Genome(config.gff_path).fromGff3(text);
         this.endGenomeConfigLoading();
       });
     });
-
-
-    // const refSequenceLoadDiv = this.div.querySelector("#customize--refseq") as HTMLDivElement;
-    // const uploadRefSequence = refSequenceLoadDiv.querySelector("input") as HTMLInputElement;
-    // uploadRefSequence.value = "";
-    // uploadRefSequence.addEventListener("change", () => {
-    //   const files = uploadRefSequence.files;
-    //   if (files) {
-    //     this.showRefSeqLoading();
-    //     this.parseRefSeqFile(files[0]);
-    //   }
-    // });
-    // uploadArea = refSequenceLoadDiv.querySelector("label") as HTMLElement;
-    // uploadArea.addEventListener("drop", e => {
-    //   e.preventDefault();
-    //   e.stopPropagation();
-    //   this.showRefSeqLoading();
-    //   if (e.dataTransfer) {
-    //     const files = e.dataTransfer.files;
-    //     if (files) {
-    //       this.parseRefSeqFile(files[0]);
-    //     }
-    //   }
-    // });
-
-
-
-
 
   }
 
@@ -523,29 +491,12 @@ export class CustomizeUI extends MccUI {
   endGenomeConfigLoading() : void {
     const genomeLoader = this.div.querySelector("#customize--genome") as HTMLElement;
     genomeLoader.classList.remove("loading");
-    if (this.stagedGenome) {
+    if (this.sharedState.genome) {
       genomeLoader.classList.remove("not-loaded");
-      (genomeLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.stagedGenome.fileName}`;
+      (genomeLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.genome.fileName}`;
       this.setGenomeDisplay();
     }
   }
-
-  showRefSeqLoading() : void {
-    (this.div.querySelector("#customize--refseq") as HTMLElement).classList.add("loading");
-  }
-
-  endRefSeqLoading() : void {
-    const refSeqLoader = this.div.querySelector("#customize--refseq") as HTMLElement;
-    refSeqLoader.classList.remove("loading");
-    if (this.stagedRefSequence) {
-      refSeqLoader.classList.remove("not-loaded");
-      (refSeqLoader.querySelector(".uploader-text") as HTMLElement).innerText = this.stagedRefSequence;
-      if (this.stagedGenome) {
-        this.stagedGenome.initRefSequence(this.stagedRefSequence);
-      }
-    }
-  }
-
 
 
   setMetadataDisplay(): void {
@@ -680,7 +631,7 @@ export class CustomizeUI extends MccUI {
   }
 
   setGenomeDisplay() : void {
-    const genome = this.stagedGenome;
+    const genome = this.sharedState.genome;
     if (genome && genome.features.length > 0) {
       const tbody = document.querySelector("#customize--genome .load-result tbody") as HTMLElement;
       genome.features.forEach(feature=>{
@@ -707,8 +658,7 @@ export class CustomizeUI extends MccUI {
     try {
       reader.addEventListener("load", ()=>{
         const text = reader.result as string;
-        this.stagedGenome = new Genome(file.name).fromGff3(text);
-        this.shareGenomeConfig();
+        this.sharedState.genome = new Genome(file.name).fromGff3(text);
         this.endGenomeConfigLoading();
       });
       reader.readAsText(file);
@@ -718,47 +668,6 @@ export class CustomizeUI extends MccUI {
     }
   }
 
-  parseRefSeqFile(file: File) {
-    const reader = new FileReader();
-    try {
-      reader.addEventListener("load", ()=>{
-        const text = reader.result as string;
-        const lines = text.trim().split('\n');
-        let writing = false;
-        let seq = '';
-        let header = '';
-        lines.forEach(line=>{
-          if (line.charAt(0) === '>') {
-            if (header === '') {
-              header = line;
-              writing = true;
-            } else {
-              console.warn('multiple lines detected in ref sequence file; only using the first one.');
-              writing = false;
-            }
-          } else if (writing) {
-            seq += line;
-          }
-        });
-        if (seq.length > 0) {
-          this.stagedRefSequence = seq;
-          this.shareGenomeConfig();
-        }
-        this.endRefSeqLoading();
-      });
-      reader.readAsText(file);
-    } catch (err) {
-      console.log(err);
-      alert("error loading genome configuration file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
-    }
-  }
-
-  shareGenomeConfig() : void {
-    if (this.stagedGenome && this.stagedRefSequence) {
-      this.stagedGenome.initRefSequence(this.stagedRefSequence);
-      this.sharedState.genome = this.stagedGenome;
-    }
-  }
 
 
 
