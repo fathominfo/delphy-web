@@ -816,7 +816,7 @@ export class TreeCanvas {
 
 
   drawHighlightsJpeg(earliest:number, latest:number,
-    mutationSite: number,
+    mutationSite: number[],
     ctx: CanvasRenderingContext2D
   ) {
     if (!this.tree) return;
@@ -829,7 +829,7 @@ export class TreeCanvas {
     const nodesWithMut: number[] = [];
     let n = 0;
     const checkMut = (mut: Mutation)=>{
-      if (mut.site === mutationSite) {
+      if (mutationSite.includes(mut.site)) {
         nodesWithMut.push(n);
       }
     };

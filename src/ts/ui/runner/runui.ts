@@ -789,7 +789,18 @@ export class RunUI extends UIScreen {
     // const mutationSite = 187427; // otoole C187428T
     // const mutationSite = 364; // rambaut h3n2 T365C
     // const mutationSite = 9278; // andersen h5n1 C9279T
-    const mutationSite = 3017; // dudas T3018C
+    // const mutationSite = 3017; // dudas T3018C
+    // const mutationSite = 3014; // dudas T3015C
+    // const mutationSite = 6295; // dudas C6296T
+    // const mutationSite = 14049; // dudas T14050C
+    // const mutationSite = 9849; // dudas G9850A
+    // const mutationSite = 5861; // dudas T5862C
+    // const mutationSite = 11435; // dudas C11436T
+    // const mutationSite = [11847]; // dudas T11848C
+    // mutations coinciding with a high conf node in Guinea
+    const mutationSite = [99, 1608, 352, 18847, 2379, 13806]; // dudas G100A A1609G, A353G, T18848C, G2380A, T13807A
+    // const mutationSite = 10217; // gire G10218A
+    // const mutationSite = [14018, 4975]; // gire T14019C C4976A
 
     // const confidenceThreshold = 0.9999;
     // const maxCladeSizePct = 0.15;
@@ -907,7 +918,7 @@ export class RunUI extends UIScreen {
   printBaseTree(
     treeIndex: number,
     // clades: string[],
-    mutationSite: number,
+    mutationSite: number[],
     // cladeScores: CladeScores,
     // confidenceThreshold: number,
     // minCladeDatePct: number,
