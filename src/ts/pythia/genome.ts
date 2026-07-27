@@ -34,7 +34,7 @@ const GFF3_DELIMITER = '\t';
 const LIKELY_NAME_FIELDS = new Set(["name", "gene", "gene_name"]);
 const MINIMUM_CHAR_COUNT_TO_HAVE_9_COLUMNS = 17;
 
-type RefSeqConfig = {
+export type RefSeqConfig = {
   taxon: number,
   abbrev: string,
   name: string,
@@ -43,7 +43,7 @@ type RefSeqConfig = {
   gff_path: string
 };
 
-type RefSeqConfigWithSegment = {
+export type RefSeqConfigWithSegment = {
   taxon: number,
   abbrev: string,
   name: string,
@@ -283,57 +283,60 @@ export type RefSequenceMatch = {
 };
 
 
-export const findRefSequenceCandidates = (sequence: string) : (RefSeqConfig | RefSeqConfigWithSegment)[] => {
+export const findRefSequenceCandidates = (sequence: string) : RefSequenceMatch[] => {
   const L = sequence.length;
-  const candidates = Object.values(refSeqs).filter((conf: RefSeqConfig | RefSeqConfigWithSegment)=>{
-    return conf.sequence.length === L;
+  const candidates: RefSequenceMatch[] = [];
+  Object.entries(refSeqs).forEach(([string, conf])=>{
+    const seq = conf.sequence;
+    if (seq.length === L) {
+      const misMatches: [number, string, string][] = [];
+      /*
+      this (naive) scoring system merely sums up mismatched letters at
+      the exact same positions.
+      */
+      for (let i = 0; i < L; i++) {
+        if (sequence.charAt(i) !== seq.charAt(i)) {
+          misMatches.push([i, sequence.charAt(i), seq.charAt(i)]);
+        }
+      }
+      // let L = bestScore.length;
+      // if (L > 10) {
+      //   console.debug(`     showing first 10 of ${L}:`);
+      //   L = 10;
+      // }
+      // for (let i = 0; i < L; i++) {
+      //   const [index, c1, c2] = bestScore[i];
+      //   console.debug(`     ${index}: ${c1} != ${c2}`);
+      // }
+      candidates.push({
+        config: conf,
+        score: misMatches.length
+      });
+    }
+  });
+  candidates.sort((a: RefSequenceMatch, b: RefSequenceMatch)=>{
+    let diff = a.score - b.score;
+    if (diff === 0) {
+      const aSeq = a.config?.sequence as string;
+      const bSeq = b.config?.sequence as string;
+      diff = aSeq.localeCompare(bSeq);
+    }
+    return diff;
   });
   return candidates;
 };
 
 export const findMatchingRefSequence = (sequence: string) : RefSequenceMatch => {
-  /*
-
-
-  TODO:
-  this scoring system is completely naive, and does not account for
-  any shifting or deleting. It merely sums up mismatched letters at
-  the exact same positions.
-
-
-  */
-  let bestScore: [number, string, string][] | null = null;
-  let bestCandidate = UNSET;
+  let bestScore: number = UNSET;
+  let bestConfig: RefSeqConfig | RefSeqConfigWithSegment | null = null;
   const L = sequence.length;
   const candidates = findRefSequenceCandidates(sequence);
-  candidates.forEach((conf: RefSeqConfig | RefSeqConfigWithSegment, n: number)=>{
-    const seq = conf.sequence;
-    const misMatches: [number, string, string][] = [];
-    for (let i = 0; i < L; i++) {
-      if (sequence.charAt(i) !== seq.charAt(i)) misMatches.push([i, sequence.charAt(i), seq.charAt(i)]);
-    }
-    if (bestScore === null || (misMatches.length < bestScore.length)) {
-      bestCandidate = n;
-      bestScore = misMatches;
-    }
-  });
-  let config: RefSeqConfig | RefSeqConfigWithSegment | null = null;
-  if (bestScore !== null) {
-    bestScore = bestScore as [number, string, string][];
-    config = candidates[bestCandidate];
-    console.log(`best candidate has ${bestScore.length} mismatched nucleotides`, config);
-    let L = bestScore.length;
-    if (L > 10) {
-      console.debug(`     showing first 10 of ${L}:`);
-      L = 10;
-    }
-    for (let i = 0; i < L; i++) {
-      const [index, c1, c2] = bestScore[i];
-      console.debug(`     ${index}: ${c1} != ${c2}`);
-    }
+  if (candidates.length > 0) {
+    const {config, score} = candidates[0];
+    bestScore = score;
+    bestConfig = config;
   }
-  const score = bestScore === null ? UNSET : bestScore.length;
-  return { config, score };
+  return { config: bestConfig, score: bestScore };
 };
 
 /* classes that drive the display state of the genome data interface */
@@ -400,9 +403,9 @@ const uploadingDiv = inner.querySelector("#reference-uploading") as HTMLDivEleme
 const gffUpload = uploadingDiv.querySelector("#reference-gff") as HTMLInputElement;
 const gffUploadArea = gffUpload.querySelector("label") as HTMLLabelElement;
 const gffUploadInput = gffUpload.querySelector("input") as HTMLInputElement;
-const seqUpload = inner.querySelector("#reference-refseq") as HTMLDivElement;
-const seqUploadArea = seqUpload.querySelector("label") as HTMLLabelElement;
-const seqUploadInput = seqUpload.querySelector("input") as HTMLInputElement;
+// const seqUpload = inner.querySelector("#reference-refseq") as HTMLDivElement;
+// const seqUploadArea = seqUpload.querySelector("label") as HTMLLabelElement;
+// const seqUploadInput = seqUpload.querySelector("input") as HTMLInputElement;
 
 
 

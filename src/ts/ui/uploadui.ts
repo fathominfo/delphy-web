@@ -501,21 +501,6 @@ const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
             pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
               .then(mccConfig=>{
                 configCallback(mccConfig as ConfigExport, fname);
-                // get the root sequence
-                const mccRef = pythia.getMcc();
-                const mcc = mccRef.getMcc();
-                const tree = mcc.getBaseTree(mcc.getMasterBaseTreeIndex());
-                const rootSequenceCoded: Uint8Array | string[] = tree.getRootSequence();
-                /*
-
-                Why can't I do the type conversion implicitly with
-                const rootSequence = rootSequenceCoded.map(c=>NUC_LOOKUP[c]);
-                */
-                let rootSequence = '';
-                rootSequenceCoded.forEach((c:number) => rootSequence += NUC_LOOKUP[c]);
-                mccRef.release();
-                sharedstate.bestRefSequenceGuess = findMatchingRefSequence(rootSequence);
-                console.log('delphy', sharedstate.bestRefSequenceGuess);
               });
           } else {
             alert(`could not read file.`);

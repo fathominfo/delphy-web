@@ -11,7 +11,7 @@ import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
 import { ColumnSummary } from '../metadata';
-import { Genome } from '../../pythia/genome';
+import { Genome, RefSeqConfig, RefSequenceMatch } from '../../pythia/genome';
 import { Pythia } from '../../pythia/pythia';
 
 /* global NodeListOf */
@@ -36,6 +36,9 @@ BEAST_VERSION_SELECTOR.addEventListener("click", (event) => {
   }
 });
 
+const GENOME_SELECT_WRAPPER: HTMLDivElement = document.querySelector("#reference-select") as HTMLDivElement;
+const SELECT_OPT_TEMPLATE: HTMLOptionElement = document.querySelector("#reference-select select option") as HTMLOptionElement;
+SELECT_OPT_TEMPLATE.remove();
 
 /* the linter doesn't recognize that NodeListOf is a built in */
 /* global NodeListOf */
@@ -77,6 +80,8 @@ export class CustomizeUI extends MccUI {
 
   stagedGenome: Genome | null = null;
   stagedRefSequence: string | null = null;
+
+  candidates: RefSequenceMatch[] = [];
 
 
 
@@ -370,28 +375,61 @@ export class CustomizeUI extends MccUI {
       }
     });
 
-    const refSequenceLoadDiv = this.div.querySelector("#customize--refseq") as HTMLDivElement;
-    const uploadRefSequence = refSequenceLoadDiv.querySelector("input") as HTMLInputElement;
-    uploadRefSequence.value = "";
-    uploadRefSequence.addEventListener("change", () => {
-      const files = uploadRefSequence.files;
-      if (files) {
-        this.showRefSeqLoading();
-        this.parseRefSeqFile(files[0]);
-      }
+    const genomeSelectActivate = GENOME_SELECT_WRAPPER.querySelector("label") as HTMLLabelElement;
+    const genomeSelect = GENOME_SELECT_WRAPPER.querySelector("select") as HTMLSelectElement;
+    genomeSelectActivate.addEventListener("click", ()=>{
+      genomeSelect.innerHTML = '';
+      const opt = SELECT_OPT_TEMPLATE.cloneNode(true) as HTMLOptionElement;
+      opt.setAttribute("value", "");
+      opt.textContent = "--";
+      genomeSelect.appendChild(opt);
+      this.candidates.forEach((candy: RefSequenceMatch)=>{
+        if (!candy.config) return;
+        const opt = SELECT_OPT_TEMPLATE.cloneNode(true) as HTMLOptionElement;
+        opt.setAttribute("value", candy.config.accession);
+        opt.textContent = `${candy.config.name} (${candy.config.accession})`;
+        genomeSelect.appendChild(opt);
+        // console.log(candy)
+      });
     });
-    uploadArea = refSequenceLoadDiv.querySelector("label") as HTMLElement;
-    uploadArea.addEventListener("drop", e => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.showRefSeqLoading();
-      if (e.dataTransfer) {
-        const files = e.dataTransfer.files;
-        if (files) {
-          this.parseRefSeqFile(files[0]);
-        }
-      }
+    genomeSelect.addEventListener("change", (event)=>{
+      event.preventDefault();
+      const value = genomeSelect.value;
+      if (value === '') return;
+      console.log('genomeSelect', value);
+      const selection = this.candidates.filter(({config})=>config && config.accession === value)[0];
+      const config = selection.config as RefSeqConfig;
+      this.showGenomeConfigLoading();
+      fetch (`assets/data/${config.gff_path}`).then(resp=>resp.text()).then((text)=>{
+        this.stagedGenome = new Genome(config.gff_path).fromGff3(text);
+        this.shareGenomeConfig();
+        this.endGenomeConfigLoading();
+      });
     });
+
+
+    // const refSequenceLoadDiv = this.div.querySelector("#customize--refseq") as HTMLDivElement;
+    // const uploadRefSequence = refSequenceLoadDiv.querySelector("input") as HTMLInputElement;
+    // uploadRefSequence.value = "";
+    // uploadRefSequence.addEventListener("change", () => {
+    //   const files = uploadRefSequence.files;
+    //   if (files) {
+    //     this.showRefSeqLoading();
+    //     this.parseRefSeqFile(files[0]);
+    //   }
+    // });
+    // uploadArea = refSequenceLoadDiv.querySelector("label") as HTMLElement;
+    // uploadArea.addEventListener("drop", e => {
+    //   e.preventDefault();
+    //   e.stopPropagation();
+    //   this.showRefSeqLoading();
+    //   if (e.dataTransfer) {
+    //     const files = e.dataTransfer.files;
+    //     if (files) {
+    //       this.parseRefSeqFile(files[0]);
+    //     }
+    //   }
+    // });
 
 
 
@@ -418,6 +456,13 @@ export class CustomizeUI extends MccUI {
       }
     }
     this.setMetadataDisplay();
+    /* reset the scoring for best match of the ref sequence */
+    if (this.pythia) {
+      this.candidates = this.pythia.getRefSeqCandidates();
+      GENOME_SELECT_WRAPPER.classList.toggle("hidden", this.candidates.length === 0);
+    } else {
+      GENOME_SELECT_WRAPPER.classList.add("hidden");
+    }
   }
 
 
