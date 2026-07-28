@@ -21,7 +21,6 @@ export class SharedState {
   kneeIsCurated: boolean;
   qc: RecordQuality;
   descriptor: string | null;
-  bestRefSequenceGuess: RefSequenceMatch | null;
   genome: Genome | null;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
@@ -36,7 +35,6 @@ export class SharedState {
     this.mutationsNeedReloading = false;
     this.qc = new RecordQuality();
     this.descriptor = null;
-    this.bestRefSequenceGuess = null;
     this.genome = null;
   }
 
