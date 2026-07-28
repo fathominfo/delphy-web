@@ -23,6 +23,7 @@ export class SharedState {
   descriptor: string | null;
   private _genome: Genome | null;
   showAAMutations = false;
+  showSynonymousMutations = true;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;

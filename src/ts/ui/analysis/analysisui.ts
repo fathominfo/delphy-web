@@ -128,8 +128,9 @@ export class AnalysisUI extends UIScreen {
       const descendantSeries: Distribution = desc.node.series as Distribution;
       const nodePair = this.assembleNodePair(anc.node, desc.node, relation, summaryTree);
       const genomeData = this.sharedState.showAAMutations ? this.sharedState.genome : null;
+      const nonSynonymousOnly = this.sharedState.genome ? !this.sharedState.showSynonymousMutations : false;
       return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median,
-        minDate, maxDate, this.isApobecEnabled, genomeData);
+        minDate, maxDate, this.isApobecEnabled, nonSynonymousOnly, genomeData);
     });
     const currentIndices = nodes.map(n=>n.index);
     // console.log('currentIndices', currentIndices);`

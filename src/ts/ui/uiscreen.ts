@@ -28,8 +28,10 @@ export class UIScreen {
     if (this.mutFormatToggleForm) {
       this.mutFormatToggleForm.addEventListener("change", ()=>{
         const form = this.mutFormatToggleForm as HTMLFormElement;
-        const value = form["mutation-name-format"].value;
-        this.sharedState.showAAMutations = value === "aa";
+        const aaValue = form["mutation-name-format"].value;
+        const synonymousValue = form["mutation-synonymous"].value;
+        this.sharedState.showAAMutations = aaValue === "aa";
+        this.sharedState.showSynonymousMutations = synonymousValue === "all";
         this.handleAAFormatChange();
       });
     }
@@ -59,6 +61,11 @@ export class UIScreen {
           this.mutFormatToggleForm["mutation-name-format"].value = "aa";
         } else {
           this.mutFormatToggleForm["mutation-name-format"].value = "nucleotide";
+        }
+        if (this.sharedState.showSynonymousMutations) {
+          this.mutFormatToggleForm["mutation-synonymous"].value = "all";
+        } else {
+          this.mutFormatToggleForm["mutation-synonymous"].value = "non-synonymous";
         }
       } else {
         this.mutFormatToggleForm.classList.add("hidden");

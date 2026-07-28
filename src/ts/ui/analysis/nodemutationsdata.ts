@@ -44,6 +44,7 @@ export class NodeMutationsData {
   isApobecRun: boolean;
   mutationTimelineData:MutationTimelineData[];
   mutationCount: number = UNSET;
+  nonSynonymousOnly: boolean;
 
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
@@ -53,7 +54,8 @@ export class NodeMutationsData {
 
   constructor(nodePair: NodePair, ancestorMedianDate: number,
     descendantMedianDate: number, minDate: number, maxDate: number,
-    isApobecRun: boolean, genome: Genome | null) {
+    isApobecRun: boolean, nonSynonymousOnly: boolean, genome: Genome | null) {
+    this.nonSynonymousOnly = nonSynonymousOnly;
     this.nodePair = nodePair;
     this.minDate = minDate;
     this.maxDate = maxDate;
@@ -73,6 +75,10 @@ export class NodeMutationsData {
     const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
     this.mutationCount = shownMutations.length;
     this.mutationTimelineData = shownMutations.map((md:MutationDistribution)=>new MutationTimelineData(md, isApobecRun, genome));
+    if (this.nonSynonymousOnly) {
+      this.mutationTimelineData = this.mutationTimelineData.filter(data=>!(data.nameParts as AAMutation).isSynonymous);
+    }
+
     this.thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
     if (mutationPrevalenceThreshold < 1.0) {
       this.thresholdLabel += ' or more'
