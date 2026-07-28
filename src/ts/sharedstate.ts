@@ -21,7 +21,8 @@ export class SharedState {
   kneeIsCurated: boolean;
   qc: RecordQuality;
   descriptor: string | null;
-  genome: Genome | null;
+  private _genome: Genome | null;
+  showAAMutations = false;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
@@ -35,7 +36,8 @@ export class SharedState {
     this.mutationsNeedReloading = false;
     this.qc = new RecordQuality();
     this.descriptor = null;
-    this.genome = null;
+    this._genome = null;
+    this.showAAMutations = false;
   }
 
 
@@ -94,6 +96,12 @@ export class SharedState {
     return this.mccConfig.schematicData as NodeSchematicData;
   }
 
+  set genome(data: Genome | null) {
+    this._genome = data;
+    this.showAAMutations = data !== null;
+  }
+
+  get genome() { return this._genome;}
 
 
 }

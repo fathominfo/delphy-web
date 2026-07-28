@@ -9,7 +9,7 @@ export class UIScreen {
   resizeHandler: ()=>void;
   isApobecEnabled: boolean;
   isActive = false;
-  // refSeqDiv: HTMLDivElement | null = null;
+  mutFormatToggleForm: HTMLFormElement | null = null;
 
 
 
@@ -23,10 +23,15 @@ export class UIScreen {
     this.resizeHandler = ()=>this.resize();
     this.pythia = null;
     this.isApobecEnabled = false;
-    // this.refSeqDiv = this.div.querySelector(".reference-sequence") as HTMLDivElement;
-    // if (this.refSeqDiv) {
-    //   initRefDiv(this.refSeqDiv, this.sharedState);
-    // }
+    this.mutFormatToggleForm = this.div.querySelector(".mut-format") as HTMLFormElement;
+    if (this.mutFormatToggleForm) {
+      this.mutFormatToggleForm.addEventListener("change", ()=>{
+        const form = this.mutFormatToggleForm as HTMLFormElement;
+        const value = form["mutation-name-format"].value;
+        this.sharedState.showAAMutations = value === "aa";
+        this.handleAAFormatChange();
+      });
+    }
   }
 
   resize() {} // eslint-disable-line @typescript-eslint/no-empty-function
@@ -44,6 +49,18 @@ export class UIScreen {
     // if (this.refSeqDiv) {
     //   setRefDivStatus(this.refSeqDiv, this.sharedState);
     // }
+    if (this.mutFormatToggleForm) {
+      if (this.sharedState.genome) {
+        this.mutFormatToggleForm.classList.remove("hidden");
+        if (this.sharedState.showAAMutations) {
+          this.mutFormatToggleForm["mutation-name-format"].value = "aa";
+        } else {
+          this.mutFormatToggleForm["mutation-name-format"].value = "nucleotide";
+        }
+      } else {
+        this.mutFormatToggleForm.classList.add("hidden");
+      }
+    }
   }
 
   deactivate() {
@@ -54,5 +71,7 @@ export class UIScreen {
       this.sharedState.mccConfig.unbind();
     }
   }
+
+  handleAAFormatChange() { /* noop by default */ }
 
 }

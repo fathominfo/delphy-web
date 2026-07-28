@@ -1,4 +1,4 @@
-import { NUC_LOOKUP } from "../constants";
+import { getMutationName, NUC_LOOKUP } from "../constants";
 import { RealSeqLetter } from "../delphy/api";
 // import { SharedState } from "../sharedstate";
 import { nfc, UNSET } from "../ui/common";
@@ -179,6 +179,9 @@ export class Genome {
     what coding region is it in?
     SCV2 is a simple case
     */
+    if (mutation.site === 799) {
+      console.debug(`debugging ${ getMutationName(mutation)}`);
+    }
     const site = mutation.site;
     const feature = this.features.filter(f=>f.start <= site && f.end >= site)[0];
     if (feature) {
@@ -186,12 +189,13 @@ export class Genome {
       get the codon
       note that mutation labels are 1-indexed, but our sequences are 0-indexed
       */
-      const genePos = site - (feature.start - 1);
-      const codonStart = Math.floor(genePos / 3) * 3;
+      const positionInRegion = site - feature.start;
+      let aaPosition = Math.floor(positionInRegion / 3);
+      const codonStart = feature.start + aaPosition * 3;
       const fromCodon: RealSeqLetter[] = [];
       const toCodon: RealSeqLetter[] = [];
       const letters = this.refSequence.slice(codonStart, codonStart + 3);
-      const codonPosition = genePos % 3;
+      const codonPosition = positionInRegion % 3;
       const fromAA = getAAName(letters);
       letters.forEach(l=>fromCodon.push(l));
       letters[codonPosition] = mutation.to;
@@ -201,13 +205,15 @@ export class Genome {
       toCodon[codonPosition] = mutation.to;
       const fromCodonLabel = fromCodon.map(n=>NUC_LOOKUP[n]).join('');
       const toCodonLabel = toCodon.map(n=>NUC_LOOKUP[n]).join('');
+      /* for the label, amino acid position should be 1 indexed */
+      aaPosition++;
       if (fromCodonLabel === toCodonLabel) {
         console.log('huh', fromCodonLabel, toCodonLabel)
       }
 
 
 
-      let label = `${feature.name}:${fromAA}${codonPosition}${toAA}`;
+      let label = `${feature.name}:${fromAA}${aaPosition}${toAA}`;
       if (isSynonymous) {
         label += `(${NUC_LOOKUP[mutation.from]}->${NUC_LOOKUP[mutation.to]})`;
       }
@@ -216,7 +222,7 @@ export class Genome {
         from: fromAA,
         to: toAA,
         protein: feature.name,
-        position: codonStart,
+        position: aaPosition,
         fromCodon: fromCodon,
         toCodon: toCodon,
         label: label,

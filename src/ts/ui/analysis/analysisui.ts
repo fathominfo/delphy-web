@@ -1,3 +1,4 @@
+import { NUC_LOOKUP } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
@@ -43,6 +44,9 @@ export class AnalysisUI extends UIScreen {
     this.setData();
     if (this.sharedState.genome && this.pythia) {
       this.sharedState.genome.refSequence = this.pythia.getMccRootSequence();
+      let refSequence = '';
+      this.sharedState.genome.refSequence.forEach(n=>refSequence += NUC_LOOKUP[n]);
+      console.log(refSequence);
     }
   }
 
@@ -130,8 +134,9 @@ export class AnalysisUI extends UIScreen {
       const ancestorSeries: Distribution = anc.node.series as Distribution;
       const descendantSeries: Distribution = desc.node.series as Distribution;
       const nodePair = this.assembleNodePair(anc.node, desc.node, relation, summaryTree);
+      const genomeData = this.sharedState.showAAMutations ? this.sharedState.genome : null;
       return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median,
-        minDate, maxDate, this.isApobecEnabled, this.sharedState.genome);
+        minDate, maxDate, this.isApobecEnabled, genomeData);
     });
     const currentIndices = nodes.map(n=>n.index);
     // console.log('currentIndices', currentIndices);`
@@ -173,6 +178,10 @@ export class AnalysisUI extends UIScreen {
       this.nodeTimelines.highlightNode(nodeIndex, date);
       this.nodeMutationCharts.highlightNode(nodeIndex, date, mutation);
     }
+  }
+
+  handleAAFormatChange() {
+    this.setData();
   }
 
 }
