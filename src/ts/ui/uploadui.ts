@@ -294,13 +294,13 @@ function bindUpload(p:Pythia, sharedstate:SharedState,
             stageCallback, parseProgressCallback, initTreeProgressCallback,
             loadWarningCallback, runParams)
             .then(fetchMetadata);
-          checkForMatchingRefSeq(bytesJs, sharedstate);
+          // checkForMatchingRefSeq(bytesJs, sharedstate);
         } else {
           pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, analysisProgressCallback,
             initTreeProgressCallback, loadWarningCallback, runParams)
             .then(fetchMetadata);
-          checkForMatchingRefSeq(bytesJs, sharedstate);
+          // checkForMatchingRefSeq(bytesJs, sharedstate);
         }
       })
   });
@@ -516,7 +516,7 @@ const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
-            checkForMatchingRefSeq(fastaBytesJs, sharedstate);
+            // checkForMatchingRefSeq(fastaBytesJs, sharedstate);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -531,7 +531,7 @@ const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
             pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
-            checkForMatchingRefSeq(mapleBytesJs, sharedstate);
+            // checkForMatchingRefSeq(mapleBytesJs, sharedstate);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -552,7 +552,7 @@ const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
                 pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
                   stageCallback, parseProgressCallback, analysisProgressCallback,
                   initTreeProgressCallback, loadWarningCallback, null);
-                checkForMatchingRefSeq(fastaBytesJs, sharedstate);
+                // checkForMatchingRefSeq(fastaBytesJs, sharedstate);
               }
             });
             reader.readAsArrayBuffer(file);
@@ -572,45 +572,42 @@ const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
 }
 
 
-function checkForMatchingRefSeq(fileBytes: ArrayBuffer, sharedstate: SharedState) {
-  /* grab the first fasta */
-  let header = '';
-  let seq = '';
-  let c = '';
-  let inHeader = false;
-  let inSeq = false;
-  let complete = false;
-  const asUint8 = new Uint8Array(fileBytes);
-  for (let i = 0; i < asUint8.byteLength && !complete; i++) {
-    c = String.fromCharCode(asUint8[i]).toUpperCase();
-    switch (c) {
-    case '>' : {
-      if (header === '') {
-        inHeader = true;
-      } else {
-        inSeq = false;
-        complete = true;
-      }
-    }
-      break;
-    case('\n'): {
-      if (inHeader) {
-        inHeader = false;
-        inSeq = true;
-      }
-      break;
-    }
-    default: {
-      if (inSeq) seq += c;
-      else if (inHeader) header += c;
-      break;
-    }
-    }
-  }
-
-  sharedstate.bestRefSequenceGuess = findMatchingRefSequence(seq);
-  console.log(header, sharedstate.bestRefSequenceGuess);
-}
+// function checkForMatchingRefSeq(fileBytes: ArrayBuffer, sharedstate: SharedState) {
+//   /* grab the first fasta */
+//   let header = '';
+//   let seq = '';
+//   let c = '';
+//   let inHeader = false;
+//   let inSeq = false;
+//   let complete = false;
+//   const asUint8 = new Uint8Array(fileBytes);
+//   for (let i = 0; i < asUint8.byteLength && !complete; i++) {
+//     c = String.fromCharCode(asUint8[i]).toUpperCase();
+//     switch (c) {
+//     case '>' : {
+//       if (header === '') {
+//         inHeader = true;
+//       } else {
+//         inSeq = false;
+//         complete = true;
+//       }
+//     }
+//       break;
+//     case('\n'): {
+//       if (inHeader) {
+//         inHeader = false;
+//         inSeq = true;
+//       }
+//       break;
+//     }
+//     default: {
+//       if (inSeq) seq += c;
+//       else if (inHeader) header += c;
+//       break;
+//     }
+//     }
+//   }
+// }
 
 
 function hideOthers(originEle: HTMLElement) {
