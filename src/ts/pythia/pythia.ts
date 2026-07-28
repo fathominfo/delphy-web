@@ -17,6 +17,11 @@ import { gatherBaseTreeMutationsOfInterest, MutationOfInterest } from './mutatio
 
 export type readyCallbackType = (_:Pythia)=>void;
 
+/*
+the `score` value approximates a population curve
+*/
+export type LineageEntry = [time: number, numLineages: number, score: number];
+
 type returnless = ()=>void;
 
 type emptyResolveType = (m:undefined)=>void;
@@ -976,6 +981,60 @@ export class Pythia {
     return nodeDist;
   }
 
+  getMCCActiveLineagesOverTime() : LineageEntry[] {
+    const mccRef = this.getMcc();
+    const mcc = mccRef.getMcc();
+    const alot = this.getActiveLineagesOverTime(mcc);
+    mccRef.release();
+    return alot;
+  }
+
+  getActiveLineagesOverTime(tree:Tree) : LineageEntry[] {
+    const rootIndex = tree.getRootIndex();
+    const q = [rootIndex];
+    const events: [number, number][] = [];
+    let totalBranchTime = 0;
+    while (q.length > 0) {
+      const node = q.shift();
+      if (node !== undefined) {
+        if (node !== rootIndex) {
+          const parent = tree.getParentIndexOf(node);
+          const t0 = tree.getTimeOf(parent);
+          const t1 = tree.getTimeOf(node);
+          events.push([t0, 1]);
+          events.push([t1, -1]);
+          totalBranchTime += t1 - t0;
+        }
+        const left = tree.getLeftChildIndexOf(node);
+        if (left !== UNSET) {
+          q.push(left);
+          q.push(tree.getRightChildIndexOf(node));
+        }
+      }
+    }
+    if (events.length > 0) {
+      events.sort((a, b)=>a[0] - b[0]);
+      const c = 0.5;
+      const numTips = (tree.getSize() + 1) / 2;
+      const timescale = c * totalBranchTime / numTips;
+      let k = 0;
+      const activeOverTime: LineageEntry[] = [];
+      events.forEach(([time, delta])=>{
+        k += delta;
+        const score = k === 0 ? 0 : Math.log(k * timescale);
+        const lastIndex = activeOverTime.length - 1;
+        const prevTime = lastIndex >= 0 ? activeOverTime[lastIndex][0] : Number.MIN_VALUE;
+        if (time === prevTime) {
+          activeOverTime[lastIndex][1] = k;
+          activeOverTime[lastIndex][2] = score;
+        } else {
+          activeOverTime.push([time, k, score]);
+        }
+      });
+      return activeOverTime;
+    }
+    return [];
+  }
 
   /*
   returns an array containing the average max prevalence across all base trees
