@@ -182,21 +182,31 @@ export class Genome {
     const site = mutation.site;
     const feature = this.features.filter(f=>f.start <= site && f.end >= site)[0];
     if (feature) {
-      /* get the codon */
-      const genePos = site - feature.start;
+      /*
+      get the codon
+      note that mutation labels are 1-indexed, but our sequences are 0-indexed
+      */
+      const genePos = site - (feature.start - 1);
       const codonStart = Math.floor(genePos / 3) * 3;
+      const fromCodon: RealSeqLetter[] = [];
+      const toCodon: RealSeqLetter[] = [];
       const letters = this.refSequence.slice(codonStart, codonStart + 3);
       const codonPosition = genePos % 3;
       const fromAA = getAAName(letters);
+      letters.forEach(l=>fromCodon.push(l));
+      letters[codonPosition] = mutation.to;
       const toAA = getAAName(letters);
-      const fromCodon: RealSeqLetter[] = [];
-      const toCodon: RealSeqLetter[] = [];
+      letters.forEach(l=>toCodon.push(l));
       const isSynonymous = fromAA === toAA;
-      letters.forEach(l=>{
-        fromCodon.push(l);
-        toCodon.push(l);
-      });
       toCodon[codonPosition] = mutation.to;
+      const fromCodonLabel = fromCodon.map(n=>NUC_LOOKUP[n]).join('');
+      const toCodonLabel = toCodon.map(n=>NUC_LOOKUP[n]).join('');
+      if (fromCodonLabel === toCodonLabel) {
+        console.log('huh', fromCodonLabel, toCodonLabel)
+      }
+
+
+
       let label = `${feature.name}:${fromAA}${codonPosition}${toAA}`;
       if (isSynonymous) {
         label += `(${NUC_LOOKUP[mutation.from]}->${NUC_LOOKUP[mutation.to]})`;
