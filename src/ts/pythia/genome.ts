@@ -1,4 +1,4 @@
-import { getMutationName, NUC_LOOKUP } from "../constants";
+import { NUC_LOOKUP } from "../constants";
 import { RealSeqLetter } from "../delphy/api";
 // import { SharedState } from "../sharedstate";
 import { nfc, UNSET } from "../ui/common";
@@ -177,13 +177,11 @@ export class Genome {
     }
     /*
     what coding region is it in?
-    SCV2 is a simple case
     */
-    if (mutation.site === 799) {
-      console.debug(`debugging ${ getMutationName(mutation)}`);
-    }
     const site = mutation.site;
-    const feature = this.features.filter(f=>f.start <= site && f.end >= site)[0];
+    const matches = this.features.filter(f=>f.start <= site && f.end >= site);
+    /* might want to prioritize the feature type? [mark 260728] */
+    const feature = matches[0];
     if (feature) {
       /*
       get the codon
@@ -203,16 +201,10 @@ export class Genome {
       letters.forEach(l=>toCodon.push(l));
       const isSynonymous = fromAA === toAA;
       toCodon[codonPosition] = mutation.to;
-      const fromCodonLabel = fromCodon.map(n=>NUC_LOOKUP[n]).join('');
-      const toCodonLabel = toCodon.map(n=>NUC_LOOKUP[n]).join('');
+      // const fromCodonLabel = fromCodon.map(n=>NUC_LOOKUP[n]).join('');
+      // const toCodonLabel = toCodon.map(n=>NUC_LOOKUP[n]).join('');
       /* for the label, amino acid position should be 1 indexed */
       aaPosition++;
-      if (fromCodonLabel === toCodonLabel) {
-        console.log('huh', fromCodonLabel, toCodonLabel)
-      }
-
-
-
       let label = `${feature.name}:${fromAA}${aaPosition}${toAA}`;
       if (isSynonymous) {
         label += `(${NUC_LOOKUP[mutation.from]}->${NUC_LOOKUP[mutation.to]})`;

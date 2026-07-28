@@ -4,7 +4,7 @@ import { Mutation } from './pythia/delphy_api';
 import { NavigateFunctionType, UNSET } from './ui/common';
 import { RecordQuality } from './recordquality';
 import { NodeSchematicData } from './ui/nodeschematic';
-import { Genome, RefSequenceMatch } from './pythia/genome';
+import { Genome } from './pythia/genome';
 
 
 
