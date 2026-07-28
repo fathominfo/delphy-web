@@ -1014,22 +1014,25 @@ export class Pythia {
     }
     if (events.length > 0) {
       events.sort((a, b)=>a[0] - b[0]);
+      const deduped: [number, number][] = [];
+      let k = 0;
+      events.forEach(([time, delta])=>{
+        k += delta;
+        const lastIndex = deduped.length - 1;
+        const prevTime = lastIndex >= 0 ? deduped[lastIndex][0] : Number.MIN_VALUE;
+        if (time === prevTime) {
+          deduped[lastIndex][1] = k;
+        } else {
+          deduped.push([time, k]);
+        }
+      });
       const c = 0.5;
       const numTips = (tree.getSize() + 1) / 2;
       const timescale = c * totalBranchTime / numTips;
-      let k = 0;
       const activeOverTime: LineageEntry[] = [];
-      events.forEach(([time, delta])=>{
-        k += delta;
+      deduped.forEach(([time, k])=>{
         const score = k === 0 ? 0 : Math.log(k * timescale);
-        const lastIndex = activeOverTime.length - 1;
-        const prevTime = lastIndex >= 0 ? activeOverTime[lastIndex][0] : Number.MIN_VALUE;
-        if (time === prevTime) {
-          activeOverTime[lastIndex][1] = k;
-          activeOverTime[lastIndex][2] = score;
-        } else {
-          activeOverTime.push([time, k, score]);
-        }
+        activeOverTime.push([time, k, score]);
       });
       return activeOverTime;
     }

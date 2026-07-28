@@ -41,6 +41,11 @@ export class AnalysisUI extends UIScreen {
   activate(): void {
     super.activate();
     this.setData();
+
+    if (this.pythia) {
+      const alot = this.pythia.getMCCActiveLineagesOverTime();
+      console.log(alot);
+    }
   }
 
 
