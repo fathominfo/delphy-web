@@ -1,3 +1,4 @@
+import { NUC_LOOKUP } from '../constants';
 import {Pythia} from '../pythia/pythia';
 import {SharedState} from '../sharedstate';
 import { getPercentLabel } from './common';
@@ -46,9 +47,11 @@ export class UIScreen {
     this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
       (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
     });
-    // if (this.refSeqDiv) {
-    //   setRefDivStatus(this.refSeqDiv, this.sharedState);
-    // }
+    if (this.sharedState.genome && this.pythia) {
+      this.sharedState.genome.refSequence = this.pythia.getMccRootSequence();
+      let refSequence = '';
+      this.sharedState.genome.refSequence.forEach(n=>refSequence += NUC_LOOKUP[n]);
+    }
     if (this.mutFormatToggleForm) {
       if (this.sharedState.genome) {
         this.mutFormatToggleForm.classList.remove("hidden");

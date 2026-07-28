@@ -1,4 +1,3 @@
-import { NUC_LOOKUP } from "../../constants";
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
@@ -42,12 +41,6 @@ export class AnalysisUI extends UIScreen {
   activate(): void {
     super.activate();
     this.setData();
-    if (this.sharedState.genome && this.pythia) {
-      this.sharedState.genome.refSequence = this.pythia.getMccRootSequence();
-      let refSequence = '';
-      this.sharedState.genome.refSequence.forEach(n=>refSequence += NUC_LOOKUP[n]);
-      console.log(refSequence);
-    }
   }
 
 
