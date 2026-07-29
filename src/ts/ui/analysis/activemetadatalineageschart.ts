@@ -50,8 +50,6 @@ export class ActiveMetadataLineagesChart {
   setData(metadataValues: string[], colors: {[value: string]: MetadataColorOption},
     pythia: Pythia, minDate: number, maxDate: number
   ) : void {
-    const chains = pythia.getMCCTransmissionChains(metadataValues);
-    console.log(chains);
     this.alotMD = pythia.getMCCActiveMetadataLineagesOverTime(metadataValues);
     this.mdColors = colors;
     this.minDate = minDate;
