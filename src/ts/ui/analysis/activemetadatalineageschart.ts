@@ -1,5 +1,5 @@
-import { toDateString } from "../../pythia/dates";
-import { LineageEntry, LineageMetadataOverTime, Pythia } from "../../pythia/pythia";
+import { LineageMetadataOverTime } from "../../pythia/introductions";
+import { Pythia } from "../../pythia/pythia";
 import { MetadataColorOption, nicenum, NO_DATE, UNSET } from "../common";
 import { HoverCallback } from "../select/selectcommon";
 
@@ -14,7 +14,6 @@ export class ActiveMetadataLineagesChart {
   /*
   the key for this dictionary will be the metadata value
   */
-  alot: LineageEntry[] = [];
   alotMD: LineageMetadataOverTime = {metadataOrder: [], overTime: []};
   svg: SVGElement;
   width: number;
@@ -51,6 +50,8 @@ export class ActiveMetadataLineagesChart {
   setData(metadataValues: string[], colors: {[value: string]: MetadataColorOption},
     pythia: Pythia, minDate: number, maxDate: number
   ) : void {
+    const chains = pythia.getMCCTransmissionChains(metadataValues);
+    console.log(chains);
     this.alotMD = pythia.getMCCActiveMetadataLineagesOverTime(metadataValues);
     this.mdColors = colors;
     this.minDate = minDate;
@@ -87,7 +88,6 @@ export class ActiveMetadataLineagesChart {
     })
     this.highlight.setAttribute("y1", `${0}`);
     this.highlight.setAttribute("y2", `${height}`);
-    this.alotMD.overTime.forEach(([time, _, counts]) => console.log(`${toDateString(time)} ${counts.join(',')}`)); // eslint-disable-line  @typescript-eslint/no-unused-vars
   }
 
   renderMetadataTrend(mdValue: string, entries: Entry[]) : void {

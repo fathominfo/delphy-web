@@ -1,5 +1,6 @@
 import { toDateString } from "../../pythia/dates";
-import { LineageEntry, Pythia } from "../../pythia/pythia";
+import { LineageEntry } from "../../pythia/introductions";
+import { Pythia } from "../../pythia/pythia";
 import { nicenum, NO_DATE, UNSET } from "../common";
 import { HoverCallback } from "../select/selectcommon";
 
