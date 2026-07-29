@@ -1,6 +1,6 @@
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
-import { AggregateMOI, tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
+import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { NO_DATE, UNSET } from "../common";

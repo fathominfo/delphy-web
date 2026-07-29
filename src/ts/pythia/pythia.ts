@@ -13,7 +13,6 @@ import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
 import { gatherBaseTreeMutationsOfInterest, MutationOfInterest } from './mutationsofinterest';
-import { toDateString } from './dates';
 
 
 export type readyCallbackType = (_:Pythia)=>void;

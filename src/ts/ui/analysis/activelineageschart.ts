@@ -1,6 +1,6 @@
 import { toDateString } from "../../pythia/dates";
 import { LineageEntry, Pythia } from "../../pythia/pythia";
-import { nicenum, NO_DATE, UNDEF, UNSET } from "../common";
+import { nicenum, NO_DATE, UNSET } from "../common";
 import { HoverCallback } from "../select/selectcommon";
 
 const alotContainer = document.querySelector("#analysis--alot-container") as HTMLDivElement;
@@ -34,14 +34,14 @@ export class ActiveLineagesChart {
       const mouseTime = minDate + event.offsetX / width * (maxDate - minDate);
       hoverCallback(UNSET, mouseTime, null);
     });
-    this.svg.addEventListener("pointerleave", (event) => hoverCallback(UNSET, NO_DATE, null));
+    this.svg.addEventListener("pointerleave", () => hoverCallback(UNSET, NO_DATE, null));
   }
 
   setData(pythia: Pythia, minDate: number, maxDate: number) : void {
     this.alot = pythia.getMCCActiveLineagesOverTime();
     this.minDate = minDate;
     this.maxDate = maxDate;
-    const maxY = Math.max.apply(null, this.alot.map(([_, __, score]) => score));
+    const maxY = Math.max.apply(null, this.alot.map(([_, __, score]) => score)); // eslint-disable-line @typescript-eslint/no-unused-vars
     this.yScale = this.height / nicenum(maxY, false);
     requestAnimationFrame(()=>this.render());
   }
@@ -54,8 +54,7 @@ export class ActiveLineagesChart {
     let d = '';
     let x: number = UNSET;
     let y: number = UNSET;
-    // console.log(toDateString(minDate), minDate, 0);
-    alot.forEach(([time, count, score], i) => {
+    alot.forEach(([time, count, score]) => {
       if (count === 0) return;
       x = (time - minDate) * xScale;
       if (y !== UNSET) {
@@ -67,12 +66,8 @@ export class ActiveLineagesChart {
       } else {
         d += `${x} ${y} `;
       }
-      // console.log(i, toDateString(time), time, count, score, x, y);
     });
-    // console.log(toDateString(maxDate), maxDate, width);
-    // d += `${x} ${this.height} `;
     path.setAttribute("d", d);
-    // console.log(alot);
     this.highlight.setAttribute("y1", `${0}`);
     this.highlight.setAttribute("y2", `${height}`);
   }
@@ -86,6 +81,7 @@ export class ActiveLineagesChart {
       readout.textContent = '';
       highlight.setAttribute("x1", `-${width}`);
       highlight.setAttribute("x2", `-${width}`);
+      valueDot.setAttribute("cx", `-${width}`);
       return;
     }
     let closestIndex = UNSET;
