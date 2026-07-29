@@ -3,14 +3,17 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { NO_DATE, UNSET } from "../common";
+import { ColorOption, NO_DATE, UNSET } from "../common";
 import { DisplayNode } from "../displaynode";
 import { Distribution } from "../distribution";
+import { MccConfig } from "../mccconfig";
+import { NodeMetadata } from "../nodemetadata";
 import { NodeSchematic } from "../nodeschematic";
 import { SchematicNode } from "../schematicdata";
 import { HoverCallback, NodePair, NodeRelationType } from "../select/selectcommon";
 import { UIScreen } from "../uiscreen";
 import { ActiveLineagesChart } from "./activelineageschart";
+import { ActiveMetadataLineagesChart } from "./activemetadatalineageschart";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { NodeMutations } from "./nodepairmutations";
 import { NodePrevalenceChart } from "./nodeprevalencechart";
@@ -24,6 +27,7 @@ export class AnalysisUI extends UIScreen {
   nodeTimelines: NodeTimelines;
   nodeMutationCharts: NodeMutations;
   activeLineagesChart: ActiveLineagesChart;
+  activeMetadataLineagesChart: ActiveMetadataLineagesChart;
   highlightNode: number = UNSET;
   highlightDate: number = NO_DATE;
   highlightMutation: Mutation | null = null;
@@ -39,6 +43,7 @@ export class AnalysisUI extends UIScreen {
     this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeMutationCharts = new NodeMutations(nodeHighlightCallback);
     this.activeLineagesChart = new ActiveLineagesChart(nodeHighlightCallback);
+    this.activeMetadataLineagesChart = new ActiveMetadataLineagesChart(nodeHighlightCallback);
   }
 
   activate(): void {
@@ -146,8 +151,19 @@ export class AnalysisUI extends UIScreen {
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData, mutationsOfInterest);
-
     this.activeLineagesChart.setData(pythia, minDate, maxDate);
+
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    const nodeMetadata = mccConfig.nodeMetadata as NodeMetadata;
+    const field = mccConfig.metadataField;
+    const showingMetadata = mccConfig.colorOption === ColorOption.metadata
+      && field !== null
+      && nodeMetadata !== null;
+    if (showingMetadata) {
+      const values = nodeMetadata.getNodeValues(field);
+      const colors = mccConfig.metadataColors[field as string];
+      this.activeMetadataLineagesChart.setData(values, colors, pythia, minDate, maxDate);
+    }
     mccRef.release();
   }
 
@@ -174,6 +190,7 @@ export class AnalysisUI extends UIScreen {
       this.nodeTimelines.highlightNode(nodeIndex, date);
       this.nodeMutationCharts.highlightNode(nodeIndex, date, mutation);
       this.activeLineagesChart.highlightDate(date);
+      this.activeMetadataLineagesChart.highlightDate(date);
     }
   }
 

@@ -1418,13 +1418,17 @@
   }
 
 
-#analysis--alot-container {
+#analysis--alot-container, #analysis--alot-md-container {
   padding: 0 0 0 calc(var(--block-gap) + var(--mutation-emergence-mutation-width));
-  svg {
-    background-color: #f9f9f9;
-    path {
-      stroke: black;
-      fill: none;
-    }
-  }
+  svg { background-color: #f9f9f9; }
+}
+
+#analysis--alot-container  svg path {
+  stroke: black;
+  fill: none;
+}
+
+#analysis--alot-md-container svg path {
+  stroke: none;
+  fill-opacity: 1.0;
 }
