@@ -13,6 +13,7 @@ import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
 import { gatherBaseTreeMutationsOfInterest, MutationOfInterest } from './mutationsofinterest';
+import { toDateString } from './dates';
 
 
 export type readyCallbackType = (_:Pythia)=>void;
@@ -1001,8 +1002,14 @@ export class Pythia {
           const parent = tree.getParentIndexOf(node);
           const t0 = tree.getTimeOf(parent);
           const t1 = tree.getTimeOf(node);
+          // const t00 = toDateString(t0);
+          // const t11 = toDateString(t1);
           events.push([t0, 1]);
           events.push([t1, -1]);
+          // if (events.length < 20) {
+          //   console.log(t00);
+          //   console.log(t11);
+          // }
           totalBranchTime += t1 - t0;
         }
         const left = tree.getLeftChildIndexOf(node);
@@ -1015,24 +1022,24 @@ export class Pythia {
     if (events.length > 0) {
       events.sort((a, b)=>a[0] - b[0]);
       const deduped: [number, number][] = [];
-      let k = 0;
+      let count = 0;
       events.forEach(([time, delta])=>{
-        k += delta;
+        count += delta;
         const lastIndex = deduped.length - 1;
         const prevTime = lastIndex >= 0 ? deduped[lastIndex][0] : Number.MIN_VALUE;
         if (time === prevTime) {
-          deduped[lastIndex][1] = k;
+          deduped[lastIndex][1] = count;
         } else {
-          deduped.push([time, k]);
+          deduped.push([time, count]);
         }
       });
       const c = 0.5;
       const numTips = (tree.getSize() + 1) / 2;
       const timescale = c * totalBranchTime / numTips;
       const activeOverTime: LineageEntry[] = [];
-      deduped.forEach(([time, k])=>{
-        const score = k === 0 ? 0 : Math.log(k * timescale);
-        activeOverTime.push([time, k, score]);
+      deduped.forEach(([time, count])=>{
+        const score = count === 0 ? 0 : Math.log(count * timescale);
+        activeOverTime.push([time, count, score]);
       });
       return activeOverTime;
     }

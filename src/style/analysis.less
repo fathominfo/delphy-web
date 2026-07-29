@@ -536,6 +536,8 @@
   width: 100%;
   align-items: flex-end;
 
+  display: none;
+
 
   .left {
     justify-content: space-between;
@@ -1416,4 +1418,13 @@
   }
 
 
-
+#analysis--alot-container {
+  padding: 0 0 0 calc(var(--block-gap) + var(--mutation-emergence-mutation-width));
+  svg {
+    background-color: #f9f9f9;
+    path {
+      stroke: black;
+      fill: none;
+    }
+  }
+}

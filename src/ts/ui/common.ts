@@ -5,8 +5,10 @@ import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
 export const UNDEF = '-';
+/* code for nodes and other array based values when a value is not yet set */
 export const UNSET = -1;
-
+/* UNSET doesn't work for dates, since -1 can fall in their range */
+export const NO_DATE = Number.MAX_SAFE_INTEGER;
 
 // export enum Topology {
 //   mcc = 1,

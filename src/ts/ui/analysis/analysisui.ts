@@ -3,13 +3,14 @@ import { MutationDistribution } from "../../pythia/mutationdistribution";
 import { AggregateMOI, tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { UNSET } from "../common";
+import { NO_DATE, UNSET } from "../common";
 import { DisplayNode } from "../displaynode";
 import { Distribution } from "../distribution";
 import { NodeSchematic } from "../nodeschematic";
 import { SchematicNode } from "../schematicdata";
 import { HoverCallback, NodePair, NodeRelationType } from "../select/selectcommon";
 import { UIScreen } from "../uiscreen";
+import { ActiveLineagesChart } from "./activelineageschart";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { NodeMutations } from "./nodepairmutations";
 import { NodePrevalenceChart } from "./nodeprevalencechart";
@@ -22,8 +23,9 @@ export class AnalysisUI extends UIScreen {
   nodePrevalenceCanvas: NodePrevalenceChart;
   nodeTimelines: NodeTimelines;
   nodeMutationCharts: NodeMutations;
+  activeLineagesChart: ActiveLineagesChart;
   highlightNode: number = UNSET;
-  highlightDate: number = Number.MAX_SAFE_INTEGER;
+  highlightDate: number = NO_DATE;
   highlightMutation: Mutation | null = null;
 
 
@@ -36,16 +38,12 @@ export class AnalysisUI extends UIScreen {
     this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeMutationCharts = new NodeMutations(nodeHighlightCallback);
+    this.activeLineagesChart = new ActiveLineagesChart(nodeHighlightCallback);
   }
 
   activate(): void {
     super.activate();
     this.setData();
-
-    if (this.pythia) {
-      const alot = this.pythia.getMCCActiveLineagesOverTime();
-      console.log(alot);
-    }
   }
 
 
@@ -148,6 +146,8 @@ export class AnalysisUI extends UIScreen {
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData, mutationsOfInterest);
+
+    this.activeLineagesChart.setData(pythia, minDate, maxDate);
     mccRef.release();
   }
 
@@ -173,6 +173,7 @@ export class AnalysisUI extends UIScreen {
       this.nodePrevalenceCanvas.highlightNode(nodeIndex, date);
       this.nodeTimelines.highlightNode(nodeIndex, date);
       this.nodeMutationCharts.highlightNode(nodeIndex, date, mutation);
+      this.activeLineagesChart.highlightDate(date);
     }
   }
 
