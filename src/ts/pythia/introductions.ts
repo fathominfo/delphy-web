@@ -14,10 +14,12 @@ export type LineageMetadataOverTime = {
 
 
 export type TransmissionChain = {
-  metadataValue: string,
+  from: string,
+  to: string,
   firstDate: number,
   lastDate: number,
-  nodes: number[]
+  nodes: number[],
+  tips: number[]
 };
 
 
@@ -166,24 +168,31 @@ export const getTransmissionChains = (tree: Tree, metadataValues: string[]) : { 
       const mdValue = metadataValues[node];
       const parent = tree.getParentIndexOf(node);
       const parentMdValue = metadataValues[parent];
+      const left = tree.getLeftChildIndexOf(node);
+      const isTip = left === UNSET;
+      let chain: TransmissionChain;
       if (mdValue !== parentMdValue) {
         /* we have ourselves an introduction */
         chainRoot[node] = node;
-        chains[node] = {
-          metadataValue : mdValue,
+        chain = {
+          from: parentMdValue,
+          to : mdValue,
           firstDate: tree.getTimeOf(node),
           lastDate: tree.getTimeOf(node),
-          nodes: [node]
+          nodes: [node],
+          tips: []
         };
+        chains[node] = chain;
       } else {
         const rootNode = chainRoot[parent];
-        const chain = chains[rootNode];
+        chain = chains[rootNode];
         chain.nodes.push(node);
         chain.lastDate = Math.max(chain.lastDate, tree.getTimeOf(node));
         chainRoot[node] = rootNode;
       }
-      const left = tree.getLeftChildIndexOf(node);
-      if (left !== UNSET) {
+      if (isTip) {
+        chain.tips.push(node);
+      } else {
         q.push(left);
         q.push(tree.getRightChildIndexOf(node));
       }
@@ -193,7 +202,7 @@ export const getTransmissionChains = (tree: Tree, metadataValues: string[]) : { 
   /* group chains by value */
   const groupedChains : { [metadataValue: string]: TransmissionChain[] } = {};
   chains.forEach((chain)=>{
-    const value = chain.metadataValue;
+    const value = chain.to;
     if (groupedChains[value] === undefined) {
       groupedChains[value] = [];
     }
