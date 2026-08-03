@@ -1467,7 +1467,6 @@
 }
 
 .introduction-summary, .introduction-detail {
-  rect {fill-opacity: 0;}
   .baseline { stroke: #999; }
   .node {
     stroke: none;
@@ -1483,7 +1482,10 @@
     }
   }
 }
-.introduction-summary + .introduction-summary {
+.introduction-summary + .introduction-summary,
+.introduction-summary + .introduction-detail,
+.introduction-detail + .introduction-detail,
+.introduction-detail + .introduction-summary {
   tspan { fill-opacity: 0;}
 }
 

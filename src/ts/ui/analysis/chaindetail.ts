@@ -176,11 +176,12 @@ export class ChainDetail {
   }
 
   render(summaryEle: SVGElement) : void {
-    const { layout, minDate, maxDate } = this;
+    const { layout, minDate, maxDate, chain } = this;
     const { root, rowCount } = layout;
     if (!root) return;
     const svg = detailTemplate.cloneNode(true) as SVGElement;
     const path = svg.querySelector("path") as SVGPathElement;
+    const text = svg.querySelector("text") as SVGTextElement;
     const width = parseFloat(svg.getAttribute("width") as string);
     const rowHeight = parseFloat(svg.getAttribute("height") as string);
     const leftSide = parseFloat(path.getAttribute("data-left") as string);
@@ -188,6 +189,7 @@ export class ChainDetail {
     const top = rowHeight;
     const range = width - leftSide;
     svg.setAttribute("height", `${height}`);
+    text.innerHTML = `<tspan dx="-10" dy="0">from</tspan>  ${chain.from}`;
     let d = '';
     const xFor = (time: number) => leftSide + (time - minDate) / (maxDate - minDate) * range;
 
