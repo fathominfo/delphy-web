@@ -148,7 +148,9 @@ export const getActiveMetadataLineagesOverTime = (tree: Tree, metadataValues: st
 }
 
 
-export const getTransmissionChains = (tree: Tree, metadataValues: string[]) : { [metadataValue: string]: TransmissionChain[] } => {
+export const getTransmissionChains = (tree: Tree,
+  metadataValues: string[]
+) : { [metadataValue: string]: TransmissionChain[] } => {
   const rootIndex = tree.getRootIndex();
   const size = tree.getSize();
   const q = [rootIndex];

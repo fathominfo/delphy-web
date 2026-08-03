@@ -858,7 +858,7 @@
   width: 100%;
 }
 
-#list--titles {
+.list--titles {
   padding: var(--duo-list-connector-height) 0;
 
 }
@@ -1423,6 +1423,10 @@
   svg { background-color: #f9f9f9; }
 }
 
+.alot-readout {
+  height: 1em;
+}
+
 #analysis--alot-container  svg path {
   stroke: black;
   fill: none;
@@ -1431,4 +1435,59 @@
 #analysis--alot-md-container svg path {
   stroke: none;
   fill-opacity: 1.0;
+}
+
+#analysis--introductions-container {
+  width: 100%;
+}
+#analysis--introductions-values {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.introduction-header, .introduction-row {
+  display: flex;
+  gap: 10px;
+}
+
+.introduction-md-name {
+  display: inline-block;
+  width: 6em;
+}
+.introduction-count {
+  display: inline-block;
+  width: 4em;
+  text-align: right;
+}
+
+.introduction-durations, .introduction-tip-counts {
+  width: 100px;
+  .tick {stroke: #555; }
+  .baseline {stroke: #999; }
+}
+
+.introduction-summary, .introduction-detail {
+  rect {fill-opacity: 0;}
+  .baseline { stroke: #999; }
+  .node {
+    stroke: none;
+    fill: #bbb;
+    &.tip {fill: black}
+  }
+  text {
+    fill: #999;
+    stroke: none;
+    tspan {
+      font-style: italic;
+      fill: #ccc;
+    }
+  }
+}
+.introduction-summary + .introduction-summary {
+  tspan { fill-opacity: 0;}
+}
+
+.introduction-detail .tree {
+  fill: none;
+  stroke: #999;
 }

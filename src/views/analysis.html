@@ -166,7 +166,7 @@
 
 
         <div id="analysis--list">
-          <div id="list--titles" class="duo">
+          <div class="list--titles" class="duo">
             <div class="block left"></div>
             <div class="block right">
               <div class="header">
@@ -258,7 +258,7 @@
         </div>
 
         <div id="analysis--lineages-over-time">
-          <div id="list--titles" class="duo">
+          <div class="list--titles" class="duo">
             <div class="block left"></div>
             <div class="block right">
               <div class="header">
@@ -290,6 +290,55 @@
             <p class="alot-readout"></p>
           </div>
         </div>
+
+
+        <div id="analysis--introductions">
+          <div class="list--titles" class="duo">
+            <div class="block left"></div>
+            <div class="block right">
+              <div class="header">
+                <div class="title" data-tooltip="outside">
+                  <h4>Introductions</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="analysis--introductions-container">
+            <div id="analysis--introductions-values">
+              <div class="introduction-header">
+                <span class="introduction-md-name"></span>
+                <span class="introduction-count">count</span>
+                <span class="introduction-durations">durations <span class="row-max"></span></span>
+                <span class="introduction-tip-counts">sequences <span class="row-max"></span></span>
+              </div>
+              <div class="introduction-row">
+                <span class="introduction-md-name"></span>
+                <span class="introduction-count"></span>
+                <svg class="introduction-durations" width="100" height="15">
+                  <line class="tick" x1="-1" x2="-1" y1="3" y2="13"></line>
+                  <line class="baseline" x1="4.5" x2="95.5" y1="14" y2="14"></line>
+                </svg>
+                <svg class="introduction-tip-counts" width="100" height="15">
+                  <line class="baseline" x1="4.5" x2="95.5" y1="14" y2="14"></line>
+                </svg>
+              </div>
+              <svg class="introduction-summary" xmlns="http://www.w3.org/2000/svg" width="417" height="15">
+                <rect x="0" y="0" width="417" height="15"></rect>
+                <line class="baseline" x1="62" x2="162" y1="7.5" y2="7.5"></line>
+                <circle class="node" cx="-1" cy="7.5" r="1.5"></circle>
+                <text x="10" y="12"></text>
+              </svg>
+              <svg class="introduction-detail" xmlns="http://www.w3.org/2000/svg" width="417" height="7.5">
+                <path data-left="62" class="tree" ></path>
+                <circle class="node" cx="-1" cy="3.75" r="1.5"></circle>
+              </svg>
+            </div>
+
+          </div>
+        </div>
+
+
       </section>
     </div>
 

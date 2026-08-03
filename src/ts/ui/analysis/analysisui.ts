@@ -14,6 +14,7 @@ import { HoverCallback, NodePair, NodeRelationType } from "../select/selectcommo
 import { UIScreen } from "../uiscreen";
 import { ActiveLineagesChart } from "./activelineageschart";
 import { ActiveMetadataLineagesChart } from "./activemetadatalineageschart";
+import { IntroductionChart } from "./introductionchart";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { NodeMutations } from "./nodepairmutations";
 import { NodePrevalenceChart } from "./nodeprevalencechart";
@@ -28,6 +29,7 @@ export class AnalysisUI extends UIScreen {
   nodeMutationCharts: NodeMutations;
   activeLineagesChart: ActiveLineagesChart;
   activeMetadataLineagesChart: ActiveMetadataLineagesChart;
+  introductionChart : IntroductionChart;
   highlightNode: number = UNSET;
   highlightDate: number = NO_DATE;
   highlightMutation: Mutation | null = null;
@@ -44,6 +46,7 @@ export class AnalysisUI extends UIScreen {
     this.nodeMutationCharts = new NodeMutations(nodeHighlightCallback);
     this.activeLineagesChart = new ActiveLineagesChart(nodeHighlightCallback);
     this.activeMetadataLineagesChart = new ActiveMetadataLineagesChart(nodeHighlightCallback);
+    this.introductionChart = new IntroductionChart(nodeHighlightCallback);
   }
 
   activate(): void {
@@ -163,6 +166,7 @@ export class AnalysisUI extends UIScreen {
       const values = nodeMetadata.getNodeValues(field);
       const colors = mccConfig.metadataColors[field as string];
       this.activeMetadataLineagesChart.setData(values, colors, pythia, minDate, maxDate);
+      this.introductionChart.setData(values, colors, pythia, minDate, maxDate);
     }
     mccRef.release();
   }
@@ -191,6 +195,7 @@ export class AnalysisUI extends UIScreen {
       this.nodeMutationCharts.highlightNode(nodeIndex, date, mutation);
       this.activeLineagesChart.highlightDate(date);
       this.activeMetadataLineagesChart.highlightDate(date);
+      // this.introductionChart.highlightNode(nodeIndex, date);
     }
   }
 
