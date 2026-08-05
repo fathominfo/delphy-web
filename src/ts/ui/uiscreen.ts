@@ -1,3 +1,4 @@
+import { NUC_LOOKUP } from '../constants';
 import {Pythia} from '../pythia/pythia';
 import {SharedState} from '../sharedstate';
 import { getPercentLabel } from './common';
@@ -9,6 +10,7 @@ export class UIScreen {
   resizeHandler: ()=>void;
   isApobecEnabled: boolean;
   isActive = false;
+  mutFormatToggleForm: HTMLFormElement | null = null;
 
 
 
@@ -22,6 +24,17 @@ export class UIScreen {
     this.resizeHandler = ()=>this.resize();
     this.pythia = null;
     this.isApobecEnabled = false;
+    this.mutFormatToggleForm = this.div.querySelector(".mut-format") as HTMLFormElement;
+    if (this.mutFormatToggleForm) {
+      this.mutFormatToggleForm.addEventListener("change", ()=>{
+        const form = this.mutFormatToggleForm as HTMLFormElement;
+        const aaValue = form["mutation-name-format"].value;
+        const synonymousValue = form["mutation-synonymous"].value;
+        this.sharedState.showAAMutations = aaValue === "aa";
+        this.sharedState.showSynonymousMutations = synonymousValue === "all";
+        this.handleAAFormatChange();
+      });
+    }
   }
 
   resize() {} // eslint-disable-line @typescript-eslint/no-empty-function
@@ -36,7 +49,28 @@ export class UIScreen {
     this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
       (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
     });
-
+    if (this.sharedState.genome && this.pythia) {
+      this.sharedState.genome.refSequence = this.pythia.getMccRootSequence();
+      let refSequence = '';
+      this.sharedState.genome.refSequence.forEach(n=>refSequence += NUC_LOOKUP[n]);
+    }
+    if (this.mutFormatToggleForm) {
+      if (this.sharedState.genome) {
+        this.mutFormatToggleForm.classList.remove("hidden");
+        if (this.sharedState.showAAMutations) {
+          this.mutFormatToggleForm["mutation-name-format"].value = "aa";
+        } else {
+          this.mutFormatToggleForm["mutation-name-format"].value = "nucleotide";
+        }
+        if (this.sharedState.showSynonymousMutations) {
+          this.mutFormatToggleForm["mutation-synonymous"].value = "all";
+        } else {
+          this.mutFormatToggleForm["mutation-synonymous"].value = "non-synonymous";
+        }
+      } else {
+        this.mutFormatToggleForm.classList.add("hidden");
+      }
+    }
   }
 
   deactivate() {
@@ -48,6 +82,6 @@ export class UIScreen {
     }
   }
 
-  // handleMessage(){}
+  handleAAFormatChange() { /* noop by default */ }
 
 }

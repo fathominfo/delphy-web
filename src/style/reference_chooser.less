@@ -1,0 +1,66 @@
+#reference-chooser-wrapper {
+	position: fixed;
+	z-index: 100;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0,0, 0, 0.4);
+	display: none;
+
+	&.active {
+		display: block;
+	}
+
+}
+
+
+#reference-chooser {
+	background-color: white;
+	width: 500px;
+	height: 80vh;
+	margin: 10vh auto;
+	position: relative;
+	padding: 50px;
+
+	p {
+		margin: 0;
+		line-height: 1.4em;
+	}
+
+	.dismiss {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+	}
+
+	input {
+		visibility: hidden;
+		width: 0;
+	}
+
+  .file-upload label{
+    padding: 2em;
+    .uploader-text {
+      width: 8em;
+    }
+  }
+
+  &.suggesting {
+    #reference-suggesting { display: block;}
+    #reference-confirmed { display: none;}
+    #reference-choosing { display: none;}
+  }
+
+
+  &.choosing {
+    #reference-choosing { display: block;}
+    #reference-confirmed { display: none;}
+    #reference-suggesting { display: none;}
+  }
+
+
+}
+
+
+#reference-suggesting, #reference-choosing {
+  display: none;
+}

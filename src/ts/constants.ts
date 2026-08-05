@@ -1,5 +1,6 @@
 import { AmbSeqLetter } from './delphy/api';
 import { Mutation, RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T } from './pythia/delphy_api';
+import { Genome } from './pythia/genome';
 
 export const RANDOM_SEED = 0; // generate a new unknown seed
 // export const RANDOM_SEED = 937162211; // reproducible behavior
@@ -129,6 +130,17 @@ function getMutationName(mutation: Mutation):string {
   return `${NUC_LOOKUP[mutation.from]}${mutation.site + 1}${NUC_LOOKUP[mutation.to]}`;
 }
 
+function getAAMutationName(mutation: Mutation, genome: Genome) : string {
+  const aaData = genome.getAAData(mutation);
+  if (aaData !== null) {
+    return aaData.label;
+  }
+  return getMutationName(mutation);
+}
+
+
+
+
 function getMutationNameParts(mutation: Mutation | string): [string, string, string] {
   let from = "", site = "", to = "";
   if (typeof mutation === "string") {
@@ -162,7 +174,9 @@ const mutationEquals = (m1: Mutation, m2: Mutation)=>m1.site === m2.site && m1.f
 
 const NUM_ALLELES = 4;
 
-export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts, sortMutList, compareMutationLists, siteIndexToLabel, siteLabelToIndex, mutationEquals, getAllele, NUM_ALLELES};
+export {NUC_LOOKUP, AMBI_NUC_LOOKUP, getMutationName, getMutationNameParts,
+  getAAMutationName, sortMutList, compareMutationLists, siteIndexToLabel,
+  siteLabelToIndex, mutationEquals, getAllele, NUM_ALLELES};
 
 
 /* only works for simple objects that can be stringified (no functions, dom elements, etc.) */

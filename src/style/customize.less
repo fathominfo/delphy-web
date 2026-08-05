@@ -233,19 +233,56 @@
   margin-bottom: 1em;
 }
 
-#metadata-file {
-  position: relative;
-  margin-top: 1em;
-  margin-bottom: 1em;
+.file-upload {
 
-  #metadata-file-label {
-    .uploader-icon {
-      display: none;
+  .upload-wrapper {
+    label {
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+      background-color: #F5F5F5;
+      border-radius: 5px;
+      padding: 1em 1.2em;
+      color: #636363;
+      .smoothly(background-color);
+
+      &:hover {
+        background-color: #f0f0f0;
+      }
+
+      &:has(input:focus) {
+        outline: auto;
+      }
+
+
+      .uploader-icon {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        .glyph {
+          .masked(url(/assets/icons/uploader.svg));
+        }
+      }
     }
+
+
+    input {
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+      appearance: none;
+      position: absolute;
+    }
+
+
   }
 
-  &.no-metadata {
-    #metadata-file-label {
+
+  &.not-loaded {
+    .upload-wrapper label {
       height: 100%;
       text-align: center;
       align-items: center;
@@ -261,16 +298,37 @@
         text-align: left;
       }
     }
+
+    .load-result {
+      display: none;
+    }
+
   }
 
-  &.loading #metadata-loading {
+  &.loading .loading-wrapper {
     opacity: 1;
     pointer-events: all;
   }
 
 }
 
-#metadata-loading {
+.upload-wrapper {
+  position: relative;
+  margin-top: 1em;
+  margin-bottom: 1em;
+
+  label {
+    .uploader-icon {
+      display: none;
+    }
+  }
+}
+
+.file-upload + .file-upload {
+  margin-top: 4em;
+}
+
+.loading-wrapper {
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -283,7 +341,7 @@
   .smoothly(opacity);
 }
 
-#metadata-loading--inner {
+.loading-wrapper--inner {
   position: relative;
   top: 50%;
   left: 50%;
@@ -295,46 +353,8 @@
   font-size: 20px;
 }
 
-#metadata-file-input {
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  opacity: 0;
-  appearance: none;
-  position: absolute;
-}
 
-#metadata-file-input:focus + #metadata-file-label {
-  outline: auto;
-}
-
-#metadata-file-label {
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  background-color: #F5F5F5;
-  border-radius: 5px;
-  padding: 1em 1.2em;
-  color: #636363;
-  .smoothly(background-color);
-
-  &:hover {
-    background-color: #f0f0f0;
-  }
-
-  .uploader-icon {
-    position: relative;
-    width: 50px;
-    height: 50px;
-    .glyph {
-      .masked(url(/assets/icons/uploader.svg));
-    }
-  }
-}
-
-#metadata-column-headings {
+.load-result {
   display: flex;
   flex-direction: column;
   gap: 0.5em;
@@ -381,6 +401,15 @@
     font-size: 0.8em;
   }
 }
+
+
+#customize--genome table {
+  thead, tbody {
+    .str { text-align: left; }
+    .num { text-align: right; }
+  }
+}
+
 
 .color-system--details {
   flex: 1;

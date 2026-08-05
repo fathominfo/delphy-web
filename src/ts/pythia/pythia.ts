@@ -4,7 +4,7 @@ import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
   SkygridPopModelType} from './delphy_api';
 import {MccRef, MccRefManager} from './mccref';
 import {MutationDistribution} from './mutationdistribution';
-import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict} from '../constants';
+import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict, NUC_LOOKUP} from '../constants';
 // import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {BackLink, MccNodeBackLinks} from './pythiacommon';
 import { assembleInheritanceTree, getParents, isTip, NodeParentIndex } from '../util/treeutils';
@@ -13,6 +13,7 @@ import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
 import { gatherBaseTreeMutationsOfInterest, MutationOfInterest } from './mutationsofinterest';
+import { findRefSequenceCandidates, RefSequenceMatch } from './genome';
 
 
 export type readyCallbackType = (_:Pythia)=>void;
@@ -1131,6 +1132,37 @@ export class Pythia {
     return alleleDist;
   }
 
+
+
+  getRefSeqCandidates() : RefSequenceMatch[] {
+    // get the root sequence
+    const mccRef = this.getMcc();
+    const mcc = mccRef.getMcc();
+    const tree = mcc.getBaseTree(mcc.getMasterBaseTreeIndex());
+    const rootSequenceCoded: Uint8Array | string[] = tree.getRootSequence();
+    /*
+
+    Why can't I do the type conversion implicitly with
+    const rootSequence = rootSequenceCoded.map(c=>NUC_LOOKUP[c]);
+    */
+    let rootSequence = '';
+    rootSequenceCoded.forEach((c:number) => rootSequence += NUC_LOOKUP[c]);
+    mccRef.release();
+    const candidates = findRefSequenceCandidates(rootSequence);
+    // sharedstate.bestRefSequenceGuess = findMatchingRefSequence(rootSequence);
+    // console.log('delphy', sharedstate.bestRefSequenceGuess);
+    return candidates;
+  }
+
+  getMccRootSequence() : Uint8Array {
+    const mccRef = this.getMcc();
+    const mcc = mccRef.getMcc();
+    const baseTreeIndex = mcc.getMasterBaseTreeIndex();
+    const baseTree = this.treeHist[baseTreeIndex];
+    const refSeq = baseTree.getRootSequence();
+    mccRef.release();
+    return refSeq;
+  }
 
 
 

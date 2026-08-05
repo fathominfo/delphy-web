@@ -151,9 +151,10 @@ window.addEventListener("keydown", e => {
 });
 
 
-function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig : configCallbackType) {
+function bindUpload(p:Pythia, sharedstate:SharedState,
+  callback : ()=>void, setConfig : configCallbackType) {
   pythia = p;
-  qc = sstate.qc;
+  qc = sharedstate.qc;
   runCallback = callback;
   configCallback = setConfig;
   uploadDiv.classList.remove('disabled');
@@ -292,11 +293,13 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
             stageCallback, parseProgressCallback, initTreeProgressCallback,
             loadWarningCallback, runParams)
             .then(fetchMetadata);
+          // checkForMatchingRefSeq(bytesJs, sharedstate);
         } else {
           pythia.initRunFromFasta(bytesJs, runCallback, errCallback,
             stageCallback, parseProgressCallback, analysisProgressCallback,
             initTreeProgressCallback, loadWarningCallback, runParams)
             .then(fetchMetadata);
+          // checkForMatchingRefSeq(bytesJs, sharedstate);
         }
       })
   });
@@ -495,7 +498,9 @@ const checkFiles = (files: File[] | FileList)=>{
               showSimpleProgress(action, t, p);
             };
             pythia.initRunFromSaveFile(bytesJs as ArrayBuffer, runCallback, progressCallback)
-              .then(mccConfig=>configCallback(mccConfig as ConfigExport, fname));
+              .then(mccConfig=>{
+                configCallback(mccConfig as ConfigExport, fname);
+              });
           } else {
             alert(`could not read file.`);
           }
@@ -510,6 +515,7 @@ const checkFiles = (files: File[] | FileList)=>{
             pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback, analysisProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
+            // checkForMatchingRefSeq(fastaBytesJs, sharedstate);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -524,6 +530,7 @@ const checkFiles = (files: File[] | FileList)=>{
             pythia.initRunFromMaple(mapleBytesJs, runCallback, errCallback,
               stageCallback, parseProgressCallback,
               initTreeProgressCallback, loadWarningCallback, null);
+            // checkForMatchingRefSeq(mapleBytesJs, sharedstate);
           }
         });
         reader.readAsArrayBuffer(file);
@@ -544,6 +551,7 @@ const checkFiles = (files: File[] | FileList)=>{
                 pythia.initRunFromFasta(fastaBytesJs, runCallback, errCallback,
                   stageCallback, parseProgressCallback, analysisProgressCallback,
                   initTreeProgressCallback, loadWarningCallback, null);
+                // checkForMatchingRefSeq(fastaBytesJs, sharedstate);
               }
             });
             reader.readAsArrayBuffer(file);
@@ -561,6 +569,44 @@ const checkFiles = (files: File[] | FileList)=>{
     }
   }
 }
+
+
+// function checkForMatchingRefSeq(fileBytes: ArrayBuffer, sharedstate: SharedState) {
+//   /* grab the first fasta */
+//   let header = '';
+//   let seq = '';
+//   let c = '';
+//   let inHeader = false;
+//   let inSeq = false;
+//   let complete = false;
+//   const asUint8 = new Uint8Array(fileBytes);
+//   for (let i = 0; i < asUint8.byteLength && !complete; i++) {
+//     c = String.fromCharCode(asUint8[i]).toUpperCase();
+//     switch (c) {
+//     case '>' : {
+//       if (header === '') {
+//         inHeader = true;
+//       } else {
+//         inSeq = false;
+//         complete = true;
+//       }
+//     }
+//       break;
+//     case('\n'): {
+//       if (inHeader) {
+//         inHeader = false;
+//         inSeq = true;
+//       }
+//       break;
+//     }
+//     default: {
+//       if (inSeq) seq += c;
+//       else if (inHeader) header += c;
+//       break;
+//     }
+//     }
+//   }
+// }
 
 
 function hideOthers(originEle: HTMLElement) {

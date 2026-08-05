@@ -1,6 +1,6 @@
 import { Mutation, SummaryTree } from "../../pythia/delphy_api";
 import { MutationDistribution } from "../../pythia/mutationdistribution";
-import { AggregateMOI, tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
+import { tallyMutationsOfInterest } from "../../pythia/mutationsofinterest";
 import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
 import { UNSET } from "../common";
@@ -127,7 +127,10 @@ export class AnalysisUI extends UIScreen {
       const ancestorSeries: Distribution = anc.node.series as Distribution;
       const descendantSeries: Distribution = desc.node.series as Distribution;
       const nodePair = this.assembleNodePair(anc.node, desc.node, relation, summaryTree);
-      return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median, minDate, maxDate, this.isApobecEnabled)
+      const genomeData = this.sharedState.showAAMutations ? this.sharedState.genome : null;
+      const nonSynonymousOnly = this.sharedState.genome ? !this.sharedState.showSynonymousMutations : false;
+      return new NodeMutationsData(nodePair, ancestorSeries.median, descendantSeries.median,
+        minDate, maxDate, this.isApobecEnabled, nonSynonymousOnly, genomeData);
     });
     const currentIndices = nodes.map(n=>n.index);
     // console.log('currentIndices', currentIndices);`
@@ -169,6 +172,10 @@ export class AnalysisUI extends UIScreen {
       this.nodeTimelines.highlightNode(nodeIndex, date);
       this.nodeMutationCharts.highlightNode(nodeIndex, date, mutation);
     }
+  }
+
+  handleAAFormatChange() {
+    this.setData();
   }
 
 }

@@ -171,12 +171,31 @@
             <div class="block right">
               <div class="header">
                 <div class="title" data-tooltip="outside">
-                  <h4>Mutation emergence date distributions</h4>
+                  <h4>Mutation emergence date distributions </h4>
                   <button class="info">
                     <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
                       <path d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z" stroke-width="0"></path>
                     </svg>
                   </button>
+                  <form class="mut-format mode toggles">
+                    <label class="toggle">
+                      <h4>Nucleotide</h4>
+                      <input type="radio" name="mutation-name-format" value="nucleotide" checked />
+                    </label>
+                    <label class="toggle">
+                      <h4>Amino acid</h4>
+                      <input type="radio" name="mutation-name-format" value="aa"/>
+                    </label>
+                    &nbsp;
+                    <label class="toggle">
+                      <h4>All</h4>
+                      <input type="radio" name="mutation-synonymous" value="all" checked />
+                    </label>
+                    <label class="toggle">
+                      <h4>Non-synonymous</h4>
+                      <input type="radio" name="mutation-synonymous" value="non-synonymous" />
+                    </label>
+                  </form>
                 </div>
               </div>
             </div>
@@ -229,9 +248,13 @@
 
                 <div class="analysis--node-comparison--mutation">
                   <div class="analysis--node-comparison--mutation-labels">
-                    <a class="analysis--node-comparison--mutation-name mutation-name" href="">
-                      <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
-                    </a>
+                    <div class="analysis--node-comparison--mutation-name mutation-name">
+                      <span class="allele-region"></span>
+                      <span class="allele allele-from"></span>
+                      <span class="site"></span>
+                      <span class="allele allele-to"></span>
+                      <span class="synonymous">(<span class="allele nuc-from"></span>→<span class="allele nuc-to"></span>)</span>
+                    </div>
                     <span class="analysis--node-comparison--mutation-is-apobec">APOBEC</span>
                     <p class="analysis--node-comparison--mutation-prevalence"><span>99%</span> of base trees</p>
                   </div>

@@ -1,0 +1,112 @@
+<section id="reference-chooser-wrapper">
+  <div id="reference-chooser">
+    <button class="dismiss">X</button>
+
+    <div id="reference-confirmed">
+      <h4>Genes, etc.</h4>
+      <div id="gff-load-result">
+        <table>
+        <thead>
+          <tr>
+          <th class="str">feature type</th>
+          <th class="num">start</th>
+          <th class="num">stop</th>
+          <th class="num">strand</th>
+          <th class="num">phase</th>
+          <th class="str">name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+          <td class="str"></td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="num"></td>
+          <td class="str"></td>
+          </tr>
+        </tbody>
+        </table>
+      </div>
+      <h4>Reference sequence</h4>
+      <div id="refseq-load-result"></div>
+    </div>
+
+    <div id="reference-suggesting">
+      <p>
+        Delphy took a guess, and it looks like
+        this might be a phylogeny of
+        <br/>
+        <span class="ncbi-name"></span>
+        <br/>
+        accession: <span class="ncbi-acc"></span>
+        <br/>
+        <span class="segment"></span>
+        <!--
+        Maybe we want to id whether this is a
+        .dphy file, in which case this guess
+        is based on the root.
+        Otherwise, it's based on the first
+        sequence in the fasta file.
+        This is assuming that we are looking
+        at this at the start of a run, and
+        that we have not yet enabled
+        looking at the root after delphy
+        has run for a bit.
+        -->
+      </p>
+      <p>
+        Is that correct?
+        <label>
+          <input type="button" value="yes" />
+          <span>Yes</span>
+        </label>
+        <label>
+          <input type="button" value="no" />
+          <span>No</span>
+        </label>
+      </p>
+    </div>
+
+    <div id="reference-choosing">
+      <div id="reference-selecting">
+        <h4>Select a reference sequence</h4>
+      </div>
+      <h4>or</h4>
+      <div id="reference-uploading">
+        <h4>Upload a reference</h4>
+
+        <div id="reference-gff" class="file-upload not-loaded">
+          <div class="upload-wrapper">
+            <label>
+            <input type="file" name="genome-file-input" accept=".gff3">
+            <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+            <div class="uploader-text">
+              Click here or drag to load a .gff3 file.
+            </div>
+            </label>
+            <div class="loading-wrapper">
+            <div class="loading-wrapper--inner">Loading…</div>
+            </div>
+          </div>
+        </div>
+
+
+        <div id="reference-refseq" class="file-upload not-loaded">
+          <div class="upload-wrapper">
+            <label>
+              <input type="file" name="genome-file-input" accept=".fasta">
+              <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+              <div class="uploader-text">
+                Click here or drag to load a .fasta file.
+              </div>
+            </label>
+            <div class="loading-wrapper">
+              <div class="loading-wrapper--inner">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

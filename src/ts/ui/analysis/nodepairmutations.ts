@@ -11,6 +11,7 @@ import { SeriesHoverCallback } from '../timedistributionchart';
 import { DisplayNode } from '../displaynode';
 import { NodeTimeDistributionChart, NodeSVGSeriesGroup } from './nodetimedistributionchart';
 import { AggregateMOI } from '../../pythia/mutationsofinterest';
+import { NUC_LOOKUP } from '../../constants';
 
 
 
@@ -47,7 +48,8 @@ class MutationTimeline {
   constructor(data: MutationTimelineData, minDate: number, maxDate: number,
     hoverCallback: SeriesHoverCallback) {
     this.data = data;
-    const {mutation} = data;
+    // is this AA or nuc?
+    const {mutation, nameParts, series} = data;
     this.div = mutationTemplate.cloneNode(true) as HTMLDivElement;
     this.div.classList.toggle('is-apobec', data.mutation.isApobecCtx && data.isApobecRun);
     this.readout = this.div.querySelector(".time-chart--readout") as HTMLDivElement;
@@ -58,12 +60,27 @@ class MutationTimeline {
     if (!nameLabel || !prevalenceLabel) {
       throw new Error('could not find elements for mutation data for node comparison');
     }
-
-    const {nameParts, series} = this.data;
-
-    (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts[0];
-    (nameLabel.querySelector(".site") as HTMLElement).innerText = nameParts[1];
-    (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts[2];
+    if (nameParts instanceof Array) {
+      (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts[0];
+      (nameLabel.querySelector(".site") as HTMLElement).innerText = nameParts[1];
+      (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts[2];
+      nameLabel.classList.remove("amino-acid");
+    } else {
+      (nameLabel.querySelector(".allele-region") as HTMLElement).innerText = nameParts.protein;
+      (nameLabel.querySelector(".allele-from") as HTMLElement).innerText = nameParts.from;
+      (nameLabel.querySelector(".site") as HTMLElement).innerText = `${nameParts.position}`;
+      (nameLabel.querySelector(".allele-to") as HTMLElement).innerText = nameParts.to;
+      nameLabel.classList.add("amino-acid");
+      if (nameParts.isSynonymous) {
+        nameLabel.classList.add("synonymous");
+        const fromCodon = nameParts.fromCodon.map(n=>NUC_LOOKUP[n]).join('');
+        const toCodon = nameParts.toCodon.map(n=>NUC_LOOKUP[n]).join('');
+        (nameLabel.querySelector(".nuc-from") as HTMLElement).innerText = fromCodon;
+        (nameLabel.querySelector(".nuc-to") as HTMLElement).innerText = toCodon;
+      } else {
+        nameLabel.classList.remove("synonymous");
+      }
+    }
     prevalenceLabel.innerText = `${ getPercentLabel(mutation.getConfidence()) }%`;
     this.timeChart = new NodeTimeDistributionChart([], minDate, maxDate, svg, hoverCallback, NodeSVGSeriesGroup);
     this.timeChart.setSeries([series]);

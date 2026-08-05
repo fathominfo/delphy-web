@@ -60,38 +60,107 @@
     </section>
     <section id="customize--right">
 
-      <div id="customize--metadata" class="customize--column">
-        <h2>Metadata</h2>
-        <div id="metadata-file" class="no-metadata">
-          <input type="file" id="metadata-file-input" name="metadata-file-input" accept=".csv, .tsv">
-          <label for="metadata-file-input" id="metadata-file-label">
-            <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
-            <div class="uploader-text">
-              Click here or drag to load a metadata file (.csv, .tsv).
-              <br/><br/>One column should be titled "ID", corresponding to the ids in the fasta file.
+      <div class="customize--column">
+        <div id="customize--metadata" class="file-upload not-loaded">
+          <h2>Metadata</h2>
+          <div class="upload-wrapper">
+            <label>
+              <input type="file" name="metadata-file-input" accept=".csv, .tsv">
+              <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+              <div class="uploader-text">
+                Click here or drag to load a metadata file (.csv, .tsv).
+                <br/><br/>One column should be titled "ID", corresponding to the ids in the fasta file.
+              </div>
+            </label>
+            <div class="loading-wrapper">
+              <div class="loading-wrapper--inner">Loading…</div>
             </div>
-          </label>
-          <div id="metadata-loading">
-            <div id="metadata-loading--inner">Loading…</div>
           </div>
-        </div>
-        <div id="metadata-column-headings" class="hidden">
-          <h3>Column headings</h3>
-          <div class="column-heading">
-            <details>
-              <summary>
-                <div class="name"></div>
-                <div class="count"></div>
-              </summary>
-              <div class="values">
-                <div class="value">
+          <div class="load-result">
+            <h3>Column headings</h3>
+            <div class="column-heading">
+              <details>
+                <summary>
                   <div class="name"></div>
                   <div class="count"></div>
+                </summary>
+                <div class="values">
+                  <div class="value">
+                    <div class="name"></div>
+                    <div class="count"></div>
+                  </div>
                 </div>
-              </div>
-            </details>
+              </details>
+            </div>
           </div>
         </div>
+
+
+        <div id="customize--genome" class="file-upload not-loaded">
+          <h2>Genome</h2>
+          <div class="upload-wrapper">
+            <label>
+              <input type="file" name="genome-file-input" accept=".gff3">
+              <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+              <div class="uploader-text">
+                Click here or drag to load a .gff3 file.
+              </div>
+            </label>
+            <div class="loading-wrapper">
+              <div class="loading-wrapper--inner">Loading…</div>
+            </div>
+          </div>
+          <div id="reference-select" class="select-wrapper">
+            <label for="ref-sequences">Or choose an NCBI reference:</label>
+            <select name="ref-sequences" id="ref-sequences">
+              <option value=""></option>
+            </select>
+          </div>
+          <div class="load-result">
+            <table>
+              <thead>
+                <tr>
+                  <th class="str">feature type</th>
+                  <th class="num">start</th>
+                  <th class="num">stop</th>
+                  <th class="num">strand</th>
+                  <th class="num">phase</th>
+                  <th class="str">name</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="str"></td>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="str"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <!-- <div id="customize--refseq" class="file-upload not-loaded">
+          <h2>Reference sequence</h2>
+          <div class="upload-wrapper">
+            <label>
+              <input type="file" name="genome-file-input" accept=".fasta">
+              <div class="uploader-icon"><div class="box"><img class="glyph" alt="" role="presentation"></div></div>
+              <div class="uploader-text">
+                Click here or drag to load a .fasta file.
+              </div>
+            </label>
+            <div class="loading-wrapper">
+              <div class="loading-wrapper--inner">Loading…</div>
+            </div>
+          </div>
+          <div class="load-result"></div>
+        </div> -->
+
+
       </div>
 
       <div id="customize--color" class="customize--column">

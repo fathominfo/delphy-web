@@ -11,11 +11,15 @@ import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
 import { ColumnSummary } from '../metadata';
+import { Genome, RefSeqConfig, RefSequenceMatch } from '../../pythia/genome';
 
 /* global NodeListOf */
 
 const COLUMN_HEADING_TEMP = document.querySelector(".column-heading") as HTMLElement;
 COLUMN_HEADING_TEMP.remove();
+
+const GENOME_ROW_TEMPLATE = document.querySelector("#customize--genome .load-result tbody tr") as HTMLElement;
+GENOME_ROW_TEMPLATE.remove();
 
 const LEGEND_KEY_TEMP = document.querySelector(".legend-key") as HTMLElement;
 LEGEND_KEY_TEMP.remove();
@@ -31,6 +35,9 @@ BEAST_VERSION_SELECTOR.addEventListener("click", (event) => {
   }
 });
 
+const GENOME_SELECT_WRAPPER: HTMLDivElement = document.querySelector("#reference-select") as HTMLDivElement;
+const SELECT_OPT_TEMPLATE: HTMLOptionElement = document.querySelector("#reference-select select option") as HTMLOptionElement;
+SELECT_OPT_TEMPLATE.remove();
 
 /* the linter doesn't recognize that NodeListOf is a built in */
 /* global NodeListOf */
@@ -69,6 +76,10 @@ export class CustomizeUI extends MccUI {
   selectAllCallback: selectAllCallbackType | null;
 
   metadataLoaded = false;
+
+  candidates: RefSequenceMatch[] = [];
+
+
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#customize--mcc .tree-canvas");
@@ -313,16 +324,17 @@ export class CustomizeUI extends MccUI {
 
 
     // metadata
-    const upload = this.div.querySelector("#metadata-file-input") as HTMLInputElement;
-    upload.value = "";
-    upload.addEventListener("change", () => {
-      const files = upload.files;
+    const metadataLoadDiv = this.div.querySelector("#customize--metadata") as HTMLDivElement;
+    const uploadMetadata = metadataLoadDiv.querySelector("input") as HTMLInputElement;
+    uploadMetadata.value = "";
+    uploadMetadata.addEventListener("change", () => {
+      const files = uploadMetadata.files;
       if (files) {
         this.showMetadataLoading();
         this.parseMetadataFile(files[0]);
       }
     });
-    const uploadArea = this.div.querySelector("#metadata-file-label") as HTMLElement;
+    let uploadArea = metadataLoadDiv.querySelector("label") as HTMLElement;
     uploadArea.addEventListener("drop", e => {
       e.preventDefault();
       e.stopPropagation();
@@ -335,23 +347,62 @@ export class CustomizeUI extends MccUI {
       }
     });
 
-    // // topology
-    // (this.div.querySelectorAll("#customize--tree-topology .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-    //   const topology = el.value === TOPOLOGY_MCC ? Topology.mcc : Topology.bestof;
-    //   el.addEventListener("input", () => this.setTopology(topology));
-    // });
+    // genome config
+    const genomeLoadDiv = this.div.querySelector("#customize--genome") as HTMLDivElement;
+    const uploadGenome = genomeLoadDiv.querySelector("input") as HTMLInputElement;
+    uploadGenome.value = "";
+    uploadGenome.addEventListener("change", () => {
+      const files = uploadGenome.files;
+      if (files) {
+        this.showGenomeConfigLoading();
+        this.parseGenomeConfigFile(files[0]);
+      }
+    });
+    uploadArea = genomeLoadDiv.querySelector("label") as HTMLElement;
+    uploadArea.addEventListener("drop", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.showGenomeConfigLoading();
+      if (e.dataTransfer) {
+        const files = e.dataTransfer.files;
+        if (files) {
+          this.parseGenomeConfigFile(files[0]);
+        }
+      }
+    });
 
-    // // presentation
-    // (this.div.querySelectorAll("#customize--tree-presentation .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-    //   const presentation = el.value === PRESENTATION_ALL ? Presentation.all : Presentation.umbrella;
-    //   el.addEventListener("input", () => this.setPresentation(presentation));
-    // });
+    const genomeSelectActivate = GENOME_SELECT_WRAPPER.querySelector("label") as HTMLLabelElement;
+    const genomeSelect = GENOME_SELECT_WRAPPER.querySelector("select") as HTMLSelectElement;
+    genomeSelectActivate.addEventListener("click", ()=>{
+      genomeSelect.innerHTML = '';
+      const opt = SELECT_OPT_TEMPLATE.cloneNode(true) as HTMLOptionElement;
+      opt.setAttribute("value", "");
+      opt.textContent = "--";
+      genomeSelect.appendChild(opt);
+      this.candidates.forEach((candy: RefSequenceMatch)=>{
+        if (!candy.config) return;
+        const opt = SELECT_OPT_TEMPLATE.cloneNode(true) as HTMLOptionElement;
+        opt.setAttribute("value", candy.config.accession);
+        opt.textContent = `${candy.config.name} (${candy.config.accession})`;
+        genomeSelect.appendChild(opt);
+        // console.log(candy)
+      });
+    });
+    genomeSelect.addEventListener("change", (event)=>{
+      event.preventDefault();
+      const value = genomeSelect.value;
+      if (value === '') return;
+      console.log('genomeSelect', value);
+      const selection = this.candidates.filter(({config})=>config && config.accession === value)[0];
+      console.log(selection)
+      const config = selection.config as RefSeqConfig;
+      this.showGenomeConfigLoading();
+      fetch (`assets/data/${config.gff_path}`).then(resp=>resp.text()).then((text)=>{
+        this.sharedState.genome = new Genome(config.gff_path).fromGff3(text);
+        this.endGenomeConfigLoading();
+      });
+    });
 
-    // // spacing
-    // (this.div.querySelectorAll("#customize--tree-spacing .paragraph-radio input") as NodeListOf<HTMLInputElement>).forEach(el => {
-    //   const spacing = el.value === Y_EVEN_SPACING ? YSpacing.even : YSpacing.genetic;
-    //   el.addEventListener("input", () => this.setSpacing(spacing));
-    // });
   }
 
 
@@ -373,6 +424,13 @@ export class CustomizeUI extends MccUI {
       }
     }
     this.setMetadataDisplay();
+    /* reset the scoring for best match of the ref sequence */
+    if (this.pythia) {
+      this.candidates = this.pythia.getRefSeqCandidates();
+      GENOME_SELECT_WRAPPER.classList.toggle("hidden", this.candidates.length === 0);
+    } else {
+      GENOME_SELECT_WRAPPER.classList.add("hidden");
+    }
   }
 
 
@@ -410,14 +468,15 @@ export class CustomizeUI extends MccUI {
   }
 
   showMetadataLoading() : void {
-    (this.div.querySelector("#metadata-file") as HTMLElement).classList.add("loading");
+    (this.div.querySelector("#customize--metadata") as HTMLElement).classList.add("loading");
   }
 
   endMetadataLoading() : void {
-    (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("loading");
+    const metadataLoader = this.div.querySelector("#customize--metadata") as HTMLElement;
+    metadataLoader.classList.remove("loading");
     if (this.sharedState.mccConfig.hasMetadata()) {
-      (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("no-metadata");
-      (this.div.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
+      metadataLoader.classList.remove("not-loaded");
+      (metadataLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
       const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
       input.disabled = false;
       input.click();
@@ -425,10 +484,24 @@ export class CustomizeUI extends MccUI {
     }
   }
 
+  showGenomeConfigLoading() : void {
+    (this.div.querySelector("#customize--genome") as HTMLElement).classList.add("loading");
+  }
+
+  endGenomeConfigLoading() : void {
+    const genomeLoader = this.div.querySelector("#customize--genome") as HTMLElement;
+    genomeLoader.classList.remove("loading");
+    if (this.sharedState.genome) {
+      genomeLoader.classList.remove("not-loaded");
+      (genomeLoader.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.genome.fileName}`;
+      this.setGenomeDisplay();
+    }
+  }
+
 
   setMetadataDisplay(): void {
     if (!this.metadataLoaded) {
-      const columnsContainer = this.div.querySelector("#metadata-column-headings") as HTMLElement;
+      const columnsContainer = this.div.querySelector("#customize--metadata .load-result") as HTMLElement;
       if (!this.sharedState.mccConfig.hasMetadata()) {
         columnsContainer.classList.add("hidden");
       } else {
@@ -557,11 +630,44 @@ export class CustomizeUI extends MccUI {
     });
   }
 
+  setGenomeDisplay() : void {
+    const genome = this.sharedState.genome;
+    if (genome && genome.features.length > 0) {
+      const tbody = document.querySelector("#customize--genome .load-result tbody") as HTMLElement;
+      genome.features.forEach(feature=>{
+        const row = GENOME_ROW_TEMPLATE.cloneNode(true) as HTMLTableRowElement;
+        const cells = row.querySelectorAll("td");
+        cells[0].textContent = feature.featureType;
+        cells[1].textContent = feature.getReadableStart();
+        cells[2].textContent = feature.getReadableEnd();
+        cells[3].textContent = feature.getReadableStrand();
+        cells[4].textContent = feature.getReadablePhase();
+        cells[5].textContent = feature.name;
+        tbody.appendChild(row);
+      });
+    }
+  }
 
 
   parseMetadataFile(file: File) {
     parseMetadataFile(file, this.sharedState.mccConfig, this.mccTreeCanvas, ()=>this.endMetadataLoading());
   }
+
+  parseGenomeConfigFile(file: File) {
+    const reader = new FileReader();
+    try {
+      reader.addEventListener("load", ()=>{
+        const text = reader.result as string;
+        this.sharedState.genome = new Genome(file.name).fromGff3(text);
+        this.endGenomeConfigLoading();
+      });
+      reader.readAsText(file);
+    } catch (err) {
+      console.log(err);
+      alert("error loading genome configuration file. Please check that it is formatted correctly. If that's not the issue, please let us know at delphy@fathom.info");
+    }
+  }
+
 
 
 
