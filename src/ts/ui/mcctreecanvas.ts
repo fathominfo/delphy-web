@@ -12,7 +12,8 @@ import {
   getCSSValue,
   setDateLabel,
   DATE_LABEL_WIDTH_PX,
-  AxisLabel} from './common';
+  AxisLabel,
+  DateAxisEntry} from './common';
 import { getTipCounts } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
 import { Context2d } from "jspdf";
@@ -133,6 +134,9 @@ export class MccTreeCanvas {
   mostRecentEvent: PointerEvent | null = null;
   lastDragUpdate: coord = {x: 0, y: 0};
 
+  dateScale: DateScale = DateScale.day;
+  dateEntries: DateAxisEntry[] = [];
+
 
 
 
@@ -235,6 +239,7 @@ export class MccTreeCanvas {
       }
       this.gatherNodeStats(tree, creds);
       this.positionTreeNodes();
+      this.setAxisDates();
       if (this.mccConfig) {
         this.confidenceThreshold = this.mccConfig.confidenceThreshold;
       }
@@ -249,8 +254,9 @@ export class MccTreeCanvas {
     this.rootIndex = rootIndex;
     if (this.rootConfigs[rootIndex] === undefined) {
       this.positionTreeNodes();
+      this.setAxisDates();
     } else {
-      requestAnimationFrame(()=>this.setAxisDates());
+      this.setAxisDates();
     }
 
   }
@@ -409,25 +415,11 @@ export class MccTreeCanvas {
         const [left, right] = nodeChildren[index],
           ly = yPositions[left],
           ry = yPositions[right];
-        // if (ly === undefined || ry === undefined) {
-        //   console.warn(`bad assumptions lurk in positionTreeNodes`)
-        //   /*
-        //   This shouldn't happen, but just in case…
-        //   one of the children's positions isn't defined yet,
-        //   so put this back on the queue to try again later
-        //   */
-        //   queue.push(index);
-        //   queue.push(left);
-        //   queue.push(right);
-        // } else {
         yPositions[index] = (ly + ry) / 2;
-        // }
       }
     }
     this.rootConfigs[rootIndex] = new CustomSubTree(minDate, maxDate, verticallySortedTips, yPositions, size);
     // console.log(` minDate: ${minDate}, maxDate: ${maxDate}`);
-    requestAnimationFrame(()=>this.setAxisDates());
-
   }
 
 
@@ -441,12 +433,19 @@ export class MccTreeCanvas {
     maxDate = this.getZoomDate(this.width - TREE_PADDING_RIGHT);
     // console.log("setAxisDates", this.zoomAmount, "min", config.minDate, minDate, "max", config.maxDate, maxDate);
     const { scale, entries } = getNiceDateInterval(minDate, maxDate);
-    const lastIndex = entries.length - 1;
+    this.dateScale = scale;
+    this.dateEntries = entries;
+    requestAnimationFrame(() => this.renderAxisDates());
+  }
+
+  renderAxisDates() {
+    const { dateScale, dateEntries } = this;
+    const lastIndex = dateEntries.length - 1;
     this.dateAxis.innerHTML = '';
     this.dateAxisEntries.length = 0;
     let previousLeft = Number.MIN_SAFE_INTEGER;
-    entries.forEach((entry, i)=>{
-      if (scale === DateScale.year) {
+    dateEntries.forEach((entry, i) => {
+      if (dateScale === DateScale.year) {
         //
       } else {
         if (entry.isNewYear || i === lastIndex) {
@@ -461,7 +460,7 @@ export class MccTreeCanvas {
             previousLeft = left;
           }
           this.dateAxis.appendChild(div);
-          this.dateAxisEntries.push({div, left});
+          this.dateAxisEntries.push({ div, left });
         }
       }
     })
@@ -583,8 +582,8 @@ export class MccTreeCanvas {
       dy = unzoomedDy * this.zoomAmount - halfDZoom;
     this.zoomOffset.x = dx;
     this.zoomOffset.y = dy ;
+    this.setAxisDates();
     requestAnimationFrame(()=>{
-      this.setAxisDates();
       this.draw();
     });
   }
