@@ -158,7 +158,7 @@ export class AnimatedNodeTimeDistributionChart extends NodeTimeDistributionChart
       this.draw();
       if (this.seriesMax.isTargeting()) {
         if (this.timer === UNSET) clearTimeout(this.timer);
-        this.timer = setTimeout(()=>this.requestDraw(), FRAME_DURATION);
+        this.timer = window.setTimeout(() => this.requestDraw(), FRAME_DURATION);
       } else {
         this.timer = UNSET;
       }

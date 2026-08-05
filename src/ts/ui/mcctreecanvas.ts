@@ -662,7 +662,7 @@ export class MccTreeCanvas {
           const newY = this.dragCanvasStart.y + yPct;
           // console.log('dragging pix: ', event.offsetX, "dx", dx, "zoomed", zoomDx, "w", width, "pct", xPct, "startX", this.dragCanvasStart.x, "new", newX);
           this.setZoom(this.zoomAmount, newX, newY);
-          this.throttleTimer = setTimeout(()=>{
+          this.throttleTimer = window.setTimeout(() => {
             this.throttleTimer = UNSET;
             this.handlePointerMove(this.mostRecentEvent);
           }, THROTTLE_TIME);

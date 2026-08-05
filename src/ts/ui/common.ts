@@ -1,6 +1,8 @@
 import { getMutationName } from '../constants';
-import { addDays, addMonths, addWeeks, addYears, DateTokenIndex,
-  MONTHS_SHORT, toDate, toDateNumber, toDateTokens } from '../pythia/dates';
+import {
+  addDays, addMonths, addWeeks, addYears, DateTokenIndex,
+  MONTHS_SHORT, toDate, toDateNumber, toDateTokens
+} from '../pythia/dates';
 import { Mutation, SummaryTree } from '../pythia/delphy_api';
 import { DateLabel } from './datelabel';
 
@@ -37,7 +39,7 @@ export const COLOR_METADATA = "metadata";
 // export const PRESENTATION_UMBRELLA = "mutations";
 
 
-export type NavigateFunctionType = (screen: Screens)=>void; // eslint-disable-line no-unused-vars
+export type NavigateFunctionType = (screen: Screens) => void; // eslint-disable-line no-unused-vars
 
 
 export const CONFIDENCE_DEFAULT = 90;
@@ -94,7 +96,7 @@ export const HI_CONFIDENCE_COLOR = 'rgb(6, 35, 33)',
   DEFAULT_NODE_CONFIDENCE = 0.9;
 
 
-export const nfc = (x:number)=>{
+export const nfc = (x: number) => {
   return x === undefined ? '' : x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
@@ -103,7 +105,7 @@ export const nfc = (x:number)=>{
 @param lowerOOM, upperOOM: lower and upper orders of magnitude at which
 we switch to scientific notation
 */
-export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
+export const safeLabel = (x: number, lowerOOM = -5, upperOOM = 5) => {
   if (x === undefined || isNaN(x) || x === null) return '';
   const magnitude = Math.log10(x);
   let label = '';
@@ -122,10 +124,10 @@ export const safeLabel = (x:number, lowerOOM = -5, upperOOM = 5)=>{
   return label;
 }
 
-export const getOrdinal = (n:number)=>{
+export const getOrdinal = (n: number) => {
   const lastDigit = n % 10;
   let ord = `${n}`;
-  switch(Math.abs(lastDigit)) {
+  switch (Math.abs(lastDigit)) {
   case 1: ord += 'st'; break;
   case 2: ord += 'nd'; break;
   case 3: ord += 'rd'; break;
@@ -134,7 +136,7 @@ export const getOrdinal = (n:number)=>{
   return ord;
 }
 
-export const minimalDecimalLabel = (x:number)=>{
+export const minimalDecimalLabel = (x: number) => {
   if (x === undefined || isNaN(x) || x === null) return '';
   let label = '';
   if (Math.abs(x) < 1) {
@@ -146,8 +148,8 @@ export const minimalDecimalLabel = (x:number)=>{
   return label;
 }
 
-export const mutToPos = (s:string):number => {
-  const r =  /.([\d]*)/.exec(s);
+export const mutToPos = (s: string): number => {
+  const r = /.([\d]*)/.exec(s);
   // console.log(r);
   return r ? parseInt(r[1]) : -1;
 }
@@ -160,7 +162,7 @@ export const MONTHLY = 1,
   TEN_YEARLY = 5;
 
 
-export const getTimelineIndices = (minDate:number, maxDate:number)=>{
+export const getTimelineIndices = (minDate: number, maxDate: number) => {
   const timelineIndices = [],
     range = maxDate - minDate + 1,
     /*
@@ -169,7 +171,7 @@ export const getTimelineIndices = (minDate:number, maxDate:number)=>{
     */
     daysPerLabel = Math.ceil(range / 5);
   let d = maxDate,
-    dl  = new DateLabel(d),
+    dl = new DateLabel(d),
     prev = new DateLabel(d),
     labelFreq = TEN_YEARLY;
   timelineIndices.push(dl);
@@ -223,12 +225,12 @@ export const getTimelineIndices = (minDate:number, maxDate:number)=>{
 }
 
 /* expects a number between 0 and 1 */
-export const getPercentLabel = (n:number)=>{
+export const getPercentLabel = (n: number) => {
   if (n === 0) return '0';
   if (n === 1) return '100';
   if (n <= 0.01) return '<1';
-  if (n > 0.99)  return '>99';
-  return `${Math.round(100*n)}`;
+  if (n > 0.99) return '>99';
+  return `${Math.round(100 * n)}`;
 }
 
 
@@ -246,13 +248,13 @@ export const resizeCanvas = (canvas: HTMLCanvasElement) => {
     canvas.width = width;
     canvas.height = height;
   }
-  return {width, height};
+  return { width, height };
 }
 
 
-export type MetadataColorOption = {color: string, active: boolean};
+export type MetadataColorOption = { color: string, active: boolean };
 
-export type ColorDict = {[value: string]: MetadataColorOption};
+export type ColorDict = { [value: string]: MetadataColorOption };
 
 
 export function constrain(n: number, low: number, high: number): number {
@@ -279,9 +281,9 @@ export function measureText(ctx: CanvasRenderingContext2D, text: string, textPos
   const metrics = ctx.measureText(text);
   const width = metrics.width;
   const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-  const myMetrics: MyTextMetrics = {width, height};
+  const myMetrics: MyTextMetrics = { width, height };
   if (textPosition) {
-    const {x, y, align, baseline} = textPosition;
+    const { x, y, align, baseline } = textPosition;
     let left: number | undefined, right: number | undefined, top: number | undefined, bottom: number | undefined;
 
     const setLeftAlign = () => {
@@ -374,20 +376,20 @@ export function textIntersects(metrics1: MyTextMetrics, metrics2: MyTextMetrics)
   return true;
 }
 
-export type DataResolveType = (tree:SummaryTree)=>void;
+export type DataResolveType = (tree: SummaryTree) => void;
 
-export const pad = (n:number)=>`${(n < 10 ? '0' : '')}${n}`;
-export const getTimestampString = ()=>{
+export const pad = (n: number) => `${(n < 10 ? '0' : '')}${n}`;
+export const getTimestampString = () => {
   const now = new Date();
-  return `${now.getFullYear() % 100}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
+  return `${now.getFullYear() % 100}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
 };
 
 
-export const numericSort = (a: number, b: number)=>a-b;
-export const numericSortReverse = (a: number, b: number)=>b-a;
+export const numericSort = (a: number, b: number) => a - b;
+export const numericSortReverse = (a: number, b: number) => b - a;
 
 
-export const getNtile = (arr: number[], ntile: number) =>{
+export const getNtile = (arr: number[], ntile: number) => {
   const index = (arr.length - 1) * ntile,
     floored = Math.floor(index),
     diff = index - floored;
@@ -397,7 +399,7 @@ export const getNtile = (arr: number[], ntile: number) =>{
     weight the influence of the two bounding amounts.
     */
     // value = value * (1.0 - diff) + arr[floored+1] * diff;
-    value = (value + arr[floored+1]) / 2;
+    value = (value + arr[floored + 1]) / 2;
   }
   return value;
 }
@@ -413,7 +415,7 @@ export const log10 = Math.log(10);
   * nicenum: find a "nice" number approximately equal to x.
   * Round the number if round is true, take ceiling if round is false
   */
-export const nicenum = (x: number, round = false )=>{
+export const nicenum = (x: number, round = false) => {
   const expv = Math.floor(Math.log10(x));  // exponent of x
   // f is the fractional part of x
   const f = x / Math.pow(10, expv);    // between 1 and 10
@@ -537,7 +539,7 @@ export function getNiceDateInterval(min: number, max: number): DateIntervalData 
 
 
 
-  entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth});
+  entries.push({ yearLabel, monthLabel, dateLabel, tokens, date, percent, isNewYear, isNewMonth });
   let initialScaleCount = scaleCount;
   if (monthsNeedAligning) {
     const month = tokens[DateTokenIndex.month];
@@ -629,7 +631,7 @@ export function getNiceDateInterval(min: number, max: number): DateIntervalData 
   // }
   // }
 
-  return {scale,  entries};
+  return { scale, entries };
 }
 
 
@@ -659,7 +661,7 @@ export const getDateLabel = (tokens: [number, number, number]): string => {
 const root = document.querySelector(":root") as HTMLBodyElement,
   rootStyle = window.getComputedStyle(root) as CSSStyleDeclaration;
 
-export const getCSSValue = (property: string) : string =>{
+export const getCSSValue = (property: string): string => {
   return rootStyle.getPropertyValue(property);
 }
 
@@ -671,7 +673,7 @@ export type AxisLabel = {
 
 
 
-export const setDateLabel = (date: number, div: HTMLDivElement)=>{
+export const setDateLabel = (date: number, div: HTMLDivElement) => {
   const tokens = toDateTokens(date);
   const month = tokens[DateTokenIndex.month];
   (div.querySelector(".day") as HTMLSpanElement).textContent = `${tokens[DateTokenIndex.day]}`;
@@ -680,23 +682,39 @@ export const setDateLabel = (date: number, div: HTMLDivElement)=>{
 };
 
 
-export const sameMutation = (m1: Mutation | null, m2: Mutation | null) : boolean=>{
+export const sameMutation = (m1: Mutation | null, m2: Mutation | null): boolean => {
   return m1 !== null && m2 !== null && getMutationName(m1) === getMutationName(m2);
 };
 
-export const getMedian = (arr:number[])=>{
+export const getMedian = (arr: number[]) => {
   let median = 0;
   if (arr.length > 0) {
     const sorted = arr.sort(numericSort);
     if (sorted.length % 2 === 1) {
-      median = sorted[Math.floor(sorted.length/2)];
+      median = sorted[Math.floor(sorted.length / 2)];
     } else {
-      median = (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2;
+      median = (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
     }
   }
   return median;
 }
 
-export type LISTENER_CALLBACK_TYPE = ()=>void;
-export type RANGE_CALLBACK_TYPE = (value: number)=>void;
-export type SET_PREVALENCE_CALLBACK_TYPE = (increment: boolean)=>void;
+const lerp = (a: number, b: number, t: number) => {
+  return Math.round(a + (b - a) * t);
+}
+
+export const lerpColor = (color1: string, color2: string, t: number): string => {
+  t = Math.max(0, Math.min(1, t));
+
+  const c1 = color1.match(/\w\w/g)!.map(h => parseInt(h, 16));
+  const c2 = color2.match(/\w\w/g)!.map(h => parseInt(h, 16));
+
+  const r = lerp(c1[0], c2[0], t);
+  const g = lerp(c1[1], c2[1], t);
+  const b = lerp(c1[2], c2[2], t);
+
+  return `rgb(${r}, ${g}, ${b})`;
+}
+export type LISTENER_CALLBACK_TYPE = () => void;
+export type RANGE_CALLBACK_TYPE = (value: number) => void;
+export type SET_PREVALENCE_CALLBACK_TYPE = (increment: boolean) => void;

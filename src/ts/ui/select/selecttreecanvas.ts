@@ -48,7 +48,7 @@ export class SelectTreeCanvas extends MccTreeCanvas {
 
     const sendUpdate = ()=>{
       hoverCallback(nodeIndex);
-      throttleTimer = setTimeout(()=>{
+      throttleTimer = window.setTimeout(() => {
         if (sendAnother) {
           sendAnother = false;
           sendUpdate();

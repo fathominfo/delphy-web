@@ -16,7 +16,7 @@ import { MccUI } from './ui/mccui';
 import { SummaryTree } from './pythia/delphy_api';
 import { Metadata } from './ui/metadata';
 import { AnalysisUI } from './ui/analysis/analysisui';
-
+import { MapUI } from './ui/mapper/mapui';
 
 
 function onReady(p:Pythia):void {
@@ -32,6 +32,7 @@ function onReady(p:Pythia):void {
   const analysisUI = new AnalysisUI(sharedState, "#analysis");
   const customizeUI = new CustomizeUI(sharedState, "#customize");
 
+  const mapUI = new MapUI(sharedState, "#map");
   goToScreens[Screens.run] = runUI;
   goToScreens[Screens.select] = selectUI;
   goToScreens[Screens.analysis] = analysisUI;
@@ -41,6 +42,7 @@ function onReady(p:Pythia):void {
   viewButtons.push(new NavLabel("Select", selectUI, "#select"));
   viewButtons.push(new NavLabel("Analyze", analysisUI, "#analysis"));
   viewButtons.push(new NavLabel("Customize", customizeUI, "#customize"));
+  viewButtons.push(new NavLabel("Map", mapUI, "#map"));
   bindNav(viewButtons);
 
   const qc = document.querySelector("#qc") as HTMLElement;

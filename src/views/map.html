@@ -1,0 +1,57 @@
+<div id="map" class="view">
+  <header>
+    <div class="header--basic">
+      {{> header_common }}
+    </div>
+  </header>
+  <div class="main-content visualizations--container">
+
+    <section id="map--left" class="charts--container">
+      <div id="map--node-layout" class="block left" data-duo="left">
+
+        <div class="header">
+          <div class="title">
+            <h3>Geography</h3>
+          </div>
+        </div>
+
+        <div class="region-picker">
+          <div class="region-input-row">
+            <input id="region-input" type="text" placeholder="Type a country ISO code...">
+
+            <button id="add-region">Add</button>
+          </div>
+          <ul id="region-list"></ul>
+          <button id="generate-map">Load map with selected regions</button>
+        </div>
+
+        <div class="map-legend">
+          <span>Coloring by:</span> <span id="color-by-current">Number of sequences</span>
+          <div class="map-toggles">
+            <label>
+              <input type="radio" name="color-mode" value="sequences" id="color-by-sequences" checked />
+              Number of sequences
+            </label>
+            <label>
+              <input type="radio" name="color-mode" value="case-counts" id="color-by-case-counts" />
+              Estimated case counts
+            </label>
+
+            <label>
+              <input type="radio" name="color-mode" value="mutation" id="color-by-mutation" />
+              Mutation
+            </label>
+          </div>
+        </div>
+
+        <div class="map--svg--container">
+        </div>
+
+        <div class="map-readout-container"></div>
+
+      </div>
+    </section>
+
+  </div>
+
+</div>
