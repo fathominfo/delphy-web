@@ -87,7 +87,7 @@ export class SelectUI extends MccUI {
     const lookupForm = document.querySelector(".id-lookup form") as HTMLFormElement;
     lookupForm.addEventListener("submit", e => e.preventDefault());
 
-    const constrainHoverByCredibilityInput = document.querySelector("#select--constrain-selection") as HTMLInputElement;
+    const constrainHoverByCredibilityInput = this.div.querySelector(".mcc--constrain-selection") as HTMLInputElement;
     constrainHoverByCredibilityInput.addEventListener('change', ()=>{
       this.coreData.setCredibilityConstrained(constrainHoverByCredibilityInput.checked);
     });
