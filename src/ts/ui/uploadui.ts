@@ -635,4 +635,5 @@ function hideOthers(originEle: HTMLElement) {
 }
 
 
-export { bindUpload, hideUpload, loadNow };
+export { bindUpload, hideUpload, loadNow }
+;

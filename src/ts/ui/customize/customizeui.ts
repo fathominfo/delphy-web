@@ -6,7 +6,7 @@ import {SharedState} from '../../sharedstate';
 import { Metadata } from '../metadata';
 import { ColorChooser } from '../colorchooser';
 import { MccTree, SummaryTree } from '../../pythia/delphy_api';
-import { MccTreeCanvas } from '../mcctreecanvas';
+import { TreeCanvas } from '../treecanvas';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
 import { MccConfig } from '../mccconfig';
@@ -118,7 +118,7 @@ export class CustomizeUI extends MccUI {
     (this.div.querySelector("#export-png") as HTMLButtonElement).addEventListener('click', ()=>{
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d') as CanvasRenderingContext2D,
-        imgTreeCanvas = new MccTreeCanvas(canvas, ctx),
+        imgTreeCanvas = new TreeCanvas(canvas, ctx),
         mccConfig = this.sharedState.mccConfig,
         tree = this.mccTreeCanvas.tree as SummaryTree,
         conf = this.mccTreeCanvas.creds;
@@ -150,7 +150,7 @@ export class CustomizeUI extends MccUI {
     (this.div.querySelector("#export-pdf") as HTMLButtonElement).addEventListener('click', ()=>{
       const canvas = new PdfCanvas(500, 750),
         ctx = canvas.getContext(),
-        imgTreeCanvas = new MccTreeCanvas(canvas, ctx),
+        imgTreeCanvas = new TreeCanvas(canvas, ctx),
         mccConfig = this.sharedState.mccConfig,
         tree = this.mccTreeCanvas.tree as SummaryTree,
         conf = this.mccTreeCanvas.creds;
@@ -265,9 +265,11 @@ export class CustomizeUI extends MccUI {
 
             let zip: JSZip;
             try {
-            // @ts-expect-error: JSZip doesn't import the same way after transpilation
+              // @ts-expect-error: JSZip doesn't import the same way after transpilation
               zip = new JSZip.default(); // eslint-disable-line new-cap
             } catch (err) {
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
               zip = new JSZip();
             }
             zip.file(titleLog, fileLog);
@@ -708,7 +710,7 @@ adding metadata does not have to be part of the customize page.
 If we _do_ decide to move it out of here, this is what it will require.
 [mark 241125]
 */
-const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccTreeCanvas, callback: ()=>void)=>{
+const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: TreeCanvas, callback: ()=>void)=>{
   let separator = "";
   if (file.type === "text/tab-separated-values" || file.name.endsWith(".tsv")) {
     separator = "\t";

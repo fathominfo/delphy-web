@@ -33,8 +33,8 @@ export class SchematicEditor extends NodeSchematic {
     clearCuratedCallback: ()=>void,
     introsOnlyCallback: ()=>void,
   ) {
-
     super(wrapper, nodeHighlightCallback);
+    wrapper.classList.add('toimitaja');
     // PREVALENCE_THRESHOLD_SLIDER.addEventListener("input", ()=>{
     //   prevThresholdCallback(true, parseFloat(PREVALENCE_THRESHOLD_SLIDER.value));
     // });

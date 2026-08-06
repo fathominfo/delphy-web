@@ -7,7 +7,7 @@ import { assembleInheritanceTree, getTipCounts, InheritanceNode, isTip } from ".
 import { ColorOption, numericSortReverse, UNDEF, UNSET } from "../common";
 import { DisplayNode, NULL_NODE_CODE } from "../displaynode";
 import { Distribution } from "../distribution";
-import { MccTreeCanvas } from "../mcctreecanvas";
+import { TreeCanvas } from "../treecanvas";
 import { FieldTipCount, NodeMetadata, NodeMetadataValues } from "../nodemetadata";
 import { getYFunction, METADATA_NONE_OPTION, NodePair, NodeRelationType, TreeHint } from "./selectcommon";
 import { MccConfig } from "../mccconfig";
@@ -178,7 +178,7 @@ export class CoreSelectData {
     this.pythia = null;
   }
 
-  initNodeData(mccTreeCanvas: MccTreeCanvas, isApobecEnabled: boolean) {
+  initNodeData(mccTreeCanvas: TreeCanvas, isApobecEnabled: boolean) {
     const summaryTree = mccTreeCanvas.tree as SummaryTree;
     if (summaryTree !== this.summaryTree) {
       /* prep the data and methods that will allow for fast processing of nodes */

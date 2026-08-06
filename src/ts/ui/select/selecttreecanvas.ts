@@ -1,7 +1,7 @@
 import { Context2d } from "jspdf";
 import { PdfCanvas } from "../../util/pdfcanvas";
 import { ColorOption, getCSSValue, UNSET } from "../common";
-import { MccTreeCanvas } from "../mcctreecanvas";
+import { TreeCanvas } from "../treecanvas";
 import { SummaryTree } from "../../pythia/delphy_api";
 import { NodeCallback, NodePair } from "./selectcommon";
 import { DisplayNode } from "../displaynode";
@@ -13,7 +13,7 @@ const PUSHBACK_ALPHA = 0.4;
 
 
 
-export class SelectTreeCanvas extends MccTreeCanvas {
+export class SelectTreeCanvas extends TreeCanvas {
   nodes: DisplayNode[] = [];
   descendants: NodePair[] = [];
   subtreeNode: DisplayNode | null = null;

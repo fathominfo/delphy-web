@@ -77,7 +77,7 @@ class CustomSubTree {
 
 }
 
-export class MccTreeCanvas {
+export class TreeCanvas {
   canvas: HTMLCanvasElement | PdfCanvas;
   ctx: CanvasRenderingContext2D | Context2d;
   dateAxis: HTMLDivElement;
@@ -88,7 +88,6 @@ export class MccTreeCanvas {
   however, the user can select a root index to draw from.
   */
   rootIndex: number;
-  // protected nodeYs: number[];
   nodeTimes: number[];
   nodeChildren: number[][];
   nodeParents: number[];
@@ -96,8 +95,6 @@ export class MccTreeCanvas {
   /* how many tips for the node at this index */
   tipCounts: number[];
   branchWeights: number[];
-  // minDate: number;
-  // maxDate: number;
   tree: Tree | null;
   creds: number[];
   /* we don't want this to be less than 1, but typescript can't enforce that for us */
@@ -146,15 +143,12 @@ export class MccTreeCanvas {
     this.ctx = ctx;
     this.dateAxis = canvas.parentNode?.querySelector(".dates") as HTMLDivElement;
     this.tree = null;
-    // this.nodeYs = [];
     this.nodeTimes = [];
     this.nodeChildren = [];
     this.nodeParents = [];
     this.tipCount = 0;
     this.tipCounts = [];
     this.branchWeights = [];
-    // this.minDate = Number.MAX_VALUE;
-    // this.maxDate = Number.MIN_VALUE;
     this.height = 0;
     this.width = 0;
     this.creds = [];
@@ -1004,5 +998,5 @@ export const instantiateMccTreeCanvas = (selector: string)=>{
   if (maybeCtx === null) {
     throw new Error('This browser does not support 2-dimensional canvas rendering contexts.');
   }
-  return new MccTreeCanvas(maybeCanvas, maybeCtx);
+  return new TreeCanvas(maybeCanvas, maybeCtx);
 }
