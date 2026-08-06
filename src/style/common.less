@@ -1426,44 +1426,171 @@ nav {
   --track-filled-hover-color: darken(@lowConfidence, 5%);
   --track-active-color: lighten(@highConfidence, 5%);
 
-  position: relative;
-  height: var(--track-height);
-  cursor: pointer;
+  // position: relative;
+  // height: var(--track-height);
+  // cursor: pointer;
+  // overflow: visible;
 
-  input {
-    position: absolute;
-    width: 0;
-    height: 0;
-    opacity: 0;
-    overflow: clip;
-  }
+  // input {
+  //   position: absolute;
+  //   width: 100%;
+  //   height: 100%;
+  //   opacity: 1;
+  //   overflow: clip;
+  // }
 
-  .slider--track {
+
+
+// input[type='range'] {
+//   width: 100%;
+//   -webkit-appearance: none;
+//   background-color: rgb(200, 200, 200);
+// }
+
+// input[type='range']::-webkit-slider-runnable-track {
+//   overflow: hidden;
+//   height: var(--track-height);
+//   -webkit-appearance: none;
+//   background-color: rgb(6, 35, 33);
+//   margin-top: -1px;
+// }
+
+// input[type='range']::-webkit-slider-thumb {
+//   width: 10px;
+//   -webkit-appearance: none;
+//   height: var(--thumb-height);
+//   cursor: ew-resize;
+//   background: cyan;
+//   box-shadow: -1000px 0 0 1000px rgb(200, 200, 200);
+// }
+
+
+  // /** FF*/
+  // input[type="range"]::-moz-range-progress {
+  //   background-color: #43e5f7;
+  // }
+
+  // input[type="range"]::-moz-range-track {
+  //   background-color: #9a905d;
+  // }
+
+  // /* IE*/
+  // input[type="range"]::-ms-fill-lower {
+  //   background-color: #43e5f7;
+  // }
+
+  // input[type="range"]::-ms-fill-upper {
+  //   background-color: #9a905d;
+  // }
+
+    --track-height: 6px;
+    --thumb-height: 16px;
+
+    --track-color: @highConfidence;
+    --track-filled-color: @lowConfidence;
+    --track-hover-color: darken(@highConfidence, 5%);
+    --track-filled-hover-color: darken(@lowConfidence, 5%);
+    --track-active-color: lighten(@highConfidence, 5%);
+
+  input[type=range] {
+    margin: 18px 0;
     width: 100%;
-    height: 100%;
-    background-color: var(--track-color);
-  }
-
-  .slider--track-filled {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    background-color: var(--track-filled-color);
-    pointer-events: none;
-  }
-
-  .slider--thumb {
-    position: absolute;
-    top: 0;
-    bottom: 0;
+    overflow: hidden;
+    appearance: none;
     height: var(--thumb-height);
-    transform: translate(-50%, calc(calc(var(--thumb-height) - var(--track-height)) * -0.5));
-    width: calc(5px + 1px);
-    background-color: var(--track-color);
-    pointer-events: none;
-    border: 1px solid #fff;
   }
+
+  input[type=range]:focus {
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: var(--track-height);
+    cursor: pointer;
+    background: var(--track-color);
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    height: var(--thumb-height);
+    width: 6px;
+    background: var(--track-color);
+    border: solid 1px #fff;
+    cursor: pointer;
+    margin-top: -5px;
+    -webkit-appearance: none;
+    /*
+    these box-shadow and clip-path entries are a webkit specific hack
+    to get a different color for the track to the left of the thumb
+    ref : https: //stackoverflow.com/questions/65738788/input-range-slider-progress-for-chrome-browser
+    */
+    box-shadow: -500px 0 0 500px var(--track-filled-color);
+    clip-path: path("M 1 5 L 1 1, 6 1, 6 15, 1 15, 1 11, -800 11 -800 5  z");
+  }
+
+  input[type=range]:focus::-webkit-slider-runnable-track {
+    background: var(--track-color);
+  }
+
+  input[type=range]::-moz-range-track {
+    width: 100%;
+    height: var(--track-height);
+    cursor: pointer;
+    background: var(--track-color);
+    appearance: none;
+  }
+
+  input[type="range"]::-moz-range-progress {
+    appearance: none;
+    height: var(--track-height);
+    background: var(--track-filled-color);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    appearance: none;
+    height: var(--thumb-height);
+    width: 6px;
+    background: var(--track-color);
+    border: solid 1px #fff;
+    cursor: pointer;
+    margin-top: -5px;
+    border-radius: 0;
+    appearance: none;
+  }
+
+  input[type="range"]::-moz-range-progress {
+    appearance: none;
+    background: var(--track-filled-color);
+    transition-delay: 30ms;
+  }
+
+
+  // .slider--track {
+  //   width: 100%;
+  //   height: 100%;
+  //   background-color: var(--track-color);
+  // }
+
+  // .slider--track-filled {
+  //   position: absolute;
+  //   top: 0;
+  //   bottom: 0;
+  //   left: 0;
+  //   background-color: var(--track-filled-color);
+  //   pointer-events: none;
+  // }
+
+  // .slider--thumb {
+  //   position: absolute;
+  //   top: 0;
+  //   bottom: 0;
+  //   height: var(--thumb-height);
+  //   transform: translate(-50%, calc(calc(var(--thumb-height) - var(--track-height)) * -0.5));
+  //   width: calc(5px + 1px);
+  //   background-color: var(--track-color);
+  //   pointer-events: none;
+  //   border: 1px solid #fff;
+  // }
 
   &:hover {
     .slider--track {

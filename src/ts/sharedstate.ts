@@ -27,7 +27,7 @@ export class SharedState {
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
-    this.mccConfig = new MccConfig(goTo);
+    this.mccConfig = new MccConfig();
     this.nodeList = [];
     this.mutationList = [];
     this.hideBurnIn = false;

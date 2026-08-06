@@ -107,7 +107,6 @@ export class RunUI extends MccUI {
   private essCandidates: TraceCanvas[] = [];
 
 
-  // private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
   private essReadout: HTMLSpanElement;
   private essMeter: HTMLDivElement;

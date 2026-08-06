@@ -1,14 +1,14 @@
-import {SummaryTree} from '../pythia/delphy_api';
-import {Pythia} from '../pythia/pythia';
-import {DateLabel} from './datelabel';
-import {TreeCanvas, instantiateMccTreeCanvas} from './treecanvas';
-import {ColorOption, DataResolveType, getPercentLabel, getTimelineIndices, Screens} from './common';
-import {UIScreen} from './uiscreen';
-import {MccRef} from '../pythia/mccref';
-import {SharedState} from '../sharedstate';
+import { SummaryTree } from '../pythia/delphy_api';
+import { Pythia } from '../pythia/pythia';
+import { DateLabel } from './datelabel';
+import { TreeCanvas, instantiateMccTreeCanvas } from './treecanvas';
+import { COLOR_CONF, ColorOption, DataResolveType, getPercentLabel, getTimelineIndices, Screens } from './common';
+import { UIScreen } from './uiscreen';
+import { MccRef } from '../pythia/mccref';
+import { SharedState } from '../sharedstate';
 import { Metadata } from './metadata';
 import { BlockSlider } from '../util/blockslider';
-import { COLOR_CONF_SELECTOR, COLOR_META_SELECTOR, MccConfig } from './mccconfig';
+import { MccConfig } from './mccconfig';
 import { NodeSchematic } from './nodeschematic';
 import { HoverCallback } from './select/selectcommon';
 
@@ -16,7 +16,7 @@ const METADATA_BUTTON_TEMPLATE = document.querySelector(".mcc-opt-list.color .co
 METADATA_BUTTON_TEMPLATE.classList.remove("color--confidence");
 METADATA_BUTTON_TEMPLATE.classList.add("color--metadata");
 
-
+type ChangeHandler = (event:Event)=>void;
 
 export class MccUI extends UIScreen {
   mccRef: MccRef | null;
@@ -24,17 +24,22 @@ export class MccUI extends UIScreen {
   schematic: NodeSchematic;
   highlightCanvas: HTMLCanvasElement;
   highlightCtx: CanvasRenderingContext2D;
-  timelineIndices:DateLabel[];
+  timelineIndices: DateLabel[];
   minDate: number;
   maxDate: number;
   baseTreeMinDate: number;
-  credibilityInput: BlockSlider | null = null;
+  /* this will be a range slider */
+  credibilityInput: HTMLInputElement | null;
+  credibilityReadout: HTMLSpanElement;
+  colorForm: HTMLFormElement | null;
+  colorCallback: ChangeHandler;
+  confidenceCallback: ChangeHandler;
 
-  constructor(sharedState: SharedState, divSelector: string, treeSelector:string) {
+  constructor(sharedState: SharedState, divSelector: string, treeSelector: string) {
     super(sharedState, divSelector);
     this.mccTreeCanvas = instantiateMccTreeCanvas(treeSelector);
     const subway = this.div.querySelector(".schematic") as HTMLDivElement;
-    const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation)=>{}; // console.debug(nodeIndex, date, mutation);
+    const nodeHighlightCallback: HoverCallback = (nodeIndex, date, mutation) => { }; // console.debug(nodeIndex, date, mutation);
     this.schematic = new NodeSchematic(subway, nodeHighlightCallback);
     this.highlightCanvas = document.createElement('canvas');
     this.highlightCanvas.classList.add("mcc_highlight");
@@ -58,7 +63,7 @@ export class MccUI extends UIScreen {
     const zoomResetBtn = this.div.querySelector(".mcc-zoom-button.reset") as HTMLButtonElement;
 
     if (zoomInBtn) { // if we have one, we have all
-      const setEnabled = ()=>{
+      const setEnabled = () => {
         // if (this.mccTreeCanvas.zoomAmount > 1) {
         zoomOutBtn.disabled = false;
         zoomResetBtn.disabled = false;
@@ -67,15 +72,15 @@ export class MccUI extends UIScreen {
         //   zoomResetBtn.disabled = true;
         // }
       };
-      zoomInBtn?.addEventListener("click", ()=>{
+      zoomInBtn?.addEventListener("click", () => {
         this.mccTreeCanvas.zoomIn();
         setEnabled();
       });
-      zoomOutBtn?.addEventListener("click", ()=>{
+      zoomOutBtn?.addEventListener("click", () => {
         this.mccTreeCanvas.zoomOut();
         setEnabled();
       });
-      zoomResetBtn?.addEventListener("click", ()=>{
+      zoomResetBtn?.addEventListener("click", () => {
         this.mccTreeCanvas.resetZoom();
         setEnabled();
       });
@@ -84,12 +89,30 @@ export class MccUI extends UIScreen {
 
     const goToCustomize = this.div.querySelector(".upload-metadata-msg a") as HTMLAnchorElement;
     if (goToCustomize) {
-      goToCustomize.addEventListener("click", event=>{
+      goToCustomize.addEventListener("click", event => {
         event.preventDefault();
         this.sharedState.goTo(Screens.customize);
       });
     }
+    this.colorForm = this.div.querySelector(".mcc-opt-list.color form") as HTMLFormElement;
+    this.credibilityInput = this.div.querySelector(".mcc-opt-list.confidence input") as HTMLInputElement;
+    this.credibilityReadout = this.div.querySelector(".mcc-opt-list.confidence .mcc-opt--confidence-readout") as HTMLSpanElement;
 
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    this.colorCallback = event=>{
+      event.preventDefault();
+      if (!this.colorForm) return;
+      const formData = new FormData(this.colorForm);
+      const value = formData.get('color') as string;
+      mccConfig.colorBy(value);
+    };
+    this.confidenceCallback = event=>{
+      event.preventDefault();
+      if (!this.credibilityInput) return;
+      const asPercent = parseFloat(this.credibilityInput.value);
+      const value = asPercent / 100;
+      mccConfig.setConfidence(value);
+    };
   }
 
 
@@ -97,31 +120,39 @@ export class MccUI extends UIScreen {
     /* hold onto the current mcc while this tab is open */
     if (this.pythia) this.mccRef = this.pythia.getMcc();
     const mccConfig = this.sharedState.mccConfig;
-    mccConfig.bind(this.div);
-    mccConfig.setListener(()=>this.handleConfigChange());
+    this.setMetadataSelectors();
+
+    mccConfig.setListener(() => this.handleConfigChange());
     if (this.mccTreeCanvas) {
       this.mccTreeCanvas.setConfig(mccConfig);
     }
     super.activate();
-    this.updateData().then(()=>{
+    this.updateData().then(() => {
       if (mccConfig.metadataColorsDirty) {
         mccConfig.setMetadata(mccConfig.metadata as Metadata, (this.mccRef as MccRef).getMcc());
         mccConfig.setColorKeys(mccConfig.metadataField as string);
         mccConfig.setColorSystem(ColorOption.metadata);
       }
     });
-    this.credibilityInput?.set(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.setMetadataSelectors();
+    this.setCladeCred();
+    if (this.colorForm) {
+      this.colorForm.addEventListener("change", this.colorCallback);
+    }
+
   }
 
   deactivate(): void {
     super.deactivate();
+    if (this.colorForm) {
+      this.colorForm.removeEventListener("change", this.colorCallback);
+    }
+
     if (this.mccRef) this.mccRef.release();
     this.mccRef = null;
   }
 
 
-  resize(): void{
+  resize(): void {
     this.mccTreeCanvas.sizeCanvas();
     this.schematic.resize();
     const canvas = this.mccTreeCanvas.getCanvas();
@@ -135,7 +166,7 @@ export class MccUI extends UIScreen {
     }
     this.mccTreeCanvas.setAxisDates();
     this.requestTreeDraw();
-    requestAnimationFrame(()=>this.mccTreeCanvas.renderAxisDates());
+    requestAnimationFrame(() => this.mccTreeCanvas.renderAxisDates());
   }
 
 
@@ -144,33 +175,32 @@ export class MccUI extends UIScreen {
     if (this.pythia) {
       const pythia = this.pythia,
         mccRef = pythia.getMcc();
-      this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
+      this.div.querySelectorAll(".cred-threshold").forEach(ele => {
         (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
       });
-      this.setTreeFromConfig(mccRef, pythia).then(()=>{
+      this.setTreeFromConfig(mccRef, pythia).then(() => {
         mccRef.release();
       });
     }
   }
 
   async setTreeFromConfig(mccRef: MccRef, _pythia: Pythia): Promise<SummaryTree> { // eslint-disable-line @typescript-eslint/no-unused-vars
-    requestAnimationFrame(()=>document.body.classList.add("summarizing"));
-    const prom = new Promise((resolve: DataResolveType)=>{
-      setTimeout(()=>{
+    requestAnimationFrame(() => document.body.classList.add("summarizing"));
+    const prom = new Promise((resolve: DataResolveType) => {
+      setTimeout(() => {
         const summary: SummaryTree = mccRef.getMcc();
         const nodeConfidence: number[] = mccRef.getNodeConfidence();
         const mccConfig = this.sharedState.mccConfig;
-        if (mccConfig) {
-          mccConfig.updateInnerNodeMetadata(summary);
-          let input = this.div.querySelector(COLOR_META_SELECTOR) as HTMLInputElement;
-          if (input) {
-            input.checked = mccConfig.colorOption === ColorOption.metadata;
-            input = this.div.querySelector(COLOR_CONF_SELECTOR) as HTMLInputElement;
-            input.checked = mccConfig.colorOption === ColorOption.confidence;
-          }
-        }
+
+        mccConfig.updateInnerNodeMetadata(summary);
+        // let input = this.div.querySelector(COLOR_META_SELECTOR) as HTMLInputElement;
+        // if (input) {
+        //   input.checked = mccConfig.colorOption === ColorOption.metadata;
+        //   input = this.div.querySelector(COLOR_CONF_SELECTOR) as HTMLInputElement;
+        //   input.checked = mccConfig.colorOption === ColorOption.confidence;
+        // }
         this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence);
-        requestAnimationFrame(()=>document.body.classList.remove("summarizing"));
+        requestAnimationFrame(() => document.body.classList.remove("summarizing"));
         this.requestTreeDraw();
         resolve(summary);
       }, 10);
@@ -180,7 +210,7 @@ export class MccUI extends UIScreen {
 
 
   protected updateData(): Promise<SummaryTree> {
-    const prom = new Promise((resolve: DataResolveType)=>{
+    const prom = new Promise((resolve: DataResolveType) => {
       if (this.pythia) {
         const oldRef = this.mccRef,
           pythia = this.pythia;
@@ -197,7 +227,7 @@ export class MccUI extends UIScreen {
           }
         }
         this.setTreeFromConfig(this.mccRef, this.pythia)
-          .then((mccTree:SummaryTree)=>{
+          .then((mccTree: SummaryTree) => {
             const rootIndex = mccTree.getRootIndex();
             this.minDate = mccTree.getTimeOf(rootIndex);
             this.maxDate = pythia.maxDate;
@@ -214,11 +244,11 @@ export class MccUI extends UIScreen {
   }
 
 
-  protected requestTreeDraw():void {
-    requestAnimationFrame(()=>this.drawTree());
+  protected requestTreeDraw(): void {
+    requestAnimationFrame(() => this.drawTree());
   }
 
-  protected drawTree():void {
+  protected drawTree(): void {
     // console.debug('drawing tree')
     if (this.pythia) {
       const drawRef = this.pythia.getMcc();
@@ -227,14 +257,20 @@ export class MccUI extends UIScreen {
     }
   }
 
-  setCladeCred() : void {
-    if (!this.credibilityInput) return;
-    const confValue = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}`;
-    this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
-      (ele as HTMLSpanElement).innerText = `${confValue}%`;
+  setCladeCred(): void {
+    const threshold = this.sharedState.mccConfig.confidenceThreshold;
+    const asPercent = threshold * 100;
+    const readoutValue = `${getPercentLabel(threshold)}`;
+    if (this.credibilityInput) {
+      this.credibilityInput.value = `${asPercent}`;
+    }
+    if (this.credibilityReadout) {
+      this.credibilityReadout.textContent = readoutValue;
+    }
+    this.div.querySelectorAll(".cred-threshold").forEach(ele => {
+      (ele as HTMLSpanElement).innerText = readoutValue;
     });
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
-    this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
+    this.mccTreeCanvas.confidenceThreshold = threshold;
     this.mccTreeCanvas.colorsUnSet = true;
     if (this.mccTreeCanvas.tree) {
       this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
@@ -243,7 +279,7 @@ export class MccUI extends UIScreen {
   }
 
 
-  setMetadataSelectors() : void {
+  setMetadataSelectors(): void {
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const colorOpts = this.div.querySelector(".mcc-opt-list.color") as HTMLDivElement;
     if (!colorOpts) return;
@@ -254,8 +290,8 @@ export class MccUI extends UIScreen {
       const metadataList = colorOpts.querySelector(".metadata-list") as HTMLDivElement;
       const metadataFields: string[] = mccConfig.metadata.getFields();
       const current = mccConfig.metadataField;
-      metadataList.querySelectorAll("label").forEach(ele=>ele.remove());
-      metadataFields.forEach(field=>{
+      metadataList.querySelectorAll("label").forEach(ele => ele.remove());
+      metadataFields.forEach(field => {
         /* skip metadata by the id field */
         if (field.toLowerCase() === "id" || field.toLowerCase() === "accession") return;
         const button = METADATA_BUTTON_TEMPLATE.cloneNode(true) as HTMLLabelElement;
@@ -266,15 +302,12 @@ export class MccUI extends UIScreen {
         if (field === current) input.checked = true;
         metadataList.appendChild(button);
       });
-
-
-
     }
   }
 
 
 
-  requestDraw() { console.debug('the inheriting class should implement this');}
+  requestDraw() { console.debug('the inheriting class should implement this'); }
 
 
 }

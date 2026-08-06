@@ -78,7 +78,6 @@ export class UIScreen {
       this.isActive = false;
       this.pythia = null;
       window.removeEventListener('resize', this.resizeHandler);
-      this.sharedState.mccConfig.unbind();
     }
   }
 
