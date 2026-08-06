@@ -101,7 +101,7 @@ export class MccConfig {
       this.setColorSystem(ColorOption.confidence);
     } else if (this.metadata && this.metadata.getFields().map(f => f.toLowerCase()).includes(value.toLowerCase())) {
       this.setMetadataField(value);
-      this.setColorSystem(ColorOption.confidence);
+      this.setColorSystem(ColorOption.metadata);
     } else {
       console.warn(`ignoring request to color by "${value}", since it does not match any available metadata values.`)
     }

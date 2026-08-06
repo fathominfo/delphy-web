@@ -589,7 +589,7 @@ export class CoreSelectData {
       mccConfig.setColorSystem(ColorOption.confidence);
     } else {
       this.filteringByMetadataField = field;
-      mccConfig.setColorSystem(ColorOption.confidence);
+      mccConfig.setColorSystem(ColorOption.metadata);
       mccConfig.setMetadataField(field);
       this.setMetadataTransitions();
     }

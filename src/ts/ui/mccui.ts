@@ -120,6 +120,7 @@ export class MccUI extends UIScreen {
     /* hold onto the current mcc while this tab is open */
     if (this.pythia) this.mccRef = this.pythia.getMcc();
     const mccConfig = this.sharedState.mccConfig;
+    console.log('mccui mccConfig', mccConfig);
     this.setMetadataSelectors();
 
     mccConfig.setListener(() => this.handleConfigChange());
@@ -135,13 +136,13 @@ export class MccUI extends UIScreen {
       }
     });
     this.setCladeCred();
+    this.setTreeOpts();
     if (this.colorForm) {
       this.colorForm.addEventListener("change", this.colorCallback);
     }
     if (this.credibilityInput) {
       this.credibilityInput.addEventListener("input", this.confidenceCallback);
     }
-
   }
 
   deactivate(): void {
@@ -181,7 +182,7 @@ export class MccUI extends UIScreen {
       const pythia = this.pythia,
         mccRef = pythia.getMcc();
       this.setCladeCred();
-
+      this.setTreeOpts();
 
       this.div.querySelectorAll(".cred-threshold").forEach(ele => {
         (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
@@ -210,9 +211,9 @@ export class MccUI extends UIScreen {
         this.mccTreeCanvas.confidenceThreshold = threshold;
         this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence);
         this.mccTreeCanvas.colorsUnSet = true;
-        // if (this.mccTreeCanvas.tree) {
-        //   this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
-        // }
+        if (this.mccTreeCanvas.tree) {
+          this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
+        }
         requestAnimationFrame(() => document.body.classList.remove("summarizing"));
         this.requestTreeDraw();
         resolve(summary);
@@ -269,6 +270,18 @@ export class MccUI extends UIScreen {
       drawRef.release();
     }
   }
+
+  setTreeOpts() : void {
+    const mccConfig: MccConfig = this.sharedState.mccConfig;
+    if (this.colorForm) {
+      if(mccConfig.colorOption === ColorOption.confidence) {
+        this.colorForm.color.value = COLOR_CONF;
+      } else {
+        this.colorForm.color.value = mccConfig.metadataField as string;
+      }
+    }
+  }
+
 
   setCladeCred(): void {
     const threshold = this.sharedState.mccConfig.confidenceThreshold;
