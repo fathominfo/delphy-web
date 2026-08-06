@@ -1,16 +1,18 @@
 import { lerpColor } from "../common";
 import { SharedState } from "../../sharedstate";
 import { UIScreen } from '../uiscreen';
-// import { SVGMapRenderer } from "./rendermap";
-const MAP_URL = "/assets/svg/SLE_GIN_LBR.svg";
+import VectorMap from "./worldmap";
 
 export class MapUI extends UIScreen {
   currentColoyByLabel: HTMLSpanElement | null;
+  vectorMap: VectorMap;
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
 
     this.currentColoyByLabel = this.div.querySelector("#color-by-current");
+    this.vectorMap = new VectorMap('map--vector--container');
+
     this.bindListeners();
   }
 
@@ -41,64 +43,6 @@ export class MapUI extends UIScreen {
     this.colorBySequenceCounts();
   }
 
-  addInputRegionListeners() {
-    const input = this.div.querySelector<HTMLInputElement>("#region-input")!;
-    const addButton = this.div.querySelector<HTMLButtonElement>("#add-region")!;
-    const list = this.div.querySelector<HTMLUListElement>("#region-list")!;
-
-    const selectedRegions = new Set<string>();
-
-    const addRegion = (value: string) => {
-      const region = value.trim();
-
-      if (!region || selectedRegions.has(region.toLowerCase())) {
-        return;
-      }
-
-      selectedRegions.add(region.toLowerCase());
-
-      const li = document.createElement("li");
-      li.className = "region-tag";
-
-      const text = document.createElement("span");
-      text.textContent = region;
-
-      const remove = document.createElement("button");
-      remove.textContent = "x";
-      remove.type = "button";
-
-      remove.onclick = () => {
-        selectedRegions.delete(region.toLowerCase());
-        li.remove();
-      };
-
-      li.append(text, remove);
-      list.appendChild(li);
-
-      input.value = "";
-    }
-
-    addButton.addEventListener("click", () => {
-      addRegion(input.value);
-    });
-
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addRegion(input.value);
-      }
-    })
-
-    const submit = this.div.querySelector<HTMLButtonElement>("#generate-map");
-    submit?.addEventListener("click", () => {
-      const allRegionsInput: string[] = []
-      list.querySelectorAll("li").forEach(node => {
-        const countryCode = node.querySelector("span")?.textContent?.trim().toUpperCase();
-        if (countryCode) allRegionsInput.push(countryCode)
-      })
-      this.loadSVGMap(allRegionsInput)
-    });
-  }
 
   bindListeners() {
     this.div.querySelectorAll<HTMLInputElement>('input[name="color-mode"]')
@@ -121,7 +65,6 @@ export class MapUI extends UIScreen {
         });
       });
 
-    this.addInputRegionListeners();
   }
 
   colorByMutation() {
@@ -138,12 +81,14 @@ export class MapUI extends UIScreen {
     // console.log("metadata tip values: ", metadataTipCounts)
 
     const metadataTipTally = metadataTipCounts.reduce<Record<string, number>>((tally, metadata) => {
+      metadata = metadata.split(" - ")[0].trim();
       tally[metadata] = (tally[metadata] ?? 0) + 1
       return tally
     }, {})
 
 
-    this.colorMapBy(metadataTipTally);
+    // this.colorMapBy(metadataTipTally);
+    this.vectorMap.colorMapTally(metadataTipTally)
   }
 
   colorMapBy(tally: Record<string, number>) {
@@ -165,6 +110,8 @@ export class MapUI extends UIScreen {
 
   activate(): void {
     super.activate();
+    this.vectorMap.init();
+    this.colorBySequenceCounts();
   }
 
 

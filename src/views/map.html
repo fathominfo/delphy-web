@@ -4,10 +4,10 @@
       {{> header_common }}
     </div>
   </header>
-  <div class="main-content visualizations--container">
+  <div class="main-content">
 
-    <section id="map--left" class="charts--container">
-      <div id="map--node-layout" class="block left" data-duo="left">
+    <!-- <section id="map--left" class="charts--container"> -->
+      <!-- <div id="map--node-layout" class="block left" data-duo="left"> -->
 
         <div class="header">
           <div class="title">
@@ -15,7 +15,7 @@
           </div>
         </div>
 
-        <div class="region-picker">
+        <!-- <div class="region-picker">
           <div class="region-input-row">
             <input id="region-input" type="text" placeholder="Type a country ISO code...">
 
@@ -23,7 +23,7 @@
           </div>
           <ul id="region-list"></ul>
           <button id="generate-map">Load map with selected regions</button>
-        </div>
+        </div> -->
 
         <div class="map-legend">
           <span>Coloring by:</span> <span id="color-by-current">Number of sequences</span>
@@ -44,13 +44,17 @@
           </div>
         </div>
 
-        <div class="map--svg--container">
+        <div id="map--svg--container" class="map--svg--container">
+        </div>
+
+
+        <div id="map--vector--container" class="map--svg--container">
         </div>
 
         <div class="map-readout-container"></div>
 
-      </div>
-    </section>
+      <!-- </div> -->
+    <!-- </section> -->
 
   </div>
 

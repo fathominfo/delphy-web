@@ -34,3 +34,6 @@ public/assets/fonts/MD*
 # *.zip
 
 notes
+
+public/*.pmtiles
+src/ts/ui/mapper/*.json

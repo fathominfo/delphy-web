@@ -1,14 +1,17 @@
 @import "./common.less";
 
-#map--node-layout {
-
+.main-content {
 
   .map-toggles {
     display: flex;
     gap: 1rem;
-
+    margin: .6rem 0;
   }
 
+  .map-legend{
+    margin: .6rem 0;
+
+  }
   button {
     padding: 4px 12px !important;
 
@@ -20,4 +23,31 @@
     border: 1px solid #bbb !important;
   }
 
+}
+
+.legend {
+  border-radius: 3px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.maplibregl-ctrl-attrib {
+  background-color: transparent !important;
+}
+
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+  display: none !important;
+}
+
+.maplibregl-ctrl-attrib {
+  background-color: transparent !important;
+}
+
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+  display: none !important;
+}
+
+#map--vector--container {
+  width: 60vw;
+  height: 60vh;
 }

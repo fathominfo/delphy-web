@@ -137,6 +137,9 @@ https://vitejs.dev/config/
 */
 export default defineConfig({
   base: './',
+  optimizeDeps: {
+  exclude: ['maplibre-gl']
+},
   plugins: [
     eslint({fix: true, formatter: 'stylish'}),
     checker({typescript: true,}),
