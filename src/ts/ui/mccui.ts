@@ -138,6 +138,9 @@ export class MccUI extends UIScreen {
     if (this.colorForm) {
       this.colorForm.addEventListener("change", this.colorCallback);
     }
+    if (this.credibilityInput) {
+      this.credibilityInput.addEventListener("input", this.confidenceCallback);
+    }
 
   }
 
@@ -146,7 +149,9 @@ export class MccUI extends UIScreen {
     if (this.colorForm) {
       this.colorForm.removeEventListener("change", this.colorCallback);
     }
-
+    if (this.credibilityInput) {
+      this.credibilityInput.removeEventListener("input", this.confidenceCallback);
+    }
     if (this.mccRef) this.mccRef.release();
     this.mccRef = null;
   }
@@ -175,6 +180,9 @@ export class MccUI extends UIScreen {
     if (this.pythia) {
       const pythia = this.pythia,
         mccRef = pythia.getMcc();
+      this.setCladeCred();
+
+
       this.div.querySelectorAll(".cred-threshold").forEach(ele => {
         (ele as HTMLSpanElement).innerText = `${getPercentLabel(this.sharedState.mccConfig.confidenceThreshold)}%`;
       });
@@ -191,7 +199,7 @@ export class MccUI extends UIScreen {
         const summary: SummaryTree = mccRef.getMcc();
         const nodeConfidence: number[] = mccRef.getNodeConfidence();
         const mccConfig = this.sharedState.mccConfig;
-
+        const threshold = mccConfig.confidenceThreshold
         mccConfig.updateInnerNodeMetadata(summary);
         // let input = this.div.querySelector(COLOR_META_SELECTOR) as HTMLInputElement;
         // if (input) {
@@ -199,7 +207,12 @@ export class MccUI extends UIScreen {
         //   input = this.div.querySelector(COLOR_CONF_SELECTOR) as HTMLInputElement;
         //   input.checked = mccConfig.colorOption === ColorOption.confidence;
         // }
+        this.mccTreeCanvas.confidenceThreshold = threshold;
         this.mccTreeCanvas.setTreeNodes(summary, nodeConfidence);
+        this.mccTreeCanvas.colorsUnSet = true;
+        // if (this.mccTreeCanvas.tree) {
+        //   this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
+        // }
         requestAnimationFrame(() => document.body.classList.remove("summarizing"));
         this.requestTreeDraw();
         resolve(summary);
@@ -270,12 +283,12 @@ export class MccUI extends UIScreen {
     this.div.querySelectorAll(".cred-threshold").forEach(ele => {
       (ele as HTMLSpanElement).innerText = readoutValue;
     });
-    this.mccTreeCanvas.confidenceThreshold = threshold;
-    this.mccTreeCanvas.colorsUnSet = true;
-    if (this.mccTreeCanvas.tree) {
-      this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
-      this.requestDraw();
-    }
+    // this.mccTreeCanvas.confidenceThreshold = threshold;
+    // this.mccTreeCanvas.colorsUnSet = true;
+    // if (this.mccTreeCanvas.tree) {
+    //   this.mccTreeCanvas.setColors(this.mccTreeCanvas.tree);
+    //   this.requestDraw();
+    // }
   }
 
 

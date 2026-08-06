@@ -337,12 +337,6 @@ export class RunUI extends MccUI {
       this.sharedState.hideBurnIn = this.hideBurnIn;
       this.updateRunData();
     });
-    // const credibilityCallback = (value: number) => {
-    //   const pct = value / 100;
-    //   this.sharedState.mccConfig.setConfidence(pct);
-    //   this.setCladeCred();
-    // }
-    // this.credibilityInput = new BlockSlider((this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement), credibilityCallback);
 
     this.stepSelector.addEventListener('input', ()=>{
       const power = parseInt(this.stepSelector.value);
