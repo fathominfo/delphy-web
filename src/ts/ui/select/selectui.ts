@@ -143,7 +143,7 @@ export class SelectUI extends MccUI {
     this.coreData.activate();
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
-    this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
+    // this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
     this.metadataLegend.setLegendData(mccConfig);
     if (this.sharedState.genome && this.pythia) {
       this.sharedState.genome.refSequence = this.pythia.getMccRootSequence();
@@ -177,7 +177,7 @@ export class SelectUI extends MccUI {
     }
     const mccConfig: MccConfig = this.sharedState.mccConfig;
     const metadataFields = mccConfig.metadata ? mccConfig.metadata.getFields() : [];
-    this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
+    // this.nodeSchematic.setMetadataSelectors(metadataFields, this.coreData.getCurrentMetadataField());
     this.metadataLegend.setLegendData(mccConfig);
   }
 

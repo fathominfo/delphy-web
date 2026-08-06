@@ -227,7 +227,6 @@ export class NodeSchematic {
   maxGenerations = UNSET;
   tipRange = UNSET;
   rootPositon = UNSET;
-  metadataFieldCount = 0;
   colorByMetadata = false;
   nodeMetadataColors: string[] = [];
   wrapper: HTMLDivElement;

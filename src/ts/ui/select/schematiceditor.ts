@@ -1,9 +1,7 @@
 import { getPercentLabel, nfc, SET_PREVALENCE_CALLBACK_TYPE, UNSET } from "../common";
 import { NodeSchematic, SchematicNodeDisplay } from "../nodeschematic";
-import { DismissNodeCallback, HoverCallback, METADATA_NONE_OPTION,
+import { DismissNodeCallback, HoverCallback,
   MetadataToggleCallback, NodeCallback } from "./selectcommon";
-
-const METADATA_FIELD_SELECTOR = "#select--metadata-transitions label";
 
 const CONTROLS = document.querySelector("#select #select--schematic-controls") as HTMLDivElement;
 const COUNT_SPAN = document.querySelector("#select--schematic-count") as HTMLSpanElement;
@@ -15,9 +13,6 @@ const INTROS_ONLY_INPUT = INTROS_ONLY.querySelector("button") as HTMLButtonEleme
 const PREVALENCE_THRESHOLD_LESS = CONTROLS.querySelector("#select--peak-prevalence-less") as HTMLButtonElement;
 const PREVALENCE_THRESHOLD_MORE = CONTROLS.querySelector("#select--peak-prevalence-more") as HTMLButtonElement;
 const PREVALENCE_THRESHOLD_READOUT = CONTROLS.querySelector("#select--peak-prevalence-readout") as HTMLSpanElement
-const METADATA_TRANSITION_TEMPLATE = CONTROLS.querySelector(METADATA_FIELD_SELECTOR) as HTMLDivElement;
-const METADATA_PARENT = METADATA_TRANSITION_TEMPLATE.parentNode as HTMLDivElement;
-METADATA_TRANSITION_TEMPLATE.remove();
 
 
 export class SchematicEditor extends NodeSchematic {
@@ -91,31 +86,6 @@ export class SchematicEditor extends NodeSchematic {
   setPrevalenceSelectors(prevalenceActive: boolean, peakPrevalence: number) : void {
     const pct = getPercentLabel(peakPrevalence);
     PREVALENCE_THRESHOLD_READOUT.textContent = `${pct}%`;
-  }
-
-  setMetadataSelectors(metadataFields : string[], current: string | null) : void {
-    if (metadataFields.length !== this.metadataFieldCount) {
-      METADATA_PARENT.querySelectorAll(METADATA_FIELD_SELECTOR).forEach((ele:Element)=>{
-        ele.remove();
-      });
-      let anyChecked = false;
-      const addMetadaOption = (mdField:string, label: string, checked=false)=>{
-        if (mdField.toLowerCase() === "id" || mdField.toLowerCase() === "accession" ) return;
-        const mdDiv = METADATA_TRANSITION_TEMPLATE.cloneNode(true) as HTMLDivElement;
-        const input = mdDiv.querySelector("input") as HTMLInputElement;
-        const fieldSpan = mdDiv.querySelector(".select--metadata-field") as HTMLSpanElement;
-        fieldSpan.textContent = label;
-        input.checked = !!checked;
-        input.addEventListener("input", ()=>{
-          this.metadataTransitionCallback(mdField);
-        });
-        METADATA_PARENT.appendChild(mdDiv);
-        if (checked) anyChecked = true;
-      };
-      metadataFields.forEach(field=>addMetadaOption(field, field, field === current));
-      addMetadaOption(METADATA_NONE_OPTION, 'None', !anyChecked);
-      this.metadataFieldCount = metadataFields.length;
-    }
   }
 
   /*
