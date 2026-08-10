@@ -39,5 +39,4 @@ notes
 public/*.pmtiles
 src/ts/ui/mapper/*.json
 
-
 public/assets/data/
