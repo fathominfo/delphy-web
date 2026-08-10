@@ -359,25 +359,25 @@
           </div>
 
           <div id="run--indicator--controls" class="menu-group">
-
-            <div id="burn-in-wrapper" class="pre">
-              <input type="checkbox" id="burn-in-toggle" disabled />
-              <label for="burn-in-toggle" >Hide burn in <span class="hint">click in a trace chart to select</span></label>
+            <div class="run--burn-in-container">
+              <span class="hint">click in a trace chart to select burn in</span>
+              <div class="burn-in-row-wrapper">
+                <div id="burn-in-wrapper" class="pre">
+                  <input type="checkbox" id="burn-in-toggle" disabled />
+                  <label for="burn-in-toggle">Hide burn in</label>
+                </div>
+                <button id="burn-in-override" class="pre" disabled
+                  title="allow delphy to detect the burn-in period">Reset</button>
+              </div>
             </div>
-
-
-            <button id="burn-in-override" class="pre" disabled title="allow delphy to detect the burn-in period">Reset burn in</button>
-
-
-
-            <label id="runner--show-traces">
-              <input id="runner--all-traces-toggle" type="checkbox" />
-              <span id="runner--all-traces">Show all traces</span>
-            </label>
-
-
-
-            <button id="runner--export-csv">Export Traces to TSV</button>
+          
+            <div class="run--traces-container">
+              <label id="runner--show-traces">
+                <input id="runner--all-traces-toggle" type="checkbox" />
+                <span id="runner--all-traces">Show all traces</span>
+              </label>
+              <button id="runner--export-csv">Export Traces to TSV</button>
+            </div>
 
           </div>
         </div>

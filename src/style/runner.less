@@ -306,7 +306,7 @@
   min-width: var(--tree-container-min-width);
   max-width: var(--tree-container-max-width);
   .tree-container {
-    height: calc(100% - 75px);
+    height: calc(100% - 95px);
   }
 
   .mcc_highlight {
@@ -1197,7 +1197,7 @@
   and related is
     #runner--bottom {gap}
   */
-  padding: 0 0 0 var(--pop-chart-highlight-dot-radius);
+  padding: 0 0 2rem var(--pop-chart-highlight-dot-radius);
 }
 
 
@@ -1249,9 +1249,13 @@ input.stopping + #run-input--label {
   border-color: var(--header-option-stroke-static);
 }
 
-
 #run--indicator--controls {
-  margin: 12px 0 4px;
+  // margin: 10px 0 4px;
+  padding: 0.5rem;
+  border: 1px solid var(--stability-stroke);
+  border-radius: 3px;
+  align-items: end;
+
 
   input[type="checkbox"] {
     appearance: auto;
@@ -1261,7 +1265,33 @@ input.stopping + #run-input--label {
     margin-right: 3px;
   }
 
+  .run--burn-in-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 
+    .hint {
+      color: #aaa
+    }
+  }
+
+  .run--traces-container {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    align-content: center;
+
+  }
+
+  .burn-in-row-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+  }
 }
 
 #runner--export-csv, #burn-in-override {
@@ -1275,8 +1305,9 @@ input.stopping + #run-input--label {
   cursor: pointer;
   transition: all var(--transition) ease-out;
   position: relative;
-  top: -4px;
+  // top: -4px;
   white-space: nowrap;
+  color: unset
 }
 
 
@@ -2199,7 +2230,8 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 #burn-in-wrapper {
-  height: 1.5em;
+  // height: 1.5em;
+  flex-direction: row;
   label .hint {color: #aaa}
   input { appearance: auto; }
   p {
