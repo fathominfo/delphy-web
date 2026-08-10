@@ -71,7 +71,7 @@
     }
   }
 
-  input:checked + label {
+  label:has(input:checked) {
     background-color: #efefef;
     color: #444;
     font-weight: 700;
@@ -90,7 +90,7 @@
   background: transparent;
   margin: 0;
   width: 100%;
-  
+
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
   }
