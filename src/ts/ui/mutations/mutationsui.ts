@@ -89,7 +89,8 @@ export class MutationsUI extends MccUI {
       [FeatureOfInterest.SameSite]: [],
       [FeatureOfInterest.MultipleIntroductions]: [],
       [FeatureOfInterest.ManyTips]: [],
-      ['all'] : []
+      ['all'] : [],
+      [FeatureOfInterest.None]: []
     };
     this.minTreesPercent = DEFAULT_MINIMUM_MOI_PRESENCE;
     this.minTipsPercent = DEFAULT_MINIMUM_TIP_PERCENT;
@@ -284,10 +285,16 @@ export class MutationsUI extends MccUI {
           }
 
           const mutationsFilter = this.div.querySelector(".mutations-filter--form") as HTMLFormElement;
-          mutationsFilter.querySelectorAll("input").forEach(radio => {
-            const value = radio.value as FeatureOfInterest;
-            radio.checked = value === this.interestCat;
-          });
+          if (this.autofill) {
+            mutationsFilter.querySelectorAll("input").forEach(radio => {
+              radio.checked = false;
+            });
+          } else {
+            mutationsFilter.querySelectorAll("input").forEach(radio => {
+              const value = radio.value as FeatureOfInterest;
+              radio.checked = value === this.interestCat;
+            });
+          }
           this.setInterest(this.autofill);
           this.autofill = false;
 
@@ -372,14 +379,16 @@ export class MutationsUI extends MccUI {
       tipDistribution.push(mut.medianTipCount);
       treePctDistribution.push(100 * mut.confidence);
       if (mut.confidence >= this.minTreesPercent && mut.medianTipCount >= minTipCount) {
-        this.addMoi(mut);
-        mutCount++;
+        if (!this.autofill) {
+          this.addMoi(mut);
+          mutCount++;
+        }
         if (autofill && this.rows.length < MAX_AUTOFILL_MUTATIONS) {
           this.selectMutation(mut);
         }
       }
     });
-    if (mutCount === 0) {
+    if (mutCount === 0 && this.interestCat !== FeatureOfInterest.None) {
       MOI_LIST.appendChild(NO_MUTATIONS);
     }
     this.treePercentSetter.set(treePctDistribution, this.minTreesPercent * 100, 100);

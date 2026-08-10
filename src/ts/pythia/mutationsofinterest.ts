@@ -7,7 +7,8 @@ export const enum FeatureOfInterest {
   Reversals = "reversals",
   SameSite = "same_site",
   MultipleIntroductions = "multiple_introductions",
-  ManyTips = "many_tips"
+  ManyTips = "many_tips",
+  None = "none"
 }
 
 export type TreeInterestData = {treeIndex: number, intros: Introduction[]};
