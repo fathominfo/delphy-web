@@ -1330,9 +1330,19 @@ input.stopping + #run-input--label {
     width: var(--header-option-symbol-size);
     height: var(--header-option-symbol-size);
     background-color: transparent;
-    path {
-      fill: black;
+    padding-top: 4px;
+    line, circle {
+      // stroke: #212121;
+      stroke: #454545;
+      stroke-linecap: round;
       transition: all var(--transition) ease-out;
+    }
+    line {
+      stroke-width: 90;
+    }
+    circle {
+      stroke-width: 80;
+      fill: none;
     }
   }
 
