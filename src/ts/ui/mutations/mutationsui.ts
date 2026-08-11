@@ -82,7 +82,7 @@ export class MutationsUI extends MccUI {
     this.maxDate = 0;
     this.selectedMutations = [];
     this.prevalence = new MutationPrevalenceCanvas();
-    this.interestCat = FeatureOfInterest.ManyTips;
+    this.interestCat = FeatureOfInterest.None;
     this.autofill = true;
     this.mutationsOfInterest = {
       [FeatureOfInterest.Reversals]: [],
@@ -108,6 +108,7 @@ export class MutationsUI extends MccUI {
     mutationsFilter.addEventListener("input", () => {
       const value = mutationsFilter.interest.value as FeatureOfInterest;
       this.interestCat = value;
+      this.autofill = false;
 
       const descriptions = this.div.querySelectorAll(".filter-description") as NodeListOf<HTMLElement>;
       descriptions.forEach(el => {
@@ -278,7 +279,6 @@ export class MutationsUI extends MccUI {
           if (this.autofill) {
             this.clearRows();
             if (this.sharedState.mutationList.length > 0) {
-              this.autofill = false;
               const mutation = this.sharedState.mutationList[0];
               this.lookupMutation(mutation);
             }
@@ -289,14 +289,14 @@ export class MutationsUI extends MccUI {
             mutationsFilter.querySelectorAll("input").forEach(radio => {
               radio.checked = false;
             });
+            this.div.querySelectorAll(".filter-description").forEach(ele=>ele.classList.add("hidden"));
           } else {
             mutationsFilter.querySelectorAll("input").forEach(radio => {
               const value = radio.value as FeatureOfInterest;
               radio.checked = value === this.interestCat;
             });
           }
-          this.setInterest(this.autofill);
-          this.autofill = false;
+          this.setInterest();
 
           this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
 
@@ -347,10 +347,16 @@ export class MutationsUI extends MccUI {
   }
 
 
-  setInterest(autofill=false):void {
+  setInterest():void {
+    const autofill = this.autofill;
     this.clearMoiList();
-    const muts = this.mutationsOfInterest[this.interestCat],
-      minTipCount = Math.round(this.tipCount * this.minTipsPercent),
+    let muts: MutationOfInterest[];
+    if (this.interestCat === FeatureOfInterest.None) {
+      muts = this.mutationsOfInterest[FeatureOfInterest.ManyTips];
+    } else {
+      muts = this.mutationsOfInterest[this.interestCat];
+    }
+    const minTipCount = Math.round(this.tipCount * this.minTipsPercent),
       tipDistribution: number[] = [],
       treePctDistribution: number[] = [];
     let sort: (moi1: MutationOfInterest, moi2: MutationOfInterest)=>number = () => 0;
