@@ -358,15 +358,21 @@ export class CustomizeUI extends MccUI {
 
   activate() {
     super.activate();
+    const hasMetadata = this.sharedState.mccConfig.hasMetadata();
+    let colorOption = this.sharedState.mccConfig.colorOption;
+    if (!hasMetadata) {
+      colorOption = ColorOption.confidence;
+    }
     this.setTopology(this.sharedState.mccConfig.topology);
-    this.setColorSystem(this.sharedState.mccConfig.colorOption);
     this.setMinConfidence(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.setSpacing(this.sharedState.mccConfig.ySpacing);
     this.setPresentation(this.sharedState.mccConfig.presentation);
-    if (this.sharedState.mccConfig.nodeMetadata) {
-      this.endMetadataLoading();
+    if (hasMetadata) {
+      this.setMetadataLoaded();
+    }
+    if (colorOption === ColorOption.metadata) {
       const conf = this.sharedState.mccConfig;
-      if (conf.metadataField !== null) {
+      if (conf.metadataField !== null && colorOption === ColorOption.metadata) {
         this.div.querySelectorAll("#customize--color--metadata #color-by option").forEach((ele)=>{
           const opt = ele as HTMLOptionElement;
           opt.selected = opt.value === conf.metadataField;
@@ -374,8 +380,8 @@ export class CustomizeUI extends MccUI {
       }
     }
     this.setMetadataDisplay();
+    this.setColorSystem(colorOption);
   }
-
 
   setNodeSelection(node: number, selected: boolean) {
     this.selectedNodes[node] = selected;
@@ -415,16 +421,25 @@ export class CustomizeUI extends MccUI {
   }
 
   endMetadataLoading() : void {
+    this.setMetadataLoaded();
+    if (this.sharedState.mccConfig.hasMetadata()) {
+      const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
+      input.click();
+      this.setMetadataDisplay();
+    }
+  }
+
+
+  setMetadataLoaded() {
     (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("loading");
     if (this.sharedState.mccConfig.hasMetadata()) {
       (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("no-metadata");
       (this.div.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
       const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
       input.disabled = false;
-      input.click();
-      this.setMetadataDisplay();
     }
   }
+
 
 
   setMetadataDisplay(): void {
