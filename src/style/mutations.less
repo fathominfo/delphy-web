@@ -616,6 +616,14 @@
   }
 }
 
+.hide-details {
+  opacity: 0;
+  visibility: 0;
+}
+
+.hidden-label{
+    transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out !important;
+}
 .mutations--display--col-name {
   text-transform: lowercase;
   font-variant: small-caps;
@@ -623,7 +631,6 @@
   font-weight: 700;
   font-size: 12px;
   line-height: 1;
-  margin-left: 1.8rem;
 }
 
 .display-options {
@@ -739,16 +746,14 @@
   position: relative;
   padding: 1em;
   font-size: 12px;
-
-  display: grid;
-  grid-template-columns: auto 100px 1fr;
+  display: flex;
+  align-items: stretch;
   gap: 1em;
   
   cursor: pointer;
   .noselect();
   
-  min-height: 7em;
-  height: 7em;
+  height: auto;
   overflow-y: clip;
 
   background-color: #FAFAFA;
@@ -1041,14 +1046,18 @@
 
   .mutation-info {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 0.5em;
+    align-items: start;
+    padding-right: 0.5em;
 
     > .mutation-name {
       font-size: 16px;
       .smoothly(font-size);
       overflow-x: visible;
       position: relative;
+      flex: 1;
+      max-width: 80px;
     }
 
     .is-apobec {
@@ -1068,26 +1077,32 @@
     display: inline-block;
   }
 
+  .mutation-left{
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    min-width: 0;
+    align-items: stretch;
+    justify-content: space-between;
+  }
 
   .mutation-right {
+    width: 170px;
     display: flex;
     flex-direction: column;
     gap: 2em;
+    flex-shrink: 0;
+    height: fit-content;
   }
 
   .mutation-charts {
-    display: flex;
-    gap: 1em;
-
-    > div {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 0.2em;
-      height: 5em;
-    }
+    flex:1 1 auto;
+    min-height: 0;
+    max-height: 9em;
 
     .mutation-time-dist {
-      flex: 2;
+      height: 100%;
     }
 
     .mutation-allele-prob {
@@ -1095,9 +1110,11 @@
     }
 
     .canvas-container {
-      height: inherit;
+      height: 100%;
       display: flex;
       canvas {
+        min-width: 0;
+        min-height: 0;
         flex: 1;
       }
     }
@@ -1118,17 +1135,18 @@
 
   .nodes-list {
     display: flex;
-    gap: 1em;
+    // gap: 1em;
+    flex-direction: column;
   }
 
   .node-detail {
     position: relative;
     font-size: 10px;
     display: grid;
-    grid-template-columns: 25px 1fr;
+    grid-template-columns: 18px auto;
     justify-items: center;
     align-items: center;
-    gap: 1em;
+    gap: 0;
 
     appearance: none;
     background: none;
@@ -1183,9 +1201,9 @@
     align-items: center;
   }
 
-  &.expanded {
-    min-height: 13rem;
-    height: 13rem;
+  // &.expanded {
+    // min-height: 13rem;
+    // height: 13rem;
 
     // .hint-expand {
     //   opacity: 0;
@@ -1198,10 +1216,11 @@
     // }
 
     .mutation-charts {
-      height: 8em;
+      flex: 1;
+      max-height: 9em;
 
       > div {
-        height: inherit;
+        height: 100%;
       }
     }
 
@@ -1213,14 +1232,18 @@
     .mutation-info {
       gap: 1em;
       
-      > .mutation-name {
-        font-size: 20px;
-      }
+      // > .mutation-name {
+      // // font-size: 20px;
+      // }
     }
 
-    .mutation-stats {
+        .mutation-stats {
+        display: flex;
       font-size: 12px;
-      gap: 0.5em;
+      gap: 1.5em;
+      flex: 4;
+      display: flex;
+      flex-direction: row;
       .smoothly(font-size);
 
       .stats--feature {
@@ -1249,9 +1272,10 @@
 
     .mutation-nodes {
       display: flex;
-      height: auto;
+      // height: auto;
+      height: max-content;
     }
-  }
+  // }
 }
 
 .mutation-time-dist {
@@ -1374,8 +1398,8 @@
 
     .stats-conf {
       font-weight: 700;
-      font-size: 9px;
-      line-height: 1;
+      // font-size: 9px;
+      // line-height: 1;
     }
   }
 }

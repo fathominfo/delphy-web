@@ -31,8 +31,8 @@ MUTATION_ROW_TEMPLATE.remove();
 
 const MAX_NODES = 3;
 
-const ICON_MIN = 5;
-const ICON_MAX = 25;
+const ICON_MIN = 2;
+const ICON_MAX = 17;
 
 const ORDER_INDICATOR = document.querySelector(".order-indicator") as HTMLElement;
 ORDER_INDICATOR.remove();
@@ -50,14 +50,11 @@ export class MutationRow {
   updateHoverNode: NodeFunctionType;
   goToLineages: NodeFunctionType;
   shiftRow: (row: MutationRow, direction: number) => void;
-  setMutationActive: (name: string, active: boolean) => void;
+  // setMutationActive: (name: string, active: boolean) => void;
   minDate: number;
   maxDate: number;
 
-  detailButton: HTMLElement;
-
-  isExpanded: boolean;
-  isActive: boolean;
+  // detailButton: HTMLElement;
 
   displayOption: DisplayOption;
 
@@ -75,7 +72,7 @@ export class MutationRow {
     updateHoverNode: NodeFunctionType,
     goToLineages: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
-    setMutationActive: (name: string, active: boolean) => void,
+    // setMutationActive: (name: string, active: boolean) => void,
     minDate: number, maxDate: number,
     displayOption: DisplayOption,
     isApobecEnabled: boolean) {
@@ -94,8 +91,6 @@ export class MutationRow {
     this.minDate = minDate;
     this.maxDate = maxDate;
 
-    this.isExpanded = false;
-
     this.rowDiv.addEventListener("pointerenter", () => this.handleMouseenter());
     // this.rowDiv.addEventListener("pointermove", e => this.handleMousemove(e));
     this.rowDiv.addEventListener("pointerleave", e => this.handleMouseleave(e), true);
@@ -103,18 +98,16 @@ export class MutationRow {
     this.rowDiv.addEventListener("keydown", e => this.handleKeydown(e));
 
     this.removeRow = removeRow;
-    const dismissButton = this.rowDiv.querySelector(".mutation-dismiss") as HTMLButtonElement;
-    dismissButton.addEventListener("click", e => {
-      this.removeRow(this);
-      e.stopImmediatePropagation();
-    });
+    // const dismissButton = this.rowDiv.querySelector(".mutation-dismiss") as HTMLButtonElement;
+    // dismissButton.addEventListener("click", e => {
+    //   this.removeRow(this);
+    //   e.stopImmediatePropagation();
+    // });
 
-    this.isActive = true;
-    this.setMutationActive = setMutationActive;
-    const toggleButton = this.rowDiv.querySelector(".mutation-toggle") as HTMLButtonElement;
-    toggleButton.addEventListener("click", this.toggleActive);
-
-    this.detailButton = this.rowDiv.querySelector(".mutation-detail") as HTMLButtonElement;
+    // this.setMutationActive = setMutationActive;
+    // const toggleButton = this.rowDiv.querySelector(".mutation-toggle") as HTMLButtonElement;
+    // toggleButton.addEventListener("click", this.toggleActive);
+    // this.detailButton = this.rowDiv.querySelector(".mutation-detail") as HTMLButtonElement;
 
     this.shiftRow = shiftRow;
     this.displayOption = displayOption;
@@ -153,6 +146,11 @@ export class MutationRow {
     (this.rowDiv.querySelector(".stats--tip-count strong") as HTMLElement).innerText = `${moi.medianTipCount}`;
     (this.rowDiv.querySelector(".stats--confidence strong") as HTMLElement).innerText = `${getPercentLabel(moi.confidence)}%`;
 
+    this.nodes = mutationData.nodes.slice(0);
+    this.createNodes();
+
+    this.rowDiv.style.height = `${(this.rowDiv.querySelector(".mutation-right")?.getBoundingClientRect().height ?? 0) + 30}px`
+
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
     if (!canvas) {
       throw new Error("mutation row has nowhere for the time distribution to go");
@@ -164,10 +162,6 @@ export class MutationRow {
     if (moi.features) {
       this.listFeatures();
     }
-
-    this.nodes = mutationData.nodes.slice(0);
-    this.createNodes();
-
     this.color = mutationData.color;
     const colorIndex = MUTATION_SERIES_COLORS.indexOf(this.color);
     if (colorIndex !== UNSET) {
@@ -246,16 +240,14 @@ export class MutationRow {
   }
 
   handleMouseenter = () => {
-    if (!this.isActive) return;
-
-    this.updateHoverRow(this, this.isExpanded);
+    this.rowDiv.querySelectorAll(".hidden-label").forEach(label => label.classList.remove("hide-details"));
+    this.updateHoverRow(this, false);
   }
 
   handleMouseleave = (event: PointerEvent) => {
-    if (!this.isActive) return;
-
-    if (event.target === this.rowDiv && !this.isExpanded) {
+    if (event.target === this.rowDiv) {
       this.updateHoverRow(null, false);
+      this.rowDiv.querySelectorAll(".hidden-label").forEach(label => label.classList.add("hide-details"));
     }
   }
 
@@ -267,9 +259,6 @@ export class MutationRow {
       if (target.closest(".grip") || target.closest("button")) return;
     }
 
-    this.isExpanded = this.rowDiv.classList.toggle("expanded");
-    this.toggleDetail();
-
     this.rowDiv.scrollIntoView({
       behavior: "smooth",
       block: "center"
@@ -278,13 +267,13 @@ export class MutationRow {
     this.timeCanvas.resize();
     this.timeCanvas.draw();
 
-    if (this.isActive) {
-      this.updateHoverRow(this, this.isExpanded);
-    }
+    this.updateHoverRow(this, true);
+
+    this.rowDiv.style.backgroundColor = `${this.color}22`;
+    this.rowDiv.classList.add("mutation-row-selected")
   }
 
   collapse() {
-    this.isExpanded = false;
     this.rowDiv.classList.remove("expanded");
     this.timeCanvas.resize();
     this.timeCanvas.draw();
@@ -296,19 +285,13 @@ export class MutationRow {
     }
   }
 
-  toggleActive = (e: MouseEvent) => {
-    e.preventDefault();
-    this.isActive = !this.isActive;
-    this.rowDiv.classList.toggle("inactive");
-    this.setMutationActive(this.moi.name, this.isActive);
-    this.updateHoverRow(this.isActive ? this : null, false);
-    e.stopImmediatePropagation();
-  }
-
-  toggleDetail = () => {
-    this.detailButton.classList.toggle("expand");
-    this.detailButton.classList.toggle("collapse");
-  }
+  // toggleActive = (e: MouseEvent) => {
+  //   e.preventDefault();
+  //   this.rowDiv.classList.toggle("inactive");
+  //   this.setMutationActive(this.moi.name, this.isActive);
+  //   this.updateHoverRow(this, false);
+  //   e.stopImmediatePropagation();
+  // }
 
   setDisplayOption(displayOption: DisplayOption) {
     this.displayOption = displayOption;

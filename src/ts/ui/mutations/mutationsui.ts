@@ -465,7 +465,7 @@ export class MutationsUI extends MccUI {
       const mutationData = {moi, name, times, nodes, minDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
-        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
+        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow,
         minDate, maxDate, this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
       this.rows.forEach(row => row.updateRows(this.rows));
@@ -528,14 +528,6 @@ export class MutationsUI extends MccUI {
       const rowIndex = this.rows.indexOf(row);
       if (rowIndex !== UNSET) {
         this.hoverColor = this.rows[rowIndex].color;
-        if (lock) {
-          /* collapse the other row */
-          const otherRows = this.rows.filter(r=>r.isExpanded && r !== row);
-          otherRows.forEach(r=>{
-            r.collapse();
-            r.toggleDetail();
-          });
-        }
       }
       moi = row.moi;
     } else {
@@ -732,11 +724,11 @@ export class MutationsUI extends MccUI {
         row.timeCanvas.draw();
       });
     } else {
-      this.rows.forEach(row => {
-        if (row.isExpanded) {
-          row.collapse();
-        }
-      });
+      // this.rows.forEach(row => {
+      // if (row.isExpanded) {
+      //   row.collapse();
+      // }
+      // });
     }
   }
 
