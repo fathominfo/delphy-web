@@ -1284,6 +1284,7 @@ input.stopping + #run-input--label {
       align-items: start;
       gap: 0.15em
     }
+    
     .run-select-wrapper {
       align-items: center;
       gap: 0.6em;
@@ -1303,9 +1304,11 @@ input.stopping + #run-input--label {
       display: block;
       margin: 0;
     }
-
+    button:disabled {
+      color: #666;
+      cursor: not-allowed;
+    }
     &.unset {
-
       input,
       label {
         display: none;
