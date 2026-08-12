@@ -285,12 +285,7 @@ export class MutationsUI extends MccUI {
           }
 
           const mutationsFilter = this.div.querySelector(".mutations-filter--form") as HTMLFormElement;
-          if (this.autofill) {
-            mutationsFilter.querySelectorAll("input").forEach(radio => {
-              radio.checked = false;
-            });
-            this.div.querySelectorAll(".filter-description").forEach(ele=>ele.classList.add("hidden"));
-          } else {
+          if (!this.autofill) {
             mutationsFilter.querySelectorAll("input").forEach(radio => {
               const value = radio.value as FeatureOfInterest;
               radio.checked = value === this.interestCat;
