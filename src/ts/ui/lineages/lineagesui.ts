@@ -251,7 +251,7 @@ export class LineagesUI extends MccUI {
     const lookupForm = document.querySelector(".id-lookup form") as HTMLFormElement;
     lookupForm.addEventListener("submit", e => e.preventDefault());
 
-    const constrainHoverByCredibilityInput = document.querySelector("#lineages--constrain-selection") as HTMLInputElement;
+    const constrainHoverByCredibilityInput = document.querySelector(".constrain-selection input") as HTMLInputElement;
     constrainHoverByCredibilityInput.addEventListener('change', ()=>{
       this.constrainHoverByCredibility = constrainHoverByCredibilityInput.checked;
     });
