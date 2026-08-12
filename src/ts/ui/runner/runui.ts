@@ -1043,7 +1043,7 @@ export class RunUI extends UIScreen {
     if (mccRef) {
       const oldRef = this.mccRef;
       this.mccRef = mccRef;
-      this.mccIndex = this.pythia.getMccIndex();
+      this.mccIndex = this.pythia.getAbsoluteMccIndex();
       const mccTree = mccRef.getMcc(),
         nodeConfidence = mccRef.getNodeConfidence();
       if (mccTree !== this.mccTreeCanvas.tree) {

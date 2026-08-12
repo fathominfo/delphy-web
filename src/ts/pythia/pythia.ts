@@ -409,7 +409,12 @@ export class Pythia {
     return this.mccRefManager.getRef();
   }
 
-  getMccIndex(): number {
+  /*
+  of all the trees in the run (not just the trees upon
+  which the MCC is based), get the index of the tree that
+  is the basis of the MCC's topology.
+  */
+  getAbsoluteMccIndex(): number {
     let index = -1;
     if (this.mccRefManager) {
       index = this.kneeIndex + this.mccRefManager.mccIndex;
