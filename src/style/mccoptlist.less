@@ -60,7 +60,9 @@
   }
 
   &.expanded .mcc-options-panel {
-    display: grid;
+    pointer-events: all;
+    opacity: 1;
+    visibility: visible;
   }
 }
 
@@ -73,13 +75,15 @@
   width: 100%;
   transition: all 0.15s;
   position: relative;
-  display: none;
+  display: grid;
   grid-template-columns: calc(50% - 5px) calc(50% - 5px);
   grid-template-rows: auto auto auto;
   gap: 5px calc(5px * 2);
   font-size: 12px;
   padding: 10px;
-
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
 }
 
 
