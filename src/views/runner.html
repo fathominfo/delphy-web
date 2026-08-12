@@ -360,23 +360,31 @@
 
           <div id="run--indicator--controls" class="menu-group">
             <div class="run--burn-in-container">
-              <div class="burn-in-row-wrapper">
-                <div id="burn-in-wrapper" class="pre">
-                  <input type="checkbox" id="burn-in-toggle" disabled />
-                  <label for="burn-in-toggle">Hide burn in</label>
-                </div>
-                <button id="burn-in-override" class="pre" disabled
-                  title="allow delphy to detect the burn-in period">Reset</button>
-              </div>
-             <span class="hint">click in a trace chart to select burn in</span>
-            </div>
-          
-            <div class="run--traces-container">
-              <label id="runner--show-traces">
-                <input id="runner--all-traces-toggle" type="checkbox" />
-                <span id="runner--all-traces">Show all traces</span>
+              <div id="burn-in-wrapper" class="pre">
+              <label>
+                <input type="checkbox" id="burn-in-toggle" disabled />
+                Hide <b>burn-in</b>
               </label>
-              <button id="runner--export-csv">Export Traces to TSV</button>
+
+              <div class="run-select-wrapper">
+                <div class="hint">
+                  <i>Click</i> a trace chart to select
+                </div>
+                <button id="burn-in-override" class="pre" disabled title="Let Delphy detect the burn-in period automatically">
+                  Reset to default
+                </button>
+              </div>
+              </div>
+            </div>
+          <div class="run--traces-container">
+              <span><b>Traces</b></span>
+              <div class="run-select-wrapper">
+                <label id="runner--show-traces">
+                  <input id="runner--all-traces-toggle" type="checkbox" />
+                  <span id="runner--all-traces">Show all</span>
+                </label>
+                <button id="runner--export-csv">Export to TSV</button>
+              </div>
             </div>
 
           </div>

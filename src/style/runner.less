@@ -1255,7 +1255,6 @@ input.stopping + #run-input--label {
   border-top: 1px solid var(--stability-stroke);
   border-radius: 3px;
 
-
   input[type="checkbox"] {
     appearance: auto;
     display: inline-block;
@@ -1265,32 +1264,57 @@ input.stopping + #run-input--label {
   }
 
   .run--burn-in-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-
-    .hint {
-      color: #aaa;
-      width: max-content;
-    }
+    flex: 4
   }
 
   .run--traces-container {
-    flex: 1;
+    flex: 3;
+  }
+
+  #burn-in-wrapper,
+  .run--traces-container {
     display: flex;
     flex-direction: row;
-    gap: 0.5rem;
+    gap: 0.6em;
     align-items: center;
     align-content: center;
 
-  }
+    @media(max-width:1250px) {
+      flex-direction: column;
+      align-items: start;
+      gap: 0.15em
+    }
+    .run-select-wrapper {
+      align-items: center;
+      gap: 0.6em;
+      display: flex;
+      flex-direction: row;
+    }
 
-  .burn-in-row-wrapper {
-    display: flex;
-    flex-direction: row;
-    gap: 0.5rem;
-    align-items: center;
+    .hint {
+      color: #aaa;
+    }
+
+    input {
+      appearance: auto;
+    }
+
+    p {
+      display: block;
+      margin: 0;
+    }
+
+    &.unset {
+
+      input,
+      label {
+        display: none;
+      }
+
+      &.pre {
+        opacity: 0.3;
+      }
+    }
   }
 }
 
@@ -1830,6 +1854,7 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 #burn-in-toggle {
+  flex: 1;
   &:disabled+label{
     opacity: 0.3;
   }
@@ -2225,23 +2250,6 @@ label:has(#advanced-skygrid-toggle:checked) {
     margin: var(--info-margin);
   }
 
-}
-
-
-
-#burn-in-wrapper {
-  // height: 1.5em;
-  flex-direction: row;
-  // label .hint {color: #aaa}
-  input { appearance: auto; }
-  p {
-    display: block;
-    margin: 0;
-  }
-  &.unset {
-    input, label {display: none;}
-    &.pre {opacity: 0.3;}
-  }
 }
 
 
