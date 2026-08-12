@@ -23,7 +23,7 @@ if (!maybeTableBody) {
   throw new Error("mutations.html doesn't have the container for the mutation rows!");
 }
 const MUTATION_TABLE_BODY = <HTMLDivElement> maybeTableBody;
-
+const MOI_HEAD = document.querySelector(".moi-list--header") as HTMLElement;
 const MOI_LIST = document.querySelector(".moi-list--body") as HTMLElement;
 
 const MOI_TEMPLATE = MOI_LIST.querySelector(".moi") as HTMLElement;
@@ -348,8 +348,10 @@ export class MutationsUI extends MccUI {
     let muts: MutationOfInterest[];
     if (this.interestCat === FeatureOfInterest.None) {
       muts = this.mutationsOfInterest[FeatureOfInterest.ManyTips];
+      MOI_HEAD.classList.add("hidden")
     } else {
       muts = this.mutationsOfInterest[this.interestCat];
+      MOI_HEAD.classList.remove("hidden")
     }
     const minTipCount = Math.round(this.tipCount * this.minTipsPercent),
       tipDistribution: number[] = [],
