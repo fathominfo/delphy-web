@@ -43,7 +43,8 @@ export class MccConfig {
   topologyCallback: ChangeHandler;
   colorCallback: ChangeHandler;
   presentationCallback: ChangeHandler;
-  mccOptsToggle: ChangeHandler;
+  mccOptsOpen: ChangeHandler;
+  mccOptsClose: ChangeHandler;
   confidenceCallback: (value: number) => void;
   zoomResetCallback: returnless;
 
@@ -124,9 +125,13 @@ export class MccConfig {
       this.setConfidence(confidenceThreshold);
     };
 
-    this.mccOptsToggle = (event)=>{
+    this.mccOptsOpen = (event) => {
       if (!this.div) return;
-      this.div.classList.toggle("expanded");
+      this.div.classList.add("expanded");
+    };
+    this.mccOptsClose = (event) => {
+      if (!this.div) return;
+      this.div.classList.remove("expanded");
     };
 
     this.zoomResetCallback = ()=>console.debug('mccconfig.zoomResetCallback is unassigned');
@@ -236,8 +241,10 @@ export class MccConfig {
 
       addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
 
-      const mccOptsToggleButton = this.div.querySelector(".mcc-display-options--inner .toggle") as HTMLButtonElement;
-      mccOptsToggleButton.addEventListener('click', this.mccOptsToggle);
+      const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
+      mccOptsOpenButton.addEventListener('click', this.mccOptsOpen);
+      const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
+      mccOptsCloseButton.addEventListener('click', this.mccOptsClose);
     }
   }
 
@@ -382,8 +389,11 @@ export class MccConfig {
         }
       };
       removeClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
-      const mccOptsToggleButton = this.div.querySelector(".mcc-display-options--inner .toggle") as HTMLButtonElement;
-      mccOptsToggleButton.removeEventListener('click', this.mccOptsToggle);
+      const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
+      mccOptsOpenButton.removeEventListener('click', this.mccOptsOpen);
+      const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
+      mccOptsCloseButton.removeEventListener('click', this.mccOptsClose);
+
 
     }
   }

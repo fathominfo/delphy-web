@@ -3,45 +3,19 @@
 .mcc-display-options {
   height: 150px;
   min-height: 150px;
-
-  &.expanded .mcc-display-options--inner {
-    width: 100%;
-    height: 100%;
-    right: 0;
-
-    .toggle {
-      width: calc(100% - 230px);
-      padding-right: 0;
-    }
-  }
-}
-
-.mcc-display-options--inner {
-  border: 1px solid #e3e3e3;
-  background-color: #fcfcfc;
-  height: 24px;
-  min-width: 130px;
-  width: 130px;
-  max-width: 100%;
-  position: absolute;
-  right: 40px;
-  overflow: hidden;
-  transition: all 0.15s;
-  width: calc(100% - 250px);
+  position: relative;
+  width: 100%;
   .toggle {
     line-height: calc(var(--unit) * 2);
-    padding-right: 24px;
-
+    position: absolute;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
     gap: var(--header-option-gap);
     white-space: nowrap;
-    position: relative;
-    padding-top: 2px;
-    padding-left: 10px;
-    padding-right: 12px;
+    top: 8px;
+    right: 8px;
     box-sizing: content-box;
     outline: none;
     cursor: pointer;
@@ -55,21 +29,51 @@
       margin-left: 0px;
 
       path {
-        stroke: #454545;
         stroke-width: 0.5;
         stroke-linejoin: round;
         stroke-linecap: square;
-        fill: #454545;
+        stroke: #888;
+        fill: #888;
       }
     }
+
+    &:hover svg path {
+      stroke: #454545;
+      fill: #454545;
+    }
+  }
+
+  .dismisser {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 2em;
+    height: 2em;
+    cursor: pointer;
+    background-color: #888;
+    .smoothly(opacity);
+    &:hover {
+      background-color: #454545;
+    }
+    .masked(url("/assets/icons/exit-lg.svg"));
+
+  }
+
+  &.expanded .mcc-options-panel {
+    display: grid;
   }
 }
 
 
 
+
 .mcc-options-panel {
+  border: 1px solid #e3e3e3;
+  background-color: #fcfcfc;
+  width: 100%;
+  transition: all 0.15s;
   position: relative;
-  display: grid;
+  display: none;
   grid-template-columns: calc(50% - 5px) calc(50% - 5px);
   grid-template-rows: auto auto auto;
   gap: 5px calc(5px * 2);
