@@ -158,8 +158,7 @@
         <span class="order-indicator"></span> <!-- span instead of div to avoid interfering with nth-of-type-->
         <div id="mutation-rows" class="list">
           <div class="mutation-row" tabindex="0" data-mutation="">
-            <div class="mutation-left">
-              <div class="grip">
+           <div class="grip">
                 <button type="button" class="mutation-prev" aria-label="Move mutation up">
                   <div class="box">
                     <div class="glyph"></div>
@@ -171,33 +170,18 @@
                   </div>
                 </button>
               </div>
-              <!-- <div class="mutation-icons">
-                  <button class="mutation-dismiss" aria-label="Dismiss mutation">
-                    <div class="box"><div class="glyph"></div></div>
-                  </button>
-                  <button class="mutation-toggle on" aria-label="Toggle mutation visibility">
-                    <div class="box"><div class="glyph"></div></div>
-                  </button>
-                  <button class="mutation-detail expand" aria-label="Toggle mutation detail">
-                    <div class="box"><div class="glyph"></div></div>
-                  </button>
-                </div> -->
-              <!-- <div class="hint hint-expand">Expand mutation…</div>
-                <div class="hint hint-collapse">Collapse mutation…</div> -->
-              <div class="mutation-info">
+
+
+          
+            <div class="mutation-left">
+                 <div class="mutation-info">     
+               
                 <div class="mutation-name">
-                  <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
-                  <span class="is-apobec">APOBEC</span>
-                </div>
-                <div class="mutation-stats">
-                  <div class="stats--tip-count">
-                    <div class="small-label">Tip count</div>
-                    <div><strong>000</strong> genomes</div>
-                  </div>
-                  <div class="stats--confidence">
-                    <div class="small-label">Appears in</div>
-                    <div><strong>00%</strong> of trees</div>
-                  </div>
+                <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
+                <span class="is-apobec">APOBEC</span>
+              </div>
+
+              <div class="mutation-stats">
                   <div class="stats--badges">
                     <div class="stats--reversals stats-badge hidden">
                       <div class="box" aria-label aria-hidden="true">
@@ -230,11 +214,24 @@
                   </div>
                 </div>
               </div>
-    
-    
+
+              <!-- <div class="mutation-icons">
+                  <button class="mutation-dismiss" aria-label="Dismiss mutation">
+                    <div class="box"><div class="glyph"></div></div>
+                  </button>
+                  <button class="mutation-toggle on" aria-label="Toggle mutation visibility">
+                    <div class="box"><div class="glyph"></div></div>
+                  </button>
+                  <button class="mutation-detail expand" aria-label="Toggle mutation detail">
+                    <div class="box"><div class="glyph"></div></div>
+                  </button>
+                </div> -->
+              <!-- <div class="hint hint-expand">Expand mutation…</div>
+                <div class="hint hint-collapse">Collapse mutation…</div> -->
+              
               <div class="mutation-charts">
                 <div class="mutation-time-dist">
-                  <div class="small-label hidden-label hide-details">Time distribution of mutation</div>
+                  <!-- <div class="small-label">Time distribution of mutation</div> -->
                   <div class="canvas-container">
                     <canvas></canvas>
                     <div class="time-chart--readout">
@@ -249,23 +246,47 @@
                 </div>
               </div>
             </div>
-    
+            
             <div class="mutation-right">
+           
+
+
+            <div class="mutation-stats-header">
+              <div></div>
+              <div class="small-label">Tips</div>
+              <div class="small-label">Appears in</div>
+            </div>
+          
+            <div class="mutation-stats">
+              <div class="node-icon"></div>
+              <div class="stats--tip-count">
+                <div><strong>000</strong></div>
+              </div>
+          
+              <div class="stats--confidence">
+                <div><strong>00%</strong> of trees</div>
+              </div>
+            </div>
+
+              <!-- <div class="small-label">representative nodes</div> -->
+              
               <div class="mutation-nodes">
-                <div class="small-label hidden-label hide-details">Distribution of representative nodes</div>
                 <div class="nodes-list">
                   <button class="node-detail">
-                    <div class="node-icon"></div>
-                    <div class="node-info">
-                      <div class="node-title"><span class="node--prevalence">60%</span> of applicable trees</div>
-                      <div class="node-stats"><span class="node--tip-count">770 tips</span></div>
-                    </div>
+                    <!-- <div class="node-info"> -->
+                        <div class="node-icon"></div>
+                      <div class="node-stats"><span class="node--tip-count">770</span>
+                      </div>
+                      <div class="node-title"><span class="node--prevalence">60%</span></div>
+                    <!-- </div> -->
+                                         
                   </button>
                 </div>
                 <div class="hidden-nodes-count hidden"><strong class="count">0</strong> more node<span
                     class="plural">s</span> hidden</div>
               </div>
             </div>
+
           </div>
         </div>
       </div>

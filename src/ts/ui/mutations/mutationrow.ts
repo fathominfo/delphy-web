@@ -149,7 +149,8 @@ export class MutationRow {
     this.nodes = mutationData.nodes.slice(0);
     this.createNodes();
 
-    this.rowDiv.style.height = `${(this.rowDiv.querySelector(".mutation-right")?.getBoundingClientRect().height ?? 0) + 30}px`
+    //TODO: what to do when the detail labels wrap around?
+    // this.rowDiv.style.height = `${(this.rowDiv.querySelector(".mutation-right")?.getBoundingClientRect().height ?? 0) + 30}px`
 
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
     if (!canvas) {
@@ -214,7 +215,7 @@ export class MutationRow {
         const prevalence = node.count / totalCount;
         (nodeHtml.querySelector(".node--prevalence") as HTMLElement).innerText = `${getPercentLabel(prevalence)}%`;
         const tips = node.tips;
-        (nodeHtml.querySelector(".node--tip-count") as HTMLElement).innerText = `${tips} tip${tips === 1 ? '' : 's'}`;
+        (nodeHtml.querySelector(".node--tip-count") as HTMLElement).innerText = `${tips}`;
         const relSize = this.getNodeRelativeSize(tips);
         const iconSize = this.getIconSize(relSize * 100);
         const icon = nodeHtml.querySelector(".node-icon") as HTMLElement;
