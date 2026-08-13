@@ -123,9 +123,10 @@ export class MutationsUI extends MccUI {
     const displayOptionsForm = document.querySelector(".display-options-form") as HTMLFormElement;
     displayOptionsForm.addEventListener("input", this.setDisplayOption);
 
-    const clearAllBtn = document.querySelector(".clear-all") as HTMLButtonElement;
+    const clearAllBtn = document.querySelector(".mutations--display-top .clear-all") as HTMLButtonElement;
     clearAllBtn.addEventListener("click", () => {
       this.clearRows();
+      this.prevalence.setData([], this.minDate, this.maxDate);
     });
 
     const sortButtons = this.div.querySelectorAll(".header-button") as NodeListOf<HTMLButtonElement>;
