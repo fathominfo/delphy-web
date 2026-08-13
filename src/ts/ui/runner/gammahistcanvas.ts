@@ -308,6 +308,7 @@ export class GammaHistCanvas extends TraceCanvas {
 
     this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
     const logLabels = (this.traceData as GammaData).logLabels;
+    let prevY = yAxisHeight * 2;
     logLabels.forEach((ll:LogLabelType)=>{
       const { ticks, value } = ll;
       ticks.forEach(([pct, tickLength], i)=>{
@@ -318,7 +319,10 @@ export class GammaHistCanvas extends TraceCanvas {
           const tic = this.addTick(y, x2);
           if (i === 0) {
             tic.classList.add("on-mag");
-            this.addText(safeLabel(value), y);
+            if (prevY - y >= LABEL_HEIGHT && y >= LABEL_HEIGHT) {
+              this.addText(safeLogLabel(safeLabel(value)), y);
+              prevY = y;
+            }
           }
         }
       });
@@ -326,7 +330,7 @@ export class GammaHistCanvas extends TraceCanvas {
     });
     /* label the top tick */
     this.addTick(0, (this.traceData as GammaData).getTickLength(9));
-    this.addText(`${safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM)} years`, 0);
+    this.addText(`${safeLogLabel(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM))} years`, 0);
     minSpan.textContent = toFullDateString(minDate);
     maxSpan.textContent = toFullDateString(maxDate);
   }
@@ -394,3 +398,9 @@ export class GammaHistCanvas extends TraceCanvas {
 
 }
 
+
+/*
+for log labels, we get a lot of `1.00e+N`, and
+we can simplify that to 1e+N
+*/
+const safeLogLabel = (label:string)=>label.replace('1.00e', '1e');
