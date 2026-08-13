@@ -1,14 +1,13 @@
 @button-curvature: 4px;
 
 .mcc-display-options {
-  // height: 150px;
-  // min-height: 150px;
-  height: 0;
-  // position: relative;
-  position: absolute;
-  bottom: 60px;
+  height: 30px;
+  min-height: 30px;
+  // height: 0;
+  position: relative;
   pointer-events: none;
   width: 100%;
+  margin-top: 10px;
 
   .panel-title{
     color: #777;
@@ -20,8 +19,8 @@
     border: 1px solid #e3e3e3;
     background-color: #fcfcfc;
     color: #777;
-    right: 0;
-    top: -5px;
+    left: 0;
+    top: 0;
     font-size: 12px;
     line-height: calc(var(--unit) * 2);
     position: absolute;
@@ -34,8 +33,6 @@
     // justify-content: space-between;
     // gap: var(--header-option-gap);
     white-space: nowrap;
-    // top: 0;
-    // right: 8px;
     box-sizing: content-box;
     outline: none;
     cursor: pointer;
@@ -105,7 +102,7 @@
 
 
 .mcc-options-panel {
-  bottom: 130px;
+  transform: translate(0, -100%-3px);
   border: 1px solid #e3e3e3;
   background-color: #fcfcfc;
   width: 100%;
