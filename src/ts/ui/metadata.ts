@@ -75,10 +75,13 @@ export class Metadata {
     const lines = text.split('\n');
     const rows = [];
     while (lines.length) {
-      const row = handleLine(lines, delimiter)
-      rows.push(row.map(cleanup));
+      try {
+        const row = handleLine(lines, delimiter)
+        rows.push(row.map(cleanup));
+      } catch (err) {
+        console.warn("err while parsing", err);
+      }
     }
-
 
     const header = rows.shift();
     if (!header) {

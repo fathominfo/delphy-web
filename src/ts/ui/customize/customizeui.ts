@@ -637,8 +637,12 @@ const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccT
         const tabCount = first.split('\t').length - 1;
         separator = commaCount > tabCount ? ',' : '\t';
       }
-      const metadata = new Metadata(file.name, text, separator);
-      mccConfig.setMetadata(metadata, mccTreeCanvas.tree as SummaryTree);
+      try {
+        const metadata = new Metadata(file.name, text, separator);
+        mccConfig.setMetadata(metadata, mccTreeCanvas.tree as SummaryTree);
+      } catch(err) {
+        console.debug(err)
+      }
       callback();
     });
     reader.readAsText(file);
