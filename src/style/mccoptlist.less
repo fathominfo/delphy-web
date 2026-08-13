@@ -1,21 +1,41 @@
 @button-curvature: 4px;
 
 .mcc-display-options {
-  height: 150px;
-  min-height: 150px;
-  position: relative;
+  // height: 150px;
+  // min-height: 150px;
+  height: 0;
+  // position: relative;
+  position: absolute;
+  bottom: 60px;
+  pointer-events: none;
   width: 100%;
+
+  .panel-title{
+    color: #777;
+    font-size: 12px;
+  }
+
   .toggle {
+    pointer-events: all;
+    border: 1px solid #e3e3e3;
+    background-color: #fcfcfc;
+    color: #777;
+    right: 0;
+    top: -5px;
+    font-size: 12px;
     line-height: calc(var(--unit) * 2);
     position: absolute;
+    padding: 0.3em;
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-end;
-    gap: var(--header-option-gap);
+    gap: 0.5em;
+    align-content: center;
+    // justify-content: space-between;
+    // gap: var(--header-option-gap);
     white-space: nowrap;
-    top: 8px;
-    right: 8px;
+    // top: 0;
+    // right: 8px;
     box-sizing: content-box;
     outline: none;
     cursor: pointer;
@@ -25,7 +45,7 @@
       width: 16px;
       height: 16px;
       position: relative;
-      top: -2px;
+      // top: -2px;
       margin-left: 0px;
 
       path {
@@ -47,8 +67,8 @@
     position: absolute;
     right: 0;
     top: 0;
-    width: 2em;
-    height: 2em;
+    width: 1.8em;
+    height: 1.8em;
     cursor: pointer;
     background-color: #888;
     .smoothly(opacity);
@@ -56,8 +76,23 @@
       background-color: #454545;
     }
     .masked(url("/assets/icons/exit-lg.svg"));
-
   }
+
+  // .expander{
+  //   position: absolute;
+  //   right: 0;
+  //   top: 0;
+  //   width: 1.8em;
+  //   height: 1.8em;
+  //   cursor: pointer;
+  //   background-color: #888;
+  //   .smoothly(opacity);
+  //   &:hover {
+  //     background-color: #454545;
+  //   }
+  //   .masked(url("/assets/icons/plus.svg"));
+
+  // }
 
   &.expanded .mcc-options-panel {
     pointer-events: all;
@@ -70,6 +105,7 @@
 
 
 .mcc-options-panel {
+  bottom: 130px;
   border: 1px solid #e3e3e3;
   background-color: #fcfcfc;
   width: 100%;
@@ -80,7 +116,7 @@
   grid-template-rows: auto auto auto;
   gap: 5px calc(5px * 2);
   font-size: 12px;
-  padding: 10px;
+  padding: 0.5em 10px;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
