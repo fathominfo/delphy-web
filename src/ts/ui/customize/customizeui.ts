@@ -120,7 +120,7 @@ export class CustomizeUI extends MccUI {
         imgTreeCanvas.setConfig(mccConfig);
         mccConfig.updateInnerNodeMetadata(tree);
       }
-      imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getMccIndex());
+      imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getAbsoluteMccIndex());
       imgTreeCanvas.setColors(tree);
       // const mcccc = this.mccTreeCanvas.canvas;
       // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
@@ -161,7 +161,7 @@ export class CustomizeUI extends MccUI {
           imgTreeCanvas.setConfig(mccConfig);
           mccConfig.updateInnerNodeMetadata(tree);
         }
-        imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getMccIndex());
+        imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getAbsoluteMccIndex());
         imgTreeCanvas.setColors(tree);
         // const mcccc = this.mccTreeCanvas.canvas;
         // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);

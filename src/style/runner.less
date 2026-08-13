@@ -297,7 +297,7 @@
   */
 
   gap: calc(var(--view-gap) - var(--pop-chart-highlight-dot-radius));
-  height: calc(100% - 64px);
+  height: calc(100% - 20px);
 }
 
 
@@ -310,7 +310,7 @@
   min-width: var(--tree-container-min-width);
   max-width: var(--tree-container-max-width);
   .tree-container {
-    height: calc(100% - 75px);
+    height: calc(100% - 100px);
   }
 
   .mcc_highlight {
@@ -1201,7 +1201,7 @@
   and related is
     #runner--bottom {gap}
   */
-  padding: 0 0 0 var(--pop-chart-highlight-dot-radius);
+  padding: 0 0 2rem var(--pop-chart-highlight-dot-radius);
 }
 
 
@@ -1253,9 +1253,11 @@ input.stopping + #run-input--label {
   border-color: var(--header-option-stroke-static);
 }
 
-
 #run--indicator--controls {
-  margin: 12px 0 4px;
+  // margin: 10px 0 4px;
+  padding: 0.5rem;
+  border-top: 1px solid var(--stability-stroke);
+  border-radius: 3px;
 
   input[type="checkbox"] {
     appearance: auto;
@@ -1265,7 +1267,63 @@ input.stopping + #run-input--label {
     margin-right: 3px;
   }
 
+  .run--burn-in-container {
+    flex: 4
+  }
 
+  .run--traces-container {
+    flex: 3;
+  }
+
+  #burn-in-wrapper,
+  .run--traces-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.6em;
+    align-items: center;
+    align-content: center;
+
+    @media(max-width:1330px) {
+      flex-direction: column;
+      align-items: start;
+      gap: 0.15em
+    }
+
+    .run-select-wrapper {
+      align-items: center;
+      gap: 0.6em;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .hint {
+      color: #aaa;
+    }
+
+    input {
+      appearance: auto;
+    }
+
+    p {
+      display: block;
+      margin: 0;
+    }
+    button:disabled {
+      color: rgb(168,168,168);
+      border-color: rgb(210, 221,227);
+      cursor: not-allowed;
+    }
+    &.unset {
+      input,
+      label {
+        display: none;
+      }
+
+      &.pre {
+        opacity: 0.3;
+      }
+    }
+  }
 }
 
 #runner--export-csv, #burn-in-override {
@@ -1279,8 +1337,10 @@ input.stopping + #run-input--label {
   cursor: pointer;
   transition: all var(--transition) ease-out;
   position: relative;
-  top: -4px;
+  // top: -4px;
   white-space: nowrap;
+  color: unset;
+  font-weight: 500;
 }
 
 
@@ -1803,6 +1863,7 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 #burn-in-toggle {
+  flex: 1;
   &:disabled+label{
     opacity: 0.3;
   }
@@ -2198,22 +2259,6 @@ label:has(#advanced-skygrid-toggle:checked) {
     margin: var(--info-margin);
   }
 
-}
-
-
-
-#burn-in-wrapper {
-  height: 1.5em;
-  label .hint {color: #aaa}
-  input { appearance: auto; }
-  p {
-    display: block;
-    margin: 0;
-  }
-  &.unset {
-    input, label {display: none;}
-    &.pre {opacity: 0.3;}
-  }
 }
 
 

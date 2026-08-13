@@ -32,3 +32,11 @@ release/*
 public/assets/revision.json
 public/assets/fonts/MD*
 # *.zip
+
+
+notes
+
+public/*.pmtiles
+src/ts/ui/mapper/*.json
+
+public/assets/data/
