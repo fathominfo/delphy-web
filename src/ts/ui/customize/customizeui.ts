@@ -420,7 +420,24 @@ export class CustomizeUI extends MccUI {
     (this.div.querySelector("#metadata-file") as HTMLElement).classList.add("loading");
   }
 
-  endMetadataLoading() : void {
+  endMetadataLoading(md: null | Metadata) : void {
+    if (!md) {
+      this.setMetadataLoaded();
+      return;
+    }
+    const mccConfig = this.sharedState.mccConfig;
+    if (this.metadataLoaded) {
+      const loadIt = confirm("Metadata is already set for this file. Do you want to replace it?");
+      if (loadIt) {
+        this.div.querySelectorAll("#metadata-column-headings .column-heading").forEach(el => el.remove());
+        mccConfig.metadataField = null;
+        this.metadataLoaded = false;
+      } else {
+        this.setMetadataLoaded();
+        return;
+      }
+    }
+    mccConfig.setMetadata(md, this.mccTreeCanvas.tree as SummaryTree, false);
     this.setMetadataLoaded();
     if (this.sharedState.mccConfig.hasMetadata()) {
       const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
@@ -576,7 +593,7 @@ export class CustomizeUI extends MccUI {
 
 
   parseMetadataFile(file: File) {
-    parseMetadataFile(file, this.sharedState.mccConfig, this.mccTreeCanvas, ()=>this.endMetadataLoading());
+    parseMetadataFile(file, (metadata: null | Metadata)=>this.endMetadataLoading(metadata));
   }
 
 
@@ -618,7 +635,7 @@ adding metadata does not have to be part of the customize page.
 If we _do_ decide to move it out of here, this is what it will require.
 [mark 241125]
 */
-const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccTreeCanvas, callback: ()=>void)=>{
+const parseMetadataFile = (file: File, callback: (metadata:null|Metadata)=>void)=>{
   let separator = "";
   if (file.type === "text/tab-separated-values" || file.name.endsWith(".tsv")) {
     separator = "\t";
@@ -626,6 +643,7 @@ const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccT
     separator = ",";
   }
   const reader = new FileReader();
+  let metadata: null | Metadata = null;
   try {
     reader.addEventListener("load", ()=>{
       const text = reader.result as string;
@@ -638,12 +656,11 @@ const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccT
         separator = commaCount > tabCount ? ',' : '\t';
       }
       try {
-        const metadata = new Metadata(file.name, text, separator);
-        mccConfig.setMetadata(metadata, mccTreeCanvas.tree as SummaryTree);
+        metadata = new Metadata(file.name, text, separator);
       } catch(err) {
         console.debug(err)
       }
-      callback();
+      callback(metadata);
     });
     reader.readAsText(file);
   } catch (err) {
