@@ -1,8 +1,8 @@
 @button-curvature: 4px;
 
 .mcc-display-options {
-  height: 30px;
-  min-height: 30px;
+  height: 150px;
+  min-height: 150px;
   // height: 0;
   position: relative;
   pointer-events: none;
@@ -12,6 +12,15 @@
   .panel-title{
     color: #777;
     font-size: 12px;
+  }
+  
+  &.expanded .toggle{
+    background-color: #777 !important;
+   
+    svg path{
+      stroke: #e3e3e3 !important;
+      fill: #e3e3e3 !important;
+    }
   }
 
   .toggle {
@@ -60,22 +69,7 @@
     }
   }
 
-  .dismisser {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 1.8em;
-    height: 1.8em;
-    cursor: pointer;
-    background-color: #888;
-    .smoothly(opacity);
-    &:hover {
-      background-color: #454545;
-    }
-    .masked(url("/assets/icons/exit-lg.svg"));
-  }
-
-  // .expander{
+  // .dismisser {
   //   position: absolute;
   //   right: 0;
   //   top: 0;
@@ -87,8 +81,7 @@
   //   &:hover {
   //     background-color: #454545;
   //   }
-  //   .masked(url("/assets/icons/plus.svg"));
-
+  //   .masked(url("/assets/icons/exit-lg.svg"));
   // }
 
   &.expanded .mcc-options-panel {
@@ -102,7 +95,7 @@
 
 
 .mcc-options-panel {
-  transform: translate(0, -100%-3px);
+  transform: translate(0,30px);
   border: 1px solid #e3e3e3;
   background-color: #fcfcfc;
   width: 100%;

@@ -242,7 +242,7 @@ export class MccConfig {
       addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
 
       const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
-      mccOptsOpenButton.addEventListener('click', this.mccOptsOpen);
+      mccOptsOpenButton.addEventListener('click', (e) => this.div?.classList.contains("expanded") ? this.mccOptsClose(e) : this.mccOptsOpen(e));
       const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
       mccOptsCloseButton.addEventListener('click', this.mccOptsClose);
     }
