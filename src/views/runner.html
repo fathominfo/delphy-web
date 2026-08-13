@@ -104,24 +104,9 @@
 
         <div id="runner--mcc">
           {{>mcc_tree}}
+          {{>mcc_opts}}
 
-          <div class="mcc-legend">
-            <div class="mcc-opt-list confidence">
-              <label for="mcc-opt--confidence-range">Credibility threshold</label>
-              <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
-                Highlighting nodes in
-                <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
-                of base trees
-              </output>
 
-              <div class="mcc-opt--confidence-range block-slider">
-                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
-                <div class="slider--track"></div>
-                <div class="slider--track-filled"></div>
-                <div class="slider--thumb"></div>
-              </div>
-            </div>
-          </div>
         </div>
 
 
