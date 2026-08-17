@@ -90,8 +90,27 @@
   }
 }
 
+#runner {
 
+  .mcc-options-panel {
+    border: none;
+    background-color: transparent;
+    pointer-events: all;
+    opacity: 1;
+    visibility: visible;
+    width: 95%;
+  }
 
+  .mcc-display-options {
+    margin-top: 0;
+
+    .toggle {
+      display: none;
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+}
 
 .mcc-options-panel {
   transform: translate(0, -5px);
