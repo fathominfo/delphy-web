@@ -242,11 +242,21 @@ export class MccConfig {
       addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
 
       const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
-      mccOptsOpenButton.addEventListener('click', (e) => this.div?.classList.contains("expanded") ? this.mccOptsClose(e) : this.mccOptsOpen(e));
-      const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
-      mccOptsCloseButton.addEventListener('click', this.mccOptsClose);
+      mccOptsOpenButton.addEventListener('click', this.mccOptsToggle)
+      // this.div?.classList.contains("expanded") ? this.mccOptsClose(e) : this.mccOptsOpen(e) });
+      // const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
+      // mccOptsCloseButton.addEventListener('click', this.mccOptsClose);
     }
   }
+  mccOptsToggle = (e: Event) => {
+    if (this.div?.classList.contains("expanded")) {
+      this.div?.classList.remove("expanded");
+      this.mccOptsClose(e);
+    } else {
+      this.div?.classList.add("expanded");
+      this.mccOptsOpen(e);
+    }
+  };
 
   resetZoom() : void {
     this.verticalZoom = 1;
@@ -390,11 +400,7 @@ export class MccConfig {
       };
       removeClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
       const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
-      mccOptsOpenButton.removeEventListener('click', this.mccOptsOpen);
-      const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
-      mccOptsCloseButton.removeEventListener('click', this.mccOptsClose);
-
-
+      mccOptsOpenButton.removeEventListener('click', this.mccOptsToggle);
     }
   }
 

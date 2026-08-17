@@ -1,6 +1,17 @@
 @button-curvature: 4px;
 
+
+#runner .mcc-display-options {
+  bottom: 100px;
+
+  .mcc-options-panel {
+      width: 90%;
+    }
+}
+
 .mcc-display-options {
+  display: flex;
+  align-items: end;
   height: 150px;
   min-height: 150px;
   position: relative;
@@ -14,11 +25,11 @@
   }
   
   &.expanded .toggle{
-    background-color: #777 !important;
+    background-color: #999;
    
     svg path{
-      stroke: #e3e3e3 !important;
-      fill: #e3e3e3 !important;
+      stroke: #fcfcfc !important;
+      fill: #fcfcfc !important;
     }
   }
 
@@ -68,21 +79,6 @@
     }
   }
 
-  // .dismisser {
-  //   position: absolute;
-  //   right: 0;
-  //   top: 0;
-  //   width: 1.8em;
-  //   height: 1.8em;
-  //   cursor: pointer;
-  //   background-color: #888;
-  //   .smoothly(opacity);
-  //   &:hover {
-  //     background-color: #454545;
-  //   }
-  //   .masked(url("/assets/icons/exit-lg.svg"));
-  // }
-
   &.expanded .mcc-options-panel {
     pointer-events: all;
     opacity: 1;
@@ -90,30 +86,8 @@
   }
 }
 
-#runner {
-
-  .mcc-options-panel {
-    border: none;
-    background-color: transparent;
-    pointer-events: all;
-    opacity: 1;
-    visibility: visible;
-    width: 95%;
-  }
-
-  .mcc-display-options {
-    margin-top: 0;
-
-    .toggle {
-      display: none;
-      pointer-events: none;
-      opacity: 0;
-    }
-  }
-}
-
 .mcc-options-panel {
-  transform: translate(0, -5px);
+  transform: translate(0, -2.5em);
   border: 1px solid #e3e3e3;
   background-color: #fcfcfc;
   width: 100%;
