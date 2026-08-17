@@ -17,6 +17,7 @@
         <div class="tree-hint preview-node1 hidden">Previewing <span class="node node1">Selection A</span> <span class="click-hint">(click to confirm selection)</span>.</div>
         <div class="tree-hint preview-node2-descendant hidden">Previewing <span class="node node2">Selection B</span>, a descendant of A <span class="click-hint">(click to confirm selection)</span>.</div>
         <div class="tree-hint preview-node2-cousin hidden">Previewing <span class="node node2">Selection B</span> <span class="click-hint">(click to confirm selection)</span>. The <span class="node mrca">MRCA of A and B</span> has been automatically inferred.</div>
+        <div class="tree-hint preview-node1-descendant hidden">Previewing <span class="node node2">Selection B</span>, an ancestor of A <span class="click-hint">(click to confirm selection)</span>.</div>
         <div class="tree-hint max-selections hidden">Remove a selection to explore other nodes.</div>
         <div class="tree-hint zoom hidden">Click and drag to zoom to a selection area.</div>
       </div>
@@ -72,10 +73,10 @@
             <div class="node-info">
               <div class="node-source">Automatically inferred</div>
               <div class="node-name">MRCA of A and B</div>
-              <div class="node-stats"><span class="node--tip-count">00 tips</span>, 
+              <div class="node-stats"><span class="node--tip-count">00 tips</span>,
                 <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
                 <span class="mono-hover">monophyletic
-                in <span class="node--confidence">00%</span> of base trees 
+                in <span class="node--confidence">00%</span> of base trees
               </div>
               <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
               {{> lineages_node_metadata }}
@@ -87,10 +88,10 @@
             <div class="node-info">
               <div class="node-source">Previewing</div>
               <div class="node-name">Selection A</div>
-              <div class="node-stats"><span class="node--tip-count">00 tips</span>, 
+              <div class="node-stats"><span class="node--tip-count">00 tips</span>,
                 <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
                 <span class="mono-hover">monophyletic
-                in <span class="node--confidence">00%</span> of base trees 
+                in <span class="node--confidence">00%</span> of base trees
               </div>
               <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
               {{> lineages_node_metadata }}
@@ -102,10 +103,10 @@
             <div class="node-info">
               <div class="node-source">Previewing</div>
               <div class="node-name">Selection B</div>
-              <div class="node-stats"><span class="node--tip-count">00 tips</span>, 
+              <div class="node-stats"><span class="node--tip-count">00 tips</span>,
                 <!-- <span class="mono-hover">monophyletic <span class="mono-tooltip">the base tree has an inner node whose descendant tips are an exact match of the tips of the selected MCC node.</span></span>  -->
                 <span class="mono-hover">monophyletic
-                in <span class="node--confidence">00%</span> of base trees 
+                in <span class="node--confidence">00%</span> of base trees
               </div>
               <div class="tip-info hidden">Tip <span class="tip-id"></span></div>
               {{> lineages_node_metadata }}
@@ -149,19 +150,19 @@
       </section>
       <section id="lineages--column-2">
         <div class="lineages--node-comparison">
-          <h1>Time distributions of <span class="lineages--node-comparison--ancestor-node">node</span> 
+          <h1>Time distributions of <span class="lineages--node-comparison--ancestor-node">node</span>
             <span class="lineages--node-comparison--descendant-connector">and </span>
             <span class="lineages--node-comparison--descendant-node">node</span>
             <span class="lineages--node-overlap-item">
               In <span class="lnoi-pct"></span>% of base trees,
               <span class="root-message">
-                the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span> 
+                the MRCA of <span class="lnoi-2">node</span> is <span class="lnoi-1">Root</span>
               </span>
               <span class="non-root-message">
-                the MRCA of the tips under 
-                <span class="lnoi-1"></span> and the MRCA of the tips under 
-                <span class="lnoi-2"></span> are the same inner node. 
-              </span> 
+                the MRCA of the tips under
+                <span class="lnoi-1"></span> and the MRCA of the tips under
+                <span class="lnoi-2"></span> are the same inner node.
+              </span>
             </span>
           </h1>
           <div class="lineages--node-comparison--time-chart-container">
