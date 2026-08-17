@@ -83,7 +83,7 @@ export class MccUI extends UIScreen {
     this.highlightCanvas.width = canvas.width;
     this.highlightCanvas.height = canvas.height;
     this.highlightCanvas.style.width = canvas.style.width;
-    this.highlightCanvas.style.height = canvas.style.height ;
+    this.highlightCanvas.style.height = canvas.style.height;
     this.highlightCanvas.style.top = `${canvas.offsetTop}px`;
     if (window.devicePixelRatio > 1) {
       this.highlightCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
