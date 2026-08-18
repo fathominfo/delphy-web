@@ -6,7 +6,9 @@ import { DistributionSeries, TimeDistributionCanvas } from '../timedistributionc
 import { Mutation } from '../../pythia/delphy_api';
 import { HighlightableTimeDistributionCanvas, HoverCallback } from './highlightabletimedistributioncanvas';
 
-// const MAX_MUTATIONS_PER_NODE = 10;
+const MAX_MUTATIONS_PER_NODE = 5;
+const MUT_BOX_HT = 40;
+const MUT_BOX_MARGIN = 7.5;
 
 const nodeComparisonTemplate = document.querySelector(".lineages--node-comparison") as HTMLDivElement;
 const nodeComparisonContainer = nodeComparisonTemplate?.parentNode as HTMLDivElement;
@@ -21,7 +23,7 @@ nodeComparisonTemplate.remove();
 const mutationCanvasSelector = '.lineages--mutation-time-chart',
   mutationNameSelector = '.lineages--node-comparison--mutation-name',
   mutationPrevalenceSelector = '.lineages--node-comparison--mutation-prevalence span',
-  mutationContainerSelector = '.lineages--node-comparison--time-chart-container',
+  mutationContainerSelector = '.lineages--node-comparison--mutation-list',
   ancestorNodeNameSelector = '.lineages--node-comparison--ancestor-node',
   descendantNodeNameSelector = '.lineages--node-comparison--descendant-node',
   mutationCountSelector = '.lineages--node-comparison--mutation-count',
@@ -108,12 +110,16 @@ export class NodeComparison {
   nodeTimesCanvas: HighlightableTimeDistributionCanvas;
   minDate: number;
   maxDate: number;
+  mutationData: MutationDistribution[];
   mutationTimelines:MutationTimeline[];
   mutationContainer: HTMLDivElement;
   goToMutations: MutationFunctionType;
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
   nodeHighlightCallback: NodeCallback;
+  showAllMutsToggle: HTMLInputElement;
+  isApobecRun: boolean;
+
 
   constructor(nodeComparisonData : NodeComparisonData, minDate: number, maxDate: number,
     goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback, isApobecRun: boolean) {
@@ -139,7 +145,9 @@ export class NodeComparison {
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.mutationTimelines = [];
+    this.mutationData = [];
     this.goToMutations = goToMutations;
+    this.isApobecRun = isApobecRun;
 
     this.ancestorType = getAncestorType(this.nodePair.pairType);
     this.descendantType = getDescendantType(this.nodePair.pairType);
@@ -163,9 +171,13 @@ export class NodeComparison {
     } else {
       overlapSpan.classList.add('hidden');
     }
+    this.showAllMutsToggle = this.div.querySelector(".lineages--node-comparison--show-toggle input") as HTMLInputElement;
+    this.showAllMutsToggle.addEventListener("input", ()=>{
+      this.requestDraw();
+    });
 
 
-    this.setMutations(isApobecRun);
+    this.setMutations();
 
     const createSeries = (dn: DisplayNode, i: number) => {
       const typeName = getNodeTypeName(dn);
@@ -213,19 +225,9 @@ export class NodeComparison {
     this.node2Span.classList.add(getNodeClassName(descendantType));
   }
 
-  setMutations(isApobecRun: boolean):void {
-    const shownMutations = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
-    const count = shownMutations.length,
-      minDate = this.minDate,
-      maxDate = this.maxDate;
-    // if (shownMutations.length > MAX_MUTATIONS_PER_NODE) {
-    //   shownMutations = shownMutations.slice(0, MAX_MUTATIONS_PER_NODE);
-    // }
-    this.mutationTimelines = shownMutations.map((md:MutationDistribution)=>{
-      const mt = new MutationTimeline(md, minDate, maxDate, this.goToMutations, isApobecRun);
-      mt.appendTo(this.mutationContainer);
-      return mt;
-    });
+  setMutations():void {
+    this.mutationData = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
+    const count = this.mutationData.length;
     this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
     let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
     if (mutationPrevalenceThreshold < 1.0) {
@@ -235,9 +237,24 @@ export class NodeComparison {
   }
 
   requestDraw() : void {
+    const count = this.mutationData.length;
+    const shownCount = this.showAllMutsToggle.checked ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
+    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN;
+    const alreadyDrawnCount = this.mutationTimelines.length;
+    if (alreadyDrawnCount < shownCount) {
+      const { minDate, maxDate, goToMutations, isApobecRun } = this;
+      this.mutationData.slice(alreadyDrawnCount, shownCount).forEach(md => {
+        const mt = new MutationTimeline(md, minDate, maxDate, goToMutations, isApobecRun);
+        this.mutationTimelines.push(mt);
+      });
+    }
     requestAnimationFrame(()=>{
       this.nodeTimesCanvas.draw();
-      this.mutationTimelines.forEach(mt=>mt.draw());
+      this.mutationTimelines.slice(alreadyDrawnCount, shownCount).forEach(mt=>{
+        mt.appendTo(this.mutationContainer);
+        mt.draw();
+      });
+      this.mutationContainer.style.height = `${mHeight}px`;
     });
   }
 

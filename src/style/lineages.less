@@ -828,7 +828,29 @@ details {
 .lineages--node-comparison--time-chart-container {
   // padding-left: 15px;
   // border-left: solid 1px rgb(225,225,225);
+
+  &:has(.lineages--node-comparison--show-toggle input:checked) {
+    .lnc-min-count { display: none; }
+  }
+
 }
+
+.lineages--node-comparison--mutation-list {
+  padding: 0;
+  margin: 0;
+  height: calc( 40px * 5 + 7.5px * 4);
+  overflow: hidden;
+  transition: height 0.15s;
+}
+
+.lineages--node-comparison--show-toggle {
+  .lnc-less { display: none;}
+  &:has(input:checked) {
+    .lnc-less { display: inline; }
+    .lnc-all { display: none; }
+  }
+}
+
 
 .lineages--node-comparison--time-chart {
   //background-color: rgb(250, 250, 250);
@@ -847,7 +869,7 @@ details {
   color: rgb(114, 114, 114);
 }
 
-.lineages--node-comparison--mutation-count {
+.lnc-mutation-min, .lineages--node-comparison--mutation-count {
   font-weight: bolder;
 }
 

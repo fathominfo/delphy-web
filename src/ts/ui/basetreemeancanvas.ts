@@ -162,7 +162,7 @@ export class BaseTreeMeanCanvas {
   protected draw() : void {
     const { ctx, width, height, averages, averageYPositions } = this;
 
-    console.log(averages, averageYPositions);
+    // console.log(averages, averageYPositions);
 
     ctx.clearRect(0, 0, width, height);
 
