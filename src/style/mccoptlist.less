@@ -1,18 +1,117 @@
 @button-curvature: 4px;
 
 
+#runner .mcc-display-options {
+  bottom: 100px;
+
+  .mcc-options-panel {
+      width: 90%;
+    }
+}
+
+.mcc-display-options {
+  display: flex;
+  align-items: end;
+  height: 150px;
+  min-height: 150px;
+  position: relative;
+  pointer-events: none;
+  width: 100%;
+  margin-top: 10px;
+
+  .panel-title{
+    color: #777;
+    font-size: 12px;
+  }
+  
+  &.expanded .toggle{
+    background-color: #999;
+   
+    svg path{
+      stroke: #fcfcfc !important;
+      fill: #fcfcfc !important;
+    }
+  }
+
+  .toggle {
+    pointer-events: all;
+    border: 1px solid #e3e3e3;
+    background-color: #fcfcfc;
+    color: #777;
+    left: 0;
+    bottom: 0;
+    font-size: 12px;
+    line-height: calc(var(--unit) * 2);
+    position: absolute;
+    padding: 0.3em;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5em;
+    align-content: center;
+    white-space: nowrap;
+    box-sizing: content-box;
+    outline: none;
+    cursor: pointer;
+    transition: all var(--transition) ease-out;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      position: relative;
+      margin-left: 0px;
+
+      path {
+        stroke-width: 0.5;
+        stroke-linejoin: round;
+        stroke-linecap: square;
+        stroke: #888;
+        fill: #888;
+      }
+    }
+
+    &:hover svg path {
+      stroke: #454545;
+      fill: #454545;
+    }
+  }
+
+  &.expanded .mcc-options-panel {
+    pointer-events: all;
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
 .mcc-options-panel {
+  transform: translate(0, -2.5em);
+  border: 1px solid #e3e3e3;
+  background-color: #fcfcfc;
+  width: 100%;
+  transition: all 0.15s;
   position: relative;
   display: grid;
   grid-template-columns: calc(50% - 5px) calc(50% - 5px);
   grid-template-rows: auto auto auto;
   gap: 5px calc(5px * 2);
   font-size: 12px;
-  border: 1px solid #e3e3e3;
-  background-color: #fcfcfc;
-  padding: 10px;
+  padding: 0.5em 10px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
 }
 
+
+.constrain-selection {
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: #777;
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  line-height: 1.2;
+  grid-column: span 2;
+}
 
 .mcc-opt-list {
   display: flex;

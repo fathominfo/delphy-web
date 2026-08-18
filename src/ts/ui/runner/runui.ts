@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
-import {ExpPopModel, PhyloTree, SkygridPopModel} from '../../pythia/delphy_api';
+import {ExpPopModel, PhyloTree, SkygridPopModel, SummaryTree} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR,
   POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {HistCanvas} from './histcanvas';
@@ -26,6 +26,7 @@ import { HistData } from './histdata';
 import { UIScreen } from '../uiscreen';
 import { enableAnalyticTabs } from '../nav';
 import { RunTree } from './runtree';
+import { MccUI } from '../mccui';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -126,7 +127,7 @@ const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
 
 
 
-export class RunUI extends UIScreen {
+export class RunUI extends MccUI {
   mccRef: MccRef | null;
 
   private runControl: HTMLDivElement;
@@ -138,7 +139,7 @@ export class RunUI extends UIScreen {
 
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
-  private mccTreeCanvas: RunTree;
+  // private mccTreeCanvas: RunTree;
   private mccHeader: HTMLSpanElement;
 
   private traceCanvases: TraceCanvas[] = [];
@@ -148,7 +149,7 @@ export class RunUI extends UIScreen {
   private showAllCanvases = false;
 
 
-  private credibilityInput: BlockSlider;
+  // private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
   private essReadout: HTMLSpanElement;
   private essMeter: HTMLDivElement;
@@ -226,7 +227,7 @@ export class RunUI extends UIScreen {
 
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector);
+    super(sharedState, divSelector, "#runner--mcc .tree-canvas");
     const DEBOUNCE_TIME = 20; // ms
     let lastRequestedBurnInPct = -1;
 
@@ -288,8 +289,8 @@ export class RunUI extends UIScreen {
       requestAnimationFrame(()=>{
         if (this.pythia) {
           const mccRef = this.pythia.getMcc();
-          const tree = mccRef.getMcc();
-          this.mccTreeCanvas.handleHover(nodeIndex, tree);
+          // const tree = mccRef.getMcc();
+          // this.mccTreeCanvas.handleHover(nodeIndex, tree);
           this.scatterPlots.forEach(canvas=>{
             canvas.handleHover(nodeIndex, name);
           });
@@ -298,9 +299,9 @@ export class RunUI extends UIScreen {
       });
     };
     this.mccRef = null;
-    const canvas = document.querySelector("#runner--mcc .tree-canvas") as HTMLCanvasElement;
-    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.mccTreeCanvas = new RunTree(canvas, ctx, this.handleNodeHover);
+    // const canvas = document.querySelector("#runner--mcc .tree-canvas") as HTMLCanvasElement;
+    // const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    // this.mccTreeCanvas = new RunTree(canvas, ctx, this.handleNodeHover);
     this.runControl = document.querySelector("#run-control") as HTMLDivElement;
     this.runInput = this.runControl.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
@@ -549,14 +550,14 @@ export class RunUI extends UIScreen {
 
 
 
-    const credibilityCallback = (value: number) => {
-      const pct = value / 100;
-      this.sharedState.mccConfig.setConfidence(pct);
-      this.setCladeCred();
-    }
-    this.credibilityInput = new BlockSlider(
-      this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement,
-      credibilityCallback);
+    // const credibilityCallback = (value: number) => {
+    //   const pct = value / 100;
+    //   this.sharedState.mccConfig.setConfidence(pct);
+    //   this.setCladeCred();
+    // }
+    // this.credibilityInput = new BlockSlider(
+    //   this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement,
+    //   credibilityCallback);
 
     this.stepSelector.addEventListener('input', ()=>{
       const power = parseInt(this.stepSelector.value);
@@ -813,7 +814,7 @@ export class RunUI extends UIScreen {
     }
     if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
     this.runInput.addEventListener("change", this.runControlHandler);
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
+    // this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.updateParamsUI();
     setTimeout(()=>this.runInput.focus(), 100);
   }
@@ -979,7 +980,7 @@ export class RunUI extends UIScreen {
     this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
       (ele as HTMLSpanElement).innerText = `${confValue}%`;
     });
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
+    // this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     // this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
     this.mccTreeCanvas.colorsUnSet = true;
     if (this.mccTreeCanvas.tree) {
@@ -1045,6 +1046,9 @@ export class RunUI extends UIScreen {
   }
 
 
+  setTreeColors(summary: SummaryTree) : void {
+    this.mccTreeCanvas.setColorsByConfidence(summary);
+  }
 
 
   updateRunData():void {
@@ -1060,11 +1064,11 @@ export class RunUI extends UIScreen {
       this.mccIndex = this.pythia.getAbsoluteMccIndex();
       const mccTree = mccRef.getMcc(),
         nodeConfidence = mccRef.getNodeConfidence();
-      if (mccTree !== this.mccTreeCanvas.tree) {
-        // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
-        this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
-        this.sharedState.resetSelections();
-      }
+      // if (mccTree !== this.mccTreeCanvas.tree) {
+      //   // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
+      //   this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+      //   this.sharedState.resetSelections();
+      // }
       const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
       this.mccMinDate.setTarget(earliestMCCDate);
       if (oldRef) {

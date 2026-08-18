@@ -31,6 +31,7 @@ const Y_EVEN_SELECTOR = `input[name=mcc-opt--y-spacing][value=${Y_EVEN_SPACING}]
   ZOOM_RESET_SELECTOR = '.mcc-zoom-button.reset';
 
 
+
 export class MccConfig {
 
   ySpacing: YSpacing;
@@ -228,8 +229,15 @@ export class MccConfig {
       }
 
       addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
+
+      const mccOptsToggleButton = this.div.querySelector(".toggle") as HTMLButtonElement;
+      mccOptsToggleButton.addEventListener('click', this.mccOptsToggle)
     }
   }
+  mccOptsToggle = (e: Event) => {
+    if (!this.div) return;
+    this.div.classList.toggle("expanded");
+  };
 
   resetZoom() : void {
     this.verticalZoom = 1;
@@ -372,7 +380,8 @@ export class MccConfig {
         }
       };
       removeClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
-
+      const mccOptsToggleButton = this.div.querySelector(".toggle") as HTMLButtonElement;
+      mccOptsToggleButton.removeEventListener('click', this.mccOptsToggle);
     }
   }
 
