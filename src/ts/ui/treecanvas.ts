@@ -520,7 +520,8 @@ export class TreeCanvas {
     labels.forEach(({ dl }) => {
       const measured1 = this.ctx.measureText(dl.label1);
       const measured2 = this.ctx.measureText(dl.label2);
-      // pdf or live canvases
+      // JSpdf's measureText method returns a number,
+      // whereas js canvas retuns TextMetrics that has a width prop
       const w1 = typeof measured1 === "number" ? measured1 : measured1.width;
       const w2 = typeof measured2 === "number" ? measured2 : measured2.width;
       maxLabelWidth = Math.max(maxLabelWidth, w1, w2);
