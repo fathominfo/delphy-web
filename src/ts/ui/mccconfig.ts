@@ -43,8 +43,6 @@ export class MccConfig {
   topologyCallback: ChangeHandler;
   colorCallback: ChangeHandler;
   presentationCallback: ChangeHandler;
-  mccOptsOpen: ChangeHandler;
-  mccOptsClose: ChangeHandler;
   confidenceCallback: (value: number) => void;
   zoomResetCallback: returnless;
 
@@ -123,15 +121,6 @@ export class MccConfig {
     this.confidenceCallback = (value: number) => {
       const confidenceThreshold = value / 100;
       this.setConfidence(confidenceThreshold);
-    };
-
-    this.mccOptsOpen = (event) => {
-      if (!this.div) return;
-      this.div.classList.add("expanded");
-    };
-    this.mccOptsClose = (event) => {
-      if (!this.div) return;
-      this.div.classList.remove("expanded");
     };
 
     this.zoomResetCallback = ()=>console.debug('mccconfig.zoomResetCallback is unassigned');
@@ -241,21 +230,13 @@ export class MccConfig {
 
       addClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
 
-      const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
-      mccOptsOpenButton.addEventListener('click', this.mccOptsToggle)
-      // this.div?.classList.contains("expanded") ? this.mccOptsClose(e) : this.mccOptsOpen(e) });
-      // const mccOptsCloseButton = this.div.querySelector(".dismisser") as HTMLButtonElement;
-      // mccOptsCloseButton.addEventListener('click', this.mccOptsClose);
+      const mccOptsToggleButton = this.div.querySelector(".toggle") as HTMLButtonElement;
+      mccOptsToggleButton.addEventListener('click', this.mccOptsToggle)
     }
   }
   mccOptsToggle = (e: Event) => {
-    if (this.div?.classList.contains("expanded")) {
-      this.div?.classList.remove("expanded");
-      this.mccOptsClose(e);
-    } else {
-      this.div?.classList.add("expanded");
-      this.mccOptsOpen(e);
-    }
+    if (!this.div) return;
+    this.div.classList.toggle("expanded");
   };
 
   resetZoom() : void {
@@ -399,8 +380,8 @@ export class MccConfig {
         }
       };
       removeClickListener(ZOOM_RESET_SELECTOR, this.zoomResetCallback);
-      const mccOptsOpenButton = this.div.querySelector(".toggle") as HTMLButtonElement;
-      mccOptsOpenButton.removeEventListener('click', this.mccOptsToggle);
+      const mccOptsToggleButton = this.div.querySelector(".toggle") as HTMLButtonElement;
+      mccOptsToggleButton.removeEventListener('click', this.mccOptsToggle);
     }
   }
 
