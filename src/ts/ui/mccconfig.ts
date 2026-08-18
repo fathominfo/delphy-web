@@ -305,6 +305,11 @@ export class MccConfig {
     }
   }
 
+  clearMetadata() : void {
+    this.nodeMetadata = null;
+    this.metadataField = null;
+  }
+
   hasMetadata() : boolean {
     return this.nodeMetadata !== null;
   }
