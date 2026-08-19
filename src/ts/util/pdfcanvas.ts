@@ -26,8 +26,6 @@ export class PdfCanvas {
   getContext(): Context2d {return this.ctx;}
 
   save(filename: string): void {
-    /* get rid of the first blank page */
-    this.doc.deletePage(1);
     this.doc.save(filename);
   }
 
