@@ -179,7 +179,9 @@ export class NodeComparison {
     this.showAllMutsToggleLabel = this.div.querySelector(".lineages--node-comparison--show-toggle") as HTMLLabelElement;
     this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
     this.showAllMutsToggle.addEventListener("input", ()=>{
+      this.mutationContainer.classList.add("windowshading");
       this.requestDraw();
+      setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
     });
 
 
