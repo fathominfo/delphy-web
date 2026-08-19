@@ -7,7 +7,7 @@ import {SharedState} from '../../sharedstate';
 import { getMutationName, getMutationNameParts, mutationEquals, siteIndexToLabel } from '../../constants';
 import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
-import { DataResolveType, getPercentLabel, MUTATION_COLOR, Screens, UNSET } from '../common';
+import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, TREE_TEXT_COLOR_2, Screens, UNSET } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
 import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType } from './mutationscommon';
 
@@ -73,7 +73,7 @@ export class MutationsUI extends MccUI {
   treePercentSetter: ParameterSetter;
   tipPercentSetter: ParameterSetter;
 
-
+  canvasMoveHandler: (event:MouseEvent)=>void; // eslint-disable-line no-unused-vars
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#mutations--mcc-canvas")
@@ -213,6 +213,41 @@ export class MutationsUI extends MccUI {
     (this.div.querySelector("#moi-list-tips--button") as HTMLButtonElement).addEventListener('click', ()=>this.tipPercentSetter.toggle());
     (this.div.querySelector("#moi-list-trees--button") as HTMLButtonElement).addEventListener('click', ()=>this.treePercentSetter.toggle());
 
+    this.canvasMoveHandler = (event: MouseEvent) => {
+      if (!this.nodes || this.nodes.length === 0) return;
+      const ctx = this.highlightCanvas?.getContext("2d") || null;
+      if (!ctx) return;
+
+      const dx = event.offsetX,
+        dy = event.offsetY - TREE_TIMELINE_SPACING;
+
+      const allNodes = [...new Set(this.nodes)];
+      const shortestDist = {
+        dist: Infinity,
+        pos: [0, 0],
+        nodeIndex: 0
+      };
+      allNodes.forEach(node => {
+        const pos = this.mccTreeCanvas.getNodePosition(node);
+        const dist = Math.sqrt(Math.pow(dx - pos[0], 2) + Math.pow(dy - pos[1], 2));
+        if (dist < shortestDist.dist) {
+          shortestDist.nodeIndex = node;
+          shortestDist.dist = dist;
+          shortestDist.pos = pos;
+        }
+      })
+      if (shortestDist.dist > Infinity) {
+        const { pos, dist, nodeIndex } = shortestDist;
+        ctx.fillStyle = 'rgb(255, 255, 255)';
+        ctx.fillRect(pos[0] - 20, pos[1] - 10, 40, 20);
+        ctx.fillStyle = TREE_TEXT_COLOR_2;
+        ctx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + 20, pos[1] - 5);
+        console.log(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + 20, pos[1] - 5)
+      } else {
+        // should only clear the label
+        // ctx.clearRect(0, 0, this.highlightCanvas.width, this.highlightCanvas.height)
+      }
+    };
   }
 
 
@@ -225,7 +260,12 @@ export class MutationsUI extends MccUI {
       console.debug('need to reset mutations');
       this.clearRows();
       this.sharedState.markMutationsUpdated();
-
+    }
+    // TODO:
+    // is the canvas event listener working?
+    const canvas = this.mccTreeCanvas.getCanvas();
+    if (canvas instanceof HTMLCanvasElement) {
+      canvas.addEventListener('pointermove', this.canvasMoveHandler);
     }
   }
 

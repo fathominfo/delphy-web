@@ -12,7 +12,8 @@ import {
   TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2,
   DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
   resizeCanvas,
-  UNSET} from './common';
+  UNSET,
+  getPercentLabel} from './common';
 import {getTipCounts} from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
 import { Context2d } from "jspdf";
