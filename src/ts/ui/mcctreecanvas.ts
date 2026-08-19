@@ -26,6 +26,11 @@ type OptionCount = {[name: string]: number};
 const FADE_OPACITY = 0.3;
 
 
+
+// TODO:
+// draw the highest confidence node with a darker color
+// draw an overlay for the %
+
 export class MccTreeCanvas extends TreeCanvas {
   mccConfig : MccConfig | null;
   verticalTips: TipInfo[];

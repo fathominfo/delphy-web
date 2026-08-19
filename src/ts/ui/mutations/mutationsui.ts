@@ -465,7 +465,7 @@ export class MutationsUI extends MccUI {
       const mutationData = {moi, name, times, nodes, minDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
-        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow,
+        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
         minDate, maxDate, this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
       this.rows.forEach(row => row.updateRows(this.rows));
@@ -514,6 +514,9 @@ export class MutationsUI extends MccUI {
     return UNSET;
   }
 
+  updateRowSelection: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
+
+  }
 
   /*
   this is declared as an anonymous function

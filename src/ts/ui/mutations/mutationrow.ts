@@ -1,7 +1,7 @@
 import { NodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType } from './mutationscommon';
 import { getMutationNameParts } from '../../constants';
-import {DistributionSeries, TimeDistributionCanvas} from '../timedistributioncanvas';
-import {MutationOfInterest, FeatureOfInterest} from '../../pythia/mutationsofinterest';
+import { DistributionSeries, TimeDistributionCanvas } from '../timedistributioncanvas';
+import { MutationOfInterest, FeatureOfInterest } from '../../pythia/mutationsofinterest';
 import { UNSET, getPercentLabel } from '../common';
 
 
@@ -13,12 +13,12 @@ const maybeTableBody = document.querySelector("#mutation-rows");
 if (!maybeTableBody) {
   throw new Error("mutations.html doesn't have the container for the mutation rows!");
 }
-const MUTATION_TABLE_BODY = <HTMLDivElement> maybeTableBody;
+const MUTATION_TABLE_BODY = <HTMLDivElement>maybeTableBody;
 const maybeRow = MUTATION_TABLE_BODY.querySelector(".mutation-row");
 if (!maybeRow) {
   throw new Error("mutations.html doesn't have the mutation row template!");
 }
-const MUTATION_ROW_TEMPLATE = <HTMLDivElement> maybeRow;
+const MUTATION_ROW_TEMPLATE = <HTMLDivElement>maybeRow;
 MUTATION_ROW_TEMPLATE.remove();
 
 const ICON_MIN = 2;
@@ -39,11 +39,11 @@ export class MutationRow {
   updateHoverNode: NodeFunctionType;
   goToLineages: NodeFunctionType;
   shiftRow: (row: MutationRow, direction: number) => void;
-  // setMutationActive: (name: string, active: boolean) => void;
+  setMutationActive: (name: string, active: boolean) => void;
   minDate: number;
   maxDate: number;
+  isActive: boolean;
 
-  // detailButton: HTMLElement;
 
   displayOption: DisplayOption;
 
@@ -61,7 +61,7 @@ export class MutationRow {
     updateHoverNode: NodeFunctionType,
     goToLineages: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
-    // setMutationActive: (name: string, active: boolean) => void,
+    setMutationActive: (name: string, active: boolean) => void,
     minDate: number, maxDate: number,
     displayOption: DisplayOption,
     isApobecEnabled: boolean) {
@@ -74,13 +74,12 @@ export class MutationRow {
     // const nodeList = nodes.map(n=>`${n}`).join(',');
     // console.log(`Mutation of Interest "${name}" confidence: ${confidence} mcc nodes: ${nodeList}`)
     // console.log(`Mutation of Interest "${name}" confidence: ${confidence} mcc nodes: ${mutationData.nodes.length}}`)
-    this.rowDiv = <HTMLDivElement> MUTATION_ROW_TEMPLATE.cloneNode(true);
+    this.rowDiv = <HTMLDivElement>MUTATION_ROW_TEMPLATE.cloneNode(true);
     this.rowDiv.setAttribute("data-mutation", moi.name);
     MUTATION_TABLE_BODY.appendChild(this.rowDiv);
 
     this.minDate = minDate;
     this.maxDate = maxDate;
-
     this.rowDiv.addEventListener("pointerenter", () => this.handleMouseenter());
     // this.rowDiv.addEventListener("pointermove", e => this.handleMousemove(e));
     this.rowDiv.addEventListener("pointerleave", e => this.handleMouseleave(e), true);
@@ -94,11 +93,8 @@ export class MutationRow {
       e.stopImmediatePropagation();
     });
 
-    // this.setMutationActive = setMutationActive;
-    // const toggleButton = this.rowDiv.querySelector(".mutation-toggle") as HTMLButtonElement;
-    // toggleButton.addEventListener("click", this.toggleActive);
-    // this.detailButton = this.rowDiv.querySelector(".mutation-detail") as HTMLButtonElement;
-
+    this.isActive = false;
+    this.setMutationActive = setMutationActive;
     this.shiftRow = shiftRow;
     this.displayOption = displayOption;
     this.prevButton = this.rowDiv.querySelector(".mutation-prev") as HTMLButtonElement;
@@ -122,7 +118,7 @@ export class MutationRow {
     this.updateHoverNode = updateHoverNode;
     this.goToLineages = goToLineages;
 
-    const nameDiv:HTMLDivElement|null = this.rowDiv.querySelector(".mutation-name");
+    const nameDiv: HTMLDivElement | null = this.rowDiv.querySelector(".mutation-name");
     if (!nameDiv) {
       throw new Error("mutation row has nowhere for the name to go");
     }
@@ -162,7 +158,7 @@ export class MutationRow {
     this.listFOI(FeatureOfInterest.MultipleIntroductions, ".stats--multi-intro");
   }
 
-  listFOI(foi: FeatureOfInterest, selector: string) : void {
+  listFOI(foi: FeatureOfInterest, selector: string): void {
     const features = this.moi?.features;
     if (features && features[foi]) {
       const foiHtml = this.rowDiv.querySelector(selector) as HTMLElement;
@@ -178,43 +174,29 @@ export class MutationRow {
   }
 
   handleMouseenter = () => {
-    this.rowDiv.querySelectorAll(".hidden-label").forEach(label => label.classList.remove("hide-details"));
-    this.updateHoverRow(this, false);
+    const hasActiveMutation = this.rows.some(row => row.isActive === true);
+    if (hasActiveMutation) return;
+    this.updateHoverRow(this, this.isActive);
   }
 
   handleMouseleave = (event: PointerEvent) => {
+    const hasActiveMutation = this.rows.some(row => row.isActive === true);
+    if (hasActiveMutation) return;
     if (event.target === this.rowDiv) {
-      this.updateHoverRow(null, false);
-      this.rowDiv.querySelectorAll(".hidden-label").forEach(label => label.classList.add("hide-details"));
+      this.updateHoverRow(this.isActive ? this : null, this.isActive);
     }
   }
 
-  handleClick = (e?: Event) => {
+  handleClick = (e?: MouseEvent) => {
     if (this.displayOption === "grid") return;
 
     if (e) {
       const target = e.target as HTMLElement;
       if (target.closest(".grip") || target.closest("button")) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
     }
-
-    this.rowDiv.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-
-    this.timeCanvas.resize();
-    this.timeCanvas.draw();
-
-    this.updateHoverRow(this, true);
-
-    this.rowDiv.style.backgroundColor = `${this.color}22`;
-    this.rowDiv.classList.add("mutation-row-selected")
-  }
-
-  collapse() {
-    this.rowDiv.classList.remove("expanded");
-    this.timeCanvas.resize();
-    this.timeCanvas.draw();
+    this.toggleActive();
   }
 
   handleKeydown = (e: KeyboardEvent) => {
@@ -223,13 +205,19 @@ export class MutationRow {
     }
   }
 
-  // toggleActive = (e: MouseEvent) => {
-  //   e.preventDefault();
-  //   this.rowDiv.classList.toggle("inactive");
-  //   this.setMutationActive(this.moi.name, this.isActive);
-  //   this.updateHoverRow(this, false);
-  //   e.stopImmediatePropagation();
-  // }
+  toggleActive() {
+    const wasActive = this.isActive;
+    this.rows.forEach(row => {
+      row.isActive = false;
+      row.rowDiv.classList.remove("mutation-row-selected");
+      row.rowDiv.style.backgroundColor = "#FAFAFA";
+    })
+    this.isActive = !wasActive;
+    this.setMutationActive(this.moi.name, this.isActive);
+    this.updateHoverRow(this.isActive ? this : null, this.isActive);
+    this.rowDiv.classList.toggle("mutation-row-selected", this.isActive);
+    this.rowDiv.style.backgroundColor = this.isActive ? `${this.color}22` : "#FAFAFA";
+  }
 
   setDisplayOption(displayOption: DisplayOption) {
     this.displayOption = displayOption;
@@ -249,5 +237,5 @@ export class MutationRow {
 }
 
 
-export const clearMutationRows = ()=>MUTATION_TABLE_BODY.innerHTML = '';
+export const clearMutationRows = () => MUTATION_TABLE_BODY.innerHTML = '';
 
