@@ -27,6 +27,7 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
   ancestorNodeNameSelector = '.lineages--node-comparison--ancestor-node',
   descendantNodeNameSelector = '.lineages--node-comparison--descendant-node',
   mutationCountSelector = '.lineages--node-comparison--mutation-count',
+  showMutationSelector = '.lineages--node-comparison--mutation-header .lnc-mutation-min',
   mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
   nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
 
@@ -105,6 +106,7 @@ export class NodeComparison {
   node1Span: HTMLSpanElement;
   node2Span: HTMLSpanElement;
   mutationCountSpan: HTMLSpanElement;
+  shownMutationCountSpan: HTMLSpanElement;
   mutationThresholdSpan: HTMLSpanElement;
   nodePair: NodePair;
   nodeTimesCanvas: HighlightableTimeDistributionCanvas;
@@ -117,6 +119,7 @@ export class NodeComparison {
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
   nodeHighlightCallback: NodeCallback;
+  showAllMutsToggleLabel: HTMLLabelElement;
   showAllMutsToggle: HTMLInputElement;
   isApobecRun: boolean;
 
@@ -129,6 +132,7 @@ export class NodeComparison {
       node1Span = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
       node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
       mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
+      shownMutationCountSpan = this.div.querySelector(showMutationSelector) as HTMLSpanElement,
       mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement,
       canvas = this.div.querySelector(nodeTimesCanvasSelector) as HTMLCanvasElement,
       overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement,
@@ -140,6 +144,7 @@ export class NodeComparison {
     this.node1Span = node1Span;
     this.node2Span = node2Span;
     this.mutationCountSpan = mutationCountSpan;
+    this.shownMutationCountSpan = shownMutationCountSpan;
     this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
     this.minDate = minDate;
@@ -171,7 +176,8 @@ export class NodeComparison {
     } else {
       overlapSpan.classList.add('hidden');
     }
-    this.showAllMutsToggle = this.div.querySelector(".lineages--node-comparison--show-toggle input") as HTMLInputElement;
+    this.showAllMutsToggleLabel = this.div.querySelector(".lineages--node-comparison--show-toggle") as HTMLLabelElement;
+    this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
     this.showAllMutsToggle.addEventListener("input", ()=>{
       this.requestDraw();
     });
@@ -229,6 +235,9 @@ export class NodeComparison {
     this.mutationData = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
     const count = this.mutationData.length;
     this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
+    const shownCount = this.showAllMutsToggle.checked ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
+    this.shownMutationCountSpan.innerText = `${shownCount}`;
+    this.showAllMutsToggleLabel.classList.toggle("hidden", shownCount === count);
     let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
     if (mutationPrevalenceThreshold < 1.0) {
       thresholdLabel += ' or more'
