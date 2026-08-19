@@ -75,10 +75,13 @@ export class Metadata {
     const lines = text.split('\n');
     const rows = [];
     while (lines.length) {
-      const row = handleLine(lines, delimiter)
-      rows.push(row.map(cleanup));
+      try {
+        const row = handleLine(lines, delimiter)
+        rows.push(row.map(cleanup));
+      } catch (err) {
+        console.warn("err while parsing", err);
+      }
     }
-
 
     const header = rows.shift();
     if (!header) {
@@ -109,23 +112,46 @@ export class Metadata {
     /*
     track all the different values in the metadata file…
     */
+    const colsWithoutHeaderCounts: number[] = [];
     this.rows.forEach(row => {
       row.forEach((value, colNum) => {
         if (!this.columnSummaries[colNum]) {
           console.warn(`no column summary for column ${colNum + 1} (value: '${value}')`);
+          if (colsWithoutHeaderCounts[colNum] === undefined) {
+            colsWithoutHeaderCounts[colNum] = 1;
+          } else {
+            colsWithoutHeaderCounts[colNum]++;
+          }
         } else {
           this.columnSummaries[colNum].initValue(value);
         }
       });
     });
+
+    if (colsWithoutHeaderCounts.length > 0) {
+      let missingHeaderMsg = '';
+      const headerlessCols = colsWithoutHeaderCounts.map((count, colNum) => [count, colNum]).filter(item=>!!item);
+      if (headerlessCols.length === 1) {
+        const [count] = headerlessCols[0];
+        missingHeaderMsg = `We detected a column in the metadata file with data for ${ count } rows but no header.`;
+      } else {
+        missingHeaderMsg = `We detected ${ headerlessCols.length } columns in the metadata file without headers.`;
+      }
+      alert(`${missingHeaderMsg} We can't track columns without headers, but you can try to fix the file and reload it.`);
+    }
+
     /*
     …but only tally the ones that show up in the tree
+    ---- note: I don't think we are constraining our tallies
+    to the records that are in the tree (and we still should) [mark 260818]
     */
     nodeMetadata.tipMetadataRow.forEach((metadataRowIndex)=>{
       const row = this.rows[metadataRowIndex];
       if (row) {
         row.forEach((value, colNum) => {
-          this.columnSummaries[colNum].add(value);
+          if (this.columnSummaries[colNum] !== undefined) {
+            this.columnSummaries[colNum].add(value);
+          }
         });
       }
     });

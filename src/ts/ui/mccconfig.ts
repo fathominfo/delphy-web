@@ -63,7 +63,6 @@ export class MccConfig {
   metadataColorsDirty: boolean;
 
 
-
   /*
   used to notify a listener that a change has occurred.
   Instead of notifying of specific change, the listening
@@ -138,11 +137,18 @@ export class MccConfig {
     this.updateCallback = callback;
   }
 
-  setMetadata(metadata: Metadata, tree: SummaryTree) : void {
+
+  /*
+  @param applyUpdate: you can send `false` when there's other work to be done
+  before updating the current page with the metadata.
+  */
+  setMetadata(metadata: Metadata, tree: SummaryTree, applyUpdate = true) : void {
     this.metadata = metadata;
     this.nodeMetadata = new NodeMetadata(metadata, tree, tree.getBaseTree(0));
     this.metadata.summarize(this.nodeMetadata);
-    this.updateCallback();
+    if (applyUpdate) {
+      this.updateCallback();
+    }
   }
 
   setMetadataField(field: string, colors: ColorDict) : void {
@@ -305,6 +311,11 @@ export class MccConfig {
       this.confidenceThreshold = confidenceThreshold;
       this.updateCallback();
     }
+  }
+
+  clearMetadata() : void {
+    this.nodeMetadata = null;
+    this.metadataField = null;
   }
 
   hasMetadata() : boolean {
