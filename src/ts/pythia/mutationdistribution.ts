@@ -6,6 +6,7 @@ export class MutationDistribution {
   // treeIndices: number[];
   possibleTrees: number;
   isApobecCtx: boolean;
+  treeIndices: Set<number>;
 
   constructor(mut: Mutation, totalTrees: number, isApobecCtx: boolean) {
     this.mutation = mut;
@@ -13,6 +14,7 @@ export class MutationDistribution {
     // this.treeIndices = [];
     this.possibleTrees = totalTrees;
     this.isApobecCtx = isApobecCtx;
+    this.treeIndices = new Set();
   }
 
   // addTime(t: number, treeIndex: number): void {
@@ -20,12 +22,13 @@ export class MutationDistribution {
   //   this.treeIndices.push(treeIndex);
   // }
 
-  addTime(t: number): void {
+  addTime(t: number, treeIndex: number): void {
+    this.treeIndices.add(treeIndex);
     this.times.push(t);
   }
 
   getConfidence():number {
-    return this.times.length / this.possibleTrees;
+    return this.treeIndices.size / this.possibleTrees;
   }
 
 }
