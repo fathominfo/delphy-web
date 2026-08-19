@@ -14,22 +14,12 @@ if (!maybeTableBody) {
   throw new Error("mutations.html doesn't have the container for the mutation rows!");
 }
 const MUTATION_TABLE_BODY = <HTMLDivElement> maybeTableBody;
-
-const nodeDetail = document.querySelector(".node-detail");
-if (!nodeDetail) {
-  throw new Error("mutations.html doesn't have the node detail template");
-}
-const NODE_DETAIL_TEMPLATE = <HTMLElement>nodeDetail;
-NODE_DETAIL_TEMPLATE.remove();
-
 const maybeRow = MUTATION_TABLE_BODY.querySelector(".mutation-row");
 if (!maybeRow) {
   throw new Error("mutations.html doesn't have the mutation row template!");
 }
 const MUTATION_ROW_TEMPLATE = <HTMLDivElement> maybeRow;
 MUTATION_ROW_TEMPLATE.remove();
-
-const MAX_NODES = 3;
 
 const ICON_MIN = 2;
 const ICON_MAX = 17;
@@ -43,7 +33,6 @@ export class MutationRow {
   rowDiv: HTMLDivElement;
   timeCanvas: TimeDistributionCanvas;
   nodes: NodeData[];
-  topNodes: NodeData[] = [];
   removeRow: (row: MutationRow) => void;
   getNodeRelativeSize: (tipCount: number) => number;
   updateHoverRow: RowFunctionType;
@@ -80,6 +69,7 @@ export class MutationRow {
     const moi = mutationData.moi;
     this.moi = moi;
     this.color = mutationData.color;
+    this.nodes = mutationData.nodes;
     // const {name, confidence} = moi;
     // const nodeList = nodes.map(n=>`${n}`).join(',');
     // console.log(`Mutation of Interest "${name}" confidence: ${confidence} mcc nodes: ${nodeList}`)
@@ -98,11 +88,11 @@ export class MutationRow {
     this.rowDiv.addEventListener("keydown", e => this.handleKeydown(e));
 
     this.removeRow = removeRow;
-    // const dismissButton = this.rowDiv.querySelector(".mutation-dismiss") as HTMLButtonElement;
-    // dismissButton.addEventListener("click", e => {
-    //   this.removeRow(this);
-    //   e.stopImmediatePropagation();
-    // });
+    const dismissButton = this.rowDiv.querySelector(".mutation-dismiss") as HTMLButtonElement;
+    dismissButton.addEventListener("click", e => {
+      this.removeRow(this);
+      e.stopImmediatePropagation();
+    });
 
     // this.setMutationActive = setMutationActive;
     // const toggleButton = this.rowDiv.querySelector(".mutation-toggle") as HTMLButtonElement;
@@ -142,15 +132,8 @@ export class MutationRow {
     (nameDiv.querySelector(".allele-to") as HTMLElement).innerText = `${nameParts[2]}`;
 
     this.rowDiv.classList.toggle('is-apobec', isApobecEnabled && moi.isApobec >= moi.treeCount * .5);
-
-    (this.rowDiv.querySelector(".stats--tip-count strong") as HTMLElement).innerText = `${moi.medianTipCount}`;
-    (this.rowDiv.querySelector(".stats--confidence strong") as HTMLElement).innerText = `${getPercentLabel(moi.confidence)}%`;
-
-    this.nodes = mutationData.nodes.slice(0);
-    this.createNodes();
-
-    //TODO: what to do when the detail labels wrap around?
-    // this.rowDiv.style.height = `${(this.rowDiv.querySelector(".mutation-right")?.getBoundingClientRect().height ?? 0) + 30}px`
+    (this.rowDiv.querySelector(".stats--confidence .mutation-confidence") as HTMLElement).textContent = `${getPercentLabel(moi.confidence)}%`;
+    (this.rowDiv.querySelector(".stats--confidence .highest-node-confidence") as HTMLElement).textContent = `${getPercentLabel(this.nodes[0].confidence ?? 0)}%`;
 
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
     if (!canvas) {
@@ -187,52 +170,6 @@ export class MutationRow {
       const conf = getPercentLabel(features[foi].confidence);
       (foiHtml.querySelector(".stats-conf") as HTMLElement).innerText = `${conf}%`;
     }
-  }
-
-  createNodes() {
-    const uniqueNodes: {index: number, count: number, tips: number, confidence: number}[] = [];
-    this.nodes.forEach(node => {
-      let existing = uniqueNodes.find(uniqueNode => uniqueNode.index === node.index);
-      if (!existing) {
-        existing = Object.assign({}, node, {count: 0});
-        uniqueNodes.push(existing);
-      }
-      existing.count += 1;
-    });
-    const sortedNodes = uniqueNodes.sort((a, b) => b.count - a.count);
-
-    const totalCount = this.nodes.length;
-    const nodeList = this.rowDiv.querySelector(".nodes-list") as HTMLElement;
-    for (let i = 0; i < MAX_NODES; i++) {
-      const node = sortedNodes[i];
-      if (node) {
-        const nodeHtml = NODE_DETAIL_TEMPLATE.cloneNode(true) as HTMLElement;
-        nodeHtml.addEventListener("mouseover", () => this.updateHoverNode(node.index));
-        nodeHtml.addEventListener("mouseout", () => this.updateHoverNode());
-        nodeHtml.addEventListener("click", () => this.goToLineages(node.index));
-        nodeList.appendChild(nodeHtml);
-        nodeHtml.setAttribute("data-node-index", `${node.index}`);
-        const prevalence = node.count / totalCount;
-        (nodeHtml.querySelector(".node--prevalence") as HTMLElement).innerText = `${getPercentLabel(prevalence)}%`;
-        const tips = node.tips;
-        (nodeHtml.querySelector(".node--tip-count") as HTMLElement).innerText = `${tips}`;
-        const relSize = this.getNodeRelativeSize(tips);
-        const iconSize = this.getIconSize(relSize * 100);
-        const icon = nodeHtml.querySelector(".node-icon") as HTMLElement;
-        icon.style.width = `${iconSize}px`;
-        icon.style.height = `${iconSize}px`;
-      }
-    }
-
-    if (sortedNodes.length > MAX_NODES) {
-      const hiddenNodesHtml = this.rowDiv.querySelector(".hidden-nodes-count") as HTMLElement;
-      hiddenNodesHtml.classList.remove("hidden");
-      const hiddenNodes = sortedNodes.length - MAX_NODES;
-      (hiddenNodesHtml.querySelector(".count") as HTMLElement).innerText = `${hiddenNodes}`;
-      (hiddenNodesHtml.querySelector(".plural") as HTMLElement).classList.toggle("hidden", hiddenNodes === 1);
-    }
-
-    this.topNodes = sortedNodes.slice(0, MAX_NODES);
   }
 
   getIconSize(pct: number): number {

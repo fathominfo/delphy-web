@@ -157,6 +157,7 @@
         </div>
         <span class="order-indicator"></span> <!-- span instead of div to avoid interfering with nth-of-type-->
         <div id="mutation-rows" class="list">
+
           <div class="mutation-row" tabindex="0" data-mutation="">
            <div class="grip">
                 <button type="button" class="mutation-prev" aria-label="Move mutation up">
@@ -169,18 +170,23 @@
                     <div class="glyph"></div>
                   </div>
                 </button>
-              </div>
-
+            </div>
+            <div class="mutation-row-delete">
+              <button class="mutation-dismiss" aria-label="Dismiss mutation">
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
+              </button>
+            </div>
 
           
-            <div class="mutation-left">
+            <div class="mutation-top">
                  <div class="mutation-info">     
                
                 <div class="mutation-name">
                 <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
                 <span class="is-apobec">APOBEC</span>
               </div>
-
               <div class="mutation-stats">
                   <div class="stats--badges">
                     <div class="stats--reversals stats-badge hidden">
@@ -212,9 +218,16 @@
                       <div class="small-label stats-conf"></div>
                     </div>
                   </div>
-                </div>
+                  <div class="stats--confidence">
+                    <div class="confidence-title">Appearance in base trees</div>
+                    <div class="small-label">Mutation</div>
+                    <div class="small-label">Highest confidence node</div>
+                    <div class="mutation-confidence"><strong>00%</strong></div>
+                    <div class="highest-node-confidence"><strong>00%</strong></div>
+                  </div>
               </div>
-
+              </div>
+              
               <!-- <div class="mutation-icons">
                   <button class="mutation-dismiss" aria-label="Dismiss mutation">
                     <div class="box"><div class="glyph"></div></div>
@@ -247,46 +260,6 @@
               </div>
             </div>
             
-            <div class="mutation-right">
-           
-
-
-            <div class="mutation-stats-header">
-              <div></div>
-              <div class="small-label">Tips</div>
-              <div class="small-label">Appears in</div>
-            </div>
-          
-            <div class="mutation-stats">
-              <div class="node-icon"></div>
-              <div class="stats--tip-count">
-                <div><strong>000</strong></div>
-              </div>
-          
-              <div class="stats--confidence">
-                <div><strong>00%</strong> of trees</div>
-              </div>
-            </div>
-
-              <!-- <div class="small-label">representative nodes</div> -->
-              
-              <div class="mutation-nodes">
-                <div class="nodes-list">
-                  <button class="node-detail">
-                    <!-- <div class="node-info"> -->
-                        <div class="node-icon"></div>
-                      <div class="node-stats"><span class="node--tip-count">770</span>
-                      </div>
-                      <div class="node-title"><span class="node--prevalence">60%</span></div>
-                    <!-- </div> -->
-                                         
-                  </button>
-                </div>
-                <div class="hidden-nodes-count hidden"><strong class="count">0</strong> more node<span
-                    class="plural">s</span> hidden</div>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>

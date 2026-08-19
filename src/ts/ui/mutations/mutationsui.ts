@@ -524,7 +524,7 @@ export class MutationsUI extends MccUI {
   updateHoverRow: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
     let moi : MutationOfInterest | null = null;
     if (row) {
-      this.nodes = row.topNodes.map(node => node.index);
+      this.nodes = row.nodes.map(node => node.index);
       const rowIndex = this.rows.indexOf(row);
       if (rowIndex !== UNSET) {
         this.hoverColor = this.rows[rowIndex].color;
