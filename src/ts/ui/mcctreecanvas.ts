@@ -26,8 +26,6 @@ type OptionCount = {[name: string]: number};
 const FADE_OPACITY = 0.3;
 
 
-
-
 export class MccTreeCanvas extends TreeCanvas {
   mccConfig : MccConfig | null;
   verticalTips: TipInfo[];

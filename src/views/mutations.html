@@ -159,17 +159,17 @@
         <div id="mutation-rows" class="list">
 
           <div class="mutation-row" tabindex="0" data-mutation="">
-           <div class="grip">
-                <button type="button" class="mutation-prev" aria-label="Move mutation up">
-                  <div class="box">
-                    <div class="glyph"></div>
-                  </div>
-                </button>
-                <button type="button" class="mutation-next" aria-label="Move mutation down">
-                  <div class="box">
-                    <div class="glyph"></div>
-                  </div>
-                </button>
+            <div class="grip">
+              <button type="button" class="mutation-prev" aria-label="Move mutation up">
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
+              </button>
+              <button type="button" class="mutation-next" aria-label="Move mutation down">
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
+              </button>
             </div>
             <div class="mutation-row-delete">
               <button class="mutation-dismiss" aria-label="Dismiss mutation">
@@ -178,93 +178,71 @@
                 </div>
               </button>
             </div>
-
-          
             <div class="mutation-wrapper">
-                 <div class="mutation-info">     
-               
+              <div class="mutation-info">
                 <div class="mutation-name">
                 <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
                 <span class="is-apobec">APOBEC</span>
               </div>
               <div class="mutation-stats">
-                  <div class="stats--badges">
-                    <div class="stats--reversals stats-badge hidden">
-                      <div class="box" aria-label aria-hidden="true">
-                        <div class="glyph"></div>
-                      </div>
-                      <div class="stats-title">Reversals</div>
-                      <div class="stats-conf"></div>
+                <div class="stats--badges">
+                  <div class="stats--reversals stats-badge hidden">
+                    <div class="box" aria-label aria-hidden="true">
+                      <div class="glyph"></div>
                     </div>
-                    <div class="stats--same-site stats-badge hidden">
-                      <div class="box" aria-hidden="true">
-                        <div class="glyph"></div>
-                      </div>
-                      <div class="stats-title">Same-site mutations</div>
-                      <div class="stats-conf"></div>
-                    </div>
-                    <div class="stats--multi-intro stats-badge hidden">
-                      <div class="box" aria-hidden="true">
-                        <div class="glyph"></div>
-                      </div>
-                      <div class="stats-title">Multiple intros</div>
-                      <div class="stats-conf"></div>
-                    </div>
-                    <div class="stats--root-variation stats-badge hidden">
-                      <div class="box" aria-hidden="true">
-                        <div class="glyph"></div>
-                      </div>
-                      <div class="stats-title">Root variation</div>
-                      <div class="stats-conf"></div>
-                    </div>
+                    <div class="stats-title">Reversals</div>
+                    <div class="stats-conf"></div>
                   </div>
-                  <div class="stats--confidence">
-                    <div class="stats-title">Appearance in base trees</div>
-                    <div class="stats-mutation-confidence-wrapper">
-                      <div class="small-label">Mutation</div>
-                      <div class="mutation-confidence list"><strong>00%</strong></div>
-                      <div class="mutation-confidence grid"><strong>00%</strong><span> of base trees</span></div>
+                  <div class="stats--same-site stats-badge hidden">
+                    <div class="box" aria-hidden="true">
+                      <div class="glyph"></div>
                     </div>
-                    <div class="stats-node-confidence-wrapper">
-                      <div class="small-label">Highest confidence node</div>
-                      <div class="highest-node-confidence"><strong>00%</strong></div>
-                    </div>
+                    <div class="stats-title">Same-site mutations</div>
+                    <div class="stats-conf"></div>
                   </div>
+                  <div class="stats--multi-intro stats-badge hidden">
+                    <div class="box" aria-hidden="true">
+                      <div class="glyph"></div>
+                    </div>
+                    <div class="stats-title">Multiple intros</div>
+                    <div class="stats-conf"></div>
+                  </div>
+                  <div class="stats--root-variation stats-badge hidden">
+                    <div class="box" aria-hidden="true">
+                      <div class="glyph"></div>
+                    </div>
+                    <div class="stats-title">Root variation</div>
+                    <div class="stats-conf"></div>
+                  </div>
+                </div>
+                <div class="stats--confidence">
+                  <div class="stats-title">Appearance in base trees</div>
+                  <div class="stats-mutation-confidence-wrapper">
+                    <div class="small-label">Mutation</div>
+                    <div class="mutation-confidence list"><strong>00%</strong></div>
+                    <div class="mutation-confidence grid"><strong>00%</strong><span> of base trees</span></div>
+                  </div>
+                  <div class="stats-node-confidence-wrapper">
+                    <div class="small-label">Highest confidence node</div>
+                    <div class="highest-node-confidence"><strong>00%</strong></div>
+                  </div>
+                </div>
               </div>
-              </div>
-              
-              <!-- <div class="mutation-icons">
-                  <button class="mutation-dismiss" aria-label="Dismiss mutation">
-                    <div class="box"><div class="glyph"></div></div>
-                  </button>
-                  <button class="mutation-toggle on" aria-label="Toggle mutation visibility">
-                    <div class="box"><div class="glyph"></div></div>
-                  </button>
-                  <button class="mutation-detail expand" aria-label="Toggle mutation detail">
-                    <div class="box"><div class="glyph"></div></div>
-                  </button>
-                </div> -->
-              <!-- <div class="hint hint-expand">Expand mutation…</div>
-                <div class="hint hint-collapse">Collapse mutation…</div> -->
-              
-              <div class="mutation-charts">
-                <div class="mutation-time-dist">
-                  <!-- <div class="small-label">Time distribution of mutation</div> -->
-                  <div class="canvas-container">
-                    <canvas></canvas>
-                    <div class="time-chart--readout">
-                      <div class="time-chart--date"></div>
-                      <div class="time-chart--series">
-                        <!-- <div class="dot"></div> -->
-                        <span class="value-label">##%</span>
-                        <span class="series-label"></span>
-                      </div>
+            </div>
+            <div class="mutation-charts">
+              <div class="mutation-time-dist">
+                <div class="canvas-container">
+                  <canvas></canvas>
+                  <div class="time-chart--readout">
+                    <div class="time-chart--date"></div>
+                    <div class="time-chart--series">
+                      <span class="value-label">##%</span>
+                      <span class="series-label"></span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       </div>
