@@ -7,7 +7,7 @@ import {SharedState} from '../../sharedstate';
 import { getMutationName, getMutationNameParts, mutationEquals, siteIndexToLabel } from '../../constants';
 import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
-import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, TREE_TEXT_COLOR_2, Screens, UNSET, CHART_TEXT_FONT } from '../common';
+import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
 import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType } from './mutationscommon';
 
@@ -45,6 +45,7 @@ const colorsUsed: string[] = [];
 
 const MOUSE_LABEL_DIST = 15;
 const LABEL_W = 40, LABEL_H = 20;
+const LABEL_TEXT_COLOR = "#000";
 
 
 
@@ -250,25 +251,10 @@ export class MutationsUI extends MccUI {
   drawConfidenceLabel(pos: number[], nodeIndex: number) {
     this.highlightCtx.fillStyle = "#eee";
     this.highlightCtx.fillRect(pos[0] + LABEL_W / 4, pos[1] - LABEL_H / 2 + TREE_TIMELINE_SPACING, LABEL_W, LABEL_H);
-    this.highlightCtx.fillStyle = TREE_TEXT_COLOR_2;
+    this.highlightCtx.fillStyle = LABEL_TEXT_COLOR;
     this.highlightCtx.font = CHART_TEXT_FONT;
     this.highlightCtx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + LABEL_W / 2, pos[1] + LABEL_H / 4 + TREE_TIMELINE_SPACING);
   }
-
-  drawAllConfidenceLabel() {
-    if (!this.nodes || this.nodes.length === 0 || !this.highlightCtx) return;
-
-    this.nodes.forEach(node => {
-      const pos = this.mccTreeCanvas.getNodePosition(node);
-
-      this.highlightCtx.fillStyle = "#eee";
-      this.highlightCtx.fillRect(pos[0] + LABEL_W / 4, pos[1] - LABEL_H / 2 + TREE_TIMELINE_SPACING, LABEL_W, LABEL_H);
-      this.highlightCtx.fillStyle = TREE_TEXT_COLOR_2;
-      this.highlightCtx.font = CHART_TEXT_FONT;
-      this.highlightCtx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[node])}%`, pos[0] + LABEL_W / 2, pos[1] + LABEL_H / 4 + TREE_TIMELINE_SPACING);
-    })
-  }
-
 
   activate() {
     super.activate();
@@ -278,10 +264,10 @@ export class MutationsUI extends MccUI {
       this.clearRows();
       this.sharedState.markMutationsUpdated();
     }
-    // const canvas = this.mccTreeCanvas.getCanvas();
-    // if (canvas instanceof HTMLCanvasElement) {
-    //   canvas.addEventListener('pointermove', (e) => this.canvasMoveHandler(e));
-    // }
+    const canvas = this.mccTreeCanvas.getCanvas();
+    if (canvas instanceof HTMLCanvasElement) {
+      canvas.addEventListener('pointermove', (e) => this.canvasMoveHandler(e));
+    }
   }
 
   resize() : void {
@@ -631,7 +617,7 @@ export class MutationsUI extends MccUI {
       this.nodes.forEach((node) => {
         this.drawHighlightNode(node, this.hoverColor, ctx, treeCanvas, mcc);
         const pos = this.mccTreeCanvas.getNodePosition(node);
-        this.drawConfidenceLabel(pos, node)
+        this.drawConfidenceLabel(pos, node);
       });
       mccRef.release();
     }
@@ -787,12 +773,6 @@ export class MutationsUI extends MccUI {
         row.timeCanvas.resize();
         row.timeCanvas.draw();
       });
-    } else {
-      // this.rows.forEach(row => {
-      // if (row.isExpanded) {
-      //   row.collapse();
-      // }
-      // });
     }
   }
 

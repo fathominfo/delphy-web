@@ -723,30 +723,55 @@
   }
 
   &.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    align-content: start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  align-content: start;
 
-    .mutation-row {
-      .mutation-right {
+  .mutation-row {
+  
+      .mutation-confidence.list {
+        display: none;
+      }
+  
+      .mutation-confidence.grid {
+        font-size: 12px;
+  
+        span {
+          font-weight: 600;
+          font-size: 9px;
+        }
+  
+        display: block;
+      }
+  
+      .mutation-info,
+      .mutation-stats {
+        flex-direction: column;
+        gap: 0.5em;
+      }
+  
+      .stats-node-confidence-wrapper,
+      .stats-title,
+      .stats--badges,
+      .mutation-charts {
         display: none;
       }
     }
 
-    .order-indicator {
-      height: 100%;
-      width: 120px;
-      margin: 0 0.5em;
-    }
-
-    .mutation-prev .glyph {
-      .masked(url("/assets/icons/arrow-left.svg"));
-    }
-
-    .mutation-next .glyph {
-      .masked(url("/assets/icons/arrow-right.svg"));
-    }
+  .order-indicator {
+    height: 100%;
+    width: 120px;
+    margin: 0 0.5em;
   }
+
+  .mutation-prev .glyph {
+    .masked(url("/assets/icons/arrow-left.svg"));
+  }
+
+  .mutation-next .glyph {
+    .masked(url("/assets/icons/arrow-right.svg"));
+  }
+}
 }
 
 .order-indicator {
@@ -772,6 +797,14 @@
   padding-left: 30px;
 
   transition: 0.15s background-color, 0.15s ease-in-out height, 0.15s ease-in-out min-height;
+
+  .mutation-confidence.grid {
+      display: none;
+    }
+
+  .mutation-confidence.list {
+      display: block;
+    }
 
   &.moving {
     position: absolute;
@@ -837,29 +870,39 @@
       }
     }
   }
-
-  .stats--confidence {
-    display: grid;
-    row-gap: 0.2em;
-    column-gap: 0.5em;
-
-    .confidence-title {
+    .stats-title {
+  
       color: #888;
-      grid-column: span 2;
       font-weight: 700;
       line-height: 1;
       font-size: 9px;
       text-transform: lowercase;
       font-variant: small-caps;
     }
-
-    .mutation-confidence,
-    .highest-node-confidence {
-      font-weight: 700;
-      font-size: 12px;
+  
+    .stats--confidence {
+      display: grid;
+      row-gap: 0.2em;
+      column-gap: 1.5em;
+  
+      .stats-title {
+        @media (min-width:1200px) {
+          grid-column: span 2;
+        }
+      }
+  
+      .mutation-confidence,
+      .highest-node-confidence {
+        font-weight: 700;
+        font-size: 1.1em;
+      }
+  
+  
+      .stats-mutation-confidence-wrapper,
+      .stats-node-confidence-wrapper {
+        line-height: 1.3;
+      }
     }
-  }
-
 
   .mutation-row-delete {
     position: absolute;
@@ -1163,7 +1206,7 @@
     display: inline-block;
   }
 
-  .mutation-top {
+  .mutation-wrapper {
     flex: 2;
     display: flex;
     flex-direction: column;
@@ -1173,7 +1216,7 @@
 
   .mutation-charts {
     flex: 1 1 auto;
-    min-height: 0;
+    min-height: 3em;
     max-height: 4em;
 
     .mutation-time-dist {
@@ -1231,8 +1274,7 @@
     }
 
     .mutation-stats,
-    .mutation-stats-header,
-    .node-detail {
+    .mutation-stats-header {
       padding: 0.3em 0;
       // display: grid;
       // grid-template-columns: 1fr 1fr 2fr;
@@ -1247,39 +1289,10 @@
     }
   }
 
-  .node-detail {
-    cursor: pointer;
-    position: relative;
-    gap: 0;
-
-    background-color: #f5f5f5;
-
-    &:hover {
-      background-color: #eee;
-    }
-
-    .node-icon {
-      background-color: rgb(142, 142, 142);
-      border-radius: 50%;
-    }
-
-    .node-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5em;
-      line-height: 1;
-
-      span {
-        font-weight: bolder;
-      }
-    }
-
-  }
-
   .stats--badges {
     display: flex;
     gap: 0.5em;
-    height: 10px;
+    // height: 10px;
     align-items: center;
   }
 
@@ -1299,14 +1312,14 @@
 
   }
 
-  .mutation-top .mutation-stats {
+  .mutation-wrapper .mutation-stats {
     display: flex;
     font-size: 12px;
     flex: 5;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    margin-right: 1.4em;
+    margin-right: 2.5em;
     .smoothly(font-size);
 
     .stats--feature {
@@ -1326,6 +1339,7 @@
       width: max-content;
       margin: 0;
       height: auto;
+      line-height: 1.3;
 
       .box {
         display: none;
@@ -1338,8 +1352,6 @@
     // height: auto;
     height: max-content;
   }
-
-  // }
 }
 
 .mutation-time-dist {
@@ -1479,6 +1491,7 @@
 
     .stats-conf {
       font-weight: 700;
+      color: rgb(81, 98, 81);
       // font-size: 9px;
       // line-height: 1;
     }
