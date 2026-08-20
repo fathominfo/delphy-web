@@ -44,9 +44,7 @@ const MANY_TIPS_PCT = 0.75;
 const colorsUsed: string[] = [];
 
 const MOUSE_LABEL_DIST = 15;
-const LABEL_W = 40, LABEL_H = 20;
-const LABEL_TEXT_COLOR = "#000";
-
+const LABEL_W = 36, LABEL_H = 16;
 
 
 type InterestCategory = FeatureOfInterest | 'all'
@@ -242,20 +240,24 @@ export class MutationsUI extends MccUI {
     })
 
     const { pos, dist, nodeIndex } = shortestDist;
-    this.highlightCtx.clearRect(0, 0, this.highlightCanvas.width, this.highlightCanvas.height);
-    this.drawHighlights();
 
     if (dist < MOUSE_LABEL_DIST * MOUSE_LABEL_DIST) {
-      this.drawConfidenceLabel(pos, nodeIndex)
+      this.hoveredNode = nodeIndex;
+      this.requestDrawHighlights();
+    } else {
+      this.hoveredNode = null;
     }
   }
 
-  drawConfidenceLabel(pos: number[], nodeIndex: number) {
-    this.highlightCtx.fillStyle = "#eee";
-    this.highlightCtx.fillRect(pos[0] + LABEL_W / 4, pos[1] - LABEL_H / 2 + TREE_TIMELINE_SPACING, LABEL_W, LABEL_H);
-    this.highlightCtx.fillStyle = LABEL_TEXT_COLOR;
-    this.highlightCtx.font = CHART_TEXT_FONT;
-    this.highlightCtx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + LABEL_W / 2, pos[1] + LABEL_H / 4 + TREE_TIMELINE_SPACING);
+  drawConfidenceLabel(pos: number[], nodeIndex: number, ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = `#ffffff`
+    ctx.beginPath();
+    ctx.roundRect(pos[0] - LABEL_W / 8, pos[1] - LABEL_H / 2, LABEL_W, LABEL_H, 3);
+    ctx.fill();
+    ctx.fillStyle = this.hoverColor;
+    ctx.font = CHART_TEXT_FONT;
+    ctx.globalAlpha = 1.0;
+    ctx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + LABEL_W / 8, pos[1] + LABEL_H / 4);
   }
 
   activate() {
@@ -571,10 +573,6 @@ export class MutationsUI extends MccUI {
     return UNSET;
   }
 
-  updateRowSelection: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
-
-  }
-
   /*
   this is declared as an anonymous function
   since it is passed to the mutation rows
@@ -587,7 +585,7 @@ export class MutationsUI extends MccUI {
       this.nodes = row.uniqueNodes.map(node => node.index);
       const rowIndex = this.rows.indexOf(row);
       if (rowIndex !== UNSET) {
-        this.hoverColor = this.rows[rowIndex].color;
+        this.hoverColor = `${this.rows[rowIndex].color}`;
       }
       moi = row.moi;
     } else {
@@ -628,9 +626,11 @@ export class MutationsUI extends MccUI {
       ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
       this.nodes.forEach((node) => {
         this.drawHighlightNode(node, this.hoverColor, ctx, treeCanvas, mcc);
-        const pos = this.mccTreeCanvas.getNodePosition(node);
-        this.drawConfidenceLabel(pos, node);
       });
+
+      if (this.hoveredNode) {
+        this.drawHighlightNode(this.hoveredNode, this.hoverColor, ctx, treeCanvas, mcc)
+      }
       mccRef.release();
     }
   }
@@ -642,18 +642,19 @@ export class MutationsUI extends MccUI {
         radius = 6;
       if (this.hoveredNode) {
         if (this.hoveredNode === index) {
-          ctx.globalAlpha = 1;
+          ctx.globalAlpha = 0.9;
         } else {
-          ctx.globalAlpha = 0.5;
+          ctx.globalAlpha = 0.6;
         }
       } else {
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 0.6;
       }
       ctx.fillStyle = color;
       ctx.moveTo(x + radius, y);
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
+      this.drawConfidenceLabel([x + radius * 2, y], index, ctx)
     }
   }
 

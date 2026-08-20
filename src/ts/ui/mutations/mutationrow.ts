@@ -1,4 +1,4 @@
-import { NodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType } from './mutationscommon';
+import { NodeData, UniqueNodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType } from './mutationscommon';
 import { getMutationNameParts } from '../../constants';
 import { DistributionSeries, TimeDistributionCanvas } from '../timedistributioncanvas';
 import { MutationOfInterest, FeatureOfInterest } from '../../pythia/mutationsofinterest';
@@ -33,7 +33,7 @@ export class MutationRow {
   rowDiv: HTMLDivElement;
   timeCanvas: TimeDistributionCanvas;
   nodes: NodeData[];
-  uniqueNodes: { index: number, count: number, tips: number, confidence: number }[];
+  uniqueNodes: UniqueNodeData[];
   removeRow: (row: MutationRow) => void;
   getNodeRelativeSize: (tipCount: number) => number;
   updateHoverRow: RowFunctionType;

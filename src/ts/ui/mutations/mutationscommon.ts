@@ -7,12 +7,24 @@ export type ParameterCallback = (percent:number)=>void;
 
 export type RowFunctionType = (row: MutationRow | null, lock: boolean) => void;
 
+/*
+ * For each MutationRow, NodeData stores the mutation node data from each base tree.
+ *
+ * UniqueNodeData collapses these into unique nodes,
+ * which we use to highlight the corresponding nodes on the MccTreeCanvas.
+ */
 export type NodeData = {
   index: number,
   tips: number,
   confidence: number
 };
 
+export type UniqueNodeData = {
+  index: number,
+  count: number,
+  tips: number,
+  confidence: number
+}
 
 export type MutationData = {
   moi: MutationOfInterest,
