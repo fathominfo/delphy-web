@@ -941,6 +941,7 @@ export class Pythia {
     let muts: MutationDistribution[] = [];
     if (downstreamMccNodeIndex !== UNSET) {
       let rootSeq: Uint8Array;
+      let treeIndex = 0;
       const treeCount = tree.getNumBaseTrees(),
         mutationLookup: { [name: string]: MutationDistribution } = {},
         tallyMutation = (mut:Mutation)=>{
@@ -949,7 +950,7 @@ export class Pythia {
             const isApobecCtx = checkApobecCtx(mut, rootSeq);
             mutationLookup[name] = new MutationDistribution(mut, treeCount, isApobecCtx);
           }
-          mutationLookup[name].addTime(mut.time);
+          mutationLookup[name].addTime(mut.time, treeIndex);
         },
         /*
           first we find the set of trees in the mcc that contain both nodes
@@ -959,7 +960,7 @@ export class Pythia {
         const nodeIndex = tree.getCorrespondingNodeInBaseTree(upstreamMccNodeIndex, treeIndex);
         upstreamTrees[treeIndex] = nodeIndex;
       }
-      for (let treeIndex = 0; treeIndex < tree.getNumBaseTrees(); treeIndex++) {
+      for (treeIndex = 0; treeIndex < tree.getNumBaseTrees(); treeIndex++) {
         try {
           const upstreamIndex = upstreamTrees[treeIndex];
           if (upstreamIndex !== undefined) {

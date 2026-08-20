@@ -792,6 +792,16 @@ export class LineagesUI extends MccUI {
   assembleNodePair(index1: number, index2: number, nodePairType: NodePairType, pythia: Pythia): NodePair {
     const tree = this.mccTreeCanvas.tree as SummaryTree,
       mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(index1, index2, tree);
+    mutTimes.sort((a, b)=>{
+      let diff = b.getConfidence() - a.getConfidence();
+      if (diff === 0) {
+        diff = a.times[0] - b.times[0];
+        if (diff === 0) {
+          diff = a.mutation.site - b.mutation.site;
+        }
+      }
+      return diff;
+    });
     return new NodePair(index1, index2, nodePairType, mutTimes);
   }
 
