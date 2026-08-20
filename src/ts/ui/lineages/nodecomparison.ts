@@ -27,7 +27,8 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
   ancestorNodeNameSelector = '.lineages--node-comparison--ancestor-node',
   descendantNodeNameSelector = '.lineages--node-comparison--descendant-node',
   mutationCountSelector = '.lineages--node-comparison--mutation-count',
-  showMutationSelector = '.lineages--node-comparison--mutation-header .lnc-mutation-min',
+  shownMutationCountSelector = '.lineages--node-comparison--mutation-header .lnc-mutation-min',
+  showAllLabelSelector = ".lineages--node-comparison--show-toggle",
   mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
   nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
 
@@ -132,11 +133,12 @@ export class NodeComparison {
       node1Span = this.div.querySelector(ancestorNodeNameSelector) as HTMLSpanElement,
       node2Span = this.div.querySelector(descendantNodeNameSelector) as HTMLSpanElement,
       mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
-      shownMutationCountSpan = this.div.querySelector(showMutationSelector) as HTMLSpanElement,
+      shownMutationCountSpan = this.div.querySelector(shownMutationCountSelector) as HTMLSpanElement,
       mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement,
       canvas = this.div.querySelector(nodeTimesCanvasSelector) as HTMLCanvasElement,
       overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement,
-      readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
+      readout = this.div.querySelector(".time-chart--readout") as HTMLElement,
+      showMutationToggleLabel = this.div.querySelector(showAllLabelSelector) as HTMLLabelElement;
     if (!mutationContainer || !node1Span || !node2Span || !mutationCountSpan || !mutationThresholdSpan || !canvas) {
       throw new Error("html is missing elements needed for node comparison");
     }
@@ -147,6 +149,10 @@ export class NodeComparison {
     this.shownMutationCountSpan = shownMutationCountSpan;
     this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
+    this.showAllMutsToggleLabel = showMutationToggleLabel;
+    this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
+    this.showAllMutsToggle.checked = !!expandedNodes[nodeComparisonData.nodePair.index2];
+    console.debug(`${nodeComparisonData.nodePair.index2} is ${this.showAllMutsToggle.checked?'':'not '}expanded`);
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.mutationTimelines = [];
@@ -176,9 +182,10 @@ export class NodeComparison {
     } else {
       overlapSpan.classList.add('hidden');
     }
-    this.showAllMutsToggleLabel = this.div.querySelector(".lineages--node-comparison--show-toggle") as HTMLLabelElement;
-    this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
     this.showAllMutsToggle.addEventListener("input", ()=>{
+      const index: number = nodeComparisonData.nodePair.index2;
+      expandedNodes[index] = this.showAllMutsToggle.checked;
+      console.debug(`.... expanding ${index}`)
       this.mutationContainer.classList.add("windowshading");
       this.requestDraw();
       setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
@@ -313,10 +320,27 @@ export class NodeComparison {
 }
 
 
+const expandedNodes: boolean[] = [];
+
+
 export function setComparisons(nodeComparisonData: NodeComparisonData[], minDate: number, maxDate: number,
   goToMutations: MutationFunctionType, nodeHighlightCallback: NodeCallback, isApobecRun: boolean,
   zoomMinDate: number, zoomMaxDate: number): NodeComparison[] {
   nodeComparisonContainer.innerHTML = '';
+  const indices: Set<number> = new Set();
+  nodeComparisonData.forEach((ncd) => {
+    indices.add(ncd.nodePair.index1);
+    indices.add(ncd.nodePair.index2);
+    console.log('node pair', ncd.nodePair.index1, ncd.nodePair.index2)
+  });
+  expandedNodes.slice(0).forEach((_value, i)=>{
+    if (!indices.has(i)) {
+      expandedNodes[i] = false;
+    }
+  });
+  console.log(`expanded nodes: ${expandedNodes.map((x, i)=>x?i: UNSET).filter(n=>n>=0).join( ',') },  indices: `, indices);
+
+
   const comps: NodeComparison[] = nodeComparisonData.map(ncd=>{
     const nc = new NodeComparison(ncd, minDate, maxDate, goToMutations, nodeHighlightCallback, isApobecRun);
     nc.setDateRange(zoomMinDate, zoomMaxDate);
