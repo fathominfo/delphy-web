@@ -2,7 +2,7 @@
 // MUTATIONS
 ////////////////////////////////////////////
 
-@placeholder: rgb(200,200,200);
+@placeholder: rgb(200, 200, 200);
 
 @color1: #049C5C;
 @color1-secondary: #037C49;
@@ -52,7 +52,9 @@
 
 
   &.apobec-disabled {
-    .moi-apobec, .header-button[value="apobec"] {
+
+    .moi-apobec,
+    .header-button[value="apobec"] {
       display: none;
     }
   }
@@ -131,7 +133,7 @@
   flex-direction: column;
   gap: 0.5em;
 
-  > div {
+  >div {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
@@ -152,7 +154,7 @@
     height: 0;
     overflow: hidden;
 
-    &:focus + label {
+    &:focus+label {
       outline: 1px solid black;
     }
   }
@@ -170,11 +172,11 @@
     justify-content: center;
   }
 
-  input:not(:checked) + label:hover {
+  input:not(:checked)+label:hover {
     background-color: #e9e9e9;
   }
 
-  input:checked + label {
+  input:checked+label {
     background-color: #717171;
     color: #fff;
   }
@@ -228,6 +230,7 @@
   height: 0;
   overflow-y: hidden;
   transition: 0.15s height, 0.15s padding, 0.15s border-color, 0.15s margin;
+
   &.active {
     height: 96px;
     border: 1px solid #EBEBEB;
@@ -244,9 +247,11 @@
     cursor: pointer;
     opacity: 0.7;
     .smoothly(opacity);
+
     &:hover {
       opacity: 1;
     }
+
     .glyph {
       .masked(url("/assets/icons/exit-lg.svg"));
     }
@@ -274,7 +279,10 @@
     cursor: pointer;
   }
 
-  canvas { width: 100%; height: 40px; }
+  canvas {
+    width: 100%;
+    height: 40px;
+  }
 }
 
 .moi-list--parameter-histogram {
@@ -286,6 +294,7 @@
   appearance: none;
   background: transparent;
   margin: 0;
+
 
   position: absolute;
   bottom: 0;
@@ -361,6 +370,7 @@
   border: 0;
   text-decoration: underline;
   padding: 0;
+
   &:not(:disabled) {
     cursor: pointer;
   }
@@ -575,6 +585,7 @@
 
   .canvas-container {
     display: flex;
+
     canvas {
       flex: 1;
       cursor: crosshair;
@@ -607,12 +618,21 @@
     gap: 1em;
     justify-content: space-between;
 
-    > div {
+    >div {
       display: flex;
       gap: 1em;
       align-items: center;
     }
   }
+}
+
+.hide-details {
+  opacity: 0;
+  visibility: 0;
+}
+
+.hidden-label {
+  transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out !important;
 }
 
 .mutations--display--col-name {
@@ -622,7 +642,6 @@
   font-weight: 700;
   font-size: 12px;
   line-height: 1;
-  margin-left: 1.8rem;
 }
 
 .display-options {
@@ -653,20 +672,21 @@
     }
   }
 
-  input:checked + label {
+  input:checked+label {
     background-color: #eee;
+
     .glyph {
       background-color: #444;
     }
   }
 
-  #display-radio--list + label {
+  #display-radio--list+label {
     .glyph {
       .masked(url("/assets/icons/hamburger.svg"));
     }
   }
 
-  #display-radio--grid + label {
+  #display-radio--grid+label {
     .glyph {
       .masked(url("/assets/icons/grid.svg"));
     }
@@ -703,30 +723,61 @@
   }
 
   &.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    align-content: start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  align-content: start;
 
-    .mutation-row {
-      .mutation-right {
+  .mutation-row {
+    .stats-node-confidence-wrapper,
+      .stats-title,
+      .stats--badges,
+      .mutation-charts {
         display: none;
       }
+    
+      .stats-mutation-confidence-wrapper {
+    
+        .small-label,
+        .mutation-confidence.list {
+          display: none;
+        }
+      }
+      
+    .mutation-confidence.grid {
+      font-size: 12px;
+      display: block;
+      line-height: 1;
+
+      span {
+        font-weight: 600;
+        font-size: 9px;
+      }
+  
+    }
+  
+      .mutation-info,
+      .mutation-stats {
+        flex-direction: column;
+        gap: 0.5em;
+      }
+  
+
     }
 
-    .order-indicator {
-      height: 100%;
-      width: 120px;
-      margin: 0 0.5em;
-    }
-
-    .mutation-prev .glyph {
-      .masked(url("/assets/icons/arrow-left.svg"));
-    }
-
-    .mutation-next .glyph {
-      .masked(url("/assets/icons/arrow-right.svg"));
-    }
+  .order-indicator {
+    height: 100%;
+    width: 120px;
+    margin: 0 0.5em;
   }
+
+  .mutation-prev .glyph {
+    .masked(url("/assets/icons/arrow-left.svg"));
+  }
+
+  .mutation-next .glyph {
+    .masked(url("/assets/icons/arrow-right.svg"));
+  }
+}
 }
 
 .order-indicator {
@@ -738,16 +789,13 @@
   position: relative;
   padding: 1em;
   font-size: 12px;
-
-  display: grid;
-  grid-template-columns: auto 100px 1fr;
+  display: flex;
   gap: 1em;
 
   cursor: pointer;
   .noselect();
 
-  min-height: 7em;
-  height: 7em;
+  height: auto;
   overflow-y: clip;
 
   background-color: #FAFAFA;
@@ -755,6 +803,14 @@
   padding-left: 30px;
 
   transition: 0.15s background-color, 0.15s ease-in-out height, 0.15s ease-in-out min-height;
+
+  .mutation-confidence.grid {
+      display: none;
+    }
+
+  .mutation-confidence.list {
+      display: block;
+    }
 
   &.moving {
     position: absolute;
@@ -810,18 +866,54 @@
       .masked(url("/assets/icons/eye-open.svg"));
     }
   }
+
   &.inactive {
     opacity: 0.5;
+
     .mutation-toggle {
       &.on .glyph {
         .masked(url("/assets/icons/eye-closed.svg"));
       }
     }
   }
+    .stats-title {
+  
+      color: #888;
+      font-weight: 700;
+      line-height: 1;
+      font-size: 9px;
+      text-transform: lowercase;
+      font-variant: small-caps;
+    }
+  
+    .stats--confidence {
+      display: grid;
+      row-gap: 0.2em;
+      column-gap: 1.5em;
+  
+      .stats-title {
+        @media (min-width:1200px) {
+          grid-column: span 2;
+        }
+      }
+  
+      .mutation-confidence,
+      .highest-node-confidence {
+        font-weight: 700;
+        font-size: 1.1em;
+      }
+  
+  
+      .stats-mutation-confidence-wrapper,
+      .stats-node-confidence-wrapper {
+        line-height: 1.3;
+      }
+    }
 
-  .mutation-icons {
-    display: flex;
-    flex-direction: column;
+  .mutation-row-delete {
+    position: absolute;
+    right: 0.5em;
+    top: 0.5em;
 
     button {
       width: 1.7em;
@@ -835,24 +927,9 @@
       }
     }
 
-    .mutation-dismiss {
-      .glyph {
-        .masked(url("/assets/icons/exit-lg.svg"));
-      }
-    }
 
-    .mutation-detail {
-      &.expand {
-        .glyph {
-          .masked(url("/assets/icons/bigger.svg"));
-        }
-      }
-
-      &.collapse {
-        .glyph {
-          .masked(url("/assets/icons/smaller.svg"));
-        }
-      }
+    .glyph {
+      .masked(url("/assets/icons/exit-lg.svg"));
     }
   }
 
@@ -861,10 +938,15 @@
       background-color: @color1;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color1; }
-      .node-title { color: @color1; }
-      .node-stats { color: @color1-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color1;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color1-secondary;
+      }
     }
   }
 
@@ -873,10 +955,15 @@
       background-color: @color2;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color2; }
-      .node-title { color: @color2; }
-      .node-stats { color: @color2-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color2;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color2-secondary;
+      }
     }
   }
 
@@ -885,10 +972,15 @@
       background-color: @color3;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color3; }
-      .node-title { color: @color3; }
-      .node-stats { color: @color3-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color3-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color3-secondary;
+      }
     }
   }
 
@@ -897,10 +989,15 @@
       background-color: @color4;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color4; }
-      .node-title { color: @color4-secondary; }
-      .node-stats { color: @color4-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color4-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color4-secondary;
+      }
     }
   }
 
@@ -909,10 +1006,15 @@
       background-color: @color5;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color5; }
-      .node-title { color: @color5-secondary; }
-      .node-stats { color: @color5-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color5-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color5-secondary;
+      }
     }
   }
 
@@ -920,10 +1022,16 @@
     .grip {
       background-color: @color6-secondary;
     }
-    .node-detail {
-      .node-icon { background-color: @color6; }
-      .node-title { color: @color6-secondary; }
-      .node-stats { color: @color6-secondary; }
+
+    .mutation-stats {
+      .small-label {
+        color: @color6-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color6-secondary;
+      }
     }
   }
 
@@ -932,10 +1040,15 @@
       background-color: @color7;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color7; }
-      .node-title { color: @color7-secondary; }
-      .node-stats { color: @color7-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color7-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color7-secondary;
+      }
     }
   }
 
@@ -944,10 +1057,15 @@
       background-color: @color8;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color8; }
-      .node-title { color: @color8-secondary; }
-      .node-stats { color: @color8-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color8-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color8-secondary;
+      }
     }
   }
 
@@ -956,10 +1074,15 @@
       background-color: @color9;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color9; }
-      .node-title { color: @color9-secondary; }
-      .node-stats { color: @color9-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color9-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color9-secondary;
+      }
     }
   }
 
@@ -968,10 +1091,15 @@
       background-color: @color10;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color10; }
-      .node-title { color: @color10-secondary; }
-      .node-stats { color: @color10-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color10-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color10-secondary;
+      }
     }
   }
 
@@ -980,10 +1108,15 @@
       background-color: @color11;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color11; }
-      .node-title { color: @color11-secondary; }
-      .node-stats { color: @color11-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color11-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color11-secondary;
+      }
     }
   }
 
@@ -992,10 +1125,15 @@
       background-color: @color12;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color12; }
-      .node-title { color: @color12-secondary; }
-      .node-stats { color: @color12-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color12-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color12-secondary;
+      }
     }
   }
 
@@ -1004,10 +1142,15 @@
       background-color: @color13;
     }
 
-    .node-detail {
-      .node-icon { background-color: @color13; }
-      .node-title { color: @color13-secondary; }
-      .node-stats { color: @color13-secondary; }
+    .mutation-stats {
+      .small-label {
+        color: @color13-secondary;
+      }
+
+      .highest-node-confidence,
+      .mutation-confidence {
+        color: @color13-secondary;
+      }
     }
   }
 
@@ -1022,13 +1165,12 @@
   // }
 
   .small-label {
-    text-transform: lowercase;
-    font-variant: small-caps;
-    color: #636363;
-    font-weight: 700;
+    // text-transform: lowercase;
+    // font-variant: small-caps;
+    // color: #636363;
+    font-weight: 600;
     font-size: 9px;
     line-height: 1;
-
     height: 0;
     overflow-y: clip;
     .smoothly(height);
@@ -1040,14 +1182,17 @@
 
   .mutation-info {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 0.5em;
+    align-items: start;
 
-    > .mutation-name {
+    >.mutation-name {
       font-size: 16px;
       .smoothly(font-size);
       overflow-x: visible;
       position: relative;
+      flex: 1;
+      max-width: 80px;
     }
 
     .is-apobec {
@@ -1067,26 +1212,21 @@
     display: inline-block;
   }
 
-
-  .mutation-right {
+  .mutation-wrapper {
+    flex: 2;
     display: flex;
     flex-direction: column;
-    gap: 2em;
+    gap: 1em;
+    min-width: 0;
   }
 
   .mutation-charts {
-    display: flex;
-    gap: 1em;
-
-    > div {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 0.2em;
-      height: 5em;
-    }
+    flex: 1 1 auto;
+    min-height: 3em;
+    max-height: 4em;
 
     .mutation-time-dist {
-      flex: 2;
+      height: 100%;
     }
 
     .mutation-allele-prob {
@@ -1094,9 +1234,12 @@
     }
 
     .canvas-container {
-      height: inherit;
+      height: 100%;
       display: flex;
+
       canvas {
+        min-width: 0;
+        min-height: 0;
         flex: 1;
       }
     }
@@ -1107,7 +1250,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
+    // gap: 0.5em;
 
     .hidden-nodes-count {
       font-size: 9px;
@@ -1117,97 +1260,58 @@
 
   .nodes-list {
     display: flex;
-    gap: 1em;
+    // gap: 1em;
+    flex-direction: column;
   }
 
-  .node-detail {
-    position: relative;
-    font-size: 10px;
-    display: grid;
-    grid-template-columns: 25px 1fr;
-    justify-items: center;
-    align-items: center;
-    gap: 1em;
 
-    appearance: none;
-    background: none;
-    border: 0;
-    margin: 0;
-    padding: 1em;
-    text-align: left;
-    cursor: pointer;
+  .mutation-right {
 
-    background-color: #f5f5f5;
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: fit-content;
 
-    &:hover {
-      background-color: #eee;
+    .nodes-list,
+    .mutation-stats,
+    .mutation-stats-header {
+      width: 140px;
     }
 
-    .node-icon {
-      background-color: rgb(142, 142, 142);
-      border-radius: 50%;
+    .mutation-stats,
+    .mutation-stats-header {
+      padding: 0.3em 0;
+      // display: grid;
+      // grid-template-columns: 1fr 1fr 2fr;
+      // justify-items: left;
+      // align-items: center;
+      font-size: 11px;
+      appearance: none;
+      background: none;
+      border: 0;
+      margin: 0;
+      text-align: left;
     }
-
-    .node-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5em;
-      line-height: 1;
-
-      span {
-        font-weight: bolder;
-      }
-    }
-
-    .node-icon  { background-color: rgb(90, 105, 138); }
-    .node-title  { color: rgb(90, 105, 138); }
-    .node-stats  { color: rgb(151, 157, 177); }
   }
-
-  &:hover,
-  &.expanded {
-    background-color: #fbfbfb;
-  }
-
-  // &:hover {
-  //   .hint-expand {
-  //     opacity: 1;
-  //   }
-  // }
 
   .stats--badges {
     display: flex;
     gap: 0.5em;
-    height: 10px;
+    // height: 10px;
     align-items: center;
   }
 
-  &.expanded {
-    min-height: 13rem;
-    height: 13rem;
-
-    // .hint-expand {
-    //   opacity: 0;
-    // }
-
-    // &:hover {
-    //   .hint-collapse {
-    //     opacity: 1;
-    //   }
-    // }
-
-    .mutation-charts {
-      height: 8em;
-
-      > div {
-        height: inherit;
-      }
+  .mutation-charts {
+    >div {
+      height: 100%;
     }
+  }
 
-    .small-label {
-      height: 1em;
-      width: auto;
-    }
+  .small-label {
+    height: 1em;
+    width: auto;
+  }
 
     .mutation-info {
       gap: 1em;
@@ -1217,39 +1321,44 @@
       }
     }
 
-    .mutation-stats {
-      font-size: 12px;
-      gap: 0.5em;
-      .smoothly(font-size);
+  .mutation-wrapper .mutation-stats {
+    display: flex;
+    font-size: 12px;
+    flex: 5;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-right: 2.5em;
+    .smoothly(font-size);
 
-      .stats--feature {
-        > div {
-          display: flex;
-          gap: 0.5em;
-        }
+    .stats--feature {
+      >div {
+        display: flex;
+        gap: 0.5em;
       }
     }
+  }
 
-    .stats--badges {
-      flex-direction: column;
-      gap: 0.5em;
-      align-items: flex-start;
+  .stats--badges {
+    flex-direction: column;
+    gap: 0.5em;
+    align-items: flex-start;
 
       .stats-badge {
         width: max-content;
         margin: 0;
         height: auto;
-
+        
         .box {
           display: none;
         }
       }
     }
 
-    .mutation-nodes {
-      display: flex;
-      height: auto;
-    }
+  .mutation-nodes {
+    display: flex;
+    // height: auto;
+    height: max-content;
   }
 }
 
@@ -1275,27 +1384,42 @@
 
     .root {
       color: @root;
-      .dot { background-color: @root; }
+
+      .dot {
+        background-color: @root;
+      }
     }
 
     .mrca {
       color: @mrca;
-      .dot { background-color: @mrca; }
+
+      .dot {
+        background-color: @mrca;
+      }
     }
 
     .node1 {
       color: @node1;
-      .dot { background-color: @node1; }
+
+      .dot {
+        background-color: @node1;
+      }
     }
 
     .node2 {
       color: @node2;
-      .dot { background-color: @node2; }
+
+      .dot {
+        background-color: @node2;
+      }
     }
 
     .mutation {
       color: #777;
-      .dot { background-color: #777; }
+
+      .dot {
+        background-color: #777;
+      }
     }
 
     .value-label {
@@ -1308,6 +1432,7 @@
     }
 
     .highlighted {
+
       .series-label,
       .value-label {
         font-weight: 700;
@@ -1330,7 +1455,8 @@
   }
 }
 
-.mutation-stats, .moi-feature {
+.mutation-stats,
+.moi-feature {
   display: flex;
   flex-direction: column;
   font-size: 9px;
@@ -1373,8 +1499,9 @@
 
     .stats-conf {
       font-weight: 700;
-      font-size: 9px;
-      line-height: 1;
+      color: rgb(81, 98, 81);
+      // font-size: 9px;
+      // line-height: 1;
     }
   }
 }

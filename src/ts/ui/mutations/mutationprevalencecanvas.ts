@@ -550,6 +550,7 @@ export class MutationPrevalenceCanvas {
 
 
   drawHoverNtiles(index: number) {
+    if (this.mutations.length === 0) return;
     const {ctx, width, height} = this,
       data = this.mutations[index],
       dayData = data.ntiles[this.hoverDateIndex],
@@ -712,13 +713,13 @@ export class MutationPrevalenceCanvas {
       this.hoverSeriesIndex = index;
       this.locked = lock;
       this.launchDraw();
-    } else if (index === this.hoverSeriesIndex) {
+    // } else if (index === this.hoverSeriesIndex) {
+    } else {
       /* are we turning off the lock?  */
       this.locked = false;
       this.launchDraw();
     }
   }
-
 }
 
 
