@@ -17,7 +17,12 @@ export type NodeData = {
 export type MutationData = {
   moi: MutationOfInterest,
   name: string,
+  /* the time of the mutation in each base tree of the MCC */
   times: number[],
+  /*
+  the node index of the mutation in each base tree of the MCC,
+  then mapped onto the corresponding node in the MCC
+  */
   nodes: NodeData[],
   minDate: number,
   maxDate: number,

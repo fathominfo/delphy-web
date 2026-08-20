@@ -496,6 +496,10 @@ export class MutationsUI extends MccUI {
     if (!this.selectedMutations.map(md => md.name).includes(moi.name) && this.pythia) {
       const tree = this.mccTreeCanvas.tree as SummaryTree,
         mutation = moi.mutation,
+        /*
+        get the time and nodeIndex for this mutation in each base tree,
+        and map that node index to a node in the MCC
+        */
         {times, nodeIndices} = this.pythia.getMutationDistributionInfo(mutation, tree),
         alleleDist = this.pythia.getPopulationAlleleDistribution(mutation.site, this.earliestDate, this.maxDate, tree);
       const nodes = nodeIndices.map(index => {
