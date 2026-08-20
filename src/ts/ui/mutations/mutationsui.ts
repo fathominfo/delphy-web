@@ -249,6 +249,11 @@ export class MutationsUI extends MccUI {
     }
   }
 
+  canvasOutHandler(e: MouseEvent) {
+    this.hoveredNode = null;
+    this.requestDrawHighlights();
+  }
+
   drawConfidenceLabel(pos: number[], nodeIndex: number, ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = `#ffffff`
     ctx.beginPath();
@@ -271,6 +276,7 @@ export class MutationsUI extends MccUI {
     const canvas = this.mccTreeCanvas.getCanvas();
     if (canvas instanceof HTMLCanvasElement) {
       canvas.addEventListener('pointermove', (e) => this.canvasMoveHandler(e));
+      canvas.addEventListener('pointerout', (e) => this.canvasOutHandler(e));
     }
   }
 

@@ -211,13 +211,13 @@ export class MutationRow {
 
   toggleActive() {
     const wasActive = this.isActive;
+    // turn all the other rows off
     this.rows.forEach(row => {
       row.isActive = false;
       row.rowDiv.classList.remove("mutation-row-selected");
       row.rowDiv.style.backgroundColor = "#FAFAFA";
     })
     this.isActive = !wasActive;
-    this.setMutationActive(this.moi.name, this.isActive);
     this.updateHoverRow(this.isActive ? this : null, this.isActive);
     this.rowDiv.classList.toggle("mutation-row-selected", this.isActive);
     this.rowDiv.style.backgroundColor = this.isActive ? `${this.color}22` : "#FAFAFA";
