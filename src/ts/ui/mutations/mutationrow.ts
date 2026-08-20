@@ -33,6 +33,7 @@ export class MutationRow {
   rowDiv: HTMLDivElement;
   timeCanvas: TimeDistributionCanvas;
   nodes: NodeData[];
+  uniqueNodes: { index: number, count: number, tips: number, confidence: number }[];
   removeRow: (row: MutationRow) => void;
   getNodeRelativeSize: (tipCount: number) => number;
   updateHoverRow: RowFunctionType;
@@ -70,6 +71,8 @@ export class MutationRow {
     this.moi = moi;
     this.color = mutationData.color;
     this.nodes = mutationData.nodes;
+    this.uniqueNodes = [];
+    this.setUniqueNodes();
     // const {name, confidence} = moi;
     // const nodeList = nodes.map(n=>`${n}`).join(',');
     // console.log(`Mutation of Interest "${name}" confidence: ${confidence} mcc nodes: ${nodeList}`)
@@ -217,6 +220,17 @@ export class MutationRow {
     this.updateHoverRow(this.isActive ? this : null, this.isActive);
     this.rowDiv.classList.toggle("mutation-row-selected", this.isActive);
     this.rowDiv.style.backgroundColor = this.isActive ? `${this.color}22` : "#FAFAFA";
+  }
+
+  setUniqueNodes() {
+    this.nodes.forEach(node => {
+      let existing = this.uniqueNodes.find(uniqueNode => uniqueNode.index === node.index);
+      if (!existing) {
+        existing = Object.assign({}, node, { count: 0 });
+        this.uniqueNodes.push(existing);
+      }
+      existing.count += 1;
+    });
   }
 
   setDisplayOption(displayOption: DisplayOption) {
