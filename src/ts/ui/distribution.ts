@@ -124,7 +124,7 @@ export class Distribution {
   getValueAt(hoverDate: number) : number {
     if (!this.kde) return 0;
     const val = this.kde.pdf(hoverDate);
-    if (val < this.getMinBand()) return 0;
+    // if (val < this.getMinBand()) return 0;
     return val;
   }
 

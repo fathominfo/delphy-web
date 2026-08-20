@@ -1,6 +1,6 @@
 import {MccRef} from '../../pythia/mccref';
 // import {ExpPopModel, SkygridPopModel, SkygridPopModelType} from '../../pythia/delphy_api';
-import {ExpPopModel, PhyloTree, SkygridPopModel} from '../../pythia/delphy_api';
+import {ExpPopModel, PhyloTree, SkygridPopModel, SummaryTree} from '../../pythia/delphy_api';
 import {MU_FACTOR, FINAL_POP_SIZE_FACTOR,
   POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {HistCanvas} from './histcanvas';
@@ -26,6 +26,7 @@ import { HistData } from './histdata';
 import { UIScreen } from '../uiscreen';
 import { enableAnalyticTabs } from '../nav';
 import { RunTree } from './runtree';
+import { MccUI } from '../mccui';
 
 const DAYS_PER_YEAR = 365;
 const POP_GROWTH_FACTOR = Math.log(2) / DAYS_PER_YEAR;
@@ -126,7 +127,7 @@ const ESS_THRESHOLDS: ESS_THRESHOLD[] = [
 
 
 
-export class RunUI extends UIScreen {
+export class RunUI extends MccUI {
   mccRef: MccRef | null;
 
   private runControl: HTMLDivElement;
@@ -138,7 +139,7 @@ export class RunUI extends UIScreen {
 
   private stepCountPluralText: HTMLSpanElement;
   private stepSelector: HTMLSelectElement;
-  private mccTreeCanvas: RunTree;
+  // private mccTreeCanvas: RunTree;
   private mccHeader: HTMLSpanElement;
 
   private traceCanvases: TraceCanvas[] = [];
@@ -148,7 +149,7 @@ export class RunUI extends UIScreen {
   private showAllCanvases = false;
 
 
-  private credibilityInput: BlockSlider;
+  // private credibilityInput: BlockSlider;
   private essWrapper: HTMLDivElement;
   private essReadout: HTMLSpanElement;
   private essMeter: HTMLDivElement;
@@ -176,7 +177,6 @@ export class RunUI extends UIScreen {
   private oldValues: { [id: string] : number; };
 
 
-  is_running: boolean;
   private timerHandle:number;
   /*
   Why not just declare this as a function on `this`?
@@ -227,7 +227,7 @@ export class RunUI extends UIScreen {
 
 
   constructor(sharedState: SharedState, divSelector: string) {
-    super(sharedState, divSelector);
+    super(sharedState, divSelector, "#runner--mcc .tree-canvas");
     const DEBOUNCE_TIME = 20; // ms
     let lastRequestedBurnInPct = -1;
 
@@ -289,8 +289,8 @@ export class RunUI extends UIScreen {
       requestAnimationFrame(()=>{
         if (this.pythia) {
           const mccRef = this.pythia.getMcc();
-          const tree = mccRef.getMcc();
-          this.mccTreeCanvas.handleHover(nodeIndex, tree);
+          // const tree = mccRef.getMcc();
+          // this.mccTreeCanvas.handleHover(nodeIndex, tree);
           this.scatterPlots.forEach(canvas=>{
             canvas.handleHover(nodeIndex, name);
           });
@@ -299,9 +299,9 @@ export class RunUI extends UIScreen {
       });
     };
     this.mccRef = null;
-    const canvas = document.querySelector("#runner--mcc .tree-canvas") as HTMLCanvasElement;
-    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.mccTreeCanvas = new RunTree(canvas, ctx, this.handleNodeHover);
+    // const canvas = document.querySelector("#runner--mcc .tree-canvas") as HTMLCanvasElement;
+    // const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    // this.mccTreeCanvas = new RunTree(canvas, ctx, this.handleNodeHover);
     this.runControl = document.querySelector("#run-control") as HTMLDivElement;
     this.runInput = this.runControl.querySelector("#run-input") as HTMLInputElement;
     this.stepCountText = document.querySelector("#run-steps .digit") as HTMLSpanElement;
@@ -471,7 +471,6 @@ export class RunUI extends UIScreen {
     this.burnInToggle.checked = this.hideBurnIn;
     this.mccTimelineIndices = [];
     this.mccMinDate = new SoftFloat(0, 0.75, 0.3);
-    this.is_running = false;
     this.timerHandle = 0;
     this.stepCount = -1;
     this.mccIndex = -1
@@ -551,14 +550,14 @@ export class RunUI extends UIScreen {
 
 
 
-    const credibilityCallback = (value: number) => {
-      const pct = value / 100;
-      this.sharedState.mccConfig.setConfidence(pct);
-      this.setCladeCred();
-    }
-    this.credibilityInput = new BlockSlider(
-      this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement,
-      credibilityCallback);
+    // const credibilityCallback = (value: number) => {
+    //   const pct = value / 100;
+    //   this.sharedState.mccConfig.setConfidence(pct);
+    //   this.setCladeCred();
+    // }
+    // this.credibilityInput = new BlockSlider(
+    //   this.div.querySelector(".mcc-opt--confidence-range") as HTMLElement,
+    //   credibilityCallback);
 
     this.stepSelector.addEventListener('input', ()=>{
       const power = parseInt(this.stepSelector.value);
@@ -795,12 +794,13 @@ export class RunUI extends UIScreen {
 
 
   enableAdvancedFormSubmit() : void {
+    if (!this.pythia) return;
     const willRestart = this.getWillRestart();
     if (this.stepCount > 0) {
       this.submitAdvancedButton.classList.add("warning");
     }
     /* don't enable the form while waiting for samples from the delphy engine */
-    const isPausedAndWaitingForSample = !this.is_running && this.timerHandle !== 0;
+    const isPausedAndWaitingForSample = !this.pythia.isRunning && this.timerHandle !== 0;
     this.submitAdvancedButton.disabled = isPausedAndWaitingForSample || !willRestart;
   }
 
@@ -814,7 +814,7 @@ export class RunUI extends UIScreen {
     }
     if (this.pythia && this.pythia.kneeIndex > 0) this.burnInToggle.disabled = false;
     this.runInput.addEventListener("change", this.runControlHandler);
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
+    // this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.updateParamsUI();
     setTimeout(()=>this.runInput.focus(), 100);
   }
@@ -980,7 +980,7 @@ export class RunUI extends UIScreen {
     this.div.querySelectorAll(".cred-threshold").forEach(ele=>{
       (ele as HTMLSpanElement).innerText = `${confValue}%`;
     });
-    this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
+    // this.credibilityInput.set(this.sharedState.mccConfig.confidenceThreshold * 100);
     // this.mccTreeCanvas.confidenceThreshold = this.sharedState.mccConfig.confidenceThreshold;
     this.mccTreeCanvas.colorsUnSet = true;
     if (this.mccTreeCanvas.tree) {
@@ -992,8 +992,10 @@ export class RunUI extends UIScreen {
 
 
   deactivate():void {
-    if (this.is_running) {
-      this.stop();
+    if (this.pythia) {
+      if (this.pythia.isRunning) {
+        this.stop();
+      }
     }
     super.deactivate();
     this.runInput.removeEventListener("change", this.runControlHandler);
@@ -1010,7 +1012,8 @@ export class RunUI extends UIScreen {
       }
     });
 
-    if (!this.is_running) {
+
+    if (this.pythia && !this.pythia.isRunning) {
       this.updateRunData();
     }
   }
@@ -1018,19 +1021,34 @@ export class RunUI extends UIScreen {
   pingPythiaForUpdate(): void {
     if (!this.pythia) return;
     const stepsHist = this.pythia.stepsHist,
-      last = stepsHist.length - 1;
-    if (this.stepCount === stepsHist[last]) return;
-    this.updateRunData();
-    if (!this.is_running && this.timerHandle !== 0) {
-      clearTimeout(this.timerHandle);
-      this.timerHandle = 0;
+      actualSteps = stepsHist[stepsHist.length - 1];
+    // const msg = `pingPythiaForUpdate local steps: ${this.stepCount}, pythia steps: ${actualSteps}, pythia running? ${this.pythia.isRunning}, hasStopped? ${this.pythia.hasStopped}`;
+    // console.log(msg);
+    if (this.stepCount !== actualSteps) {
+      /*
+      if pythia has something new, update our data
+      */
+      this.updateRunData();
+    }
+    /*
+    Was this the update we were waiting for to stop the run?
+    */
+    if (!this.pythia.isRunning && this.pythia.hasStopped) {
+      if (this.timerHandle !== 0) {
+        clearTimeout(this.timerHandle);
+        this.timerHandle = 0;
+      }
       this.runInput.classList.remove("stopping");
       this.enableAdvancedFormSubmit();
       this.stepSelector.disabled = false;
     }
+
   }
 
 
+  setTreeColors(summary: SummaryTree) : void {
+    this.mccTreeCanvas.setColorsByConfidence(summary);
+  }
 
 
   updateRunData():void {
@@ -1043,14 +1061,14 @@ export class RunUI extends UIScreen {
     if (mccRef) {
       const oldRef = this.mccRef;
       this.mccRef = mccRef;
-      this.mccIndex = this.pythia.getMccIndex();
+      this.mccIndex = this.pythia.getAbsoluteMccIndex();
       const mccTree = mccRef.getMcc(),
         nodeConfidence = mccRef.getNodeConfidence();
-      if (mccTree !== this.mccTreeCanvas.tree) {
-        // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
-        this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
-        this.sharedState.resetSelections();
-      }
+      // if (mccTree !== this.mccTreeCanvas.tree) {
+      //   // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
+      //   this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+      //   this.sharedState.resetSelections();
+      // }
       const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
       this.mccMinDate.setTarget(earliestMCCDate);
       if (oldRef) {
@@ -1139,69 +1157,68 @@ export class RunUI extends UIScreen {
   }
 
   private draw():void {
-    if (this.pythia) {
-      const {stepCount, ess}  = this;
-      // const {maxDate} = this.pythia;
-      let treeCount = 0;
-      let mccCount = 0;
-      if (this.mccRef) {
-        /* for safety, add extra ref while drawing */
-        const drawRef = this.pythia.getMcc();
-        const mcc = drawRef.getMcc();
-        try {
-          // this.mccTreeCanvas.draw();
-          this.mccTreeCanvas.draw(this.mccMinDate.value, this.pythia.maxDate, this.mccTimelineIndices);
-        } catch (ex) {
-          console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
-        }
-        treeCount = this.pythia.getBaseTreeCount();
-        mccCount = mcc.getNumBaseTrees();
-        drawRef.release();
-        this.mccRef.release();
-      } else {
-        // console.debug('no mcc ref available')
+    if (!this.pythia) return;
+    const {stepCount, ess}  = this;
+    // const {maxDate} = this.pythia;
+    let treeCount = 0;
+    let mccCount = 0;
+    if (this.mccRef) {
+      /* for safety, add extra ref while drawing */
+      const drawRef = this.pythia.getMcc();
+      const mcc = drawRef.getMcc();
+      try {
+        // this.mccTreeCanvas.draw();
+        this.mccTreeCanvas.draw(this.mccMinDate.value, this.pythia.maxDate, this.mccTimelineIndices);
+      } catch (ex) {
+        console.debug(`error on id ${this.mccRef.getManager().id}`, ex);
       }
-      this.traceCanvases.filter(canvas=>canvas.isVisible).forEach(canvas=>canvas.draw());
-      this.stepCountText.innerHTML = `${nfc(stepCount)}`;
-      this.treeCountText.innerHTML = `${nfc(treeCount)}`;
-      this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
-      let stepCountPlural = 's';
-      if (stepCount === 1) {
-        stepCountPlural = '';
-      }
-      const essIsUsable = ess > 0;
-      let essClass = "converging";
-      this.essWrapper.classList.toggle("unset", !essIsUsable);
-      this.essWrapper.classList.toggle("unset", !essIsUsable);
-      const integerPart = this.essReadout.querySelector(".before") as HTMLSpanElement;
-      const fractionPart = this.essReadout.querySelector(".after") as HTMLSpanElement;
-      const essString = (essIsUsable ? ess : 0).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
-      const tokens = essString.split('.');
-      integerPart.textContent = tokens[0];
-      fractionPart.textContent = `.${tokens[1]}`;
-      if (treeCount <= 1 && !this.is_running) {
-        essClass = 'no-data';
-        this.runControl.classList.add("no-data");
-        this.burnInWrapper.classList.add("pre");
-        this.mccHeader.classList.add("no-data");
-        enableAnalyticTabs(false);
-      } else {
-        ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
-          if (ess >= et.threshold) {
-            essClass = et.className;
-          }
-        });
-        this.runControl.classList.remove("no-data");
-        this.burnInWrapper.classList.remove("pre");
-        this.mccHeader.classList.remove("no-data");
-        enableAnalyticTabs(true);
-      }
-      this.essMeter.setAttribute("data-stage", essClass);
-      this.stepCountPluralText.innerHTML = stepCountPlural;
-
-      const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
-      treeCountPluralText.classList.toggle("hidden", treeCount === 1);
+      treeCount = this.pythia.getBaseTreeCount();
+      mccCount = mcc.getNumBaseTrees();
+      drawRef.release();
+      this.mccRef.release();
+    } else {
+      // console.debug('no mcc ref available')
     }
+    this.traceCanvases.filter(canvas=>canvas.isVisible).forEach(canvas=>canvas.draw());
+    this.stepCountText.innerHTML = `${nfc(stepCount)}`;
+    this.treeCountText.innerHTML = `${nfc(treeCount)}`;
+    this.mccTreeCountText.innerHTML = `${nfc(mccCount)}`;
+    let stepCountPlural = 's';
+    if (stepCount === 1) {
+      stepCountPlural = '';
+    }
+    const essIsUsable = ess > 0;
+    let essClass = "converging";
+    this.essWrapper.classList.toggle("unset", !essIsUsable);
+    this.essWrapper.classList.toggle("unset", !essIsUsable);
+    const integerPart = this.essReadout.querySelector(".before") as HTMLSpanElement;
+    const fractionPart = this.essReadout.querySelector(".after") as HTMLSpanElement;
+    const essString = (essIsUsable ? ess : 0).toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1});
+    const tokens = essString.split('.');
+    integerPart.textContent = tokens[0];
+    fractionPart.textContent = `.${tokens[1]}`;
+    if (treeCount <= 1 && !this.pythia.isRunning && this.pythia.hasStopped) {
+      essClass = 'no-data';
+      this.runControl.classList.add("no-data");
+      this.burnInWrapper.classList.add("pre");
+      this.mccHeader.classList.add("no-data");
+      enableAnalyticTabs(false);
+    } else {
+      ESS_THRESHOLDS.forEach((et: ESS_THRESHOLD)=>{
+        if (ess >= et.threshold) {
+          essClass = et.className;
+        }
+      });
+      this.runControl.classList.remove("no-data");
+      this.burnInWrapper.classList.remove("pre");
+      this.mccHeader.classList.remove("no-data");
+      enableAnalyticTabs(true);
+    }
+    this.essMeter.setAttribute("data-stage", essClass);
+    this.stepCountPluralText.innerHTML = stepCountPlural;
+
+    const treeCountPluralText = (this.treeCountText.parentElement as HTMLElement).querySelector(".plural") as HTMLElement;
+    treeCountPluralText.classList.toggle("hidden", treeCount === 1);
   }
 
   start():void {
@@ -1210,24 +1227,18 @@ export class RunUI extends UIScreen {
       this.timerHandle = setInterval(()=>this.pingPythiaForUpdate(), 30) as unknown as number;
     }
     if (this.pythia) {
-      this.is_running = true;
       this.runInput.checked = true;
       this.runInput.classList.remove("stopping");
-      this.pythia.startRun(null);
+      this.pythia.startRun();
     }
   }
 
   stop():void {
-    /* don't stop checking for results until the current iteration is done. */
-    // if (this.timerHandle !== 0) {
-    //   clearTimeout(this.timerHandle);
-    //   this.timerHandle = 0;
-    // }
     if (this.pythia) {
-      this.is_running = false;
       this.runInput.checked = false;
       this.runInput.classList.add("stopping");
       this.stepSelector.disabled = true;
+      // console.log("pausing pythia run, timer handle", this.timerHandle);
       this.pythia.pauseRun();
     }
   }
@@ -1247,8 +1258,8 @@ export class RunUI extends UIScreen {
 
 
   private set_running() : void {
-    this.is_running = this.runInput.checked;
-    if (this.is_running) {
+    const isRunning = this.runInput.checked;
+    if (isRunning) {
       this.start();
     } else {
       this.stop();

@@ -11,7 +11,6 @@ import { MccTree, SummaryTree } from '../../pythia/delphy_api';
 import { MccTreeCanvas } from '../mcctreecanvas';
 import { PdfCanvas } from '../../util/pdfcanvas';
 import * as JSZip from 'jszip';
-import { MccConfig } from '../mccconfig';
 
 /* global NodeListOf */
 
@@ -120,7 +119,8 @@ export class CustomizeUI extends MccUI {
         imgTreeCanvas.setConfig(mccConfig);
         mccConfig.updateInnerNodeMetadata(tree);
       }
-      imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getMccIndex());
+      imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getAbsoluteMccIndex());
+      imgTreeCanvas.setColors(tree);
       // const mcccc = this.mccTreeCanvas.canvas;
       // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
       imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices);
@@ -160,7 +160,8 @@ export class CustomizeUI extends MccUI {
           imgTreeCanvas.setConfig(mccConfig);
           mccConfig.updateInnerNodeMetadata(tree);
         }
-        imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getMccIndex());
+        imgTreeCanvas.positionTreeNodes(tree, conf, this.pythia?.getAbsoluteMccIndex());
+        imgTreeCanvas.setColors(tree);
         // const mcccc = this.mccTreeCanvas.canvas;
         // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
         imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices, canvas);
@@ -358,15 +359,21 @@ export class CustomizeUI extends MccUI {
 
   activate() {
     super.activate();
+    const hasMetadata = this.sharedState.mccConfig.hasMetadata();
+    let colorOption = this.sharedState.mccConfig.colorOption;
+    if (!hasMetadata) {
+      colorOption = ColorOption.confidence;
+    }
     this.setTopology(this.sharedState.mccConfig.topology);
-    this.setColorSystem(this.sharedState.mccConfig.colorOption);
     this.setMinConfidence(this.sharedState.mccConfig.confidenceThreshold * 100);
     this.setSpacing(this.sharedState.mccConfig.ySpacing);
     this.setPresentation(this.sharedState.mccConfig.presentation);
-    if (this.sharedState.mccConfig.nodeMetadata) {
-      this.endMetadataLoading();
+    if (hasMetadata) {
+      this.setMetadataLoaded();
+    }
+    if (colorOption === ColorOption.metadata) {
       const conf = this.sharedState.mccConfig;
-      if (conf.metadataField !== null) {
+      if (conf.metadataField !== null && colorOption === ColorOption.metadata) {
         this.div.querySelectorAll("#customize--color--metadata #color-by option").forEach((ele)=>{
           const opt = ele as HTMLOptionElement;
           opt.selected = opt.value === conf.metadataField;
@@ -374,8 +381,8 @@ export class CustomizeUI extends MccUI {
       }
     }
     this.setMetadataDisplay();
+    this.setColorSystem(colorOption);
   }
-
 
   setNodeSelection(node: number, selected: boolean) {
     this.selectedNodes[node] = selected;
@@ -414,17 +421,53 @@ export class CustomizeUI extends MccUI {
     (this.div.querySelector("#metadata-file") as HTMLElement).classList.add("loading");
   }
 
-  endMetadataLoading() : void {
+  endMetadataLoading(md: null | Metadata) : void {
+    if (!md) {
+      this.setMetadataLoaded();
+      return;
+    }
+    const mccConfig = this.sharedState.mccConfig;
+    if (this.metadataLoaded) {
+      const loadIt = confirm("Metadata is already set for this file. Do you want to replace it?");
+      if (loadIt) {
+        this.div.querySelectorAll("#metadata-column-headings .column-heading").forEach(el => el.remove());
+        mccConfig.metadataField = null;
+        this.metadataLoaded = false;
+      } else {
+        this.setMetadataLoaded();
+        return;
+      }
+    }
+    try {
+      mccConfig.setMetadata(md, this.mccTreeCanvas.tree as SummaryTree, false);
+      this.setMetadataLoaded();
+      if (this.sharedState.mccConfig.hasMetadata()) {
+        const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
+        input.click();
+        this.setMetadataDisplay();
+      }
+    } catch (err) {
+      if (this.sharedState.mccConfig.hasMetadata()) {
+        this.sharedState.mccConfig.clearMetadata();
+      }
+      this.setMetadataLoaded();
+      console.warn("could not load metadata:", err);
+      alert("Delphy had trouble parsing your metadata. Try a different file, or if that doesn't work, contact us at delphy@fathom.info.");
+    }
+
+  }
+
+
+  setMetadataLoaded() {
     (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("loading");
     if (this.sharedState.mccConfig.hasMetadata()) {
       (this.div.querySelector("#metadata-file") as HTMLElement).classList.remove("no-metadata");
       (this.div.querySelector(".uploader-text") as HTMLElement).innerText = `${this.sharedState.mccConfig.getMetadataFilename()}`;
       const input = (this.div.querySelector("#color-system--metadata") as HTMLInputElement);
       input.disabled = false;
-      input.click();
-      this.setMetadataDisplay();
     }
   }
+
 
 
   setMetadataDisplay(): void {
@@ -561,7 +604,7 @@ export class CustomizeUI extends MccUI {
 
 
   parseMetadataFile(file: File) {
-    parseMetadataFile(file, this.sharedState.mccConfig, this.mccTreeCanvas, ()=>this.endMetadataLoading());
+    parseMetadataFile(file, (metadata: null | Metadata)=>this.endMetadataLoading(metadata));
   }
 
 
@@ -603,7 +646,7 @@ adding metadata does not have to be part of the customize page.
 If we _do_ decide to move it out of here, this is what it will require.
 [mark 241125]
 */
-const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccTreeCanvas, callback: ()=>void)=>{
+const parseMetadataFile = (file: File, callback: (metadata:null|Metadata)=>void)=>{
   let separator = "";
   if (file.type === "text/tab-separated-values" || file.name.endsWith(".tsv")) {
     separator = "\t";
@@ -611,6 +654,7 @@ const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccT
     separator = ",";
   }
   const reader = new FileReader();
+  let metadata: null | Metadata = null;
   try {
     reader.addEventListener("load", ()=>{
       const text = reader.result as string;
@@ -622,9 +666,12 @@ const parseMetadataFile = (file: File, mccConfig: MccConfig, mccTreeCanvas: MccT
         const tabCount = first.split('\t').length - 1;
         separator = commaCount > tabCount ? ',' : '\t';
       }
-      const metadata = new Metadata(file.name, text, separator);
-      mccConfig.setMetadata(metadata, mccTreeCanvas.tree as SummaryTree);
-      callback();
+      try {
+        metadata = new Metadata(file.name, text, separator);
+      } catch(err) {
+        console.debug(err)
+      }
+      callback(metadata);
     });
     reader.readAsText(file);
   } catch (err) {

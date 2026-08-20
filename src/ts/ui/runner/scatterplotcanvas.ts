@@ -226,6 +226,9 @@ export class ScatterPlotCanvas extends TraceCanvas {
   drawLabels():void {
     const { minSpan, maxSpan, dataHeight, svg } = this;
     const { dataMin, dataMax, minDate, maxDate } = this.traceData as ScatterData;
+    if (minDate === UNSET && maxDate === UNSET) {
+      return;
+    }
     const countRange = dataMax - dataMin;
     svg.querySelectorAll(TICK_SELECTOR).forEach(ele=>ele.remove());
     svg.querySelectorAll(TICK_LABEL_SELECTOR).forEach(ele=>ele.remove());
@@ -235,6 +238,9 @@ export class ScatterPlotCanvas extends TraceCanvas {
     const tickInterval = nicenum(Math.ceil(countRange / tickCount));
     const tickSpacing = (tickInterval / countRange) * dataHeight;
     const labelInterval = tickSpacing >= LABEL_SPACING ? 1 : 5;
+    if (tickInterval === 0) {
+      return;
+    }
     let drawnTicks = 0;
     for (let i = 0; i <= countRange; i += tickInterval) {
       const y = MARGIN.top + (1 - i / countRange) * dataHeight;

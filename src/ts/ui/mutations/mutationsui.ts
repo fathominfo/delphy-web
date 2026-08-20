@@ -23,7 +23,7 @@ if (!maybeTableBody) {
   throw new Error("mutations.html doesn't have the container for the mutation rows!");
 }
 const MUTATION_TABLE_BODY = <HTMLDivElement> maybeTableBody;
-
+const MOI_HEAD = document.querySelector(".moi-list--header") as HTMLElement;
 const MOI_LIST = document.querySelector(".moi-list--body") as HTMLElement;
 
 const MOI_TEMPLATE = MOI_LIST.querySelector(".moi") as HTMLElement;
@@ -85,14 +85,15 @@ export class MutationsUI extends MccUI {
     this.maxDate = 0;
     this.selectedMutations = [];
     this.prevalence = new MutationPrevalenceCanvas();
-    this.interestCat = FeatureOfInterest.ManyTips;
+    this.interestCat = FeatureOfInterest.None;
     this.autofill = true;
     this.mutationsOfInterest = {
       [FeatureOfInterest.Reversals]: [],
       [FeatureOfInterest.SameSite]: [],
       [FeatureOfInterest.MultipleIntroductions]: [],
       [FeatureOfInterest.ManyTips]: [],
-      ['all'] : []
+      ['all'] : [],
+      [FeatureOfInterest.None]: []
     };
     this.minTreesPercent = DEFAULT_MINIMUM_MOI_PRESENCE;
     this.minTipsPercent = DEFAULT_MINIMUM_TIP_PERCENT;
@@ -110,6 +111,7 @@ export class MutationsUI extends MccUI {
     mutationsFilter.addEventListener("input", () => {
       const value = mutationsFilter.interest.value as FeatureOfInterest;
       this.interestCat = value;
+      this.autofill = false;
 
       const descriptions = this.div.querySelectorAll(".filter-description") as NodeListOf<HTMLElement>;
       descriptions.forEach(el => {
@@ -124,7 +126,7 @@ export class MutationsUI extends MccUI {
     const displayOptionsForm = document.querySelector(".display-options-form") as HTMLFormElement;
     displayOptionsForm.addEventListener("input", this.setDisplayOption);
 
-    const clearAllBtn = document.querySelector(".clear-all") as HTMLButtonElement;
+    const clearAllBtn = document.querySelector(".mutations--display-top .clear-all") as HTMLButtonElement;
     clearAllBtn.addEventListener("click", () => {
       this.clearRows();
     });
@@ -318,19 +320,19 @@ export class MutationsUI extends MccUI {
           if (this.autofill) {
             this.clearRows();
             if (this.sharedState.mutationList.length > 0) {
-              this.autofill = false;
               const mutation = this.sharedState.mutationList[0];
               this.lookupMutation(mutation);
             }
           }
 
           const mutationsFilter = this.div.querySelector(".mutations-filter--form") as HTMLFormElement;
-          mutationsFilter.querySelectorAll("input").forEach(radio => {
-            const value = radio.value as FeatureOfInterest;
-            radio.checked = value === this.interestCat;
-          });
-          this.setInterest(this.autofill);
-          this.autofill = false;
+          if (!this.autofill) {
+            mutationsFilter.querySelectorAll("input").forEach(radio => {
+              const value = radio.value as FeatureOfInterest;
+              radio.checked = value === this.interestCat;
+            });
+          }
+          this.setInterest();
 
           this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
 
@@ -381,10 +383,18 @@ export class MutationsUI extends MccUI {
   }
 
 
-  setInterest(autofill=false):void {
+  setInterest():void {
+    const autofill = this.autofill;
     this.clearMoiList();
-    const muts = this.mutationsOfInterest[this.interestCat],
-      minTipCount = Math.round(this.tipCount * this.minTipsPercent),
+    let muts: MutationOfInterest[];
+    if (this.interestCat === FeatureOfInterest.None) {
+      muts = this.mutationsOfInterest[FeatureOfInterest.ManyTips];
+      MOI_HEAD.classList.add("hidden")
+    } else {
+      muts = this.mutationsOfInterest[this.interestCat];
+      MOI_HEAD.classList.remove("hidden")
+    }
+    const minTipCount = Math.round(this.tipCount * this.minTipsPercent),
       tipDistribution: number[] = [],
       treePctDistribution: number[] = [];
     let sort: (moi1: MutationOfInterest, moi2: MutationOfInterest)=>number = () => 0;
@@ -413,14 +423,16 @@ export class MutationsUI extends MccUI {
       tipDistribution.push(mut.medianTipCount);
       treePctDistribution.push(100 * mut.confidence);
       if (mut.confidence >= this.minTreesPercent && mut.medianTipCount >= minTipCount) {
-        this.addMoi(mut);
-        mutCount++;
+        if (!this.autofill) {
+          this.addMoi(mut);
+          mutCount++;
+        }
         if (autofill && this.rows.length < MAX_AUTOFILL_MUTATIONS) {
           this.selectMutation(mut);
         }
       }
     });
-    if (mutCount === 0) {
+    if (mutCount === 0 && this.interestCat !== FeatureOfInterest.None) {
       MOI_LIST.appendChild(NO_MUTATIONS);
     }
     this.treePercentSetter.set(treePctDistribution, this.minTreesPercent * 100, 100);

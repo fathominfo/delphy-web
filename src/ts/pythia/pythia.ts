@@ -159,7 +159,12 @@ export class Pythia {
   initialTree: PhyloTree | null;    // Immutable snapshot of initial tree
   runParams: RunParamConfig | null; // Immutable once run has been initialized
 
+  /*
+  flag for whether we should request another round
+  of steps. Set asynchronously from processing.
+  */
   isRunning: boolean;
+  hasStopped: boolean;
 
   muHist : number[] = [];
   muStarHist: number[] = [];
@@ -207,6 +212,7 @@ export class Pythia {
     this.initialTree = null;
     this.runParams = null;
     this.isRunning = false;
+    this.hasStopped = true;
     this.resetHist();
     this.mccRefManager = null;
     this.currentMccRef = null;
@@ -409,7 +415,12 @@ export class Pythia {
     return this.mccRefManager.getRef();
   }
 
-  getMccIndex(): number {
+  /*
+  of all the trees in the run (not just the trees upon
+  which the MCC is based), get the index of the tree that
+  is the basis of the MCC's topology.
+  */
+  getAbsoluteMccIndex(): number {
     let index = -1;
     if (this.mccRefManager) {
       index = this.kneeIndex + this.mccRefManager.mccIndex;
@@ -560,23 +571,45 @@ export class Pythia {
     }
   }
 
-  startRun(callback:(null|returnless)):void {
+  startRun():void {
     if (this.run) {
+      if (this.isRunning) {
+        /* don't try to start it again */
+        return;
+      }
+      if (!this.hasStopped) {
+        /*
+        if we are here, that means pythia is running and has
+        gotten a request to stop. Simplest thing is to
+        revert that request and let it go;
+        */
+        this.isRunning = true;
+        return;
+      }
+
       this.isRunning = true;
+      this.hasStopped = false;
       const runCallback = ()=>{
         this.sampleCurrentTree();
         this.delphy.deriveMccTreeAsync(this.treeHist.slice(this.kneeIndex))
           .then((mccTree:MccTree) => {
             this.updateMcc(mccTree);
-            if (callback) callback();
             if (this.isRunning) {
               this.runSteps(runCallback);
+            } else {
+              this.hasStopped = true;
             }
           });
       };
       this.runSteps(runCallback);
     }
   }
+
+  pauseRun(): void {
+    this.isRunning = false;
+  }
+
+
 
 
   resetHist(): void {
@@ -676,11 +709,6 @@ export class Pythia {
     this.minDateHist.push(minDate);
     const tipMutations = getMutationCounts(tree);
     this.nodeMutCountHist.push(tipMutations);
-  }
-
-
-  pauseRun():void {
-    this.isRunning = false;
   }
 
 

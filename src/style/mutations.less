@@ -59,10 +59,9 @@
     }
   }
 
-  .zoom-buttons {
+  .zoom-buttons, .constrain-selection {
     display: none;
   }
-
 }
 
 #mutations--mcc {
@@ -295,6 +294,7 @@
   appearance: none;
   background: transparent;
   margin: 0;
+
 
   position: absolute;
   bottom: 0;
@@ -1307,10 +1307,13 @@
     width: auto;
   }
 
-  .mutation-info {
-    gap: 1em;
+    .mutation-info {
+      gap: 1em;
 
-  }
+      > .mutation-name {
+        font-size: 20px;
+      }
+    }
 
   .mutation-wrapper .mutation-stats {
     display: flex;

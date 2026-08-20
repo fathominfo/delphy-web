@@ -39,7 +39,7 @@
                 <label for="interest--reversals">Reversals</label>
               </div>
               <div class="filter-option--tips">
-                <input type="radio" name="interest" class="radio-interest" id="interest--tips" value="many_tips" checked autocomplete="off">
+                <input type="radio" name="interest" class="radio-interest" id="interest--tips" value="many_tips" autocomplete="off">
                 <label for="interest--tips">Many tips</label>
               </div>
               <div class="filter-option--site">
@@ -55,10 +55,10 @@
           <div class="filter-descriptions">
             <p class="filter-description hidden" data-feature="all"><b>All</b>: no filters applied to mutations.</p>
             <p class="filter-description hidden" data-feature="reversals"><b>Reversals</b>: mutations from the root sequence that are followed by another mutation that reverts the mutated allele back to the root allele.</p>
-            <p class="filter-description" data-feature="many_tips"><b>Many tips</b>: mutations where the median number of genomes affected in the base trees is 75% or more.</p>
+            <p class="filter-description hidden" data-feature="many_tips"><b>Many tips</b>: mutations where the median number of genomes affected in the base trees is 75% or more.</p>
             <p class="filter-description hidden" data-feature="same_site"><b>Same-site</b>: mutations occuring at the same site on the genome that result in different alleles.</p>
             <p class="filter-description hidden" data-feature="multiple_introductions"><b>Recurring</b>: instances of the same mutation appearing independently multiple times.</p>
-
+            <p class="filter-description" data-feature="none">Select a feature type to see mutation details. </p>
           </div>
         </div>
         <div class="moi-list">
@@ -110,9 +110,9 @@
               <input type="range" min="0" max="100" step="1" class="parameter-range parameter-range--trees">
             </div>
           </div>
-          <p class="parameter-info">Showing <span id="moi-list-mut-count"></span> mutation<span class="plural">s</span> appearing in at least 
-            <button id="moi-list-tips--button" class="parameter-button"><span id="moi-list-tips"></span>% of genomes</button> 
-            and present in at least 
+          <p class="parameter-info">Showing <span id="moi-list-mut-count"></span> mutation<span class="plural">s</span> appearing in at least
+            <button id="moi-list-tips--button" class="parameter-button"><span id="moi-list-tips"></span>% of genomes</button>
+            and present in at least
             <button id="moi-list-trees--button" class="parameter-button"><span id="moi-list-trees"></span>% of base trees</button>.
           </p>
         </div>

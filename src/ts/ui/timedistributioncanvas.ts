@@ -132,32 +132,42 @@ export class TimeDistributionCanvas {
     const {ctx, drawWidth, xheight, allSeriesBandMax} = this;
     // const {ctx, width, xheight} = this;
     const {distribution, color} = ds;
-    const {bands, bandwidth, bandValues: bandTimes, kde} = distribution;
+    const {bands, bandwidth, bandValues: bandTimes, kde, data: times} = distribution;
     // const {bands, bandTimes, bandMax, bandwidth, kde} = distribution;
+
+    const pixelsPerDay = this.drawWidth / (this.maxDate - this.minDate),
+      curveInterval = Math.max(pixelsPerDay, 1);
+    let startDate = bandTimes[0],
+      endDate = bandTimes[bandTimes.length - 1];
+    if (kde) {
+      startDate -= bandwidth * 3;
+      endDate += bandwidth * 3;
+    }
     ctx.fillStyle = color;
     ctx.strokeStyle = "none";
     this.setAlpha(ds);
     ctx.beginPath();
-    let t = bandTimes[0],
+    let t = startDate,
       x = this.xFor(t, drawWidth),
+      y = UNSET,
       val = ds.distribution.getMinBand();
-    const THRESHOLD = val;
     ctx.moveTo(x, xheight);
-    for (let i = 0; i < bandTimes.length; i++) {
-      t = bandTimes[i];
-      x = this.xFor(t, drawWidth);
-      val = bands[i];
-      const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
-      // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
-      ctx.lineTo(x, y);
-    }
-    if (kde){
-      while (val > THRESHOLD) {
-        t += bandwidth;
+    if (kde) {
+      while (t <= endDate || y < xheight - 1) {
         x = this.xFor(t, drawWidth);
         val = kde.pdf(t);
-        const y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
-        // const y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
+        y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
+        // y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
+        ctx.lineTo(x, y);
+        t += curveInterval;
+      }
+    } else {
+      for (let i = 0; i < bandTimes.length; i++) {
+        t = bandTimes[i];
+        x = this.xFor(t, drawWidth);
+        val = bands[i];
+        y = (1 - val / allSeriesBandMax) * (xheight - margin.top) + margin.top;
+        // y = (1 - val / bandMax) * (xheight - margin.top) + margin.top;
         ctx.lineTo(x, y);
       }
     }
