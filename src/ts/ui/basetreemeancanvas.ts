@@ -160,24 +160,31 @@ export class BaseTreeMeanCanvas {
   }
 
   protected draw() : void {
-    const { ctx, width, height, averageYPositions } = this;
+    const { ctx, width, height, averages, averageYPositions } = this;
+
+    // console.log(averages, averageYPositions);
 
     ctx.clearRect(0, 0, width, height);
 
     ctx.lineWidth = LINE_WIDTH;
 
+
+
     for (let i = 0; i < averageYPositions.length; i++) {
-      const prevIndex = (i > 0) ? i - 1 : null;
+      const prevIndex = i - 1;
+      const values = averages[i];
 
       // set color
       this.setSeriesColor(i);
+
+
 
       /* trace the top */
       ctx.beginPath();
       let startY = 0,
         ys: number[];
       const L: number = averageYPositions[i].length;
-      if (prevIndex === null) {
+      if (prevIndex < 0) {
         ctx.moveTo(0, 0);
         ctx.lineTo(width, 0);
       } else {
@@ -190,7 +197,7 @@ export class BaseTreeMeanCanvas {
           ctx.lineTo(x, y);
         }
       }
-      ctx.stroke();
+      // ctx.stroke();
 
       /* trace the bottom */
       ys = averageYPositions[i];
@@ -202,6 +209,25 @@ export class BaseTreeMeanCanvas {
       // console.log(ctx.fillStyle, ys);
       ctx.lineTo(0, startY);
       ctx.fill();
+
+      /* do a stroke for the top, only where the value > 0 */
+      let drawing = false;
+      ctx.beginPath();
+      values.forEach((val, d)=>{
+        if (val === 0) {
+          drawing = false;
+        } else {
+          const x = d / (L - 1) * width,
+            y = ys[d] * height;
+          if (drawing) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+      });
+      ctx.stroke();
+
     }
 
 

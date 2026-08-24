@@ -75,14 +75,20 @@ export const SummaryStatShortLabels: {[_:string]: string} = {
 
 
 
+export type TempestData =  {
+  mutCountHist:number[][],
+  nodeDateHist: number[][]
+};
+
 export type kneeHoverListenerType = (pct:number)=>void;
 export type hoverListenerType = (treeIndex:number)=>void;
 export type statHoverListenerType = (statName:SummaryStat | null)=>void;
 export type requestDrawFnc = ()=>void;
+export type HoverNodeFnc = (nodeIndex: number)=>void;
 
 
 export type HistDataFunction = ()=>number[];
 export type GammaDataFunction = ()=>SkygridPopModel[];
-
+export type ScatterDataFunction = ()=>TempestData;
 
 

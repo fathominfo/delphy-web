@@ -1,5 +1,5 @@
 import {KernelDensityEstimate} from "../pythia/kde";
-import { numericSort } from "./common";
+import { nicenum, numericSort } from "./common";
 import { calcEffectiveSampleSize } from "./runner/effectivesamplesize";
 
 
@@ -86,7 +86,7 @@ export class Distribution {
           increment = this.bandwidth / 3;
         if (increment > 1) {
           medianDate = Math.floor(medianDate);
-          increment = 1;
+          increment = nicenum(increment, true);
         }
         for (let d = medianDate; d < this.max; d += increment) {
           const sample = this.getCumulativeProbability(d),
@@ -124,7 +124,7 @@ export class Distribution {
   getValueAt(hoverDate: number) : number {
     if (!this.kde) return 0;
     const val = this.kde.pdf(hoverDate);
-    if (val < this.getMinBand()) return 0;
+    // if (val < this.getMinBand()) return 0;
     return val;
   }
 

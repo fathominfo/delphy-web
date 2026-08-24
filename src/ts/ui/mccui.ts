@@ -9,6 +9,7 @@ import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
 import { MccUmbrella } from '../pythia/mccumbrella';
 import { Metadata } from './metadata';
+import { sum } from 'mathjs';
 
 
 export class MccUI extends UIScreen {
@@ -128,13 +129,19 @@ export class MccUI extends UIScreen {
         if (mccConfig) {
           mccConfig.updateInnerNodeMetadata(summary);
         }
-        this.mccTreeCanvas.positionTreeNodes(summary, nodeConfidence, pythia.getMccIndex());
+        const mccManager = mccRef.getManager();
+        this.mccTreeCanvas.positionTreeNodes(summary, nodeConfidence, mccManager.mccIndex);
+        this.setTreeColors(summary);
         requestAnimationFrame(()=>document.body.classList.remove("summarizing"));
         this.requestTreeDraw();
         resolve(summary);
       }, 10);
     });
     return prom;
+  }
+
+  setTreeColors(summary: SummaryTree) : void {
+    this.mccTreeCanvas.setColors(summary);
   }
 
 

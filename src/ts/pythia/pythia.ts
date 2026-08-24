@@ -9,7 +9,7 @@ import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType,
   CoreVersionInfo, copyDict} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
-import {BackLink, MccNodeBackLinks} from './pythiacommon';
+import {BackLink, getMutationCounts, MccNodeBackLinks} from './pythiacommon';
 import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
@@ -170,7 +170,12 @@ export class Pythia {
   initialTree: PhyloTree | null;    // Immutable snapshot of initial tree
   runParams: RunParamConfig | null; // Immutable once run has been initialized
 
+  /*
+  flag for whether we should request another round
+  of steps. Set asynchronously from processing.
+  */
   isRunning: boolean;
+  hasStopped: boolean;
 
   muHist : number[] = [];
   muStarHist: number[] = [];
@@ -189,6 +194,7 @@ export class Pythia {
   popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
+  nodeMutCountHist: number[][] = [];
   paramsHist: ArrayBuffer[] = [];
   treeHist: PhyloTree[] = [];
   kneeIndex = 0;
@@ -217,6 +223,7 @@ export class Pythia {
     this.initialTree = null;
     this.runParams = null;
     this.isRunning = false;
+    this.hasStopped = true;
     this.resetHist();
     this.mccRefManager = null;
     this.currentMccRef = null;
@@ -241,7 +248,10 @@ export class Pythia {
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
     analysisProgressCallback:(numSeqsSoFar: number, totalSeqs: number)=>void,
-    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    guideTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    refinedTreeProgressCallback:(round:number, tipsSoFar:number, totalTips:number)=>void,
+    sprRefineProgressCallback:(attempt:number, maxAttempts:number, curMuts:number)=>void,
+    rootingProgressCallback:(substageId:number, substage:number, numSubstages:number, nodes:number, total:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void, // eslint-disable-line @typescript-eslint/no-explicit-any
     config: RunParamConfig | null
   ):Promise<void> { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -252,7 +262,10 @@ export class Pythia {
       stageCallback,
       parseProgressCallback,
       analysisProgressCallback,
-      initTreeProgressCallback,
+      guideTreeProgressCallback,
+      refinedTreeProgressCallback,
+      sprRefineProgressCallback,
+      rootingProgressCallback,
       warningCallback
     );
     return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback, config);
@@ -263,7 +276,11 @@ export class Pythia {
     errCallback:(msg:string)=>void,
     stageCallback:(stage:number)=>void,
     parseProgressCallback:(numSeqsSoFar: number, bytesSoFar: number, totalBytes: number)=>void,
-    initTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    // analysisProgressCallback_unused:(numSeqsSoFar: number, totalSeqs: number)=>void,
+    guideTreeProgressCallback:(tipsSoFar:number, totalTips:number)=>void,
+    refinedTreeProgressCallback:(round:number, tipsSoFar:number, totalTips:number)=>void,
+    sprRefineProgressCallback:(attempt:number, maxAttempts:number, curMuts:number)=>void,
+    rootingProgressCallback:(substageId:number, substage:number, numSubstages:number, nodes:number, total:number)=>void,
     warningCallback:(seqId:string, warningCode: SequenceWarningCode, detail:any)=>void, // eslint-disable-line @typescript-eslint/no-explicit-any
     config: RunParamConfig | null
   ):Promise<void> {
@@ -273,7 +290,11 @@ export class Pythia {
       mapleBytesJs,
       stageCallback,
       parseProgressCallback,
-      initTreeProgressCallback,
+      guideTreeProgressCallback,
+      // analysisProgressCallback_unused,
+      refinedTreeProgressCallback,
+      sprRefineProgressCallback,
+      rootingProgressCallback,
       warningCallback
     );
     return this.initRunFromTreePromise(treePromise, runReadyCallback, errCallback, config);
@@ -421,7 +442,12 @@ export class Pythia {
     return this.mccRefManager.getRef();
   }
 
-  getMccIndex(): number {
+  /*
+  of all the trees in the run (not just the trees upon
+  which the MCC is based), get the index of the tree that
+  is the basis of the MCC's topology.
+  */
+  getAbsoluteMccIndex(): number {
     let index = -1;
     if (this.mccRefManager) {
       index = this.kneeIndex + this.mccRefManager.mccIndex;
@@ -572,23 +598,45 @@ export class Pythia {
     }
   }
 
-  startRun(callback:(null|returnless)):void {
+  startRun():void {
     if (this.run) {
+      if (this.isRunning) {
+        /* don't try to start it again */
+        return;
+      }
+      if (!this.hasStopped) {
+        /*
+        if we are here, that means pythia is running and has
+        gotten a request to stop. Simplest thing is to
+        revert that request and let it go;
+        */
+        this.isRunning = true;
+        return;
+      }
+
       this.isRunning = true;
+      this.hasStopped = false;
       const runCallback = ()=>{
         this.sampleCurrentTree();
         this.delphy.deriveMccTreeAsync(this.treeHist.slice(this.kneeIndex))
           .then((mccTree:MccTree) => {
             this.updateMcc(mccTree);
-            if (callback) callback();
             if (this.isRunning) {
               this.runSteps(runCallback);
+            } else {
+              this.hasStopped = true;
             }
           });
       };
       this.runSteps(runCallback);
     }
   }
+
+  pauseRun(): void {
+    this.isRunning = false;
+  }
+
+
 
 
   resetHist(): void {
@@ -609,6 +657,7 @@ export class Pythia {
     this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
+    this.nodeMutCountHist = [];
     this.paramsHist = [];
     if (this.treeHist) {
       this.treeHist.forEach((tree:PhyloTree)=>tree.delete());
@@ -648,6 +697,7 @@ export class Pythia {
         this.paramsHist.pop();
         this.treeHist.pop();
         this.minDateHist.pop();
+        this.nodeMutCountHist.pop();
       }
       this.stepsHist.push(step);
       if (this.run.isMpoxHackEnabled()) {
@@ -684,11 +734,8 @@ export class Pythia {
       minDate = Math.min(minDate, tree.getTimeOf(i));
     }
     this.minDateHist.push(minDate);
-  }
-
-
-  pauseRun():void {
-    this.isRunning = false;
+    const tipMutations = getMutationCounts(tree);
+    this.nodeMutCountHist.push(tipMutations);
   }
 
 
@@ -920,6 +967,7 @@ export class Pythia {
     let muts: MutationDistribution[] = [];
     if (downstreamMccNodeIndex !== UNSET) {
       let rootSeq: Uint8Array;
+      let treeIndex = 0;
       const treeCount = tree.getNumBaseTrees(),
         mutationLookup: { [name: string]: MutationDistribution } = {},
         tallyMutation = (mut:Mutation)=>{
@@ -928,7 +976,7 @@ export class Pythia {
             const isApobecCtx = checkApobecCtx(mut, rootSeq);
             mutationLookup[name] = new MutationDistribution(mut, treeCount, isApobecCtx);
           }
-          mutationLookup[name].addTime(mut.time);
+          mutationLookup[name].addTime(mut.time, treeIndex);
         },
         /*
           first we find the set of trees in the mcc that contain both nodes
@@ -938,7 +986,7 @@ export class Pythia {
         const nodeIndex = tree.getCorrespondingNodeInBaseTree(upstreamMccNodeIndex, treeIndex);
         upstreamTrees[treeIndex] = nodeIndex;
       }
-      for (let treeIndex = 0; treeIndex < tree.getNumBaseTrees(); treeIndex++) {
+      for (treeIndex = 0; treeIndex < tree.getNumBaseTrees(); treeIndex++) {
         try {
           const upstreamIndex = upstreamTrees[treeIndex];
           if (upstreamIndex !== undefined) {
@@ -1429,6 +1477,10 @@ export class Pythia {
     const firstTree = this.delphy.createPhyloTreeFromFlatbuffers(tBuff, treeInfo);
 
     this.run = await this.instantiateRun(firstTree, runParams);
+    // reset the first params
+    this.resetHist();
+    this.run.setParamsFromFlatbuffer(pBuff);
+    this.sampleCurrentTree();
 
     for (let i = 1; i < treeCount; i++) {
       progressCallback(i, treeCount);
@@ -1439,7 +1491,6 @@ export class Pythia {
       tree.delete();
 
       this.run.setParamsFromFlatbuffer(pBuff);
-
       this.sampleCurrentTree();
 
       await yieldToMain();

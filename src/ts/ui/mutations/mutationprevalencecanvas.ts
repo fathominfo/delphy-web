@@ -115,7 +115,7 @@ export class MutationPrevalenceCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   mutations: MutationPrevalenceData[];
-  mutationLookup: {[name: string]: MutationPrevalenceData}
+  mutationLookup: {[name: string]: MutationPrevalenceData};
   width: number;
   height: number;
 
@@ -195,6 +195,7 @@ export class MutationPrevalenceCanvas {
 
   setData(mutations: MutationData[], minDate: number, maxDate: number): void {
     mutations = mutations.filter(md => md.active === true);
+    this.mutations.length = 0;
     mutations.forEach((src: MutationData)=>{
       if (this.mutationLookup[src.name] === undefined) {
         const alt: number = src.moi.mutation.to,
@@ -204,8 +205,10 @@ export class MutationPrevalenceCanvas {
           prevalenceData = {src, balances, ntiles, color};
         this.mutations.push(prevalenceData);
         this.mutationLookup[src.name] = prevalenceData;
+      } else {
+        this.mutations.push(this.mutationLookup[src.name]);
       }
-    })
+    });
     this.minDate = minDate;
     this.maxDate = maxDate;
 
@@ -547,6 +550,7 @@ export class MutationPrevalenceCanvas {
 
 
   drawHoverNtiles(index: number) {
+    if (this.mutations.length === 0) return;
     const {ctx, width, height} = this,
       data = this.mutations[index],
       dayData = data.ntiles[this.hoverDateIndex],
@@ -709,13 +713,13 @@ export class MutationPrevalenceCanvas {
       this.hoverSeriesIndex = index;
       this.locked = lock;
       this.launchDraw();
-    } else if (index === this.hoverSeriesIndex) {
+    // } else if (index === this.hoverSeriesIndex) {
+    } else {
       /* are we turning off the lock?  */
       this.locked = false;
       this.launchDraw();
     }
   }
-
 }
 
 

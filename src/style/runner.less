@@ -91,6 +91,10 @@
     * { box-sizing: content-box;}
   }
 
+  .constrain-selection, .mcc-opt-list.y-spacing, .mcc-opt-list.color {
+    display: none;
+  }
+
 }
 
 
@@ -293,7 +297,7 @@
   */
 
   gap: calc(var(--view-gap) - var(--pop-chart-highlight-dot-radius));
-  height: calc(100% - 64px);
+  height: calc(100% - 20px);
 }
 
 
@@ -305,8 +309,27 @@
   width: var(--tree-container-min-width);
   min-width: var(--tree-container-min-width);
   max-width: var(--tree-container-max-width);
+
+  .title .info { display: none; }
+
   .tree-container {
-    height: calc(100% - 75px);
+    height: calc(100% - 100px);
+  }
+
+  .mcc_highlight {
+    top: 0;
+    background-color: white;
+    transition: opacity 0.15s;
+    opacity: 0;
+    &.highlighting {
+      opacity: 0.45;
+    }
+  }
+
+
+
+  .model--trees--label {
+    font-weight: 400;
   }
 }
 
@@ -1000,6 +1023,160 @@
         }
       }
     }
+
+    &.scatter {
+
+      min-width: var(--indicator-pop-module-width);
+      max-width: var(--indicator-pop-module-width);
+
+
+      .subtitle-row {
+        display: flex;
+        color:  #5e5e5e;
+        margin: 0.5em 0;
+        .subtitle {
+          margin: 0 !important;
+          flex-grow: 1;
+        }
+        .y-axis-label {
+          margin: 0 !important;
+          flex-grow: 1;
+          text-align: right;
+          padding-right: 15px;
+          font-size: 11px;
+          dominant-baseline: middle;
+          font-variant-numeric: tabular-nums;
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+        }
+      }
+
+      .sup {
+        display: inline-block;
+        position: relative;
+        top: -5px;
+        font-size: 10px;
+      }
+
+      .displays {
+        padding: 0 0;
+        height: var(--trace-chart-width);
+      }
+
+      .chart {
+        margin-top: -5px;
+        // width: fit-content;
+        width: 100%;
+        height: 202px;
+        gap: 5px;
+
+        .feature {
+          height: 100%;
+          width: 100%;
+        }
+        // background-color: yellow;
+        .graph.display {
+          background-color: white;
+          // min-width: var(--pop-chart-graph-width);
+          // max-width: var(--pop-chart-graph-width);
+          width: 100%;
+          height: 100%;
+          /*
+          Move the chart over so that the trend lines
+          visually align with the charts above. We need
+          to do this because the svg element is a little wider
+          than the data inside it, because if we didn't,
+          the highlight dots would get clipped at either edge.
+          Related entries in this file are for
+            #runner--panel--modules {padding}
+          and
+            #runner--bottom {gap}
+          */
+          margin-left: calc(-1 * var(--pop-chart-highlight-dot-radius));
+        }
+
+        .displays {
+          height: 100%;
+          width: 100%;
+        }
+
+        .tick {
+          stroke-width: 0.5;
+          stroke: var(--chart-graph-run-trend-stroke);
+        }
+        .tick-label, .hover-count {
+          font-size: 11px;
+          dominant-baseline: middle;
+          font-variant-numeric: tabular-nums;
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+
+        }
+
+        .min-date, .max-date {
+          font-weight: var(--chart-axis-text-font-weight);
+          fill: var(--chart-axis-text);
+        }
+        .max-date {
+          text-anchor: end;
+        }
+
+        .min-date, .max-date, .tick-label {
+          opacity: 1;
+          transition: opacity 0.15s;
+          &.back {
+            opacity: 0;
+          }
+        }
+
+      }
+      .bg {
+        fill: #f0f0f0;
+      }
+      ellipse.dot {
+        fill: #5e5e5e;
+        stroke: none;
+        opacity: 1;
+        transition: opacity 0.15s, fill 0.15s;
+
+        &.back {
+          opacity: 0.25;
+          fill: #c1c1c1;
+        }
+        &.highlight {
+          fill: #094e77;
+          rx: 3;
+          ry: 3;
+        }
+      }
+
+      .hover-date, .hover-count {
+        fill: #094e77 !important;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .hover-date {
+        text-anchor: middle;
+      }
+      .hover-count {
+        dominant-baseline: middle;
+      }
+
+      .regression {
+        stroke: var(--chart-graph-run-trend-stroke);
+        transition: opacity 0.15s;
+        &.back {
+          opacity: 0.25;
+        }
+      }
+
+      svg.hovering {
+        .hover-date, .hover-count {
+          opacity: 1;
+        }
+      }
+
+    }
   }
 
 
@@ -1027,7 +1204,7 @@
   and related is
     #runner--bottom {gap}
   */
-  padding: 0 0 0 var(--pop-chart-highlight-dot-radius);
+  padding: 0 0 2rem var(--pop-chart-highlight-dot-radius);
 }
 
 
@@ -1079,9 +1256,11 @@ input.stopping + #run-input--label {
   border-color: var(--header-option-stroke-static);
 }
 
-
 #run--indicator--controls {
-  margin: 12px 0 4px;
+  // margin: 10px 0 4px;
+  padding: 0.5rem;
+  border-top: 1px solid var(--stability-stroke);
+  border-radius: 3px;
 
   input[type="checkbox"] {
     appearance: auto;
@@ -1091,7 +1270,63 @@ input.stopping + #run-input--label {
     margin-right: 3px;
   }
 
+  .run--burn-in-container {
+    flex: 4
+  }
 
+  .run--traces-container {
+    flex: 3;
+  }
+
+  #burn-in-wrapper,
+  .run--traces-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.6em;
+    align-items: center;
+    align-content: center;
+
+    @media(max-width:1330px) {
+      flex-direction: column;
+      align-items: start;
+      gap: 0.15em
+    }
+
+    .run-select-wrapper {
+      align-items: center;
+      gap: 0.6em;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .hint {
+      color: #aaa;
+    }
+
+    input {
+      appearance: auto;
+    }
+
+    p {
+      display: block;
+      margin: 0;
+    }
+    button:disabled {
+      color: rgb(168,168,168);
+      border-color: rgb(210, 221,227);
+      cursor: not-allowed;
+    }
+    &.unset {
+      input,
+      label {
+        display: none;
+      }
+
+      &.pre {
+        opacity: 0.3;
+      }
+    }
+  }
 }
 
 #runner--export-csv, #burn-in-override {
@@ -1105,8 +1340,10 @@ input.stopping + #run-input--label {
   cursor: pointer;
   transition: all var(--transition) ease-out;
   position: relative;
-  top: -4px;
+  // top: -4px;
   white-space: nowrap;
+  color: unset;
+  font-weight: 500;
 }
 
 
@@ -1160,9 +1397,21 @@ input.stopping + #run-input--label {
     width: var(--header-option-symbol-size);
     height: var(--header-option-symbol-size);
     background-color: transparent;
-    path {
-      fill: black;
+    padding-top: 4px;
+    line, circle {
+      // stroke: #212121;
+      // stroke: #454545;
+      // stroke: var(--header-option-stroke-static);
+      stroke: #999;
+      stroke-linecap: round;
       transition: all var(--transition) ease-out;
+    }
+    line {
+      stroke-width: 70;
+    }
+    circle {
+      stroke-width: 60;
+      fill: none;
     }
   }
 
@@ -1686,6 +1935,7 @@ label:has(#advanced-skygrid-toggle:checked) {
 
 
 #burn-in-toggle {
+  flex: 1;
   &:disabled+label{
     opacity: 0.3;
   }
@@ -2081,22 +2331,6 @@ label:has(#advanced-skygrid-toggle:checked) {
     margin: var(--info-margin);
   }
 
-}
-
-
-
-#burn-in-wrapper {
-  height: 1.5em;
-  label .hint {color: #aaa}
-  input { appearance: auto; }
-  p {
-    display: block;
-    margin: 0;
-  }
-  &.unset {
-    input, label {display: none;}
-    &.pre {opacity: 0.3;}
-  }
 }
 
 

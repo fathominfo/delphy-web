@@ -83,7 +83,7 @@
 
 .tree-hint-container {
   .t05();
-  margin-bottom: 1em;
+  // margin-bottom: 1em;
   color: #777;
   min-height: calc(14px * 2);
 
@@ -95,16 +95,6 @@
   .mrca { color: @mrca; }
   .node1 { color: @node1; }
   .node2 { color: @node2; }
-}
-
-.constrain-selection {
-  font-size: 12px;
-  margin-bottom: 10px;
-  color: #777;
-  display: flex;
-  gap: 7px;
-  align-items: flex-start;
-  line-height: 1.2;
 }
 
 #lineages--right {
@@ -838,7 +828,31 @@ details {
 .lineages--node-comparison--time-chart-container {
   // padding-left: 15px;
   // border-left: solid 1px rgb(225,225,225);
+
+  &:has(.lineages--node-comparison--show-toggle input:checked) {
+    .lnc-min-count { display: none; }
+  }
+
 }
+
+.lineages--node-comparison--mutation-list {
+  padding: 0;
+  margin: 0;
+  // height: calc( 40px * 5 + 7.5px * 4);
+  overflow: hidden;
+  &.windowshading {
+    transition: height 0.15s;
+  }
+}
+
+.lineages--node-comparison--show-toggle {
+  .lnc-less { display: none;}
+  &:has(input:checked) {
+    .lnc-less { display: inline; }
+    .lnc-all { display: none; }
+  }
+}
+
 
 .lineages--node-comparison--time-chart {
   //background-color: rgb(250, 250, 250);
@@ -857,7 +871,7 @@ details {
   color: rgb(114, 114, 114);
 }
 
-.lineages--node-comparison--mutation-count {
+.lnc-mutation-min, .lineages--node-comparison--mutation-count {
   font-weight: bolder;
 }
 

@@ -39,8 +39,17 @@
               <label id="runner--advanced--toggle">
                 <input type="checkbox" />
                 <div class="icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-                    <path d="m11.84,9.18l-.94-.39c.07-.25.12-.52.12-.79s-.05-.54-.12-.79l.94-.39c.19-.08.28-.3.2-.49s-.3-.28-.49-.2l-.95.39c-.27-.47-.65-.85-1.12-1.12l.39-.95c.08-.19-.01-.41-.2-.49-.19-.08-.41.01-.49.2l-.39.94c-.25-.07-.52-.12-.79-.12s-.54.05-.79.12l-.39-.94c-.08-.19-.3-.28-.49-.2-.19.08-.28.3-.2.49l.39.95c-.47.27-.85.65-1.12,1.12l-.95-.39c-.19-.08-.41.01-.49.2s.01.41.2.49l.94.39c-.07.25-.12.52-.12.79s.05.54.12.79l-.94.39c-.19.08-.28.3-.2.49.06.14.2.23.35.23.05,0,.1,0,.14-.03l.95-.39c.27.47.65.85,1.12,1.12l-.39.95c-.08.19.01.41.2.49.05.02.1.03.14.03.15,0,.29-.09.35-.23l.39-.94c.25.07.52.12.79.12s.54-.05.79-.12l.39.94c.06.14.2.23.35.23.05,0,.1,0,.14-.03.19-.08.28-.3.2-.49l-.39-.95c.47-.27.85-.65,1.12-1.12l.95.39s.1.03.14.03c.15,0,.29-.09.35-.23.08-.19-.01-.41-.2-.49Zm-3.84,1.07c-1.24,0-2.25-1.01-2.25-2.25s1.01-2.25,2.25-2.25,2.25,1.01,2.25,2.25-1.01,2.25-2.25,2.25Z" stroke-width="0"></path>
+                  <svg class="settings-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"
+                    width="16" height="16">
+                    <line x1="50" y1="160" x2="195" y2="160"> </line>
+                    <circle cx="285" cy="160" r="90"></circle>
+                    <line x1="375" y1="160" x2="950" y2="160"> </line>
+                    <line x1="50" y1="400" x2="610" y2="400"> </line>
+                    <circle cx="700" cy="400" r="90"></circle>
+                    <line x1="790" y1="400" x2="950" y2="400"> </line>
+                    <line x1="50" y1="640" x2="310" y2="640"> </line>
+                    <circle cx="400" cy="640" r="90"></circle>
+                    <line x1="490" y1="640" x2="950" y2="640"> </line>
                   </svg>
                 </div>
                 <span>Advanced options</span>
@@ -104,24 +113,9 @@
 
         <div id="runner--mcc">
           {{>mcc_tree}}
+          {{>mcc_opts}}
 
-          <div class="mcc-legend">
-            <div class="mcc-opt-list confidence">
-              <label for="mcc-opt--confidence-range">Credibility threshold</label>
-              <output name="mcc-opt--confidence-range--output" for="mcc-opt--confidence-range">
-                Highlighting nodes in
-                <span class="mcc-opt--confidence-readout cred-threshold">90%</span>
-                of base trees
-              </output>
 
-              <div class="mcc-opt--confidence-range block-slider">
-                <input type="range" min="1" max="100" value="90" step="1" class="slider--input" id="mcc-opt--confidence-range" />
-                <div class="slider--track"></div>
-                <div class="slider--track-filled"></div>
-                <div class="slider--thumb"></div>
-              </div>
-            </div>
-          </div>
         </div>
 
 
@@ -324,31 +318,71 @@
                 </div>
               </div>
 
+              <div class="module scatter">
+                <div class="header">
+                  <h3 class="title"></h3>
+                  <div class="subtitle-row">
+                    <p class="subtitle"></p>
+                    <p class="y-axis-label"></p>
+                  </div>
+                </div>
+                <div class="chart">
+                  <div class="feature">
+                    <div class="displays">
+                      <div class="graph display">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 145 145">
+                          <rect class="bg" x="0" y="0" width="145" height="145"></rect>
+                          <line class="regression" x1="0" y1="0" x2="0" y2="0"></line>
+                          <ellipse class="dot" cx="0" cy="0" rx="1.5" ry="1.5"></ellipse>
+
+                          <line class="tick"></line>
+                          <text class="tick-label"></text>
+                          <text class="hover-count"></text>
+                          <text class="min-date"></text>
+                          <text class="max-date"></text>
+                          <text class="hover-date"></text>
+
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
           </div>
 
           <div id="run--indicator--controls" class="menu-group">
+            <div class="run--burn-in-container">
+              <div id="burn-in-wrapper" class="pre">
+              <label>
+                <input type="checkbox" id="burn-in-toggle" disabled />
+                Hide <b>burn-in</b>
+              </label>
 
-            <div id="burn-in-wrapper" class="pre">
-              <input type="checkbox" id="burn-in-toggle" disabled />
-              <label for="burn-in-toggle" >Hide burn in <span class="hint">click in a trace chart to select</span></label>
+              <div class="run-select-wrapper">
+                <div class="hint">
+                  <i>Click</i> a trace chart to select
+                </div>
+                <button id="burn-in-override" class="pre" disabled title="Let Delphy detect the burn-in period automatically">
+                  Reset selection
+                </button>
+              </div>
+              </div>
+            </div>
+          <div class="run--traces-container">
+              <span><b>Traces</b></span>
+              <div class="run-select-wrapper">
+                <label id="runner--show-traces">
+                  <input id="runner--all-traces-toggle" type="checkbox" />
+                  <span id="runner--all-traces">Show all</span>
+                </label>
+                <button id="runner--export-csv">Export to TSV</button>
+              </div>
             </div>
 
-
-            <button id="burn-in-override" class="pre" disabled title="allow delphy to detect the burn-in period">Reset burn in</button>
-
-
-
-            <label id="runner--show-traces">
-              <input id="runner--all-traces-toggle" type="checkbox" />
-              <span id="runner--all-traces">Show all traces</span>
-            </label>
-
-
-
-            <button id="runner--export-csv">Export Traces to TSV</button>
-
           </div>
+
         </div>
       </div>
 

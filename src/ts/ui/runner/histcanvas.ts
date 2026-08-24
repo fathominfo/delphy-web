@@ -536,6 +536,8 @@ export class HistCanvas extends TraceCanvas {
     burnInMarker.classList.toggle("hidden", burnInHeight === 0);
     burnInMarker.setAttribute("y1", `${activeTop}`);
     burnInMarker.setAttribute("y2", `${activeTop}`);
+    if (burnInPath.endsWith("L")) burnInPath = burnInPath.substring(0, burnInPath.length - 1);
+    if (activePath.endsWith("L")) activePath = activePath.substring(0, activePath.length - 1);
     burnInTrend.setAttribute("d", burnInPath);
     activeInTrend.setAttribute("d", activePath);
     burnInTrend.style.strokeWidth = `${trendWeight}`;
@@ -600,6 +602,8 @@ export class HistCanvas extends TraceCanvas {
     const { counts, edges, positions, step } = binConfig;
     const valRange = displayMax - displayMin;
 
+    if (displayMin === displayMax) return;
+
     /*
     since burnin might be visible, and the histogram does not include burn-in values,
     we need to calculate how much room the histogram takes.
@@ -623,7 +627,8 @@ export class HistCanvas extends TraceCanvas {
     */
     const minVal = edges[0];
     const maxVal = edges[edges.length-1] + binSize;
-    const distStep = (maxVal - minVal) / this.width * 3;
+    // const distStep = (maxVal - minVal) / this.width;
+    const distStep = (displayMax - displayMin) / this.width;
     const probs: number[] = [];
     const values: number[] = [];
     const kde = (traceData as HistData).distribution.kde as KernelDensityEstimate;
@@ -641,11 +646,15 @@ export class HistCanvas extends TraceCanvas {
           histoSize: ${histoSize}, N: ${N} binSize: ${binSize}`);
         return;
       }
-      for (let val = minVal; val <= maxVal; val+= distStep) {
+      for (let val = displayMin; val <= displayMax; val+= distStep) {
         const pdf = kde.pdf(val);
         const prob = step * pdf;
-        probs.push(prob);
-        values.push(val);
+        try {
+          probs.push(prob);
+          values.push(val);
+        } catch (err) {
+          console.warn(`error calculating probabilities (displayMin}: ${displayMin}, displayMax: ${displayMax}, distStep: ${distStep}`, err);
+        }
       }
     }
     // const probs =  bins.map((pdf, i)=>{
@@ -664,7 +673,7 @@ export class HistCanvas extends TraceCanvas {
     counts.forEach((n, i)=>{
       const value = edges[i];
       const barProb = Math.max(0, n / sumCounts);
-      const size = barProb / maxProb * histoHeight;
+      const size = barProb / maxProb * histoHeight || 0;
       const top = histoHeight - size;
       const bar = BAR_TEMPLATE.cloneNode(true) as SVGRectElement;
       const x = (value - displayMin) / valRange * this.histoWidth;
@@ -682,9 +691,9 @@ export class HistCanvas extends TraceCanvas {
     // let btot = 0;
     probs.forEach((probability, i)=>{
       const value = values[i];
-      const size = Math.max(0, probability / maxProb * histoHeight);
+      const size = Math.max(0, probability / maxProb * histoHeight) || 0;
       const top = histoHeight - size;
-      const x = (value - displayMin) / valRange * histoWidth;
+      const x = (value - displayMin) / valRange * histoWidth ;
       if (d === '') {
         d = `M${x} ${top} L `;
       } else {
@@ -705,10 +714,30 @@ export class HistCanvas extends TraceCanvas {
         const pdf = kde.pdf(highlightValue);
         const cdf = kde.cdf(highlightValue);
         const prob = step * pdf;
-        const ht = Math.max(0, prob / maxProb * histoHeight);
+        const ht = Math.max(0, prob / maxProb * histoHeight) || 0;
         const y = histoHeight - ht;
         const x = (highlightValue - displayMin) / valRange * histoWidth;
-        highlightD += `${x} ${y} ${x} ${histoHeight}`;
+        const match = highlightD.match(/^M([-\d.]+)\s/);
+        if (match) {
+          /*
+          The fill area differs from the probability curve in that
+          in needs to start from the bottom of the chart. In most cases,
+          the probability curve starts from the bottom, but we sometimes
+          see it starting higher. It probably shouldn't, but until we
+          fix that, we can at least fix the display.
+          Parse the path of the highlight area to get the first
+          coordinate pair, and then add a coordinate pair at the same
+          x position, but at the bottom of the chart.
+          */
+          const firstX = match[1];
+          highlightD =
+            `M${firstX} ${histoHeight} L${
+              /* remove the 'M' that was there before */
+              highlightD.slice(1)
+            } ${x} ${y} ${x} ${histoHeight}`;
+        } else {
+          highlightD = `M${x} ${y} L${x} ${histoHeight}`;
+        }
         const highlightPath = DISTRIBUTION_TEMPLATE.cloneNode() as SVGPathElement;
         highlightPath.setAttribute('d', highlightD);
         highlightPath.classList.add("cdf");

@@ -1,5 +1,5 @@
 import { UNSET } from '../common';
-import { GammaDataFunction, HistDataFunction } from './runcommon';
+import { GammaDataFunction, HistDataFunction, ScatterDataFunction } from './runcommon';
 import { TraceData } from './tracedata';
 
 const maybeChartContainer = document.querySelector('#runner--panel--modules');
@@ -29,7 +29,10 @@ export class TraceCanvas {
 
 
 
-  constructor(label:string, unit='', className: string, getDataFnc: HistDataFunction | GammaDataFunction, template: HTMLDivElement) {
+  constructor(label:string, unit='', className: string,
+    getDataFnc: HistDataFunction | GammaDataFunction | ScatterDataFunction,
+    template: HTMLDivElement
+  ) {
     this.traceData = new TraceData(label, unit, getDataFnc);
     this.container = template.cloneNode(true) as HTMLDivElement;
     this.className = className;

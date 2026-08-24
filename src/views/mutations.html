@@ -39,7 +39,7 @@
                 <label for="interest--reversals">Reversals</label>
               </div>
               <div class="filter-option--tips">
-                <input type="radio" name="interest" class="radio-interest" id="interest--tips" value="many_tips" checked autocomplete="off">
+                <input type="radio" name="interest" class="radio-interest" id="interest--tips" value="many_tips" autocomplete="off">
                 <label for="interest--tips">Many tips</label>
               </div>
               <div class="filter-option--site">
@@ -55,10 +55,10 @@
           <div class="filter-descriptions">
             <p class="filter-description hidden" data-feature="all"><b>All</b>: no filters applied to mutations.</p>
             <p class="filter-description hidden" data-feature="reversals"><b>Reversals</b>: mutations from the root sequence that are followed by another mutation that reverts the mutated allele back to the root allele.</p>
-            <p class="filter-description" data-feature="many_tips"><b>Many tips</b>: mutations where the median number of genomes affected in the base trees is 75% or more.</p>
+            <p class="filter-description hidden" data-feature="many_tips"><b>Many tips</b>: mutations where the median number of genomes affected in the base trees is 75% or more.</p>
             <p class="filter-description hidden" data-feature="same_site"><b>Same-site</b>: mutations occuring at the same site on the genome that result in different alleles.</p>
             <p class="filter-description hidden" data-feature="multiple_introductions"><b>Recurring</b>: instances of the same mutation appearing independently multiple times.</p>
-
+            <p class="filter-description" data-feature="none">Select a feature type to see mutation details. </p>
           </div>
         </div>
         <div class="moi-list">
@@ -110,9 +110,9 @@
               <input type="range" min="0" max="100" step="1" class="parameter-range parameter-range--trees">
             </div>
           </div>
-          <p class="parameter-info">Showing <span id="moi-list-mut-count"></span> mutation<span class="plural">s</span> appearing in at least 
-            <button id="moi-list-tips--button" class="parameter-button"><span id="moi-list-tips"></span>% of genomes</button> 
-            and present in at least 
+          <p class="parameter-info">Showing <span id="moi-list-mut-count"></span> mutation<span class="plural">s</span> appearing in at least
+            <button id="moi-list-tips--button" class="parameter-button"><span id="moi-list-tips"></span>% of genomes</button>
+            and present in at least
             <button id="moi-list-trees--button" class="parameter-button"><span id="moi-list-trees"></span>% of base trees</button>.
           </p>
         </div>
@@ -127,10 +127,7 @@
       </div>
       <div id="mutations--display">
         <div class="mutations--display-top">
-          <div>
-            <h1>Selected mutations</h1>
-            <div class="mutations--display--col-name">Mutation time</div>
-          </div>
+          <h1>Selected mutations</h1>
           <div>
             <div>
               <button type="button" class="clear-all">Clear all</button>
@@ -140,13 +137,18 @@
                 <div>
                   <input type="radio" name="display" class="display-radio" id="display-radio--list" value="list" checked autocomplete="off">
                   <label for="display-radio--list">
-                    <div class="box"><div class="glyph"></div></div>
+                    <div class="box">
+                      <div class="glyph"></div>
+                    </div>
                   </label>
                 </div>
                 <div>
-                  <input type="radio" name="display" class="display-radio" id="display-radio--grid" value="grid" autocomplete="off">
+                  <input type="radio" name="display" class="display-radio" id="display-radio--grid" value="grid"
+                    autocomplete="off">
                   <label for="display-radio--grid">
-                    <div class="box"><div class="glyph"></div></div>
+                    <div class="box">
+                      <div class="glyph"></div>
+                    </div>
                   </label>
                 </div>
               </form>
@@ -155,91 +157,90 @@
         </div>
         <span class="order-indicator"></span> <!-- span instead of div to avoid interfering with nth-of-type-->
         <div id="mutation-rows" class="list">
+
           <div class="mutation-row" tabindex="0" data-mutation="">
             <div class="grip">
-              <button type="button" class="mutation-prev" aria-label="Move mutation up"><div class="box"><div class="glyph"></div></div></button>
-              <button type="button" class="mutation-next" aria-label="Move mutation down"><div class="box"><div class="glyph"></div></div></button>
+              <button type="button" class="mutation-prev" aria-label="Move mutation up">
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
+              </button>
+              <button type="button" class="mutation-next" aria-label="Move mutation down">
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
+              </button>
             </div>
-            <div class="mutation-icons">
+            <div class="mutation-row-delete">
               <button class="mutation-dismiss" aria-label="Dismiss mutation">
-                <div class="box"><div class="glyph"></div></div>
-              </button>
-              <button class="mutation-toggle on" aria-label="Toggle mutation visibility">
-                <div class="box"><div class="glyph"></div></div>
-              </button>
-              <button class="mutation-detail expand" aria-label="Toggle mutation detail">
-                <div class="box"><div class="glyph"></div></div>
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
               </button>
             </div>
-            <!-- <div class="hint hint-expand">Expand mutation…</div>
-            <div class="hint hint-collapse">Collapse mutation…</div> -->
-            <div class="mutation-info">
-              <div class="mutation-name">
+            <div class="mutation-wrapper">
+              <div class="mutation-info">
+                <div class="mutation-name">
                 <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
                 <span class="is-apobec">APOBEC</span>
               </div>
               <div class="mutation-stats">
-                <div class="stats--tip-count">
-                  <div class="small-label">Tip count</div>
-                  <div><strong>000</strong> genomes</div>
-                </div>
-                <div class="stats--confidence">
-                  <div class="small-label">Appears in</div>
-                  <div><strong>00%</strong> of trees</div>
-                </div>
                 <div class="stats--badges">
                   <div class="stats--reversals stats-badge hidden">
-                    <div class="box" aria-label aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Reversals</div>
-                    <div class="small-label stats-conf"></div>
+                    <div class="box" aria-label aria-hidden="true">
+                      <div class="glyph"></div>
+                    </div>
+                    <div class="stats-title">Reversals</div>
+                    <div class="stats-conf"></div>
                   </div>
                   <div class="stats--same-site stats-badge hidden">
-                    <div class="box" aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Same-site mutations</div>
-                    <div class="small-label stats-conf"></div>
+                    <div class="box" aria-hidden="true">
+                      <div class="glyph"></div>
+                    </div>
+                    <div class="stats-title">Same-site mutations</div>
+                    <div class="stats-conf"></div>
                   </div>
                   <div class="stats--multi-intro stats-badge hidden">
-                    <div class="box" aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Multiple intros</div>
-                    <div class="small-label stats-conf"></div>
+                    <div class="box" aria-hidden="true">
+                      <div class="glyph"></div>
+                    </div>
+                    <div class="stats-title">Multiple intros</div>
+                    <div class="stats-conf"></div>
                   </div>
                   <div class="stats--root-variation stats-badge hidden">
-                    <div class="box" aria-hidden="true"><div class="glyph"></div></div>
-                    <div class="small-label">Root variation</div>
-                    <div class="small-label stats-conf"></div>
+                    <div class="box" aria-hidden="true">
+                      <div class="glyph"></div>
+                    </div>
+                    <div class="stats-title">Root variation</div>
+                    <div class="stats-conf"></div>
+                  </div>
+                </div>
+                <div class="stats--confidence">
+                  <div class="stats-title">Appearance in base trees</div>
+                  <div class="stats-mutation-confidence-wrapper">
+                    <div class="small-label">Mutation</div>
+                    <div class="mutation-confidence list"><strong>00%</strong></div>
+                    <div class="mutation-confidence grid"><strong>00%</strong><span> of base trees</span></div>
+                  </div>
+                  <div class="stats-node-confidence-wrapper">
+                    <div class="small-label">Highest confidence node</div>
+                    <div class="highest-node-confidence"><strong>00%</strong></div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="mutation-right">
-              <div class="mutation-charts">
-                <div class="mutation-time-dist">
-                  <div class="small-label">Time distribution of mutation</div>
-                  <div class="canvas-container">
-                    <canvas></canvas>
-                    <div class="time-chart--readout">
-                      <div class="time-chart--date"></div>
-                      <div class="time-chart--series">
-                        <!-- <div class="dot"></div> -->
-                        <span class="value-label">##%</span>
-                        <span class="series-label"></span>
-                      </div>
+            <div class="mutation-charts">
+              <div class="mutation-time-dist">
+                <div class="canvas-container">
+                  <canvas></canvas>
+                  <div class="time-chart--readout">
+                    <div class="time-chart--date"></div>
+                    <div class="time-chart--series">
+                      <span class="value-label">##%</span>
+                      <span class="series-label"></span>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="mutation-nodes">
-                <div class="small-label">Distribution of representative nodes</div>
-                <div class="nodes-list">
-                  <button class="node-detail">
-                    <div class="node-icon"></div>
-                    <div class="node-info">
-                      <div class="node-title"><span class="node--prevalence">60%</span> of applicable trees</div>
-                      <div class="node-stats"><span class="node--tip-count">770 tips</span></div>
-                    </div>
-                  </button>
-                </div>
-                <div class="hidden-nodes-count hidden"><strong class="count">0</strong> more node<span class="plural">s</span> hidden</div>
               </div>
             </div>
           </div>

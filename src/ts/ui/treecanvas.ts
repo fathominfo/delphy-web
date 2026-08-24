@@ -497,10 +497,9 @@ export class TreeCanvas {
     });
   }
 
-
-  drawTimelineLabels(dates:DateLabel[], pdf: PdfCanvas | null = null):void {
+  drawTimelineLabels(dates: DateLabel[], pdf: PdfCanvas | null = null): void {
     this.ctx.fillStyle = TREE_TEXT_COLOR_2;
-    if (pdf===null) {
+    if (pdf === null) {
       this.ctx.font = TREE_TEXT_FONT_2;
     } else {
       const fontTokens = TREE_TEXT_FONT_2.split(' ');
@@ -511,16 +510,50 @@ export class TreeCanvas {
       y2 = y1 + TREE_TEXT_LINE_SPACING;
     let first = true;
     this.ctx.lineWidth = DASH_WEIGHT;
-    dates.forEach((dl:DateLabel)=>{
+
+    const labels = dates
+      .filter(dl => dl.index > this.minDate)
+      .map(dl => ({ dl, x: this.getZoomX(dl.index), visible: dl.index === this.maxDate || dl.index < this.maxDate - 30 }))
+      .filter(l => l.visible);
+
+    let maxLabelWidth = 0;
+    labels.forEach(({ dl }) => {
+      const measured1 = this.ctx.measureText(dl.label1);
+      const measured2 = this.ctx.measureText(dl.label2);
+      // JSpdf's measureText method returns a number,
+      // whereas js canvas retuns TextMetrics that has a width prop
+      const w1 = typeof measured1 === "number" ? measured1 : measured1.width;
+      const w2 = typeof measured2 === "number" ? measured2 : measured2.width;
+      maxLabelWidth = Math.max(maxLabelWidth, w1, w2);
+    });
+
+    let minGap = Infinity;
+
+    for (let i = 1; i < labels.length; i++) {
+      minGap = Math.min(minGap, labels[i - 1].x - labels[i].x);
+    }
+
+    const isTooDense = minGap !== Infinity && minGap < maxLabelWidth;
+
+    const skipping = new Set<DateLabel>();
+    if (isTooDense) { //show every other label
+      labels.forEach(({ dl }, i) => {
+        if (i % 2 !== 0) skipping.add(dl);
+      });
+    }
+
+    dates.forEach((dl: DateLabel) => {
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
         if (dl.index === this.maxDate || dl.index < this.maxDate - 30) {
-          this.ctx.fillText(dl.label1, x, y1);
-          this.ctx.fillText(dl.label2, x, y2);
+          if (!skipping.has(dl)) {
+            this.ctx.fillText(dl.label1, x, y1);
+            this.ctx.fillText(dl.label2, x, y2);
+          }
         }
         if (first) {
           first = false;
-          if (pdf===null) {
+          if (pdf === null) {
             this.ctx.font = TREE_TEXT_FONT;
           } else {
             const fontTokens = TREE_TEXT_FONT.split(' ');
@@ -531,7 +564,6 @@ export class TreeCanvas {
         }
       }
     });
-
   }
 
 

@@ -7,7 +7,7 @@ import {SharedState} from '../../sharedstate';
 import { getMutationName, getMutationNameParts, mutationEquals, siteIndexToLabel } from '../../constants';
 import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
-import { DataResolveType, getPercentLabel, MUTATION_COLOR, Screens, UNSET } from '../common';
+import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
 import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType } from './mutationscommon';
 
@@ -23,7 +23,7 @@ if (!maybeTableBody) {
   throw new Error("mutations.html doesn't have the container for the mutation rows!");
 }
 const MUTATION_TABLE_BODY = <HTMLDivElement> maybeTableBody;
-
+const MOI_HEAD = document.querySelector(".moi-list--header") as HTMLElement;
 const MOI_LIST = document.querySelector(".moi-list--body") as HTMLElement;
 
 const MOI_TEMPLATE = MOI_LIST.querySelector(".moi") as HTMLElement;
@@ -42,6 +42,9 @@ AC_SUGGESTION_TEMPLATE.remove();
 const MANY_TIPS_PCT = 0.75;
 
 const colorsUsed: string[] = [];
+
+const MOUSE_LABEL_DIST = 15;
+const LABEL_W = 36, LABEL_H = 16;
 
 
 type InterestCategory = FeatureOfInterest | 'all'
@@ -73,8 +76,6 @@ export class MutationsUI extends MccUI {
   treePercentSetter: ParameterSetter;
   tipPercentSetter: ParameterSetter;
 
-
-
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector, "#mutations--mcc-canvas")
     this.minDate = 0;
@@ -82,14 +83,15 @@ export class MutationsUI extends MccUI {
     this.maxDate = 0;
     this.selectedMutations = [];
     this.prevalence = new MutationPrevalenceCanvas();
-    this.interestCat = FeatureOfInterest.ManyTips;
+    this.interestCat = FeatureOfInterest.None;
     this.autofill = true;
     this.mutationsOfInterest = {
       [FeatureOfInterest.Reversals]: [],
       [FeatureOfInterest.SameSite]: [],
       [FeatureOfInterest.MultipleIntroductions]: [],
       [FeatureOfInterest.ManyTips]: [],
-      ['all'] : []
+      ['all'] : [],
+      [FeatureOfInterest.None]: []
     };
     this.minTreesPercent = DEFAULT_MINIMUM_MOI_PRESENCE;
     this.minTipsPercent = DEFAULT_MINIMUM_TIP_PERCENT;
@@ -107,6 +109,7 @@ export class MutationsUI extends MccUI {
     mutationsFilter.addEventListener("input", () => {
       const value = mutationsFilter.interest.value as FeatureOfInterest;
       this.interestCat = value;
+      this.autofill = false;
 
       const descriptions = this.div.querySelectorAll(".filter-description") as NodeListOf<HTMLElement>;
       descriptions.forEach(el => {
@@ -121,7 +124,7 @@ export class MutationsUI extends MccUI {
     const displayOptionsForm = document.querySelector(".display-options-form") as HTMLFormElement;
     displayOptionsForm.addEventListener("input", this.setDisplayOption);
 
-    const clearAllBtn = document.querySelector(".clear-all") as HTMLButtonElement;
+    const clearAllBtn = document.querySelector(".mutations--display-top .clear-all") as HTMLButtonElement;
     clearAllBtn.addEventListener("click", () => {
       this.clearRows();
     });
@@ -212,11 +215,55 @@ export class MutationsUI extends MccUI {
 
     (this.div.querySelector("#moi-list-tips--button") as HTMLButtonElement).addEventListener('click', ()=>this.tipPercentSetter.toggle());
     (this.div.querySelector("#moi-list-trees--button") as HTMLButtonElement).addEventListener('click', ()=>this.treePercentSetter.toggle());
-
   }
 
+  canvasMoveHandler(event: MouseEvent) {
+    if (!this.nodes || this.nodes.length === 0) return;
 
+    const dx = event.offsetX,
+      dy = event.offsetY - TREE_TIMELINE_SPACING;
 
+    const shortestDist = {
+      dist: MOUSE_LABEL_DIST * MOUSE_LABEL_DIST,
+      pos: [0, 0],
+      nodeIndex: 0
+    };
+
+    this.nodes.forEach(node => {
+      const pos = this.mccTreeCanvas.getNodePosition(node);
+      const dist = Math.pow(dx - pos[0], 2) + Math.pow(dy - pos[1], 2);
+      if (dist < shortestDist.dist) {
+        shortestDist.nodeIndex = node;
+        shortestDist.dist = dist;
+        shortestDist.pos = pos;
+      }
+    })
+
+    const { pos, dist, nodeIndex } = shortestDist;
+
+    if (dist < MOUSE_LABEL_DIST * MOUSE_LABEL_DIST) {
+      this.hoveredNode = nodeIndex;
+      this.requestDrawHighlights();
+    } else {
+      this.hoveredNode = null;
+    }
+  }
+
+  canvasOutHandler(e: MouseEvent) {
+    this.hoveredNode = null;
+    this.requestDrawHighlights();
+  }
+
+  drawConfidenceLabel(pos: number[], nodeIndex: number, ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = `#ffffff`
+    ctx.beginPath();
+    ctx.roundRect(pos[0] - LABEL_W / 8, pos[1] - LABEL_H / 2, LABEL_W, LABEL_H, 3);
+    ctx.fill();
+    ctx.fillStyle = this.hoverColor;
+    ctx.font = CHART_TEXT_FONT;
+    ctx.globalAlpha = 1.0;
+    ctx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + LABEL_W / 8, pos[1] + LABEL_H / 4);
+  }
 
   activate() {
     super.activate();
@@ -225,7 +272,11 @@ export class MutationsUI extends MccUI {
       console.debug('need to reset mutations');
       this.clearRows();
       this.sharedState.markMutationsUpdated();
-
+    }
+    const canvas = this.mccTreeCanvas.getCanvas();
+    if (canvas instanceof HTMLCanvasElement) {
+      canvas.addEventListener('pointermove', (e) => this.canvasMoveHandler(e));
+      canvas.addEventListener('pointerout', (e) => this.canvasOutHandler(e));
     }
   }
 
@@ -277,19 +328,19 @@ export class MutationsUI extends MccUI {
           if (this.autofill) {
             this.clearRows();
             if (this.sharedState.mutationList.length > 0) {
-              this.autofill = false;
               const mutation = this.sharedState.mutationList[0];
               this.lookupMutation(mutation);
             }
           }
 
           const mutationsFilter = this.div.querySelector(".mutations-filter--form") as HTMLFormElement;
-          mutationsFilter.querySelectorAll("input").forEach(radio => {
-            const value = radio.value as FeatureOfInterest;
-            radio.checked = value === this.interestCat;
-          });
-          this.setInterest(this.autofill);
-          this.autofill = false;
+          if (!this.autofill) {
+            mutationsFilter.querySelectorAll("input").forEach(radio => {
+              const value = radio.value as FeatureOfInterest;
+              radio.checked = value === this.interestCat;
+            });
+          }
+          this.setInterest();
 
           this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
 
@@ -340,10 +391,18 @@ export class MutationsUI extends MccUI {
   }
 
 
-  setInterest(autofill=false):void {
+  setInterest():void {
+    const autofill = this.autofill;
     this.clearMoiList();
-    const muts = this.mutationsOfInterest[this.interestCat],
-      minTipCount = Math.round(this.tipCount * this.minTipsPercent),
+    let muts: MutationOfInterest[];
+    if (this.interestCat === FeatureOfInterest.None) {
+      muts = this.mutationsOfInterest[FeatureOfInterest.ManyTips];
+      MOI_HEAD.classList.add("hidden")
+    } else {
+      muts = this.mutationsOfInterest[this.interestCat];
+      MOI_HEAD.classList.remove("hidden")
+    }
+    const minTipCount = Math.round(this.tipCount * this.minTipsPercent),
       tipDistribution: number[] = [],
       treePctDistribution: number[] = [];
     let sort: (moi1: MutationOfInterest, moi2: MutationOfInterest)=>number = () => 0;
@@ -372,14 +431,16 @@ export class MutationsUI extends MccUI {
       tipDistribution.push(mut.medianTipCount);
       treePctDistribution.push(100 * mut.confidence);
       if (mut.confidence >= this.minTreesPercent && mut.medianTipCount >= minTipCount) {
-        this.addMoi(mut);
-        mutCount++;
+        if (!this.autofill) {
+          this.addMoi(mut);
+          mutCount++;
+        }
         if (autofill && this.rows.length < MAX_AUTOFILL_MUTATIONS) {
           this.selectMutation(mut);
         }
       }
     });
-    if (mutCount === 0) {
+    if (mutCount === 0 && this.interestCat !== FeatureOfInterest.None) {
       MOI_LIST.appendChild(NO_MUTATIONS);
     }
     this.treePercentSetter.set(treePctDistribution, this.minTreesPercent * 100, 100);
@@ -441,6 +502,10 @@ export class MutationsUI extends MccUI {
     if (!this.selectedMutations.map(md => md.name).includes(moi.name) && this.pythia) {
       const tree = this.mccTreeCanvas.tree as SummaryTree,
         mutation = moi.mutation,
+        /*
+        get the time and nodeIndex for this mutation in each base tree,
+        and map that node index to a node in the MCC
+        */
         {times, nodeIndices} = this.pythia.getMutationDistributionInfo(mutation, tree),
         alleleDist = this.pythia.getPopulationAlleleDistribution(mutation.site, this.earliestDate, this.maxDate, tree);
       const nodes = nodeIndices.map(index => {
@@ -514,7 +579,6 @@ export class MutationsUI extends MccUI {
     return UNSET;
   }
 
-
   /*
   this is declared as an anonymous function
   since it is passed to the mutation rows
@@ -524,18 +588,10 @@ export class MutationsUI extends MccUI {
   updateHoverRow: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
     let moi : MutationOfInterest | null = null;
     if (row) {
-      this.nodes = row.topNodes.map(node => node.index);
+      this.nodes = row.uniqueNodes.map(node => node.index);
       const rowIndex = this.rows.indexOf(row);
       if (rowIndex !== UNSET) {
-        this.hoverColor = this.rows[rowIndex].color;
-        if (lock) {
-          /* collapse the other row */
-          const otherRows = this.rows.filter(r=>r.isExpanded && r !== row);
-          otherRows.forEach(r=>{
-            r.collapse();
-            r.toggleDetail();
-          });
-        }
+        this.hoverColor = `${this.rows[rowIndex].color}`;
       }
       moi = row.moi;
     } else {
@@ -577,6 +633,10 @@ export class MutationsUI extends MccUI {
       this.nodes.forEach((node) => {
         this.drawHighlightNode(node, this.hoverColor, ctx, treeCanvas, mcc);
       });
+
+      if (this.hoveredNode) {
+        this.drawHighlightNode(this.hoveredNode, this.hoverColor, ctx, treeCanvas, mcc)
+      }
       mccRef.release();
     }
   }
@@ -588,18 +648,19 @@ export class MutationsUI extends MccUI {
         radius = 6;
       if (this.hoveredNode) {
         if (this.hoveredNode === index) {
-          ctx.globalAlpha = 1;
+          ctx.globalAlpha = 0.9;
         } else {
-          ctx.globalAlpha = 0.5;
+          ctx.globalAlpha = 0.6;
         }
       } else {
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 0.6;
       }
       ctx.fillStyle = color;
       ctx.moveTo(x + radius, y);
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
+      this.drawConfidenceLabel([x + radius * 2, y], index, ctx)
     }
   }
 
@@ -730,12 +791,6 @@ export class MutationsUI extends MccUI {
       this.rows.forEach(row => {
         row.timeCanvas.resize();
         row.timeCanvas.draw();
-      });
-    } else {
-      this.rows.forEach(row => {
-        if (row.isExpanded) {
-          row.collapse();
-        }
       });
     }
   }

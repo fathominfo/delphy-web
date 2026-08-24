@@ -49,6 +49,7 @@ const enum TreeHint {
   PreviewNode1,
   PreviewNode2Descendant,
   PreviewNode2Cousin,
+  PreviewNode1Descendant,
 
   MaxSelections,
 
@@ -67,6 +68,8 @@ const TREE_HINT_CLASSES = [
   "preview-node1",
   "preview-node2-descendant",
   "preview-node2-cousin",
+  "preview-node1-descendant",
+
 
   "max-selections",
 
@@ -251,7 +254,7 @@ export class LineagesUI extends MccUI {
     const lookupForm = document.querySelector(".id-lookup form") as HTMLFormElement;
     lookupForm.addEventListener("submit", e => e.preventDefault());
 
-    const constrainHoverByCredibilityInput = document.querySelector("#lineages--constrain-selection") as HTMLInputElement;
+    const constrainHoverByCredibilityInput = document.querySelector(".constrain-selection input") as HTMLInputElement;
     constrainHoverByCredibilityInput.addEventListener('change', ()=>{
       this.constrainHoverByCredibility = constrainHoverByCredibilityInput.checked;
     });
@@ -496,11 +499,19 @@ export class LineagesUI extends MccUI {
       } else if (node2Index === UNSET && nodeIndex !== node1Index) {
         /* selecting node 2 */
         node2Index = nodeIndex;
-        mrcaIndex = this.checkMRCA(node1Index, node2Index);
         displayNode = DisplayNode.node2;
-        if (mrcaIndex === UNSET) {
+        const mrca = this.getMRCA(node1Index, node2Index);
+        if (mrca === node1Index) {
+          mrcaIndex = UNSET;
           this.setHint(TreeHint.PreviewNode2Descendant);
+        } else if (mrca === node2Index) {
+          mrcaIndex = UNSET;
+          this.setHint(TreeHint.PreviewNode1Descendant);
+        } else if (mrca === this.rootIndex ) {
+          mrcaIndex = UNSET;
+          this.setHint(TreeHint.PreviewNode2Cousin);
         } else {
+          mrcaIndex = mrca;
           this.setHint(TreeHint.PreviewNode2Cousin);
         }
       }
@@ -781,6 +792,16 @@ export class LineagesUI extends MccUI {
   assembleNodePair(index1: number, index2: number, nodePairType: NodePairType, pythia: Pythia): NodePair {
     const tree = this.mccTreeCanvas.tree as SummaryTree,
       mutTimes : MutationDistribution[] = pythia.getMccMutationsBetween(index1, index2, tree);
+    mutTimes.sort((a, b)=>{
+      let diff = b.getConfidence() - a.getConfidence();
+      if (diff === 0) {
+        diff = a.times[0] - b.times[0];
+        if (diff === 0) {
+          diff = a.mutation.site - b.mutation.site;
+        }
+      }
+      return diff;
+    });
     return new NodePair(index1, index2, nodePairType, mutTimes);
   }
 

@@ -60,7 +60,7 @@ export class MccTreeCanvas extends TreeCanvas {
   positionTreeNodes(tree:Tree, creds: number[]=[], mccIndex = 0): number[][] {
     this.colorsUnSet = true;
     super.positionTreeNodes(tree, creds);
-    this.setColors(tree);
+    // this.setColors(tree);
     if (this.mccConfig) {
       if (this.mccConfig.ySpacing === YSpacing.genetic) {
         this.rescaleGeneticDistance(tree as SummaryTree, mccIndex);
@@ -254,36 +254,51 @@ export class MccTreeCanvas extends TreeCanvas {
     const mccConfig = this.mccConfig,
       size = this.nodeYs.length;
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
-      const confidenceThreshold = mccConfig ? mccConfig.confidenceThreshold : (CONFIDENCE_DEFAULT / 100);
-      for (let index = 0; index < size; index++) {
-        let confidence = this.creds[index];
-        if (isTip(tree,index)) {
-          confidence = this.creds[this.nodeParents[index]];
-          this.nodeColors[index] = confidence >= confidenceThreshold ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR;
-          this.branchColors[index] = HI_CONFIDENCE_COLOR;
-        } else {
-          const hiConf = confidence >= confidenceThreshold,
-            color = hiConf ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR;
-          this.nodeColors[index] = color;
-          this.branchColors[index] = color;
-          if (!hiConf) {
-            this.branchWeights[index] = BRANCH_WEIGHT;
-          }
-        }
-      }
+      this.setColorsByConfidence(tree);
     } else if (mccConfig.metadataColors) {
-      /* tips are the same across all base trees */
-      // this.metadataNodeValues = values.map(v=>v as string);
-      // this.metadataNodeValueOptions = optionCounts;
-      this.metadataNodeValues = mccConfig.getMetadataValues();
-      this.metadataNodeValueOptions = mccConfig.getMetadataTipCounts();
-      const nodeValues = this.metadataNodeValues;
-      for (let index = 0; index < size; index++) {
-        const value = nodeValues[index],
-          color = mccConfig.getMetadataColor(value);
+      this.setColorsByMetadata(tree);
+    }
+  }
+
+
+  setColorsByConfidence(tree: Tree): void {
+    const mccConfig = this.mccConfig,
+      size = this.nodeYs.length;
+    const confidenceThreshold = mccConfig ? mccConfig.confidenceThreshold : (CONFIDENCE_DEFAULT / 100);
+    for (let index = 0; index < size; index++) {
+      let confidence = this.creds[index];
+      if (isTip(tree, index)) {
+        confidence = this.creds[this.nodeParents[index]];
+        this.nodeColors[index] = confidence >= confidenceThreshold ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR;
+        this.branchColors[index] = HI_CONFIDENCE_COLOR;
+      } else {
+        const hiConf = confidence >= confidenceThreshold,
+          color = hiConf ? HI_CONFIDENCE_COLOR : LOW_CONFIDENCE_COLOR;
         this.nodeColors[index] = color;
         this.branchColors[index] = color;
+        if (!hiConf) {
+          this.branchWeights[index] = BRANCH_WEIGHT;
+        }
       }
+    }
+    this.colorsUnSet = false;
+  }
+
+  setColorsByMetadata(tree: Tree): void {
+    const mccConfig = this.mccConfig,
+      size = this.nodeYs.length;
+    if (!mccConfig) return;
+    /* tips are the same across all base trees */
+    // this.metadataNodeValues = values.map(v=>v as string);
+    // this.metadataNodeValueOptions = optionCounts;
+    this.metadataNodeValues = mccConfig.getMetadataValues();
+    this.metadataNodeValueOptions = mccConfig.getMetadataTipCounts();
+    const nodeValues = this.metadataNodeValues;
+    for (let index = 0; index < size; index++) {
+      const value = nodeValues[index],
+        color = mccConfig.getMetadataColor(value);
+      this.nodeColors[index] = color;
+      this.branchColors[index] = color;
     }
     this.colorsUnSet = false;
   }
