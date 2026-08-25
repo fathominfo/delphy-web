@@ -890,6 +890,7 @@
       display: grid;
       row-gap: 0.2em;
       column-gap: 1.5em;
+      grid-auto-rows: .8em;
   
       .stats-title {
         @media (min-width:1200px) {
@@ -1340,8 +1341,8 @@
   }
 
   .stats--badges {
-    flex-direction: column;
-    gap: 0.5em;
+    flex-direction: row;
+    gap: 1em;
     align-items: flex-start;
 
       .stats-badge {
