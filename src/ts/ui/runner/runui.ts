@@ -12,7 +12,7 @@ import {SharedState} from '../../sharedstate';
 import { GammaDataFunction, HistDataFunction, hoverListenerType, HoverNodeFnc,
   kneeHoverListenerType, ScatterDataFunction, statHoverListenerType,
   SummaryStat, TempestData } from './runcommon';
-import { BlockSlider } from '../../util/blockslider';
+// import { BlockSlider } from '../../util/blockslider';
 import { BurninPrompt } from './burninprompt';
 import { setStage } from '../../errors';
 import { convertSkygridDaysToTau, convertSkygridTauToDays,
@@ -23,9 +23,9 @@ import { GammaHistCanvas } from './gammahistcanvas';
 import { ScatterPlotCanvas } from './scatterplotcanvas';
 import { chartContainer, TraceCanvas } from './tracecanvas';
 import { HistData } from './histdata';
-import { UIScreen } from '../uiscreen';
+// import { UIScreen } from '../uiscreen';
 import { enableAnalyticTabs } from '../nav';
-import { RunTree } from './runtree';
+// import { RunTree } from './runtree';
 import { MccUI } from '../mccui';
 
 const DAYS_PER_YEAR = 365;
@@ -1062,8 +1062,8 @@ export class RunUI extends MccUI {
       const oldRef = this.mccRef;
       this.mccRef = mccRef;
       this.mccIndex = this.pythia.getAbsoluteMccIndex();
-      const mccTree = mccRef.getMcc(),
-        nodeConfidence = mccRef.getNodeConfidence();
+      const mccTree = mccRef.getMcc();
+      // nodeConfidence = mccRef.getNodeConfidence();
       // if (mccTree !== this.mccTreeCanvas.tree) {
       //   // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
       //   this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);

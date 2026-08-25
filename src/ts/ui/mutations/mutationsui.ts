@@ -246,7 +246,7 @@ export class MutationsUI extends MccUI {
       }
     })
 
-    const { pos, dist, nodeIndex } = shortestDist;
+    const { dist, nodeIndex } = shortestDist;
 
     if (dist < MOUSE_LABEL_DIST * MOUSE_LABEL_DIST) {
       this.hoveredNode = nodeIndex;
@@ -256,7 +256,7 @@ export class MutationsUI extends MccUI {
     }
   }
 
-  canvasOutHandler(e: MouseEvent) {
+  canvasOutHandler(_e: MouseEvent) { // eslint-disable-line @typescript-eslint/no-unused-vars
     this.hoveredNode = null;
     this.requestDrawHighlights();
   }

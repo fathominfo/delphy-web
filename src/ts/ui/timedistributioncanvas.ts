@@ -132,8 +132,8 @@ export class TimeDistributionCanvas {
     const {ctx, drawWidth, xheight, allSeriesBandMax} = this;
     // const {ctx, width, xheight} = this;
     const {distribution, color} = ds;
-    const {bands, bandwidth, bandValues: bandTimes, kde, data: times} = distribution;
-    // const {bands, bandTimes, bandMax, bandwidth, kde} = distribution;
+    // const {bands, bandwidth, bandValues: bandTimes, kde, data: times} = distribution;
+    const { bands, bandValues: bandTimes, bandwidth, kde} = distribution;
 
     const pixelsPerDay = this.drawWidth / (this.maxDate - this.minDate),
       curveInterval = Math.max(pixelsPerDay, 1);

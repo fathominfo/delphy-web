@@ -15,7 +15,7 @@ import { UNSET } from '../ui/common';
 import { randomGaussian } from '../util/randomsamplers';
 import { isBadSafari, SAFARI_26_2_ERR_MSG } from '../errors';
 
-type returnless = ()=>void;
+// type returnless = ()=>void;
 
 type emptyResolveType = (m:undefined)=>void;
 type configResolveType = (conf:ConfigExport)=>void;

@@ -9,7 +9,7 @@ import {MccRef} from '../pythia/mccref';
 import {SharedState} from '../sharedstate';
 import { MccUmbrella } from '../pythia/mccumbrella';
 import { Metadata } from './metadata';
-import { sum } from 'mathjs';
+// import { sum } from 'mathjs';
 
 
 export class MccUI extends UIScreen {
