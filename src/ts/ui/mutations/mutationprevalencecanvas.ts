@@ -702,7 +702,10 @@ export class MutationPrevalenceCanvas {
 
 
   setHighlight(moi: MutationOfInterest | null, lock: boolean) : void {
-    const index = this.mutations.map((md: MutationPrevalenceData)=>md.src.moi).indexOf(moi as MutationOfInterest);
+    let index = UNSET;
+    if (moi) {
+      index = this.mutations.map((md: MutationPrevalenceData)=>md.src.moi.name).indexOf(moi.name);
+    }
     // console.log('setHighlight', this.locked, this.hoverSeriesIndex, moi?getMutationName(moi.mutation):'–', lock, index);
     if (!this.locked || lock) {
       if (index >= 0) {
