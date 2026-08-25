@@ -133,7 +133,7 @@ export class MutationRow {
     this.rowDiv.classList.toggle('is-apobec', isApobecEnabled && moi.isApobec >= moi.treeCount * .5);
     (this.rowDiv.querySelector(".stats--confidence .mutation-confidence.list") as HTMLElement).innerHTML = `${getPercentLabel(moi.confidence)}%`;
     (this.rowDiv.querySelector(".stats--confidence .mutation-confidence.grid") as HTMLElement).innerHTML = `${getPercentLabel(moi.confidence)}% <span>of base trees</span>`;
-    (this.rowDiv.querySelector(".stats--confidence .highest-node-confidence") as HTMLElement).textContent = `${getPercentLabel(this.nodes[0].confidence ?? 0)}%`;
+    (this.rowDiv.querySelector(".stats--confidence .highest-node-confidence") as HTMLElement).textContent = `${getPercentLabel(this.uniqueNodes[0].confidence ?? 0)}%`;
 
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
     if (!canvas) {

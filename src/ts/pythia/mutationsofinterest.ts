@@ -93,10 +93,9 @@ const gatherBaseTreeMutationsOfInterest = (tree: PhyloTree, all: {[name: string]
   const nodeCounts = getNodeCounts(tree),
     siteIntroductions: Introduction[][] = gatherTreeMutations(tree),
     rootSequence: Uint8Array = tree.getRootSequence(),
-    addToAll = (intro: Introduction)=>{
+    tallyMutation = (intro: Introduction, name: string)=>{
       const mutation = intro.mutation,
         nodeIndex = intro.nodeIndex,
-        name = getMutationName(mutation),
         isApobecCtx = checkApobecCtx(mutation, tree.getRootSequence());
       let moi = all[name]
       if (!moi) {
@@ -111,101 +110,101 @@ const gatherBaseTreeMutationsOfInterest = (tree: PhyloTree, all: {[name: string]
       moi.treeCount++;
       if (isApobecCtx) moi.isApobec++;
       moi.baseTipCounts.push(nodeCounts[nodeIndex]);
+    },
+    addFoI = (moi: MutationOfInterest, foi: FeatureOfInterest, intros: Introduction[])=>{
+      if (!moi.features) {
+        moi.features = {};
+      }
+      if (!moi.features[foi]) {
+        moi.features[foi] = {
+          confidence: 0,
+          introductions: []
+        };
+      }
+      moi.features[foi].introductions.push({ treeIndex, intros });
     };
+
   let uniques: {[name:string]: Introduction};
   for (let site = 0; site < siteIntroductions.length; site++) {
     if (siteIntroductions[site]) {
       const intros: Introduction[] = siteIntroductions[site];
-      if (intros.length === 1) {
-        addToAll(intros[0]);
+      const introCount = intros.length;
+      if (introCount === 1) {
+        const name = getMutationName(intros[0].mutation);
+        tallyMutation(intros[0], name);
       } else {
         /*
         If there are multiple mutations at the same site,
         then we have either a reversal, multiple introductions,
         or same site mutations.
-
-        Organize them each according to the
-        allele switches
         */
-        const fromAlleles: number[] = [],
-          toAlleles: number[] = [],
-          rootAllele: number = rootSequence[site];
-        let fromCount = 0,
-          toCount = 0,
-          moic: FeatureOfInterest;
         uniques = {};
+        /*
+        track introductions by the from and to alleles
+        */
+        const fromTo: Introduction[][][] = [];
         intros.forEach(intro=>{
           const name = getMutationName(intro.mutation);
           if (!uniques[name] || uniques[name].mutation.time > intro.mutation.time) {
             uniques[name] = intro;
           }
-          let allele = intro.mutation.from;
-          if (!fromAlleles[allele]) {
-            fromAlleles[allele] = 1;
-            fromCount++;
-          } else {
-            fromAlleles[allele]++
+          const fromAllele = intro.mutation.from;
+          const toAllele = intro.mutation.to;
+          if (fromTo[fromAllele] === undefined) {
+            fromTo[fromAllele] = [];
           }
-          allele = intro.mutation.to;
-          if (!toAlleles[allele]) {
-            toAlleles[allele] = 1;
-            toCount++;
+          if (fromTo[fromAllele][toAllele] === undefined) {
+            fromTo[fromAllele][toAllele] = [intro];
           } else {
-            toAlleles[allele]++
+            fromTo[fromAllele][toAllele].push(intro);
           }
         });
-        if (fromCount === 1) {
-          if (toCount === 1) {
-            // we have the same mutation occuring multiple times
-            moic = FeatureOfInterest.MultipleIntroductions;
-          } else {
-            // we same site mutations
-            moic = FeatureOfInterest.SameSite;
-          }
-        } else if (toAlleles[rootAllele] > 0) {
-          /*
-          something mutated back to the root allele
-          so we have a reversal
-          if we want to confirm which is the reversal,
-          we can do something like  this:
-              const from = intro.mutation.from;
-              let found = false;
-              for (let i = index + 1; i < intros.length && !found; i++) {
-                const intro2 = intros[i];
-                if (intro2.mutation.to === from) {
-                  let ix = intro.nodeIndex;
-                  while (ix >= 0 && !found) {
-                    ix = tree.getParentIndexOf(ix);
-                    found = ix === intro2.nodeIndex;
-                  }
-                  if (found) {
-                    reversals.increment(intro2.mutation);
-                  }
-                }
-              }
-          */
-          moic = FeatureOfInterest.Reversals;
-          // if (fromCount > 2 ) {
-          //   // we also have a same site mutation
-          // }
-        } else {
-          // we have same site mutations
-          moic = FeatureOfInterest.SameSite;
-        }
+        // if (site === 5557) {
+        //   console.log('looking at 5558 here', fromTo);
+        // }
         Object.values(uniques).forEach((intro: Introduction)=>{
-          addToAll(intro);
-          const name = getMutationName(intro.mutation),
-            moi: MutationOfInterest = all[name];
+          const name = getMutationName(intro.mutation);
+          tallyMutation(intro, name);
+          const moi: MutationOfInterest = all[name];
           if (!moi.features) {
             moi.features = {};
           }
-          if (!moi.features[moic]) {
-            moi.features[moic] = {
-              confidence : 0,
-              introductions: []
-            };
+          const fromAllele = intro.mutation.from;
+          const toAllele = intro.mutation.to;
+          const intros = fromTo[fromAllele][toAllele];
+          // const fromCount = fromTo.filter(toArr=>!!toArr).length;
+          const reverse = fromTo[toAllele]?.[fromAllele];
+          const tos = fromTo[fromAllele];
+          /*
+          are there any mutations tracked that are
+          not this or the reversal of this?
+          */
+          let others = false;
+          fromTo.forEach((tos, f)=>{
+            if (f !== fromAllele && f !== toAllele) others = true;
+            else {
+              tos.forEach((_intros, t)=>{
+                if (t !== fromAllele && t !== toAllele) others = true;
+              });
+            }
+          });
+          if (others) {
+            /*
+            if this mutated to different alleles, that
+            falls under the bucket of multiple mutations
+            at the same site.
+            */
+            addFoI(moi, FeatureOfInterest.SameSite, intros);
           }
-          moi.features[moic].introductions.push({treeIndex, intros});
+          if (intros.length > 1) {
+            /*
+            the same mutation was introduced multiple times
+            */
+            addFoI(moi, FeatureOfInterest.MultipleIntroductions, intros);
+          }
+          if (reverse !== undefined) {
+            addFoI(moi, FeatureOfInterest.Reversals, intros);
+          }
         });
       }
     }

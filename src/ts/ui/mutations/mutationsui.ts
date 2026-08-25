@@ -47,7 +47,14 @@ const MOUSE_LABEL_DIST = 15;
 const LABEL_W = 36, LABEL_H = 16;
 
 
-type InterestCategory = FeatureOfInterest | 'all'
+type InterestCategory = FeatureOfInterest | 'all';
+
+type MutationNode = {
+  /* the index of the node in the MCC */
+  index: number,
+  /* percent of base trees where this mutation shows up at this node */
+  representation: number
+};
 
 export class MutationsUI extends MccUI {
   minDate: number;
@@ -60,7 +67,7 @@ export class MutationsUI extends MccUI {
   allMutations: MutationOfInterest[];
   rows: MutationRow[] = [];
   mccRef: MccRef | null;
-  nodes: number[] = [];
+  nodes: MutationNode[] = [];
   hoveredNode: number | null = null;
   hoverColor = "#999";
   prevalence: MutationPrevalenceCanvas;
@@ -230,10 +237,10 @@ export class MutationsUI extends MccUI {
     };
 
     this.nodes.forEach(node => {
-      const pos = this.mccTreeCanvas.getNodePosition(node);
+      const pos = this.mccTreeCanvas.getNodePosition(node.index);
       const dist = Math.pow(dx - pos[0], 2) + Math.pow(dy - pos[1], 2);
       if (dist < shortestDist.dist) {
-        shortestDist.nodeIndex = node;
+        shortestDist.nodeIndex = node.index;
         shortestDist.dist = dist;
         shortestDist.pos = pos;
       }
@@ -254,7 +261,7 @@ export class MutationsUI extends MccUI {
     this.requestDrawHighlights();
   }
 
-  drawConfidenceLabel(pos: number[], nodeIndex: number, ctx: CanvasRenderingContext2D) {
+  drawConfidenceLabel(pos: number[], representation: number, ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = `#ffffff`
     ctx.beginPath();
     ctx.roundRect(pos[0] - LABEL_W / 8, pos[1] - LABEL_H / 2, LABEL_W, LABEL_H, 3);
@@ -262,7 +269,7 @@ export class MutationsUI extends MccUI {
     ctx.fillStyle = this.hoverColor;
     ctx.font = CHART_TEXT_FONT;
     ctx.globalAlpha = 1.0;
-    ctx.fillText(`${getPercentLabel(this.mccTreeCanvas.creds[nodeIndex])}%`, pos[0] + LABEL_W / 8, pos[1] + LABEL_H / 4);
+    ctx.fillText(`${getPercentLabel(representation)}%`, pos[0] + LABEL_W / 8, pos[1] + LABEL_H / 4);
   }
 
   activate() {
@@ -586,9 +593,19 @@ export class MutationsUI extends MccUI {
   preserve the `this` reference to this class.
   */
   updateHoverRow: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
+    if (!this.pythia) return;
+    const mccRef = this.pythia.getMcc();
+    const mcc = mccRef.getMcc();
+    const baseTreeCount = mcc.getNumBaseTrees();
+    mccRef.release();
     let moi : MutationOfInterest | null = null;
     if (row) {
-      this.nodes = row.uniqueNodes.map(node => node.index);
+      this.nodes = row.uniqueNodes.map(node => {
+        return {
+          index: node.index,
+          representation: node.count / baseTreeCount
+        }
+      });
       const rowIndex = this.rows.indexOf(row);
       if (rowIndex !== UNSET) {
         this.hoverColor = `${this.rows[rowIndex].color}`;
@@ -599,6 +616,7 @@ export class MutationsUI extends MccUI {
     }
     this.prevalence.setHighlight(moi, lock);
     this.requestDrawHighlights();
+
   }
 
   updateHoverNode: NodeFunctionType = (nodeIndex?: number) => {
@@ -631,7 +649,7 @@ export class MutationsUI extends MccUI {
       ctx.lineWidth = 3;
       ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
       this.nodes.forEach((node) => {
-        this.drawHighlightNode(node, this.hoverColor, ctx, treeCanvas, mcc);
+        this.drawHighlightNode(node.index, this.hoverColor, ctx, treeCanvas, mcc);
       });
 
       if (this.hoveredNode) {
@@ -641,13 +659,15 @@ export class MutationsUI extends MccUI {
     }
   }
 
-  private drawHighlightNode(index: number, color: string, ctx: CanvasRenderingContext2D, treeCanvas: TreeCanvas, mcc: MccTree): void {
-    if (index >= 0) {
-      const x = treeCanvas.getZoomX(mcc.getTimeOf(index)),
-        y = treeCanvas.getZoomY(index),
+  private drawHighlightNode(nodeIndex: number, color: string, ctx: CanvasRenderingContext2D, treeCanvas: TreeCanvas, mcc: MccTree): void {
+    const node: MutationNode = this.nodes.filter(({ index }) => index === nodeIndex)[0];
+    if (nodeIndex >= 0 && node) {
+      const nodeRep = node.representation;
+      const x = treeCanvas.getZoomX(mcc.getTimeOf(nodeIndex)),
+        y = treeCanvas.getZoomY(nodeIndex),
         radius = 6;
       if (this.hoveredNode) {
-        if (this.hoveredNode === index) {
+        if (this.hoveredNode === nodeIndex) {
           ctx.globalAlpha = 0.9;
         } else {
           ctx.globalAlpha = 0.6;
@@ -660,7 +680,7 @@ export class MutationsUI extends MccUI {
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
-      this.drawConfidenceLabel([x + radius * 2, y], index, ctx)
+      this.drawConfidenceLabel([x + radius * 2, y], nodeRep, ctx)
     }
   }
 
