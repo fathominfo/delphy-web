@@ -519,7 +519,7 @@ export class MutationsUI extends MccUI {
         }
         return nodeObj;
       });
-      const {minDate, maxDate} = this,
+      const {earliestDate, minDate, maxDate} = this,
         name = moi.name;
       let color = MUTATION_COLOR;
       const colorsAvailable = MUTATION_SERIES_COLORS.filter(color => !colorsUsed.includes(color));
@@ -527,11 +527,11 @@ export class MutationsUI extends MccUI {
         color = colorsAvailable[0];
         colorsUsed.push(color);
       }
-      const mutationData = {moi, name, times, nodes, minDate, maxDate, alleleDist, color, active: true};
+      const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
         this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
-        minDate, maxDate, this.displayOption, this.isApobecEnabled);
+        this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
       this.rows.forEach(row => row.updateRows(this.rows));
 
