@@ -197,15 +197,17 @@ export class MutationPrevalenceCanvas {
     mutations = mutations.filter(md => md.active === true);
     this.mutations.length = 0;
     mutations.forEach((src: MutationData)=>{
+      const color = new ColorSet(src.color);
       if (this.mutationLookup[src.name] === undefined) {
         const alt: number = src.moi.mutation.to,
           balances = this.medianizeSeries(src.alleleDist, alt),
           ntiles = this.getNtiles(balances),
-          color = new ColorSet(src.color),
           prevalenceData = {src, balances, ntiles, color};
         this.mutations.push(prevalenceData);
         this.mutationLookup[src.name] = prevalenceData;
       } else {
+        this.mutationLookup[src.name].src = src;
+        this.mutationLookup[src.name].color = color;
         this.mutations.push(this.mutationLookup[src.name]);
       }
     });
@@ -345,7 +347,8 @@ export class MutationPrevalenceCanvas {
     this.ctx.textBaseline = "top";
     this.ctx.font = CHART_MONO_FONT;
     this.mutations.forEach((data: MutationPrevalenceData, index)=>{
-      const {name, color} = data.src;
+      const name = data.src.name;
+      const color = data.color.getMedianColor();
       this.ctx.globalAlpha = this.hoverSeriesIndex === UNSET || index === this.hoverSeriesIndex ? 1 : 0.3;
       this.drawLegendItem(name, color, index);
     });
