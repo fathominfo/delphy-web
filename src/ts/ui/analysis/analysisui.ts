@@ -10,6 +10,7 @@ import { NodeSchematic } from "../nodeschematic";
 import { SchematicNode } from "../schematicdata";
 import { HoverCallback, NodePair, NodeRelationType } from "../select/selectcommon";
 import { UIScreen } from "../uiscreen";
+import { MutationMatrix } from "./mutationmatrix";
 import { NodeMutationsData } from "./nodemutationsdata";
 import { NodeMutations } from "./nodepairmutations";
 import { NodePrevalenceChart } from "./nodeprevalencechart";
@@ -22,6 +23,7 @@ export class AnalysisUI extends UIScreen {
   nodePrevalenceCanvas: NodePrevalenceChart;
   nodeTimelines: NodeTimelines;
   nodeMutationCharts: NodeMutations;
+  mutationMatrix: MutationMatrix;
   highlightNode: number = UNSET;
   highlightDate: number = Number.MAX_SAFE_INTEGER;
   highlightMutation: Mutation | null = null;
@@ -36,6 +38,7 @@ export class AnalysisUI extends UIScreen {
     this.nodePrevalenceCanvas = new NodePrevalenceChart(nodeHighlightCallback);
     this.nodeTimelines = new NodeTimelines(nodeHighlightCallback);
     this.nodeMutationCharts = new NodeMutations(nodeHighlightCallback);
+    this.mutationMatrix = new MutationMatrix(this.div.querySelector("#analysis--matrix") as HTMLTableElement);
   }
 
   activate(): void {
@@ -146,6 +149,7 @@ export class AnalysisUI extends UIScreen {
     this.nodeTimelines.setData(nodes);
     this.nodeTimelines.setDateRange(minDate, maxDate);
     this.nodeMutationCharts.setData(nodeComparisonData, mutationsOfInterest);
+    this.mutationMatrix.setData(summaryTree);
     mccRef.release();
   }
 
