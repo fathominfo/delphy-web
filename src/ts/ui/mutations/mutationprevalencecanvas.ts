@@ -333,7 +333,7 @@ export class MutationPrevalenceCanvas {
           isDrawing = true;
           /*
           extend the line below the axis so that the line doesn't end too
-          abruptly
+          abruptly (it will be cleaned up when we draw the x-axis).
           */
           ctx.moveTo(x-1, y+1);
         }
