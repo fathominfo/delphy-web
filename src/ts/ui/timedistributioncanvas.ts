@@ -515,7 +515,7 @@ export class TimeDistributionCanvas {
       this.hoverSeriesIndex = 0;
     }
 
-    this.draw();
+    requestAnimationFrame(()=>this.draw());
   }
 
   handleMouseout() {
