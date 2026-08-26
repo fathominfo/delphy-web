@@ -544,7 +544,7 @@ export class MutationsUI extends MccUI {
 
 
   updateMutationHistory(): void {
-    this.prevalence.setData(this.selectedMutations, this.minDate, this.maxDate);
+    this.prevalence.setData(this.selectedMutations, this.earliestDate, this.maxDate);
     this.prevalence.launchDraw();
   }
 
