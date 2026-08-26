@@ -33,7 +33,7 @@ class ColorSet {
   removing: boolean;
 
   constructor(color: string) {
-    console.log(color);
+    // console.log(color);
     const [r,g,b] = hexToRGB(color);
     this.baseColor = `rgba(${r},${g},${b},`;
     this.actualState = 0;

@@ -251,8 +251,7 @@ export class MccTreeCanvas extends TreeCanvas {
 
   setColors(tree:Tree): void {
     // console.debug('setColorrs');
-    const mccConfig = this.mccConfig,
-      size = this.nodeYs.length;
+    const mccConfig = this.mccConfig;
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
       this.setColorsByConfidence(tree);
     } else if (mccConfig.metadataColors) {
@@ -284,7 +283,7 @@ export class MccTreeCanvas extends TreeCanvas {
     this.colorsUnSet = false;
   }
 
-  setColorsByMetadata(tree: Tree): void {
+  setColorsByMetadata(_tree: Tree): void { // eslint-disable-line @typescript-eslint/no-unused-vars
     const mccConfig = this.mccConfig,
       size = this.nodeYs.length;
     if (!mccConfig) return;
