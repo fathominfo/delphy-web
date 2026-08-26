@@ -53,10 +53,46 @@ export class KernelDensityEstimate {
     const data_variance = estimate_data_variance(this.samples_);
     const sigma_hat = Math.sqrt(data_variance);
     const iqr = interquartile_range(this.samples_);
+    /*
+    TODO:
+    Currently, we can request a distribution for multiple "nodes" at the
+    same time. This leads to a problem for the ESS. To quote @pvarilly (in
+    slack, 260826):
+
+      for two nodes, the resulting trace looks to the ESS calculator like
+      you were trapped in one mode for the first half the run, then trapped
+      in another mode for the second half of the run, and it will
+      [correctly] report that you have essentially less than 1 independent
+      statistical sample from the combined distribution).
+
+    So the ESS ends up being a negative number, which will result in NaN for
+    the bandwidth calculation below. In that case, rather than using the
+    estimated sample size, we use the number of actual samples in the data.
+
+    This is an edge case, and we need to fix it upstream. It happens when we
+    request the distribution of times that a mutation is introduced, and the
+    mutation has multiple occurrences. The goal should be to tease apart the
+    separate occurrences and calculate distributions for each. [mark 260826]
+    */
     const sampleCount = ess < 0 ? this.samples_.length : ess;
-    this.bandwidth_ =
-      + Math.max(0.9 * Math.min(sigma_hat, iqr / 1.34) * Math.pow(sampleCount, -1/5),
-        + (this.max_sample_ - this.min_sample_) / 200);  // Avoid too few bins
+    /*
+    `iqr` (interquartile range) can be 0 in cases when the source data is
+    integers (like for the `number of mutations` trace chart histogram). By
+    default, we don't do a histogram for those, but if the range of values
+    gets very large, we might. When `iqr` == 0, then `bandwidth` will end
+    up being 0, and we end up with NaN in the kernel and an infinite loop
+    if we increment by bandwidth. So here we catch it early, and use an
+    entirely different calculation for bandwidth. [mark 260826]
+    */
+    this.bandwidth_ = iqr === 0 ? (this.max_sample_ - this.min_sample_) / 200
+      : + (0.9 * Math.min(sigma_hat, iqr / 1.34) * Math.pow(sampleCount, -1/5));
+    if (this.bandwidth_ === 0) {
+      console.debug(`Kernel Density Estimator bandwidth == 0, and is unusable.
+        ${this.samples_.length} samples, min: ${this.min_sample_}, max: ${this.max_sample_}, 
+        ess: ${ess}, data_variance : ${data_variance}, iqr: ${iqr}, sigma_hat: ${sigma_hat}
+        `);
+      throw new Error(`Kernel Density Estimator bandwidth == 0, and is unusable.`);
+    }
     const bandwidth_2: number = 2 * this.bandwidth_ * this.bandwidth_;
     // Precalculate factors in Gaussian kernel
     const factor_in_exp = 1 / bandwidth_2;
@@ -64,10 +100,6 @@ export class KernelDensityEstimate {
     this.kernel_ = (x: number, xi: number) => {
       return Math.exp(-Math.pow(x - xi, 2) * factor_in_exp) * normalization;
     }
-    // const normalization = 1 / Math.sqrt(2 * bandwidth_2);
-    // this.kernel_ = (x: number, mu: number)=> {
-    //   return normalization * Math.exp(-Math.pow(x - mu, 2)/ bandwidth_2);
-    // };
   }
 
   get min_sample(): number {
