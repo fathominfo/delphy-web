@@ -261,11 +261,24 @@ export class NodeComparison {
     }
     requestAnimationFrame(()=>{
       this.nodeTimesCanvas.draw();
+      this.div.querySelectorAll(".lineages--node-comparison--mutation").forEach(tl=>tl.classList.remove("is-last"));
       this.mutationTimelines.slice(alreadyDrawnCount, shownCount).forEach(mt=>{
         mt.appendTo(this.mutationContainer);
         mt.draw();
       });
       this.mutationContainer.style.height = `${mHeight}px`;
+      if (shownCount > 0) {
+        const lastEntry = this.mutationTimelines[shownCount - 1];
+        if (lastEntry) {
+          /*
+          if we don't have this, the hover label for the series will be
+          below the `hidden` bottom of the div. [mark 260826]
+          */
+          lastEntry.div.classList.add("is-last");
+        } else {
+          console.debug("The world is full of the unexpected, like how a mutation that you thought should be here, isn't.");
+        }
+      }
     });
   }
 
