@@ -97,7 +97,8 @@ const margin = {
   top: 2,
   right: 35,
   bottom: 20,
-  left: 31
+  left: 0
+  // left: 31
 };
 const TEXT_PADDING = 3;
 const TICK_LENGTH = 5;
