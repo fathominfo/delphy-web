@@ -256,6 +256,7 @@ export class RunUI extends MccUI {
 
 
     this.curatedKneeHandler = (pct:number)=>{
+      if (pct < 0 || pct > 100) return;
       this.sharedState.kneeIsCurated = true;
       this.resetBurnInButton.disabled = false;
       this.kneeHandler(pct);

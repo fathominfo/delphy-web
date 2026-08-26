@@ -193,16 +193,16 @@ export class GammaHistCanvas extends TraceCanvas {
     rangeD += `${PADDING} ${firstY} `;
 
     // draw the population curve for the current sample
-    if (sampleIndex !== UNSET) {
+    if (sampleIndex !== UNSET && rangeData[sampleIndex]) {
       const sampleData = rangeData[sampleIndex];
       console.assert(sampleData.length === kCount, "Current population curve has different number of points than mean curve?");
       x = PADDING;
-      y = height-(sampleData[0]-displayMin) * verticalScale;
+      y = height - (sampleData[0] - displayMin) * verticalScale;
       if (!drawingStaircase) {
         sampleD = `M${x} ${y} L`;
       }
       for (i = 1; i < kCount; i++) {
-        y = height-(sampleData[i]-displayMin) * verticalScale;
+        y = height - (sampleData[i] - displayMin) * verticalScale;
         if (drawingStaircase) {
           sampleD += `M${x} ${y} L`;
         }
