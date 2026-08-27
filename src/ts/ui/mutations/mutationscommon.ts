@@ -8,7 +8,11 @@ export type ParameterCallback = (percent:number)=>void;
 
 export type RowFunctionType = (row: MutationRow | null, lock: boolean) => void;
 
-export type MutFinderFunctionType = (mutation: Mutation, feature: FeatureOfInterest) => void;
+/*
+for a given mutation, find other mutations related to it, according to the given feature of interest.
+For example, it may find the reversal or other mutations at the same site.
+*/
+export type MutationComplementFunctionType = (srcMutation: Mutation, feature: FeatureOfInterest) => void;
 
 /*
  * For each MutationRow, NodeData stores the mutation node data from each base tree.

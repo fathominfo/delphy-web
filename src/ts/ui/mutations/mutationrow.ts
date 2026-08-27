@@ -1,4 +1,4 @@
-import { NodeData, UniqueNodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType, MutFinderFunctionType } from './mutationscommon';
+import { NodeData, UniqueNodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType, MutationComplementFunctionType } from './mutationscommon';
 import { getMutationNameParts } from '../../constants';
 import { DistributionSeries, TimeDistributionCanvas } from '../timedistributioncanvas';
 import { MutationOfInterest, FeatureOfInterest } from '../../pythia/mutationsofinterest';
@@ -68,7 +68,7 @@ export class MutationRow {
     goToLineages: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
     setMutationActive: (name: string, active: boolean) => void,
-    addComplements: MutFinderFunctionType,
+    addComplements: MutationComplementFunctionType,
     // minDate: number, maxDate: number,
     displayOption: DisplayOption,
     isApobecEnabled: boolean) {
