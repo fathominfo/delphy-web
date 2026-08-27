@@ -1064,12 +1064,11 @@ export class RunUI extends MccUI {
       this.mccRef = mccRef;
       this.mccIndex = this.pythia.getAbsoluteMccIndex();
       const mccTree = mccRef.getMcc();
-      // nodeConfidence = mccRef.getNodeConfidence();
-      // if (mccTree !== this.mccTreeCanvas.tree) {
-      //   // this.mccTreeCanvas.setTreeNodes(mccTree, nodeConfidence);
-      //   this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
-      //   this.sharedState.resetSelections();
-      // }
+      const nodeConfidence = mccRef.getNodeConfidence();
+      if (mccTree !== this.mccTreeCanvas.tree) {
+        this.mccTreeCanvas.positionTreeNodes(mccTree, nodeConfidence);
+        this.sharedState.resetSelections();
+      }
       const earliestMCCDate = mccRef.getMcc().getTimeOf(mccTree.getRootIndex())
       this.mccMinDate.setTarget(earliestMCCDate);
       if (oldRef) {
