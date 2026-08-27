@@ -809,7 +809,7 @@ export class MutationsUI extends MccUI {
     if (feature === FeatureOfInterest.Reversals) {
       matches = this.allMutations.filter(({mutation: mut})=>mut.site === site && mut.from === to && mut.to === from);
     } else if (feature === FeatureOfInterest.SameSite) {
-      matches = this.allMutations.filter(({ mutation: mut }) => mut.site === site);
+      matches = this.allMutations.filter(({ mutation: mut, features }) => mut.site === site && features?.[FeatureOfInterest.SameSite]);
       matches.sort((a, b)=>{
         const amut = a.mutation, bmut = b.mutation;
         return (amut.from - bmut.from) || (amut.to - bmut.to);
