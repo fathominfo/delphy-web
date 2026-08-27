@@ -1,11 +1,14 @@
-import { MutationOfInterest } from '../../pythia/mutationsofinterest';
+import { FeatureOfInterest, MutationOfInterest } from '../../pythia/mutationsofinterest';
 import { BaseTreeSeriesType } from '../../constants';
 import { MutationRow } from './mutationrow';
+import { Mutation } from '../../pythia/delphy_api';
 
 
 export type ParameterCallback = (percent:number)=>void;
 
 export type RowFunctionType = (row: MutationRow | null, lock: boolean) => void;
+
+export type MutFinderFunctionType = (mutation: Mutation, feature: FeatureOfInterest) => void;
 
 /*
  * For each MutationRow, NodeData stores the mutation node data from each base tree.

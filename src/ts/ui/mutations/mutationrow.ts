@@ -1,8 +1,13 @@
-import { NodeData, UniqueNodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType } from './mutationscommon';
+import { NodeData, UniqueNodeData, MutationData, DisplayOption, MUTATION_SERIES_COLORS, RowFunctionType, MutFinderFunctionType } from './mutationscommon';
 import { getMutationNameParts } from '../../constants';
 import { DistributionSeries, TimeDistributionCanvas } from '../timedistributioncanvas';
 import { MutationOfInterest, FeatureOfInterest } from '../../pythia/mutationsofinterest';
 import { UNSET, getPercentLabel } from '../common';
+
+
+const REVERSAL_SELECTOR = ".stats--reversals";
+const SAME_SITE_SELECTOR = ".stats--same-site";
+const RECURRENCE_SELECTOR = ".stats--multi-intro";
 
 
 
@@ -63,11 +68,13 @@ export class MutationRow {
     goToLineages: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
     setMutationActive: (name: string, active: boolean) => void,
+    addComplements: MutFinderFunctionType,
     // minDate: number, maxDate: number,
     displayOption: DisplayOption,
     isApobecEnabled: boolean) {
 
     const moi = mutationData.moi;
+    const mutation = moi.mutation;
     this.moi = moi;
     this.color = mutationData.color;
     this.nodes = mutationData.nodes;
@@ -125,7 +132,7 @@ export class MutationRow {
     if (!nameDiv) {
       throw new Error("mutation row has nowhere for the name to go");
     }
-    const nameParts = getMutationNameParts(moi.mutation);
+    const nameParts = getMutationNameParts(mutation);
     (nameDiv.querySelector(".allele-from") as HTMLElement).innerText = `${nameParts[0]}`;
     (nameDiv.querySelector(".site") as HTMLElement).innerText = `${nameParts[1]}`;
     (nameDiv.querySelector(".allele-to") as HTMLElement).innerText = `${nameParts[2]}`;
@@ -134,6 +141,15 @@ export class MutationRow {
     (this.rowDiv.querySelector(".stats--confidence .mutation-confidence.list") as HTMLElement).innerHTML = `${getPercentLabel(moi.confidence)}%`;
     (this.rowDiv.querySelector(".stats--confidence .mutation-confidence.grid") as HTMLElement).innerHTML = `${getPercentLabel(moi.confidence)}% <span>of base trees</span>`;
     (this.rowDiv.querySelector(".stats--confidence .highest-node-confidence") as HTMLElement).textContent = `${getPercentLabel(this.uniqueNodes[0].confidence ?? 0)}%`;
+
+    (this.rowDiv.querySelector(REVERSAL_SELECTOR) as HTMLSpanElement).addEventListener("click", (event: PointerEvent) => {
+      event.stopImmediatePropagation();
+      addComplements(mutation, FeatureOfInterest.Reversals);
+    });
+    (this.rowDiv.querySelector(SAME_SITE_SELECTOR) as HTMLSpanElement).addEventListener("click", (event: PointerEvent) => {
+      event.stopImmediatePropagation();
+      addComplements(mutation, FeatureOfInterest.SameSite);
+    });
 
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
     if (!canvas) {
@@ -157,9 +173,9 @@ export class MutationRow {
   }
 
   listFeatures() {
-    this.listFOI(FeatureOfInterest.Reversals, ".stats--reversals");
-    this.listFOI(FeatureOfInterest.SameSite, ".stats--same-site");
-    this.listFOI(FeatureOfInterest.MultipleIntroductions, ".stats--multi-intro");
+    this.listFOI(FeatureOfInterest.Reversals, REVERSAL_SELECTOR);
+    this.listFOI(FeatureOfInterest.SameSite, SAME_SITE_SELECTOR);
+    this.listFOI(FeatureOfInterest.MultipleIntroductions, RECURRENCE_SELECTOR);
   }
 
   listFOI(foi: FeatureOfInterest, selector: string): void {
@@ -171,6 +187,21 @@ export class MutationRow {
       (foiHtml.querySelector(".stats-conf") as HTMLElement).innerText = `${conf}%`;
     }
   }
+
+
+  flash() : void {
+    const style = this.rowDiv.style;
+    const wasColor = style.backgroundColor;
+    style.backgroundColor = `${this.color}55`;
+    setTimeout(() => {
+      style.backgroundColor = wasColor;
+      this.rowDiv.classList.add("slow-fade");
+      setTimeout(() => this.rowDiv.classList.remove("slow-fade"), 1000);
+    }, 300);
+
+
+  }
+
 
   getIconSize(pct: number): number {
     const MAX_PCT = 100;

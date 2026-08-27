@@ -802,7 +802,7 @@
   border: 1px solid #E6E6E6;
   padding-left: 30px;
 
-  transition: 0.15s background-color, 0.15s ease-in-out height, 0.15s ease-in-out min-height;
+  transition: 0.15s background-color;
 
   .mutation-confidence.grid {
       display: none;
@@ -811,6 +811,10 @@
   .mutation-confidence.list {
       display: block;
     }
+
+  &.slow-fade {
+    transition: 1.0s background-color;
+  }
 
   &.moving {
     position: absolute;
@@ -891,7 +895,7 @@
       row-gap: 0.2em;
       column-gap: 1.5em;
       grid-auto-rows: .8em;
-  
+
       .stats-title {
         @media (min-width:1200px) {
           grid-column: span 2;
