@@ -849,7 +849,23 @@ details {
 }
 
 .lineages--node-comparison--show-toggle {
+  color: rgb(151, 159, 158);
+  // padding: 4px 6px;
+  cursor: pointer;
+  // text-transform: uppercase;
+  font-family: MDSystemNarrow, RobotoCondensed, sans-serif;
+  font-weight: 700;
+  // border: 0.25px solid;
+
+  input {
+    visibility: hidden;
+    width: 0;
+  }
   .lnc-less { display: none;}
+
+  &:hover {
+    color: rgb(110, 121, 120);
+  }
   &:has(input:checked) {
     .lnc-less { display: inline; }
     .lnc-all { display: none; }
@@ -870,8 +886,18 @@ details {
 
 
 .lineages--node-comparison--mutation-header {
+  margin: 12px 0;
   font-size: 12px;
   color: rgb(114, 114, 114);
+  display: flex;
+  flex-direction: column;
+  .lnc-count-row {
+    display: flex;
+    gap: 12px;
+  }
+  .lnc-counts {
+    width: 17em;
+  }
 }
 
 .lnc-mutation-min, .lineages--node-comparison--mutation-count {
@@ -1019,14 +1045,14 @@ details {
   padding: 0 0.2em;
   button {
     padding: 0.4em 0.5em;
-    border: solid #777777aa 1px;
+    border: solid 1px;
     font-weight: 600;
-    color: #777777aa;
+    color: rgb(151, 159, 158);
     font-size: 12px;
     cursor: pointer;
     &:hover {
-      color: #777777;
-      border: solid #777777 1px;
+      color: rgb(110, 121, 120);
+
     }
   }
 }
