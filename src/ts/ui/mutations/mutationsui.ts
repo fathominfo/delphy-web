@@ -114,7 +114,7 @@ export class MutationsUI extends MccUI {
     mutationsFilter.addEventListener("input", () => {
       const value = mutationsFilter.interest.value as FeatureOfInterest;
       this.interestCat = value;
-      this.autofill = false;
+      // this.autofill = false;
 
       const descriptions = this.div.querySelectorAll(".filter-description") as NodeListOf<HTMLElement>;
       descriptions.forEach(el => {
@@ -352,6 +352,7 @@ export class MutationsUI extends MccUI {
           (this.div.querySelector("#moi-list-tips") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTipsPercent)}`;
           (this.div.querySelector("#moi-list-trees") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTreesPercent)}`;
           resolve(summary);
+          this.autofill = false;
         })
     });
     return prom;
