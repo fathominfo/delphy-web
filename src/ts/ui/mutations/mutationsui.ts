@@ -547,7 +547,7 @@ export class MutationsUI extends MccUI {
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
         this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow,
-        this.setMutationActive, this.addComplements,
+        this.setMutationActive, this.addRelatedMutations,
         this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
     }
@@ -803,7 +803,7 @@ export class MutationsUI extends MccUI {
     this.updateMutationHistory();
   }
 
-  addComplements: MutationComplementFunctionType = (mutation: Mutation, feature: FeatureOfInterest)=>{
+  addRelatedMutations: MutationComplementFunctionType = (mutation: Mutation, feature: FeatureOfInterest)=>{
     let matches: MutationOfInterest[] = [];
     const { site, from, to } = mutation;
     if (feature === FeatureOfInterest.Reversals) {

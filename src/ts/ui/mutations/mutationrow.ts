@@ -68,7 +68,7 @@ export class MutationRow {
     goToLineages: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
     setMutationActive: (name: string, active: boolean) => void,
-    addComplements: MutationComplementFunctionType,
+    addRelatedMutations: MutationComplementFunctionType,
     // minDate: number, maxDate: number,
     displayOption: DisplayOption,
     isApobecEnabled: boolean) {
@@ -144,11 +144,11 @@ export class MutationRow {
 
     (this.rowDiv.querySelector(REVERSAL_SELECTOR) as HTMLSpanElement).addEventListener("click", (event: PointerEvent) => {
       event.stopImmediatePropagation();
-      addComplements(mutation, FeatureOfInterest.Reversals);
+      addRelatedMutations(mutation, FeatureOfInterest.Reversals);
     });
     (this.rowDiv.querySelector(SAME_SITE_SELECTOR) as HTMLSpanElement).addEventListener("click", (event: PointerEvent) => {
       event.stopImmediatePropagation();
-      addComplements(mutation, FeatureOfInterest.SameSite);
+      addRelatedMutations(mutation, FeatureOfInterest.SameSite);
     });
 
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
