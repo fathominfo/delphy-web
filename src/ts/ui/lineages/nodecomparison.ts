@@ -8,7 +8,7 @@ import { HighlightableTimeDistributionCanvas, HoverCallback } from './highlighta
 
 const MAX_MUTATIONS_PER_NODE = 5;
 const MUT_BOX_HT = 40;
-const SHOW_ROW_HT = 35;
+const READOUT_PADDING = 40;
 const MUT_BOX_MARGIN = 7.5;
 
 
@@ -251,7 +251,7 @@ export class NodeComparison {
       /* rather than take up space with a button to "show 1 more", just show it*/
       shownCount++;
     }
-    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN;
+    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN + READOUT_PADDING;
     const alreadyDrawnCount = this.mutationTimelines.length;
     if (alreadyDrawnCount < shownCount) {
       const { minDate, maxDate, goToMutations, isApobecRun } = this;
@@ -278,6 +278,21 @@ export class NodeComparison {
         mt.appendTo(this.mutationContainer);
         mt.draw();
       });
+      if (shownCount < alreadyDrawnCount) {
+        /*
+        delay hiding the overflow entries so that they don't disappear
+        before the container is done moving
+        */
+        setTimeout(()=>{
+          this.mutationTimelines.slice(shownCount).forEach(mt => {
+            mt.div.classList.add("hidden");
+          });
+        }, 175);
+      } else if (shownCount === alreadyDrawnCount) {
+        this.mutationTimelines.forEach(mt => {
+          mt.div.classList.remove("hidden");
+        });
+      }
       this.moreDiv.classList.toggle("hidden", count <= MAX_MUTATIONS_PER_NODE + 1);
       (this.moreDiv.querySelector(".lnc-all span") as HTMLSpanElement).textContent = nfc(moreToShow);
       this.mutationContainer.style.height = `${mHeight}px`;
