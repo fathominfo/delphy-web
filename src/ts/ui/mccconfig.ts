@@ -240,7 +240,7 @@ export class MccConfig {
       mccOptsToggleButton.addEventListener('click', this.mccOptsToggle)
     }
   }
-  mccOptsToggle = (e: Event) => {
+  mccOptsToggle = (e: Event) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (!this.div) return;
     this.div.classList.toggle("expanded");
   };

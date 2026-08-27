@@ -92,7 +92,7 @@ const gatherBaseTreeMutationsOfInterest = (tree: PhyloTree, all: {[name: string]
   */
   const nodeCounts = getNodeCounts(tree),
     siteIntroductions: Introduction[][] = gatherTreeMutations(tree),
-    rootSequence: Uint8Array = tree.getRootSequence(),
+    // rootSequence: Uint8Array = tree.getRootSequence(),
     tallyMutation = (intro: Introduction, name: string)=>{
       const mutation = intro.mutation,
         nodeIndex = intro.nodeIndex,
@@ -174,7 +174,7 @@ const gatherBaseTreeMutationsOfInterest = (tree: PhyloTree, all: {[name: string]
           const intros = fromTo[fromAllele][toAllele];
           // const fromCount = fromTo.filter(toArr=>!!toArr).length;
           const reverse = fromTo[toAllele]?.[fromAllele];
-          const tos = fromTo[fromAllele];
+          // const tos = fromTo[fromAllele];
           /*
           are there any mutations tracked that are
           not this or the reversal of this?

@@ -98,6 +98,7 @@ const margin = {
   right: 35,
   bottom: 20,
   left: 0
+  // left: 31
 };
 const TEXT_PADDING = 3;
 const TICK_LENGTH = 5;
@@ -247,12 +248,12 @@ export class MutationPrevalenceCanvas {
 
     this.drawBackground();
 
-    this.drawAxes();
-
     this.mutations.forEach(({color}, i)=> {
       if (color.getRangeAlpha() > 0) this.drawSeriesNtiles(i);
     });
     this.drawMedianSeries();
+    this.drawAxes();
+
 
     if (this.hoverSeriesIndex === UNSET) {
       this.hintText.classList.add("hidden");
@@ -287,20 +288,26 @@ export class MutationPrevalenceCanvas {
       color = data.color.getRangeColor(),
       dailyCounts = data.ntiles,
       n = dailyCounts.length;
+    let firstNonZeroIndex = 0;
+    while (firstNonZeroIndex < n) {
+      const [a, b, c] = dailyCounts[firstNonZeroIndex];
+      if (a > 0 || b > 0 || c > 0) break;
+      firstNonZeroIndex++;
+    }
+    let x = margin.left + firstNonZeroIndex / n * widthRange,
+      y = bottom - dailyCounts[0][0] * heightRange,
+      i = 0;
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
-    let x = 0,
-      y = bottom - dailyCounts[0][0] * heightRange,
-      i;
     ctx.moveTo(x, y);
-    for (i = 0; i < n; i++) {
+    for (i = firstNonZeroIndex; i < n; i++) {
       const dayPct = i / n;
       x = margin.left + dayPct * widthRange;
       y = bottom - dailyCounts[i][0] * heightRange;
       ctx.lineTo(x, y);
     }
-    for (i = n - 1; i >= 0; i--) {
+    for (i = n - 1; i >= firstNonZeroIndex; i--) {
       const dayPct = i / n;
       x = margin.left + dayPct * widthRange;
       y = bottom - dailyCounts[i][2] * heightRange;
@@ -318,16 +325,25 @@ export class MutationPrevalenceCanvas {
       ntiles = data.ntiles;
     ctx.strokeStyle = color;
     ctx.beginPath();
+    let isDrawing = false;
     ntiles.forEach((daily: number[], dayIndex: number)=>{
-      const dayPct = dayIndex / this.dayCount;
-      const x = margin.left + dayPct * (width - margin.left - margin.right),
-        y = margin.top + (1 - daily[1]) * (height - margin.top - margin.bottom);
-      if (dayIndex === 0) {
-        ctx.moveTo(x, y);
-      } else {
+      const value = daily[1];
+      if (isDrawing || value > 0) {
+        const dayPct = dayIndex / this.dayCount;
+        const x = margin.left + dayPct * (width - margin.left - margin.right),
+          y = margin.top + (1 - daily[1]) * (height - margin.top - margin.bottom);
+        if (!isDrawing) {
+          isDrawing = true;
+          /*
+          extend the line below the axis so that the line doesn't end too
+          abruptly (it will be cleaned up when we draw the x-axis).
+          */
+          ctx.moveTo(x-1, y+1);
+        }
         ctx.lineTo(x, y);
       }
     });
+
     ctx.stroke();
   }
 
@@ -447,9 +463,13 @@ export class MutationPrevalenceCanvas {
   drawXAxis() {
     const {ctx, width, height, minDate, maxDate} = this;
 
+    const y = height - margin.bottom;
+    // clear any traces of the series that we drew below
+    // the axis to make a cleaner end to the line
+    ctx.clearRect(margin.left, y, width - margin.right - margin.left, 2);
+
     // line
     ctx.beginPath();
-    const y = height - margin.bottom;
     ctx.moveTo(margin.left, y);
     ctx.lineTo(width - margin.right, y);
     ctx.stroke();

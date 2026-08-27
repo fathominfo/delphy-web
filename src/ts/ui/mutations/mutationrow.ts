@@ -63,7 +63,7 @@ export class MutationRow {
     goToLineages: NodeFunctionType,
     shiftRow: (row: MutationRow, direction: number) => void,
     setMutationActive: (name: string, active: boolean) => void,
-    minDate: number, maxDate: number,
+    // minDate: number, maxDate: number,
     displayOption: DisplayOption,
     isApobecEnabled: boolean) {
 
@@ -81,8 +81,8 @@ export class MutationRow {
     this.rowDiv.setAttribute("data-mutation", moi.name);
     MUTATION_TABLE_BODY.appendChild(this.rowDiv);
 
-    this.minDate = minDate;
-    this.maxDate = maxDate;
+    this.minDate = mutationData.minDate;
+    this.maxDate = mutationData.maxDate;
     this.rowDiv.addEventListener("pointerenter", () => this.handleMouseenter());
     // this.rowDiv.addEventListener("pointermove", e => this.handleMousemove(e));
     this.rowDiv.addEventListener("pointerleave", e => this.handleMouseleave(e), true);

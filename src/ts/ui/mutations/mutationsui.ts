@@ -244,7 +244,7 @@ export class MutationsUI extends MccUI {
       }
     })
 
-    const { pos, dist, nodeIndex } = shortestDist;
+    const { dist, nodeIndex } = shortestDist;
 
     if (dist < MOUSE_LABEL_DIST * MOUSE_LABEL_DIST) {
       this.hoveredNode = nodeIndex;
@@ -254,7 +254,7 @@ export class MutationsUI extends MccUI {
     }
   }
 
-  canvasOutHandler(e: MouseEvent) {
+  canvasOutHandler(_e: MouseEvent) { // eslint-disable-line @typescript-eslint/no-unused-vars
     this.hoveredNode = null;
     this.requestDrawHighlights();
   }
@@ -524,15 +524,14 @@ export class MutationsUI extends MccUI {
         }
         return nodeObj;
       });
-      const {minDate, maxDate} = this,
+      const {earliestDate, minDate, maxDate} = this,
         name = moi.name,
         color = getMutationColor();
-
-      const mutationData = {moi, name, times, nodes, minDate, maxDate, alleleDist, color, active: true};
+      const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
         this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
-        minDate, maxDate, this.displayOption, this.isApobecEnabled);
+        this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
       this.rows.forEach(row => row.updateRows(this.rows));
 
@@ -545,7 +544,7 @@ export class MutationsUI extends MccUI {
 
 
   updateMutationHistory(): void {
-    this.prevalence.setData(this.selectedMutations, this.minDate, this.maxDate);
+    this.prevalence.setData(this.selectedMutations, this.earliestDate, this.maxDate);
     this.prevalence.launchDraw();
   }
 
