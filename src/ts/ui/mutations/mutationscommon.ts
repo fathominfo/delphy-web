@@ -1,6 +1,7 @@
 import { MutationOfInterest } from '../../pythia/mutationsofinterest';
 import { BaseTreeSeriesType } from '../../constants';
 import { MutationRow } from './mutationrow';
+import { MUTATION_COLOR, UNSET } from '../common';
 
 
 export type ParameterCallback = (percent:number)=>void;
@@ -68,3 +69,27 @@ export const MUTATION_SERIES_COLORS = [
 ];
 
 export type DisplayOption = "list" | "grid";
+
+
+const colorsUsed: string[] = [];
+
+export const getMutationColor = () : string =>{
+  let color = MUTATION_COLOR;
+  const colorsAvailable = MUTATION_SERIES_COLORS.filter(color => !colorsUsed.includes(color));
+  if (colorsAvailable.length > 0) {
+    color = colorsAvailable[0];
+    colorsUsed.push(color);
+  }
+  return color;
+};
+
+export const releaseMutationColor = (color: string) : void =>{
+  const colorIndex = colorsUsed.indexOf(color);
+  if (colorIndex !== UNSET) {
+    colorsUsed.splice(colorIndex, 1);
+  }
+};
+
+export const resetMutationColors = () : void =>{
+  colorsUsed.length = 0;
+};

@@ -9,7 +9,7 @@ import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
 import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
-import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType } from './mutationscommon';
+import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType, getMutationColor, releaseMutationColor, resetMutationColors } from './mutationscommon';
 
 import autocomplete from 'autocompleter';
 import { ParameterSetter } from './parametersetter';
@@ -40,8 +40,6 @@ const AC_SUGGESTION_TEMPLATE = document.querySelector(".autocomplete-suggestion"
 AC_SUGGESTION_TEMPLATE.remove();
 
 const MANY_TIPS_PCT = 0.75;
-
-const colorsUsed: string[] = [];
 
 const MOUSE_LABEL_DIST = 15;
 const LABEL_W = 36, LABEL_H = 16;
@@ -527,13 +525,8 @@ export class MutationsUI extends MccUI {
         return nodeObj;
       });
       const {earliestDate, minDate, maxDate} = this,
-        name = moi.name;
-      let color = MUTATION_COLOR;
-      const colorsAvailable = MUTATION_SERIES_COLORS.filter(color => !colorsUsed.includes(color));
-      if (colorsAvailable.length > 0) {
-        color = colorsAvailable[0];
-        colorsUsed.push(color);
-      }
+        name = moi.name,
+        color = getMutationColor();
       const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
@@ -564,11 +557,7 @@ export class MutationsUI extends MccUI {
       this.rows.splice(rowIndex, 1);
       this.selectedMutations.splice(rowIndex, 1);
     }
-
-    const colorIndex = colorsUsed.indexOf(row.color);
-    if (colorIndex !== UNSET) {
-      colorsUsed.splice(colorIndex, 1);
-    }
+    releaseMutationColor(row.color);
 
     this.updateMoiList();
     this.updateMutationHistory();
@@ -760,7 +749,7 @@ export class MutationsUI extends MccUI {
     clearMutationRows();
     this.rows.length = 0;
     this.selectedMutations.length = 0;
-    colorsUsed.length = 0;
+    resetMutationColors();
     this.updateMoiList();
     this.updateMutationHistory();
   }
