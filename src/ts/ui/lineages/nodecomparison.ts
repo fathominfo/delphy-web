@@ -1,23 +1,25 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, NodeComparisonData, getAncestorType, getDescendantType, NodeCallback } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getPercentLabel, getNodeTypeName, getNodeColorDark, UNSET, getNodeClassName } from '../common';
+import { DisplayNode, getPercentLabel, getNodeTypeName, getNodeColorDark, UNSET, getNodeClassName, nfc } from '../common';
 import { DistributionSeries, TimeDistributionCanvas } from '../timedistributioncanvas';
 import { Mutation } from '../../pythia/delphy_api';
 import { HighlightableTimeDistributionCanvas, HoverCallback } from './highlightabletimedistributioncanvas';
 
 const MAX_MUTATIONS_PER_NODE = 5;
 const MUT_BOX_HT = 40;
+const SHOW_ROW_HT = 35;
 const MUT_BOX_MARGIN = 7.5;
 
+const MORE_SELECTOR = ".lineages--node-comparison--more";
+
 const nodeComparisonTemplate = document.querySelector(".lineages--node-comparison") as HTMLDivElement;
-const nodeComparisonContainer = nodeComparisonTemplate?.parentNode as HTMLDivElement;
-const mutationTemplate = nodeComparisonTemplate?.querySelector(".lineages--node-comparison--mutation") as HTMLDivElement;
-if (!nodeComparisonTemplate || !nodeComparisonContainer || !mutationTemplate) {
-  throw new Error("could not find a div to use as a template for node comparisons on the lineage tab");
-}
+const nodeComparisonContainer = nodeComparisonTemplate.parentNode as HTMLDivElement;
+const mutationTemplate = nodeComparisonTemplate.querySelector(".lineages--node-comparison--mutation") as HTMLDivElement;
+const moreTemplate = nodeComparisonTemplate.querySelector(MORE_SELECTOR) as HTMLDivElement;
 
 mutationTemplate.remove();
+moreTemplate.remove();
 nodeComparisonTemplate.remove();
 
 const mutationCanvasSelector = '.lineages--mutation-time-chart',
@@ -121,6 +123,7 @@ export class NodeComparison {
   nodeHighlightCallback: NodeCallback;
   showAllMutsToggleLabel: HTMLLabelElement;
   showAllMutsToggle: HTMLInputElement;
+  showAll = false;
   isApobecRun: boolean;
 
 
@@ -179,6 +182,7 @@ export class NodeComparison {
     this.showAllMutsToggleLabel = this.div.querySelector(".lineages--node-comparison--show-toggle") as HTMLLabelElement;
     this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
     this.showAllMutsToggle.addEventListener("input", ()=>{
+      this.showAll = this.showAllMutsToggle.checked;
       this.mutationContainer.classList.add("windowshading");
       this.requestDraw();
       setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
@@ -237,7 +241,7 @@ export class NodeComparison {
     this.mutationData = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
     const count = this.mutationData.length;
     this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
-    const shownCount = this.showAllMutsToggle.checked ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
+    const shownCount = this.showAll ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
     this.shownMutationCountSpan.innerText = `${shownCount}`;
     this.showAllMutsToggleLabel.classList.toggle("hidden", shownCount === count);
     let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
@@ -249,8 +253,20 @@ export class NodeComparison {
 
   requestDraw() : void {
     const count = this.mutationData.length;
-    const shownCount = this.showAllMutsToggle.checked ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
-    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN;
+    let shownCount = this.showAll ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
+    let extraRow = 0;
+    const moreToShow = count - shownCount;
+    if (moreToShow > 0) {
+      if (moreToShow === 1) {
+        /* rather than take up space with a button to "show 1 more", just show it*/
+        shownCount++;
+      } else {
+        /* make room for the "show # more " */
+        extraRow = 1;
+      }
+    }
+    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN
+      + extraRow * SHOW_ROW_HT;
     const alreadyDrawnCount = this.mutationTimelines.length;
     if (alreadyDrawnCount < shownCount) {
       const { minDate, maxDate, goToMutations, isApobecRun } = this;
@@ -259,12 +275,36 @@ export class NodeComparison {
         this.mutationTimelines.push(mt);
       });
     }
+    let moreDiv = this.mutationContainer.querySelector(MORE_SELECTOR) as HTMLDivElement;
+    const shownSpan = this.div.querySelector(".lnc-min-count") as HTMLSpanElement;
+    const shownCountSpan = this.div.querySelector(".lnc-mutation-min") as HTMLSpanElement;
     requestAnimationFrame(()=>{
       this.nodeTimesCanvas.draw();
       this.mutationTimelines.slice(alreadyDrawnCount, shownCount).forEach(mt=>{
         mt.appendTo(this.mutationContainer);
         mt.draw();
       });
+      shownSpan.classList.toggle("hidden", shownCount === count);
+      shownCountSpan.textContent = `${nfc(shownCount)}`;
+      if (extraRow) {
+        if (moreDiv) {
+          moreDiv.classList.remove("hidden");
+        } else {
+          moreDiv = moreTemplate.cloneNode(true) as HTMLDivElement;
+          this.mutationContainer.append(moreDiv);
+          moreDiv.addEventListener("click", ()=>{
+            this.showAll = true;
+            this.showAllMutsToggle.checked = true;
+            this.mutationContainer.classList.add("windowshading");
+            this.requestDraw();
+            setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
+          });
+        }
+        (moreDiv.querySelector("span") as HTMLSpanElement).textContent = nfc(moreToShow);
+      } else if (moreDiv) {
+        moreDiv.classList.add("hidden");
+      }
+
       this.mutationContainer.style.height = `${mHeight}px`;
     });
   }

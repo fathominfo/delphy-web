@@ -825,15 +825,18 @@ details {
 
 }
 
-.lineages--node-comparison--time-chart-container {
-  // padding-left: 15px;
-  // border-left: solid 1px rgb(225,225,225);
+// .lineages--node-comparison--time-chart-container {
+//   // padding-left: 15px;
+//   // border-left: solid 1px rgb(225,225,225);
 
-  &:has(.lineages--node-comparison--show-toggle input:checked) {
-    .lnc-min-count { display: none; }
-  }
+//   // &:has(.lineages--node-comparison--show-toggle input:checked) {
+//   //   .lnc-min-count { display: none; }
+//   // }
 
-}
+// }
+
+
+
 
 .lineages--node-comparison--mutation-list {
   padding: 0;
@@ -1006,5 +1009,24 @@ details {
   .time-chart--readout {
     // transform: translate(@chartLeftMargin, 0);
     transform: translate(@chartLeftMargin, 100%);
+  }
+}
+
+
+.lineages--node-comparison--more {
+  height: 30px;
+  margin-top: 0.5em;
+  padding: 0 0.2em;
+  button {
+    padding: 0.4em 0.5em;
+    border: solid #777777aa 1px;
+    font-weight: 600;
+    color: #777777aa;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover {
+      color: #777777;
+      border: solid #777777 1px;
+    }
   }
 }
