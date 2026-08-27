@@ -11,15 +11,13 @@ const MUT_BOX_HT = 40;
 const SHOW_ROW_HT = 35;
 const MUT_BOX_MARGIN = 7.5;
 
-const MORE_SELECTOR = ".lineages--node-comparison--more";
+
 
 const nodeComparisonTemplate = document.querySelector(".lineages--node-comparison") as HTMLDivElement;
 const nodeComparisonContainer = nodeComparisonTemplate.parentNode as HTMLDivElement;
 const mutationTemplate = nodeComparisonTemplate.querySelector(".lineages--node-comparison--mutation") as HTMLDivElement;
-const moreTemplate = nodeComparisonTemplate.querySelector(MORE_SELECTOR) as HTMLDivElement;
 
 mutationTemplate.remove();
-moreTemplate.remove();
 nodeComparisonTemplate.remove();
 
 const mutationCanvasSelector = '.lineages--mutation-time-chart',
@@ -30,8 +28,10 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
   descendantNodeNameSelector = '.lineages--node-comparison--descendant-node',
   mutationCountSelector = '.lineages--node-comparison--mutation-count',
   showMutationSelector = '.lineages--node-comparison--mutation-header .lnc-mutation-min',
+  shownOfSelector = '.lnc-min-count',
   mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
-  nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
+  nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas',
+  moreSelector = ".lineages--node-comparison--more";
 
 /* should we provide an interface to this ? [mark 230524]*/
 /* adding it for now! [katherine 230608] */
@@ -110,6 +110,7 @@ export class NodeComparison {
   mutationCountSpan: HTMLSpanElement;
   shownMutationCountSpan: HTMLSpanElement;
   mutationThresholdSpan: HTMLSpanElement;
+  moreDiv: HTMLDivElement;
   nodePair: NodePair;
   nodeTimesCanvas: HighlightableTimeDistributionCanvas;
   minDate: number;
@@ -121,8 +122,6 @@ export class NodeComparison {
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
   nodeHighlightCallback: NodeCallback;
-  showAllMutsToggleLabel: HTMLLabelElement;
-  showAllMutsToggle: HTMLInputElement;
   showAll = false;
   isApobecRun: boolean;
 
@@ -137,6 +136,7 @@ export class NodeComparison {
       mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
       shownMutationCountSpan = this.div.querySelector(showMutationSelector) as HTMLSpanElement,
       mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement,
+      moreDiv = this.div.querySelector(moreSelector) as HTMLDivElement,
       canvas = this.div.querySelector(nodeTimesCanvasSelector) as HTMLCanvasElement,
       overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement,
       readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
@@ -150,6 +150,7 @@ export class NodeComparison {
     this.shownMutationCountSpan = shownMutationCountSpan;
     this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
+    this.moreDiv = moreDiv;
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.mutationTimelines = [];
@@ -163,6 +164,17 @@ export class NodeComparison {
     if (this.descendantType === UNSET) {
       this.div.classList.add('single');
     }
+
+
+    const input = moreDiv.querySelector("input") as HTMLInputElement;
+    input.checked = false;
+    input.addEventListener("input", () => {
+      this.showAll = input.checked;
+      this.mutationContainer.classList.add("windowshading");
+      this.requestDraw();
+      setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
+    });
+
     this.setLabel(this.ancestorType, this.descendantType);
     const overlapCount = nodeComparisonData.overlapCount;
     if (overlapCount > 0) {
@@ -179,16 +191,6 @@ export class NodeComparison {
     } else {
       overlapSpan.classList.add('hidden');
     }
-    this.showAllMutsToggleLabel = this.div.querySelector(".lineages--node-comparison--show-toggle") as HTMLLabelElement;
-    this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
-    this.showAllMutsToggle.addEventListener("input", ()=>{
-      this.showAll = this.showAllMutsToggle.checked;
-      this.mutationContainer.classList.add("windowshading");
-      this.requestDraw();
-      setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
-    });
-
-
     this.setMutations();
 
     const createSeries = (dn: DisplayNode, i: number) => {
@@ -239,34 +241,17 @@ export class NodeComparison {
 
   setMutations():void {
     this.mutationData = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
-    const count = this.mutationData.length;
-    this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
-    const shownCount = this.showAll ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
-    this.shownMutationCountSpan.innerText = `${shownCount}`;
-    this.showAllMutsToggleLabel.classList.toggle("hidden", shownCount === count);
-    let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
-    if (mutationPrevalenceThreshold < 1.0) {
-      thresholdLabel += ' or more'
-    }
-    this.mutationThresholdSpan.innerText = thresholdLabel;
   }
 
   requestDraw() : void {
     const count = this.mutationData.length;
     let shownCount = this.showAll ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
-    let extraRow = 0;
     const moreToShow = count - shownCount;
-    if (moreToShow > 0) {
-      if (moreToShow === 1) {
-        /* rather than take up space with a button to "show 1 more", just show it*/
-        shownCount++;
-      } else {
-        /* make room for the "show # more " */
-        extraRow = 1;
-      }
+    if (moreToShow === 1) {
+      /* rather than take up space with a button to "show 1 more", just show it*/
+      shownCount++;
     }
-    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN
-      + extraRow * SHOW_ROW_HT;
+    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN;
     const alreadyDrawnCount = this.mutationTimelines.length;
     if (alreadyDrawnCount < shownCount) {
       const { minDate, maxDate, goToMutations, isApobecRun } = this;
@@ -275,36 +260,26 @@ export class NodeComparison {
         this.mutationTimelines.push(mt);
       });
     }
-    let moreDiv = this.mutationContainer.querySelector(MORE_SELECTOR) as HTMLDivElement;
-    const shownSpan = this.div.querySelector(".lnc-min-count") as HTMLSpanElement;
-    const shownCountSpan = this.div.querySelector(".lnc-mutation-min") as HTMLSpanElement;
+    const shownSpan = this.div.querySelector(shownOfSelector) as HTMLSpanElement;
+
     requestAnimationFrame(()=>{
+      this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
+      this.shownMutationCountSpan.innerText = `${nfc(shownCount)}`;
+      // this.showAllMutsToggleLabel.classList.toggle("hidden", shownCount === count);
+      shownSpan.classList.toggle("hidden", shownCount === count);
+      let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
+      if (mutationPrevalenceThreshold < 1.0) {
+        thresholdLabel += ' or more'
+      }
+      this.mutationThresholdSpan.innerText = thresholdLabel;
+
       this.nodeTimesCanvas.draw();
       this.mutationTimelines.slice(alreadyDrawnCount, shownCount).forEach(mt=>{
         mt.appendTo(this.mutationContainer);
         mt.draw();
       });
-      shownSpan.classList.toggle("hidden", shownCount === count);
-      shownCountSpan.textContent = `${nfc(shownCount)}`;
-      if (extraRow) {
-        if (moreDiv) {
-          moreDiv.classList.remove("hidden");
-        } else {
-          moreDiv = moreTemplate.cloneNode(true) as HTMLDivElement;
-          this.mutationContainer.append(moreDiv);
-          moreDiv.addEventListener("click", ()=>{
-            this.showAll = true;
-            this.showAllMutsToggle.checked = true;
-            this.mutationContainer.classList.add("windowshading");
-            this.requestDraw();
-            setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
-          });
-        }
-        (moreDiv.querySelector("span") as HTMLSpanElement).textContent = nfc(moreToShow);
-      } else if (moreDiv) {
-        moreDiv.classList.add("hidden");
-      }
-
+      this.moreDiv.classList.toggle("hidden", count <= MAX_MUTATIONS_PER_NODE + 1);
+      (this.moreDiv.querySelector(".lnc-all span") as HTMLSpanElement).textContent = nfc(moreToShow);
       this.mutationContainer.style.height = `${mHeight}px`;
     });
   }
