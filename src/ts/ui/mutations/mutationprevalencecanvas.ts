@@ -97,15 +97,15 @@ const margin = {
   top: 2,
   right: 35,
   bottom: 20,
-  left: 0
-  // left: 31
+  left: 29.5
 };
 const TEXT_PADDING = 3;
 const TICK_LENGTH = 5;
 const LINE_HEIGHT = 12;
 const DOT_RAD = 3;
 const SWATCH_SIDE = 8;
-const LEGEND_X = margin.left + 20;
+// const LEGEND_X = margin.left + 20;
+const LEGEND_X = 19;
 const LEGEND_Y = margin.top + 20;
 let LEGEND_X2 = LEGEND_X;
 const LEGEND_X2_PAD = 5;
@@ -376,10 +376,12 @@ export class MutationPrevalenceCanvas {
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#FBFBFB";
     ctx.beginPath();
-    ctx.rect(margin.left, margin.top,
-      width - margin.left - margin.right,
+    ctx.rect(0, margin.top,
+      width - margin.right,
       height - margin.top - margin.bottom);
     ctx.fill();
+    ctx.fillStyle = "#F0F0F0";
+    ctx.fillRect(0, margin.top, 10, height - margin.top - margin.bottom);
   }
 
   drawLegendItem(name: string, color: string, i: number) {
@@ -470,7 +472,8 @@ export class MutationPrevalenceCanvas {
 
     // line
     ctx.beginPath();
-    ctx.moveTo(margin.left, y);
+    // ctx.moveTo(margin.left, y);
+    ctx.moveTo(0, y);
     ctx.lineTo(width - margin.right, y);
     ctx.stroke();
 

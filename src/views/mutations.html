@@ -129,13 +129,11 @@
         <div class="mutations--display-top">
           <h1>Selected mutations</h1>
           <div>
-            <div>
-              <button type="button" class="clear-all">Clear all</button>
-            </div>
             <div class="display-options">
               <form class="display-options-form">
                 <div>
-                  <input type="radio" name="display" class="display-radio" id="display-radio--list" value="list" checked autocomplete="off">
+                  <input type="radio" name="display" class="display-radio" id="display-radio--list" value="list" checked
+                    autocomplete="off">
                   <label for="display-radio--list">
                     <div class="box">
                       <div class="glyph"></div>
@@ -143,8 +141,7 @@
                   </label>
                 </div>
                 <div>
-                  <input type="radio" name="display" class="display-radio" id="display-radio--grid" value="grid"
-                    autocomplete="off">
+                  <input type="radio" name="display" class="display-radio" id="display-radio--grid" value="grid" autocomplete="off">
                   <label for="display-radio--grid">
                     <div class="box">
                       <div class="glyph"></div>
@@ -153,13 +150,22 @@
                 </div>
               </form>
             </div>
+            <div>
+              <button type="button" class="clear-all">Clear all</button>
+            </div>
           </div>
         </div>
         <span class="order-indicator"></span> <!-- span instead of div to avoid interfering with nth-of-type-->
         <div id="mutation-rows" class="list">
 
           <div class="mutation-row" tabindex="0" data-mutation="">
-            <div class="grip">
+            <div class="grip"></div>
+            <div class="mutation-row-delete">
+              <button class="mutation-dismiss" aria-label="Dismiss mutation">
+                <div class="box">
+                  <div class="glyph"></div>
+                </div>
+              </button>
               <button type="button" class="mutation-prev" aria-label="Move mutation up">
                 <div class="box">
                   <div class="glyph"></div>
@@ -171,40 +177,49 @@
                 </div>
               </button>
             </div>
-            <div class="mutation-row-delete">
-              <button class="mutation-dismiss" aria-label="Dismiss mutation">
-                <div class="box">
-                  <div class="glyph"></div>
-                </div>
-              </button>
-            </div>
             <div class="mutation-wrapper">
               <div class="mutation-info">
                 <div class="mutation-name">
                 <span class="allele allele-from"></span><span class="site"></span><span class="allele allele-to"></span>
                 <span class="is-apobec">APOBEC</span>
               </div>
+              <div class="stats--confidence">
+                <div class="stats-mutation-confidence-wrapper">
+                  <div class="stats-title">Appears in</div>
+                  <div class="mutation-confidence list"><strong>00%</strong><span> of trees</span></div>
+                  <div class="mutation-confidence grid"><strong>00%</strong><span> of trees</span></div>
+                </div>
+              </div>
               <div class="mutation-stats">
                 <div class="stats--badges">
-                  <div class="stats--reversals stats-badge hidden">
-                    <div class="box" aria-label aria-hidden="true">
-                      <div class="glyph"></div>
+                  <button class="stats--reversals stats-badge" title="Mutations from the root sequence followed by another mutation that reverts the mutated allele back to the root allele.">
+                    <div class="stats-title">Reversal
+                      <!-- <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="8" height="8">
+                        <path
+                          d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z"
+                          stroke-width="0"></path>
+                      </svg> -->
                     </div>
-                    <div class="stats-title">Reversals</div>
                     <div class="stats-conf"></div>
-                  </div>
-                  <div class="stats--same-site stats-badge hidden">
-                    <div class="box" aria-hidden="true">
-                      <div class="glyph"></div>
+                  </button>
+                  <button class="stats--same-site stats-badge" title="Mutations occuring at the same site on the genome that result in different alleles.">
+                    <div class="stats-title">Same-site
+                      <!-- <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="8" height="8">
+                        <path
+                          d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z"
+                          stroke-width="0"></path>
+                      </svg> -->
                     </div>
-                    <div class="stats-title">Same-site mutations</div>
                     <div class="stats-conf"></div>
-                  </div>
-                  <div class="stats--multi-intro stats-badge hidden">
-                    <div class="box" aria-hidden="true">
-                      <div class="glyph"></div>
+                  </button>
+                  <div class="stats--multi-intro stats-badge" title="Instances of the same mutation appearing independently multiple times.">
+                    <div class="stats-title">Recurring
+                      <!-- <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="8" height="8">
+                        <path
+                          d="m4.63,2.13c0,.34-.28.62-.62.62s-.62-.28-.62-.62.28-.62.62-.62.62.28.62.62Zm-1,1.45v2.55c0,.21.17.38.38.38s.38-.17.38-.38v-2.55c-.12.03-.24.05-.38.05s-.25-.02-.38-.05Z"
+                          stroke-width="0"></path>
+                      </svg> -->
                     </div>
-                    <div class="stats-title">Multiple intros</div>
                     <div class="stats-conf"></div>
                   </div>
                   <div class="stats--root-variation stats-badge hidden">
@@ -213,18 +228,6 @@
                     </div>
                     <div class="stats-title">Root variation</div>
                     <div class="stats-conf"></div>
-                  </div>
-                </div>
-                <div class="stats--confidence">
-                  <div class="stats-title">Appearance in base trees</div>
-                  <div class="stats-mutation-confidence-wrapper">
-                    <div class="small-label">Mutation</div>
-                    <div class="mutation-confidence list"><strong>00%</strong></div>
-                    <div class="mutation-confidence grid"><strong>00%</strong><span> of base trees</span></div>
-                  </div>
-                  <div class="stats-node-confidence-wrapper">
-                    <div class="small-label">Highest confidence node</div>
-                    <div class="highest-node-confidence"><strong>00%</strong></div>
                   </div>
                 </div>
               </div>

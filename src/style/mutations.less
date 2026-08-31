@@ -586,6 +586,7 @@
   .canvas-container {
     display: flex;
 
+
     canvas {
       flex: 1;
       cursor: crosshair;
@@ -617,6 +618,7 @@
     align-items: center;
     gap: 1em;
     justify-content: space-between;
+    padding-right: 10px;
 
     >div {
       display: flex;
@@ -714,12 +716,20 @@
     }
 
     .mutation-prev .glyph {
-      .masked(url("/assets/icons/arrow-up.svg"));
+      .masked(url("/assets/icons/triangle-up.svg"));
     }
 
     .mutation-next .glyph {
-      .masked(url("/assets/icons/arrow-down.svg"));
+      .masked(url("/assets/icons/triangle-down.svg"));
     }
+
+    // .stats-mutation-confidence-wrapper,
+    // .stats-badge {
+    //   display: flex;
+    //   gap: 3px;
+    //   align-items: baseline;
+    // }
+
   }
 
   &.grid {
@@ -747,10 +757,11 @@
       font-size: 12px;
       display: block;
       line-height: 1;
+      color: #516251;
 
       span {
         font-weight: 600;
-        font-size: 9px;
+        font-size: 10px;
       }
 
     }
@@ -810,6 +821,14 @@
 
   .mutation-confidence.list {
       display: block;
+      span {
+        font-weight: 700;
+        font-size: 10px;
+        line-height: 1;
+        color: #888;
+        text-transform: lowercase;
+        font-variant: small-caps;
+      }
     }
 
   &.slow-fade {
@@ -880,55 +899,68 @@
       }
     }
   }
-    .stats-title {
+  .stats-title {
+    color: #888;
+    font-weight: 700;
+    line-height: 1.2;
+    font-size: 10px;
+    text-transform: lowercase;
+    font-variant: small-caps;
+  }
 
-      color: #888;
-      font-weight: 700;
-      line-height: 1;
-      font-size: 9px;
+  .stats--confidence {
+    display: grid;
+    row-gap: 0.2em;
+    column-gap: 1.5em;
+    grid-auto-rows: .8em;
+
+    .stats-title {
       text-transform: lowercase;
       font-variant: small-caps;
-    }
 
-    .stats--confidence {
-      display: grid;
-      row-gap: 0.2em;
-      column-gap: 1.5em;
-      grid-auto-rows: .8em;
-
-      .stats-title {
-        @media (min-width:1200px) {
-          grid-column: span 2;
-        }
-      }
-
-      .mutation-confidence,
-      .highest-node-confidence {
-        font-weight: 700;
-        font-size: 1.1em;
-      }
-
-
-      .stats-mutation-confidence-wrapper,
-      .stats-node-confidence-wrapper {
-        line-height: 1.3;
+      @media (min-width:1200px) {
+        grid-column: span 2;
       }
     }
+
+    .mutation-confidence strong {
+      font-weight: 700;
+      font-size: 12px;
+      color: #516251;
+
+    }
+
+
+    .stats-mutation-confidence-wrapper {
+      line-height: 1.3;
+    }
+  }
 
   .mutation-row-delete {
     position: absolute;
     right: 0.5em;
     top: 0.5em;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
 
     button {
-      width: 1.7em;
-      height: 1.7em;
+      width: 2em;
+      height: 2em;
       .noselect();
 
       &:hover {
         .glyph {
           background-color: #444;
         }
+      }
+
+      &.mutation-prev, &.mutation-next {
+        width: 1.7em;
+        height: 1.0em;
+      }
+      &.mutation-next {
+        margin-top: 3px;
       }
     }
 
@@ -947,11 +979,6 @@
       .small-label {
         color: @color1;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color1-secondary;
-      }
     }
   }
 
@@ -964,11 +991,6 @@
       .small-label {
         color: @color2;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color2-secondary;
-      }
     }
   }
 
@@ -979,11 +1001,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color3-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color3-secondary;
       }
     }
@@ -998,11 +1015,6 @@
       .small-label {
         color: @color4-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color4-secondary;
-      }
     }
   }
 
@@ -1013,11 +1025,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color5-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color5-secondary;
       }
     }
@@ -1032,11 +1039,6 @@
       .small-label {
         color: @color6-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color6-secondary;
-      }
     }
   }
 
@@ -1047,11 +1049,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color7-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color7-secondary;
       }
     }
@@ -1066,11 +1063,6 @@
       .small-label {
         color: @color8-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color8-secondary;
-      }
     }
   }
 
@@ -1081,11 +1073,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color9-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color9-secondary;
       }
     }
@@ -1100,11 +1087,6 @@
       .small-label {
         color: @color10-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color10-secondary;
-      }
     }
   }
 
@@ -1115,11 +1097,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color11-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color11-secondary;
       }
     }
@@ -1134,11 +1111,6 @@
       .small-label {
         color: @color12-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color12-secondary;
-      }
     }
   }
 
@@ -1149,11 +1121,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color13-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color13-secondary;
       }
     }
@@ -1197,7 +1164,8 @@
       overflow-x: visible;
       position: relative;
       flex: 1;
-      max-width: 80px;
+      min-width: 110px;
+      max-width: 110px;
     }
 
     .is-apobec {
@@ -1233,6 +1201,7 @@
 
     .mutation-time-dist {
       height: 100%;
+      padding-right: 14px;
     }
 
     .mutation-allele-prob {
@@ -1346,20 +1315,45 @@
   }
 
   .stats--badges {
+    margin-left: 20px;
     flex-direction: row;
     gap: 1em;
     align-items: flex-start;
 
-      .stats-badge {
-        width: max-content;
-        margin: 0;
-        height: auto;
 
-        .box {
-          display: none;
-        }
+    .stats-badge {
+      width: max-content;
+      margin: 0;
+      height: auto;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      text-align: left;
+      cursor: default;
+
+      &.active {
+        opacity: 1;
+        pointer-events: all;
+        visibility: visible;
+      }
+
+
+    }
+
+    button.stats-badge {
+      background-color: rgba(0, 0, 0, 0.07);
+      border: solid 0.5px rgb(230, 230, 230);
+      border-radius: 3px;
+      padding: 3px 5px;
+      margin-top: -3px;
+      cursor: pointer;
+
+      &:hover {
+        border-color: rgb(150,150,150);
       }
     }
+
+  }
 
   .mutation-nodes {
     display: flex;
@@ -1369,6 +1363,7 @@
 }
 
 .mutation-time-dist {
+
   .canvas-container {
     position: relative;
   }
