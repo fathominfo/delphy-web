@@ -331,6 +331,10 @@ export class ScatterPlotCanvas extends TraceCanvas {
       const dateXFactor = scatterData.tipCoords[nodeIndex][0];
       const countYFactor = scatterData.tipCoords[nodeIndex][1];
       let dateX = dateXFactor * this.dataWidth;
+      this.xAxisHoverTick.setAttribute("x1", `${dateX}`)
+      this.xAxisHoverTick.setAttribute("x2", `${dateX}`)
+      this.xAxisHoverTick.setAttribute("y1", `${this.height - LABEL_HEIGHT - TICK_LENGTH}`)
+      this.xAxisHoverTick.setAttribute("y2", `${this.height - LABEL_HEIGHT}`)
       if (dateX < DATE_LABEL_WIDTH * 1.5) {
         if (dateX < HALF_DATE_LABEL_WIDTH) {
           dateX = HALF_DATE_LABEL_WIDTH;
@@ -359,11 +363,6 @@ export class ScatterPlotCanvas extends TraceCanvas {
       this.hoverCount.textContent = `${ count.toLocaleString(undefined, {maximumFractionDigits: 1}) }`;
       this.hoverCount.setAttribute("y", `${countY}`);
 
-      this.xAxisHoverTick.setAttribute("x1", `${dateX}`)
-      this.xAxisHoverTick.setAttribute("x2", `${dateX}`)
-      this.xAxisHoverTick.setAttribute("y1", `${this.height - LABEL_HEIGHT - TICK_LENGTH}`)
-      this.xAxisHoverTick.setAttribute("y2", `${this.height - LABEL_HEIGHT}`)
-      // this.xAxisHoverTick.classList.toggle("back",)
       this.tickLabels.forEach(({label, y})=>{
         label.classList.toggle("back", Math.abs(y - countY) < LABEL_HEIGHT);
       });
