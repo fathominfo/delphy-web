@@ -9,7 +9,8 @@ import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
 import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
-import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType, getMutationColor, releaseMutationColor, resetMutationColors } from './mutationscommon';
+import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType, getMutationColor, 
+        releaseMutationColor, resetMutationColors, MutationComplementFunctionType } from './mutationscommon';
 
 import autocomplete from 'autocompleter';
 import { ParameterSetter } from './parametersetter';
@@ -540,13 +541,22 @@ export class MutationsUI extends MccUI {
 
   selectMutation = (moi: MutationOfInterest) => {
     if (!this.selectedMutations.map(md => md.name).includes(moi.name) && this.pythia) {
+      this.addMutation(moi);
+      this.rows.forEach(row => row.updateRows(this.rows));
+      this.updateMoiList();
+      this.updateMutationHistory();
+    }
+  }
+
+  addMutation = (moi: MutationOfInterest) => {
+    if (!this.selectedMutations.map(md => md.name).includes(moi.name) && this.pythia) {
       const tree = this.mccTreeCanvas.tree as SummaryTree,
         mutation = moi.mutation,
         /*
         get the time and nodeIndex for this mutation in each base tree,
         and map that node index to a node in the MCC
         */
-        {times, nodeIndices} = this.pythia.getMutationDistributionInfo(mutation, tree),
+        { times, nodeIndices } = this.pythia.getMutationDistributionInfo(mutation, tree),
         alleleDist = this.pythia.getPopulationAlleleDistribution(mutation.site, this.earliestDate, this.maxDate, tree);
       const nodes = nodeIndices.map(index => {
         let nodeObj = { index: UNSET, tips: 0, confidence: 0 };
@@ -565,13 +575,10 @@ export class MutationsUI extends MccUI {
       const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
-        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow, this.setMutationActive,
+        this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow,
+        this.setMutationActive, this.addRelatedMutations,
         this.displayOption, this.isApobecEnabled);
       this.rows.push(row);
-      this.rows.forEach(row => row.updateRows(this.rows));
-
-      this.updateMoiList();
-      this.updateMutationHistory();
     }
   }
 
@@ -819,6 +826,29 @@ export class MutationsUI extends MccUI {
       found.active = active;
     }
     this.updateMutationHistory();
+  }
+
+  addRelatedMutations: MutationComplementFunctionType = (mutation: Mutation, feature: FeatureOfInterest)=>{
+    let matches: MutationOfInterest[] = [];
+    const { site, from, to } = mutation;
+    if (feature === FeatureOfInterest.Reversals) {
+      matches = this.allMutations.filter(({mutation: mut})=>mut.site === site && mut.from === to && mut.to === from);
+    } else if (feature === FeatureOfInterest.SameSite) {
+      matches = this.allMutations.filter(({ mutation: mut, features }) => mut.site === site && features?.[FeatureOfInterest.SameSite]);
+      matches.sort((a, b)=>{
+        const amut = a.mutation, bmut = b.mutation;
+        return (amut.from - bmut.from) || (amut.to - bmut.to);
+      });
+    }
+    matches.forEach(moi => this.addMutation(moi));
+    this.rows.forEach(row => row.updateRows(this.rows));
+    this.updateMoiList();
+    this.updateMutationHistory();
+    /* after everything is added to the DOM, flash the new additions */
+    setTimeout(()=>{
+      const additions = this.rows.filter(row => matches.includes(row.moi) && !mutationEquals(row.moi.mutation, mutation));
+      additions.forEach(row=>row.flash());
+    }, 30);
   }
 
   setDisplayOption = () => {

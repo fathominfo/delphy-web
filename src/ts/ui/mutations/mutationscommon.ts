@@ -1,12 +1,19 @@
-import { MutationOfInterest } from '../../pythia/mutationsofinterest';
+import { FeatureOfInterest, MutationOfInterest } from '../../pythia/mutationsofinterest';
 import { BaseTreeSeriesType } from '../../constants';
 import { MutationRow } from './mutationrow';
+import { Mutation } from '../../pythia/delphy_api';
 import { MUTATION_COLOR, UNSET } from '../common';
 
 
 export type ParameterCallback = (percent:number)=>void;
 
 export type RowFunctionType = (row: MutationRow | null) => void;
+
+/*
+for a given mutation, find other mutations related to it, according to the given feature of interest.
+For example, it may find the reversal or other mutations at the same site.
+*/
+export type MutationComplementFunctionType = (srcMutation: Mutation, feature: FeatureOfInterest) => void;
 
 /*
  * For each MutationRow, NodeData stores the mutation node data from each base tree.
