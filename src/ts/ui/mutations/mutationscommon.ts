@@ -6,7 +6,7 @@ import { MUTATION_COLOR, UNSET } from '../common';
 
 export type ParameterCallback = (percent:number)=>void;
 
-export type RowFunctionType = (row: MutationRow | null, lock: boolean) => void;
+export type RowFunctionType = (row: MutationRow | null) => void;
 
 /*
  * For each MutationRow, NodeData stores the mutation node data from each base tree.

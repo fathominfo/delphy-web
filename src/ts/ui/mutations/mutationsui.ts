@@ -122,7 +122,7 @@ export class MutationsUI extends MccUI {
     mutationsFilter.addEventListener("input", () => {
       const value = mutationsFilter.interest.value as FeatureOfInterest;
       this.interestCat = value;
-      this.autofill = false;
+      // this.autofill = false;
 
       const descriptions = this.div.querySelectorAll(".filter-description") as NodeListOf<HTMLElement>;
       descriptions.forEach(el => {
@@ -326,7 +326,9 @@ export class MutationsUI extends MccUI {
 
   deactivate() : void {
     super.deactivate();
-    this.sharedState.setMutationSelection(this.selectedMutations.map(md=>md.moi.mutation));
+    this.sharedState.setMutationList(this.selectedMutations.map(md=>md.moi.mutation));
+    const activeRow = this.rows.filter(row => row.isActive)[0];
+    this.sharedState.setSelectedMutation(activeRow?.moi?.mutation || null);
   }
 
 
@@ -370,11 +372,21 @@ export class MutationsUI extends MccUI {
           }
           this.setInterest();
 
-          this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
+          this.sharedState.mutationList.forEach(mutation => {
+            // add the row from sharestate.mutationList if it doesn't already exist
+            this.lookupMutation(mutation);
+            // check if this row was selected, if so, restore the isActive state and highlight the prevalence chart
+            if (this.sharedState.selectedMutation !== null && mutationEquals(mutation, this.sharedState.selectedMutation)) {
+              // find the row and isActive => true
+              const row = this.rows.filter(row => mutationEquals(row.moi.mutation, mutation))[0];
+              if (row) row.toggleActive(true);
+            }
+          });
 
           (this.div.querySelector("#moi-list-tips") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTipsPercent)}`;
           (this.div.querySelector("#moi-list-trees") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTreesPercent)}`;
           resolve(summary);
+          this.autofill = false;
         })
     });
     return prom;
@@ -604,7 +616,7 @@ export class MutationsUI extends MccUI {
   and used there in event handlers. We want to
   preserve the `this` reference to this class.
   */
-  updateHoverRow: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
+  updateHoverRow: RowFunctionType = (row: MutationRow | null) => {
     if (!this.pythia) return;
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
@@ -626,7 +638,7 @@ export class MutationsUI extends MccUI {
     } else {
       this.nodes = [];
     }
-    this.prevalence.setHighlight(moi, lock);
+    this.prevalence.setHighlight(moi, row?.isActive || false);
     this.requestDrawHighlights();
 
   }
