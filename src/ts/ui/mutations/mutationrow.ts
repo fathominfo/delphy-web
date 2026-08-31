@@ -185,7 +185,7 @@ export class MutationRow {
     const features = this.moi?.features;
     if (features && features[foi]) {
       const foiHtml = this.rowDiv.querySelector(selector) as HTMLElement;
-      foiHtml.classList.remove("hidden");
+      foiHtml.classList.add("active");
       const conf = getPercentLabel(features[foi].confidence);
       (foiHtml.querySelector(".stats-conf") as HTMLElement).innerText = `${conf}%`;
     }
