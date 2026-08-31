@@ -199,7 +199,7 @@ round number to the nearest power of 1000, e.g., "96k" or "8M"
 */
 export const nf000 = (x: number) : {n000: number, magnitudeLabel: string} | null=>{
   if (x === undefined || isNaN(x) || x === null) return null;
-  const magnitude = Math.log10(x);
+  const magnitude = Math.log10(Math.abs(x));
   const m000 = Math.floor(magnitude / 3);
   const n000 = Math.pow(10, m000 * 3);
   let magnitudeLabel = '';

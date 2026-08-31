@@ -92,21 +92,25 @@ export class HistData extends TraceData {
     const { postBurnIn } = this;
     const N = postBurnIn.length;
     if (N > 1) {
-      this.distribution = new Distribution(postBurnIn);
-      this.ess = this.distribution.ess;
-      if (postBurnIn.length >= MIN_COUNT_FOR_HISTO) {
-        const histoMinVal = Math.min(...postBurnIn);
-        const histoMaxVal = Math.max(...postBurnIn);
-        const histoRange = histoMaxVal - histoMinVal;
-        if (this.distribution.kde === null || this.isDiscrete && histoRange < 20) {
-          this.binConfig = this.getDiscreteHistoData(postBurnIn, histoRange, histoMinVal);
-        } else {
-          this.binConfig = this.getKDEHistoData(this.distribution.kde);
+      const histoMinVal = Math.min(...postBurnIn);
+      const histoMaxVal = Math.max(...postBurnIn);
+      const histoRange = histoMaxVal - histoMinVal;
+      if (this.isDiscrete && histoRange < 20) {
+        this.binConfig = this.getDiscreteHistoData(postBurnIn, histoRange, histoMinVal);
+      } else {
+        this.distribution = new Distribution(postBurnIn);
+        this.ess = this.distribution.ess;
+        if (postBurnIn.length >= MIN_COUNT_FOR_HISTO) {
+          if (this.distribution.kde === null || isNaN(this.ess) ) {
+            this.binConfig = this.getDiscreteHistoData(postBurnIn, histoRange, histoMinVal);
+          } else {
+            this.binConfig = this.getKDEHistoData(this.distribution.kde);
+          }
         }
       }
     } else {
       this.distribution = new Distribution(this.data);
-      this.ess = calcEffectiveSampleSize(this.postBurnIn);
+      this.ess = UNSET;
     }
     this.act = N / this.ess * stepsPerSample;
     this.setSummaryStats();
