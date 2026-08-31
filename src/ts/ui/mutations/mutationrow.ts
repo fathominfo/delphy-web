@@ -142,14 +142,18 @@ export class MutationRow {
     (this.rowDiv.querySelector(".stats--confidence .mutation-confidence.grid") as HTMLElement).innerHTML = `${getPercentLabel(moi.confidence)}% <span>of base trees</span>`;
     (this.rowDiv.querySelector(".stats--confidence .highest-node-confidence") as HTMLElement).textContent = `${getPercentLabel(this.uniqueNodes[0].confidence ?? 0)}%`;
 
-    (this.rowDiv.querySelector(REVERSAL_SELECTOR) as HTMLSpanElement).addEventListener("click", (event: PointerEvent) => {
+    const reversalHandler = (event: MouseEvent) => {
       event.stopImmediatePropagation();
       addRelatedMutations(mutation, FeatureOfInterest.Reversals);
-    });
-    (this.rowDiv.querySelector(SAME_SITE_SELECTOR) as HTMLSpanElement).addEventListener("click", (event: PointerEvent) => {
+    };
+
+    const sameSiteHandler = (event: MouseEvent) => {
       event.stopImmediatePropagation();
       addRelatedMutations(mutation, FeatureOfInterest.SameSite);
-    });
+    };
+
+    (this.rowDiv.querySelector(REVERSAL_SELECTOR) as HTMLSpanElement).addEventListener("click", reversalHandler);
+    (this.rowDiv.querySelector(SAME_SITE_SELECTOR) as HTMLSpanElement).addEventListener("click", sameSiteHandler);
 
     const canvas = this.rowDiv.querySelector(".mutation-time-dist canvas") as HTMLCanvasElement;
     if (!canvas) {
