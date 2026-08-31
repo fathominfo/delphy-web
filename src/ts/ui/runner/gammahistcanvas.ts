@@ -35,9 +35,9 @@ const POP_CHART_LABEL_WIDTH = 95;
 
 export class GammaHistCanvas extends TraceCanvas {
 
-  minSpan: HTMLDivElement;
-  maxSpan: HTMLDivElement;
-  hoverSpan: HTMLDivElement;
+  minSpan: SVGTextElement;
+  maxSpan: SVGTextElement;
+  hoverSpan: SVGTextElement;
   trendRange: SVGPathElement;
   medianTrend: SVGPathElement;
   sampleTrend: SVGPathElement;
@@ -47,6 +47,12 @@ export class GammaHistCanvas extends TraceCanvas {
   labelTextTemplate: SVGTextElement;
   labelTickTemplate: SVGLineElement;
   // hoverLabelTemplate: SVGTextElement;
+
+  xAxisContainer: SVGGElement;
+  xAxisMinTick: SVGLineElement;
+  xAxisMaxTick: SVGLineElement;
+  xAxisHoverTick: SVGLineElement;
+
   scrim: SVGRectElement;
   yAxisWidth: number = UNSET;
   yAxisHeight: number = UNSET;
@@ -61,9 +67,9 @@ export class GammaHistCanvas extends TraceCanvas {
       (this.container.querySelector(".header .subtitle") as HTMLParagraphElement).innerHTML = subtitle;
     }
     this.traceData = new GammaData(label, '', getDataFnc);
-    this.minSpan = this.container.querySelector(".support .axis.x .min-date") as HTMLDivElement;
-    this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as HTMLDivElement;
-    this.hoverSpan = this.container.querySelector(".support .axis.x .hover-date") as HTMLDivElement;
+    this.minSpan = this.container.querySelector(".support .axis.x .min-date") as SVGTextElement;
+    this.maxSpan = this.container.querySelector(".support .axis.x .max-date") as SVGTextElement;
+    this.hoverSpan = this.container.querySelector(".support .axis.x .hover-date") as SVGTextElement;
     this.trendRange = this.svg.querySelector(".trend.range") as SVGPathElement;
     this.medianTrend = this.svg.querySelector(".trend.median") as SVGPathElement;
     this.sampleTrend = this.svg.querySelector(".trend.sample") as SVGPathElement;
@@ -74,6 +80,12 @@ export class GammaHistCanvas extends TraceCanvas {
     this.labelTickTemplate = this.labelContainer.querySelector("line") as SVGLineElement;
     // this.hoverLabelTemplate = this.labelContainer.querySelector(".hover") as SVGTextElement;
     // this.hoverLabelTemplate.remove();
+
+    this.xAxisContainer = this.container.querySelector(".x.axis") as SVGGElement;
+    this.xAxisMinTick = this.xAxisContainer.querySelector(".tick.min") as SVGLineElement;
+    this.xAxisMaxTick = this.xAxisContainer.querySelector(".tick.max") as SVGLineElement;
+    this.xAxisHoverTick = this.xAxisContainer.querySelector(".tick.hover") as SVGLineElement;
+
     this.scrim = this.svg.querySelector(".scrim") as SVGRectElement;
     const gammaData = this.traceData as GammaData;
     this.svg.addEventListener('pointerenter', (event: PointerEvent)=>{
@@ -110,10 +122,19 @@ export class GammaHistCanvas extends TraceCanvas {
     super.setSizes();
     const svgHeight = this.yAxisHeight + (Y_AXIS_OVERFLOW * 2);
     const viewBox = `0 -${Y_AXIS_OVERFLOW -1 } ${this.yAxisWidth} ${svgHeight + 4}`;
+
+    const borderRect = this.svg.querySelector(".border") as SVGRectElement;
+    borderRect.setAttribute("x", `${PADDING}`);
+    borderRect.setAttribute("y", `${1}`);
+    borderRect.setAttribute("width", `${this.width - PADDING * 2}`);
+    borderRect.setAttribute("height", `${this.height - 2}`);
+
     this.labelContainer.setAttribute("width", `${this.yAxisWidth}`);
     this.labelContainer.setAttribute("height", `${svgHeight}`);
     this.labelContainer.setAttribute("viewBox", viewBox);
     this.labelContainer.style.marginTop = `-${Y_AXIS_OVERFLOW - 1}px`;
+
+    this.xAxisContainer.querySelector("svg")?.setAttribute("viewBox", `0 0 ${this.width} 30`);
   }
 
   // setRangeData(data:number[][], dates: number[], isLogLinear: boolean, kneeIndex: number, sampleIndex: number):void {
@@ -280,18 +301,11 @@ export class GammaHistCanvas extends TraceCanvas {
 
       this.scrim.setAttribute("width", `${this.width}`);
       this.scrim.setAttribute("height", `${height}`);
-      dateX = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, dateX), this.width - HALF_DATE_LABEL_WIDTH);
-      this.hoverSpan.textContent = dateLabel;
-      this.hoverSpan.style.left = `${dateX}px`;
-      this.minSpan.classList.toggle("hidden", dateX !== NO_VALUE && dateX <= DATE_LABEL_WIDTH * 1.5);
-      this.maxSpan.classList.toggle("hidden", dateX >= this.width - DATE_LABEL_WIDTH * 1.5);
       this.container.classList.add("highlighting");
-    } else {
+    }else{
       this.container.classList.remove("highlighting");
-      this.hoverSpan.textContent = '';
       // this.scrim.setAttribute("x", `${this.width}`);
     }
-
 
     this.trendRange.setAttribute("d", rangeD);
     this.medianTrend.setAttribute("d", medianD);
@@ -299,13 +313,12 @@ export class GammaHistCanvas extends TraceCanvas {
 
 
   drawLabels():void {
-    const { yAxisHeight, minSpan, maxSpan } = this;
-    const { logRange, maxMagnitude, minDate, maxDate } = this.traceData as GammaData;
+    const { yAxisHeight} = this;
+    const { logRange, maxMagnitude } = this.traceData as GammaData;
     const labelHeight = LABEL_HEIGHT * logRange;
     const labelsOK = yAxisHeight >= labelHeight;
     // const dateX = NO_VALUE;
     this.labelContainer.innerHTML = '';
-
     this.addTick(yAxisHeight, (this.traceData as GammaData).getTickLength(9));
     const logLabels = (this.traceData as GammaData).logLabels;
     let prevY = yAxisHeight * 2;
@@ -331,8 +344,63 @@ export class GammaHistCanvas extends TraceCanvas {
     /* label the top tick */
     this.addTick(0, (this.traceData as GammaData).getTickLength(9));
     this.addText(`${safeLogLabel(safeLabel(Math.pow(10, maxMagnitude), LOWER_OOM, UPPER_OOM))} years`, 0);
-    minSpan.textContent = toFullDateString(minDate);
-    maxSpan.textContent = toFullDateString(maxDate);
+    this.drawXAxis();
+  }
+
+  drawXAxis(): void {
+    const { minDate, maxDate, highlightData } = this.traceData as GammaData;
+    const y1 = 0, y2 = 8, yLabel = 20;
+
+    this.minSpan.setAttribute("x", `${PADDING + HALF_DATE_LABEL_WIDTH}`);
+    this.minSpan.setAttribute("y", `${yLabel}`);
+
+    this.maxSpan.setAttribute("x", `${this.width - PADDING - HALF_DATE_LABEL_WIDTH}`);
+    this.maxSpan.setAttribute("y", `${yLabel}`);
+
+    this.minSpan.textContent = toFullDateString(minDate);
+    this.maxSpan.textContent = toFullDateString(maxDate);
+
+    // endpoints
+    this.xAxisMinTick.setAttribute("x1", `${1}`);
+    this.xAxisMinTick.setAttribute("x2", `${1}`);
+    this.xAxisMinTick.setAttribute("y1", `${y1}`);
+    this.xAxisMinTick.setAttribute("y2", `${y2}`);
+
+    this.xAxisMaxTick.setAttribute("x1", `${this.width -1}`);
+    this.xAxisMaxTick.setAttribute("x2", `${this.width - 1}`);
+    this.xAxisMaxTick.setAttribute("y1", `${y1}`);
+    this.xAxisMaxTick.setAttribute("y2", `${y2}`);
+
+    // hover
+    if (highlightData !== null) {
+      const { dateX, dateLabel } = highlightData;
+      let x = Math.min(Math.max(.5, dateX * this.width), this.width - .5 * 2);
+      this.xAxisHoverTick.setAttribute("x1", `${x}`);
+      this.xAxisHoverTick.setAttribute("x2", `${x}`);
+      this.xAxisHoverTick.setAttribute("y1", `${y1}`);
+      this.xAxisHoverTick.setAttribute("y2", `${y2}`);
+
+      this.hoverSpan.textContent = dateLabel;
+
+      this.xAxisHoverTick.classList.remove("hidden")
+      this.xAxisMinTick.classList.toggle("hidden", x !== NO_VALUE && x <= DATE_LABEL_WIDTH * 1.5);
+      this.xAxisMaxTick.classList.toggle("hidden", x >= this.width - DATE_LABEL_WIDTH * 1.5);
+      this.minSpan.classList.toggle("hidden", x !== NO_VALUE && x <= DATE_LABEL_WIDTH * 1.5);
+      this.maxSpan.classList.toggle("hidden", x >= this.width - DATE_LABEL_WIDTH * 1.5);
+
+      x = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, x), this.width - HALF_DATE_LABEL_WIDTH);
+
+      this.hoverSpan.setAttribute("x", `${x}`)
+      this.hoverSpan.setAttribute("y", `20`)
+
+    } else {
+      this.xAxisMinTick.classList.remove("hidden");
+      this.xAxisMaxTick.classList.remove("hidden");
+      this.minSpan.classList.remove("hidden");
+      this.maxSpan.classList.remove("hidden");
+      this.xAxisHoverTick.classList.add("hidden")
+      this.hoverSpan.textContent = '';
+    }
   }
 
   /* Warning: modifies the values in the supplied array */

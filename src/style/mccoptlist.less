@@ -24,16 +24,14 @@
     font-size: 12px;
   }
 
-  &.expanded .toggle{
+  // &.expanded .toggle{
     // background-color: #999;
-    color: black;
-    svg path{
-      // stroke: #fcfcfc !important;
-      // fill: #fcfcfc !important;
-      stroke: #333;
-      fill: #333;
-    }
-  }
+    // color: black;
+    // svg path{
+    //   stroke: @darkGrey;
+    //   fill:  @darkGrey;
+    // }
+  // }
 
   .toggle {
     pointer-events: all;
@@ -65,7 +63,7 @@
     padding-top: var(--header-option-padding-y);
     padding-right: var(--header-option-padding-x);
 
-    color: #333;
+    color: @darkGrey;
 
     svg {
       width: 16px;
@@ -77,14 +75,16 @@
         stroke-width: 0.5;
         stroke-linejoin: round;
         stroke-linecap: square;
-        stroke: #888;
-        fill: #888;
+        stroke: @lightGrey;
+        fill: @lightGrey;
       }
     }
 
     &:hover svg path {
-      stroke: #454545;
-      fill: #454545;
+      // stroke: #454545;
+      // fill: #454545;
+      stroke: @texture;
+      fill: @texture;
     }
   }
 

@@ -85,7 +85,8 @@
       justify-content: flex-start;
       align-items: flex-start;
       gap: 0;
-      width: 100%;
+      // width: 100%;
+      width: max-content;
     }
 
     * { box-sizing: content-box;}
@@ -347,6 +348,12 @@
     overflow: visible;
     box-sizing: border-box;
   }
+    svg rect.border{
+      fill: none;
+      stroke: var(--stability-stroke);
+      // stroke: var(--chart-graph-run-trend-stroke);
+      stroke-width: 1px;
+    }
 
   .displays {
     position: relative;
@@ -378,6 +385,16 @@
       padding: var(--chart-stroke-weight) 0;
     }
 
+    &.x{
+      svg line{
+        stroke-width: .5px;
+        stroke: var(--chart-graph-run-trend-stroke);
+      }
+
+      svg text{
+        text-anchor: middle;
+      }
+    }
   }
 
 
@@ -900,7 +917,7 @@
 
       .chart {
         width: fit-content;
-        gap: 5px;
+        // gap: 5px;
         // background-color: yellow;
         .graph.display {
           background-color: white;
@@ -1003,9 +1020,9 @@
 
         .axis.x {
           position: relative;
-          margin-left: 3px;
-          margin-right: 3px;
-          margin-top: 3px;
+          // margin-left: 3px;
+          // margin-right: 3px;
+          // margin-top: 3px;
           width: calc(var(--pop-chart-graph-width) - 6px);
           .min-date {flex-grow: 1;}
           .min-date, .max-date {
@@ -1100,7 +1117,7 @@
           width: 100%;
         }
 
-        .tick {
+        .tick,.x-tick {
           stroke-width: 0.5;
           stroke: var(--chart-graph-run-trend-stroke);
         }
@@ -1121,7 +1138,7 @@
           text-anchor: end;
         }
 
-        .min-date, .max-date, .tick-label {
+        .min-date, .max-date, .tick-label,.x-tick {
           opacity: 1;
           transition: opacity 0.15s;
           &.back {
@@ -1150,10 +1167,13 @@
         }
       }
 
-      .hover-date, .hover-count {
+      .hover-date, .hover-count,.x-tick.hover {
         fill: #094e77 !important;
         opacity: 0;
         transition: opacity 0.15s;
+      }
+      .x-tick.hover {
+        stroke: #094e77 !important;
       }
       .hover-date {
         text-anchor: middle;
@@ -1171,7 +1191,7 @@
       }
 
       svg.hovering {
-        .hover-date, .hover-count {
+        .hover-date, .hover-count,.x-tick.hover {
           opacity: 1;
         }
       }
@@ -1402,7 +1422,7 @@ input.stopping + #run-input--label {
       // stroke: #212121;
       // stroke: #454545;
       // stroke: var(--header-option-stroke-static);
-      stroke: #999;
+      stroke: @lightGrey;
       stroke-linecap: round;
       transition: all var(--transition) ease-out;
     }
@@ -1413,6 +1433,11 @@ input.stopping + #run-input--label {
       stroke-width: 60;
       fill: none;
     }
+  }
+
+  &:hover .icon line,
+   &:hover .icon circle{
+    stroke: @texture;
   }
 
   span {
@@ -1606,7 +1631,7 @@ input.stopping + #run-input--label {
     padding: 0;
     border-radius: 3px;
     background: none;
-    color: #000;
+    color: @darkGrey;
     border: none;
     text-decoration: underline;
   }

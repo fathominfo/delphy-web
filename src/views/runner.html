@@ -272,10 +272,12 @@
                     <div class="displays">
                       <div class="graph display">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 145 96">
+                          
                           <path class="trend range" d=""></path>
                           <path class="trend median" d=""></path>
                           <path class="trend sample" d=""></path>
                           <rect class="scrim" x="0" y="0" width="0" height="0"></rect>
+                          <rect class="border"></rect>
                           <g class="highlight">
                             <line class="dist" x1="0" y1="-1" x2="0" y2="-1"></line>
                             <ellipse class="point hpdmax" cx="0" cy="-1" rx="2" ry="2"></ellipse>
@@ -310,9 +312,16 @@
                   </div>
                   <div class="support">
                     <div class="x axis">
-                      <div class="min-date"></div>
-                      <div class="max-date"></div>
-                      <div class="hover-date"></div>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 50">
+                        <line class="tick min"></line>
+                        <text class="min-date"></text>
+                    
+                        <line class="tick max"></line>
+                        <text class="max-date"></text>
+                    
+                        <line class="tick hover"></line>
+                        <text class="hover-date"></text>
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -336,6 +345,9 @@
                           <ellipse class="dot" cx="0" cy="0" rx="1.5" ry="1.5"></ellipse>
 
                           <line class="tick"></line>
+                          <line class="x-tick hover"></line>
+                          <line class="x-tick max"></line>
+                          <line class="x-tick min"></line>
                           <text class="tick-label"></text>
                           <text class="hover-count"></text>
                           <text class="min-date"></text>
