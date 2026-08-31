@@ -822,8 +822,12 @@
   .mutation-confidence.list {
       display: block;
       span {
-        font-weight: 600;
+        font-weight: 700;
         font-size: 10px;
+        line-height: 1;
+        color: #888;
+        text-transform: lowercase;
+        font-variant: small-caps;
       }
     }
 
@@ -898,8 +902,8 @@
   .stats-title {
     color: #888;
     font-weight: 700;
-    line-height: 1;
-    font-size: 9px;
+    line-height: 1.2;
+    font-size: 10px;
     text-transform: lowercase;
     font-variant: small-caps;
   }
@@ -953,7 +957,10 @@
 
       &.mutation-prev, &.mutation-next {
         width: 1.7em;
-        height: 0.9em;
+        height: 1.0em;
+      }
+      &.mutation-next {
+        margin-top: 3px;
       }
     }
 
