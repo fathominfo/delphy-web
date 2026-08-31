@@ -586,6 +586,7 @@
   .canvas-container {
     display: flex;
 
+
     canvas {
       flex: 1;
       cursor: crosshair;
@@ -617,6 +618,7 @@
     align-items: center;
     gap: 1em;
     justify-content: space-between;
+    padding-right: 10px;
 
     >div {
       display: flex;
@@ -714,11 +716,11 @@
     }
 
     .mutation-prev .glyph {
-      .masked(url("/assets/icons/arrow-up.svg"));
+      .masked(url("/assets/icons/triangle-up.svg"));
     }
 
     .mutation-next .glyph {
-      .masked(url("/assets/icons/arrow-down.svg"));
+      .masked(url("/assets/icons/triangle-down.svg"));
     }
   }
 
@@ -897,13 +899,13 @@
       grid-auto-rows: .8em;
 
       .stats-title {
+        text-transform: lowercase;
         @media (min-width:1200px) {
           grid-column: span 2;
         }
       }
 
-      .mutation-confidence,
-      .highest-node-confidence {
+      .mutation-confidence strong {
         font-weight: 700;
         font-size: 1.1em;
       }
@@ -919,16 +921,24 @@
     position: absolute;
     right: 0.5em;
     top: 0.5em;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
 
     button {
-      width: 1.7em;
-      height: 1.7em;
+      width: 2em;
+      height: 2em;
       .noselect();
 
       &:hover {
         .glyph {
           background-color: #444;
         }
+      }
+
+      &.mutation-prev, &.mutation-next {
+        width: 1.7em;
+        height: 0.9em;
       }
     }
 
@@ -947,11 +957,6 @@
       .small-label {
         color: @color1;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color1-secondary;
-      }
     }
   }
 
@@ -964,11 +969,6 @@
       .small-label {
         color: @color2;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color2-secondary;
-      }
     }
   }
 
@@ -979,11 +979,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color3-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color3-secondary;
       }
     }
@@ -998,11 +993,6 @@
       .small-label {
         color: @color4-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color4-secondary;
-      }
     }
   }
 
@@ -1013,11 +1003,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color5-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color5-secondary;
       }
     }
@@ -1032,11 +1017,6 @@
       .small-label {
         color: @color6-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color6-secondary;
-      }
     }
   }
 
@@ -1047,11 +1027,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color7-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color7-secondary;
       }
     }
@@ -1066,11 +1041,6 @@
       .small-label {
         color: @color8-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color8-secondary;
-      }
     }
   }
 
@@ -1081,11 +1051,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color9-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color9-secondary;
       }
     }
@@ -1100,11 +1065,6 @@
       .small-label {
         color: @color10-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color10-secondary;
-      }
     }
   }
 
@@ -1115,11 +1075,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color11-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color11-secondary;
       }
     }
@@ -1134,11 +1089,6 @@
       .small-label {
         color: @color12-secondary;
       }
-
-      .highest-node-confidence,
-      .mutation-confidence {
-        color: @color12-secondary;
-      }
     }
   }
 
@@ -1149,11 +1099,6 @@
 
     .mutation-stats {
       .small-label {
-        color: @color13-secondary;
-      }
-
-      .highest-node-confidence,
-      .mutation-confidence {
         color: @color13-secondary;
       }
     }
@@ -1197,7 +1142,8 @@
       overflow-x: visible;
       position: relative;
       flex: 1;
-      max-width: 80px;
+      min-width: 110px;
+      max-width: 110px;
     }
 
     .is-apobec {
@@ -1233,6 +1179,7 @@
 
     .mutation-time-dist {
       height: 100%;
+      padding-right: 14px;
     }
 
     .mutation-allele-prob {
@@ -1369,6 +1316,7 @@
 }
 
 .mutation-time-dist {
+
   .canvas-container {
     position: relative;
   }
