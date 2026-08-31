@@ -85,7 +85,8 @@
       justify-content: flex-start;
       align-items: flex-start;
       gap: 0;
-      width: 100%;
+      // width: 100%;
+      width: max-content;
     }
 
     * { box-sizing: content-box;}
@@ -347,6 +348,12 @@
     overflow: visible;
     box-sizing: border-box;
   }
+    svg rect.border{
+      fill: none;
+      stroke: var(--stability-stroke);
+      // stroke: var(--chart-graph-run-trend-stroke);
+      stroke-width: 1px;
+    }
 
   .displays {
     position: relative;
@@ -378,6 +385,16 @@
       padding: var(--chart-stroke-weight) 0;
     }
 
+    &.x{
+      svg line{
+        stroke-width: .5px;
+        stroke: var(--chart-graph-run-trend-stroke);
+      }
+
+      svg text{
+        text-anchor: middle;
+      }
+    }
   }
 
 
@@ -900,7 +917,7 @@
 
       .chart {
         width: fit-content;
-        gap: 5px;
+        // gap: 5px;
         // background-color: yellow;
         .graph.display {
           background-color: white;
@@ -1003,9 +1020,9 @@
 
         .axis.x {
           position: relative;
-          margin-left: 3px;
-          margin-right: 3px;
-          margin-top: 3px;
+          // margin-left: 3px;
+          // margin-right: 3px;
+          // margin-top: 3px;
           width: calc(var(--pop-chart-graph-width) - 6px);
           .min-date {flex-grow: 1;}
           .min-date, .max-date {
