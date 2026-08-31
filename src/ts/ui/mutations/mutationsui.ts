@@ -42,7 +42,15 @@ AC_SUGGESTION_TEMPLATE.remove();
 const MANY_TIPS_PCT = 0.75;
 
 const MOUSE_LABEL_DIST = 15;
+const MOUSE_LABEL_DIST_SQ = MOUSE_LABEL_DIST * MOUSE_LABEL_DIST;
 const LABEL_W = 36, LABEL_H = 16;
+
+type NodeLocation = {
+  dist: number,
+  pos: number[],
+  nodeIndex: number
+};
+
 
 
 type InterestCategory = FeatureOfInterest | 'all';
@@ -223,30 +231,9 @@ export class MutationsUI extends MccUI {
   }
 
   canvasMoveHandler(event: MouseEvent) {
-    if (!this.nodes || this.nodes.length === 0) return;
-
-    const dx = event.offsetX,
-      dy = event.offsetY - TREE_TIMELINE_SPACING;
-
-    const shortestDist = {
-      dist: MOUSE_LABEL_DIST * MOUSE_LABEL_DIST,
-      pos: [0, 0],
-      nodeIndex: 0
-    };
-
-    this.nodes.forEach(node => {
-      const pos = this.mccTreeCanvas.getNodePosition(node.index);
-      const dist = Math.pow(dx - pos[0], 2) + Math.pow(dy - pos[1], 2);
-      if (dist < shortestDist.dist) {
-        shortestDist.nodeIndex = node.index;
-        shortestDist.dist = dist;
-        shortestDist.pos = pos;
-      }
-    })
-
+    const shortestDist = this.getClosestNode(event);
     const { dist, nodeIndex } = shortestDist;
-
-    if (dist < MOUSE_LABEL_DIST * MOUSE_LABEL_DIST) {
+    if (dist < MOUSE_LABEL_DIST_SQ) {
       this.hoveredNode = nodeIndex;
       this.requestDrawHighlights();
     } else {
@@ -258,6 +245,41 @@ export class MutationsUI extends MccUI {
     this.hoveredNode = null;
     this.requestDrawHighlights();
   }
+
+  canvasClickHandler(event: MouseEvent) : void {
+    const shortestDist = this.getClosestNode(event);
+    const { dist, nodeIndex } = shortestDist;
+    if (dist < MOUSE_LABEL_DIST_SQ) {
+      this.goToLineages(nodeIndex)
+    }
+  }
+
+  getClosestNode(event: MouseEvent): NodeLocation {
+    const mx = event.offsetX,
+      my = event.offsetY - TREE_TIMELINE_SPACING;
+
+    const shortestDist: NodeLocation = {
+      dist: MOUSE_LABEL_DIST_SQ,
+      pos: [0, 0],
+      nodeIndex: UNSET
+    };
+
+    if (this.nodes && this.nodes.length > 0) {
+      this.nodes.forEach(node => {
+        const pos = this.mccTreeCanvas.getNodePosition(node.index);
+        const dist = Math.pow(mx - pos[0], 2) + Math.pow(my - pos[1], 2);
+        if (dist < shortestDist.dist) {
+          shortestDist.nodeIndex = node.index;
+          shortestDist.dist = dist;
+          shortestDist.pos = pos;
+        }
+      });
+    }
+
+    return shortestDist;
+
+  }
+
 
   drawConfidenceLabel(pos: number[], representation: number, ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = `#ffffff`
@@ -282,6 +304,7 @@ export class MutationsUI extends MccUI {
     if (canvas instanceof HTMLCanvasElement) {
       canvas.addEventListener('pointermove', (e) => this.canvasMoveHandler(e));
       canvas.addEventListener('pointerout', (e) => this.canvasOutHandler(e));
+      canvas.addEventListener('click', (e) => this.canvasClickHandler(e));
     }
   }
 
