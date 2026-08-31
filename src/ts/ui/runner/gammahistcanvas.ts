@@ -388,7 +388,7 @@ export class GammaHistCanvas extends TraceCanvas {
       this.minSpan.classList.toggle("hidden", x !== NO_VALUE && x <= DATE_LABEL_WIDTH * 1.5);
       this.maxSpan.classList.toggle("hidden", x >= this.width - DATE_LABEL_WIDTH * 1.5);
 
-      x = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, x), this.width - HALF_DATE_LABEL_WIDTH * 2);
+      x = Math.min(Math.max(HALF_DATE_LABEL_WIDTH, x), this.width - HALF_DATE_LABEL_WIDTH);
 
       this.hoverSpan.setAttribute("x", `${x}`)
       this.hoverSpan.setAttribute("y", `20`)

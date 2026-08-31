@@ -65,6 +65,9 @@ export class ScatterPlotCanvas extends TraceCanvas {
   hoverDate: SVGTextElement;
   hoverCount: SVGTextElement;
   tickLabels: LabelY[] = [];
+  xAxisMinTick: SVGLineElement;
+  xAxisMaxTick: SVGLineElement;
+  xAxisHoverTick: SVGLineElement;
   subtitleElement: HTMLParagraphElement;
   subtitle: string;
 
@@ -102,6 +105,9 @@ export class ScatterPlotCanvas extends TraceCanvas {
     this.hoverCount = this.svg.querySelector(".hover-count") as SVGTextElement;
     this.quadTree = new Quadtree(DOT_RADIUS);
 
+    this.xAxisMinTick = this.container.querySelector(".x-tick.min") as SVGLineElement;
+    this.xAxisMaxTick = this.container.querySelector(".x-tick.max") as SVGLineElement;
+    this.xAxisHoverTick = this.container.querySelector(".x-tick.hover") as SVGLineElement;
 
     let prevNodeIndex = UNSET;
     const handlePointer = (event: PointerEvent)=>{
@@ -132,13 +138,22 @@ export class ScatterPlotCanvas extends TraceCanvas {
     this.background.setAttribute("height", `${this.dataHeight}`);
     this.minSpan.setAttribute("x", `${MARGIN.left}`);
     this.minSpan.setAttribute("y", `${this.height}`);
+    this.xAxisMinTick.setAttribute("x1", `${MARGIN.left}`);
+    this.xAxisMinTick.setAttribute("x2", `${MARGIN.left}`);
+    this.xAxisMinTick.setAttribute("y1", `${this.height - LABEL_HEIGHT - TICK_LENGTH}`);
+    this.xAxisMinTick.setAttribute("y2", `${this.height - LABEL_HEIGHT}`);
     this.maxSpan.setAttribute("x", `${this.width - MARGIN.right}`);
     this.maxSpan.setAttribute("y", `${this.height}`);
+    this.xAxisMaxTick.setAttribute("x1", `${this.width - MARGIN.right}`);
+    this.xAxisMaxTick.setAttribute("x2", `${this.width - MARGIN.right}`);
+    this.xAxisMaxTick.setAttribute("y1", `${this.height - LABEL_HEIGHT - TICK_LENGTH}`);
+    this.xAxisMaxTick.setAttribute("y2", `${this.height - LABEL_HEIGHT}`);
     this.hoverCount.setAttribute("x", `${this.width - MARGIN.right + TICK_LENGTH + TICK_GAP * 2}`);
     this.hoverDate.setAttribute("y", `${this.height}`);
+    this.xAxisHoverTick.setAttribute("y1", `${this.height}`);
+    this.xAxisHoverTick.setAttribute("y2", `${this.height}`);
     const x = this.width - MARGIN.right + TICK_GAP - 9;
     this.subtitleElement.style.width = `${x}px`;
-
   }
 
   protected setSizes(): void {
@@ -288,7 +303,10 @@ export class ScatterPlotCanvas extends TraceCanvas {
       });
       this.svg.classList.remove("hovering");
       this.minSpan.classList.remove("back");
+      this.xAxisMinTick.classList.remove("back");
+      this.minSpan.classList.remove("back");
       this.maxSpan.classList.remove("back");
+      this.xAxisMaxTick.classList.remove("back");
       this.regressionLine.classList.remove("back");
       this.tickLabels.forEach(({label})=>label.classList.remove("back"));
       // this.subTitle.innerHTML = `R<span class="sup">2</span> of time x # mutations: ${scatterData.r2.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
@@ -318,25 +336,34 @@ export class ScatterPlotCanvas extends TraceCanvas {
           dateX = HALF_DATE_LABEL_WIDTH;
         }
         this.minSpan.classList.add("back");
+        this.xAxisMinTick.classList.add("back");
       } else {
         this.minSpan.classList.remove("back");
-
+        this.xAxisMinTick.classList.remove("back")
       }
       dateX += MARGIN.left;
       const right = this.width - MARGIN.right;
       if (dateX > right - DATE_LABEL_WIDTH  * 1.5) {
         this.maxSpan.classList.add("back");
+        this.xAxisMaxTick.classList.add("back")
         if (dateX > right - HALF_DATE_LABEL_WIDTH) {
           dateX = right - HALF_DATE_LABEL_WIDTH;
         }
       } else {
         this.maxSpan.classList.remove("back");
+        this.xAxisMaxTick.classList.remove("back")
       }
       const countY = MARGIN.top + (1-countYFactor) * this.dataHeight;
       this.hoverDate.textContent = `${ toFullDateString(date) }`;
       this.hoverDate.setAttribute("x", `${ dateX }`);
       this.hoverCount.textContent = `${ count.toLocaleString(undefined, {maximumFractionDigits: 1}) }`;
-      this.hoverCount.setAttribute("y", `${ countY }`);
+      this.hoverCount.setAttribute("y", `${countY}`);
+
+      this.xAxisHoverTick.setAttribute("x1", `${dateX}`)
+      this.xAxisHoverTick.setAttribute("x2", `${dateX}`)
+      this.xAxisHoverTick.setAttribute("y1", `${this.height - LABEL_HEIGHT - TICK_LENGTH}`)
+      this.xAxisHoverTick.setAttribute("y2", `${this.height - LABEL_HEIGHT}`)
+      // this.xAxisHoverTick.classList.toggle("back",)
       this.tickLabels.forEach(({label, y})=>{
         label.classList.toggle("back", Math.abs(y - countY) < LABEL_HEIGHT);
       });
