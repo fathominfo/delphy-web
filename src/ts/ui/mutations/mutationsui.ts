@@ -7,10 +7,10 @@ import {SharedState} from '../../sharedstate';
 import { getMutationName, getMutationNameParts, mutationEquals, siteIndexToLabel } from '../../constants';
 import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
-import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
+import { DataResolveType, getPercentLabel, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
-import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType, getMutationColor, 
-        releaseMutationColor, resetMutationColors, MutationComplementFunctionType } from './mutationscommon';
+import { MutationData, DisplayOption, ParameterCallback, RowFunctionType, getMutationColor,
+  releaseMutationColor, resetMutationColors, MutationComplementFunctionType } from './mutationscommon';
 
 import autocomplete from 'autocompleter';
 import { ParameterSetter } from './parametersetter';
