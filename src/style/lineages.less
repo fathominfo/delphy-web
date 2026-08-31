@@ -699,6 +699,17 @@ details {
   overflow-y: auto;
   .customScroll();
   padding-right: 8px;
+
+  &::-webkit-scrollbar {
+    width: 11px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+  }
+
+  /*Firefox doesn't support custom dimensions, only keywords */
+  scrollbar-width: auto;
 }
 
 
