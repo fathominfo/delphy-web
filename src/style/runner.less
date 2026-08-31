@@ -1402,7 +1402,7 @@ input.stopping + #run-input--label {
       // stroke: #212121;
       // stroke: #454545;
       // stroke: var(--header-option-stroke-static);
-      stroke: #999;
+      stroke: @lightGrey;
       stroke-linecap: round;
       transition: all var(--transition) ease-out;
     }
@@ -1413,6 +1413,11 @@ input.stopping + #run-input--label {
       stroke-width: 60;
       fill: none;
     }
+  }
+
+  &:hover .icon line,
+   &:hover .icon circle{
+    stroke: @texture;
   }
 
   span {
@@ -1606,7 +1611,7 @@ input.stopping + #run-input--label {
     padding: 0;
     border-radius: 3px;
     background: none;
-    color: #000;
+    color: @darkGrey;
     border: none;
     text-decoration: underline;
   }
