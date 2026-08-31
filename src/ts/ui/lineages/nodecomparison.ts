@@ -97,6 +97,7 @@ class MutationTimeline {
 
   resize() {
     this.timeCanvas.resize();
+    requestAnimationFrame(()=>this.draw());
   }
 }
 
