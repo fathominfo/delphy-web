@@ -1,21 +1,21 @@
 import { MutationDistribution } from '../../pythia/mutationdistribution';
 import { NodePair, NodeComparisonData, getAncestorType, getDescendantType, NodeCallback } from './lineagescommon';
 import { getMutationName, getMutationNameParts } from '../../constants';
-import { DisplayNode, getPercentLabel, getNodeTypeName, getNodeColorDark, UNSET, getNodeClassName } from '../common';
+import { DisplayNode, getPercentLabel, getNodeTypeName, getNodeColorDark, UNSET, getNodeClassName, nfc } from '../common';
 import { DistributionSeries, TimeDistributionCanvas } from '../timedistributioncanvas';
 import { Mutation } from '../../pythia/delphy_api';
 import { HighlightableTimeDistributionCanvas, HoverCallback } from './highlightabletimedistributioncanvas';
 
 const MAX_MUTATIONS_PER_NODE = 5;
 const MUT_BOX_HT = 40;
+const READOUT_PADDING = 40;
 const MUT_BOX_MARGIN = 7.5;
 
+
+
 const nodeComparisonTemplate = document.querySelector(".lineages--node-comparison") as HTMLDivElement;
-const nodeComparisonContainer = nodeComparisonTemplate?.parentNode as HTMLDivElement;
-const mutationTemplate = nodeComparisonTemplate?.querySelector(".lineages--node-comparison--mutation") as HTMLDivElement;
-if (!nodeComparisonTemplate || !nodeComparisonContainer || !mutationTemplate) {
-  throw new Error("could not find a div to use as a template for node comparisons on the lineage tab");
-}
+const nodeComparisonContainer = nodeComparisonTemplate.parentNode as HTMLDivElement;
+const mutationTemplate = nodeComparisonTemplate.querySelector(".lineages--node-comparison--mutation") as HTMLDivElement;
 
 mutationTemplate.remove();
 nodeComparisonTemplate.remove();
@@ -28,8 +28,10 @@ const mutationCanvasSelector = '.lineages--mutation-time-chart',
   descendantNodeNameSelector = '.lineages--node-comparison--descendant-node',
   mutationCountSelector = '.lineages--node-comparison--mutation-count',
   showMutationSelector = '.lineages--node-comparison--mutation-header .lnc-mutation-min',
+  shownOfSelector = '.lnc-min-count',
   mutationThresholdSelector = '.lineages--node-comparison--mutation-threshold',
-  nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas';
+  nodeTimesCanvasSelector = '.lineages--node-comparison--time-chart canvas',
+  moreSelector = ".lineages--node-comparison--more";
 
 /* should we provide an interface to this ? [mark 230524]*/
 /* adding it for now! [katherine 230608] */
@@ -109,6 +111,7 @@ export class NodeComparison {
   mutationCountSpan: HTMLSpanElement;
   shownMutationCountSpan: HTMLSpanElement;
   mutationThresholdSpan: HTMLSpanElement;
+  moreDiv: HTMLDivElement;
   nodePair: NodePair;
   nodeTimesCanvas: HighlightableTimeDistributionCanvas;
   minDate: number;
@@ -120,8 +123,7 @@ export class NodeComparison {
   ancestorType: DisplayNode;
   descendantType: DisplayNode;
   nodeHighlightCallback: NodeCallback;
-  showAllMutsToggleLabel: HTMLLabelElement;
-  showAllMutsToggle: HTMLInputElement;
+  showAll = false;
   isApobecRun: boolean;
 
 
@@ -135,6 +137,7 @@ export class NodeComparison {
       mutationCountSpan = this.div.querySelector(mutationCountSelector) as HTMLSpanElement,
       shownMutationCountSpan = this.div.querySelector(showMutationSelector) as HTMLSpanElement,
       mutationThresholdSpan = this.div.querySelector(mutationThresholdSelector) as HTMLSpanElement,
+      moreDiv = this.div.querySelector(moreSelector) as HTMLDivElement,
       canvas = this.div.querySelector(nodeTimesCanvasSelector) as HTMLCanvasElement,
       overlapSpan = this.div.querySelector(".lineages--node-overlap-item") as HTMLSpanElement,
       readout = this.div.querySelector(".time-chart--readout") as HTMLElement;
@@ -148,6 +151,7 @@ export class NodeComparison {
     this.shownMutationCountSpan = shownMutationCountSpan;
     this.mutationThresholdSpan = mutationThresholdSpan;
     this.mutationContainer = mutationContainer;
+    this.moreDiv = moreDiv;
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.mutationTimelines = [];
@@ -161,6 +165,17 @@ export class NodeComparison {
     if (this.descendantType === UNSET) {
       this.div.classList.add('single');
     }
+
+
+    const input = moreDiv.querySelector("input") as HTMLInputElement;
+    input.checked = false;
+    input.addEventListener("input", () => {
+      this.showAll = input.checked;
+      this.mutationContainer.classList.add("windowshading");
+      this.requestDraw();
+      setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
+    });
+
     this.setLabel(this.ancestorType, this.descendantType);
     const overlapCount = nodeComparisonData.overlapCount;
     if (overlapCount > 0) {
@@ -177,15 +192,6 @@ export class NodeComparison {
     } else {
       overlapSpan.classList.add('hidden');
     }
-    this.showAllMutsToggleLabel = this.div.querySelector(".lineages--node-comparison--show-toggle") as HTMLLabelElement;
-    this.showAllMutsToggle = this.showAllMutsToggleLabel.querySelector("input") as HTMLInputElement;
-    this.showAllMutsToggle.addEventListener("input", ()=>{
-      this.mutationContainer.classList.add("windowshading");
-      this.requestDraw();
-      setTimeout(() => this.mutationContainer.classList.remove("windowshading"), 150);
-    });
-
-
     this.setMutations();
 
     const createSeries = (dn: DisplayNode, i: number) => {
@@ -236,22 +242,17 @@ export class NodeComparison {
 
   setMutations():void {
     this.mutationData = this.nodePair.mutations.filter((md:MutationDistribution)=>md.getConfidence() >= mutationPrevalenceThreshold);
-    const count = this.mutationData.length;
-    this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
-    const shownCount = this.showAllMutsToggle.checked ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
-    this.shownMutationCountSpan.innerText = `${shownCount}`;
-    this.showAllMutsToggleLabel.classList.toggle("hidden", shownCount === count);
-    let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
-    if (mutationPrevalenceThreshold < 1.0) {
-      thresholdLabel += ' or more'
-    }
-    this.mutationThresholdSpan.innerText = thresholdLabel;
   }
 
   requestDraw() : void {
     const count = this.mutationData.length;
-    const shownCount = this.showAllMutsToggle.checked ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
-    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN;
+    let shownCount = this.showAll ? count : Math.min(count, MAX_MUTATIONS_PER_NODE);
+    const moreToShow = count - shownCount;
+    if (moreToShow === 1) {
+      /* rather than take up space with a button to "show 1 more", just show it*/
+      shownCount++;
+    }
+    const mHeight = shownCount * (MUT_BOX_HT + MUT_BOX_MARGIN) - MUT_BOX_MARGIN + READOUT_PADDING;
     const alreadyDrawnCount = this.mutationTimelines.length;
     if (alreadyDrawnCount < shownCount) {
       const { minDate, maxDate, goToMutations, isApobecRun } = this;
@@ -260,12 +261,41 @@ export class NodeComparison {
         this.mutationTimelines.push(mt);
       });
     }
+    const shownSpan = this.div.querySelector(shownOfSelector) as HTMLSpanElement;
+
     requestAnimationFrame(()=>{
+      this.mutationCountSpan.innerText = `${count} mutation${count === 1 ? '' : 's'}`;
+      this.shownMutationCountSpan.innerText = `${nfc(shownCount)}`;
+      // this.showAllMutsToggleLabel.classList.toggle("hidden", shownCount === count);
+      shownSpan.classList.toggle("hidden", shownCount === count);
+      let thresholdLabel = `${getPercentLabel(mutationPrevalenceThreshold)}%`;
+      if (mutationPrevalenceThreshold < 1.0) {
+        thresholdLabel += ' or more'
+      }
+      this.mutationThresholdSpan.innerText = thresholdLabel;
+
       this.nodeTimesCanvas.draw();
       this.mutationTimelines.slice(alreadyDrawnCount, shownCount).forEach(mt=>{
         mt.appendTo(this.mutationContainer);
         mt.draw();
       });
+      if (shownCount < alreadyDrawnCount) {
+        /*
+        delay hiding the overflow entries so that they don't disappear
+        before the container is done moving
+        */
+        setTimeout(()=>{
+          this.mutationTimelines.slice(shownCount).forEach(mt => {
+            mt.div.classList.add("hidden");
+          });
+        }, 175);
+      } else if (shownCount === alreadyDrawnCount) {
+        this.mutationTimelines.forEach(mt => {
+          mt.div.classList.remove("hidden");
+        });
+      }
+      this.moreDiv.classList.toggle("hidden", count <= MAX_MUTATIONS_PER_NODE + 1);
+      (this.moreDiv.querySelector(".lnc-all span") as HTMLSpanElement).textContent = nfc(moreToShow);
       this.mutationContainer.style.height = `${mHeight}px`;
     });
   }

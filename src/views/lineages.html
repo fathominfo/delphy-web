@@ -172,19 +172,21 @@
                 </div>
               </div>
             </div>
-            <p class="lineages--node-comparison--mutation-header">
-              Mutations between these nodes that appear in
-              <span class="lineages--node-comparison--mutation-threshold">50%</span>
-              of base trees.
-              <br/>
-              Showing <span class="lnc-min-count"><span class="lnc-mutation-min">5</span> of</span>
-              <span class="lineages--node-comparison--mutation-count">0 mutations</span>
-              <label class="lineages--node-comparison--show-toggle">
-                <input type="checkbox">
-                <span class="lnc-all">Show all</span>
-                <span class="lnc-less">Show less</span>
-              </label>
-            </p>
+            <div class="lineages--node-comparison--mutation-header">
+              <span>
+                Mutations between these nodes that appear in
+                <span class="lineages--node-comparison--mutation-threshold">50%</span>
+                of base trees.
+              </span>
+              <span class="lnc-count-row">
+                <span class="lnc-counts">
+                  Showing <span class="lnc-min-count"><span class="lnc-mutation-min">5</span> of</span>
+                  <span class="lineages--node-comparison--mutation-count">0 mutations</span>
+                </span>
+              </span>
+
+
+            </div>
             <div class="lineages--node-comparison--mutation-list">
               <div class="lineages--node-comparison--mutation">
                 <div class="lineages--node-comparison--mutation-labels">
@@ -205,6 +207,13 @@
                   </div>
                 </div>
               </div>
+            </div>
+            <div class="lineages--node-comparison--more">
+              <label class="lineages--node-comparison--show-toggle">
+                <input type="checkbox">
+                <span class="lnc-all">Show <span></span> more</span>
+                <span class="lnc-less">Show first 5</span>
+              </label>
             </div>
           </div>
         </div>
