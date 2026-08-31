@@ -215,14 +215,14 @@ export class MutationRow {
   handleMouseenter = () => {
     const hasActiveMutation = this.rows.some(row => row.isActive === true);
     if (hasActiveMutation) return;
-    this.updateHoverRow(this, this.isActive);
+    this.updateHoverRow(this);
   }
 
   handleMouseleave = (event: PointerEvent) => {
     const hasActiveMutation = this.rows.some(row => row.isActive === true);
     if (hasActiveMutation) return;
     if (event.target === this.rowDiv) {
-      this.updateHoverRow(this.isActive ? this : null, this.isActive);
+      this.updateHoverRow(this.isActive ? this : null);
     }
   }
 
@@ -244,8 +244,8 @@ export class MutationRow {
     }
   }
 
-  toggleActive() {
-    const wasActive = this.isActive;
+  toggleActive(active?: boolean) {
+    const wasActive = active === undefined ? this.isActive : !active;
     // turn all the other rows off
     this.rows.forEach(row => {
       row.isActive = false;
@@ -253,7 +253,7 @@ export class MutationRow {
       row.rowDiv.style.backgroundColor = "#FAFAFA";
     })
     this.isActive = !wasActive;
-    this.updateHoverRow(this.isActive ? this : null, this.isActive);
+    this.updateHoverRow(this.isActive ? this : null);
     this.rowDiv.classList.toggle("mutation-row-selected", this.isActive);
     this.rowDiv.style.backgroundColor = this.isActive ? `${this.color}22` : "#FAFAFA";
   }

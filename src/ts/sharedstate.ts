@@ -12,6 +12,7 @@ export class SharedState {
   mccConfig: MccConfig;
   nodeList: number[];
   mutationList: Mutation[];
+  selectedMutation: Mutation | null;
   hideBurnIn: boolean;
   goTo: NavigateFunctionType;
   private tipIds: string[];
@@ -24,6 +25,7 @@ export class SharedState {
     this.mccConfig = new MccConfig(goTo);
     this.nodeList = [];
     this.mutationList = [];
+    this.selectedMutation = null;
     this.hideBurnIn = false;
     this.kneeIsCurated = false;
     this.goTo = goTo;
@@ -42,8 +44,12 @@ export class SharedState {
     this.nodeList = nodes.slice(0);
   }
 
-  setMutationSelection(mutations: Mutation[]): void {
+  setMutationList(mutations: Mutation[]): void {
     this.mutationList = mutations.slice(0);
+  }
+
+  setSelectedMutation(mutation: Mutation | null): void {
+    this.selectedMutation = mutation;
   }
 
   addMutation(mutation: Mutation): void {

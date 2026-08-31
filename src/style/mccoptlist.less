@@ -23,37 +23,49 @@
     color: #777;
     font-size: 12px;
   }
-  
+
   &.expanded .toggle{
-    background-color: #999;
-   
+    // background-color: #999;
+    color: black;
     svg path{
-      stroke: #fcfcfc !important;
-      fill: #fcfcfc !important;
+      // stroke: #fcfcfc !important;
+      // fill: #fcfcfc !important;
+      stroke: #333;
+      fill: #333;
     }
   }
 
   .toggle {
     pointer-events: all;
-    border: 1px solid #e3e3e3;
-    background-color: #fcfcfc;
-    color: #777;
     left: 0;
     bottom: 0;
-    font-size: 12px;
+    font-size: calc(var(--unit) * 1.25);
+    font-weight: 500;
     line-height: calc(var(--unit) * 2);
     position: absolute;
-    padding: 0.3em;
+
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.5em;
     align-content: center;
-    white-space: nowrap;
     box-sizing: content-box;
     outline: none;
     cursor: pointer;
     transition: all var(--transition) ease-out;
+
+    border-width: var(--header-option-stroke-weight);
+    border-style: solid;
+    border-color: var(--header-option-stroke-static);
+    justify-content: flex-start;
+    gap: var(--header-option-gap);
+    white-space: nowrap;
+
+    height: var(--header-option-height);
+    padding-left: var(--header-option-gap);
+    padding-top: var(--header-option-padding-y);
+    padding-right: var(--header-option-padding-x);
+
+    color: #333;
 
     svg {
       width: 16px;

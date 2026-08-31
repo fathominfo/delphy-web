@@ -9,7 +9,8 @@ import { TreeCanvas } from '../treecanvas';
 import { MccTree } from '../../pythia/delphy_api';
 import { DataResolveType, getPercentLabel, MUTATION_COLOR, TREE_TIMELINE_SPACING, Screens, UNSET, CHART_TEXT_FONT } from '../common';
 import { MutationPrevalenceCanvas } from './mutationprevalencecanvas';
-import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType, MutationComplementFunctionType } from './mutationscommon';
+import { MutationData, MUTATION_SERIES_COLORS, DisplayOption, ParameterCallback, RowFunctionType, getMutationColor, 
+        releaseMutationColor, resetMutationColors, MutationComplementFunctionType } from './mutationscommon';
 
 import autocomplete from 'autocompleter';
 import { ParameterSetter } from './parametersetter';
@@ -41,10 +42,16 @@ AC_SUGGESTION_TEMPLATE.remove();
 
 const MANY_TIPS_PCT = 0.75;
 
-const colorsUsed: string[] = [];
-
 const MOUSE_LABEL_DIST = 15;
+const MOUSE_LABEL_DIST_SQ = MOUSE_LABEL_DIST * MOUSE_LABEL_DIST;
 const LABEL_W = 36, LABEL_H = 16;
+
+type NodeLocation = {
+  dist: number,
+  pos: number[],
+  nodeIndex: number
+};
+
 
 
 type InterestCategory = FeatureOfInterest | 'all';
@@ -116,7 +123,7 @@ export class MutationsUI extends MccUI {
     mutationsFilter.addEventListener("input", () => {
       const value = mutationsFilter.interest.value as FeatureOfInterest;
       this.interestCat = value;
-      this.autofill = false;
+      // this.autofill = false;
 
       const descriptions = this.div.querySelectorAll(".filter-description") as NodeListOf<HTMLElement>;
       descriptions.forEach(el => {
@@ -225,30 +232,9 @@ export class MutationsUI extends MccUI {
   }
 
   canvasMoveHandler(event: MouseEvent) {
-    if (!this.nodes || this.nodes.length === 0) return;
-
-    const dx = event.offsetX,
-      dy = event.offsetY - TREE_TIMELINE_SPACING;
-
-    const shortestDist = {
-      dist: MOUSE_LABEL_DIST * MOUSE_LABEL_DIST,
-      pos: [0, 0],
-      nodeIndex: 0
-    };
-
-    this.nodes.forEach(node => {
-      const pos = this.mccTreeCanvas.getNodePosition(node.index);
-      const dist = Math.pow(dx - pos[0], 2) + Math.pow(dy - pos[1], 2);
-      if (dist < shortestDist.dist) {
-        shortestDist.nodeIndex = node.index;
-        shortestDist.dist = dist;
-        shortestDist.pos = pos;
-      }
-    })
-
+    const shortestDist = this.getClosestNode(event);
     const { dist, nodeIndex } = shortestDist;
-
-    if (dist < MOUSE_LABEL_DIST * MOUSE_LABEL_DIST) {
+    if (dist < MOUSE_LABEL_DIST_SQ) {
       this.hoveredNode = nodeIndex;
       this.requestDrawHighlights();
     } else {
@@ -260,6 +246,41 @@ export class MutationsUI extends MccUI {
     this.hoveredNode = null;
     this.requestDrawHighlights();
   }
+
+  canvasClickHandler(event: MouseEvent) : void {
+    const shortestDist = this.getClosestNode(event);
+    const { dist, nodeIndex } = shortestDist;
+    if (dist < MOUSE_LABEL_DIST_SQ) {
+      this.goToLineages(nodeIndex)
+    }
+  }
+
+  getClosestNode(event: MouseEvent): NodeLocation {
+    const mx = event.offsetX,
+      my = event.offsetY - TREE_TIMELINE_SPACING;
+
+    const shortestDist: NodeLocation = {
+      dist: MOUSE_LABEL_DIST_SQ,
+      pos: [0, 0],
+      nodeIndex: UNSET
+    };
+
+    if (this.nodes && this.nodes.length > 0) {
+      this.nodes.forEach(node => {
+        const pos = this.mccTreeCanvas.getNodePosition(node.index);
+        const dist = Math.pow(mx - pos[0], 2) + Math.pow(my - pos[1], 2);
+        if (dist < shortestDist.dist) {
+          shortestDist.nodeIndex = node.index;
+          shortestDist.dist = dist;
+          shortestDist.pos = pos;
+        }
+      });
+    }
+
+    return shortestDist;
+
+  }
+
 
   drawConfidenceLabel(pos: number[], representation: number, ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = `#ffffff`
@@ -284,6 +305,7 @@ export class MutationsUI extends MccUI {
     if (canvas instanceof HTMLCanvasElement) {
       canvas.addEventListener('pointermove', (e) => this.canvasMoveHandler(e));
       canvas.addEventListener('pointerout', (e) => this.canvasOutHandler(e));
+      canvas.addEventListener('click', (e) => this.canvasClickHandler(e));
     }
   }
 
@@ -305,7 +327,9 @@ export class MutationsUI extends MccUI {
 
   deactivate() : void {
     super.deactivate();
-    this.sharedState.setMutationSelection(this.selectedMutations.map(md=>md.moi.mutation));
+    this.sharedState.setMutationList(this.selectedMutations.map(md=>md.moi.mutation));
+    const activeRow = this.rows.filter(row => row.isActive)[0];
+    this.sharedState.setSelectedMutation(activeRow?.moi?.mutation || null);
   }
 
 
@@ -349,11 +373,21 @@ export class MutationsUI extends MccUI {
           }
           this.setInterest();
 
-          this.sharedState.mutationList.forEach(mutation=>this.lookupMutation(mutation));
+          this.sharedState.mutationList.forEach(mutation => {
+            // add the row from sharestate.mutationList if it doesn't already exist
+            this.lookupMutation(mutation);
+            // check if this row was selected, if so, restore the isActive state and highlight the prevalence chart
+            if (this.sharedState.selectedMutation !== null && mutationEquals(mutation, this.sharedState.selectedMutation)) {
+              // find the row and isActive => true
+              const row = this.rows.filter(row => mutationEquals(row.moi.mutation, mutation))[0];
+              if (row) row.toggleActive(true);
+            }
+          });
 
           (this.div.querySelector("#moi-list-tips") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTipsPercent)}`;
           (this.div.querySelector("#moi-list-trees") as HTMLSpanElement).innerHTML = `${Math.round(100 * this.minTreesPercent)}`;
           resolve(summary);
+          this.autofill = false;
         })
     });
     return prom;
@@ -535,15 +569,10 @@ export class MutationsUI extends MccUI {
         }
         return nodeObj;
       });
-      const { earliestDate, minDate, maxDate } = this,
-        name = moi.name;
-      let color = MUTATION_COLOR;
-      const colorsAvailable = MUTATION_SERIES_COLORS.filter(color => !colorsUsed.includes(color));
-      if (colorsAvailable.length > 0) {
-        color = colorsAvailable[0];
-        colorsUsed.push(color);
-      }
-      const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true };
+      const {earliestDate, minDate, maxDate} = this,
+        name = moi.name,
+        color = getMutationColor();
+      const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true};
       this.selectedMutations.push(mutationData);
       const row = new MutationRow(mutationData, this.removeRow, this.getNodeRelativeSize,
         this.updateHoverRow, this.updateHoverNode, this.goToLineages, this.shiftRow,
@@ -570,11 +599,7 @@ export class MutationsUI extends MccUI {
       this.rows.splice(rowIndex, 1);
       this.selectedMutations.splice(rowIndex, 1);
     }
-
-    const colorIndex = colorsUsed.indexOf(row.color);
-    if (colorIndex !== UNSET) {
-      colorsUsed.splice(colorIndex, 1);
-    }
+    releaseMutationColor(row.color);
 
     this.updateMoiList();
     this.updateMutationHistory();
@@ -598,7 +623,7 @@ export class MutationsUI extends MccUI {
   and used there in event handlers. We want to
   preserve the `this` reference to this class.
   */
-  updateHoverRow: RowFunctionType = (row: MutationRow | null, lock: boolean) => {
+  updateHoverRow: RowFunctionType = (row: MutationRow | null) => {
     if (!this.pythia) return;
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
@@ -620,7 +645,7 @@ export class MutationsUI extends MccUI {
     } else {
       this.nodes = [];
     }
-    this.prevalence.setHighlight(moi, lock);
+    this.prevalence.setHighlight(moi, row?.isActive || false);
     this.requestDrawHighlights();
 
   }
@@ -766,7 +791,7 @@ export class MutationsUI extends MccUI {
     clearMutationRows();
     this.rows.length = 0;
     this.selectedMutations.length = 0;
-    colorsUsed.length = 0;
+    resetMutationColors();
     this.updateMoiList();
     this.updateMutationHistory();
   }

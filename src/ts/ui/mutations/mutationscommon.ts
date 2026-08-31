@@ -2,11 +2,12 @@ import { FeatureOfInterest, MutationOfInterest } from '../../pythia/mutationsofi
 import { BaseTreeSeriesType } from '../../constants';
 import { MutationRow } from './mutationrow';
 import { Mutation } from '../../pythia/delphy_api';
+import { MUTATION_COLOR, UNSET } from '../common';
 
 
 export type ParameterCallback = (percent:number)=>void;
 
-export type RowFunctionType = (row: MutationRow | null, lock: boolean) => void;
+export type RowFunctionType = (row: MutationRow | null) => void;
 
 /*
 for a given mutation, find other mutations related to it, according to the given feature of interest.
@@ -75,3 +76,27 @@ export const MUTATION_SERIES_COLORS = [
 ];
 
 export type DisplayOption = "list" | "grid";
+
+
+const colorsUsed: string[] = [];
+
+export const getMutationColor = () : string =>{
+  let color = MUTATION_COLOR;
+  const colorsAvailable = MUTATION_SERIES_COLORS.filter(color => !colorsUsed.includes(color));
+  if (colorsAvailable.length > 0) {
+    color = colorsAvailable[0];
+    colorsUsed.push(color);
+  }
+  return color;
+};
+
+export const releaseMutationColor = (color: string) : void =>{
+  const colorIndex = colorsUsed.indexOf(color);
+  if (colorIndex !== UNSET) {
+    colorsUsed.splice(colorIndex, 1);
+  }
+};
+
+export const resetMutationColors = () : void =>{
+  colorsUsed.length = 0;
+};
