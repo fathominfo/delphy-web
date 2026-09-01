@@ -1,6 +1,5 @@
 import { getStdDev, log10, UNSET } from '../common';
 import { TraceData } from './tracedata';
-import { calcEffectiveSampleSize } from "./effectivesamplesize";
 import { KernelDensityEstimate } from '../../pythia/kde';
 import { HistDataFunction, SummaryStatsType } from './runcommon';
 import { Distribution } from '../distribution';

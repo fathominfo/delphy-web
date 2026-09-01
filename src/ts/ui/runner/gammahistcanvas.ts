@@ -268,7 +268,7 @@ export class GammaHistCanvas extends TraceCanvas {
       hpdMinY *= height;
       hpdMaxY *= height;
       dateX *= this.width;
-      const { median, hpdMin, hpdMax, dateLabel } = highlightData;
+      const { median, hpdMin, hpdMax } = highlightData;
       const positions: [number, number, number] = [hpdMinY, medianY, hpdMaxY];
       this.setLabelYSpacing(positions);
       const [hpdMinLabelY, medianLabelY, hpdMaxLabelY] = positions;

@@ -569,7 +569,7 @@ export class MutationsUI extends MccUI {
         }
         return nodeObj;
       });
-      const {earliestDate, minDate, maxDate} = this,
+      const {earliestDate, maxDate} = this,
         name = moi.name,
         color = getMutationColor();
       const mutationData = { moi, name, times, nodes, minDate: earliestDate, maxDate, alleleDist, color, active: true};
