@@ -82,13 +82,13 @@ class ProgressStep {
   }
 
   show() {
-    console.log(this.name, 'show');
+    console.debug(this.name, 'show');
     this.div.classList.add("progressing");
   }
 
   /* assumes success */
   complete() {
-    console.log(`${this.name} complete`);
+    console.debug(`${this.name} complete`);
     this.disc.style.setProperty('--pct', `100%`);
     this.div.classList.remove("progressing");
     this.div.classList.add("complete");
@@ -198,7 +198,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean,
     stageCallback = (stage: number)=>{
       forceCompletePriorSteps();
       stepIndex++;
-      console.log(`Entering stage ${stage}`);
+      console.debug(`Entering stage ${stage}`);
       steps[stepIndex].show();
     },
     parseProgressCallback = (numSeqsSoFar: number, bytesSoFar: number, totalBytes: number) => {
@@ -248,7 +248,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean,
       step.setLabel(label);
       // console.log(`Rooting and timing: ${substageId}`, step.name, nodes, total);
       if (isComplete) {
-        console.log(`Rooting and timing: ${substageId} complete`);
+        console.debug(`Rooting and timing: ${substageId} complete`);
         if (substageId === 1) {
           rootingTopDownStep.show();
           stepIndex = steps.indexOf(rootingBottomUpStep);

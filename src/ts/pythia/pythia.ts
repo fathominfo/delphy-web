@@ -291,7 +291,7 @@ export class Pythia {
 
   initRunFromTreePromise(futureTree:Promise<PhyloTree>, runReadyCallback:()=>void,
     errCallback:(msg:string)=>void, config: RunParamConfig | null):Promise<void> {
-    console.log(config);
+    console.log("initializing run with the following configuration", config);
     const startTime = Date.now();
     this.runReadyCallback = runReadyCallback;
     return new Promise(resolve=>{
