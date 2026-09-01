@@ -62,7 +62,9 @@ export class TimeDistributionCanvas {
 
   readout: HTMLElement;
 
-  constructor(series: [DistributionSeries, DistributionSeries?], minDate: number, maxDate: number, canvas: HTMLCanvasElement, readout: HTMLElement) {
+  constructor(series: [DistributionSeries, DistributionSeries?],
+    minDate: number, maxDate: number, canvas: HTMLCanvasElement, readout: HTMLElement
+  ) {
     this.series = series;
     this.minDate = minDate;
     this.maxDate = maxDate;
@@ -244,12 +246,14 @@ export class TimeDistributionCanvas {
     const minDateMetrics = measureText(ctx, minDateStr),
       maxDateMetrics = measureText(ctx, maxDateStr);
     let minX = this.xFor(minDate, drawWidth),
-      maxX = this.xFor(maxDate, drawWidth);
-    if (minX - minDateMetrics.width < margin.left) {
-      minX = margin.left + minDateMetrics.width;
+      maxX = this.xFor(maxDate, drawWidth),
+      minLabelX = minX,
+      maxLabelX = maxX;
+    if (minLabelX - minDateMetrics.width < margin.left) {
+      minLabelX = margin.left + minDateMetrics.width;
     }
-    if (maxX + maxDateMetrics.width > width - margin.right) {
-      maxX = width - margin.right - maxDateMetrics.width;
+    if (maxLabelX + maxDateMetrics.width > width - margin.right) {
+      maxLabelX = width - margin.right - maxDateMetrics.width;
     }
 
     if (this.hoverSeriesIndex === UNSET || this.hoverSeriesIndex === index) {
@@ -279,10 +283,10 @@ export class TimeDistributionCanvas {
         ctx.textBaseline = "middle";
 
         ctx.textAlign = "right";
-        ctx.fillText(minDateStr, minX, middleY);
+        ctx.fillText(minDateStr, minLabelX, middleY);
 
         ctx.textAlign = "left";
-        ctx.fillText(maxDateStr, maxX, middleY);
+        ctx.fillText(maxDateStr, maxLabelX, middleY);
       }
 
       middleY += textMetrics.height;
@@ -332,32 +336,6 @@ export class TimeDistributionCanvas {
     ctx.moveTo(0, xheight);
     ctx.lineTo(drawWidth, xheight);
     ctx.stroke();
-  }
-
-  labelExtents(ds: DistributionSeries) {
-    const {ctx} = this;
-    const {distribution, color} = ds;
-
-    ctx.fillStyle = color;
-
-    // date text
-    ctx.globalAlpha = 0.7;
-    ctx.textBaseline = "bottom";
-    const minDate = distribution.hpdMin,
-      maxDate = distribution.hpdMax;
-    const minDateStr = toFullDateString(minDate);
-    const maxDateStr = toFullDateString(maxDate);
-
-    ctx.font = CHART_TEXT_SMALL_FONT;
-    const LINE_HEIGHT = 14;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-    const label = "95% HPD";
-    const textX = this.textOnRight ? this.drawWidth / 2 : 0;
-    ctx.fillText(label, textX, LINE_HEIGHT);
-
-    ctx.font = CHART_TEXT_FONT;
-    ctx.fillText(`${minDateStr} – ${maxDateStr}`, textX+COL_2, LINE_HEIGHT);
   }
 
   labelHover() {
@@ -453,12 +431,6 @@ export class TimeDistributionCanvas {
       }
 
       this.labelMedian(ds);
-
-      // if (this.hovering && this.hoverSeries === ds) {
-      //   if (distribution.range > 0) {
-      //     this.labelExtents(ds);
-      //   }
-      // }
     });
   }
 
