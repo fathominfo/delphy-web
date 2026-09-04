@@ -356,14 +356,14 @@ export class RunUI extends MccUI {
       stdErrLabelFunction: n=>`${safeLabel(n)} <span class="pct">days</span>`
     };
     this.traceChartConfig[TraceChart.growthRate] = {
-      name: "Growth rate",
+      name: "Growth Rate",
       unit: "doublings / year",
       className: "growth-rate",
       dataFnc: growthRateFnc,
       isDiscrete: false
     };
     this.traceChartConfig[TraceChart.gamma] = {
-      name: `Effective population size`,
+      name: `Effective Population Size`,
       className: "effective-population-size", subtitle: "Showing Median and 95% HPD",
       dataFnc: gammaDataFnc
     };

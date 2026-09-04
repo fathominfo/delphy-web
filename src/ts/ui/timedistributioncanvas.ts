@@ -1,5 +1,5 @@
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
-import {CHART_TEXT_FONT, CHART_TEXT_SMALL_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
+import {CHART_TEXT_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
 import { TimeDistribution } from './timedistribution';
 
 const margin = {
@@ -38,7 +38,7 @@ export class DistributionSeries {
 
 }
 
-const COL_2 = 28;
+// const COL_2 = 28;
 const PADDING = 5;
 
 export class TimeDistributionCanvas {
@@ -245,9 +245,9 @@ export class TimeDistributionCanvas {
       maxDateStr = toFullDateString(maxDate);
     const minDateMetrics = measureText(ctx, minDateStr),
       maxDateMetrics = measureText(ctx, maxDateStr);
-    let minX = this.xFor(minDate, drawWidth),
-      maxX = this.xFor(maxDate, drawWidth),
-      minLabelX = minX,
+    const minX = this.xFor(minDate, drawWidth),
+      maxX = this.xFor(maxDate, drawWidth);
+    let minLabelX = minX,
       maxLabelX = maxX;
     if (minLabelX - minDateMetrics.width < margin.left) {
       minLabelX = margin.left + minDateMetrics.width;
