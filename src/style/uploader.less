@@ -11,8 +11,22 @@
     display: block;
 
   }
+}/* For browsers that support `scrollbar-*` properties */
+@supports (scrollbar-color: auto) {
+  #uploader {
+    scrollbar-color: #add5ff #2366b1;
+  }
 }
 
+@supports selector(::-webkit-scrollbar) {
+  #uploader::-webkit-scrollbar {
+    background: #2366b1;
+  }
+
+  #uploader::-webkit-scrollbar-thumb {
+    background: #add5ff;
+  }
+}
 #uploader {
   height: 100%;
   width: 100%;
