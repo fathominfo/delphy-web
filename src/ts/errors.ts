@@ -22,7 +22,7 @@ export const setShowFormat = (fnc:()=>void)=>{
 
 export const SAFARI_26_2_REGEX = /26\.2( mobile.*)? safari/i;
 export const SAFARI_26_2_ERR_MSG = `This web browser appears to be Safari version 26.2, which contains a bug that prevents the web version of Delphy from running.
-We expect this issue to be fixed in the next Safari release. For now, please try a different browser (and not on an iPhone).
+Please update to the latest version of Safari (System Settings > General > Software Updates > scroll to the bottom and select any Safari updates).
 Sorry for the inconvenience!`;
 export const isBadSafari = ()=>{
   console.log(`userAgent`, window.navigator.userAgent);
