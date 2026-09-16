@@ -11,7 +11,9 @@
     display: block;
 
   }
-}/* For browsers that support `scrollbar-*` properties */
+}
+
+/* For browsers that support `scrollbar-*` properties */
 @supports (scrollbar-color: auto) {
   #uploader {
     scrollbar-color: #add5ff rgba(173, 213, 255, 0.2);
@@ -19,18 +21,23 @@
 }
 
 @supports selector(::-webkit-scrollbar) {
-  #uploader::-webkit-scrollbar {
+  #uploader ::-webkit-scrollbar {
+    background: rgba(173, 213, 255, 0.2);
+    width: 10px;
+  }
+
+  #uploader ::-webkit-scrollbar-track {
     background: rgba(173, 213, 255, 0.2);
   }
 
-  #uploader::-webkit-scrollbar-thumb {
+  #uploader ::-webkit-scrollbar-thumb {
     background: #add5ff;
   }
 }
+
 #uploader {
   height: 100%;
   width: 100%;
-  scrollbar-width: thin;
 
   &.uploading {
     #uploader--entry-points {
@@ -574,7 +581,7 @@
   display: block;
   width: 225px;
   height: 100%;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .uploader--demo-option
