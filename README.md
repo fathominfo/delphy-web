@@ -12,7 +12,7 @@ References
 
 * [Whitepaper with overview of key ideas and accuracy+speed benchmarks](https://github.com/broadinstitute/delphy/blob/main/delphywp.pdf)
 
-* [Preprint with full details and benchmarking](https://www.biorxiv.org/content/10.1101/2025.03.25.645253v1)
+* [Nature paper with full details and benchmarking](https://www.nature.com/articles/s41586-026-11012-6)
 
 System Requirements
 -------------------
