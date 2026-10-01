@@ -20,19 +20,18 @@ const PADDING = {
 export class BaseTreeScrubber {
   svg: SVGSVGElement;
   numTrees: number = UNSET;
-  selectedTree: number;
+  selectedTree: number = UNSET;
   width: number;
+  xSpan: number = UNSET;
   tickContainer: SVGGElement;
 
   constructor(selectCallback: SelectTreeCallback) {
     this.svg = chart;
     this.tickContainer = this.svg.querySelector("#poplar--scrubber-ticks") as SVGGElement;
-    this.selectedTree = 0;
     this.svg.addEventListener('pointermove', (event:MouseEvent)=>{
       if (event.buttons === 1) {
-        const x = event.offsetX;
-        /* set this */
-        const index = 0;
+        const x = event.offsetX - PADDING.left;
+        const index = Math.max(0, Math.min(this.numTrees - 1, Math.round(x / this.xSpan * this.numTrees)));
         selectCallback(index);
       }
     });
@@ -40,16 +39,18 @@ export class BaseTreeScrubber {
     this.width = container.offsetWidth;
     const resizeObserver = new ResizeObserver(entries=>this.resize(entries));
     resizeObserver.observe(this.svg);
+    this.setSelectedTree(0);
   }
 
 
 
   resize(entries: ResizeObserverEntry[]) {
-    console.log(`resizing`, entries);
+    // console.log(`resizing`, entries);
     const width = entries[0].borderBoxSize[0].inlineSize;
     this.svg.setAttribute("width", `${width}`);
     this.svg.setAttribute("viewBox", `0 0 ${width} ${SVG_HEIGHT}`);
     this.width = width;
+    this.xSpan = width - PADDING.left - PADDING.right;
     this.render();
 
   }
@@ -61,19 +62,21 @@ export class BaseTreeScrubber {
   }
 
   setSelectedTree(index: number) {
-    this.selectedTree = index;
-    this.render();
+    if (index !== this.selectedTree) {
+      const ticks = this.tickContainer.querySelectorAll(".tick");
+      ticks.forEach((tick, i)=>tick.classList.toggle("selected-tick", index === i));
+    }
   }
 
   render() {
+    if (this.xSpan === UNSET || this.numTrees === UNSET) return;
     this.tickContainer.innerHTML = '';
-    const xSpan = this.width - PADDING.left - PADDING.right;
-
     for (let i = 0; i < this.numTrees; i++) {
       const line = tickTemplate.cloneNode(true) as SVGLineElement;
-      const x = PADDING.left + i / (this.numTrees - 1) * xSpan;
+      const x = PADDING.left + i / (this.numTrees - 1) * this.xSpan;
       line.setAttribute('x1', `${x}`);
       line.setAttribute('x2', `${x}`);
+      line.classList.toggle("selected-tick", i === this.selectedTree);
       this.tickContainer.appendChild(line);
     }
   }
