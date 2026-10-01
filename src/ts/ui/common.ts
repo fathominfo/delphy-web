@@ -28,7 +28,8 @@ export enum Screens {
   lineages = 2,
   mutations = 3,
   customize = 4,
-  about = 5
+  poplar = 5,
+  about = 6
 }
 
 /*

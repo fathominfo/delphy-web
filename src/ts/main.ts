@@ -12,6 +12,7 @@ import { ConfigExport } from './ui/mccconfig';
 import { initErrors, setStage } from './errors';
 import { STAGES } from './constants';
 import { setQCPanel } from './ui/qcpanel';
+import { PoplarUI } from './ui/poplar/poplarui';
 
 
 
@@ -27,16 +28,19 @@ function onReady(p:Pythia):void {
   const lineagesUI = new LineagesUI(sharedState, "#lineages");
   const mutationsUI = new MutationsUI(sharedState, "#mutations");
   const customizeUI = new CustomizeUI(sharedState, "#customize");
+  const poplarUI = new PoplarUI(sharedState, "#poplar");
 
   goToScreens[Screens.run] = runUI;
   goToScreens[Screens.lineages] = lineagesUI;
   goToScreens[Screens.mutations] = mutationsUI;
   goToScreens[Screens.customize] = customizeUI;
+  goToScreens[Screens.poplar] = poplarUI;
 
   viewButtons.push(new NavLabel("Trees", runUI, "#runner"));
   viewButtons.push(new NavLabel("Lineages", lineagesUI, "#lineages"));
   viewButtons.push(new NavLabel("Mutations", mutationsUI, "#mutations"));
   viewButtons.push(new NavLabel("Customize", customizeUI, "#customize"));
+  viewButtons.push(new NavLabel("Poplar", poplarUI, "#poplar"));
   bindNav(viewButtons);
 
   const qc = document.querySelector("#qc") as HTMLElement;

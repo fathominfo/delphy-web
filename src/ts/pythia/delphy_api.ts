@@ -455,7 +455,7 @@ export class Delphy {
       probeTimesWasmView.set(probeTimes);
 
       const numNodes = tree.getSize();
-      
+
       const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numProbeTimes * numNodes);
       const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numProbeTimes * numNodes);
 
