@@ -442,6 +442,37 @@ export class Delphy {
     });
   }
 
+  // `result[k][i]` = probability that a random probe at time `probeTimes[i]` attaches to tree just above node `k`.
+  popModelProbeWholeTree(tree: PhyloTree, popModel: PopModel, probeTimes: number[]): number[][] {
+    return withStackSave(() => {
+      const rawPopModel = popModel.toPopModelPtr(this.ctx);
+
+      const sizeofDouble = 8;
+      const numProbeTimes = probeTimes.length;
+      const probeTimesWasm = stackAlloc(sizeofDouble * (numProbeTimes));
+      const probeTimesWasmView = new Float64Array(
+        Module.HEAPF64.buffer, probeTimesWasm, numProbeTimes);
+      probeTimesWasmView.set(probeTimes);
+
+      const numNodes = tree.getSize();
+      
+      const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numProbeTimes * numNodes);
+      const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numProbeTimes * numNodes);
+
+      Delphy.delphyCoreRaw.pop_model_probe_whole_tree(
+        this.ctx, tree.phyloTreePtr_, rawPopModel, probeTimesWasm, numProbeTimes, valuesWasm);
+
+      // Copy out before release
+      const result = [];
+      for (let i = 0; i !== numNodes; ++i) {
+        result.push(Array.prototype.slice.call(valuesWasmView, i * numProbeTimes, (i+1) * numProbeTimes));
+      }
+      Delphy.delphyCoreRaw.free(valuesWasm);
+      Delphy.delphyCoreRaw.pop_model_delete(this.ctx, rawPopModel);
+      return result;
+    });
+  }
+
   extractFbHelper(body: (fbHolderWasm: FbHolderPtr) => void): ArrayBuffer {
     return withStackSave(() => {
       const sizeofFbHolder = Delphy.delphyCoreRaw.fb_holder_sizeof(this.ctx);
@@ -805,6 +836,14 @@ export class Delphy {
        numTCells: number,
        outValues: DoublePtr)
         => void,
+    pop_model_probe_whole_tree:
+      (ctx: DelphyContextPtr,
+       tree: PhyloTreePtr,
+       popModel: PopModelPtr,
+       probeTimes: DoublePtr,
+       numProbeTimes: number,
+       outValues: DoublePtr)
+        => void,
 
     // Fb_holder
     fb_holder_sizeof: (ctx: DelphyContextPtr) => number,
@@ -1014,6 +1053,7 @@ export class Delphy {
       pop_model_render_population_curve: Module['_delphy_pop_model_render_population_curve'],
       pop_model_probe_site_states_on_tree: Module['_delphy_pop_model_probe_site_states_on_tree'],
       pop_model_probe_ancestors_on_tree: Module['_delphy_pop_model_probe_ancestors_on_tree'],
+      pop_model_probe_whole_tree: Module['_delphy_pop_model_probe_whole_tree'],
 
       // Fb_holder
       fb_holder_sizeof: Module['_delphy_fb_holder_sizeof'],
