@@ -7,7 +7,7 @@ import {MutationDistribution} from './mutationdistribution';
 import {getMutationName, TipsByNodeIndex, MutationDistInfo, BaseTreeSeriesType, mutationEquals, NodeDistributionType, OverlapTally, CoreVersionInfo, copyDict, RANDOM_SEED} from '../constants';
 import {getMccMutationsOfInterest, MutationOfInterestSet} from './mutationsofinterest';
 import {MostCommonSplitTree} from './mostcommonsplittree';
-import {BackLink, getMutationCounts, MccNodeBackLinks} from './pythiacommon';
+import {BackLink, getMutationCounts, MccNodeBackLinks, PoplarDataType} from './pythiacommon';
 import {MccUmbrella} from './mccumbrella';
 import { isTip } from '../util/treeutils';
 import { ConfigExport } from '../ui/mccconfig';
@@ -895,6 +895,52 @@ export class Pythia {
   getBaseTreeCount() : number {
     return this.treeHist.length;
   }
+
+  // ██████╗  ██████╗ ██████╗ ██╗      █████╗ ██████╗
+  // ██╔══██╗██╔═══██╗██╔══██╗██║     ██╔══██╗██╔══██╗
+  // ██████╔╝██║   ██║██████╔╝██║     ███████║██████╔╝
+  // ██╔═══╝ ██║   ██║██╔═══╝ ██║     ██╔══██║██╔══██╗
+  // ██║     ╚██████╔╝██║     ███████╗██║  ██║██║  ██║
+  // ╚═╝      ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+
+  /*
+  @param baseTreeIndex: _not_ the mcc index, but the index
+  including the burn in period.
+  */
+  getPoplarPrevalenceData(baseTreeIndex: number): PoplarDataType {
+    const tree: PhyloTree = this.treeHist[baseTreeIndex];
+    const popModel: PopModel = this.popModelHist[baseTreeIndex];
+    const rootIndex = tree.getRootIndex();
+    const minDate = tree.getTimeOf(rootIndex);
+    let maxDate: number = Number.MIN_SAFE_INTEGER;
+    const queue = [rootIndex];
+    while (queue.length > 0) {
+      const i = queue.shift() as number;
+      maxDate = Math.max(maxDate, tree.getTimeOf(i));
+      const left = tree.getLeftChildIndexOf(i);
+      if (left !== UNSET) {
+        queue.push(left);
+        queue.push(tree.getRightChildIndexOf(i));
+      }
+    }
+    const timeRange = maxDate - minDate;
+    const numDates = 200;
+    const probeTimes: number[] = [];
+    for (let d = 0; d < numDates; d++) {
+      const date = minDate + d / numDates * timeRange;
+      probeTimes.push(date);
+    }
+    console.log(probeTimes)
+    const branchPrevalence = this.delphy.popModelProbeWholeTree(tree, popModel, probeTimes);
+    return {
+      minDate,
+      maxDate,
+      branchPrevalence,
+      tree
+    };
+  }
+
 
 
 

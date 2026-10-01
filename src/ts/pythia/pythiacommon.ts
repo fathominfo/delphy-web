@@ -74,3 +74,11 @@ export const getMutationCounts = (tree: PhyloTree): number[] =>{
   }
   return mutCounts;
 }
+
+
+export type PoplarDataType = {
+  minDate: number,
+  maxDate: number,
+  branchPrevalence: number[][],
+  tree: PhyloTree
+};
