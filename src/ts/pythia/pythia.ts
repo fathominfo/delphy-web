@@ -913,16 +913,10 @@ export class Pythia {
     const popModel: PopModel = this.popModelHist[baseTreeIndex];
     const rootIndex = tree.getRootIndex();
     const minDate = tree.getTimeOf(rootIndex);
+    const nodeCount = tree.getSize();
     let maxDate: number = Number.MIN_SAFE_INTEGER;
-    const queue = [rootIndex];
-    while (queue.length > 0) {
-      const i = queue.shift() as number;
+    for (let i = 0; i < nodeCount; i++) {
       maxDate = Math.max(maxDate, tree.getTimeOf(i));
-      const left = tree.getLeftChildIndexOf(i);
-      if (left !== UNSET) {
-        queue.push(left);
-        queue.push(tree.getRightChildIndexOf(i));
-      }
     }
     const timeRange = maxDate - minDate;
     const numDates = 200;
