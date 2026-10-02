@@ -361,11 +361,13 @@ export class Delphy {
 
     const sizeofDouble = 8;
     const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numTCells);
-    const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numTCells);
+    new Float64Array(Module.HEAPF64.buffer, valuesWasm, numTCells).fill(NaN);  // Left as NaN if call fails
 
     Delphy.delphyCoreRaw.pop_model_render_population_curve(
       this.ctx, rawPopModel, tStart, tEnd, numTCells, valuesWasm);
 
+    // Only view results after the call: if the call grew the WASM heap, earlier views are detached
+    const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numTCells);
     const result = Array.from(valuesWasmView);  // Copy out before release
 
     Delphy.delphyCoreRaw.free(valuesWasm);
@@ -386,10 +388,13 @@ export class Delphy {
 
     const sizeofDouble = 8;
     const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * 4 * numTCells);
-    const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, 4 * numTCells);
+    new Float64Array(Module.HEAPF64.buffer, valuesWasm, 4 * numTCells).fill(NaN);  // Left as NaN if call fails
 
     Delphy.delphyCoreRaw.pop_model_probe_site_states_on_tree(
       this.ctx, tree.phyloTreePtr_, rawPopModel, site, tStart, tEnd, numTCells, valuesWasm);
+
+    // Only view results after the call: if the call grew the WASM heap, earlier views are detached
+    const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, 4 * numTCells);
 
     // Copy out before release
     const result = [
@@ -425,11 +430,15 @@ export class Delphy {
 
       const sizeofDouble = 8;
       const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * (numMarkedAncestors+1) * numTCells);
-      const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, (numMarkedAncestors+1) * numTCells);
+      new Float64Array(Module.HEAPF64.buffer, valuesWasm, (numMarkedAncestors+1) * numTCells)
+        .fill(NaN);  // Left as NaN if call fails
 
       Delphy.delphyCoreRaw.pop_model_probe_ancestors_on_tree(
         this.ctx, tree.phyloTreePtr_, rawPopModel, markedAncestorIndicesWasm, numMarkedAncestors,
         tStart, tEnd, numTCells, valuesWasm);
+
+      // Only view results after the call: if the call grew the WASM heap, earlier views are detached
+      const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, (numMarkedAncestors+1) * numTCells);
 
       // Copy out before release
       const result = [];
@@ -445,7 +454,7 @@ export class Delphy {
   // `result[k][i]` = probability that a random probe at time `probeTimes[i]` attaches to tree just above node `k`.
   popModelProbeWholeTree(tree: PhyloTree, popModel: PopModel, probeTimes: number[],
     includeIndirectDescendants: boolean): number[][] {
-    
+
     return withStackSave(() => {
       const rawPopModel = popModel.toPopModelPtr(this.ctx);
 
@@ -459,10 +468,13 @@ export class Delphy {
       const numNodes = tree.getSize();
 
       const valuesWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numProbeTimes * numNodes);
-      const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numProbeTimes * numNodes);
+      new Float64Array(Module.HEAPF64.buffer, valuesWasm, numProbeTimes * numNodes).fill(NaN);  // Left as NaN if call fails
 
       Delphy.delphyCoreRaw.pop_model_probe_whole_tree(
         this.ctx, tree.phyloTreePtr_, rawPopModel, probeTimesWasm, numProbeTimes, includeIndirectDescendants, valuesWasm);
+
+      // Only view results after the call: if the call grew the WASM heap, earlier views are detached
+      const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numProbeTimes * numNodes);
 
       // Copy out before release
       const result = [];
@@ -1448,14 +1460,14 @@ function popModelPtrToPopModel(ctx: DelphyContextPtr, rawPopModel: PopModelPtr):
     const sizeofDouble = 8;
 
     const xWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numKnots);
-    const xWasmView = new Float64Array(Module.HEAPF64.buffer, xWasm, numKnots);
     Delphy.delphyCoreRaw.skygrid_pop_model_get_x(ctx, rawPopModel, numKnots, xWasm);
+    const xWasmView = new Float64Array(Module.HEAPF64.buffer, xWasm, numKnots);  // View only after call (heap may grow)
     const x = Array.from(xWasmView);  // Copy out before release
     Delphy.delphyCoreRaw.free(xWasm);
 
     const gammaWasm = Delphy.delphyCoreRaw.malloc(sizeofDouble * numKnots);
-    const gammaWasmView = new Float64Array(Module.HEAPF64.buffer, gammaWasm, numKnots);
     Delphy.delphyCoreRaw.skygrid_pop_model_get_gamma(ctx, rawPopModel, numKnots, gammaWasm);
+    const gammaWasmView = new Float64Array(Module.HEAPF64.buffer, gammaWasm, numKnots);  // View only after call (heap may grow)
     const gamma = Array.from(gammaWasmView);  // Copy out before release
     Delphy.delphyCoreRaw.free(gammaWasm);
 
