@@ -25,8 +25,8 @@ export class PoplarUI extends UIScreen {
     this.baseTreeCanvas = new TreeCanvas(canvas, ctx);
     canvas = this.div.querySelector("#poplar--container canvas") as HTMLCanvasElement;
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.poplarCanvas = new PoplarCanvas(canvas, ctx);
     this.poplarData = new PoplarData();
+    this.poplarCanvas = new PoplarCanvas(canvas, ctx, this.poplarData);
     this.selectedTree = 0;
   }
 
@@ -46,6 +46,7 @@ export class PoplarUI extends UIScreen {
 
   resize() {
     this.baseTreeCanvas.sizeCanvas();
+    this.poplarCanvas.sizeCanvas();
     this.handleTreeSelect(this.selectedTree);
   }
 
@@ -59,15 +60,13 @@ export class PoplarUI extends UIScreen {
     const minDate = mcc.getTimeOf(baseTree.getRootIndex());
     mccRef.release();
     this.baseTreeCanvas.positionTreeNodes(baseTree);
-    this.poplarData.setSelectedTree(index);
+    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan);
     const dateLabels: DateLabel[] = [];
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
       if (this.pythia) {
         this.baseTreeCanvas.draw(minDate, this.pythia.maxDate, dateLabels);
+        this.poplarCanvas.draw();
       }
     })
-
-
   }
-
 }
