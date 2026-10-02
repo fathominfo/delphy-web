@@ -908,7 +908,7 @@ export class Pythia {
   @param baseTreeIndex: _not_ the mcc index, but the index
   including the burn in period.
   */
-  getPoplarPrevalenceData(baseTreeIndex: number): PoplarDataType {
+  getPoplarPrevalenceData(baseTreeIndex: number, resolution = 200): PoplarDataType {
     const tree: PhyloTree = this.treeHist[baseTreeIndex];
     const popModel: PopModel = this.popModelHist[baseTreeIndex];
     const rootIndex = tree.getRootIndex();
@@ -919,14 +919,13 @@ export class Pythia {
       maxDate = Math.max(maxDate, tree.getTimeOf(i));
     }
     const timeRange = maxDate - minDate;
-    const numDates = 200;
     const probeTimes: number[] = [];
-    for (let d = 0; d < numDates; d++) {
-      const date = minDate + d / numDates * timeRange;
+    for (let d = 0; d < resolution; d++) {
+      const date = minDate + d / resolution * timeRange;
       probeTimes.push(date);
     }
-    console.log(probeTimes)
-    const branchPrevalence = this.delphy.popModelProbeWholeTree(tree, popModel, probeTimes, false);
+    // console.log(probeTimes);
+    const branchPrevalence = this.delphy.popModelProbeWholeTree(tree, popModel, probeTimes, true);
     return {
       minDate,
       maxDate,
