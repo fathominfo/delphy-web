@@ -25,24 +25,25 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
+    resolution = 20;
     const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
     console.log(minDate, maxDate, tree, branchPrevalence);
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.branchPrevalence = branchPrevalence;
     this.baseTree = tree;
-    this.findBranchesExceedPrevalenceThreshold()
+    this.findBranchesExceedPrevalenceThreshold();
   }
 
 
   findBranchesExceedPrevalenceThreshold() {
     this.branchIndices.length = 0;
     this.branchPrevalence.forEach((branchPrevalence: number[], index) => {
-      if (Math.max(...branchPrevalence) > this.threshold) {
+      if (Math.max(...branchPrevalence) >= this.threshold) {
         this.branchIndices.push(index);
       }
     });
-    console.log(this.branchIndices, this.branchPrevalence)
+    console.log("branch indexes above threshold: ",this.branchIndices, this.branchPrevalence);
   }
 
 
