@@ -926,7 +926,7 @@ export class Pythia {
       probeTimes.push(date);
     }
     console.log(probeTimes)
-    const branchPrevalence = this.delphy.popModelProbeWholeTree(tree, popModel, probeTimes);
+    const branchPrevalence = this.delphy.popModelProbeWholeTree(tree, popModel, probeTimes, false);
     return {
       minDate,
       maxDate,

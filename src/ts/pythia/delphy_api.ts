@@ -443,7 +443,9 @@ export class Delphy {
   }
 
   // `result[k][i]` = probability that a random probe at time `probeTimes[i]` attaches to tree just above node `k`.
-  popModelProbeWholeTree(tree: PhyloTree, popModel: PopModel, probeTimes: number[]): number[][] {
+  popModelProbeWholeTree(tree: PhyloTree, popModel: PopModel, probeTimes: number[],
+    includeIndirectDescendants: boolean): number[][] {
+    
     return withStackSave(() => {
       const rawPopModel = popModel.toPopModelPtr(this.ctx);
 
@@ -460,7 +462,7 @@ export class Delphy {
       const valuesWasmView = new Float64Array(Module.HEAPF64.buffer, valuesWasm, numProbeTimes * numNodes);
 
       Delphy.delphyCoreRaw.pop_model_probe_whole_tree(
-        this.ctx, tree.phyloTreePtr_, rawPopModel, probeTimesWasm, numProbeTimes, valuesWasm);
+        this.ctx, tree.phyloTreePtr_, rawPopModel, probeTimesWasm, numProbeTimes, includeIndirectDescendants, valuesWasm);
 
       // Copy out before release
       const result = [];
@@ -842,6 +844,7 @@ export class Delphy {
        popModel: PopModelPtr,
        probeTimes: DoublePtr,
        numProbeTimes: number,
+       includeIndirectDescendants: boolean,
        outValues: DoublePtr)
         => void,
 
