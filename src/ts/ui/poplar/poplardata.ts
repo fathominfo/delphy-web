@@ -2,12 +2,16 @@ import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
 import { UNSET } from "../common";
 
+const DEFAULT_PREVALENCE = 0.3;
+
 export class PoplarData {
   pythia: Pythia | null = null;
   baseTree: PhyloTree | null = null;
   minDate: number = UNSET;
   maxDate: number = UNSET;
   branchPrevalence: number[][] = [];
+  branchIndices: number[] = [];
+  threshold: number = DEFAULT_PREVALENCE;
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -27,8 +31,19 @@ export class PoplarData {
     this.maxDate = maxDate;
     this.branchPrevalence = branchPrevalence;
     this.baseTree = tree;
+    this.findBranchesExceedPrevalenceThreshold()
   }
 
+
+  findBranchesExceedPrevalenceThreshold() {
+    this.branchIndices.length = 0;
+    this.branchPrevalence.forEach((branchPrevalence: number[], index) => {
+      if (Math.max(...branchPrevalence) > this.threshold) {
+        this.branchIndices.push(index);
+      }
+    });
+    console.log(this.branchIndices, this.branchPrevalence)
+  }
 
 
 }
