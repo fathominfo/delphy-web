@@ -728,9 +728,9 @@ export class RunUI extends MccUI {
           TraceChart.hkyPiG, TraceChart.hkyPiT]);
       }
       if (params.popModelIsSkygrid) {
-        availables.push(TraceChart.tau);
-        if (params.skygridTauConfig === tauConfigOption.INFER){
-          availables.push(TraceChart.halfDoublingTime)
+        if (params.skygridTauConfig === tauConfigOption.INFER) {
+          availables.push(TraceChart.tau);
+          availables.push(TraceChart.halfDoublingTime);
         }
         gammas.push(TraceChart.gamma);
         toShow.push(TraceChart.gamma);
