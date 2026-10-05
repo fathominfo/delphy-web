@@ -43,6 +43,7 @@ export class PoplarCanvas {
     ctx.strokeStyle = "black";
 
     drawOrder.forEach(k => {
+      if (!popData.branchIndices.includes(k)) return;
       const row = treePoplarCoords[k];
       const r = Math.random() * 50 + 150;
       const g = Math.random() * 200 + 50;

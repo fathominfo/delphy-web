@@ -2,7 +2,7 @@ import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
 import { UNSET } from "../common";
 
-const DEFAULT_PREVALENCE = 0.3;
+const DEFAULT_PREVALENCE = 0.1;
 
 
 export type PoplarCoord = {
@@ -141,7 +141,7 @@ export class PoplarData {
           splitTop = top + allotted / 2;
           splitBottom = bottom - allotted / 2;
           childTop = splitTop;
-          lastUnsplitCol = poplarCoords[index][c - 1].lastUnsplitCol
+          lastUnsplitCol = poplarCoords[index][c - 1].lastUnsplitCol;
         }
         try {
           poplarCoords[index][c] = {center, top, bottom, splitTop, splitBottom, childTop, lastUnsplitCol};
