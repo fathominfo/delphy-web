@@ -11,7 +11,7 @@ export type PoplarCoord = {
   bottom: number,        // bottom of the branch area
   splitTop: number,      // top of the lower branch area (if it is split)
   splitBottom: number,   // bottom of the lower branch area (if it is split)
-  childTop: number       // top of the current child, used during layout calculations
+  childTop: number       // start y-position for the current child, used and updated during layout
 };
 
 
@@ -24,6 +24,7 @@ export class PoplarData {
   branchPrevalence: number[][] = [];
   branchIndices: number[] = [];
   threshold: number = DEFAULT_PREVALENCE;
+  treePoplarCoords: PoplarCoord[][] = [];
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -143,9 +144,9 @@ export class PoplarData {
         } catch (err) {
           console.warn(`poplar[${index}][${c}]`, err);
         }
-
       }
     }
+    this.treePoplarCoords = poplarCoords;
   }
 
 }
