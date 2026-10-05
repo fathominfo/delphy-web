@@ -11,7 +11,8 @@ export type PoplarCoord = {
   bottom: number,        // bottom of the branch area
   splitTop: number,      // top of the lower branch area (if it is split)
   splitBottom: number,   // bottom of the lower branch area (if it is split)
-  childTop: number       // start y-position for the current child, used and updated during layout
+  childTop: number,      // start y-position for the current child, used and updated during layout
+  lastUnsplitCol: number
 };
 
 
@@ -25,6 +26,7 @@ export class PoplarData {
   branchIndices: number[] = [];
   threshold: number = DEFAULT_PREVALENCE;
   treePoplarCoords: PoplarCoord[][] = [];
+  drawOrder: number[] = [];
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -39,7 +41,7 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
-    resolution = 20;
+    // resolution = 20;
     const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
     console.log(minDate, maxDate, tree, branchPrevalence);
     this.minDate = minDate;
@@ -123,6 +125,7 @@ export class PoplarData {
         let splitTop: number = UNSET;
         let splitBottom: number = UNSET;
         let childTop: number = UNSET;
+        let lastUnsplitCol: number = c;
         if (parent === UNSET) { /* root */
           center = 0.5;
           top = 0;
@@ -138,15 +141,17 @@ export class PoplarData {
           splitTop = top + allotted / 2;
           splitBottom = bottom - allotted / 2;
           childTop = splitTop;
+          lastUnsplitCol = poplarCoords[index][c - 1].lastUnsplitCol
         }
         try {
-          poplarCoords[index][c] = {center, top, bottom, splitTop, splitBottom, childTop};
+          poplarCoords[index][c] = {center, top, bottom, splitTop, splitBottom, childTop, lastUnsplitCol};
         } catch (err) {
           console.warn(`poplar[${index}][${c}]`, err);
         }
       }
     }
     this.treePoplarCoords = poplarCoords;
+    this.drawOrder = drawOrder;
   }
 
 }
