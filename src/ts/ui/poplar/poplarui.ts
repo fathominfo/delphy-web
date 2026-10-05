@@ -60,7 +60,12 @@ export class PoplarUI extends UIScreen {
     const minDate = mcc.getTimeOf(baseTree.getRootIndex());
     mccRef.release();
     this.baseTreeCanvas.positionTreeNodes(baseTree);
-    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan);
+    /*
+    get the y position of nodes in the tree so that the poplar
+    canvas can follow it
+    */
+    const nodeYs = this.baseTreeCanvas.getNodeYs();
+    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs);
     const dateLabels: DateLabel[] = [];
     requestAnimationFrame(() => {
       if (this.pythia) {

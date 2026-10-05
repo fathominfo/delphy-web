@@ -430,6 +430,9 @@ export class TreeCanvas {
     return right - (pct * zoomedWidth - offset);
   }
 
+  getNodeYs() : number[] {
+    return this.nodeYs.slice(0);
+  }
 
 
 
