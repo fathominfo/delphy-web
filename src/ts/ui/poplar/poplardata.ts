@@ -49,9 +49,14 @@ export class PoplarData {
     this.maxDate = maxDate;
     this.branchPrevalence = branchPrevalence;
     this.baseTree = tree;
-    this.findBranchesExceedPrevalenceThreshold();
     this.prepareLayout();
     this.setNodePositions();
+    this.findBranchesExceedPrevalenceThreshold();
+  }
+
+  setPrevalenceThreshold(threshold: number) {
+    this.threshold = threshold;
+    this.findBranchesExceedPrevalenceThreshold();
   }
 
   findBranchesExceedPrevalenceThreshold() {

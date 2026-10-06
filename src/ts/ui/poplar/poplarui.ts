@@ -27,6 +27,19 @@ export class PoplarUI extends UIScreen {
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.poplarData = new PoplarData();
     this.poplarCanvas = new PoplarCanvas(canvas, ctx, this.poplarData);
+
+    const prevInputLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
+    const prevInput = prevInputLabel.querySelector("input") as HTMLInputElement;
+    const prevReadout = prevInputLabel.querySelector(".poplar-value") as HTMLSpanElement;
+    prevInput.addEventListener("input", ()=>{
+      const value = parseInt(prevInput.value);
+      this.poplarData.setPrevalenceThreshold(value/100);
+      requestAnimationFrame(()=>{
+        prevReadout.textContent = `${value}%`;
+        this.poplarCanvas.draw();
+      });
+    });
+
   }
 
   activate() {
