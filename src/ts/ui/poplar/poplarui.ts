@@ -14,7 +14,7 @@ export class PoplarUI extends UIScreen {
   baseTreeCanvas: TreeCanvas;
   poplarCanvas: PoplarCanvas;
   poplarData: PoplarData;
-  selectedTree: number = UNSET;
+  selectedTree = 0;
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
@@ -27,7 +27,6 @@ export class PoplarUI extends UIScreen {
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.poplarData = new PoplarData();
     this.poplarCanvas = new PoplarCanvas(canvas, ctx, this.poplarData);
-    this.selectedTree = 0;
   }
 
   activate() {

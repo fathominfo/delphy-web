@@ -35,6 +35,7 @@ export class PoplarData {
 
   setSelectedTree(treeIndex: number, resolution: number, nodeYs: number[]) {
     if (!this.pythia) return;
+    // console.log(`setting selected tree... index: ${treeIndex}`)
     this.baseTreeNodeYs = nodeYs;
     /*
     treeIndex is taken from the MCC, but getPoplarPrevalenceData
@@ -43,7 +44,7 @@ export class PoplarData {
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
     // resolution = 20;
     const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
-    console.log(minDate, maxDate, tree, branchPrevalence);
+    // console.log(minDate, maxDate, tree, branchPrevalence);
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.branchPrevalence = branchPrevalence;
@@ -51,7 +52,6 @@ export class PoplarData {
     this.findBranchesExceedPrevalenceThreshold();
     this.prepareLayout();
     this.setNodePositions();
-    console.log(this.nodePos)
   }
 
   findBranchesExceedPrevalenceThreshold() {
@@ -132,10 +132,10 @@ export class PoplarData {
       }
       i++;
     }
-    console.assert(nodeYs.length === drawOrder.length);
-    console.log(rootIndex);
-    console.log(allottedArea[rootIndex].join());
-    console.log(branchPrevalence[rootIndex].join());
+    // console.assert(nodeYs.length === drawOrder.length);
+    // console.log(rootIndex);
+    // console.log(allottedArea[rootIndex].join());
+    // console.log(branchPrevalence[rootIndex].join());
 
     /*
     we could probably combine this with the first iteration,

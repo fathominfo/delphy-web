@@ -32,7 +32,9 @@ export class BaseTreeScrubber {
       if (event.buttons === 1) {
         const x = event.offsetX - PADDING.left;
         const index = Math.max(0, Math.min(this.numTrees - 1, Math.round(x / this.xSpan * this.numTrees)));
-        selectCallback(index);
+        if (index !== this.selectedTree) {
+          selectCallback(index);
+        }
       }
     });
     // set initial size
