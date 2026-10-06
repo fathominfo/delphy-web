@@ -125,23 +125,26 @@ export class PoplarData {
         let splitTop: number = UNSET;
         let splitBottom: number = UNSET;
         let childTop: number = UNSET;
-        let lastUnsplitCol: number = c;
+        let lastUnsplitCol: number = UNSET;
         if (parent === UNSET) { /* root */
           center = 0.5;
           top = 0;
           bottom = 1.0;
+          lastUnsplitCol = c;
         } else if (total > 0) {
           const parentCoords = poplarCoords[parent][c];
           top = parentCoords.childTop;
           bottom = top + total;
           center = (top + bottom) / 2;
           parentCoords.childTop += total;
+          lastUnsplitCol = c;
         }
         if (total > 0 && isSplit) {
           splitTop = top + allotted / 2;
           splitBottom = bottom - allotted / 2;
           childTop = splitTop;
-          lastUnsplitCol = poplarCoords[index][c - 1].lastUnsplitCol;
+          const candidate = poplarCoords[index][c - 1].lastUnsplitCol;
+          if (candidate !== UNSET) lastUnsplitCol = candidate;
         }
         try {
           poplarCoords[index][c] = {center, top, bottom, splitTop, splitBottom, childTop, lastUnsplitCol};
