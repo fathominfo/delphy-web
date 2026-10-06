@@ -80,5 +80,6 @@ export type PoplarDataType = {
   minDate: number,
   maxDate: number,
   branchPrevalence: number[][],
-  tree: PhyloTree
+  tree: PhyloTree,
+  probeTimes: number[]
 };

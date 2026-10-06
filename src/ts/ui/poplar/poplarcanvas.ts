@@ -37,11 +37,12 @@ export class PoplarCanvas {
   draw() {
     const { ctx, popData, width, height } = this;
     ctx.clearRect(0, 0, width, height);
-    const { treePoplarCoords, drawOrder, baseTree } = popData;
+    const { treePoplarCoords, drawOrder, branchIndices, baseTree } = popData;
 
     if (!baseTree) return;
     ctx.strokeStyle = "black";
     drawOrder.forEach((k, i) => {
+      if (!branchIndices.includes(k)) return;
       const r = Math.random() * 50 + 150;
       const g = Math.random() * 200 + 50;
       ctx.fillStyle = `rgba(${r},${g},60,1.0)`;
@@ -100,6 +101,7 @@ export class PoplarCanvas {
 
   drawTreeArea(ctx: CanvasRenderingContext2D,
     row: PoplarCoord[],
+    includeDecendants = true,
     // parentRow: null | PoplarCoord[]
   ) {
     const { xSpan, ySpan } = this;
@@ -140,7 +142,7 @@ export class PoplarCanvas {
         }
       }
     }
-    if (firstSplit !== UNSET) {
+    if (firstSplit !== UNSET && !includeDecendants) {
       /* draw along the top of the split, right to left */
       for (i = lastDrawn; i >= firstSplit; i--) {
         x = PADDING.left + i / binCount * xSpan;

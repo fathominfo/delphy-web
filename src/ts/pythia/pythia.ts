@@ -921,7 +921,7 @@ export class Pythia {
     const timeRange = maxDate - minDate;
     const probeTimes: number[] = [];
     for (let d = 0; d < resolution; d++) {
-      const date = minDate + d / resolution * timeRange;
+      const date = minDate + d / (resolution - 1) * timeRange;
       probeTimes.push(date);
     }
     // console.log(probeTimes);
@@ -930,7 +930,8 @@ export class Pythia {
       minDate,
       maxDate,
       branchPrevalence,
-      tree
+      tree,
+      probeTimes
     };
   }
 

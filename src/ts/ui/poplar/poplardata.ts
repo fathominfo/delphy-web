@@ -19,14 +19,16 @@ export type PoplarCoord = {
 export class PoplarData {
   pythia: Pythia | null = null;
   baseTree: PhyloTree | null = null;
-  nodeYs: number[] = [];
+  baseTreeNodeYs: number[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
+  probeTimes: number[] = [];
   branchPrevalence: number[][] = [];
   branchIndices: number[] = [];
   threshold: number = DEFAULT_PREVALENCE;
   treePoplarCoords: PoplarCoord[][] = [];
   drawOrder: number[] = [];
+  nodePos: number[][] = [];
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -35,27 +37,33 @@ export class PoplarData {
 
   setSelectedTree(treeIndex: number, resolution: number, nodeYs: number[]) {
     if (!this.pythia) return;
-    this.nodeYs = nodeYs;
+    this.baseTreeNodeYs = nodeYs;
     /*
     treeIndex is taken from the MCC, but getPoplarPrevalenceData
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
     // resolution = 20;
-    const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    const { minDate, maxDate, tree, branchPrevalence, probeTimes } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
     console.log(minDate, maxDate, tree, branchPrevalence);
     this.minDate = minDate;
     this.maxDate = maxDate;
+    this.probeTimes= probeTimes;
     this.branchPrevalence = branchPrevalence;
     this.baseTree = tree;
     this.findBranchesExceedPrevalenceThreshold();
     this.prepareLayout();
+    this.setNodePositions();
+    console.log(this.nodePos)
   }
 
   findBranchesExceedPrevalenceThreshold() {
+    if (!this.baseTree) return;
     const { branchPrevalence, threshold, branchIndices } = this;
     branchIndices.length = 0;
+    const rootIndex = this.baseTree.getRootIndex();
     branchPrevalence.forEach((row, i) => {
+      if (i === rootIndex) return;
       for (let j = 0; j < row.length; j++) {
         if (row[j] >= threshold) {
           branchIndices.push(i);
@@ -65,8 +73,40 @@ export class PoplarData {
     })
   }
 
+  setNodePositions() {
+    const { baseTree, treePoplarCoords, minDate, maxDate,probeTimes } = this;
+    if(!baseTree)return;
+    const numBins = treePoplarCoords[0].length - 1;
+
+    // console.log("min max time: ", minDate, probeTimes[0], maxDate, probeTimes[probeTimes.length - 1])
+    treePoplarCoords.forEach((row, i) => {
+      const nodeTime = baseTree.getTimeOf(i);
+      const timePercent = (nodeTime - minDate) / (maxDate - minDate);
+      const column = timePercent * numBins;
+      const column1 = Math.floor(column);
+      const fraction = column - column1;
+
+      const y1 = row[column1].center;
+      const y2 = column1 === numBins ? y1 : row[column1 + 1].center;
+      let nodeY = UNSET;
+
+      if (y1 === UNSET) {
+        nodeY = y2;
+      } else {
+        if (y2 === UNSET) {
+          nodeY = y1;
+        } else {
+          nodeY = y1 + fraction * (y2 - y1);
+        }
+      }
+      if (nodeY === -1) console.log(numBins, column, y1, y2, row, this.branchPrevalence[i], this.probeTimes, nodeTime)
+      this.nodePos[i] = [column, nodeY];
+    })
+  }
+
+
   prepareLayout() {
-    const { baseTree, branchPrevalence, nodeYs } = this;
+    const { baseTree, branchPrevalence, baseTreeNodeYs: nodeYs } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
     /*
