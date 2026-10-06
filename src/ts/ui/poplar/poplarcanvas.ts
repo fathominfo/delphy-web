@@ -9,6 +9,23 @@ const PADDING = {
   right: 5
 };
 
+const COLORS = [
+  "#71FFF7",
+  "#FD6498",
+  "#FFDB6C",
+  "#FCFF70",
+  "#FD6E6D",
+  "#6E63FF",
+  "#7F62FF",
+  "#7DFF6A",
+  "#6FC7FF",
+  "#FFC76C",
+  "#B85FFF",
+  "#FC61CD",
+  "#C1FF6C",
+  "#6B83FF",
+  "#AFFF6E",
+];
 
 export class PoplarCanvas {
   canvas: HTMLCanvasElement;
@@ -18,11 +35,22 @@ export class PoplarCanvas {
   height: number = UNSET;
   xSpan: number = UNSET;
   ySpan: number = UNSET;
+  branchColors = new Map<number, string>();
 
   constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, popData: PoplarData) {
     this.canvas = canvas;
     this.ctx = ctx;
     this.popData = popData;
+  }
+
+
+  getColor(k: number): string {
+    let c = this.branchColors.get(k);
+    if (!c) {
+      c = COLORS[k % COLORS.length];
+      this.branchColors.set(k, c);
+    }
+    return c;
   }
 
   sizeCanvas() {
@@ -33,7 +61,6 @@ export class PoplarCanvas {
     this.ySpan = this.height - PADDING.top - PADDING.bottom;
   }
 
-
   draw() {
     const { ctx, popData, width, height } = this;
     ctx.clearRect(0, 0, width, height);
@@ -43,9 +70,7 @@ export class PoplarCanvas {
     ctx.strokeStyle = "black";
     drawOrder.forEach((k, i) => {
       if (!branchIndices.includes(k)) return;
-      const r = Math.random() * 50 + 150;
-      const g = Math.random() * 200 + 50;
-      ctx.fillStyle = `rgba(${r},${g},60,1.0)`;
+      ctx.fillStyle = this.getColor(i);
       const row = treePoplarCoords[k];
       this.drawTreeArea(ctx, row);
     });
@@ -54,7 +79,6 @@ export class PoplarCanvas {
     drawOrder.forEach((nodeIndex, i) => {
       const row = treePoplarCoords[nodeIndex];
       const parentIndex = baseTree.getParentIndexOf(nodeIndex);
-      // const parentRow = parentIndex === UNSET ? null : treePoplarCoords[parentIndex];
       const curretNodePos = nodePos[nodeIndex];
       const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
       this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos, i);
