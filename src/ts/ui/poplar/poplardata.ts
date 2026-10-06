@@ -52,15 +52,17 @@ export class PoplarData {
     this.prepareLayout();
   }
 
-
   findBranchesExceedPrevalenceThreshold() {
-    this.branchIndices.length = 0;
-    this.branchPrevalence.forEach((branchPrevalence: number[], index) => {
-      if (Math.max(...branchPrevalence) >= this.threshold) {
-        this.branchIndices.push(index);
+    const { branchPrevalence, threshold, branchIndices } = this;
+    branchIndices.length = 0;
+    branchPrevalence.forEach((row, i) => {
+      for (let j = 0; j < row.length; j++) {
+        if (row[j] >= threshold) {
+          branchIndices.push(i);
+          break;
+        }
       }
-    });
-    // console.log("branch indexes above threshold: ",this.branchIndices, this.branchPrevalence);
+    })
   }
 
   prepareLayout() {
