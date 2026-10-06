@@ -22,11 +22,13 @@ export class PoplarData {
   minDate: number = UNSET;
   maxDate: number = UNSET;
   branchPrevalence: number[][] = [];
-  branchIndices: number[] = [];
-  threshold: number = DEFAULT_PREVALENCE;
+  allottedArea: number[][] = [];
+  numBins: number = UNSET;
   treePoplarCoords: PoplarCoord[][] = [];
   drawOrder: number[] = [];
   nodePos: number[][] = [];
+  branchIndices: number[] = [];
+  threshold: number = DEFAULT_PREVALENCE;
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -42,16 +44,59 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
-    // resolution = 20;
     const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
-    // console.log(minDate, maxDate, tree, branchPrevalence);
     this.minDate = minDate;
     this.maxDate = maxDate;
-    this.branchPrevalence = branchPrevalence;
     this.baseTree = tree;
+    this.branchPrevalence = branchPrevalence;
+    if (branchPrevalence[0].length > this.numBins) {
+      this.numBins = branchPrevalence[0].length;
+      this.initializeStorage();
+    }
     this.prepareLayout();
     this.setNodePositions();
     this.findBranchesExceedPrevalenceThreshold();
+  }
+
+  initializeStorage() {
+    const nodeCount = this.baseTreeNodeYs.length;
+    const numBins = this.numBins;
+    if (this.nodePos.length === 0) {
+      this.nodePos = new Array(nodeCount);
+      this.allottedArea = new Array(nodeCount);
+      this.treePoplarCoords = new Array(nodeCount);
+      for (let i = 0; i < nodeCount; i++) {
+        this.nodePos[i] = [UNSET, UNSET];
+        this.allottedArea[i] = new Array(numBins);
+        this.treePoplarCoords[i] = new Array(numBins);
+        for (let b = 0; b < numBins; b++) {
+          this.treePoplarCoords[i][b] = {
+            center: UNSET,
+            top: UNSET,
+            bottom: UNSET,
+            splitTop: UNSET,
+            splitBottom: UNSET,
+            childTop: UNSET
+          };
+        }
+      }
+    } else {
+      const currentBins = this.allottedArea[0].length;
+      const newBins = numBins - currentBins;
+      for (let i = 0; i < nodeCount; i++) {
+        for (let b = 0; b < newBins; b++) {
+          this.allottedArea[i].push(UNSET);
+          this.treePoplarCoords[i].push({
+            center: UNSET,
+            top: UNSET,
+            bottom: UNSET,
+            splitTop: UNSET,
+            splitBottom: UNSET,
+            childTop: UNSET
+          });
+        }
+      }
+    }
   }
 
   setPrevalenceThreshold(threshold: number) {
@@ -76,20 +121,18 @@ export class PoplarData {
   }
 
   setNodePositions() {
-    const { baseTree, treePoplarCoords, minDate, maxDate } = this;
+    const { baseTree, treePoplarCoords, minDate, maxDate, numBins } = this;
     if (!baseTree) return;
-    const numBins = treePoplarCoords[0].length - 1;
+    const lastBin = numBins - 1;
     treePoplarCoords.forEach((row, i) => {
       const nodeTime = baseTree.getTimeOf(i);
       const timePercent = (nodeTime - minDate) / (maxDate - minDate);
-      const column = timePercent * numBins;
+      const column = timePercent * lastBin;
       const column1 = Math.floor(column);
       const fraction = column - column1;
-
       const y1 = row[column1].center;
-      const y2 = column1 === numBins ? y1 : row[column1 + 1].center;
+      const y2 = column1 === lastBin ? y1 : row[column1 + 1].center;
       let nodeY = UNSET;
-
       if (y1 === UNSET) {
         nodeY = y2;
       } else {
@@ -99,13 +142,14 @@ export class PoplarData {
           nodeY = y1 + fraction * (y2 - y1);
         }
       }
-      this.nodePos[i] = [column, nodeY];
+      this.nodePos[i][0] = column;
+      this.nodePos[i][1] = nodeY;
     })
   }
 
 
   prepareLayout() {
-    const { baseTree, branchPrevalence, baseTreeNodeYs: nodeYs } = this;
+    const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, treePoplarCoords, numBins, allottedArea } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
     /*
@@ -113,8 +157,17 @@ export class PoplarData {
     the space allotted to its children?
     */
     const rootIndex = baseTree.getRootIndex();
-    const allottedArea = branchPrevalence.map(row => row.slice(0));
-    const drawOrder = [rootIndex];
+    const nodeCount = branchPrevalence.length;
+    for (let r = 0; r < nodeCount; r++) {
+      const src = branchPrevalence[r];
+      const row = allottedArea[r];
+      for (let b = 0; b < numBins; b++) {
+        row[b] = src[b];
+      }
+    }
+    // const allottedArea = branchPrevalence.map(row => row.slice(0));
+    drawOrder.length = 0;
+    drawOrder.push(rootIndex);
     let i = 0;
     while (i < drawOrder.length) {
       const index = drawOrder[i] as number;
@@ -127,7 +180,7 @@ export class PoplarData {
         for (let col = 0; col < row.length; col++) {
           row[col] -= leftRow[col] + rightRow[col];
         }
-        if (nodeYs[leftIndex] < nodeYs[rightIndex]) {
+        if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
           drawOrder.push(leftIndex);
           drawOrder.push(rightIndex);
         } else {
@@ -137,21 +190,9 @@ export class PoplarData {
       }
       i++;
     }
-    // console.assert(nodeYs.length === drawOrder.length);
-    // console.log(rootIndex);
-    // console.log(allottedArea[rootIndex].join());
-    // console.log(branchPrevalence[rootIndex].join());
 
-    /*
-    we could probably combine this with the first iteration,
-    but gonna see what works before taking on that optimization
-    */
-    const rowCount = nodeYs.length;
-    const colCount = allottedArea[0].length;
-    const poplarCoords: PoplarCoord[][] = new Array(rowCount);
-    for (let i = 0; i < rowCount; i++) {
-      poplarCoords[i] = [];
-    }
+    const rowCount = baseTreeNodeYs.length;
+    const colCount = numBins;
 
     for (let c = 0; c < colCount; c++) {
       for (let i = 0; i < rowCount; i++) {
@@ -171,7 +212,7 @@ export class PoplarData {
           top = 0;
           bottom = 1.0;
         } else if (total > 0) {
-          const parentCoords = poplarCoords[parent][c];
+          const parentCoords = treePoplarCoords[parent][c];
           top = parentCoords.childTop;
           bottom = top + total;
           center = (top + bottom) / 2;
@@ -183,13 +224,16 @@ export class PoplarData {
           childTop = splitTop;
         }
         try {
-          poplarCoords[index][c] = { center, top, bottom, splitTop, splitBottom, childTop };
+          treePoplarCoords[index][c].center = center;
+          treePoplarCoords[index][c].top = top;
+          treePoplarCoords[index][c].bottom = bottom;
+          treePoplarCoords[index][c].splitTop = splitTop;
+          treePoplarCoords[index][c].splitBottom = splitBottom;
+          treePoplarCoords[index][c].childTop = childTop;
         } catch (err) {
-          console.warn(`poplar[${index}][${c}]`, err);
+          console.warn(`poplar[${index}][${c}]`, treePoplarCoords, err);
         }
       }
     }
-    this.treePoplarCoords = poplarCoords;
-    this.drawOrder = drawOrder;
   }
 }

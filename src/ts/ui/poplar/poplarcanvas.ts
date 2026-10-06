@@ -64,7 +64,7 @@ export class PoplarCanvas {
   draw() {
     const { ctx, popData, width, height } = this;
     ctx.clearRect(0, 0, width, height);
-    const { treePoplarCoords, drawOrder, branchIndices, baseTree, nodePos } = popData;
+    const { treePoplarCoords, drawOrder, branchIndices, baseTree, nodePos, numBins } = popData;
 
     if (!baseTree) return;
     ctx.strokeStyle = "black";
@@ -72,7 +72,7 @@ export class PoplarCanvas {
       if (!branchIndices.includes(k)) return;
       ctx.fillStyle = this.getColor(i);
       const row = treePoplarCoords[k];
-      this.drawTreeArea(ctx, row);
+      this.drawTreeArea(ctx, row, numBins);
     });
     ctx.strokeStyle = "black";
     ctx.beginPath();
@@ -81,16 +81,16 @@ export class PoplarCanvas {
       const parentIndex = baseTree.getParentIndexOf(nodeIndex);
       const curretNodePos = nodePos[nodeIndex];
       const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
-      this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos, i);
+      this.drawTreeBranch(ctx, row, numBins, curretNodePos, parentNodePos);
     });
     ctx.stroke();
   }
 
   drawTreeBranch(ctx: CanvasRenderingContext2D,
     row: PoplarCoord[],
+    numBins: number,
     currentNodePos: number[],
-    parentNodePos: number[],
-    rowIndex: number
+    parentNodePos: number[]
   ) {
     const { xSpan, ySpan } = this;
     const lastIndex = row.length - 1;
@@ -109,9 +109,9 @@ export class PoplarCanvas {
     ctx.moveTo(x, y);
     const nodeXrender = PADDING.left + nodeX / lastIndex * xSpan;
     const nodeYrender = PADDING.top + nodeY * ySpan;
-    for (i = 0; i < row.length; i++) {
+    for (i = 0; i < numBins; i++) {
       if (row[i].center !== UNSET && row[i].splitTop === UNSET) {
-        x = PADDING.left + i / (row.length - 1) * xSpan;
+        x = PADDING.left + i / lastIndex * xSpan;
         y = PADDING.top + row[i].center * ySpan;
         if (x < nodeXrender) ctx.lineTo(x, y);
       }
@@ -121,11 +121,11 @@ export class PoplarCanvas {
 
   drawTreeArea(ctx: CanvasRenderingContext2D,
     row: PoplarCoord[],
-    includeDecendants = true,
-    // parentRow: null | PoplarCoord[]
+    numBins: number,
+    includeDecendants = true
   ) {
     const { xSpan, ySpan } = this;
-    const binCount = row.length - 1;
+    const binCount = numBins - 1;
     let i = 0;
     let drawing = false;
     let x: number;
