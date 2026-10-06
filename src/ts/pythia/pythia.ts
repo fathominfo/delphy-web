@@ -930,8 +930,7 @@ export class Pythia {
       minDate,
       maxDate,
       branchPrevalence,
-      tree,
-      probeTimes
+      tree
     };
   }
 

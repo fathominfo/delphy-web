@@ -37,7 +37,7 @@ export class PoplarCanvas {
   draw() {
     const { ctx, popData, width, height } = this;
     ctx.clearRect(0, 0, width, height);
-    const { treePoplarCoords, drawOrder, branchIndices, baseTree } = popData;
+    const { treePoplarCoords, drawOrder, branchIndices, baseTree, nodePos } = popData;
 
     if (!baseTree) return;
     ctx.strokeStyle = "black";
@@ -51,52 +51,48 @@ export class PoplarCanvas {
     });
     ctx.strokeStyle = "black";
     ctx.beginPath();
-    drawOrder.forEach((k, i) => {
-      const row = treePoplarCoords[k];
-      const parentIndex = baseTree.getParentIndexOf(k);
-      const parentRow = parentIndex === UNSET ? null : treePoplarCoords[parentIndex];
-      this.drawTreeBranch(ctx, row, parentRow, i);
+    drawOrder.forEach((nodeIndex, i) => {
+      const row = treePoplarCoords[nodeIndex];
+      const parentIndex = baseTree.getParentIndexOf(nodeIndex);
+      // const parentRow = parentIndex === UNSET ? null : treePoplarCoords[parentIndex];
+      const curretNodePos = nodePos[nodeIndex];
+      const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos, i);
     });
     ctx.stroke();
   }
 
   drawTreeBranch(ctx: CanvasRenderingContext2D,
     row: PoplarCoord[],
-    parentCoordRow: null | PoplarCoord[],
+    currentNodePos: number[],
+    parentNodePos: number[],
     rowIndex: number
   ) {
     const { xSpan, ySpan } = this;
     const lastIndex = row.length - 1;
     let i = 0;
-    const drawing = false;
     let x: number;
     let y: number;
-    if (parentCoordRow === null) {
+    const [nodeX, nodeY] = currentNodePos;
+    const [parentX, parentY] = parentNodePos;
+    if (parentX === UNSET) {
       x = PADDING.left;
       y = PADDING.top + ySpan * 0.5;
     } else {
-      const lastUnsplitParentCoord = parentCoordRow[lastIndex];
-      const lastUnsplitCol = lastUnsplitParentCoord.lastUnsplitCol;
-      try {
-        x = PADDING.left + lastUnsplitCol / (lastIndex) * xSpan;
-        y = PADDING.top + parentCoordRow[lastUnsplitCol].center * ySpan;
-        if (y < PADDING.top || isNaN(y)) {
-          console.log(`got ${y} for row ${rowIndex} col ${i}`, row[i], parentCoordRow);
-        }
-      } catch(err) {
-        console.log(`no y for row ${rowIndex} col ${i}`, lastUnsplitCol, parentCoordRow);
-        throw new Error();
-      }
-
+      x = PADDING.left + parentX / lastIndex * xSpan;
+      y = PADDING.top + parentY * ySpan;
     }
     ctx.moveTo(x, y);
+    const nodeXrender = PADDING.left + nodeX / lastIndex * xSpan;
+    const nodeYrender = PADDING.top + nodeY * ySpan;
     for (i = 0; i < row.length; i++) {
       if (row[i].center !== UNSET && row[i].splitTop === UNSET) {
         x = PADDING.left + i / (row.length - 1) * xSpan;
         y = PADDING.top + row[i].center * ySpan;
-        ctx.lineTo(x, y);
+        if (x < nodeXrender) ctx.lineTo(x, y);
       }
     }
+    ctx.lineTo(nodeXrender, nodeYrender);
   }
 
   drawTreeArea(ctx: CanvasRenderingContext2D,
@@ -109,7 +105,7 @@ export class PoplarCanvas {
     let i = 0;
     let drawing = false;
     let x: number;
-    let y:number;
+    let y: number;
     let firstDrawn = UNSET;
     ctx.beginPath();
     /* draw along the bottom, from right to left */
@@ -158,7 +154,4 @@ export class PoplarCanvas {
     }
     ctx.fill();
   }
-
-
 }
-

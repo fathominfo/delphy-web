@@ -12,7 +12,6 @@ export type PoplarCoord = {
   splitTop: number,      // top of the lower branch area (if it is split)
   splitBottom: number,   // bottom of the lower branch area (if it is split)
   childTop: number,      // start y-position for the current child, used and updated during layout
-  lastUnsplitCol: number
 };
 
 
@@ -22,7 +21,6 @@ export class PoplarData {
   baseTreeNodeYs: number[] = [];
   minDate: number = UNSET;
   maxDate: number = UNSET;
-  probeTimes: number[] = [];
   branchPrevalence: number[][] = [];
   branchIndices: number[] = [];
   threshold: number = DEFAULT_PREVALENCE;
@@ -44,11 +42,10 @@ export class PoplarData {
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
     // resolution = 20;
-    const { minDate, maxDate, tree, branchPrevalence, probeTimes } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
     console.log(minDate, maxDate, tree, branchPrevalence);
     this.minDate = minDate;
     this.maxDate = maxDate;
-    this.probeTimes= probeTimes;
     this.branchPrevalence = branchPrevalence;
     this.baseTree = tree;
     this.findBranchesExceedPrevalenceThreshold();
@@ -74,11 +71,9 @@ export class PoplarData {
   }
 
   setNodePositions() {
-    const { baseTree, treePoplarCoords, minDate, maxDate,probeTimes } = this;
-    if(!baseTree)return;
+    const { baseTree, treePoplarCoords, minDate, maxDate } = this;
+    if (!baseTree) return;
     const numBins = treePoplarCoords[0].length - 1;
-
-    // console.log("min max time: ", minDate, probeTimes[0], maxDate, probeTimes[probeTimes.length - 1])
     treePoplarCoords.forEach((row, i) => {
       const nodeTime = baseTree.getTimeOf(i);
       const timePercent = (nodeTime - minDate) / (maxDate - minDate);
@@ -99,7 +94,6 @@ export class PoplarData {
           nodeY = y1 + fraction * (y2 - y1);
         }
       }
-      if (nodeY === -1) console.log(numBins, column, y1, y2, row, this.branchPrevalence[i], this.probeTimes, nodeTime)
       this.nodePos[i] = [column, nodeY];
     })
   }
@@ -114,7 +108,7 @@ export class PoplarData {
     the space allotted to its children?
     */
     const rootIndex = baseTree.getRootIndex();
-    const allottedArea = branchPrevalence.map(row=>row.slice(0));
+    const allottedArea = branchPrevalence.map(row => row.slice(0));
     const drawOrder = [rootIndex];
     let i = 0;
     while (i < drawOrder.length) {
@@ -167,29 +161,24 @@ export class PoplarData {
         let splitTop: number = UNSET;
         let splitBottom: number = UNSET;
         let childTop: number = UNSET;
-        let lastUnsplitCol: number = UNSET;
         if (parent === UNSET) { /* root */
           center = 0.5;
           top = 0;
           bottom = 1.0;
-          lastUnsplitCol = c;
         } else if (total > 0) {
           const parentCoords = poplarCoords[parent][c];
           top = parentCoords.childTop;
           bottom = top + total;
           center = (top + bottom) / 2;
           parentCoords.childTop += total;
-          lastUnsplitCol = c;
         }
         if (total > 0 && isSplit) {
           splitTop = top + allotted / 2;
           splitBottom = bottom - allotted / 2;
           childTop = splitTop;
-          const candidate = poplarCoords[index][c - 1].lastUnsplitCol;
-          if (candidate !== UNSET) lastUnsplitCol = candidate;
         }
         try {
-          poplarCoords[index][c] = {center, top, bottom, splitTop, splitBottom, childTop, lastUnsplitCol};
+          poplarCoords[index][c] = { center, top, bottom, splitTop, splitBottom, childTop };
         } catch (err) {
           console.warn(`poplar[${index}][${c}]`, err);
         }
@@ -198,5 +187,4 @@ export class PoplarData {
     this.treePoplarCoords = poplarCoords;
     this.drawOrder = drawOrder;
   }
-
 }
