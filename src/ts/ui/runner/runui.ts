@@ -470,7 +470,7 @@ export class RunUI extends MccUI {
     };
     this.traceChartConfig[TraceChart.halfDoublingTime] = {
       name: "Half-Doubling time",
-      unit: 'years',
+      unit: 'days',
       className: "half-doubling-time",
       dataFnc: () => {
         if (!this.pythia) return [];
