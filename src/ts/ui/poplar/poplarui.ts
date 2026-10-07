@@ -1,6 +1,4 @@
-import { Pythia } from "../../pythia/pythia";
 import { SharedState } from "../../sharedstate";
-import { UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 import { TreeCanvas } from "../treecanvas";
 import { UIScreen } from "../uiscreen";
@@ -65,6 +63,10 @@ export class PoplarUI extends UIScreen {
 
   handleTreeSelect(index: number) {
     if (!this.pythia) return;
+    console.debug(`
+      handleTreeSelect
+      `);
+    const start = Date.now();
     this.scrubber.setSelectedTree(index);
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
@@ -72,18 +74,23 @@ export class PoplarUI extends UIScreen {
     const minDate = mcc.getTimeOf(baseTree.getRootIndex());
     mccRef.release();
     this.baseTreeCanvas.positionTreeNodes(baseTree);
+    // console.debug(`up to setting baseTree took ${Date.now() - start} ms`);
     /*
     get the y position of nodes in the tree so that the poplar
     canvas can follow it
     */
     const nodeYs = this.baseTreeCanvas.getNodeYs();
+    // console.debug(`and up to get nodeYs took ${Date.now() - start} ms`);
     this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs);
     const dateLabels: DateLabel[] = [];
     requestAnimationFrame(() => {
       if (this.pythia) {
+        const start = Date.now();
         this.baseTreeCanvas.draw(minDate, this.pythia.maxDate, dateLabels);
         this.poplarCanvas.draw();
+        console.debug(`poplar draw took ${Date.now() - start} ms`);
       }
-    })
+    });
+    console.debug(`handleTreeSelect took ${Date.now() - start} ms`);
   }
 }
