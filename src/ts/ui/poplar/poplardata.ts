@@ -118,17 +118,18 @@ export class PoplarData {
   }
 
   setNodePositions() {
-    const { baseTree, treePoplarCoords, minDate, maxDate, numBins } = this;
+    const { baseTree, minDate, maxDate, numBins } = this;
     if (!baseTree) return;
     const lastBin = numBins - 1;
-    treePoplarCoords.forEach((row, i) => {
-      const nodeTime = baseTree.getTimeOf(i);
+    const nodeCount = baseTree.getSize();
+    for (let nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
+      const nodeTime = baseTree.getTimeOf(nodeIndex);
       const timePercent = (nodeTime - minDate) / (maxDate - minDate);
       const column = timePercent * lastBin;
       const column1 = Math.floor(column);
       const fraction = column - column1;
-      const y1 = this.getPoplarCoordCenter(i, column1); // row[column1].center;
-      const y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(i, column1 + 1); //row[column1 + 1].center;
+      const y1 = this.getPoplarCoordCenter(nodeIndex, column1); // row[column1].center;
+      const y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1); //row[column1 + 1].center;
       let nodeY = UNSET;
       if (y1 === UNSET) {
         nodeY = y2;
@@ -139,9 +140,9 @@ export class PoplarData {
           nodeY = y1 + fraction * (y2 - y1);
         }
       }
-      this.nodePos[i][0] = column;
-      this.nodePos[i][1] = nodeY;
-    })
+      this.nodePos[nodeIndex][0] = column;
+      this.nodePos[nodeIndex][1] = nodeY;
+    }
   }
 
 
