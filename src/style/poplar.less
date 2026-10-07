@@ -49,3 +49,17 @@
   flex: 1;
   height: calc(100% - 50px);
 }
+
+:has(canvas.poplar--highlight) {
+  position: relative;
+}
+
+canvas.poplar--highlight {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  /* let events pass through to the main canvas */
+  pointer-events: none;
+}

@@ -20,13 +20,13 @@ export class PoplarUI extends UIScreen {
     super(sharedState, divSelector);
     const treeSelectCallback: SelectTreeCallback = (index: number)=>this.handleTreeSelect(index);
     this.scrubber = new BaseTreeScrubber(treeSelectCallback);
-    let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas") as HTMLCanvasElement;
-    let ctx: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas.poplar--main") as HTMLCanvasElement;
+    const ctx: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
     this.baseTreeCanvas = new TreeCanvas(canvas, ctx);
-    canvas = this.div.querySelector("#poplar--container canvas") as HTMLCanvasElement;
-    ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    canvas = this.div.querySelector("#poplar--container canvas.poplar--main") as HTMLCanvasElement;
+    const highlightCanvas: HTMLCanvasElement = this.div.querySelector("#poplar--container canvas.poplar--highlight") as HTMLCanvasElement;
     this.poplarData = new PoplarData();
-    this.poplarCanvas = new PoplarCanvas(canvas, ctx, this.poplarData);
+    this.poplarCanvas = new PoplarCanvas(canvas, highlightCanvas, this.poplarData);
 
     const prevInputLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
     const prevInput = prevInputLabel.querySelector("input") as HTMLInputElement;

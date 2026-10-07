@@ -30,17 +30,74 @@ const COLORS = [
 export class PoplarCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  highlightCanvas: HTMLCanvasElement;
+  highlightCtx: CanvasRenderingContext2D;
   popData: PoplarData;
   width: number = UNSET;
   height: number = UNSET;
   xSpan: number = UNSET;
   ySpan: number = UNSET;
   branchColors = new Map<number, string>();
+  selectedNode: number = UNSET;
 
-  constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, popData: PoplarData) {
+  constructor(canvas: HTMLCanvasElement,
+    highlightCanvas: HTMLCanvasElement,
+    popData: PoplarData
+  ) {
     this.canvas = canvas;
-    this.ctx = ctx;
+    this.highlightCanvas = highlightCanvas;
+    this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    this.highlightCtx = highlightCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.popData = popData;
+    /*
+    kind of a cheat, but maybe it will work? Find the horizontal
+    location of the mouse, and for that vertical slice, find the
+    closest branch.
+    */
+    const getClosestNode = (event: MouseEvent) => {
+      const { binCount, branchIndices, drawOrder } = this.popData;
+      let bindex = (event.offsetX - PADDING.left) / this.xSpan * (binCount - 1);
+      const yScaled = (event.offsetY - PADDING.top) / this.ySpan;
+      bindex = Math.max(0, Math.min(binCount - 1, Math.round(bindex)));
+      let closest = UNSET;
+      let nodeIndex: number;
+      let top: number;
+      let bottom: number;
+      let splitTop: number;
+      let splitBottom: number;
+      /*
+      going through the node areas from the root down
+      find the nodes with this point in their area.
+      we want the smallest one that has its area drawn.
+      */
+      console.debug(`
+        find closest `);
+      for (let i = 0; i < drawOrder.length; i++) {
+        nodeIndex = drawOrder[i];
+        if (branchIndices.includes(nodeIndex)) {
+          top = this.popData.treePoplarCoords[nodeIndex][bindex].top;
+          bottom = this.popData.treePoplarCoords[nodeIndex][bindex].bottom;
+          if (yScaled >= top && yScaled < bottom) {
+            console.log(i, nodeIndex, top, bottom, branchIndices.includes(nodeIndex));
+            closest = nodeIndex;
+          }
+        }
+      }
+      return closest;
+    };
+    canvas.addEventListener("pointermove", (event: MouseEvent) => {
+      const closest = getClosestNode(event);
+      if (closest !== this.selectedNode) {
+        this.selectedNode = closest;
+        requestAnimationFrame(() => this.drawHighlight());
+      }
+    });
+    canvas.addEventListener("pointerleave", () => {
+      if (this.selectedNode !== UNSET) {
+        this.selectedNode = UNSET;
+        requestAnimationFrame(() => this.drawHighlight());
+      }
+    });
   }
 
 
@@ -59,6 +116,8 @@ export class PoplarCanvas {
     this.height = height;
     this.xSpan = this.width - PADDING.left - PADDING.right;
     this.ySpan = this.height - PADDING.top - PADDING.bottom;
+    resizeCanvas(this.highlightCanvas);
+    this.ctx.lineWidth = 0.5;
   }
 
   draw() {
@@ -70,9 +129,11 @@ export class PoplarCanvas {
     ctx.strokeStyle = "black";
     drawOrder.forEach((k, i) => {
       if (!branchIndices.includes(k)) return;
-      ctx.fillStyle = this.getColor(i);
       const row = treePoplarCoords[k];
+      ctx.fillStyle = this.getColor(k);
+      ctx.beginPath();
       this.drawTreeArea(ctx, row);
+      ctx.fill();
     });
     ctx.strokeStyle = "black";
     ctx.beginPath();
@@ -131,7 +192,6 @@ export class PoplarCanvas {
     let x: number;
     let y: number;
     let firstDrawn = UNSET;
-    ctx.beginPath();
     /* draw along the bottom, from right to left */
     for (i = binCount; i >= 0; i--) {
       if (row[i].center !== UNSET) {
@@ -165,17 +225,50 @@ export class PoplarCanvas {
     if (firstSplit !== UNSET && !includeDecendants) {
       /* draw along the top of the split, right to left */
       for (i = lastDrawn; i >= firstSplit; i--) {
-        x = PADDING.left + i / binCount * xSpan;
-        y = PADDING.top + row[i].splitTop * ySpan;
-        ctx.lineTo(x, y);
+        if (row[i].splitTop !== UNSET) {
+          x = PADDING.left + i / binCount * xSpan;
+          y = PADDING.top + row[i].splitTop * ySpan;
+          ctx.lineTo(x, y);
+        }
       }
       /* draw along the bottom of the split, left to right */
       for (; i <= lastDrawn; i++) {
-        x = PADDING.left + i / binCount * xSpan;
-        y = PADDING.top + row[i].splitBottom * ySpan;
-        ctx.lineTo(x, y);
+        if (row[i].splitBottom !== UNSET) {
+          x = PADDING.left + i / binCount * xSpan;
+          y = PADDING.top + row[i].splitBottom * ySpan;
+          ctx.lineTo(x, y);
+        }
       }
     }
-    ctx.fill();
+  }
+
+  drawHighlight() {
+    console.debug('drawHighlight');
+    const { highlightCtx, selectedNode, width, height } = this;
+    const { treePoplarCoords, baseTree, nodePos } = this.popData;
+    if (!baseTree) return;
+    highlightCtx.clearRect(0, 0, width, height);
+    if (selectedNode !== UNSET) {
+      highlightCtx.clearRect(0, 0, width, height);
+      highlightCtx.fillStyle = 'rgba(255,255,255,0.7)';
+      highlightCtx.fillRect(0, 0, width, height);
+      highlightCtx.strokeStyle = 'black';
+      highlightCtx.beginPath();
+      this.drawTreeArea(highlightCtx, treePoplarCoords[selectedNode], true);
+      highlightCtx.stroke();
+      highlightCtx.beginPath();
+      highlightCtx.fillStyle = this.getColor(selectedNode);
+      this.drawTreeArea(highlightCtx, treePoplarCoords[selectedNode], false);
+      highlightCtx.fill();
+      highlightCtx.stroke();
+      highlightCtx.beginPath();
+      const row = treePoplarCoords[selectedNode];
+      const parentIndex = baseTree.getParentIndexOf(selectedNode);
+      const curretNodePos = nodePos[selectedNode];
+      const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      this.drawTreeBranch(highlightCtx, row, curretNodePos, parentNodePos, selectedNode);
+      highlightCtx.stroke();
+    }
+
   }
 }

@@ -27,6 +27,8 @@ export class PoplarData {
   treePoplarCoords: PoplarCoord[][] = [];
   drawOrder: number[] = [];
   nodePos: number[][] = [];
+  nodeCount: number = UNSET;
+  binCount: number = UNSET;
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -37,6 +39,7 @@ export class PoplarData {
     if (!this.pythia) return;
     // console.log(`setting selected tree... index: ${treeIndex}`)
     this.baseTreeNodeYs = nodeYs;
+    this.nodeCount = nodeYs.length;
     /*
     treeIndex is taken from the MCC, but getPoplarPrevalenceData
     takes the absolute index (including burn-in)
@@ -105,13 +108,14 @@ export class PoplarData {
 
 
   prepareLayout() {
-    const { baseTree, branchPrevalence, baseTreeNodeYs: nodeYs } = this;
+    const { baseTree, branchPrevalence, baseTreeNodeYs } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
     /*
     how much area is allotted to each branch, minus
     the space allotted to its children?
     */
+    this.binCount = branchPrevalence[0].length;
     const rootIndex = baseTree.getRootIndex();
     const allottedArea = branchPrevalence.map(row => row.slice(0));
     const drawOrder = [rootIndex];
@@ -127,7 +131,7 @@ export class PoplarData {
         for (let col = 0; col < row.length; col++) {
           row[col] -= leftRow[col] + rightRow[col];
         }
-        if (nodeYs[leftIndex] < nodeYs[rightIndex]) {
+        if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
           drawOrder.push(leftIndex);
           drawOrder.push(rightIndex);
         } else {
@@ -146,7 +150,7 @@ export class PoplarData {
     we could probably combine this with the first iteration,
     but gonna see what works before taking on that optimization
     */
-    const rowCount = nodeYs.length;
+    const rowCount = baseTreeNodeYs.length;
     const colCount = allottedArea[0].length;
     const poplarCoords: PoplarCoord[][] = new Array(rowCount);
     for (let i = 0; i < rowCount; i++) {
