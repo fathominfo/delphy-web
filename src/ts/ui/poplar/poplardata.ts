@@ -101,15 +101,18 @@ export class PoplarData {
     const { branchPrevalence, threshold, branchIndices } = this;
     branchIndices.length = 0;
     const rootIndex = this.baseTree.getRootIndex();
-    branchPrevalence.forEach((row, i) => {
+    let row: number[];
+    let j: number;
+    for (let i = 0; i < branchPrevalence.length; i++) {
+      row = branchPrevalence[i];
       if (i === rootIndex) return;
-      for (let j = 0; j < row.length; j++) {
+      for (j = 0; j < row.length; j++) {
         if (row[j] >= threshold) {
           branchIndices.push(i);
           break;
         }
       }
-    })
+    }
   }
 
   setNodePositions() {
@@ -171,9 +174,9 @@ export class PoplarData {
     let splitTop: number = UNSET;
     let splitBottom: number = UNSET;
     let childTop: number = UNSET;
-
+    let i: number;
     for (let c = 0; c < colCount; c++) {
-      for (let i = 0; i < rowCount; i++) {
+      for (i = 0; i < rowCount; i++) {
         index = drawOrder[i];
         parent = baseTree.getParentIndexOf(index);
         total = branchPrevalence[index][c];
@@ -227,6 +230,7 @@ export class PoplarData {
     let leftRow: number[];
     let rightRow: number[];
     let i = 0;
+    let col = 0;
     while (i < drawOrder.length) {
       index = drawOrder[i] as number;
       src = branchPrevalence[index];
@@ -236,7 +240,7 @@ export class PoplarData {
         rightIndex = baseTree.getRightChildIndexOf(index);
         leftRow = branchPrevalence[leftIndex];
         rightRow = branchPrevalence[rightIndex];
-        for (let col = 0; col < numBins; col++) {
+        for (col = 0; col < numBins; col++) {
           allottedAreaHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
         }
         if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
@@ -247,7 +251,7 @@ export class PoplarData {
           drawOrder.push(leftIndex);
         }
       } else {
-        for (let col = 0; col < numBins; col++) {
+        for (col = 0; col < numBins; col++) {
           allottedAreaHeap[aaBase + col] = src[col];
         }
       }
