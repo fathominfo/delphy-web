@@ -66,6 +66,7 @@ export class PoplarData {
       this.numBins = branchPrevalence[0].length;
       this.initializeStorage();
     }
+    this.setDrawOrderAndAllotted();
     this.prepareLayout();
     this.setNodePositions();
     this.findBranchesExceedPrevalenceThreshold();
@@ -116,15 +117,24 @@ export class PoplarData {
     if (!baseTree) return;
     const lastBin = numBins - 1;
     const nodeCount = baseTree.getSize();
+    let nodeTime: number;
+    let timePercent: number;
+    let column: number;
+    let column1: number;
+    let fraction: number;
+    let y1: number;
+    let y2: number;
+    let nodeY: number;
+
     for (let nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
-      const nodeTime = baseTree.getTimeOf(nodeIndex);
-      const timePercent = (nodeTime - minDate) / (maxDate - minDate);
-      const column = timePercent * lastBin;
-      const column1 = Math.floor(column);
-      const fraction = column - column1;
-      const y1 = this.getPoplarCoordCenter(nodeIndex, column1); // row[column1].center;
-      const y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1); //row[column1 + 1].center;
-      let nodeY = UNSET;
+      nodeTime = baseTree.getTimeOf(nodeIndex);
+      timePercent = (nodeTime - minDate) / (maxDate - minDate);
+      column = timePercent * lastBin;
+      column1 = Math.floor(column);
+      fraction = column - column1;
+      y1 = this.getPoplarCoordCenter(nodeIndex, column1); // row[column1].center;
+      y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1); //row[column1 + 1].center;
+      nodeY = UNSET;
       if (y1 === UNSET) {
         nodeY = y2;
       } else {
@@ -144,59 +154,37 @@ export class PoplarData {
     const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, numBins, allottedAreaHeap } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
-    /*
-    how much area is allotted to each branch, minus
-    the space allotted to its children?
-    */
-    const rootIndex = baseTree.getRootIndex();
-
-    drawOrder.length = 0;
-    drawOrder.push(rootIndex);
-    let i = 0;
-    while (i < drawOrder.length) {
-      const index = drawOrder[i] as number;
-      const src = branchPrevalence[index];
-      const aaBase = index * numBins;
-      const leftIndex = baseTree.getLeftChildIndexOf(index);
-      if (leftIndex !== UNSET) {
-        const rightIndex = baseTree.getRightChildIndexOf(index);
-        const leftRow = branchPrevalence[leftIndex];
-        const rightRow = branchPrevalence[rightIndex];
-        for (let col = 0; col < numBins; col++) {
-          allottedAreaHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
-        }
-        if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
-          drawOrder.push(leftIndex);
-          drawOrder.push(rightIndex);
-        } else {
-          drawOrder.push(rightIndex);
-          drawOrder.push(leftIndex);
-        }
-      } else {
-        for (let col = 0; col < numBins; col++) {
-          allottedAreaHeap[aaBase + col] = src[col];
-        }
-      }
-      i++;
-    }
 
     const rowCount = baseTreeNodeYs.length;
     const colCount = numBins;
     // console.debug(`prepareLayout draw order took ${Date.now() - start} ms`);
     const start = Date.now();
+
+    let index: number;
+    let parent: number;
+    let total: number;
+    let allotted: number;
+    let isSplit: boolean;
+    let center: number = UNSET;
+    let top: number = UNSET;
+    let bottom: number = UNSET;
+    let splitTop: number = UNSET;
+    let splitBottom: number = UNSET;
+    let childTop: number = UNSET;
+
     for (let c = 0; c < colCount; c++) {
       for (let i = 0; i < rowCount; i++) {
-        const index = drawOrder[i];
-        const parent = baseTree.getParentIndexOf(index);
-        const total = branchPrevalence[index][c];
-        const allotted = allottedAreaHeap[index * numBins + c];
-        const isSplit = allotted < total;
-        let center: number = UNSET;
-        let top: number = UNSET;
-        let bottom: number = UNSET;
-        let splitTop: number = UNSET;
-        let splitBottom: number = UNSET;
-        let childTop: number = UNSET;
+        index = drawOrder[i];
+        parent = baseTree.getParentIndexOf(index);
+        total = branchPrevalence[index][c];
+        allotted = allottedAreaHeap[index * numBins + c];
+        isSplit = allotted < total;
+        center = UNSET;
+        top = UNSET;
+        bottom = UNSET;
+        splitTop = UNSET;
+        splitBottom = UNSET;
+        childTop = UNSET;
         if (parent === UNSET) { /* root */
           center = 0.5;
           top = 0;
@@ -216,6 +204,56 @@ export class PoplarData {
       }
     }
     console.debug(`prepareLayout took ${Date.now() - start} ms`);
+  }
+
+  setDrawOrderAndAllotted() {
+    const { drawOrder, baseTree, allottedAreaHeap, branchPrevalence, baseTreeNodeYs, numBins } = this;
+    if (!baseTree) return;
+    if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
+
+    /*
+    how much area is allotted to each branch, minus
+    the space allotted to its children?
+    */
+    const rootIndex = baseTree.getRootIndex();
+
+    drawOrder.length = 0;
+    drawOrder.push(rootIndex);
+    let index: number;
+    let src: number[];
+    let aaBase: number;
+    let leftIndex: number;
+    let rightIndex: number;
+    let leftRow: number[];
+    let rightRow: number[];
+    let i = 0;
+    while (i < drawOrder.length) {
+      index = drawOrder[i] as number;
+      src = branchPrevalence[index];
+      aaBase = index * numBins;
+      leftIndex = baseTree.getLeftChildIndexOf(index);
+      if (leftIndex !== UNSET) {
+        rightIndex = baseTree.getRightChildIndexOf(index);
+        leftRow = branchPrevalence[leftIndex];
+        rightRow = branchPrevalence[rightIndex];
+        for (let col = 0; col < numBins; col++) {
+          allottedAreaHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
+        }
+        if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
+          drawOrder.push(leftIndex);
+          drawOrder.push(rightIndex);
+        } else {
+          drawOrder.push(rightIndex);
+          drawOrder.push(leftIndex);
+        }
+      } else {
+        for (let col = 0; col < numBins; col++) {
+          allottedAreaHeap[aaBase + col] = src[col];
+        }
+      }
+      i++;
+    }
+
   }
 
   getCoordBaseIndex(nodeIndex: number, bin: number) : number {
