@@ -104,12 +104,13 @@ export class PoplarData {
     let row: number[];
     let j: number;
     for (let i = 0; i < branchPrevalence.length; i++) {
-      if (i === rootIndex) return;
-      row = branchPrevalence[i];
-      for (j = 0; j < row.length; j++) {
-        if (row[j] >= threshold) {
-          branchIndices.push(i);
-          break;
+      if (i !== rootIndex) {
+        row = branchPrevalence[i];
+        for (j = 0; j < row.length; j++) {
+          if (row[j] >= threshold) {
+            branchIndices.push(i);
+            break;
+          }
         }
       }
     }
