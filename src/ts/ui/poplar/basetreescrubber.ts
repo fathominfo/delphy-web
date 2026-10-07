@@ -28,13 +28,20 @@ export class BaseTreeScrubber {
   constructor(selectCallback: SelectTreeCallback) {
     this.svg = chart;
     this.tickContainer = this.svg.querySelector("#poplar--scrubber-ticks") as SVGGElement;
-    this.svg.addEventListener('pointermove', (event:MouseEvent)=>{
+    const handleMouseEvent = (event: MouseEvent) => {
+      const x = event.offsetX - PADDING.left;
+      const bins = this.numTrees - 1;
+      const index = Math.max(0, Math.min(bins, Math.round(x / this.xSpan * bins)));
+      if (index !== this.selectedTree) {
+        selectCallback(index);
+      }
+    };
+    this.svg.addEventListener('click', (event: MouseEvent) => {
+      handleMouseEvent(event);
+    });
+    this.svg.addEventListener('pointermove', (event: MouseEvent) => {
       if (event.buttons === 1) {
-        const x = event.offsetX - PADDING.left;
-        const index = Math.max(0, Math.min(this.numTrees - 1, Math.round(x / this.xSpan * this.numTrees)));
-        if (index !== this.selectedTree) {
-          selectCallback(index);
-        }
+        handleMouseEvent(event);
       }
     });
     // set initial size
@@ -67,6 +74,7 @@ export class BaseTreeScrubber {
     if (index !== this.selectedTree) {
       const ticks = this.tickContainer.querySelectorAll(".tick");
       ticks.forEach((tick, i)=>tick.classList.toggle("selected-tick", index === i));
+      this.selectedTree = index;
     }
   }
 
