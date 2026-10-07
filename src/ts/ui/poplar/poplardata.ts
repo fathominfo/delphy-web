@@ -14,6 +14,15 @@ export type PoplarCoord = {
   childTop: number,      // start y-position for the current child, used and updated during layout
 };
 
+// export type PoplarCoord = [number, number, number, number, number, number];
+// const ix_center : number = 0; // vertical center of the branch
+// const ix_top: number = 1;            // top of the branch area
+// const ix_bottom: number = 2;         // bottom of the branch area
+// const ix_splitTop: number = 3;       // top of the lower branch area (if it is split)
+// const ix_splitBottom: number = 4;    // bottom of the lower branch area (if it is split)
+// const ix_childTop: number = 5;       // start y-position for the current child, used and updated during layout
+
+
 
 export class PoplarData {
   pythia: Pythia | null = null;
@@ -44,7 +53,9 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
+    const start = Date.now();
     const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    console.debug(`getPoplarPrevalenceData took ${Date.now() - start} ms`);
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.baseTree = tree;
@@ -149,9 +160,10 @@ export class PoplarData {
 
 
   prepareLayout() {
-    const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, treePoplarCoords, numBins, allottedArea } = this;
+    const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, numBins, allottedArea } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
+    const start = Date.now();
     /*
     how much area is allotted to each branch, minus
     the space allotted to its children?
@@ -193,7 +205,7 @@ export class PoplarData {
 
     const rowCount = baseTreeNodeYs.length;
     const colCount = numBins;
-
+    console.debug(`prepareLayout draw order took ${Date.now() - start} ms`);
     for (let c = 0; c < colCount; c++) {
       for (let i = 0; i < rowCount; i++) {
         const index = drawOrder[i];
@@ -212,28 +224,56 @@ export class PoplarData {
           top = 0;
           bottom = 1.0;
         } else if (total > 0) {
-          const parentCoords = treePoplarCoords[parent][c];
-          top = parentCoords.childTop;
+          top = this.getPoplarCoordChildTop(parent, c);
           bottom = top + total;
           center = (top + bottom) / 2;
-          parentCoords.childTop += total;
+          this.setPoplarCoordChildTop(parent, c, bottom);
         }
         if (total > 0 && isSplit) {
           splitTop = top + allotted / 2;
           splitBottom = bottom - allotted / 2;
           childTop = splitTop;
         }
-        try {
-          treePoplarCoords[index][c].center = center;
-          treePoplarCoords[index][c].top = top;
-          treePoplarCoords[index][c].bottom = bottom;
-          treePoplarCoords[index][c].splitTop = splitTop;
-          treePoplarCoords[index][c].splitBottom = splitBottom;
-          treePoplarCoords[index][c].childTop = childTop;
-        } catch (err) {
-          console.warn(`poplar[${index}][${c}]`, treePoplarCoords, err);
-        }
+        this.setPoplarCoords(index, c, center, top, bottom, splitTop, splitBottom, childTop);
       }
     }
+    console.debug(`prepareLayout took ${Date.now() - start} ms`);
   }
+
+  setPoplarCoords(nodeIndex: number, bin: number, center: number,
+    top: number, bottom: number, splitTop: number, splitBottom: number,
+    childTop: number
+  ) {
+    this.treePoplarCoords[nodeIndex][bin].center = center;
+    this.treePoplarCoords[nodeIndex][bin].top = top;
+    this.treePoplarCoords[nodeIndex][bin].bottom = bottom;
+    this.treePoplarCoords[nodeIndex][bin].splitTop = splitTop;
+    this.treePoplarCoords[nodeIndex][bin].splitBottom = splitBottom;
+    this.treePoplarCoords[nodeIndex][bin].childTop = childTop;
+  }
+
+  getPoplarCoordCenter(nodeIndex: number, bin: number) {
+    return this.treePoplarCoords[nodeIndex][bin].center;
+  }
+  getPoplarCoordTop(nodeIndex: number, bin: number) {
+    return this.treePoplarCoords[nodeIndex][bin].top;
+  }
+  getPoplarCoordBottom(nodeIndex: number, bin: number) {
+    return this.treePoplarCoords[nodeIndex][bin].bottom;
+  }
+  getPoplarCoordSplitTop(nodeIndex: number, bin: number) {
+    return this.treePoplarCoords[nodeIndex][bin].splitTop;
+  }
+  getPoplarCoordSplitBottom(nodeIndex: number, bin: number) {
+    return this.treePoplarCoords[nodeIndex][bin].splitBottom;
+  }
+  getPoplarCoordChildTop(nodeIndex: number, bin: number) {
+    return this.treePoplarCoords[nodeIndex][bin].childTop;
+  }
+
+  setPoplarCoordChildTop(nodeIndex: number, bin: number, childTop: number) {
+    this.treePoplarCoords[nodeIndex][bin].childTop = childTop;
+  }
+
+
 }
