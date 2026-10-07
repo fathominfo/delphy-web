@@ -14,13 +14,14 @@ const DEFAULT_PREVALENCE = 0.1;
 //   childTop: number,      // start y-position for the current child, used and updated during layout
 // };
 
-export type PoplarCoord = [number, number, number, number, number, number];
+// export type PoplarCoord = [number, number, number, number, number, number];
 const ix_center  = 0; // vertical center of the branch
 const ix_top = 1;            // top of the branch area
 const ix_bottom = 2;         // bottom of the branch area
 const ix_splitTop = 3;       // top of the lower branch area (if it is split)
 const ix_splitBottom = 4;    // bottom of the lower branch area (if it is split)
 const ix_childTop = 5;       // start y-position for the current child, used and updated during layout
+const NUM_POPLAR_COORDS = 6;
 
 
 
@@ -31,13 +32,14 @@ export class PoplarData {
   minDate: number = UNSET;
   maxDate: number = UNSET;
   branchPrevalence: number[][] = [];
-  allottedArea: number[][] = [];
   numBins: number = UNSET;
-  treePoplarCoords: PoplarCoord[][] = [];
   drawOrder: number[] = [];
   nodePos: number[][] = [];
   branchIndices: number[] = [];
   threshold: number = DEFAULT_PREVALENCE;
+  allottedAreaHeap: number[] = [];
+  poplarCoordHeap: number[] = [];
+
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -72,26 +74,18 @@ export class PoplarData {
   initializeStorage() {
     const nodeCount = this.baseTreeNodeYs.length;
     const numBins = this.numBins;
+    const allottedHeapSize = nodeCount * numBins;
+    if (allottedHeapSize > this.allottedAreaHeap.length) {
+      const diff = allottedHeapSize - this.allottedAreaHeap.length;
+      let toAdd = new Array(diff).fill(UNSET);
+      this.allottedAreaHeap = this.allottedAreaHeap.concat(toAdd);
+      toAdd = new Array(diff * NUM_POPLAR_COORDS).fill(UNSET);
+      this.poplarCoordHeap = this.poplarCoordHeap.concat(toAdd);
+    }
     if (this.nodePos.length === 0) {
       this.nodePos = new Array(nodeCount);
-      this.allottedArea = new Array(nodeCount);
-      this.treePoplarCoords = new Array(nodeCount);
       for (let i = 0; i < nodeCount; i++) {
         this.nodePos[i] = [UNSET, UNSET];
-        this.allottedArea[i] = new Array(numBins);
-        this.treePoplarCoords[i] = new Array(numBins);
-        for (let b = 0; b < numBins; b++) {
-          this.treePoplarCoords[i][b] = [UNSET, UNSET, UNSET, UNSET, UNSET, UNSET];
-        }
-      }
-    } else {
-      const currentBins = this.allottedArea[0].length;
-      const newBins = numBins - currentBins;
-      for (let i = 0; i < nodeCount; i++) {
-        for (let b = 0; b < newBins; b++) {
-          this.allottedArea[i].push(UNSET);
-          this.treePoplarCoords[i].push([UNSET, UNSET, UNSET, UNSET, UNSET, UNSET]);
-        }
       }
     }
   }
@@ -147,7 +141,7 @@ export class PoplarData {
 
 
   prepareLayout() {
-    const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, numBins, allottedArea } = this;
+    const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, numBins, allottedAreaHeap } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
     /*
@@ -155,16 +149,6 @@ export class PoplarData {
     the space allotted to its children?
     */
     const rootIndex = baseTree.getRootIndex();
-    const nodeCount = branchPrevalence.length;
-    const start1 = Date.now();
-    for (let r = 0; r < nodeCount; r++) {
-      const src = branchPrevalence[r];
-      const row = allottedArea[r];
-      for (let b = 0; b < numBins; b++) {
-        row[b] = src[b];
-      }
-    }
-    console.debug(`copying allotted took ${Date.now() - start1} ms`);
 
     drawOrder.length = 0;
     drawOrder.push(rootIndex);
@@ -172,14 +156,14 @@ export class PoplarData {
     while (i < drawOrder.length) {
       const index = drawOrder[i] as number;
       const src = branchPrevalence[index];
-      const row = allottedArea[index];
+      const aaBase = index * numBins;
       const leftIndex = baseTree.getLeftChildIndexOf(index);
       if (leftIndex !== UNSET) {
         const rightIndex = baseTree.getRightChildIndexOf(index);
         const leftRow = branchPrevalence[leftIndex];
         const rightRow = branchPrevalence[rightIndex];
-        for (let col = 0; col < row.length; col++) {
-          row[col] = src[col] - leftRow[col] - rightRow[col];
+        for (let col = 0; col < numBins; col++) {
+          allottedAreaHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
         }
         if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
           drawOrder.push(leftIndex);
@@ -189,8 +173,8 @@ export class PoplarData {
           drawOrder.push(leftIndex);
         }
       } else {
-        for (let col = 0; col < row.length; col++) {
-          row[col] = src[col];
+        for (let col = 0; col < numBins; col++) {
+          allottedAreaHeap[aaBase + col] = src[col];
         }
       }
       i++;
@@ -205,7 +189,7 @@ export class PoplarData {
         const index = drawOrder[i];
         const parent = baseTree.getParentIndexOf(index);
         const total = branchPrevalence[index][c];
-        const allotted = allottedArea[index][c];
+        const allotted = allottedAreaHeap[index * numBins + c];
         const isSplit = allotted < total;
         let center: number = UNSET;
         let top: number = UNSET;
@@ -234,39 +218,43 @@ export class PoplarData {
     console.debug(`prepareLayout took ${Date.now() - start} ms`);
   }
 
+  getCoordBaseIndex(nodeIndex: number, bin: number) : number {
+    return (nodeIndex * this.numBins + bin) * NUM_POPLAR_COORDS;
+  }
+
   setPoplarCoords(nodeIndex: number, bin: number, center: number,
     top: number, bottom: number, splitTop: number, splitBottom: number,
     childTop: number
   ) {
-    this.treePoplarCoords[nodeIndex][bin][ix_center] = center;
-    this.treePoplarCoords[nodeIndex][bin][ix_top] = top;
-    this.treePoplarCoords[nodeIndex][bin][ix_bottom] = bottom;
-    this.treePoplarCoords[nodeIndex][bin][ix_splitTop] = splitTop;
-    this.treePoplarCoords[nodeIndex][bin][ix_splitBottom] = splitBottom;
-    this.treePoplarCoords[nodeIndex][bin][ix_childTop] = childTop;
+    const baseIndex = this.getCoordBaseIndex(nodeIndex, bin);
+    this.poplarCoordHeap[baseIndex + ix_center] = center;
+    this.poplarCoordHeap[baseIndex + ix_top] = top;
+    this.poplarCoordHeap[baseIndex + ix_bottom] = bottom;
+    this.poplarCoordHeap[baseIndex + ix_splitTop] = splitTop;
+    this.poplarCoordHeap[baseIndex + ix_splitBottom] = splitBottom;
+    this.poplarCoordHeap[baseIndex + ix_childTop] = childTop;
   }
 
   getPoplarCoordCenter(nodeIndex: number, bin: number) {
-    return this.treePoplarCoords[nodeIndex][bin][ix_center];
+    return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_center];
   }
   getPoplarCoordTop(nodeIndex: number, bin: number) {
-    return this.treePoplarCoords[nodeIndex][bin][ix_top];
+    return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_top];
   }
   getPoplarCoordBottom(nodeIndex: number, bin: number) {
-    return this.treePoplarCoords[nodeIndex][bin][ix_bottom];
+    return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_bottom];
   }
   getPoplarCoordSplitTop(nodeIndex: number, bin: number) {
-    return this.treePoplarCoords[nodeIndex][bin][ix_splitTop];
+    return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_splitTop];
   }
   getPoplarCoordSplitBottom(nodeIndex: number, bin: number) {
-    return this.treePoplarCoords[nodeIndex][bin][ix_splitBottom];
+    return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_splitBottom];
   }
   getPoplarCoordChildTop(nodeIndex: number, bin: number) {
-    return this.treePoplarCoords[nodeIndex][bin][ix_childTop];
+    return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop];
   }
-
   setPoplarCoordChildTop(nodeIndex: number, bin: number, childTop: number) {
-    this.treePoplarCoords[nodeIndex][bin][ix_childTop] = childTop;
+    this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop] = childTop;
   }
 
 
