@@ -104,8 +104,8 @@ export class PoplarData {
     let row: number[];
     let j: number;
     for (let i = 0; i < branchPrevalence.length; i++) {
-      row = branchPrevalence[i];
       if (i === rootIndex) return;
+      row = branchPrevalence[i];
       for (j = 0; j < row.length; j++) {
         if (row[j] >= threshold) {
           branchIndices.push(i);
@@ -134,9 +134,8 @@ export class PoplarData {
       timePercent = (nodeTime - minDate) / (maxDate - minDate);
       column = timePercent * lastBin;
       column1 = Math.floor(column);
-      fraction = column - column1;
-      y1 = this.getPoplarCoordCenter(nodeIndex, column1); // row[column1].center;
-      y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1); //row[column1 + 1].center;
+      y1 = this.getPoplarCoordCenter(nodeIndex, column1);
+      y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1);
       nodeY = UNSET;
       if (y1 === UNSET) {
         nodeY = y2;
@@ -144,6 +143,7 @@ export class PoplarData {
         if (y2 === UNSET) {
           nodeY = y1;
         } else {
+          fraction = column - column1;
           nodeY = y1 + fraction * (y2 - y1);
         }
       }
@@ -157,17 +157,13 @@ export class PoplarData {
     const { baseTree, branchPrevalence, baseTreeNodeYs, drawOrder, numBins, allottedAreaHeap } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
-
-    const rowCount = baseTreeNodeYs.length;
-    const colCount = numBins;
-    // console.debug(`prepareLayout draw order took ${Date.now() - start} ms`);
     const start = Date.now();
 
+    const rowCount = baseTreeNodeYs.length;
     let index: number;
     let parent: number;
     let total: number;
     let allotted: number;
-    let isSplit: boolean;
     let center: number = UNSET;
     let top: number = UNSET;
     let bottom: number = UNSET;
@@ -175,35 +171,46 @@ export class PoplarData {
     let splitBottom: number = UNSET;
     let childTop: number = UNSET;
     let i: number;
-    for (let c = 0; c < colCount; c++) {
-      for (i = 0; i < rowCount; i++) {
-        index = drawOrder[i];
-        parent = baseTree.getParentIndexOf(index);
-        total = branchPrevalence[index][c];
-        allotted = allottedAreaHeap[index * numBins + c];
-        isSplit = allotted < total;
-        center = UNSET;
-        top = UNSET;
-        bottom = UNSET;
-        splitTop = UNSET;
-        splitBottom = UNSET;
-        childTop = UNSET;
-        if (parent === UNSET) { /* root */
+    for (i = 0; i < rowCount; i++) {
+      index = drawOrder[i];
+      parent = baseTree.getParentIndexOf(index);
+      if (parent === UNSET) { /* root */
+        for (let c = 0; c < numBins; c++) {
           center = 0.5;
           top = 0;
           bottom = 1.0;
-        } else if (total > 0) {
-          top = this.getPoplarCoordChildTop(parent, c);
-          bottom = top + total;
-          center = (top + bottom) / 2;
-          this.setPoplarCoordChildTop(parent, c, bottom);
+          total = branchPrevalence[index][c];
+          allotted = allottedAreaHeap[index * numBins + c];
+          if (total > allotted ) { // total > 0 is implied
+            splitTop = top + allotted / 2;
+            splitBottom = bottom - allotted / 2;
+            childTop = splitTop;
+          }
+          this.setPoplarCoords(index, c, center, top, bottom, splitTop, splitBottom, childTop);
         }
-        if (total > 0 && isSplit) {
-          splitTop = top + allotted / 2;
-          splitBottom = bottom - allotted / 2;
-          childTop = splitTop;
+      } else {
+        for (let c = 0; c < numBins; c++) {
+          total = branchPrevalence[index][c];
+          allotted = allottedAreaHeap[index * numBins + c];
+          center = UNSET;
+          top = UNSET;
+          bottom = UNSET;
+          splitTop = UNSET;
+          splitBottom = UNSET;
+          childTop = UNSET;
+          if (total > 0) {
+            top = this.getPoplarCoordChildTop(parent, c);
+            bottom = top + total;
+            center = (top + bottom) / 2;
+            this.setPoplarCoordChildTop(parent, c, bottom);
+            if (allotted < total) {
+              splitTop = top + allotted / 2;
+              splitBottom = bottom - allotted / 2;
+              childTop = splitTop;
+            }
+          }
+          this.setPoplarCoords(index, c, center, top, bottom, splitTop, splitBottom, childTop);
         }
-        this.setPoplarCoords(index, c, center, top, bottom, splitTop, splitBottom, childTop);
       }
     }
     console.debug(`prepareLayout took ${Date.now() - start} ms`);
