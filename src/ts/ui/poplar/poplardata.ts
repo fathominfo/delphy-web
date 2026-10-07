@@ -156,6 +156,7 @@ export class PoplarData {
     */
     const rootIndex = baseTree.getRootIndex();
     const nodeCount = branchPrevalence.length;
+    const start1 = Date.now();
     for (let r = 0; r < nodeCount; r++) {
       const src = branchPrevalence[r];
       const row = allottedArea[r];
@@ -163,20 +164,22 @@ export class PoplarData {
         row[b] = src[b];
       }
     }
-    // const allottedArea = branchPrevalence.map(row => row.slice(0));
+    console.debug(`copying allotted took ${Date.now() - start1} ms`);
+
     drawOrder.length = 0;
     drawOrder.push(rootIndex);
     let i = 0;
     while (i < drawOrder.length) {
       const index = drawOrder[i] as number;
+      const src = branchPrevalence[index];
       const row = allottedArea[index];
       const leftIndex = baseTree.getLeftChildIndexOf(index);
       if (leftIndex !== UNSET) {
         const rightIndex = baseTree.getRightChildIndexOf(index);
-        const leftRow = allottedArea[leftIndex];
-        const rightRow = allottedArea[rightIndex];
+        const leftRow = branchPrevalence[leftIndex];
+        const rightRow = branchPrevalence[rightIndex];
         for (let col = 0; col < row.length; col++) {
-          row[col] -= leftRow[col] + rightRow[col];
+          row[col] = src[col] - leftRow[col] - rightRow[col];
         }
         if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
           drawOrder.push(leftIndex);
@@ -184,6 +187,10 @@ export class PoplarData {
         } else {
           drawOrder.push(rightIndex);
           drawOrder.push(leftIndex);
+        }
+      } else {
+        for (let col = 0; col < row.length; col++) {
+          row[col] = src[col];
         }
       }
       i++;
