@@ -78,6 +78,7 @@ export class PoplarUI extends UIScreen {
     */
     const nodeYs = this.baseTreeCanvas.getNodeYs();
     this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs);
+    this.poplarCanvas.resetColors();
     const dateLabels: DateLabel[] = [];
     requestAnimationFrame(() => {
       if (this.pythia) {

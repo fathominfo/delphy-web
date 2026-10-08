@@ -11,21 +11,18 @@ const PADDING = {
 };
 
 const COLORS = [
-  "#71FFF7",
-  "#FD6498",
-  "#FFDB6C",
-  "#FCFF70",
-  "#FD6E6D",
-  "#6E63FF",
-  "#7F62FF",
-  "#7DFF6A",
-  "#6FC7FF",
-  "#FFC76C",
-  "#B85FFF",
-  "#FC61CD",
-  "#C1FF6C",
-  "#6B83FF",
-  "#AFFF6E",
+  "rgb(145,205,255)",
+  "rgb(0,86,129)",
+  "rgb(119,148,158)",
+  "rgb(0,96,106)",
+  "rgb(0,156,189)",
+  "rgb(0,235,251)",
+  "rgb(111,186,240)",
+  "rgb(0,81,151)",
+  "rgb(0,111,204)",
+  "rgb(65,255,255)",
+  "rgb(52,219,193)",
+  "rgb(83,192,240)"
 ];
 
 export class PoplarCanvas {
@@ -38,7 +35,8 @@ export class PoplarCanvas {
   height: number = UNSET;
   xSpan: number = UNSET;
   ySpan: number = UNSET;
-  branchColors = new Map<number, string>();
+  /* sparse array of colors */
+  branchColors: string[] = [];
   selectedNode: number = UNSET;
 
   constructor(canvas: HTMLCanvasElement,
@@ -97,6 +95,23 @@ export class PoplarCanvas {
     });
   }
 
+  resetColors() {
+    this.branchColors.length = 0;
+  }
+
+  setColors() {
+    const { drawOrder, branchIndices } = this.popData;
+    const { branchColors } = this;
+    let colorIndex = 0;
+    drawOrder.forEach((nodeIndex, i)=>{
+      if (branchIndices.includes(nodeIndex) && branchColors[nodeIndex] === undefined) {
+        branchColors[nodeIndex] = COLORS[colorIndex];
+        console.log(nodeIndex, i, branchColors[nodeIndex], [91,84].includes(nodeIndex)? '--------' : '');
+        colorIndex++;
+        colorIndex %= COLORS.length;
+      }
+    });
+  }
 
   setSelectedNode(nodeIndex: number) {
     this.selectedNode = nodeIndex;
@@ -104,11 +119,11 @@ export class PoplarCanvas {
   }
 
 
-  getColor(k: number): string {
-    let c = this.branchColors.get(k);
+  getColor(nodeIndex: number): string {
+    let c = this.branchColors[nodeIndex];
     if (!c) {
-      c = COLORS[k % COLORS.length];
-      this.branchColors.set(k, c);
+      this.setColors();
+      c = this.branchColors[nodeIndex];
     }
     return c;
   }
