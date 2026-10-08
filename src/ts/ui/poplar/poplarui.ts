@@ -1,4 +1,6 @@
+import { PhyloTree } from "../../pythia/delphy_api";
 import { SharedState } from "../../sharedstate";
+import { UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 import { UIScreen } from "../uiscreen";
 import { BaseTreeCanvas } from "./basetreecanvas";
@@ -13,6 +15,7 @@ export class PoplarUI extends UIScreen {
   poplarCanvas: PoplarCanvas;
   poplarData: PoplarData;
   selectedTree = 0;
+  earliestRootDate = UNSET;
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
@@ -53,6 +56,14 @@ export class PoplarUI extends UIScreen {
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
     const numBaseTrees = mcc.getNumBaseTrees();
+    this.earliestRootDate = Number.MAX_VALUE;
+    let tree: PhyloTree;
+    let rootIndex: number;
+    for (let i = 0; i < numBaseTrees; i++) {
+      tree = mcc.getBaseTree(i);
+      rootIndex = tree.getRootIndex();
+      this.earliestRootDate = Math.min(this.earliestRootDate, tree.getTimeOf(rootIndex));
+    }
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
     this.poplarData.setPythia(this.pythia);
@@ -73,7 +84,6 @@ export class PoplarUI extends UIScreen {
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
     const baseTree = mcc.getBaseTree(index);
-    const minDate = mcc.getTimeOf(baseTree.getRootIndex());
     mccRef.release();
     this.baseTreeCanvas.positionTreeNodes(baseTree);
     /*
@@ -81,12 +91,12 @@ export class PoplarUI extends UIScreen {
     canvas can follow it
     */
     const nodeYs = this.baseTreeCanvas.getNodeYs();
-    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs);
+    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs, this.earliestRootDate, this.pythia.maxDate);
     this.poplarCanvas.resetColors();
     const dateLabels: DateLabel[] = [];
     requestAnimationFrame(() => {
       if (this.pythia) {
-        this.baseTreeCanvas.draw(minDate, this.pythia.maxDate, dateLabels);
+        this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);
         this.poplarCanvas.draw();
       }
     })

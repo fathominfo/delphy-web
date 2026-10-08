@@ -19,6 +19,8 @@ export class PoplarData {
   pythia: Pythia | null = null;
   baseTree: PhyloTree | null = null;
   baseTreeNodeYs: number[] = [];
+  minDateAcrossTrees: number = UNSET;
+  maxDateAcrossTrees: number = UNSET;
   minDate: number = UNSET;
   maxDate: number = UNSET;
   branchPrevalence: number[][] = [];
@@ -35,11 +37,15 @@ export class PoplarData {
   }
 
 
-  setSelectedTree(treeIndex: number, resolution: number, nodeYs: number[]) {
+  setSelectedTree(treeIndex: number, resolution: number, nodeYs: number[],
+    minDateAcrossTrees: number, maxDateAcrossTrees: number
+  ) {
     if (!this.pythia) return;
     // console.log(`setting selected tree... index: ${treeIndex}`)
     this.baseTreeNodeYs = nodeYs;
     this.nodeCount = nodeYs.length;
+    this.minDateAcrossTrees = minDateAcrossTrees;
+    this.maxDateAcrossTrees = maxDateAcrossTrees;
     /*
     treeIndex is taken from the MCC, but getPoplarPrevalenceData
     takes the absolute index (including burn-in)

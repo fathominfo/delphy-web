@@ -38,6 +38,8 @@ export class PoplarCanvas {
   /* sparse array of colors */
   branchColors: string[] = [];
   selectedNode: number = UNSET;
+  paddingRight: number = PADDING.right;
+  paddingLeft: number = PADDING.left;
 
   constructor(canvas: HTMLCanvasElement,
     highlightCanvas: HTMLCanvasElement,
@@ -55,9 +57,10 @@ export class PoplarCanvas {
     closest branch.
     */
     const getClosestNode = (event: MouseEvent) => {
+      const { paddingLeft,  xSpan, ySpan } = this;
       const { binCount, branchIndices, drawOrder } = this.popData;
-      let bindex = (event.offsetX - PADDING.left) / this.xSpan * (binCount - 1);
-      const yScaled = (event.offsetY - PADDING.top) / this.ySpan;
+      let bindex = (event.offsetX - paddingLeft) / xSpan * (binCount - 1);
+      const yScaled = (event.offsetY - PADDING.top) / ySpan;
       bindex = Math.max(0, Math.min(binCount - 1, Math.round(bindex)));
       let closest = UNSET;
       let nodeIndex: number;
@@ -97,6 +100,16 @@ export class PoplarCanvas {
 
   resetColors() {
     this.branchColors.length = 0;
+    const { minDate, maxDate, minDateAcrossTrees, maxDateAcrossTrees } = this.popData;
+    /* how does the data for this tree scale across all trees */
+    const totalDateRange = maxDateAcrossTrees - minDateAcrossTrees;
+    if (totalDateRange === 0) return;
+    const totalXSpan = this.width - PADDING.left - PADDING.right;
+    const startPct = (minDate - minDateAcrossTrees) / totalDateRange;
+    const endPct = (maxDate - minDateAcrossTrees) / totalDateRange;
+    this.paddingLeft = PADDING.left + startPct * totalXSpan;
+    this.paddingRight = this.width - (PADDING.left + endPct * totalXSpan);
+    this.xSpan = this.width - this.paddingLeft - this.paddingRight;
   }
 
   setColors() {
@@ -132,7 +145,7 @@ export class PoplarCanvas {
     const { width, height } = resizeCanvas(this.canvas);
     this.width = width;
     this.height = height;
-    this.xSpan = this.width - PADDING.left - PADDING.right;
+    this.xSpan = this.width - this.paddingLeft - this.paddingRight;
     this.ySpan = this.height - PADDING.top - PADDING.bottom;
     resizeCanvas(this.highlightCanvas);
     this.ctx.lineWidth = 0.5;
@@ -177,18 +190,18 @@ export class PoplarCanvas {
     const [nodeX, nodeY] = currentNodePos;
     const [parentX, parentY] = parentNodePos;
     if (parentX === UNSET) {
-      x = PADDING.left;
+      x = this.paddingLeft;
       y = PADDING.top + ySpan * 0.5;
     } else {
-      x = PADDING.left + parentX / lastIndex * xSpan;
+      x = this.paddingLeft + parentX / lastIndex * xSpan;
       y = PADDING.top + parentY * ySpan;
     }
     ctx.moveTo(x, y);
-    const nodeXrender = PADDING.left + nodeX / lastIndex * xSpan;
+    const nodeXrender = this.paddingLeft + nodeX / lastIndex * xSpan;
     const nodeYrender = PADDING.top + nodeY * ySpan;
     for (i = 0; i < row.length; i++) {
       if (row[i].center !== UNSET && row[i].splitTop === UNSET) {
-        x = PADDING.left + i / (row.length - 1) * xSpan;
+        x = this.paddingLeft + i / (row.length - 1) * xSpan;
         y = PADDING.top + row[i].center * ySpan;
         if (x < nodeXrender) ctx.lineTo(x, y);
       }
@@ -211,7 +224,7 @@ export class PoplarCanvas {
     /* draw along the bottom, from right to left */
     for (i = binCount; i >= 0; i--) {
       if (row[i].center !== UNSET) {
-        x = PADDING.left + i / (binCount) * xSpan;
+        x = this.paddingLeft + i / (binCount) * xSpan;
         y = PADDING.top + row[i].bottom * ySpan;
         if (!drawing) {
           ctx.moveTo(x, y);
@@ -228,7 +241,7 @@ export class PoplarCanvas {
     /* draw along the top, left to right */
     for (i = 0; i < row.length; i++) {
       if (row[i].center !== UNSET) {
-        x = PADDING.left + i / (binCount) * xSpan;
+        x = this.paddingLeft + i / (binCount) * xSpan;
         y = PADDING.top + row[i].top * ySpan;
         ctx.lineTo(x, y);
         // ctx.ellipse(x, y, 4, 4, Math.PI / 4, 0, 2 * Math.PI);
@@ -242,7 +255,7 @@ export class PoplarCanvas {
       /* draw along the top of the split, right to left */
       for (i = lastDrawn; i >= firstSplit; i--) {
         if (row[i].splitTop !== UNSET) {
-          x = PADDING.left + i / binCount * xSpan;
+          x = this.paddingLeft + i / binCount * xSpan;
           y = PADDING.top + row[i].splitTop * ySpan;
           ctx.lineTo(x, y);
         }
@@ -250,7 +263,7 @@ export class PoplarCanvas {
       /* draw along the bottom of the split, left to right */
       for (; i <= lastDrawn; i++) {
         if (row[i].splitBottom !== UNSET) {
-          x = PADDING.left + i / binCount * xSpan;
+          x = this.paddingLeft + i / binCount * xSpan;
           y = PADDING.top + row[i].splitBottom * ySpan;
           ctx.lineTo(x, y);
         }
