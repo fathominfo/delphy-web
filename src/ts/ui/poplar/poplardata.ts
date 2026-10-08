@@ -1,6 +1,7 @@
 import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
 import { UNSET } from "../common";
+import { DateLabel } from "../datelabel";
 
 const DEFAULT_PREVALENCE = 0.1;
 
@@ -31,6 +32,7 @@ export class PoplarData {
   nodePos: number[][] = [];
   nodeCount: number = UNSET;
   binCount: number = UNSET;
+  dateLabels: DateLabel[] = [];
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
@@ -38,7 +40,7 @@ export class PoplarData {
 
 
   setSelectedTree(treeIndex: number, resolution: number, nodeYs: number[],
-    minDateAcrossTrees: number, maxDateAcrossTrees: number
+    minDateAcrossTrees: number, maxDateAcrossTrees: number, dateLabels: DateLabel[]
   ) {
     if (!this.pythia) return;
     // console.log(`setting selected tree... index: ${treeIndex}`)
@@ -46,6 +48,7 @@ export class PoplarData {
     this.nodeCount = nodeYs.length;
     this.minDateAcrossTrees = minDateAcrossTrees;
     this.maxDateAcrossTrees = maxDateAcrossTrees;
+    this.dateLabels = dateLabels;
     /*
     treeIndex is taken from the MCC, but getPoplarPrevalenceData
     takes the absolute index (including burn-in)

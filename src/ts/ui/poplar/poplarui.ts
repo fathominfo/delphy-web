@@ -1,6 +1,6 @@
 import { PhyloTree } from "../../pythia/delphy_api";
 import { SharedState } from "../../sharedstate";
-import { UNSET } from "../common";
+import { getTimelineIndices, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 import { UIScreen } from "../uiscreen";
 import { BaseTreeCanvas } from "./basetreecanvas";
@@ -91,9 +91,10 @@ export class PoplarUI extends UIScreen {
     canvas can follow it
     */
     const nodeYs = this.baseTreeCanvas.getNodeYs();
-    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs, this.earliestRootDate, this.pythia.maxDate);
+    const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
+    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs, this.earliestRootDate, this.pythia.maxDate, dateLabels);
     this.poplarCanvas.resetColors();
-    const dateLabels: DateLabel[] = [];
+
     requestAnimationFrame(() => {
       if (this.pythia) {
         this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);

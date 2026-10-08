@@ -1,13 +1,13 @@
-import { resizeCanvas, UNSET } from "../common";
+import { DASH_LENGTH, DASH_SPACING, DASH_WEIGHT, resizeCanvas, TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2, TREE_TEXT_COLOR, TREE_TEXT_FONT, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, UNSET } from "../common";
 import { SelectCallback } from "./poplarcommon";
 import { PoplarCoord, PoplarData } from "./poplardata";
 
 
 const PADDING = {
-  top: 5,
-  bottom: 5,
-  left: 5,
-  right: 5
+  top: 45,
+  bottom: 10,
+  left: 20,
+  right: 25
 };
 
 const COLORS = [
@@ -175,7 +175,45 @@ export class PoplarCanvas {
       this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos);
     });
     ctx.stroke();
+    this.drawDates();
   }
+
+  drawDates() {
+    const { ctx } = this;
+    const { dateLabels, minDateAcrossTrees, maxDateAcrossTrees } = this.popData;
+    /* date labels are scaled to time, not to the current bins */
+    const xSpan = this.width - PADDING.left - PADDING.right;
+    const y1 = TREE_TEXT_TOP;
+    const y2 = y1 + TREE_TEXT_LINE_SPACING;
+    const bottom = this.height - PADDING.bottom;
+    const lineTop = y1 + TREE_TEXT_LINE_SPACING * 2 + DASH_LENGTH - 1;
+    ctx.lineWidth = DASH_WEIGHT;
+    ctx.font = TREE_TEXT_FONT;
+    ctx.fillStyle = TREE_TEXT_COLOR;
+    ctx.textAlign = "center";
+    ctx.strokeStyle = TREE_DATELINE_COLOR_2;
+    let first = true;
+    dateLabels.forEach(dl=>{
+      const x = PADDING.left + (dl.index - minDateAcrossTrees) / (maxDateAcrossTrees - minDateAcrossTrees) * xSpan;
+      ctx.fillText(dl.label1, x, y1);
+      ctx.fillText(dl.label2, x, y2);
+      let y = lineTop;
+      this.ctx.beginPath();
+      while (y < bottom) {
+        this.ctx.moveTo(x, y);
+        y += DASH_LENGTH;
+        this.ctx.lineTo(x, y);
+        y += DASH_SPACING;
+      }
+      this.ctx.stroke();
+      if (first) {
+        first = false;
+        this.ctx.strokeStyle = TREE_DATELINE_COLOR;
+      }
+    });
+
+  }
+
 
   drawTreeBranch(ctx: CanvasRenderingContext2D,
     row: PoplarCoord[],
@@ -309,6 +347,7 @@ export class PoplarCanvas {
       const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
       this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos);
       ctx.stroke();
+      this.drawDates();
     }
 
   }
