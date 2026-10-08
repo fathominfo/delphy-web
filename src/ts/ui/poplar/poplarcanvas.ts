@@ -1,4 +1,5 @@
 import { resizeCanvas, UNSET } from "../common";
+import { SelectCallback } from "./poplarcommon";
 import { PoplarCoord, PoplarData } from "./poplardata";
 
 
@@ -42,7 +43,8 @@ export class PoplarCanvas {
 
   constructor(canvas: HTMLCanvasElement,
     highlightCanvas: HTMLCanvasElement,
-    popData: PoplarData
+    popData: PoplarData,
+    nodeSelectCallback: SelectCallback
   ) {
     this.canvas = canvas;
     this.highlightCanvas = highlightCanvas;
@@ -63,15 +65,12 @@ export class PoplarCanvas {
       let nodeIndex: number;
       let top: number;
       let bottom: number;
-      let splitTop: number;
-      let splitBottom: number;
       /*
       going through the node areas from the root down
       find the nodes with this point in their area.
       we want the smallest one that has its area drawn.
       */
-      console.debug(`
-        find closest `);
+      console.debug(`\n        find closest `);
       for (let i = 0; i < drawOrder.length; i++) {
         nodeIndex = drawOrder[i];
         if (branchIndices.includes(nodeIndex)) {
@@ -88,16 +87,20 @@ export class PoplarCanvas {
     canvas.addEventListener("pointermove", (event: MouseEvent) => {
       const closest = getClosestNode(event);
       if (closest !== this.selectedNode) {
-        this.selectedNode = closest;
-        requestAnimationFrame(() => this.drawHighlight());
+        nodeSelectCallback(closest);
       }
     });
     canvas.addEventListener("pointerleave", () => {
       if (this.selectedNode !== UNSET) {
-        this.selectedNode = UNSET;
-        requestAnimationFrame(() => this.drawHighlight());
+        nodeSelectCallback(UNSET);
       }
     });
+  }
+
+
+  setSelectedNode(nodeIndex: number) {
+    this.selectedNode = nodeIndex;
+    requestAnimationFrame(() => this.drawHighlight());
   }
 
 
@@ -127,22 +130,22 @@ export class PoplarCanvas {
 
     if (!baseTree) return;
     ctx.strokeStyle = "black";
-    drawOrder.forEach((k, i) => {
-      if (!branchIndices.includes(k)) return;
-      const row = treePoplarCoords[k];
-      ctx.fillStyle = this.getColor(k);
+    drawOrder.forEach((nodeIndex) => {
+      if (!branchIndices.includes(nodeIndex)) return;
+      const row = treePoplarCoords[nodeIndex];
+      ctx.fillStyle = this.getColor(nodeIndex);
       ctx.beginPath();
       this.drawTreeArea(ctx, row);
       ctx.fill();
     });
     ctx.strokeStyle = "black";
     ctx.beginPath();
-    drawOrder.forEach((nodeIndex, i) => {
+    drawOrder.forEach((nodeIndex) => {
       const row = treePoplarCoords[nodeIndex];
       const parentIndex = baseTree.getParentIndexOf(nodeIndex);
       const curretNodePos = nodePos[nodeIndex];
       const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
-      this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos, i);
+      this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos);
     });
     ctx.stroke();
   }
@@ -150,8 +153,7 @@ export class PoplarCanvas {
   drawTreeBranch(ctx: CanvasRenderingContext2D,
     row: PoplarCoord[],
     currentNodePos: number[],
-    parentNodePos: number[],
-    rowIndex: number
+    parentNodePos: number[]
   ) {
     const { xSpan, ySpan } = this;
     const lastIndex = row.length - 1;
@@ -191,7 +193,7 @@ export class PoplarCanvas {
     let drawing = false;
     let x: number;
     let y: number;
-    let firstDrawn = UNSET;
+    // let firstDrawn = UNSET;
     /* draw along the bottom, from right to left */
     for (i = binCount; i >= 0; i--) {
       if (row[i].center !== UNSET) {
@@ -203,7 +205,7 @@ export class PoplarCanvas {
         } else {
           ctx.lineTo(x, y);
         }
-        firstDrawn = i;
+        // firstDrawn = i;
       }
     }
 
@@ -266,7 +268,7 @@ export class PoplarCanvas {
       const parentIndex = baseTree.getParentIndexOf(selectedNode);
       const curretNodePos = nodePos[selectedNode];
       const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
-      this.drawTreeBranch(highlightCtx, row, curretNodePos, parentNodePos, selectedNode);
+      this.drawTreeBranch(highlightCtx, row, curretNodePos, parentNodePos);
       highlightCtx.stroke();
     }
 

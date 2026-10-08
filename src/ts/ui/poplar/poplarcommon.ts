@@ -1,3 +1,3 @@
 
 
-export type SelectTreeCallback = (_:number)=>void;
+export type SelectCallback = (_:number)=>void;
