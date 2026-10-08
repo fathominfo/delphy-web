@@ -24,10 +24,12 @@ export class BaseTreeScrubber {
   width: number;
   xSpan: number = UNSET;
   tickContainer: SVGGElement;
+  readout: SVGTextElement;
 
   constructor(selectCallback: SelectCallback) {
     this.svg = chart;
     this.tickContainer = this.svg.querySelector("#poplar--scrubber-ticks") as SVGGElement;
+    this.readout = this.svg.querySelector("#poplar--scrubber-readout text") as SVGTextElement;
     const handleMouseEvent = (event: MouseEvent) => {
       const x = event.offsetX - PADDING.left;
       const bins = this.numTrees - 1;
@@ -70,14 +72,6 @@ export class BaseTreeScrubber {
     this.render();
   }
 
-  setSelectedTree(index: number) {
-    if (index !== this.selectedTree) {
-      const ticks = this.tickContainer.querySelectorAll(".tick");
-      ticks.forEach((tick, i)=>tick.classList.toggle("selected-tick", index === i));
-      this.selectedTree = index;
-    }
-  }
-
   render() {
     if (this.xSpan === UNSET || this.numTrees === UNSET) return;
     this.tickContainer.innerHTML = '';
@@ -91,5 +85,25 @@ export class BaseTreeScrubber {
     }
   }
 
+  setSelectedTree(index: number) {
+    if (index !== this.selectedTree) {
+      const ticks = this.tickContainer.querySelectorAll(".tick");
+      const x = UNSET;
+      ticks.forEach((tick, i) => {
+        if (index === i) {
+          tick.classList.add("selected-tick");
+          let x = parseInt(tick.getAttribute("x1") || '0');
+          if (x + 70 >= this.width - PADDING.right) {
+            x = this.width - PADDING.right - 70;
+          }
+          this.readout.setAttribute("x", `${x}`);
+          this.readout.textContent = `sample ${i}`;
+        } else {
+          tick.classList.remove("selected-tick");
+        }
+      });
+      this.selectedTree = index;
+    }
+  }
 
 }
