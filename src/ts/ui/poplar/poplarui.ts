@@ -27,11 +27,14 @@ export class PoplarUI extends UIScreen {
     this.poplarData = new PoplarData();
     this.poplarCanvas = new PoplarCanvas(canvas, highlightCanvas, this.poplarData, nodeSelectCallback);
 
+
+    const prevalenceThreshold = this.poplarData.threshold * 100;
     const prevInputLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
     const prevInput = prevInputLabel.querySelector("input") as HTMLInputElement;
+    prevInput.setAttribute("value", `${prevalenceThreshold}`);
     const prevReadout = prevInputLabel.querySelector(".poplar-value") as HTMLSpanElement;
+    prevReadout.textContent = `${prevalenceThreshold}%`;
     prevInput.addEventListener("input", (event)=>{
-      console.log('input', event.timeStamp, (event.target as HTMLInputElement).value);
       const value = parseInt(prevInput.value);
       this.poplarData.setPrevalenceThreshold(value/100);
       requestAnimationFrame(()=>{
@@ -39,6 +42,7 @@ export class PoplarUI extends UIScreen {
         this.poplarCanvas.draw();
       });
     });
+
 
   }
 
