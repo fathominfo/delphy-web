@@ -1,4 +1,4 @@
-import { DASH_LENGTH, DASH_SPACING, DASH_WEIGHT, resizeCanvas, TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2, TREE_TEXT_COLOR, TREE_TEXT_FONT, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, UNSET } from "../common";
+import { DASH_LENGTH, DASH_SPACING, DASH_WEIGHT, resizeCanvas, TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2, TREE_TEXT_COLOR, TREE_TEXT_COLOR_2, TREE_TEXT_FONT, TREE_TEXT_FONT_2, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, UNSET } from "../common";
 import { SelectCallback } from "./poplarcommon";
 import { PoplarCoord, PoplarData } from "./poplardata";
 
@@ -28,8 +28,6 @@ const COLORS = [
 export class PoplarCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  highlightCanvas: HTMLCanvasElement;
-  highlightCtx: CanvasRenderingContext2D;
   popData: PoplarData;
   width: number = UNSET;
   height: number = UNSET;
@@ -42,14 +40,11 @@ export class PoplarCanvas {
   paddingLeft: number = PADDING.left;
 
   constructor(canvas: HTMLCanvasElement,
-    highlightCanvas: HTMLCanvasElement,
     popData: PoplarData,
     nodeSelectCallback: SelectCallback
   ) {
     this.canvas = canvas;
-    this.highlightCanvas = highlightCanvas;
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.highlightCtx = highlightCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.popData = popData;
     /*
     kind of a cheat, but maybe it will work? Find the horizontal
@@ -147,7 +142,6 @@ export class PoplarCanvas {
     this.height = height;
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
     this.ySpan = this.height - PADDING.top - PADDING.bottom;
-    resizeCanvas(this.highlightCanvas);
     this.ctx.lineWidth = 0.5;
   }
 
@@ -166,6 +160,7 @@ export class PoplarCanvas {
       ctx.fill();
     });
     ctx.strokeStyle = "black";
+    ctx.lineWidth = 0.5;
     ctx.beginPath();
     drawOrder.forEach((nodeIndex) => {
       const row = treePoplarCoords[nodeIndex];
@@ -188,15 +183,17 @@ export class PoplarCanvas {
     const bottom = this.height - PADDING.bottom;
     const lineTop = y1 + TREE_TEXT_LINE_SPACING * 2 + DASH_LENGTH - 1;
     ctx.lineWidth = DASH_WEIGHT;
-    ctx.font = TREE_TEXT_FONT;
-    ctx.fillStyle = TREE_TEXT_COLOR;
+    ctx.font = TREE_TEXT_FONT_2;
+    ctx.fillStyle = TREE_TEXT_COLOR_2;
     ctx.textAlign = "center";
     ctx.strokeStyle = TREE_DATELINE_COLOR_2;
     let first = true;
     dateLabels.forEach(dl=>{
       const x = PADDING.left + (dl.index - minDateAcrossTrees) / (maxDateAcrossTrees - minDateAcrossTrees) * xSpan;
-      ctx.fillText(dl.label1, x, y1);
-      ctx.fillText(dl.label2, x, y2);
+      if (dl.index === maxDateAcrossTrees || dl.index < maxDateAcrossTrees - 30) {
+        ctx.fillText(dl.label1, x, y1);
+        ctx.fillText(dl.label2, x, y2);
+      }
       let y = lineTop;
       this.ctx.beginPath();
       while (y < bottom) {
@@ -209,6 +206,8 @@ export class PoplarCanvas {
       if (first) {
         first = false;
         this.ctx.strokeStyle = TREE_DATELINE_COLOR;
+        ctx.font = TREE_TEXT_FONT;
+        ctx.fillStyle = TREE_TEXT_COLOR;
       }
     });
 
@@ -318,6 +317,7 @@ export class PoplarCanvas {
     } else {
       ctx.clearRect(0, 0, width, height);
       ctx.strokeStyle = "black";
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
       drawOrder.forEach((nodeIndex) => {
         const row = treePoplarCoords[nodeIndex];

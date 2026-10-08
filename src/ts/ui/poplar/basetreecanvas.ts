@@ -5,23 +5,18 @@ import { SelectCallback } from "./poplarcommon";
 
 
 const TIP_RADIUS = 2.5;
-const INNER_RADIUS = 4;
+const INNER_RADIUS = 5;
 const TAU = Math.PI * 2;
 
 
 export class BaseTreeCanvas extends TreeCanvas {
 
-  highlightCanvas: HTMLCanvasElement;
-  highlightCtx: CanvasRenderingContext2D;
   selectedNode: number = UNSET;
   labels: DateLabel[] = [];
 
-  constructor(canvas: HTMLCanvasElement, highlightCanvas: HTMLCanvasElement, nodeSelectCallback: SelectCallback) {
+  constructor(canvas: HTMLCanvasElement, nodeSelectCallback: SelectCallback) {
     const ctx: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
     super(canvas, ctx);
-    this.highlightCanvas = highlightCanvas;
-    this.highlightCtx = highlightCanvas.getContext("2d") as CanvasRenderingContext2D;
-    resizeCanvas(highlightCanvas);
     canvas.addEventListener("pointermove", (event:MouseEvent)=>{
       const nodeIndex = this.getNodeAt(event.offsetX, event.offsetY);
       if (nodeIndex !== this.selectedNode) {
@@ -37,9 +32,6 @@ export class BaseTreeCanvas extends TreeCanvas {
 
   sizeCanvas(): void {
     super.sizeCanvas();
-    if (this.highlightCanvas) {
-      resizeCanvas(this.highlightCanvas);
-    }
   }
 
   setSelectedNode(nodeIndex: number) {
@@ -62,12 +54,13 @@ export class BaseTreeCanvas extends TreeCanvas {
     const { ctx, selectedNode } = this;
     this.drawTree();
     if (selectedNode !== UNSET) {
-      this.drawSubtree(selectedNode, ctx);
+      ctx.strokeStyle = 'black';
+      this.drawSubtree(selectedNode, ctx, false);
       const [nx, ny] = this.getNodePosition(selectedNode);
       const actualY = ny + this.timelineSpacing;
       const isTip = this.tipCounts[selectedNode] === 1;
       const radius = isTip ? TIP_RADIUS : INNER_RADIUS;
-      ctx.strokeStyle = 'black';
+      this.setBranchWeight(selectedNode);
       ctx.beginPath();
       ctx.moveTo(nx, actualY + radius);
       if (isTip) {

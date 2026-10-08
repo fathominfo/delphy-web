@@ -23,12 +23,10 @@ export class PoplarUI extends UIScreen {
     const nodeSelectCallback: SelectCallback = (index: number) => this.handleNodeSelect(index);
     this.scrubber = new BaseTreeScrubber(treeSelectCallback);
     let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas.poplar--main") as HTMLCanvasElement;
-    let highlightCanvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas.poplar--highlight") as HTMLCanvasElement;
-    this.baseTreeCanvas = new BaseTreeCanvas(canvas, highlightCanvas, nodeSelectCallback);
+    this.baseTreeCanvas = new BaseTreeCanvas(canvas, nodeSelectCallback);
     canvas = this.div.querySelector("#poplar--container canvas.poplar--main") as HTMLCanvasElement;
-    highlightCanvas = this.div.querySelector("#poplar--container canvas.poplar--highlight") as HTMLCanvasElement;
     this.poplarData = new PoplarData();
-    this.poplarCanvas = new PoplarCanvas(canvas, highlightCanvas, this.poplarData, nodeSelectCallback);
+    this.poplarCanvas = new PoplarCanvas(canvas, this.poplarData, nodeSelectCallback);
 
 
     const prevalenceThreshold = this.poplarData.threshold * 100;
