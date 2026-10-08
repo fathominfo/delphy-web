@@ -12,14 +12,14 @@ const PADDING = {
 
 const COLORS = [
   "rgb(145,205,255)",
-  "rgb(0,86,129)",
+  // "rgb(0,86,129)",
   "rgb(119,148,158)",
-  "rgb(0,96,106)",
+  // "rgb(0,96,106)",
   "rgb(0,156,189)",
   "rgb(0,235,251)",
   "rgb(111,186,240)",
-  "rgb(0,81,151)",
-  "rgb(0,111,204)",
+  // "rgb(0,81,151)",
+  // "rgb(0,111,204)",
   "rgb(65,255,255)",
   "rgb(52,219,193)",
   "rgb(83,192,240)"
@@ -144,7 +144,6 @@ export class PoplarCanvas {
     const { treePoplarCoords, drawOrder, branchIndices, baseTree, nodePos } = popData;
 
     if (!baseTree) return;
-    ctx.strokeStyle = "black";
     drawOrder.forEach((nodeIndex) => {
       if (!branchIndices.includes(nodeIndex)) return;
       const row = treePoplarCoords[nodeIndex];
@@ -260,31 +259,43 @@ export class PoplarCanvas {
   }
 
   drawHighlight() {
-    console.debug('drawHighlight');
-    const { highlightCtx, selectedNode, width, height } = this;
-    const { treePoplarCoords, baseTree, nodePos } = this.popData;
+    const { ctx, selectedNode, width, height } = this;
+    const { treePoplarCoords, baseTree, nodePos, drawOrder } = this.popData;
     if (!baseTree) return;
-    highlightCtx.clearRect(0, 0, width, height);
-    if (selectedNode !== UNSET) {
-      highlightCtx.clearRect(0, 0, width, height);
-      highlightCtx.fillStyle = 'rgba(255,255,255,0.7)';
-      highlightCtx.fillRect(0, 0, width, height);
-      highlightCtx.strokeStyle = 'black';
-      highlightCtx.beginPath();
-      this.drawTreeArea(highlightCtx, treePoplarCoords[selectedNode], true);
-      highlightCtx.stroke();
-      highlightCtx.beginPath();
-      highlightCtx.fillStyle = this.getColor(selectedNode);
-      this.drawTreeArea(highlightCtx, treePoplarCoords[selectedNode], false);
-      highlightCtx.fill();
-      highlightCtx.stroke();
-      highlightCtx.beginPath();
+    if (selectedNode === UNSET) {
+      this.draw();
+    } else {
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = "black";
+      ctx.beginPath();
+      drawOrder.forEach((nodeIndex) => {
+        const row = treePoplarCoords[nodeIndex];
+        const parentIndex = baseTree.getParentIndexOf(nodeIndex);
+        const curretNodePos = nodePos[nodeIndex];
+        const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+        this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos);
+      });
+      ctx.stroke();
+      ctx.strokeStyle = this.getColor(selectedNode);
+      ctx.fillStyle = this.getColor(selectedNode);
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      this.drawTreeArea(ctx, treePoplarCoords[selectedNode], true);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      this.drawTreeArea(ctx, treePoplarCoords[selectedNode], false);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "black";
+      ctx.beginPath();
       const row = treePoplarCoords[selectedNode];
       const parentIndex = baseTree.getParentIndexOf(selectedNode);
       const curretNodePos = nodePos[selectedNode];
       const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
-      this.drawTreeBranch(highlightCtx, row, curretNodePos, parentNodePos);
-      highlightCtx.stroke();
+      this.drawTreeBranch(ctx, row, curretNodePos, parentNodePos);
+      ctx.stroke();
     }
 
   }
