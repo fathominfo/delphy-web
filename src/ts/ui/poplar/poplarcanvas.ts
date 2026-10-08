@@ -68,14 +68,14 @@ export class PoplarCanvas {
       find the nodes with this point in their area.
       we want the smallest one that has its area drawn.
       */
-      console.debug(`\n        find closest `);
+      // console.debug(`\n        find closest `);
       for (let i = 0; i < drawOrder.length; i++) {
         nodeIndex = drawOrder[i];
         if (branchIndices.includes(nodeIndex)) {
           top = this.popData.treePoplarCoords[nodeIndex][bindex].top;
           bottom = this.popData.treePoplarCoords[nodeIndex][bindex].bottom;
           if (yScaled >= top && yScaled < bottom) {
-            console.log(i, nodeIndex, top, bottom, branchIndices.includes(nodeIndex));
+            // console.log(i, nodeIndex, top, bottom, branchIndices.includes(nodeIndex));
             closest = nodeIndex;
           }
         }
@@ -106,7 +106,7 @@ export class PoplarCanvas {
     drawOrder.forEach((nodeIndex, i)=>{
       if (branchIndices.includes(nodeIndex) && branchColors[nodeIndex] === undefined) {
         branchColors[nodeIndex] = COLORS[colorIndex];
-        console.log(nodeIndex, i, branchColors[nodeIndex], [91,84].includes(nodeIndex)? '--------' : '');
+        // console.log(nodeIndex, i, branchColors[nodeIndex], [91,84].includes(nodeIndex)? '--------' : '');
         colorIndex++;
         colorIndex %= COLORS.length;
       }

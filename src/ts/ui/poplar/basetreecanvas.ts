@@ -76,8 +76,8 @@ export class BaseTreeCanvas extends TreeCanvas {
         ctx.arc(nx, actualY, radius, 0.25 * TAU, 0.75 * TAU, false);
       }
       ctx.stroke();
-      ctx.fillStyle = 'black';
-      ctx.fillText(`node index: ${selectedNode}`, 40, 20);
+      // ctx.fillStyle = 'black';
+      // ctx.fillText(`node index: ${selectedNode}`, 40, 20);
     }
   }
 

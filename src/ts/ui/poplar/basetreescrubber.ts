@@ -73,22 +73,25 @@ export class BaseTreeScrubber {
   }
 
   render() {
-    if (this.xSpan === UNSET || this.numTrees === UNSET) return;
-    this.tickContainer.innerHTML = '';
+    const { xSpan, selectedTree, numTrees, tickContainer, readout } = this;
+    if (xSpan === UNSET || numTrees === UNSET) return;
+    tickContainer.innerHTML = '';
     for (let i = 0; i < this.numTrees; i++) {
       const line = tickTemplate.cloneNode(true) as SVGLineElement;
-      const x = PADDING.left + i / (this.numTrees - 1) * this.xSpan;
+      const x = PADDING.left + i / (numTrees - 1) * xSpan;
       line.setAttribute('x1', `${x}`);
       line.setAttribute('x2', `${x}`);
-      line.classList.toggle("selected-tick", i === this.selectedTree);
-      this.tickContainer.appendChild(line);
+      line.classList.toggle("selected-tick", i === selectedTree);
+      tickContainer.appendChild(line);
     }
+    const x = PADDING.left + selectedTree / (numTrees - 1) * xSpan;
+    readout.setAttribute("x", `${x}`);
+    readout.textContent = `sample ${selectedTree}`;
   }
 
   setSelectedTree(index: number) {
     if (index !== this.selectedTree) {
       const ticks = this.tickContainer.querySelectorAll(".tick");
-      const x = UNSET;
       ticks.forEach((tick, i) => {
         if (index === i) {
           tick.classList.add("selected-tick");
