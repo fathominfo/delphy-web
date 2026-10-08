@@ -30,7 +30,8 @@ export class PoplarUI extends UIScreen {
     const prevInputLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
     const prevInput = prevInputLabel.querySelector("input") as HTMLInputElement;
     const prevReadout = prevInputLabel.querySelector(".poplar-value") as HTMLSpanElement;
-    prevInput.addEventListener("input", ()=>{
+    prevInput.addEventListener("input", (event)=>{
+      console.log('input', event.timeStamp, (event.target as HTMLInputElement).value);
       const value = parseInt(prevInput.value);
       this.poplarData.setPrevalenceThreshold(value/100);
       requestAnimationFrame(()=>{
