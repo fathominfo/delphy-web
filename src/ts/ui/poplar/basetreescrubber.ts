@@ -1,5 +1,5 @@
 import { UNSET } from "../common";
-import { SelectTreeCallback } from "./poplarcommon";
+import { SelectCallback } from "./poplarcommon";
 
 const container = document.querySelector("#poplar #poplar--scrubber-container") as HTMLDivElement;
 const chart = container.querySelector("svg") as SVGSVGElement;
@@ -24,10 +24,12 @@ export class BaseTreeScrubber {
   width: number;
   xSpan: number = UNSET;
   tickContainer: SVGGElement;
+  readout: SVGTextElement;
 
-  constructor(selectCallback: SelectTreeCallback) {
+  constructor(selectCallback: SelectCallback) {
     this.svg = chart;
     this.tickContainer = this.svg.querySelector("#poplar--scrubber-ticks") as SVGGElement;
+    this.readout = this.svg.querySelector("#poplar--scrubber-readout text") as SVGTextElement;
     const handleMouseEvent = (event: MouseEvent) => {
       const x = event.offsetX - PADDING.left;
       const bins = this.numTrees - 1;
@@ -70,26 +72,41 @@ export class BaseTreeScrubber {
     this.render();
   }
 
+  render() {
+    const { xSpan, selectedTree, numTrees, tickContainer, readout } = this;
+    if (xSpan === UNSET || numTrees === UNSET) return;
+    tickContainer.innerHTML = '';
+    for (let i = 0; i < this.numTrees; i++) {
+      const line = tickTemplate.cloneNode(true) as SVGLineElement;
+      const x = PADDING.left + i / (numTrees - 1) * xSpan;
+      line.setAttribute('x1', `${x}`);
+      line.setAttribute('x2', `${x}`);
+      line.classList.toggle("selected-tick", i === selectedTree);
+      tickContainer.appendChild(line);
+    }
+    const x = PADDING.left + selectedTree / (numTrees - 1) * xSpan;
+    readout.setAttribute("x", `${x}`);
+    readout.textContent = `sample ${selectedTree}`;
+  }
+
   setSelectedTree(index: number) {
     if (index !== this.selectedTree) {
       const ticks = this.tickContainer.querySelectorAll(".tick");
-      ticks.forEach((tick, i)=>tick.classList.toggle("selected-tick", index === i));
+      ticks.forEach((tick, i) => {
+        if (index === i) {
+          tick.classList.add("selected-tick");
+          let x = parseInt(tick.getAttribute("x1") || '0');
+          if (x + 70 >= this.width - PADDING.right) {
+            x = this.width - PADDING.right - 70;
+          }
+          this.readout.setAttribute("x", `${x}`);
+          this.readout.textContent = `sample ${i}`;
+        } else {
+          tick.classList.remove("selected-tick");
+        }
+      });
       this.selectedTree = index;
     }
   }
-
-  render() {
-    if (this.xSpan === UNSET || this.numTrees === UNSET) return;
-    this.tickContainer.innerHTML = '';
-    for (let i = 0; i < this.numTrees; i++) {
-      const line = tickTemplate.cloneNode(true) as SVGLineElement;
-      const x = PADDING.left + i / (this.numTrees - 1) * this.xSpan;
-      line.setAttribute('x1', `${x}`);
-      line.setAttribute('x2', `${x}`);
-      line.classList.toggle("selected-tick", i === this.selectedTree);
-      this.tickContainer.appendChild(line);
-    }
-  }
-
 
 }

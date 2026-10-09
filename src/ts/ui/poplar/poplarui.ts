@@ -1,37 +1,41 @@
-import { Pythia } from "../../pythia/pythia";
+import { PhyloTree } from "../../pythia/delphy_api";
 import { SharedState } from "../../sharedstate";
-import { UNSET } from "../common";
+import { getTimelineIndices, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
-import { TreeCanvas } from "../treecanvas";
 import { UIScreen } from "../uiscreen";
+import { BaseTreeCanvas } from "./basetreecanvas";
 import { BaseTreeScrubber } from "./basetreescrubber";
 import { PoplarCanvas } from "./poplarcanvas";
-import { SelectTreeCallback } from "./poplarcommon";
+import { SelectCallback } from "./poplarcommon";
 import { PoplarData } from "./poplardata";
 
 export class PoplarUI extends UIScreen {
   scrubber: BaseTreeScrubber;
-  baseTreeCanvas: TreeCanvas;
+  baseTreeCanvas: BaseTreeCanvas;
   poplarCanvas: PoplarCanvas;
   poplarData: PoplarData;
   selectedTree = 0;
+  earliestRootDate = UNSET;
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
-    const treeSelectCallback: SelectTreeCallback = (index: number)=>this.handleTreeSelect(index);
+    const treeSelectCallback: SelectCallback = (index: number)=>this.handleTreeSelect(index);
+    const nodeSelectCallback: SelectCallback = (index: number) => this.handleNodeSelect(index);
     this.scrubber = new BaseTreeScrubber(treeSelectCallback);
-    let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas") as HTMLCanvasElement;
-    let ctx: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
-    this.baseTreeCanvas = new TreeCanvas(canvas, ctx);
-    canvas = this.div.querySelector("#poplar--container canvas") as HTMLCanvasElement;
-    ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas.poplar--main") as HTMLCanvasElement;
+    this.baseTreeCanvas = new BaseTreeCanvas(canvas, nodeSelectCallback);
+    canvas = this.div.querySelector("#poplar--container canvas.poplar--main") as HTMLCanvasElement;
     this.poplarData = new PoplarData();
-    this.poplarCanvas = new PoplarCanvas(canvas, ctx, this.poplarData);
+    this.poplarCanvas = new PoplarCanvas(canvas, this.poplarData, nodeSelectCallback);
 
+
+    const prevalenceThreshold = this.poplarData.threshold * 100;
     const prevInputLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
     const prevInput = prevInputLabel.querySelector("input") as HTMLInputElement;
+    prevInput.setAttribute("value", `${prevalenceThreshold}`);
     const prevReadout = prevInputLabel.querySelector(".poplar-value") as HTMLSpanElement;
-    prevInput.addEventListener("input", ()=>{
+    prevReadout.textContent = `${prevalenceThreshold}%`;
+    prevInput.addEventListener("input", (event)=>{
       const value = parseInt(prevInput.value);
       this.poplarData.setPrevalenceThreshold(value/100);
       requestAnimationFrame(()=>{
@@ -39,6 +43,7 @@ export class PoplarUI extends UIScreen {
         this.poplarCanvas.draw();
       });
     });
+
 
   }
 
@@ -49,6 +54,14 @@ export class PoplarUI extends UIScreen {
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
     const numBaseTrees = mcc.getNumBaseTrees();
+    this.earliestRootDate = Number.MAX_VALUE;
+    let tree: PhyloTree;
+    let rootIndex: number;
+    for (let i = 0; i < numBaseTrees; i++) {
+      tree = mcc.getBaseTree(i);
+      rootIndex = tree.getRootIndex();
+      this.earliestRootDate = Math.min(this.earliestRootDate, tree.getTimeOf(rootIndex));
+    }
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
     this.poplarData.setPythia(this.pythia);
@@ -69,7 +82,6 @@ export class PoplarUI extends UIScreen {
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
     const baseTree = mcc.getBaseTree(index);
-    const minDate = mcc.getTimeOf(baseTree.getRootIndex());
     mccRef.release();
     this.baseTreeCanvas.positionTreeNodes(baseTree);
     /*
@@ -77,13 +89,20 @@ export class PoplarUI extends UIScreen {
     canvas can follow it
     */
     const nodeYs = this.baseTreeCanvas.getNodeYs();
-    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs);
-    const dateLabels: DateLabel[] = [];
+    const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
+    this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs, this.earliestRootDate, this.pythia.maxDate, dateLabels);
+    this.poplarCanvas.resetColors();
+
     requestAnimationFrame(() => {
       if (this.pythia) {
-        this.baseTreeCanvas.draw(minDate, this.pythia.maxDate, dateLabels);
+        this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);
         this.poplarCanvas.draw();
       }
     })
+  }
+
+  handleNodeSelect(nodeIndex: number) {
+    this.poplarCanvas.setSelectedNode(nodeIndex);
+    this.baseTreeCanvas.setSelectedNode(nodeIndex);
   }
 }

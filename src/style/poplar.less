@@ -17,10 +17,14 @@
       stroke: #999;
       &.selected-tick {
         stroke: black;
+        stroke-width: 1;
       }
     }
 
-    #poplar--scrubber-readout {display: none;}
+    #poplar--scrubber-readout {
+      font: MDSystem 500;
+      user-select: none;
+    }
 
   }
 }
@@ -45,7 +49,91 @@
   flex: 1;
 }
 
+#poplar--minlinpct .poplar-value {
+  display: inline-block;
+  width: 3em;
+}
+
+#poplar--minlinpct span {
+  user-select: none;
+}
+
+#poplar--minlinpct input {
+&::-webkit-slider-thumb {
+    -webkit-appearance: none;
+  }
+
+  &::-ms-track {
+    width: 100%;
+    cursor: pointer;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+  }
+
+  /*
+  can't comma-separate the following vendor-specific
+  selectors -- browsers will drop the entire selector if it
+  doesn't understand a part of it
+  https://css-tricks.com/styling-cross-browser-compatible-range-inputs-css/
+  */
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    background: #7E7E7E;
+    cursor: pointer;
+    margin-top: -3px;
+  }
+
+  &::-moz-range-thumb {
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    background: #7E7E7E;
+    cursor: pointer;
+  }
+
+  &::-ms-thumb {
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    background-color: #7E7E7E;
+    cursor: pointer;
+  }
+
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 3px;
+    cursor: pointer;
+    background: #C8C8C8;
+  }
+
+  &::-moz-range-track {
+    width: 100%;
+    height: 3px;
+    cursor: pointer;
+    background-color: #C8C8C8;
+  }
+}
+
 #poplar--container-inner {
   flex: 1;
   height: calc(100% - 50px);
+}
+
+:has(canvas.poplar--highlight) {
+  position: relative;
+}
+
+canvas.poplar--highlight {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  /* let events pass through to the main canvas */
+  pointer-events: none;
 }

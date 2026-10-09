@@ -660,12 +660,16 @@ export class TreeCanvas {
   }
 
 
-  drawSubtree(nodeIndex: number, ctx: CanvasRenderingContext2D | Context2d): void {
+  drawSubtree(nodeIndex: number, ctx: CanvasRenderingContext2D | Context2d,
+    consistentLineWeight = true
+  ): void {
     if (this.tree) {
       const q: number[] = [nodeIndex];
       let index, nodeX, left, right,
         leftX, leftY, rightX, rightY;
-      ctx.beginPath();
+      if (consistentLineWeight) {
+        ctx.beginPath();
+      }
       while (q.length > 0) {
         index = q.shift() as number;
         left = this.tree.getLeftChildIndexOf(index);
@@ -676,21 +680,25 @@ export class TreeCanvas {
           leftY = this.getZoomY(left);
           rightX = this.getZoomX(this.tree.getTimeOf(right));
           rightY = this.getZoomY(right);
+          if (!consistentLineWeight) {
+            this.setBranchWeight(index);
+            ctx.beginPath();
+          }
           ctx.moveTo(leftX, leftY);
           ctx.lineTo(nodeX, leftY);
           ctx.lineTo(nodeX, rightY);
           ctx.lineTo(rightX, rightY);
+          if (!consistentLineWeight) {
+            ctx.stroke();
+          }
           q.push(left);
           q.push(right);
-        // } else {
-        //   nodeX = this.getZoomX(this.tree.getTimeOf(index));
-        //   nodeY = this.getZoomY(index);
-        //   ctx.moveTo(nodeX + TIP_SIZE_MAX, nodeY);
-        //   ctx.arc(nodeX, nodeY, TIP_SIZE_MAX, 0, TAU, false);
         }
       }
       // ctx.fill();
-      ctx.stroke();
+      if (consistentLineWeight) {
+        ctx.stroke();
+      }
     }
   }
 
