@@ -5,16 +5,6 @@ import { DateLabel } from "../datelabel";
 
 const DEFAULT_PREVALENCE = 0.1;
 
-
-export type PoplarCoord = {
-  center: number,        // vertical center of the branch
-  top: number,           // top of the branch area
-  bottom: number,        // bottom of the branch area
-  splitTop: number,      // top of the lower branch area (if it is split)
-  splitBottom: number,   // bottom of the lower branch area (if it is split)
-  childTop: number,      // start y-position for the current child, used and updated during layout
-};
-
 const ix_center = 0; // vertical center of the branch
 const ix_top = 1;            // top of the branch area
 const ix_bottom = 2;         // bottom of the branch area
@@ -42,7 +32,6 @@ export class PoplarData {
   allottedAreaHeap: number[] = [];
   poplarCoordHeap: number[] = [];
   dateLabels: DateLabel[] = [];
-
 
   setPythia(pythia: Pythia) {
     this.pythia = pythia;
