@@ -5,7 +5,7 @@ import { DateLabel } from "../datelabel";
 
 const DEFAULT_PREVALENCE = 0.1;
 
-const ix_center = 0; // vertical center of the branch
+const ix_center = 0;         // vertical center of the branch
 const ix_top = 1;            // top of the branch area
 const ix_bottom = 2;         // bottom of the branch area
 const ix_splitTop = 3;       // top of the lower branch area (if it is split)
