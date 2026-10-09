@@ -78,6 +78,8 @@ export class PoplarUI extends UIScreen {
 
   handleTreeSelect(index: number) {
     if (!this.pythia) return;
+    console.debug(`\n      handleTreeSelect\n`);
+    const start = Date.now();
     this.scrubber.setSelectedTree(index);
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
@@ -95,10 +97,13 @@ export class PoplarUI extends UIScreen {
 
     requestAnimationFrame(() => {
       if (this.pythia) {
+        const start = Date.now();
         this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);
         this.poplarCanvas.draw();
+        console.debug(`poplar draw took ${Date.now() - start} ms`);
       }
-    })
+    });
+    console.debug(`handleTreeSelect took ${Date.now() - start} ms`);
   }
 
   handleNodeSelect(nodeIndex: number) {
