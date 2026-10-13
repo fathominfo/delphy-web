@@ -1,5 +1,5 @@
 import { UNSET } from "../common";
-import { SelectCallback } from "./poplarcommon";
+import { SelectTreeCallback } from "./poplarcommon";
 
 const container = document.querySelector("#poplar #poplar--scrubber-container") as HTMLDivElement;
 const chart = container.querySelector("svg") as SVGSVGElement;
@@ -26,7 +26,7 @@ export class BaseTreeScrubber {
   tickContainer: SVGGElement;
   readout: SVGTextElement;
 
-  constructor(selectCallback: SelectCallback) {
+  constructor(selectCallback: SelectTreeCallback) {
     this.svg = chart;
     this.tickContainer = this.svg.querySelector("#poplar--scrubber-ticks") as SVGGElement;
     this.readout = this.svg.querySelector("#poplar--scrubber-readout text") as SVGTextElement;

@@ -3,7 +3,7 @@ import { resizeCanvas, UNSET, DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
   TREE_TEXT_FONT, TREE_TEXT_FONT_2, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP
 } from "../common";
 import { DateLabel } from "../datelabel";
-import { SelectCallback } from "./poplarcommon";
+import { PoplarChart, SelectNodeCallback } from "./poplarcommon";
 import { PoplarData } from "./poplardata";
 
 
@@ -16,14 +16,10 @@ const PADDING = {
 
 const COLORS = [
   "rgb(145,205,255)",
-  // "rgb(0,86,129)",
   "rgb(119,148,158)",
-  // "rgb(0,96,106)",
   "rgb(0,156,189)",
   "rgb(0,235,251)",
   "rgb(111,186,240)",
-  // "rgb(0,81,151)",
-  // "rgb(0,111,204)",
   "rgb(65,255,255)",
   "rgb(52,219,193)",
   "rgb(83,192,240)"
@@ -45,7 +41,7 @@ export class PoplarCanvas {
 
   constructor(canvas: HTMLCanvasElement,
     popData: PoplarData,
-    nodeSelectCallback: SelectCallback
+    nodeSelectCallback: SelectNodeCallback
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -87,12 +83,12 @@ export class PoplarCanvas {
     canvas.addEventListener("pointermove", (event: MouseEvent) => {
       const closest = getClosestNode(event);
       if (closest !== this.selectedNode) {
-        nodeSelectCallback(closest);
+        nodeSelectCallback(closest, PoplarChart.poplarTree);
       }
     });
     canvas.addEventListener("pointerleave", () => {
       if (this.selectedNode !== UNSET) {
-        nodeSelectCallback(UNSET);
+        nodeSelectCallback(UNSET, PoplarChart.poplarTree);
       }
     });
   }
@@ -136,9 +132,16 @@ export class PoplarCanvas {
     return c;
   }
 
-  setSelectedNode(nodeIndex: number) {
+  setSelectedNode(nodeIndex: number, src: PoplarChart) {
     this.selectedNode = nodeIndex;
-    requestAnimationFrame(() => this.drawHighlight());
+    switch (src) {
+    case PoplarChart.baseTree:
+      requestAnimationFrame(() => this.drawHighlightTree());
+      break;
+    case PoplarChart.poplarTree:
+      requestAnimationFrame(() => this.drawHighlightArea());
+      break;
+    }
   }
 
 
@@ -166,7 +169,7 @@ export class PoplarCanvas {
         ctx.fill();
       }
     }
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = "#00000099";
     ctx.lineWidth = 0.5;
     ctx.beginPath();
     let parentIndex: number;
@@ -335,7 +338,7 @@ export class PoplarCanvas {
     }
   }
 
-  drawHighlight() {
+  drawHighlightTree() {
     const { ctx, selectedNode, width, height } = this;
     const { baseTree, nodePos, drawOrder } = this.popData;
     if (!baseTree) return;
@@ -343,7 +346,7 @@ export class PoplarCanvas {
       this.draw();
     } else {
       ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = "black";
+      ctx.strokeStyle = "#999";
       ctx.lineWidth = 0.5;
       ctx.beginPath();
       let nodeIndex: number;
@@ -381,4 +384,52 @@ export class PoplarCanvas {
     }
 
   }
+
+  drawHighlightArea() {
+    const { ctx, selectedNode, width, height } = this;
+    const { baseTree, nodePos, drawOrder } = this.popData;
+    if (!baseTree) return;
+    if (selectedNode === UNSET) {
+      this.draw();
+    } else {
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = "#999";
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      let nodeIndex: number;
+      let parentIndex: number;
+      let currentNodePos: number[];
+      let parentNodePos: number[];
+      for (let i = 0; i < drawOrder.length; i++) {
+        nodeIndex = drawOrder[i];
+        parentIndex = baseTree.getParentIndexOf(nodeIndex);
+        currentNodePos = nodePos[nodeIndex];
+        parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+        this.drawTreeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = this.getColor(selectedNode);
+      ctx.fillStyle = this.getColor(selectedNode);
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      this.drawTreeArea(ctx, selectedNode, true);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      this.drawTreeArea(ctx, selectedNode, false);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "black";
+      ctx.beginPath();
+      parentIndex = baseTree.getParentIndexOf(selectedNode);
+      currentNodePos = nodePos[selectedNode];
+      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      this.drawTreeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
+      ctx.stroke();
+      this.drawDates();
+    }
+
+  }
+
 }
