@@ -38,6 +38,7 @@ export class PoplarUI extends UIScreen {
     prevInput.addEventListener("input", (event)=>{
       const value = parseInt(prevInput.value);
       this.poplarData.setPrevalenceThreshold(value/100);
+      this.poplarCanvas.resetColors();
       requestAnimationFrame(()=>{
         prevReadout.textContent = `${value}%`;
         this.poplarCanvas.draw();
