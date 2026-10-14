@@ -124,6 +124,10 @@ export class PoplarCanvas {
     this.paddingLeft = PADDING.left + startPct * totalXSpan;
     this.paddingRight = this.width - (PADDING.left + endPct * totalXSpan);
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
+    this.treeBufferCtx.clearRect(0, 0, this.width, this.height);
+    this.areaBufferCtx.clearRect(0, 0, this.width, this.height);
+    this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawAreas(this.areaBufferCtx);
   }
 
   setColors() {
