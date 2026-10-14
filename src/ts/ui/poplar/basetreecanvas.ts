@@ -1,7 +1,7 @@
-import { resizeCanvas, UNSET } from "../common";
+import { UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 import { TreeCanvas } from "../treecanvas";
-import { SelectCallback } from "./poplarcommon";
+import { PoplarChart, SelectNodeCallback } from "./poplarcommon";
 
 
 const TIP_RADIUS = 2.5;
@@ -14,18 +14,18 @@ export class BaseTreeCanvas extends TreeCanvas {
   selectedNode: number = UNSET;
   labels: DateLabel[] = [];
 
-  constructor(canvas: HTMLCanvasElement, nodeSelectCallback: SelectCallback) {
+  constructor(canvas: HTMLCanvasElement, nodeSelectCallback: SelectNodeCallback) {
     const ctx: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
     super(canvas, ctx);
     canvas.addEventListener("pointermove", (event:MouseEvent)=>{
       const nodeIndex = this.getNodeAt(event.offsetX, event.offsetY);
       if (nodeIndex !== this.selectedNode) {
-        nodeSelectCallback(nodeIndex);
+        nodeSelectCallback(nodeIndex, PoplarChart.baseTree);
       }
     });
     canvas.addEventListener("pointerleave", () => {
       if (this.selectedNode !== UNSET) {
-        nodeSelectCallback(UNSET);
+        nodeSelectCallback(UNSET, PoplarChart.baseTree);
       }
     });
   }

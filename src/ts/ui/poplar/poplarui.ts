@@ -6,7 +6,7 @@ import { UIScreen } from "../uiscreen";
 import { BaseTreeCanvas } from "./basetreecanvas";
 import { BaseTreeScrubber } from "./basetreescrubber";
 import { PoplarCanvas } from "./poplarcanvas";
-import { SelectCallback } from "./poplarcommon";
+import { PoplarChart, SelectNodeCallback, SelectTreeCallback } from "./poplarcommon";
 import { PoplarData } from "./poplardata";
 
 export class PoplarUI extends UIScreen {
@@ -19,8 +19,8 @@ export class PoplarUI extends UIScreen {
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
-    const treeSelectCallback: SelectCallback = (index: number)=>this.handleTreeSelect(index);
-    const nodeSelectCallback: SelectCallback = (index: number) => this.handleNodeSelect(index);
+    const treeSelectCallback: SelectTreeCallback = (index: number)=>this.handleTreeSelect(index);
+    const nodeSelectCallback: SelectNodeCallback = (index: number, src: PoplarChart) => this.handleNodeSelect(index, src);
     this.scrubber = new BaseTreeScrubber(treeSelectCallback);
     let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas.poplar--main") as HTMLCanvasElement;
     this.baseTreeCanvas = new BaseTreeCanvas(canvas, nodeSelectCallback);
@@ -106,8 +106,8 @@ export class PoplarUI extends UIScreen {
     console.debug(`handleTreeSelect took ${Date.now() - start} ms`);
   }
 
-  handleNodeSelect(nodeIndex: number) {
-    this.poplarCanvas.setSelectedNode(nodeIndex);
+  handleNodeSelect(nodeIndex: number, src: PoplarChart) {
+    this.poplarCanvas.setSelectedNode(nodeIndex, src);
     this.baseTreeCanvas.setSelectedNode(nodeIndex);
   }
 }
