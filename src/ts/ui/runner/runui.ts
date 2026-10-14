@@ -5,7 +5,7 @@ import {MU_FACTOR, FINAL_POP_SIZE_FACTOR,
   POP_GROWTH_RATE_FACTOR, copyDict, STAGES} from '../../constants';
 import {HistCanvas} from './histcanvas';
 import {DateLabel} from '../datelabel';
-import {nfc, getTimelineIndices, getTimestampString,
+import {nfc, getTimelineIndices, getExportStampString,
   getPercentLabel, UNSET, safeLabel} from '../common';
 import {SoftFloat} from '../../util/softfloat.js';
 import {SharedState} from '../../sharedstate';
@@ -592,7 +592,7 @@ export class RunUI extends MccUI {
           blob = new Blob([log], { type: 'text/csv;charset=utf-8;' }),
           url = URL.createObjectURL(blob),
           a = document.createElement("a"),
-          title = `delphy-parameters-${getTimestampString()}.tsv`;
+          title = `delphy-parameters-${getExportStampString()}.tsv`;
         a.href = url;
         a.download = title;
         document.body.appendChild(a);

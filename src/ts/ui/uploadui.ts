@@ -6,7 +6,7 @@ import { ConfigExport } from './mccconfig';
 import {SequenceWarningCode} from '../pythia/delphy_api';
 import { RecordQuality } from '../recordquality';
 import { parse_iso_date } from '../pythia/dates';
-import { nfc } from './common';
+import { nfc, setExportSourceName } from './common';
 
 const DEMO_FILES = './demofiles.json'
 
@@ -115,6 +115,7 @@ class ProgressStep {
 
 const initDphyUpload = (filePath: string, pythia : Pythia, jsBytes: ArrayBuffer)=>{
   const fileName = filePath.split('/').pop() as string;
+  setExportSourceName(filePath);
   dphyStepContainer.classList.remove("hidden");
   (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
   dphyStepContainer.innerHTML = '';
@@ -143,6 +144,7 @@ const initFileUpload = (filePath: string, pythia : Pythia, isMaple: boolean,
   jsBytes: ArrayBuffer, runParams: RunParamConfig | null
 ): Promise<void>=>{
   const fileName = filePath.split('/').pop() as string;
+  setExportSourceName(filePath);
   fileStepContainer.classList.remove("hidden");
   (uploadDiv.querySelector("#uploader--file-name") as HTMLParagraphElement).textContent = fileName;
   fileStepContainer.innerHTML = '';

@@ -509,6 +509,34 @@ export const getTimestampString = ()=>{
   return `${now.getFullYear() % 100}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
 };
 
+const MAX_SOURCE_NAME_LENGTH = 60;
+let exportSourceName = '';
+
+export const getSourceNameFromPath = (filePath: string): string=>{
+  let name = filePath.split(/[?#]/)[0].split(/[/\\]/).pop() || '';
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    /* not valid percent-encoding, so keep the name as given */
+  }
+  name = name.replace(/\.[^.]*$/, '');
+  /*
+  a reloaded .dphy save is already named delphy-<source>-<timestamp>,
+  so unwrap it rather than nesting the prefix and timestamp on every save
+  */
+  name = name.replace(/^delphy-(.*?)-?\d{10}$/, '$1');
+  name = name.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^[._-]+|[._-]+$/g, '');
+  return name.substring(0, MAX_SOURCE_NAME_LENGTH).replace(/[._-]+$/, '');
+};
+
+export const setExportSourceName = (filePath: string)=>{
+  exportSourceName = getSourceNameFromPath(filePath);
+};
+
+export const withExportSourceName = (base: string)=>exportSourceName ? `${base}-${exportSourceName}` : base;
+
+export const getExportStampString = ()=>exportSourceName ? `${exportSourceName}-${getTimestampString()}` : getTimestampString();
+
 
 export const numericSort = (a: number, b: number)=>a-b;
 export const numericSortReverse = (a: number, b: number)=>b-a;

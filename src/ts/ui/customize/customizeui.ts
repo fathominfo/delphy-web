@@ -1,7 +1,7 @@
 import { YSpacing, Topology, ColorOption, Presentation,
   Y_EVEN_SPACING, Y_GENETIC_DISTANCE, TOPOLOGY_MCC, TOPOLOGY_BEST_OF,
   COLOR_CONF, COLOR_METADATA, PRESENTATION_ALL, PRESENTATION_UMBRELLA,
-  CONFIDENCE_DEFAULT, ColorDict, getTimestampString, MetadataColorOption } from '../common';
+  CONFIDENCE_DEFAULT, ColorDict, getExportStampString, MetadataColorOption } from '../common';
 import {noop} from '../../constants';
 import {MccUI} from '../mccui';
 import {SharedState} from '../../sharedstate';
@@ -126,7 +126,7 @@ export class CustomizeUI extends MccUI {
       imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices);
       const a = document.createElement("a"),
         url = canvas.toDataURL('image/png', 1.0),
-        title = `delphy-${getTimestampString()}.png`;
+        title = `delphy-${getExportStampString()}.png`;
       // console.log('URL', url);
       a.href = url;
       a.download = title;
@@ -165,7 +165,7 @@ export class CustomizeUI extends MccUI {
         // const mcccc = this.mccTreeCanvas.canvas;
         // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
         imgTreeCanvas.draw(this.minDate, this.maxDate, this.timelineIndices, canvas);
-        canvas.save(`delphy-${getTimestampString()}.pdf`);
+        canvas.save(`delphy-${getExportStampString()}.pdf`);
       });
     });
 
@@ -181,7 +181,7 @@ export class CustomizeUI extends MccUI {
       const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
         a = document.createElement("a"),
         url = URL.createObjectURL(file),
-        title = `delphy-${getTimestampString()}.nwk`;
+        title = `delphy-${getExportStampString()}.nwk`;
       a.href = url;
       a.download = title;
       document.body.appendChild(a);
@@ -229,7 +229,7 @@ export class CustomizeUI extends MccUI {
             const file = new Blob([outBuffer], {type: "application/text;charset=utf-8"}),
               a = document.createElement("a"),
               url = URL.createObjectURL(file),
-              title = `beast-input-${getTimestampString()}.xml`;
+              title = `beast-input-${getExportStampString()}.xml`;
             a.href = url;
             a.download = title;
             document.body.appendChild(a);
@@ -246,7 +246,7 @@ export class CustomizeUI extends MccUI {
         .then(version=>{
           if (this.pythia) {
             const {log, trees} = this.pythia.getBeastOutputs(version),
-              timestamp = getTimestampString();
+              timestamp = getExportStampString();
 
             const fileLog = new Blob([log], {type: "application/text;charset=utf-8"}),
               titleLog = `beast.log`;
@@ -301,7 +301,7 @@ export class CustomizeUI extends MccUI {
           file = new Blob([outBuffer], {type: "application/octet-binary;charset=utf-8"}),
           a = document.createElement("a"),
           url = URL.createObjectURL(file),
-          title = `delphy-${getTimestampString()}.dphy`;
+          title = `delphy-${getExportStampString()}.dphy`;
         a.href = url;
         a.download = title;
         document.body.appendChild(a);

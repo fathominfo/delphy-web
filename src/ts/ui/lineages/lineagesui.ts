@@ -9,7 +9,7 @@ import { CHART_TEXT_FONT, DataResolveType, DisplayNode, Screens,
   TREE_PADDING_RIGHT,
   TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP, TREE_TIMELINE_SPACING, UNSET,
   getNodeColor, getNodeTypeName, getNodeClassName,
-  downloadTextFile} from '../common';
+  downloadTextFile, withExportSourceName} from '../common';
 import { SharedState } from '../../sharedstate';
 import { NodeRelationChart } from './noderelationchart';
 import { NodePairType, NodePair, NodeComparisonData,
@@ -969,7 +969,7 @@ export class LineagesUI extends MccUI {
       const tips = tipIndices.map(tipIndex=>nameSource.getNameOf(tipIndex).split('|')[0]);
       mccRef.release();
       /* download these */
-      const title = `delphy_tips_${nodeIndex}.txt`;
+      const title = `${withExportSourceName(`delphy_tips_${nodeIndex}`)}.txt`;
       const output = tips.join('\n');
       downloadTextFile(title, output);
     }

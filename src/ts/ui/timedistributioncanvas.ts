@@ -1,5 +1,5 @@
 import {MONTHS_SHORT, toDateString, toDateTokens, toFullDateString} from '../pythia/dates';
-import {CHART_TEXT_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas} from './common';
+import {CHART_TEXT_FONT, UNSET, constrain, getPercentLabel, measureText, resizeCanvas, withExportSourceName} from './common';
 import { TimeDistribution } from './timedistribution';
 
 const margin = {
@@ -511,7 +511,7 @@ export class TimeDistributionCanvas {
         file = new Blob([txt], {type: "text;charset=utf-8"}),
         a = document.createElement("a"),
         url = URL.createObjectURL(file),
-        title = `delphy-${name.toLowerCase().replace(/ /g, '_')}-times.txt`;
+        title = `${withExportSourceName(`delphy-${name.toLowerCase().replace(/ /g, '_')}`)}-times.txt`;
       a.href = url;
       a.download = title;
       document.body.appendChild(a);

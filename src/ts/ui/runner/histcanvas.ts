@@ -1,4 +1,4 @@
-import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getTimestampString,
+import { downloadTextFile, getDecimalPrecision, getPercentLabelDecimal, getExportStampString,
   nf000, nfc, nicenum, NO_VALUE, safeLabel, UNSET } from '../common';
 import { chartContainer, TraceCanvas } from "./tracecanvas";
 import { HistDataFunction, hoverListenerType, kneeHoverListenerType, PlottableSummaryStats,
@@ -190,7 +190,7 @@ export class HistCanvas extends TraceCanvas {
     // histoDownloadDataButton.addEventListener('click', ()=>{
     histoDownloadsDiv.addEventListener('click', ()=>{
       const text = this.createHistogramDataExport(),
-        title = `delphy-${label.toLowerCase()}-distribution-${getTimestampString()}.tsv`;
+        title = `delphy-${label.toLowerCase()}-distribution-${getExportStampString()}.tsv`;
       downloadTextFile(title, text).then(()=>{
         histoDownloadsDiv.classList.add("completed");
       })
@@ -205,7 +205,7 @@ export class HistCanvas extends TraceCanvas {
     // traceDownloadDataButton.addEventListener('click', ()=>{
     traceDownloadsDiv.addEventListener('click', ()=>{
       const text = this.createTraceDataExport(),
-        title = `delphy-${label}-traces-${getTimestampString()}.tsv`;
+        title = `delphy-${label}-traces-${getExportStampString()}.tsv`;
       downloadTextFile(title, text).then(()=>{
         traceDownloadsDiv.classList.add("completed");
       });
