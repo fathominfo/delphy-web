@@ -1,3 +1,4 @@
+import { HCV, Lab } from "../../util/lab";
 import { resizeCanvas, UNSET, DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
   TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2, TREE_TEXT_COLOR, TREE_TEXT_COLOR_2,
   TREE_TEXT_FONT, TREE_TEXT_FONT_2, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP
@@ -14,23 +15,25 @@ const PADDING = {
   right: 25
 };
 
-const COLORS = [
-  "rgb(145,205,255)",
-  "rgb(119,148,158)",
-  "rgb(0,156,189)",
-  "rgb(0,235,251)",
-  "rgb(111,186,240)",
-  "rgb(65,255,255)",
-  "rgb(52,219,193)",
-  "rgb(83,192,240)"
-];
+// const COLORS = [
+//   "rgb(145,205,255)",
+//   "rgb(119,148,158)",
+//   "rgb(0,156,189)",
+//   "rgb(0,235,251)",
+//   "rgb(111,186,240)",
+//   "rgb(65,255,255)",
+//   "rgb(52,219,193)",
+//   "rgb(83,192,240)"
+// ];
 
 const BRANCH_COLOR = "#00000099";
 const BRANCH_COLOR_DARK = "#000";
 const BRANCH_COLOR_LIGHT = "#999";
 const BRANCH_WEIGHT = 0.5;
-const BRANCH_WEIGHT_LIGHT = 0.25;
+// const BRANCH_WEIGHT_LIGHT = 0.25;
 
+
+type ColorInputs = [nodeIndex: number, parentColor: HCV, isLeft: boolean, isRootLeft: boolean];
 
 export class PoplarCanvas {
   canvas: HTMLCanvasElement;
@@ -43,7 +46,7 @@ export class PoplarCanvas {
   xSpan: number = UNSET;
   ySpan: number = UNSET;
   /* sparse array of colors */
-  branchColors: string[] = [];
+  branchColors: NodeColor[] = [];
   selectedNode: number = UNSET;
   paddingRight: number = PADDING.right;
   paddingLeft: number = PADDING.left;
@@ -131,19 +134,64 @@ export class PoplarCanvas {
   }
 
   setColors() {
-    const { drawOrder, branchIndices } = this.popData;
+    // const { drawOrder, branchIndices, fileHash, baseTree } = this.popData;
+    const { fileHash, baseTree } = this.popData;
+    if (!baseTree) return;
     const { branchColors } = this;
-    let colorIndex = 0;
+    const hashChars = fileHash.toString(16);
+    let hue = parseInt(hashChars.substring(1, 3), 16);
+    let chroma = parseInt(hashChars.substring(3, 5), 16);
+    let value = parseInt(hashChars.substring(5, 7), 16);
+    hue = Math.floor(hue / 255.0 * rangeHue);
+    chroma = chroma / 255.0 * rangeChr;
+    value = value / 255.0 * rangeVal;
+    const hcvs: HCV[] = [];
+    const stack: ColorInputs[] = [];
+    const rootColor = new HCV(hue, chroma, value);
+    const rootIndex = baseTree.getRootIndex();
+    hcvs[rootIndex] = getColor(rootColor, true, true, false);
+    stack.push([baseTree.getLeftChildIndexOf(rootIndex), rootColor, true, true]);
+    stack.push([baseTree.getRightChildIndexOf(rootIndex), rootColor, false, false]);
+    let info: ColorInputs;
     let nodeIndex: number;
-    for (let i = 0; i < drawOrder.length; i++) {
-      nodeIndex = drawOrder[i];
-      if (branchIndices.includes(nodeIndex) && branchColors[nodeIndex] === undefined) {
-        branchColors[nodeIndex] = COLORS[colorIndex];
-        // console.log(nodeIndex, i, branchColors[nodeIndex], [91,84].includes(nodeIndex)? '--------' : '');
-        colorIndex++;
-        colorIndex %= COLORS.length;
+    let parentColor: HCV;
+    let isLeft: boolean;
+    let isRootLeft: boolean;
+    let leftIndex: number;
+    let hasDescendants: boolean;
+    let hcv: HCV;
+    while (stack.length > 0) {
+      info = stack.shift() as ColorInputs;
+      nodeIndex = info[0];
+      parentColor = info[1];
+      isLeft = info[2];
+      isRootLeft = info[3];
+      leftIndex = baseTree.getLeftChildIndexOf(nodeIndex);
+      hasDescendants = leftIndex !== UNSET;
+      hcv = getColor(parentColor, isLeft, hasDescendants, isRootLeft);
+      hcvs[nodeIndex] = hcv;
+      if (hasDescendants) {
+        stack.push([leftIndex, hcv, true, isRootLeft]);
+        stack.push([baseTree.getRightChildIndexOf(nodeIndex), hcv, false, isRootLeft]);
       }
     }
+
+
+    for (let i = 0; i< hcvs.length; i++) {
+      branchColors[i] = new NodeColor(hcvs[i]);
+    }
+
+
+    // let colorIndex = 0;
+    // let nodeIndex: number;
+    // for (let i = 0; i < drawOrder.length; i++) {
+    //   nodeIndex = drawOrder[i];
+    //   if (branchIndices.includes(nodeIndex) && branchColors[nodeIndex] === undefined) {
+    //     branchColors[nodeIndex] = COLORS[colorIndex];
+    //     colorIndex++;
+    //     colorIndex %= COLORS.length;
+    //   }
+    // }
   }
 
   getColor(nodeIndex: number): string {
@@ -152,7 +200,8 @@ export class PoplarCanvas {
       this.setColors();
       c = this.branchColors[nodeIndex];
     }
-    return c;
+    console.log('getColor', nodeIndex, c);
+    return c.rgb;
   }
 
   setSelectedNode(nodeIndex: number, src: PoplarChart) {
@@ -334,7 +383,7 @@ export class PoplarCanvas {
     let drawing = false;
     let x: number;
     let y: number;
-    let firstDrawn = UNSET;
+    // let firstDrawn = UNSET;
     let bottom: number;
     /* draw along the bottom, from right to left */
     for (i = lastIndex; i >= 0; i--) {
@@ -348,7 +397,7 @@ export class PoplarCanvas {
         } else {
           ctx.lineTo(x, y);
         }
-        firstDrawn = i;
+        // firstDrawn = i;
       }
     }
 
@@ -404,9 +453,6 @@ export class PoplarCanvas {
     } else {
       ctx.globalAlpha = 1;
       ctx.drawImage(this.treeBuffer, 0, 0, width, height);
-      let parentIndex: number;
-      let currentNodePos: number[];
-      let parentNodePos: number[];
       ctx.strokeStyle = this.getColor(selectedNode);
       ctx.fillStyle = this.getColor(selectedNode);
       ctx.globalAlpha = 0.25;
@@ -421,9 +467,9 @@ export class PoplarCanvas {
       ctx.stroke();
       ctx.strokeStyle = BRANCH_COLOR;
       ctx.beginPath();
-      parentIndex = baseTree.getParentIndexOf(selectedNode);
-      currentNodePos = nodePos[selectedNode];
-      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      const parentIndex = baseTree.getParentIndexOf(selectedNode);
+      const currentNodePos = nodePos[selectedNode];
+      const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
@@ -532,5 +578,68 @@ export class PoplarCanvas {
     }
 
   }
+
+}
+
+
+
+
+const minHue = 0;
+const minChr = 0.2;
+const minVal = 0.2;
+
+const rangeHue = 64;
+const rangeChr = 0.4;
+const rangeVal = 0.8;
+
+const stepHue = 1;
+const stepChr = 0.1;
+const stepVal = 0.2;
+
+// const distHue = 0.25;
+// const distChr = 0.5;
+// const distVal = 0.5;
+
+
+const getColor = (parentColor: HCV, isLeft: boolean, hasDescendants: boolean, isRootLeft: boolean) : HCV =>{
+  let { hue, chroma, value } = parentColor;
+  let moveHue, moveChr, moveVal;
+  hue -= minHue;
+  chroma -= minChr;
+  value -= minVal;
+
+  // if (root == 1 && isLeft) {
+  //   oriHue += Math.floor(rangeHue * distHue);
+  // }
+
+  moveHue = stepHue * (hasDescendants ? 1 : 4);
+  moveChr = stepChr * (isLeft ? 2 : 1);
+  moveVal = stepVal * (isLeft ? 2 : 1);
+
+  if (isRootLeft) { moveHue *= -1; }
+  if (moveChr > rangeChr * 0.5) { moveChr *= -1; }
+  if (moveVal > rangeVal * 0.5) { moveVal *= -1; }
+
+  hue = minHue + ((hue + moveHue) % rangeHue);
+  chroma = minChr + ((chroma + moveChr) % rangeChr);
+  value = minVal + ((value + moveVal) % rangeVal);
+  return new HCV(hue, chroma, value);
+};
+
+
+
+class NodeColor {
+  hcv: HCV;
+  lab: Lab;
+  rgb = '';
+
+  constructor(hcv: HCV) {
+    this.hcv = hcv;
+    this.lab = new Lab(1, 0, 0);
+    this.lab.setFromHCV(hcv.hue, hcv.chroma, hcv.value);
+    this.rgb = this.lab.toRgb();
+  }
+
+
 
 }

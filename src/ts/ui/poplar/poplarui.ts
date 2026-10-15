@@ -35,7 +35,7 @@ export class PoplarUI extends UIScreen {
     prevInput.setAttribute("value", `${prevalenceThreshold}`);
     const prevReadout = prevInputLabel.querySelector(".poplar-value") as HTMLSpanElement;
     prevReadout.textContent = `${prevalenceThreshold}%`;
-    prevInput.addEventListener("input", (event)=>{
+    prevInput.addEventListener("input", ()=>{
       const value = parseInt(prevInput.value);
       this.poplarData.setPrevalenceThreshold(value/100);
       this.poplarCanvas.resetColors();
@@ -65,7 +65,7 @@ export class PoplarUI extends UIScreen {
     }
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
-    this.poplarData.setPythia(this.pythia);
+    this.poplarData.setPythia(this.pythia, this.sharedState.filename);
     this.handleTreeSelect(this.selectedTree);
   }
 

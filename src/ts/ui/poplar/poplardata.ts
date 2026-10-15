@@ -1,6 +1,6 @@
 import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
-import { UNSET } from "../common";
+import { getHash, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 
 const DEFAULT_PREVALENCE = 0.1;
@@ -32,8 +32,10 @@ export class PoplarData {
   allottedAreaHeap: number[] = [];
   poplarCoordHeap: number[] = [];
   dateLabels: DateLabel[] = [];
+  fileHash: number = UNSET;
 
-  setPythia(pythia: Pythia) {
+  setPythia(pythia: Pythia, filename: string) {
+    this.fileHash = getHash(filename);
     this.pythia = pythia;
   }
 
