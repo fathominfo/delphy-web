@@ -19,8 +19,8 @@ const R8 = 80; // 1
 
 const A_SIGN_INDEX = 0;
 const B_SIGN_INDEX = 1;
-const A_unknown_INDEX = 2;
-const B_unknown_INDEX = 3;
+// const A_unknown_INDEX = 2;
+// const B_unknown_INDEX = 3;
 const A_QUANTITY_INDEX = 4;
 const B_QUANTITY_INDEX = 5;
 
@@ -216,17 +216,13 @@ export class Lab {
     const abRatio = b === 0 ? 1.0 : Math.abs(a) / Math.abs(b);
     if (a !== 0 || b !== 0) {
       if (aTop) {
-        if (a != 0) {
-          a *= Math.abs(Z);
-          a = constrainS(a);
-          b = Math.abs(a / abRatio) * bSign;
-        }
+        a *= Math.abs(Z);
+        a = constrainS(a);
+        b = Math.abs(a / abRatio) * bSign;
       } else {
-        if (b != 0) {
-          b *= Math.abs(Z);
-          b = constrainS(b);
-          a = Math.abs(b * abRatio) * aSign;
-        }
+        b *= Math.abs(Z);
+        b = constrainS(b);
+        a = Math.abs(b * abRatio) * aSign;
       }
     }
     this.ay = a;
