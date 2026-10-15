@@ -129,6 +129,7 @@ export class PoplarCanvas {
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
     this.treeBufferCtx.clearRect(0, 0, this.width, this.height);
     this.areaBufferCtx.clearRect(0, 0, this.width, this.height);
+    this.setColors();
     this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
     this.drawAreas(this.areaBufferCtx);
   }
@@ -194,14 +195,22 @@ export class PoplarCanvas {
     // }
   }
 
-  getColor(nodeIndex: number): string {
+  getNodeFill(nodeIndex: number): string {
     let c = this.branchColors[nodeIndex];
     if (!c) {
       this.setColors();
       c = this.branchColors[nodeIndex];
     }
-    console.log('getColor', nodeIndex, c);
-    return c.rgb;
+    return c.fill;
+  }
+
+  getStroke(nodeIndex: number): string {
+    let c = this.branchColors[nodeIndex];
+    if (!c) {
+      this.setColors();
+      c = this.branchColors[nodeIndex];
+    }
+    return c.stroke;
   }
 
   setSelectedNode(nodeIndex: number, src: PoplarChart) {
@@ -261,7 +270,7 @@ export class PoplarCanvas {
     for (let i = 0; i < drawOrder.length; i++) {
       nodeIndex = drawOrder[i];
       if (branchIndices.includes(nodeIndex)) {
-        ctx.fillStyle = this.getColor(nodeIndex);
+        ctx.fillStyle = this.getNodeFill(nodeIndex);
         ctx.beginPath();
         this.drawNodeArea(ctx, nodeIndex);
         ctx.fill();
@@ -453,8 +462,8 @@ export class PoplarCanvas {
     } else {
       ctx.globalAlpha = 1;
       ctx.drawImage(this.treeBuffer, 0, 0, width, height);
-      ctx.strokeStyle = this.getColor(selectedNode);
-      ctx.fillStyle = this.getColor(selectedNode);
+      ctx.strokeStyle = this.getNodeFill(selectedNode);
+      ctx.fillStyle = this.getNodeFill(selectedNode);
       ctx.globalAlpha = 0.25;
       ctx.beginPath();
       this.drawNodeArea(ctx, selectedNode, true);
@@ -527,12 +536,12 @@ export class PoplarCanvas {
       fill for the selected node, and draw that over the
       node's descendants
       */
-      ctx.fillStyle = this.getColor(selectedNode);
+      ctx.fillStyle = this.getNodeFill(selectedNode);
       ctx.globalAlpha = 0.5;
       ctx.beginPath();
       this.drawNodeArea(ctx, selectedNode, true);
       ctx.fill();
-      ctx.strokeStyle = this.getColor(selectedNode);
+      ctx.strokeStyle = this.getNodeFill(selectedNode);
       ctx.globalAlpha = 0.5;
       ctx.stroke();
       /* draw the tree for the descendants of the selected node */
@@ -631,13 +640,20 @@ const getColor = (parentColor: HCV, isLeft: boolean, hasDescendants: boolean, is
 class NodeColor {
   hcv: HCV;
   lab: Lab;
-  rgb = '';
+  fill = '';
+  stroke = '';
 
   constructor(hcv: HCV) {
     this.hcv = hcv;
     this.lab = new Lab(1, 0, 0);
     this.lab.setFromHCV(hcv.hue, hcv.chroma, hcv.value);
-    this.rgb = this.lab.toRgb();
+    this.fill = this.lab.toRgb();
+    const strokeLab = this.lab.copy();
+    if (Math.max(Math.abs(strokeLab.ay), Math.abs(strokeLab.be)) >= 64) {
+      strokeLab.adjustChroma(0.5);
+    }
+    strokeLab.adjustChroma(2).mirrorMoveValue(20);
+    this.stroke = strokeLab.toRgb();
   }
 
 

@@ -117,15 +117,16 @@ export class Lab {
     this.be = constrainS(b);
   }
 
-  setFromHCV(hue: number, chroma: number, value: number) {
+  setFromHCV(hue: number, chroma: number, value: number) : Lab {
     this.setHue(hue);
     this.setChroma(chroma);
     this.el = constrainL(L_MAX * value);
+    return this;
   }
 
 
   /* set a and b values, not L */
-  setHue(hue: number) {
+  setHue(hue: number) : Lab {
     hue = hue % SLICES;
     if (hue < 0) {
       hue = (SLICES + hue) % SLICES;
@@ -167,14 +168,16 @@ export class Lab {
     }
     this.ay = a;
     this.be = b;
+    return this;
   }
 
-  setValue(Z: number) {
+  setValue(Z: number) : Lab {
     // values from 0 - 1
     this.el = constrainL(L_MAX * Z);
+    return this;
   }
 
-  setChroma(chroma: number) {
+  setChroma(chroma: number) : Lab {
     chroma = Math.abs(chroma);
     // values from 0 - 1
     let a = this.ay;
@@ -204,10 +207,11 @@ export class Lab {
     }
     this.ay = a;
     this.be = b;
+    return this;
   }
 
 
-  adjustChroma(Z: number) {
+  adjustChroma(Z: number) : Lab {
     let a = this.ay;
     let b = this.be;
     const aSign = Math.sign(a);
@@ -227,6 +231,7 @@ export class Lab {
     }
     this.ay = a;
     this.be = b;
+    return this;
   }
 
   getValueReflector(l: number) : number {
@@ -234,13 +239,15 @@ export class Lab {
     return reflector === 0 ? 1 : reflector;
   }
 
-  adjustValue(Z:number)  {
+  adjustValue(Z:number) : Lab {
     this.el = constrainL(this.el * Math.abs(Z));
+    return this;
   }
 
-  mirrorMoveValue(Z: number) {
+  mirrorMoveValue(Z: number) : Lab {
     const reflected = this.getValueReflector(this.el);
     this.el = (-Z * reflected) + (L_EDGE + Math.abs(L_EDGE - this.el) * reflected);
+    return this;
   }
 
   toRgb() : string {
