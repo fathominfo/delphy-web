@@ -120,10 +120,11 @@ export class PoplarData {
     const { peakPrevalences, threshold, branchIndices } = this;
     branchIndices.length = 0;
     const rootIndex = this.baseTree.getRootIndex();
-    let j: number;
+    let nodeIndex: number;
     for (let i = 0; i < peakPrevalences.length; i++) {
-      if (i !== rootIndex && peakPrevalences[i][DATA_INDEX] >= threshold) {
-        branchIndices.push(peakPrevalences[i][NODE_INDEX]);
+      nodeIndex = peakPrevalences[i][NODE_INDEX];
+      if (nodeIndex !== rootIndex && peakPrevalences[i][DATA_INDEX] >= threshold) {
+        branchIndices.push(nodeIndex);
       }
     }
   }
@@ -138,7 +139,19 @@ export class PoplarData {
     if (this.threshold === UNSET) {
       this.threshold = this.peakPrevalences[DEFAULT_HIGHLIGHT_NODE_COUNT][DATA_INDEX];
     }
-    this.topNodes = this.peakPrevalences.filter(([peak, i]) => peak >= this.threshold).map(([peaks, i])=>i);
+    this.topNodes.length = 0;
+    const rootIndex = this.baseTree.getRootIndex();
+    let nodeIndex: number;
+    for (let i = 0; i < this.peakPrevalences.length; i++) {
+      if (this.peakPrevalences[i][DATA_INDEX] >= this.threshold) {
+        nodeIndex = this.peakPrevalences[i][NODE_INDEX];
+        if (nodeIndex !== rootIndex) {
+          this.topNodes.push();
+        }
+      } else {
+        break;
+      }
+    }
   }
 
 
