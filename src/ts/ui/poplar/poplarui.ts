@@ -105,12 +105,11 @@ export class PoplarUI extends UIScreen {
     const nodeYs = this.baseTreeCanvas.getNodeYs();
     const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
     this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs, this.earliestRootDate, this.pythia.maxDate, dateLabels);
-    console.debug(`threshold: ${this.poplarData.threshold}, ${this.poplarData.topNodes.length} nodes`);
+    // console.debug(`threshold: ${this.poplarData.threshold}, ${this.poplarData.topNodes.length} nodes`);
     this.poplarCanvas.resetColors();
-    const threshold = Math.round(this.poplarData.threshold * 100);
-    (this.prevalenceLabel.querySelector("input") as HTMLInputElement).value = `${threshold}`;
-    (this.prevalenceLabel.querySelector(".poplar-value") as HTMLSpanElement).textContent = `${threshold}%`;
-
+    // const threshold = Math.round(this.poplarData.threshold * 100);
+    // (this.prevalenceLabel.querySelector("input") as HTMLInputElement).value = `${threshold}`;
+    // (this.prevalenceLabel.querySelector(".poplar-value") as HTMLSpanElement).textContent = `${threshold}%`;
     requestAnimationFrame(() => {
       if (this.pythia) {
         const start = Date.now();

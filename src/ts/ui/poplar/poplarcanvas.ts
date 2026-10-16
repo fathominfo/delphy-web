@@ -158,10 +158,6 @@ export class PoplarCanvas {
     const { baseTree, topNodes } = this.popData;
     if (!baseTree) return;
     const { branchColors } = this;
-    console.debug(`
-      setColors ${topNodes.length}
-      
-      `);
     // const hashChars = fileHash.toString(16);
     // let hue = parseInt(hashChars.substring(1, 3), 16);
     // let chroma = parseInt(hashChars.substring(3, 5), 16);
@@ -175,6 +171,17 @@ export class PoplarCanvas {
     const rootIndex = baseTree.getRootIndex();
     let leftIndex = baseTree.getLeftChildIndexOf(rootIndex);
     const rightIndex = baseTree.getRightChildIndexOf(rootIndex);
+    /*
+    force the first two nodes in the tree to have specific colors
+    */
+    if (!topNodes.includes(leftIndex)){
+      topNodes.push(leftIndex);
+      topNodes.push(rightIndex);
+    }
+    // console.debug(`
+    //   setColors: ${topNodes.length} nodes, choosing from ${CORE_COLORS.length} colors
+    //   ${topNodes.join()}
+    // `);
     hcvs[rootIndex] = getColor(rootColor, true, true, false);
     stack.push([leftIndex, rootColor, true, true]);
     stack.push([rightIndex, rootColor, false, false]);
@@ -512,6 +519,8 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
+      // ctx.fillStyle = 'black';
+      // ctx.fillText(`${selectedNode}`, 20, 20);
     }
   }
 
@@ -614,6 +623,8 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
+      // ctx.fillStyle = 'black';
+      // ctx.fillText(`${selectedNode}`, 20, 20);
     }
 
   }
@@ -635,10 +646,6 @@ const stepHue = 1;
 const stepChr = 0.1;
 const stepVal = 0.2;
 
-// const distHue = 0.25;
-// const distChr = 0.5;
-// const distVal = 0.5;
-
 
 const getColor = (parentColor: HCV, isLeft: boolean, hasDescendants: boolean, isRootLeft: boolean) : HCV =>{
   let { hue, chroma, value } = parentColor;
@@ -647,13 +654,9 @@ const getColor = (parentColor: HCV, isLeft: boolean, hasDescendants: boolean, is
   chroma -= minChr;
   value -= minVal;
 
-  // if (root == 1 && isLeft) {
-  //   oriHue += Math.floor(rangeHue * distHue);
-  // }
-
-  moveHue = stepHue * (hasDescendants ? 1 : 4);
+  moveHue = stepHue; // * (hasDescendants ? 1 : 0);
   moveChr = stepChr * (isLeft ? 2 : 1);
-  moveVal = stepVal * (isLeft ? 2 : 1);
+  moveVal = stepVal * (isLeft ? 1 : 2);
 
   if (isRootLeft) { moveHue *= -1; }
   if (moveChr > rangeChr * 0.5) { moveChr *= -1; }
