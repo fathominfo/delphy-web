@@ -354,16 +354,19 @@ export const resizeCanvas = (canvas: HTMLCanvasElement) => {
   const computed = window.getComputedStyle(canvas),
     width = parseInt(computed.width.replace('px', '')),
     height = parseInt(computed.height.replace('px', '')),
-    ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-  if (window.devicePixelRatio > 1) {
-    canvas.width = Math.round(window.devicePixelRatio * width);
-    canvas.height = Math.round(window.devicePixelRatio * height);
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  } else {
-    canvas.width = width;
-    canvas.height = height;
+    ctx = canvas.getContext('2d') as CanvasRenderingContext2D,
+    isChanged = width !== canvas.width || height !== canvas.height;
+  if (isChanged) {
+    if (window.devicePixelRatio > 1) {
+      canvas.width = Math.round(window.devicePixelRatio * width);
+      canvas.height = Math.round(window.devicePixelRatio * height);
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    } else {
+      canvas.width = width;
+      canvas.height = height;
+    }
   }
-  return {width, height};
+  return { width, height, isChanged };
 }
 
 

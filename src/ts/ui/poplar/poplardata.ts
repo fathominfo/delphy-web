@@ -5,6 +5,10 @@ import { DateLabel } from "../datelabel";
 
 const DEFAULT_PREVALENCE = 0.1;
 
+
+const DEFAULT_HIGHLIGHT_NODE_COUNT = 8;
+
+
 const ix_center = 0;         // vertical center of the branch
 const ix_top = 1;            // top of the branch area
 const ix_bottom = 2;         // bottom of the branch area
@@ -24,7 +28,7 @@ export class PoplarData {
   maxDate: number = UNSET;
   branchPrevalence: number[][] = [];
   branchIndices: number[] = [];
-  threshold: number = DEFAULT_PREVALENCE;
+  threshold: number = UNSET;
   drawOrder: number[] = [];
   nodePos: number[][] = [];
   nodeCount: number = UNSET;
@@ -33,6 +37,9 @@ export class PoplarData {
   poplarCoordHeap: number[] = [];
   dateLabels: DateLabel[] = [];
   fileHash: number = UNSET;
+  topAreaIndices: number[][] = [];
+  peakPrevalences: number[][] = [];
+  topNodes: number[] = [];
 
   setPythia(pythia: Pythia, filename: string) {
     this.fileHash = getHash(filename);
@@ -68,6 +75,8 @@ export class PoplarData {
     this.prepareLayout();
     this.setNodePositions();
     this.findBranchesExceedPrevalenceThreshold();
+    this.setTopNodes();
+
   }
 
 
@@ -115,6 +124,27 @@ export class PoplarData {
       }
     }
   }
+
+  setTopNodes() {
+    if (!this.baseTree) return;
+    const totalAreas: number[] = sumAreas(this.branchPrevalence);
+    const peaks: number[] = getPeaks(this.branchPrevalence);
+    this.topAreaIndices = totalAreas.map((area, i) => [area, i]);
+    this.topAreaIndices.sort((a, b) => b[0] - a[0]);
+    this.peakPrevalences = peaks.map((peak, i) => [peak, i]);
+    this.peakPrevalences.sort((a, b) => b[0] - a[0]);
+    if (this.threshold === UNSET) {
+      this.threshold = this.peakPrevalences[DEFAULT_HIGHLIGHT_NODE_COUNT][0];
+    }
+    /* force the top 2 nodes to be in the list */
+    const rootIndex = this.baseTree.getRootIndex();
+    const leftIndex = this.baseTree.getLeftChildIndexOf(rootIndex);
+    const rightIndex = this.baseTree.getRightChildIndexOf(rootIndex);
+    this.topNodes = this.peakPrevalences.filter(([peak, i]) => peak >= this.threshold || i === leftIndex || i == rightIndex).map(([peaks, i])=>i);
+  }
+
+
+
 
   setNodePositions() {
     const { baseTree, minDate, maxDate, binCount, nodeCount } = this;
@@ -305,3 +335,9 @@ export class PoplarData {
     this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop] = childTop;
   }
 }
+
+
+
+const sumAreas = (rows: number[][]): number[] => rows.map(row => row.reduce((tot, n) => tot + n, 0));
+const getPeaks = (rows: number[][]): number[] => rows.map(row => Math.max.apply(null, row));
+

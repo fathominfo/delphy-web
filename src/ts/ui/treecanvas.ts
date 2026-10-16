@@ -130,13 +130,15 @@ export class TreeCanvas {
     this.drawBranch = (i:number, ctx: CanvasRenderingContext2D | Context2d)=>console.debug(`drawBranch not decided ${i}`, ctx)
   }
 
-  sizeCanvas() {
+  /* @return: boolean indicating whether the canvas was resized  */
+  sizeCanvas() : boolean {
     const canvas = this.canvas as HTMLCanvasElement;
+    let isChanged = false;
     try {
-      const computed = window.getComputedStyle(canvas);
-      this.width = parseInt(computed.width.replace('px', ''));
-      if (this.width !== UNSTYLED_CANVAS_WIDTH) {
-        const {width, height} = resizeCanvas(canvas);
+      const sizeResult = resizeCanvas(canvas);
+      const { width, height } = sizeResult;
+      isChanged = sizeResult.isChanged;
+      if (isChanged && width !== UNSTYLED_CANVAS_WIDTH) {
         this.width = width;
         this.height = height;
         this.ctx.textAlign = 'center';
@@ -146,6 +148,7 @@ export class TreeCanvas {
     } catch (typeError) {
       // this happens if the canvas is a PdfCanvas
     }
+    return isChanged;
   }
 
   setAspectRatio(aspectRatio: number) {

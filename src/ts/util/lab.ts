@@ -302,10 +302,6 @@ export class HCV {
     this.value = v;
   }
 
-  toRgb() : string {
-    return "";
-  }
-
 }
 
 

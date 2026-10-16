@@ -30,8 +30,8 @@ export class BaseTreeCanvas extends TreeCanvas {
     });
   }
 
-  sizeCanvas(): void {
-    super.sizeCanvas();
+  sizeCanvas(): boolean {
+    return super.sizeCanvas();
   }
 
   setSelectedNode(nodeIndex: number) {

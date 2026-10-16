@@ -26,6 +26,24 @@ const PADDING = {
 //   "rgb(83,192,240)"
 // ];
 
+
+/* colors are in HCV */
+const CORE_COLORS = [
+  [8, 0.33070866141732286, 0.48],
+  [19, 0.07874015748031496, 0.21],
+  [27, 0.3307086614173228, 0.48],
+  [4, 0.14173228346456693, 0.7],
+  [59, 0.14173228346456693, 0.4],
+  [62, 0.6535433070866141, 0.67],
+  [29, 0.16535433070866143, 0.32],
+  [33, 0.3543307086614173, 0.58],
+  [4, 0.31496062992125984, 0.79],
+  [4, 0.5826771653543307, 0.62],
+  [28, 0.2755905511811024, 0.24],
+  [32, -0, 0.38]
+];
+
+
 const BRANCH_COLOR = "#00000099";
 const BRANCH_COLOR_DARK = "#000";
 const BRANCH_COLOR_LIGHT = "#999";
@@ -124,43 +142,50 @@ export class PoplarCanvas {
     const totalXSpan = this.width - PADDING.left - PADDING.right;
     const startPct = (minDate - minDateAcrossTrees) / totalDateRange;
     const endPct = (maxDate - minDateAcrossTrees) / totalDateRange;
+    this.setColors();
     this.paddingLeft = PADDING.left + startPct * totalXSpan;
     this.paddingRight = this.width - (PADDING.left + endPct * totalXSpan);
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
     this.treeBufferCtx.clearRect(0, 0, this.width, this.height);
     this.areaBufferCtx.clearRect(0, 0, this.width, this.height);
-    this.setColors();
     this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
     this.drawAreas(this.areaBufferCtx);
   }
 
   setColors() {
     // const { drawOrder, branchIndices, fileHash, baseTree } = this.popData;
-    const { fileHash, baseTree } = this.popData;
+    // const { fileHash, baseTree, topNodes } = this.popData;
+    const { baseTree, topNodes } = this.popData;
     if (!baseTree) return;
     const { branchColors } = this;
-    const hashChars = fileHash.toString(16);
-    let hue = parseInt(hashChars.substring(1, 3), 16);
-    let chroma = parseInt(hashChars.substring(3, 5), 16);
-    let value = parseInt(hashChars.substring(5, 7), 16);
-    hue = Math.floor(hue / 255.0 * rangeHue);
-    chroma = chroma / 255.0 * rangeChr;
-    value = value / 255.0 * rangeVal;
+    console.debug(`
+      setColors ${topNodes.length}
+      
+      `);
+    // const hashChars = fileHash.toString(16);
+    // let hue = parseInt(hashChars.substring(1, 3), 16);
+    // let chroma = parseInt(hashChars.substring(3, 5), 16);
+    // let value = parseInt(hashChars.substring(5, 7), 16);
+    // hue = Math.floor(hue / 255.0 * rangeHue);
+    // chroma = chroma / 255.0 * rangeChr;
+    // value = value / 255.0 * rangeVal;
     const hcvs: HCV[] = [];
     const stack: ColorInputs[] = [];
-    const rootColor = new HCV(hue, chroma, value);
+    const rootColor = new HCV(0, 0, 1);
     const rootIndex = baseTree.getRootIndex();
+    let leftIndex = baseTree.getLeftChildIndexOf(rootIndex);
+    const rightIndex = baseTree.getRightChildIndexOf(rootIndex);
     hcvs[rootIndex] = getColor(rootColor, true, true, false);
-    stack.push([baseTree.getLeftChildIndexOf(rootIndex), rootColor, true, true]);
-    stack.push([baseTree.getRightChildIndexOf(rootIndex), rootColor, false, false]);
+    stack.push([leftIndex, rootColor, true, true]);
+    stack.push([rightIndex, rootColor, false, false]);
     let info: ColorInputs;
     let nodeIndex: number;
     let parentColor: HCV;
     let isLeft: boolean;
     let isRootLeft: boolean;
-    let leftIndex: number;
     let hasDescendants: boolean;
     let hcv: HCV;
+    let colordex = 0;
     while (stack.length > 0) {
       info = stack.shift() as ColorInputs;
       nodeIndex = info[0];
@@ -169,7 +194,12 @@ export class PoplarCanvas {
       isRootLeft = info[3];
       leftIndex = baseTree.getLeftChildIndexOf(nodeIndex);
       hasDescendants = leftIndex !== UNSET;
-      hcv = getColor(parentColor, isLeft, hasDescendants, isRootLeft);
+      if (topNodes.includes(nodeIndex) && colordex < CORE_COLORS.length) {
+        const [h, c, v] = CORE_COLORS[colordex++];
+        hcv = new HCV(h, c, v);
+      } else {
+        hcv = getColor(parentColor, isLeft, hasDescendants, isRootLeft);
+      }
       hcvs[nodeIndex] = hcv;
       if (hasDescendants) {
         stack.push([leftIndex, hcv, true, isRootLeft]);
