@@ -41,8 +41,8 @@ export class PoplarData {
   nodePos: number[][] = [];
   nodeCount: number = UNSET;
   binCount: number = UNSET;
-  allottedAreaHeap: number[] = [];
-  poplarCoordHeap: number[] = [];
+  allottedAreaHeap: Float32Array = new Float32Array();
+  poplarCoordHeap: Float32Array = new Float32Array();
   dateLabels: DateLabel[] = [];
   fileHash: number = UNSET;
   topAreas: number[][] = [];
@@ -94,11 +94,8 @@ export class PoplarData {
     const numBins = this.branchPrevalence[0].length;
     const allottedHeapSize = nodeCount * numBins;
     if (allottedHeapSize > this.allottedAreaHeap.length) {
-      const diff = allottedHeapSize - this.allottedAreaHeap.length;
-      let toAdd = new Array(diff).fill(UNSET);
-      this.allottedAreaHeap = this.allottedAreaHeap.concat(toAdd);
-      toAdd = new Array(diff * NUM_POPLAR_COORDS).fill(UNSET);
-      this.poplarCoordHeap = this.poplarCoordHeap.concat(toAdd);
+      this.allottedAreaHeap = new Float32Array(allottedHeapSize).fill(UNSET);
+      this.poplarCoordHeap = new Float32Array(allottedHeapSize * NUM_POPLAR_COORDS).fill(UNSET);
     }
     if (this.nodePos.length === 0) {
       this.nodePos = new Array(nodeCount);
