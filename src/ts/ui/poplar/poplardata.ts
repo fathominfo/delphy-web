@@ -17,6 +17,16 @@ const ix_splitBottom = 4;    // bottom of the lower branch area (if it is split)
 const ix_childTop = 5;       // start y-position for the current child, used and updated during layout
 const NUM_POPLAR_COORDS = 6;
 
+/*
+for use with peakPrevalence and topAreas:
+  those are both 2d arrays, where each
+  entry is a pair of a nodeIndex, and the data
+  for that node. They are sorted by the data
+  values descending.
+*/
+const DATA_INDEX = 0;
+const NODE_INDEX = 1;
+
 
 export class PoplarData {
   pythia: Pythia | null = null;
@@ -37,7 +47,7 @@ export class PoplarData {
   poplarCoordHeap: number[] = [];
   dateLabels: DateLabel[] = [];
   fileHash: number = UNSET;
-  topAreaIndices: number[][] = [];
+  topAreas: number[][] = [];
   peakPrevalences: number[][] = [];
   topNodes: number[] = [];
 
@@ -74,8 +84,8 @@ export class PoplarData {
     this.setDrawOrderAndAllotted();
     this.prepareLayout();
     this.setNodePositions();
-    this.findBranchesExceedPrevalenceThreshold();
     this.setTopNodes();
+    this.findBranchesExceedPrevalenceThreshold();
 
   }
 
@@ -107,40 +117,28 @@ export class PoplarData {
 
   findBranchesExceedPrevalenceThreshold() {
     if (!this.baseTree) return;
-    const { branchPrevalence, threshold, branchIndices } = this;
+    const { peakPrevalences, threshold, branchIndices } = this;
     branchIndices.length = 0;
     const rootIndex = this.baseTree.getRootIndex();
-    let row: number[];
     let j: number;
-    for (let i = 0; i < branchPrevalence.length; i++) {
-      if (i !== rootIndex) {
-        row = branchPrevalence[i];
-        for (j = 0; j < row.length; j++) {
-          if (row[j] >= threshold) {
-            branchIndices.push(i);
-            break;
-          }
-        }
+    for (let i = 0; i < peakPrevalences.length; i++) {
+      if (i !== rootIndex && peakPrevalences[i][DATA_INDEX] >= threshold) {
+        branchIndices.push(peakPrevalences[i][NODE_INDEX]);
       }
     }
   }
 
   setTopNodes() {
     if (!this.baseTree) return;
-    const totalAreas: number[] = sumAreas(this.branchPrevalence);
-    const peaks: number[] = getPeaks(this.branchPrevalence);
-    this.topAreaIndices = totalAreas.map((area, i) => [area, i]);
-    this.topAreaIndices.sort((a, b) => b[0] - a[0]);
+    const [ totalAreas, peaks ] = sumAreasAndGetPeaks(this.branchPrevalence);
+    this.topAreas = totalAreas.map((area, i) => [area, i]);
+    this.topAreas.sort((a, b) => b[DATA_INDEX] - a[DATA_INDEX]);
     this.peakPrevalences = peaks.map((peak, i) => [peak, i]);
-    this.peakPrevalences.sort((a, b) => b[0] - a[0]);
+    this.peakPrevalences.sort((a, b) => b[DATA_INDEX] - a[DATA_INDEX]);
     if (this.threshold === UNSET) {
-      this.threshold = this.peakPrevalences[DEFAULT_HIGHLIGHT_NODE_COUNT][0];
+      this.threshold = this.peakPrevalences[DEFAULT_HIGHLIGHT_NODE_COUNT][DATA_INDEX];
     }
-    /* force the top 2 nodes to be in the list */
-    const rootIndex = this.baseTree.getRootIndex();
-    const leftIndex = this.baseTree.getLeftChildIndexOf(rootIndex);
-    const rightIndex = this.baseTree.getRightChildIndexOf(rootIndex);
-    this.topNodes = this.peakPrevalences.filter(([peak, i]) => peak >= this.threshold || i === leftIndex || i == rightIndex).map(([peaks, i])=>i);
+    this.topNodes = this.peakPrevalences.filter(([peak, i]) => peak >= this.threshold).map(([peaks, i])=>i);
   }
 
 
@@ -338,6 +336,26 @@ export class PoplarData {
 
 
 
-const sumAreas = (rows: number[][]): number[] => rows.map(row => row.reduce((tot, n) => tot + n, 0));
-const getPeaks = (rows: number[][]): number[] => rows.map(row => Math.max.apply(null, row));
+const sumAreasAndGetPeaks = (rows: number[][]): [number[], number[]] => {
+  const areas:number[] = new Array(rows.length);
+  const peaks: number[] = new Array(rows.length);
+  let row: number[];
+  let tot: number;
+  let max: number;
+  let j: number;
+  for (let i=0; i < rows.length; i++) {
+    row = rows[i];
+    tot = 0;
+    max = 0;
+    for (j = 0; j < row.length; j++) {
+      tot += row[j];
+      max = Math.max(max, row[j]);
+    }
+    areas[i] = tot;
+    peaks[i] = max;
+  }
+  return [areas, peaks];
+
+};
+
 
