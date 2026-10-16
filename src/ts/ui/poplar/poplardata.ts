@@ -131,7 +131,8 @@ export class PoplarData {
   setTopNodes() {
     if (!this.baseTree) return;
     this.sumAreasAndGetPeaks();
-    const theSource = this.peakAllottedPrevalences;
+    // const theSource = this.peakAllottedPrevalences;
+    const theSource = this.peakPrevalences;
     const topThreshold = theSource[DEFAULT_HIGHLIGHT_NODE_COUNT][DATA_INDEX];
     this.topNodes.length = 0;
     const rootIndex = this.baseTree.getRootIndex();
