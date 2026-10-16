@@ -110,6 +110,8 @@ export class PoplarUI extends UIScreen {
     // const threshold = Math.round(this.poplarData.threshold * 100);
     // (this.prevalenceLabel.querySelector("input") as HTMLInputElement).value = `${threshold}`;
     // (this.prevalenceLabel.querySelector(".poplar-value") as HTMLSpanElement).textContent = `${threshold}%`;
+
+    this.baseTreeCanvas.topNodes = this.poplarData.topNodes;
     requestAnimationFrame(() => {
       if (this.pythia) {
         const start = Date.now();

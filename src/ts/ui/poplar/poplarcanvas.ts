@@ -5,7 +5,7 @@ import { resizeCanvas, UNSET, DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
 } from "../common";
 import { DateLabel } from "../datelabel";
 import { PoplarChart, SelectNodeCallback } from "./poplarcommon";
-import { PoplarData } from "./poplardata";
+import { PoplarData, topNodeSources } from "./poplardata";
 
 
 const PADDING = {
@@ -178,10 +178,10 @@ export class PoplarCanvas {
       topNodes.push(leftIndex);
       topNodes.push(rightIndex);
     }
-    // console.debug(`
-    //   setColors: ${topNodes.length} nodes, choosing from ${CORE_COLORS.length} colors
-    //   ${topNodes.join()}
-    // `);
+    console.debug(`
+      setColors: ${topNodes.length} nodes, choosing from ${CORE_COLORS.length} colors
+      ${topNodes.join()}
+    `);
     hcvs[rootIndex] = getColor(rootColor, true, true, false);
     stack.push([leftIndex, rootColor, true, true]);
     stack.push([rightIndex, rootColor, false, false]);
@@ -298,6 +298,7 @@ export class PoplarCanvas {
     this.ctx.drawImage(this.areaBuffer, 0, 0, width, height);
     this.ctx.drawImage(this.treeBuffer, 0, 0, width, height);
     this.drawDates();
+    this.drawPopulationCurve(this.ctx);
   }
 
   drawAreas(ctx: CanvasRenderingContext2D) {
@@ -380,13 +381,34 @@ export class PoplarCanvas {
     }
   }
 
+  drawPopulationCurve(ctx: CanvasRenderingContext2D) {
+    const { xSpan, ySpan, popData, paddingLeft } = this;
+    const pop = popData.populationScale;
+    const last = pop.length - 1;
+    ctx.beginPath();
+    let i = 0;
+    let x: number = paddingLeft;
+    let y: number = PADDING.top + ySpan * (1 - pop[0])
+    ctx.moveTo(x, y);
+    for (i = 1; i < pop.length; i++) {
+      x = paddingLeft + i / last * xSpan;
+      y = PADDING.top + ySpan * (1 - pop[i]);
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+  }
+
+
+
+
 
   drawNodeBranch(ctx: CanvasRenderingContext2D,
     nodeIndex: number,
     currentNodePos: number[],
     parentNodePos: number[]
   ) {
-    const { xSpan, ySpan, popData } = this;
+    const { xSpan, ySpan, popData, paddingLeft} = this;
     const binCount = popData.binCount;
     const lastIndex = binCount - 1;
     let i = 0;
@@ -395,14 +417,14 @@ export class PoplarCanvas {
     const [nodeX, nodeY] = currentNodePos;
     const [parentX, parentY] = parentNodePos;
     if (parentX === UNSET) {
-      x = this.paddingLeft;
+      x = paddingLeft;
       y = PADDING.top + ySpan * 0.5;
     } else {
-      x = this.paddingLeft + parentX / lastIndex * xSpan;
+      x = paddingLeft + parentX / lastIndex * xSpan;
       y = PADDING.top + parentY * ySpan;
     }
     ctx.moveTo(x, y);
-    const nodeXrender = this.paddingLeft + nodeX / lastIndex * xSpan;
+    const nodeXrender = paddingLeft + nodeX / lastIndex * xSpan;
     const nodeYrender = PADDING.top + nodeY * ySpan;
     let center: number;
     let splitTop: number;
@@ -410,7 +432,7 @@ export class PoplarCanvas {
       center = popData.getPoplarCoordCenter(nodeIndex, i);
       splitTop = popData.getPoplarCoordSplitTop(nodeIndex, i);
       if (center !== UNSET && splitTop === UNSET) {
-        x = this.paddingLeft + i / lastIndex * xSpan;
+        x = paddingLeft + i / lastIndex * xSpan;
         y = PADDING.top + center * ySpan;
         if (x < nodeXrender) ctx.lineTo(x, y);
       }
@@ -519,8 +541,7 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      // ctx.fillStyle = 'black';
-      // ctx.fillText(`${selectedNode}`, 20, 20);
+      this.reportSelected(selectedNode);
     }
   }
 
@@ -623,11 +644,25 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      // ctx.fillStyle = 'black';
-      // ctx.fillText(`${selectedNode}`, 20, 20);
+      this.reportSelected(selectedNode);
     }
-
   }
+
+  reportSelected(selectedNode: number) {
+    const ctx = this.ctx;
+    const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, nodeSource] = this.popData.getReadoutData(selectedNode);
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'left';
+    ctx.fillText(`nodeIndex: ${selectedNode}`, 20, 20);
+    ctx.fillText(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${Math.round(areaPct * 100)}%`, 20, 40);
+    ctx.fillText(`peak (cumulative)${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${Math.round(peakPct * 100)}%`, 20, 60);
+    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${Math.round(exclusivePeakPct * 100)}%`, 20, 80);
+    ctx.fillText(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${Math.round(areaScaled * 100)}%`, 20, 100);
+    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${Math.round(peakScaled * 100)}%`, 20, 120);
+    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${Math.round(peakScaledAllotted * 100)}%`, 20, 140);
+    ctx.fillText(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${Math.round(areaScaledAllotted * 100)}%`, 20, 160);
+  }
+
 
 }
 

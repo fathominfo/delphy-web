@@ -26,6 +26,21 @@ const DATA_INDEX = 0;
 const NODE_INDEX = 1;
 
 
+export enum topNodeSources {
+  AREA,
+  PEAK,
+  ALLOTTED,
+  AREA_SCALED,
+  POP_SCALED,
+  POP_SCALED_ALLOTTED,
+  AREA_SCALED_ALLOTED
+}
+
+const TOP_NODE_SOURCE: topNodeSources = topNodeSources.AREA_SCALED_ALLOTED;
+
+
+
+
 export class PoplarData {
   pythia: Pythia | null = null;
   baseTree: PhyloTree | null = null;
@@ -41,13 +56,18 @@ export class PoplarData {
   nodePos: number[][] = [];
   nodeCount: number = UNSET;
   binCount: number = UNSET;
-  allottedAreaHeap: Float32Array = new Float32Array();
+  allottedPrevalenceHeap: Float32Array = new Float32Array();
   poplarCoordHeap: Float32Array = new Float32Array();
+  populationScale: number[] = [];
   dateLabels: DateLabel[] = [];
   fileHash: number = UNSET;
   topAreas: number[][] = [];
+  scaledAreas: number[][] = [];
   peakPrevalences: number[][] = [];
   peakAllottedPrevalences: number[][] = [];
+  peakScaledPrevalences: number[][] = [];
+  peakScaledAllottedPrevalences: number[][] = [];
+  scaledAllottedAreas: number[][] = [];
   topNodes: number[] = [];
 
   setPythia(pythia: Pythia, filename: string) {
@@ -71,7 +91,15 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
-    const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    const { minDate, maxDate, tree, branchPrevalence, population } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    let maxPop = 0;
+    for (let i = 0; i < population.length; i++) {
+      maxPop = Math.max(maxPop, population[i]);
+    }
+    this.populationScale.length = population.length;
+    for (let i = 0; i < population.length; i++) {
+      this.populationScale[i] = population[i] / maxPop;
+    }
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.baseTree = tree;
@@ -93,8 +121,8 @@ export class PoplarData {
     const nodeCount = this.baseTreeNodeYs.length;
     const numBins = this.branchPrevalence[0].length;
     const allottedHeapSize = nodeCount * numBins;
-    if (allottedHeapSize > this.allottedAreaHeap.length) {
-      this.allottedAreaHeap = new Float32Array(allottedHeapSize).fill(UNSET);
+    if (allottedHeapSize > this.allottedPrevalenceHeap.length) {
+      this.allottedPrevalenceHeap = new Float32Array(allottedHeapSize).fill(UNSET);
       this.poplarCoordHeap = new Float32Array(allottedHeapSize * NUM_POPLAR_COORDS).fill(UNSET);
     }
     if (this.nodePos.length === 0) {
@@ -111,35 +139,116 @@ export class PoplarData {
     this.findBranchesExceedPrevalenceThreshold();
   }
 
-  findBranchesExceedPrevalenceThreshold() {
-    if (!this.baseTree) return;
-    const { peakPrevalences, peakAllottedPrevalences, threshold, branchIndices } = this;
-    branchIndices.length = 0;
-    const rootIndex = this.baseTree.getRootIndex();
-    let nodeIndex: number;
-    for (let i = 0; i < peakAllottedPrevalences.length; i++) {
-      nodeIndex = peakAllottedPrevalences[i][NODE_INDEX];
-      if (nodeIndex !== rootIndex && peakAllottedPrevalences[i][DATA_INDEX] >= threshold) {
-        branchIndices.push(nodeIndex);
+
+
+
+  sumAreasAndGetPeaks() {
+    const { branchPrevalence, allottedPrevalenceHeap, binCount, populationScale } = this
+    const areas: number[] = new Array(branchPrevalence.length);
+    const peaks: number[] = new Array(branchPrevalence.length);
+    const exclusivePeaks: number[] = new Array(branchPrevalence.length);
+    const scaledAreas: number[] = new Array(branchPrevalence.length);
+    const scaledPeaks: number[] = new Array(branchPrevalence.length);
+    const scaledExclusivePeaks: number[] = new Array(branchPrevalence.length);
+    const scaledAllottedAreas: number[] = new Array(branchPrevalence.length);
+    let totalArea = 0;
+    let totalScaled = 0;
+    let totalAllottedScaled = 0;
+    let row: number[];
+    let tot: number;
+    let totScaled: number;
+    let totScaledAllot: number;
+    let max: number;
+    let allottedMax: number;
+    let scaledMax: number;
+    let scaledAllottedMax: number;
+    let j: number;
+
+    let val: number;
+    let scaled: number;
+    let allot: number;
+    let pop: number;
+
+    for (let i = 0; i < branchPrevalence.length; i++) {
+      row = branchPrevalence[i];
+      tot = 0;
+      totScaled = 0;
+      totScaledAllot = 0;
+      max = 0;
+      allottedMax = 0;
+      scaledMax = 0;
+      scaledAllottedMax = 0;
+      for (j = 0; j < row.length; j++) {
+        pop = populationScale[j];
+        val = row[j];
+        allot = allottedPrevalenceHeap[i * binCount + j];
+        scaled = val * pop;
+        //
+        tot += val;
+        max = Math.max(max, val);
+        allottedMax = Math.max(allottedMax, allot);
+        totScaled += scaled;
+        scaledMax = Math.max(scaledMax, scaled);
+        scaledAllottedMax = Math.max(scaledAllottedMax, allot * pop);
+        totScaledAllot += allot * pop;
       }
+      areas[i] = tot;
+      peaks[i] = max;
+      exclusivePeaks[i] = allottedMax;
+      scaledAreas[i] = totScaled;
+      scaledPeaks[i] = scaledMax;
+      scaledExclusivePeaks[i] = scaledAllottedMax;
+      scaledAllottedAreas[i] = totScaledAllot;
+      totalArea += tot;
+      totalScaled += totScaled;
+      totalAllottedScaled += totScaledAllot;
     }
+    /* set areas so they reflect the % of total */
+    for (let i = 0; i < areas.length; i++) {
+      areas[i] /= totalArea;
+      scaledAreas[i] /= totalScaled;
+      scaledAllottedAreas[i] /= totalAllottedScaled;
+    }
+    this.topAreas = getSortedTops(areas);
+    this.scaledAreas = getSortedTops(scaledAreas);
+    this.peakPrevalences = getSortedTops(peaks);
+    this.peakAllottedPrevalences = getSortedTops(exclusivePeaks);
+    this.peakScaledPrevalences = getSortedTops(scaledPeaks);
+    this.peakScaledAllottedPrevalences = getSortedTops(scaledExclusivePeaks);
+    this.scaledAllottedAreas = getSortedTops(scaledAllottedAreas);
   }
+
+
+  getTopNodeSource() : number[][] {
+    let source = this.peakPrevalences;
+    switch (TOP_NODE_SOURCE) {
+    case topNodeSources.AREA: source = this.topAreas; break;
+    case topNodeSources.AREA_SCALED: source = this.scaledAreas; break;
+    case topNodeSources.PEAK: source = this.peakPrevalences; break;
+    case topNodeSources.POP_SCALED: source = this.peakScaledPrevalences; break;
+    case topNodeSources.ALLOTTED: source = this.peakAllottedPrevalences; break;
+    case topNodeSources.POP_SCALED_ALLOTTED: source = this.peakScaledAllottedPrevalences; break;
+    case topNodeSources.AREA_SCALED_ALLOTED: source = this.scaledAllottedAreas; break;
+    }
+    return source;
+  }
+
 
   setTopNodes() {
     if (!this.baseTree) return;
     this.sumAreasAndGetPeaks();
-    // const theSource = this.peakAllottedPrevalences;
-    const theSource = this.peakPrevalences;
+    const { topNodes, baseTree } = this;
+    const theSource = this.getTopNodeSource();
     const topThreshold = theSource[DEFAULT_HIGHLIGHT_NODE_COUNT][DATA_INDEX];
-    this.topNodes.length = 0;
-    const rootIndex = this.baseTree.getRootIndex();
+    topNodes.length = 0;
+    const rootIndex = baseTree.getRootIndex();
     let nodeIndex: number;
     for (let i = 0; i < theSource.length; i++) {
       if (theSource[i][DATA_INDEX] >= topThreshold) {
         nodeIndex = theSource[i][NODE_INDEX];
         if (nodeIndex !== rootIndex) {
-          this.topNodes.push(nodeIndex);
-          // const prev = theSource[i][DATA_INDEX];
+          topNodes.push(nodeIndex);
+          // const prev = prevalenceSource[i][DATA_INDEX];
           // const srcAllotted = this.allottedAreaHeap.slice(nodeIndex * this.binCount, (nodeIndex +1) * this.binCount);
           // const at = srcAllotted.indexOf(prev);
           // const leftIndex = this.baseTree.getLeftChildIndexOf(nodeIndex);
@@ -155,6 +264,23 @@ export class PoplarData {
       }
     }
     console.debug(`set colors with threshold ${topThreshold}, ${this.topNodes.length} nodes found`)
+  }
+
+
+  findBranchesExceedPrevalenceThreshold() {
+    if (!this.baseTree) return;
+    const { threshold, branchIndices } = this;
+    const theSource = this.getTopNodeSource();
+    // const theSource = this.peakPrevalences;
+    branchIndices.length = 0;
+    const rootIndex = this.baseTree.getRootIndex();
+    let nodeIndex: number;
+    for (let i = 0; i < theSource.length; i++) {
+      nodeIndex = theSource[i][NODE_INDEX];
+      if (nodeIndex !== rootIndex && theSource[i][DATA_INDEX] >= threshold) {
+        branchIndices.push(nodeIndex);
+      }
+    }
   }
 
 
@@ -198,7 +324,7 @@ export class PoplarData {
 
 
   prepareLayout() {
-    const { baseTree, branchPrevalence, allottedAreaHeap, drawOrder, binCount, nodeCount } = this;
+    const { baseTree, branchPrevalence, allottedPrevalenceHeap, drawOrder, binCount, nodeCount } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
     const start = Date.now();
@@ -223,7 +349,7 @@ export class PoplarData {
           top = 0;
           bottom = 1.0;
           total = branchPrevalence[index][c];
-          allotted = allottedAreaHeap[index * binCount + c];
+          allotted = allottedPrevalenceHeap[index * binCount + c];
           if (total > allotted ) { // total > 0 is implied
             splitTop = top + allotted / 2;
             splitBottom = bottom - allotted / 2;
@@ -234,7 +360,7 @@ export class PoplarData {
       } else {
         for (let c = 0; c < binCount; c++) {
           total = branchPrevalence[index][c];
-          allotted = allottedAreaHeap[index * binCount + c];
+          allotted = allottedPrevalenceHeap[index * binCount + c];
           center = UNSET;
           top = UNSET;
           bottom = UNSET;
@@ -260,14 +386,15 @@ export class PoplarData {
   }
 
   setDrawOrderAndAllotted() {
-    const { drawOrder, baseTree, allottedAreaHeap, branchPrevalence, baseTreeNodeYs, binCount } = this;
+    const { drawOrder, baseTree, allottedPrevalenceHeap, branchPrevalence,
+      baseTreeNodeYs, binCount } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
 
     /*
-      how much area is allotted to each branch, minus
-      the space allotted to its children?
-      */
+    how much area is allotted to each branch, minus
+    the space allotted to its children?
+    */
     const rootIndex = baseTree.getRootIndex();
 
     drawOrder.length = 0;
@@ -291,7 +418,7 @@ export class PoplarData {
         leftRow = branchPrevalence[leftIndex];
         rightRow = branchPrevalence[rightIndex];
         for (col = 0; col < binCount; col++) {
-          allottedAreaHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
+          allottedPrevalenceHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
         }
         if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
           drawOrder.push(leftIndex);
@@ -302,7 +429,7 @@ export class PoplarData {
         }
       } else {
         for (col = 0; col < binCount; col++) {
-          allottedAreaHeap[aaBase + col] = src[col];
+          allottedPrevalenceHeap[aaBase + col] = src[col];
         }
       }
       i++;
@@ -350,38 +477,24 @@ export class PoplarData {
   }
 
 
-  sumAreasAndGetPeaks() {
-    const { branchPrevalence, allottedAreaHeap, binCount } = this
-    const areas: number[] = new Array(branchPrevalence.length);
-    const peaks: number[] = new Array(branchPrevalence.length);
-    const exclusivePeaks: number[] = new Array(branchPrevalence.length);
-    let row: number[];
-    let tot: number;
-    let max: number;
-    let xMax: number;
-    let xPrev: number;
-    let j: number;
-    for (let i = 0; i < branchPrevalence.length; i++) {
-      row = branchPrevalence[i];
-      tot = 0;
-      max = 0;
-      xMax = 0;
-      for (j = 0; j < row.length; j++) {
-        tot += row[j];
-        max = Math.max(max, row[j]);
-        xPrev = allottedAreaHeap[i * binCount + j];
-        xMax = Math.max(xMax, xPrev);
-      }
-      areas[i] = tot;
-      peaks[i] = max;
-      exclusivePeaks[i] = xMax;
-    }
-    this.topAreas = getSortedTops(areas);
-    this.peakPrevalences = getSortedTops(peaks);
-    this.peakAllottedPrevalences = getSortedTops(exclusivePeaks);
+  getReadoutData(nodeIndex: number) : number[] {
+    const areaPct = findData(nodeIndex, this.topAreas);
+    const peakPct = findData(nodeIndex, this.peakPrevalences);
+    const exclusivePeakPct = findData(nodeIndex, this.peakAllottedPrevalences);
+    const areaScaled = findData(nodeIndex, this.scaledAreas);
+    const peakScaled = findData(nodeIndex, this.peakScaledPrevalences);
+    const peakScaledAllotted = findData(nodeIndex, this.peakScaledAllottedPrevalences);
+    const areaScaledAllotted = findData(nodeIndex, this.scaledAllottedAreas);
+    return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, TOP_NODE_SOURCE];
   }
+
 }
 
+
+const findData = (nodeIndex: number, data: number[][]) : number => {
+  const record = data.filter((pair)=>pair[NODE_INDEX] === nodeIndex)[0];
+  return record[DATA_INDEX];
+}
 
 
 const getSortedTops = (data: number[]) : number[][] => {
