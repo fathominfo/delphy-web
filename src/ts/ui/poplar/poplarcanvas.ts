@@ -155,7 +155,7 @@ export class PoplarCanvas {
   setColors() {
     // const { drawOrder, branchIndices, fileHash, baseTree } = this.popData;
     // const { fileHash, baseTree, topNodes } = this.popData;
-    const { baseTree, topNodes } = this.popData;
+    const { baseTree, topNodes, mutCounts } = this.popData;
     if (!baseTree) return;
     const { branchColors } = this;
     // const hashChars = fileHash.toString(16);
@@ -190,7 +190,7 @@ export class PoplarCanvas {
     let parentColor: HCV;
     let isLeft: boolean;
     let isRootLeft: boolean;
-    let hasDescendants: boolean;
+    let hasMutations: boolean;
     let hcv: HCV;
     let colordex = 0;
     while (stack.length > 0) {
@@ -200,15 +200,15 @@ export class PoplarCanvas {
       isLeft = info[2];
       isRootLeft = info[3];
       leftIndex = baseTree.getLeftChildIndexOf(nodeIndex);
-      hasDescendants = leftIndex !== UNSET;
+      hasMutations = mutCounts[nodeIndex] > 0;
       if (topNodes.includes(nodeIndex) && colordex < CORE_COLORS.length) {
         const [h, c, v] = CORE_COLORS[colordex++];
         hcv = new HCV(h, c, v);
       } else {
-        hcv = getColor(parentColor, isLeft, hasDescendants, isRootLeft);
+        hcv = getColor(parentColor, isLeft, hasMutations, isRootLeft);
       }
       hcvs[nodeIndex] = hcv;
-      if (hasDescendants) {
+      if (leftIndex !== UNSET) {
         stack.push([leftIndex, hcv, true, isRootLeft]);
         stack.push([baseTree.getRightChildIndexOf(nodeIndex), hcv, false, isRootLeft]);
       }
@@ -298,7 +298,7 @@ export class PoplarCanvas {
     this.ctx.drawImage(this.areaBuffer, 0, 0, width, height);
     this.ctx.drawImage(this.treeBuffer, 0, 0, width, height);
     this.drawDates();
-    this.drawPopulationCurve(this.ctx);
+    // this.drawPopulationCurve(this.ctx);
   }
 
   drawAreas(ctx: CanvasRenderingContext2D) {
@@ -541,7 +541,7 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      this.reportSelected(selectedNode);
+      // this.reportSelected(selectedNode);
     }
   }
 
@@ -644,7 +644,7 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      this.reportSelected(selectedNode);
+      // this.reportSelected(selectedNode);
     }
   }
 
@@ -653,14 +653,15 @@ export class PoplarCanvas {
     const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, nodeSource] = this.popData.getReadoutData(selectedNode);
     ctx.fillStyle = 'black';
     ctx.textAlign = 'left';
-    ctx.fillText(`nodeIndex: ${selectedNode}`, 20, 20);
-    ctx.fillText(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${Math.round(areaPct * 100)}%`, 20, 40);
-    ctx.fillText(`peak (cumulative)${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${Math.round(peakPct * 100)}%`, 20, 60);
-    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${Math.round(exclusivePeakPct * 100)}%`, 20, 80);
-    ctx.fillText(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${Math.round(areaScaled * 100)}%`, 20, 100);
-    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${Math.round(peakScaled * 100)}%`, 20, 120);
-    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${Math.round(peakScaledAllotted * 100)}%`, 20, 140);
-    ctx.fillText(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${Math.round(areaScaledAllotted * 100)}%`, 20, 160);
+    const y = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 3;
+    ctx.fillText(`nodeIndex: ${selectedNode}`, 20, y);
+    ctx.fillText(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${(areaPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y+20);
+    ctx.fillText(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${(areaScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 40);
+    ctx.fillText(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${(areaScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 60);
+    ctx.fillText(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 80);
+    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 100);
+    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 120);
+    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
   }
 
 
@@ -682,16 +683,24 @@ const stepChr = 0.1;
 const stepVal = 0.2;
 
 
-const getColor = (parentColor: HCV, isLeft: boolean, hasDescendants: boolean, isRootLeft: boolean) : HCV =>{
+const getColor = (parentColor: HCV, isLeft: boolean, hasMutations: boolean, isRootLeft: boolean) : HCV =>{
   let { hue, chroma, value } = parentColor;
+  // if (!hasMutations) {
+  //   return new HCV(hue, chroma, value);
+  // }
   let moveHue, moveChr, moveVal;
   hue -= minHue;
   chroma -= minChr;
   value -= minVal;
 
-  moveHue = stepHue; // * (hasDescendants ? 1 : 0);
+  moveHue = stepHue * 2;
   moveChr = stepChr * (isLeft ? 2 : 1);
   moveVal = stepVal * (isLeft ? 1 : 2);
+  if (!hasMutations) {
+    moveHue *= 0.5;
+    moveChr *= 0.5;
+    moveVal *= 0.5;
+  }
 
   if (isRootLeft) { moveHue *= -1; }
   if (moveChr > rangeChr * 0.5) { moveChr *= -1; }

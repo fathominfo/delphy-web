@@ -45,7 +45,7 @@ export class BaseTreeCanvas extends TreeCanvas {
     this.maxDate = latest;
     this.labels = dateLabels;
     this.drawTree();
-    this.drawTops();
+    // this.drawTops();
   }
 
   drawTops() {
@@ -68,7 +68,7 @@ export class BaseTreeCanvas extends TreeCanvas {
   drawHighlight() {
     const { ctx, selectedNode } = this;
     this.drawTree();
-    this.drawTops();
+    // this.drawTops();
     if (selectedNode !== UNSET) {
       ctx.strokeStyle = 'black';
       this.drawSubtree(selectedNode, ctx, false);
