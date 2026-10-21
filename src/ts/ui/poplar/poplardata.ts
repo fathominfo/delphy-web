@@ -30,13 +30,14 @@ export enum topNodeSources {
   AREA,
   AREA_SCALED,
   AREA_SCALED_ALLOTED,
+  AREA_SCALED_ALLOTED_MUTS_ONLY,
   PEAK,
   ALLOTTED,
   POP_SCALED,
   POP_SCALED_ALLOTTED
 }
 
-const TOP_NODE_SOURCE: topNodeSources = topNodeSources.AREA_SCALED;
+const TOP_NODE_SOURCE: topNodeSources = topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY;
 
 
 
@@ -57,6 +58,7 @@ export class PoplarData {
   nodeCount: number = UNSET;
   binCount: number = UNSET;
   allottedPrevalenceHeap: Float32Array = new Float32Array();
+  allottedPrevalenceMutsOnlyHeap: Float32Array = new Float32Array();
   poplarCoordHeap: Float32Array = new Float32Array();
   populationScale: number[] = [];
   dateLabels: DateLabel[] = [];
@@ -68,6 +70,7 @@ export class PoplarData {
   peakScaledPrevalences: number[][] = [];
   peakScaledAllottedPrevalences: number[][] = [];
   scaledAllottedAreas: number[][] = [];
+  allottedAreasMutsOnly: number[][] = [];
   topNodes: number[] = [];
   mutCounts: Int16Array = new Int16Array();
 
@@ -128,6 +131,7 @@ export class PoplarData {
     const allottedHeapSize = nodeCount * numBins;
     if (allottedHeapSize > this.allottedPrevalenceHeap.length) {
       this.allottedPrevalenceHeap = new Float32Array(allottedHeapSize).fill(UNSET);
+      this.allottedPrevalenceMutsOnlyHeap = new Float32Array(allottedHeapSize).fill(UNSET);
       this.poplarCoordHeap = new Float32Array(allottedHeapSize * NUM_POPLAR_COORDS).fill(UNSET);
     }
     if (this.nodePos.length === 0) {
@@ -149,7 +153,8 @@ export class PoplarData {
 
   sumAreasAndGetPeaks() {
     if (!this.baseTree) return;
-    const { branchPrevalence, allottedPrevalenceHeap, binCount, populationScale } = this
+    const { branchPrevalence, allottedPrevalenceHeap, allottedPrevalenceMutsOnlyHeap,
+      binCount, populationScale } = this
     const areas: number[] = new Array(branchPrevalence.length);
     const peaks: number[] = new Array(branchPrevalence.length);
     const exclusivePeaks: number[] = new Array(branchPrevalence.length);
@@ -157,6 +162,7 @@ export class PoplarData {
     const scaledPeaks: number[] = new Array(branchPrevalence.length);
     const scaledExclusivePeaks: number[] = new Array(branchPrevalence.length);
     const scaledAllottedAreas: number[] = new Array(branchPrevalence.length);
+    const allottedAreasMutsOnly: number[] = new Array(branchPrevalence.length);
     let row: number[];
     let tot: number;
     let totScaled: number;
@@ -165,12 +171,16 @@ export class PoplarData {
     let allottedMax: number;
     let scaledMax: number;
     let scaledAllottedMax: number;
+    let allottedMutsMax: number;
     let j: number;
 
     let val: number;
     let scaled: number;
     let allot: number;
+    let allotMut: number;
     let pop: number;
+
+    let totalMutsOnly = 0;
 
     const root = this.baseTree.getRootIndex();
 
@@ -183,6 +193,7 @@ export class PoplarData {
       allottedMax = 0;
       scaledMax = 0;
       scaledAllottedMax = 0;
+      allottedMutsMax = 0;
       for (j = 0; j < row.length; j++) {
         /*
         the `|| 0` here is probably papering over a small discrepancy
@@ -191,6 +202,7 @@ export class PoplarData {
         pop = populationScale[j] || 0;
         val = row[j];
         allot = allottedPrevalenceHeap[i * binCount + j];
+        allotMut = allottedPrevalenceMutsOnlyHeap[i * binCount + j];
         scaled = val * pop;
         //
         tot += val;
@@ -200,6 +212,7 @@ export class PoplarData {
         scaledMax = Math.max(scaledMax, scaled);
         scaledAllottedMax = Math.max(scaledAllottedMax, allot * pop);
         totScaledAllot += allot * pop;
+        allottedMutsMax = Math.max(allotMut, allottedMutsMax);
       }
       areas[i] = tot;
       peaks[i] = max;
@@ -208,16 +221,20 @@ export class PoplarData {
       scaledPeaks[i] = scaledMax;
       scaledExclusivePeaks[i] = scaledAllottedMax;
       scaledAllottedAreas[i] = totScaledAllot;
-
+      allottedAreasMutsOnly[i] = allottedMutsMax;
+      totalMutsOnly += allottedMutsMax;
     }
     const totalArea = areas[root];
     const totalScaled = scaledAreas[root];
+
+    console.log('total', totalMutsOnly, totalArea);
 
     /* set areas so they reflect the % of total */
     for (let i = 0; i < areas.length; i++) {
       areas[i] /= totalArea;
       scaledAreas[i] /= totalScaled;
       scaledAllottedAreas[i] /= totalScaled;
+      allottedAreasMutsOnly[i] /= totalMutsOnly;
     }
     this.topAreas = getSortedTops(areas);
     this.scaledAreas = getSortedTops(scaledAreas);
@@ -226,6 +243,7 @@ export class PoplarData {
     this.peakScaledPrevalences = getSortedTops(scaledPeaks);
     this.peakScaledAllottedPrevalences = getSortedTops(scaledExclusivePeaks);
     this.scaledAllottedAreas = getSortedTops(scaledAllottedAreas);
+    this.allottedAreasMutsOnly = getSortedTops(allottedAreasMutsOnly);
   }
 
 
@@ -239,6 +257,7 @@ export class PoplarData {
     case topNodeSources.ALLOTTED: source = this.peakAllottedPrevalences; break;
     case topNodeSources.POP_SCALED_ALLOTTED: source = this.peakScaledAllottedPrevalences; break;
     case topNodeSources.AREA_SCALED_ALLOTED: source = this.scaledAllottedAreas; break;
+    case topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY: source = this.allottedAreasMutsOnly; break;
     }
     return source;
   }
@@ -283,8 +302,8 @@ export class PoplarData {
   findBranchesExceedPrevalenceThreshold() {
     if (!this.baseTree) return;
     const { threshold, branchIndices } = this;
-    const theSource = this.getTopNodeSource();
-    // const theSource = this.peakPrevalences;
+    // const theSource = this.getTopNodeSource();
+    const theSource = this.peakScaledPrevalences;
     branchIndices.length = 0;
     const rootIndex = this.baseTree.getRootIndex();
     let nodeIndex: number;
@@ -399,8 +418,8 @@ export class PoplarData {
   }
 
   setDrawOrderAndAllotted() {
-    const { drawOrder, baseTree, allottedPrevalenceHeap, branchPrevalence,
-      baseTreeNodeYs, binCount } = this;
+    const { drawOrder, baseTree, allottedPrevalenceHeap, allottedPrevalenceMutsOnlyHeap,
+      branchPrevalence, baseTreeNodeYs, binCount } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
 
@@ -447,6 +466,42 @@ export class PoplarData {
       }
       i++;
     }
+    i = drawOrder.length - 1;
+    let hasMutations: boolean;
+    let parentIndex: number;
+    let parentBase: number;
+    let hasParent: boolean;
+    allottedPrevalenceMutsOnlyHeap.fill(0);
+    while (i >= 0) {
+      index = drawOrder[i] as number;
+      src = branchPrevalence[index];
+      aaBase = index * binCount;
+      hasMutations = this.mutCounts[index] > 0;
+      parentIndex = baseTree.getParentIndexOf(index);
+      hasParent = parentIndex !== UNSET;
+      parentBase = parentIndex * binCount;
+      if (hasMutations) {
+        for (col = 0; col < binCount; col++) {
+          allottedPrevalenceMutsOnlyHeap[aaBase + col] += src[col];
+          if (hasParent) {
+            allottedPrevalenceMutsOnlyHeap[parentBase + col] -= src[col];
+          }
+        }
+      } else {
+        /*
+        carry up the (negative) total of descendant nodes, and
+        set this prevalence to 0
+        */
+        for (col = 0; col < binCount; col++) {
+          if (hasParent) {
+            allottedPrevalenceMutsOnlyHeap[parentBase + col] += allottedPrevalenceMutsOnlyHeap[aaBase + col];
+          }
+          allottedPrevalenceMutsOnlyHeap[aaBase + col] = 0;
+        }
+      }
+      i--;
+    }
+
   }
 
 
@@ -498,7 +553,8 @@ export class PoplarData {
     const peakScaled = findData(nodeIndex, this.peakScaledPrevalences);
     const peakScaledAllotted = findData(nodeIndex, this.peakScaledAllottedPrevalences);
     const areaScaledAllotted = findData(nodeIndex, this.scaledAllottedAreas);
-    return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, TOP_NODE_SOURCE];
+    const areaAllottedMutsOnly = findData(nodeIndex, this.allottedAreasMutsOnly);
+    return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, areaAllottedMutsOnly, TOP_NODE_SOURCE];
   }
 
 }

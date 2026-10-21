@@ -650,7 +650,7 @@ export class PoplarCanvas {
 
   reportSelected(selectedNode: number) {
     const ctx = this.ctx;
-    const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, nodeSource] = this.popData.getReadoutData(selectedNode);
+    const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, areaAllottedMutsOnly, nodeSource] = this.popData.getReadoutData(selectedNode);
     ctx.fillStyle = 'black';
     ctx.textAlign = 'left';
     const y = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 3;
@@ -658,10 +658,12 @@ export class PoplarCanvas {
     ctx.fillText(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${(areaPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y+20);
     ctx.fillText(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${(areaScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 40);
     ctx.fillText(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${(areaScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 60);
-    ctx.fillText(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 80);
-    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 100);
-    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 120);
-    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
+    ctx.fillText(`area allotted (muts only)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY ? '*' : ''}: ${(areaAllottedMutsOnly * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 80);
+    ctx.fillText(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 100);
+    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 120);
+    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
+    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 160);
+
   }
 
 
