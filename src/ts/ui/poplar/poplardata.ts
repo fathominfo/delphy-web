@@ -167,11 +167,11 @@ export class PoplarData {
     let tot: number;
     let totScaled: number;
     let totScaledAllot: number;
+    let allottedMutsArea: number;
     let max: number;
     let allottedMax: number;
     let scaledMax: number;
     let scaledAllottedMax: number;
-    let allottedMutsMax: number;
     let j: number;
 
     let val: number;
@@ -180,8 +180,6 @@ export class PoplarData {
     let allotMut: number;
     let pop: number;
 
-    let totalMutsOnly = 0;
-
     const root = this.baseTree.getRootIndex();
 
     for (let i = 0; i < branchPrevalence.length; i++) {
@@ -189,11 +187,12 @@ export class PoplarData {
       tot = 0;
       totScaled = 0;
       totScaledAllot = 0;
+      allottedMutsArea = 0;
       max = 0;
       allottedMax = 0;
       scaledMax = 0;
       scaledAllottedMax = 0;
-      allottedMutsMax = 0;
+
       for (j = 0; j < row.length; j++) {
         /*
         the `|| 0` here is probably papering over a small discrepancy
@@ -206,13 +205,13 @@ export class PoplarData {
         scaled = val * pop;
         //
         tot += val;
+        allottedMutsArea += allotMut * pop;
         max = Math.max(max, val);
         allottedMax = Math.max(allottedMax, allot);
         totScaled += scaled;
         scaledMax = Math.max(scaledMax, scaled);
         scaledAllottedMax = Math.max(scaledAllottedMax, allot * pop);
         totScaledAllot += allot * pop;
-        allottedMutsMax = Math.max(allotMut, allottedMutsMax);
       }
       areas[i] = tot;
       peaks[i] = max;
@@ -221,20 +220,17 @@ export class PoplarData {
       scaledPeaks[i] = scaledMax;
       scaledExclusivePeaks[i] = scaledAllottedMax;
       scaledAllottedAreas[i] = totScaledAllot;
-      allottedAreasMutsOnly[i] = allottedMutsMax;
-      totalMutsOnly += allottedMutsMax;
+      allottedAreasMutsOnly[i] = allottedMutsArea;
     }
     const totalArea = areas[root];
     const totalScaled = scaledAreas[root];
-
-    console.log('total', totalMutsOnly, totalArea);
 
     /* set areas so they reflect the % of total */
     for (let i = 0; i < areas.length; i++) {
       areas[i] /= totalArea;
       scaledAreas[i] /= totalScaled;
       scaledAllottedAreas[i] /= totalScaled;
-      allottedAreasMutsOnly[i] /= totalMutsOnly;
+      allottedAreasMutsOnly[i] /= totalScaled;
     }
     this.topAreas = getSortedTops(areas);
     this.scaledAreas = getSortedTops(scaledAreas);
@@ -501,6 +497,14 @@ export class PoplarData {
       }
       i--;
     }
+    // const bintots: number[] = new Array(binCount).fill(0);
+    // for (col = 0; col < binCount; col++) {
+    //   for (let i = 0; i < this.nodeCount; i++) {
+    //     bintots[col] += allottedPrevalenceMutsOnlyHeap[i * binCount + col];
+    //   }
+    // }
+    // console.log(`
+    //   bin totals`, bintots)
 
   }
 
