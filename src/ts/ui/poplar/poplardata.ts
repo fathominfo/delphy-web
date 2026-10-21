@@ -184,7 +184,11 @@ export class PoplarData {
       scaledMax = 0;
       scaledAllottedMax = 0;
       for (j = 0; j < row.length; j++) {
-        pop = populationScale[j];
+        /*
+        the `|| 0` here is probably papering over a small discrepancy
+        [mark 261021]
+        */
+        pop = populationScale[j] || 0;
         val = row[j];
         allot = allottedPrevalenceHeap[i * binCount + j];
         scaled = val * pop;
@@ -246,6 +250,9 @@ export class PoplarData {
     const { topNodes, baseTree, mutCounts } = this;
     const theSource = this.getTopNodeSource();
     const topThreshold = theSource[DEFAULT_HIGHLIGHT_NODE_COUNT][DATA_INDEX];
+    if (isNaN(topThreshold)) {
+      console.log(theSource)
+    }
     topNodes.length = 0;
     const rootIndex = baseTree.getRootIndex();
     let nodeIndex: number;
