@@ -301,6 +301,14 @@ export class PoplarCanvas {
     // this.drawPopulationCurve(this.ctx);
   }
 
+  animate() {
+    const { ctx, width, height } = this;
+    ctx.clearRect(0, 0, width, height);
+    this.drawTree(ctx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawAreas(ctx);
+    this.drawDates();
+  }
+
   drawAreas(ctx: CanvasRenderingContext2D) {
     const { drawOrder, branchIndices, baseTree } = this.popData;
     if (!baseTree) return;
@@ -318,7 +326,8 @@ export class PoplarCanvas {
 
   /* render the tree branches */
   drawTree(ctx: CanvasRenderingContext2D, color: string, weight: number) {
-    const { drawOrder, baseTree, nodePos } = this.popData;
+    const popData = this.popData;
+    const { drawOrder, baseTree } = popData;
     if (!baseTree) return;
     ctx.strokeStyle = color;
     ctx.lineWidth = weight;
@@ -330,8 +339,8 @@ export class PoplarCanvas {
     for (let i = 0; i < drawOrder.length; i++) {
       nodeIndex = drawOrder[i];
       parentIndex = baseTree.getParentIndexOf(nodeIndex);
-      currentNodePos = nodePos[nodeIndex];
-      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      currentNodePos = popData.getNodePos(nodeIndex);
+      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
       this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
     }
     ctx.stroke();
@@ -385,14 +394,24 @@ export class PoplarCanvas {
     const { xSpan, ySpan, popData, paddingLeft } = this;
     const pop = popData.populationScale;
     const last = pop.length - 1;
-    ctx.beginPath();
+    const cy = PADDING.top + ySpan * 0.5;
+    const getY = (y: number, direction: number) => {
+      return cy + direction * y * 0.5 * ySpan;
+    };
+
     let i = 0;
     let x: number = paddingLeft;
-    let y: number = PADDING.top + ySpan * (1 - pop[0])
+    let y: number = getY(pop[0], -1)
+    ctx.beginPath();
     ctx.moveTo(x, y);
     for (i = 1; i < pop.length; i++) {
       x = paddingLeft + i / last * xSpan;
-      y = PADDING.top + ySpan * (1 - pop[i]);
+      y = getY(pop[i], -1);
+      ctx.lineTo(x, y);
+    }
+    for (i = pop.length -1; i >=0; i--) {
+      x = paddingLeft + i / last * xSpan;
+      y = getY(pop[i], 1);
       ctx.lineTo(x, y);
     }
     ctx.strokeStyle = "black";
@@ -512,8 +531,8 @@ export class PoplarCanvas {
   }
 
   drawHighlightTree() {
-    const { ctx, selectedNode, width, height } = this;
-    const { baseTree, nodePos } = this.popData;
+    const { ctx, selectedNode, width, height, popData } = this;
+    const { baseTree } = popData;
     if (!baseTree) return;
     ctx.clearRect(0, 0, width, height);
     if (selectedNode === UNSET) {
@@ -536,18 +555,19 @@ export class PoplarCanvas {
       ctx.strokeStyle = BRANCH_COLOR;
       ctx.beginPath();
       const parentIndex = baseTree.getParentIndexOf(selectedNode);
-      const currentNodePos = nodePos[selectedNode];
-      const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      const currentNodePos = popData.getNodePos(selectedNode);
+      const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
       // this.reportSelected(selectedNode);
+      // this.drawPopulationCurve(this.ctx);
     }
   }
 
   drawHighlightArea() {
-    const { ctx, selectedNode, width, height } = this;
-    const { baseTree, nodePos } = this.popData;
+    const { ctx, selectedNode, width, height, popData } = this;
+    const { baseTree } = popData;
     if (!baseTree) return;
     ctx.clearRect(0, 0, width, height);
     if (selectedNode === UNSET) {
@@ -574,8 +594,8 @@ export class PoplarCanvas {
         nodeIndex = pair[0];
         if (nodeIndex !== selectedNode) {
           parentIndex = pair[1];
-          currentNodePos = nodePos[nodeIndex];
-          parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+          currentNodePos = popData.getNodePos(nodeIndex);
+          parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
           this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
           left = baseTree.getLeftChildIndexOf(nodeIndex);
           if (left !== UNSET) {
@@ -617,8 +637,8 @@ export class PoplarCanvas {
           pair = stack.shift() as [number, number];
           nodeIndex = pair[0];
           parentIndex = pair[1];
-          currentNodePos = nodePos[nodeIndex];
-          parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+          currentNodePos = popData.getNodePos(nodeIndex);
+          parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
           this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
           left = baseTree.getLeftChildIndexOf(nodeIndex);
           if (left !== UNSET) {
@@ -639,18 +659,20 @@ export class PoplarCanvas {
       ctx.lineWidth = BRANCH_WEIGHT;
       ctx.beginPath();
       parentIndex = baseTree.getParentIndexOf(selectedNode);
-      currentNodePos = nodePos[selectedNode];
-      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      currentNodePos = popData.getNodePos(selectedNode);
+      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
+      // this.drawPopulationCurve(this.ctx);
       // this.reportSelected(selectedNode);
     }
   }
 
   reportSelected(selectedNode: number) {
     const ctx = this.ctx;
-    const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, areaAllottedMutsOnly, nodeSource] = this.popData.getReadoutData(selectedNode);
+    const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted,
+      areaScaledAllotted, areaAllottedMutsOnly, nodeSource, column, nodeY] = this.popData.getReadoutData(selectedNode);
     ctx.fillStyle = 'black';
     ctx.textAlign = 'left';
     const y = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 3;
@@ -663,7 +685,25 @@ export class PoplarCanvas {
     ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 120);
     ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
     ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 160);
+    ctx.fillText(`node position: ${column}, ${nodeY}%`, 20, y + 180);
+  }
 
+
+  startPopScaleAnimation() {
+    console.log("start animation");
+    const animationInterval = setInterval(()=>{
+      this.popData.updateAnimation();
+      requestAnimationFrame(()=>this.animate());
+      if (this.popData.animationComplete()) {
+        clearInterval(animationInterval);
+        /* set up buffers for highlights */
+        const { areaBufferCtx, treeBufferCtx, width, height } = this;
+        areaBufferCtx.clearRect(0, 0, width, height);
+        treeBufferCtx.clearRect(0, 0, width, height);
+        this.drawTree(treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+        this.drawAreas(areaBufferCtx);
+      }
+    }, 30);
   }
 
 

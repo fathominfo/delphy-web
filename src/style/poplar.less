@@ -61,13 +61,17 @@
 prevent the input from affecting the canvas size
 was throwing off the hover detection
 */
-#poplar--minlinpct {
+#poplar--controls {
   position: absolute;
   bottom: 0;
+  display: flex;
+  gap: 30px;
 }
 #poplar--minlinpct .poplar-value {
   display: inline-block;
-  width: 3em;
+  width: 45px;
+  padding-right: 5px;
+  text-align: right;
 }
 
 #poplar--minlinpct span {
@@ -75,6 +79,7 @@ was throwing off the hover detection
 }
 
 #poplar--minlinpct input {
+  width: 200px;
 &::-webkit-slider-thumb {
     -webkit-appearance: none;
   }
