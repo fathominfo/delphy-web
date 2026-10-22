@@ -137,7 +137,7 @@ export class PoplarData {
     if (this.nodePos.length === 0) {
       this.nodePos = new Array(nodeCount);
       for (let i = 0; i < nodeCount; i++) {
-        this.nodePos[i] = [UNSET, UNSET];
+        this.nodePos[i] = [UNSET, UNSET, UNSET];
       }
     }
   }
@@ -325,28 +325,37 @@ export class PoplarData {
     let fraction: number;
     let y1: number;
     let y2: number;
+    let y1Unscaled: number;
+    let y2Unscaled: number;
     let nodeY: number;
+    let nodeYUnscaled: number;
 
     for (let nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
       nodeTime = baseTree.getTimeOf(nodeIndex);
       timePercent = (nodeTime - minDate) / (maxDate - minDate);
       column = timePercent * lastBin;
       column1 = Math.floor(column);
+      y1Unscaled = this.getUnscaledPoplarCoordCenter(nodeIndex, column1);
+      y2Unscaled = column1 === lastBin ? y1Unscaled : this.getUnscaledPoplarCoordCenter(nodeIndex, column1 + 1);
       y1 = this.getPoplarCoordCenter(nodeIndex, column1);
       y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1);
       nodeY = UNSET;
       if (y1 === UNSET) {
         nodeY = y2;
+        nodeYUnscaled = y2Unscaled;
       } else {
         if (y2 === UNSET) {
           nodeY = y1;
+          nodeYUnscaled = y1Unscaled;
         } else {
           fraction = column - column1;
           nodeY = y1 + fraction * (y2 - y1);
+          nodeYUnscaled = y1Unscaled + fraction * (y2Unscaled - y1Unscaled);
         }
       }
       this.nodePos[nodeIndex][0] = column;
       this.nodePos[nodeIndex][1] = nodeY;
+      this.nodePos[nodeIndex][2] = nodeYUnscaled;
     }
   }
 
@@ -396,7 +405,7 @@ export class PoplarData {
           splitBottom = UNSET;
           childTop = UNSET;
           if (total > 0) {
-            top = this.getPoplarCoordChildTop(parent, c);
+            top = this.getUnscaledPoplarCoordChildTop(parent, c);
             bottom = top + total;
             center = (top + bottom) / 2;
             this.setPoplarCoordChildTop(parent, c, bottom);
@@ -517,6 +526,11 @@ export class PoplarData {
     top: number, bottom: number, splitTop: number, splitBottom: number,
     childTop: number
   ) {
+
+    if (Math.max.apply(null, [center, top,bottom,splitTop, splitBottom, childTop])>1) {
+      console.debug(nodeIndex, bin, [center, top, bottom, splitTop, splitBottom, childTop]);
+    }
+
     const baseIndex = this.getCoordBaseIndex(nodeIndex, bin);
     this.poplarCoordHeap[baseIndex + ix_center] = center;
     this.poplarCoordHeap[baseIndex + ix_top] = top;
@@ -526,26 +540,62 @@ export class PoplarData {
     this.poplarCoordHeap[baseIndex + ix_childTop] = childTop;
   }
 
-  getPoplarCoordCenter(nodeIndex: number, bin: number) {
+  getUnscaledPoplarCoordCenter(nodeIndex: number, bin: number) {
     return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_center];
   }
-  getPoplarCoordTop(nodeIndex: number, bin: number) {
+  getUnscaledPoplarCoordTop(nodeIndex: number, bin: number) {
     return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_top];
   }
-  getPoplarCoordBottom(nodeIndex: number, bin: number) {
+  getUnscaledPoplarCoordBottom(nodeIndex: number, bin: number) {
     return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_bottom];
   }
-  getPoplarCoordSplitTop(nodeIndex: number, bin: number) {
+  getUnscaledPoplarCoordSplitTop(nodeIndex: number, bin: number) {
     return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_splitTop];
   }
-  getPoplarCoordSplitBottom(nodeIndex: number, bin: number) {
+  getUnscaledPoplarCoordSplitBottom(nodeIndex: number, bin: number) {
     return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_splitBottom];
   }
-  getPoplarCoordChildTop(nodeIndex: number, bin: number) {
+  getUnscaledPoplarCoordChildTop(nodeIndex: number, bin: number) {
     return this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop];
+  }
+
+
+  /* scale the number according to the population at that time */
+  getPoplarCoordCenter(nodeIndex: number, bin: number) {
+    return this.popScale(this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_center], bin);
+  }
+  getPoplarCoordTop(nodeIndex: number, bin: number) {
+    return this.popScale(this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_top], bin);
+  }
+  getPoplarCoordBottom(nodeIndex: number, bin: number) {
+    return this.popScale(this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_bottom], bin);
+  }
+  getPoplarCoordSplitTop(nodeIndex: number, bin: number) {
+    return this.popScale(this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_splitTop], bin);
+  }
+  getPoplarCoordSplitBottom(nodeIndex: number, bin: number) {
+    return this.popScale(this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_splitBottom], bin);
+  }
+  getPoplarCoordChildTop(nodeIndex: number, bin: number) {
+    return this.popScale(this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop], bin);
   }
   setPoplarCoordChildTop(nodeIndex: number, bin: number, childTop: number) {
     this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop] = childTop;
+  }
+
+  /* take a y-value, and scale it according to the population at that bin */
+  popScale(y: number, bin: number) : number {
+    if (y === UNSET) return y;
+    const popPct: number = this.populationScale[bin];
+    const top = (1 - popPct) * 0.5;
+    return top + y * popPct;
+  }
+
+  getNodePos(nodeIndex:number, unscaled = false) : number[] {
+    if (!this.nodePos) return [UNSET, UNSET];
+    const [col, y, yUnscaled] = this.nodePos[nodeIndex];
+    if (unscaled) return [col, yUnscaled];
+    return [col, y];
   }
 
 
@@ -558,7 +608,9 @@ export class PoplarData {
     const peakScaledAllotted = findData(nodeIndex, this.peakScaledAllottedPrevalences);
     const areaScaledAllotted = findData(nodeIndex, this.scaledAllottedAreas);
     const areaAllottedMutsOnly = findData(nodeIndex, this.allottedAreasMutsOnly);
-    return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, areaAllottedMutsOnly, TOP_NODE_SOURCE];
+    const [ column, nodeY ] = this.nodePos[nodeIndex];
+    return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted,
+      areaScaledAllotted, areaAllottedMutsOnly, TOP_NODE_SOURCE, column, nodeY];
   }
 
 }
