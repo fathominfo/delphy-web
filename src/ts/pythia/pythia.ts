@@ -180,6 +180,7 @@ export class Pythia {
   hkyPiCHist: number[] = [];
   hkyPiGHist: number[] = [];
   hkyPiTHist: number[] = [];
+  tauHist: number[] = [];
   popModelHist: PopModel[] = [];
   stepsHist : number[] = [];
   minDateHist: number[] = [];
@@ -627,6 +628,7 @@ export class Pythia {
     this.hkyPiCHist = [];
     this.hkyPiGHist = [];
     this.hkyPiTHist = [];
+    this.tauHist = [];
     this.popModelHist = [];
     this.stepsHist = [];
     this.minDateHist = [];
@@ -666,6 +668,7 @@ export class Pythia {
         this.hkyPiCHist.pop();
         this.hkyPiGHist.pop();
         this.hkyPiTHist.pop();
+        this.tauHist.pop()
         this.popModelHist.pop();
         this.paramsHist.pop();
         this.treeHist.pop();
@@ -691,6 +694,12 @@ export class Pythia {
       this.hkyPiCHist.push(this.run.getHkyPiC());
       this.hkyPiGHist.push(this.run.getHkyPiG());
       this.hkyPiTHist.push(this.run.getHkyPiT());
+      if (this.runParams?.popModelIsSkygrid) {
+        const tau = this.run.getSkygridTau();
+        this.tauHist.push(tau);
+      }else{
+        this.tauHist.push(0);
+      }
       this.popModelHist.push(this.run.getPopModel());
       this.paramsHist.push(this.run.getParamsToFlatbuffer());
       this.trackTree(this.run);

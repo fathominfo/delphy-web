@@ -782,6 +782,15 @@ function hideEntryPoints() {
 }
 
 
+const citationSection = uploadDiv.querySelector("#uploader--citation") as HTMLDivElement;
+const citationCheckbox = citationSection.querySelector("#citation-agreement-input") as HTMLInputElement;
+const citationButton = citationSection.querySelector("#citation-agreement-confirmation") as HTMLButtonElement;
+citationCheckbox.addEventListener("change", ()=>{
+  citationButton.disabled = !citationCheckbox.checked;
+});
+citationButton.addEventListener("click", ()=>{
+  uploadDiv.classList.add("citing-acknowledged");
+});
 
 
 export { bindUpload, hideUpload, loadNow };
