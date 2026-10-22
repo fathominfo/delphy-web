@@ -304,12 +304,8 @@ export class PoplarCanvas {
   animate() {
     const { ctx, width, height } = this;
     ctx.clearRect(0, 0, width, height);
-    this.areaBufferCtx.clearRect(0, 0, width, height);
-    this.treeBufferCtx.clearRect(0, 0, width, height);
-    this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
-    this.drawAreas(this.areaBufferCtx);
-    this.ctx.drawImage(this.areaBuffer, 0, 0, width, height);
-    this.ctx.drawImage(this.treeBuffer, 0, 0, width, height);
+    this.drawTree(ctx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawAreas(ctx);
     this.drawDates();
   }
 
@@ -564,7 +560,7 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      this.reportSelected(selectedNode);
+      // this.reportSelected(selectedNode);
       // this.drawPopulationCurve(this.ctx);
     }
   }
@@ -669,7 +665,7 @@ export class PoplarCanvas {
       ctx.stroke();
       this.drawDates();
       // this.drawPopulationCurve(this.ctx);
-      this.reportSelected(selectedNode);
+      // this.reportSelected(selectedNode);
     }
   }
 
@@ -700,6 +696,12 @@ export class PoplarCanvas {
       requestAnimationFrame(()=>this.animate());
       if (this.popData.animationComplete()) {
         clearInterval(animationInterval);
+        /* set up buffers for highlights */
+        const { areaBufferCtx, treeBufferCtx, width, height } = this;
+        areaBufferCtx.clearRect(0, 0, width, height);
+        treeBufferCtx.clearRect(0, 0, width, height);
+        this.drawTree(treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+        this.drawAreas(areaBufferCtx);
       }
     }, 30);
   }
