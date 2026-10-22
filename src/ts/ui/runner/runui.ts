@@ -104,7 +104,9 @@ enum TraceChart {
   hkyPiG,
   hkyPiT,
   gamma,
-  tipCheck
+  tipCheck,
+  tau,
+  halfDoublingTime
 }
 
 
@@ -459,6 +461,26 @@ export class RunUI extends MccUI {
       labelFunction: pctLabelFnc,
       stdErrLabelFunction: pctLabelFnc
     };
+    this.traceChartConfig[TraceChart.tau] = {
+      name: "Precision",
+      unit: '',
+      className: "tau",
+      dataFnc: ()=>(this.pythia as Pythia).tauHist,
+      isDiscrete: false
+    };
+    this.traceChartConfig[TraceChart.halfDoublingTime] = {
+      name: "Half-Doubling time",
+      unit: 'days',
+      className: "half-doubling-time",
+      dataFnc: () => {
+        if (!this.pythia) return [];
+        return this.pythia.tauHist.map((n, i) => {
+          const popModel = this.pythia?.popModelHist[i] as SkygridPopModel;
+          return n * Math.pow(Math.log(2), 2) * (popModel.x[1] - popModel.x[0]);
+        });
+      },
+      isDiscrete: false
+    };
 
 
     this.decideTraceCharts();
@@ -706,6 +728,10 @@ export class RunUI extends MccUI {
           TraceChart.hkyPiG, TraceChart.hkyPiT]);
       }
       if (params.popModelIsSkygrid) {
+        if (params.skygridTauConfig === tauConfigOption.INFER) {
+          availables.push(TraceChart.tau);
+          availables.push(TraceChart.halfDoublingTime);
+        }
         gammas.push(TraceChart.gamma);
         toShow.push(TraceChart.gamma);
       }
