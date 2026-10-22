@@ -1,10 +1,11 @@
+import { HCV, Lab } from "../../util/lab";
 import { resizeCanvas, UNSET, DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
   TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2, TREE_TEXT_COLOR, TREE_TEXT_COLOR_2,
   TREE_TEXT_FONT, TREE_TEXT_FONT_2, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP
 } from "../common";
 import { DateLabel } from "../datelabel";
 import { PoplarChart, SelectNodeCallback } from "./poplarcommon";
-import { PoplarData } from "./poplardata";
+import { PoplarData, topNodeSources } from "./poplardata";
 
 
 const PADDING = {
@@ -14,23 +15,43 @@ const PADDING = {
   right: 25
 };
 
-const COLORS = [
-  "rgb(145,205,255)",
-  "rgb(119,148,158)",
-  "rgb(0,156,189)",
-  "rgb(0,235,251)",
-  "rgb(111,186,240)",
-  "rgb(65,255,255)",
-  "rgb(52,219,193)",
-  "rgb(83,192,240)"
+// const COLORS = [
+//   "rgb(145,205,255)",
+//   "rgb(119,148,158)",
+//   "rgb(0,156,189)",
+//   "rgb(0,235,251)",
+//   "rgb(111,186,240)",
+//   "rgb(65,255,255)",
+//   "rgb(52,219,193)",
+//   "rgb(83,192,240)"
+// ];
+
+
+/* colors are in HCV */
+const CORE_COLORS = [
+  [8, 0.33070866141732286, 0.48],
+  [19, 0.07874015748031496, 0.21],
+  [27, 0.3307086614173228, 0.48],
+  [4, 0.14173228346456693, 0.7],
+  [59, 0.14173228346456693, 0.4],
+  [62, 0.6535433070866141, 0.67],
+  [29, 0.16535433070866143, 0.32],
+  [33, 0.3543307086614173, 0.58],
+  [4, 0.31496062992125984, 0.79],
+  [4, 0.5826771653543307, 0.62],
+  [28, 0.2755905511811024, 0.24],
+  [32, -0, 0.38]
 ];
+
 
 const BRANCH_COLOR = "#00000099";
 const BRANCH_COLOR_DARK = "#000";
 const BRANCH_COLOR_LIGHT = "#999";
 const BRANCH_WEIGHT = 0.5;
-const BRANCH_WEIGHT_LIGHT = 0.25;
+// const BRANCH_WEIGHT_LIGHT = 0.25;
 
+
+type ColorInputs = [nodeIndex: number, parentColor: HCV, isLeft: boolean, isRootLeft: boolean];
 
 export class PoplarCanvas {
   canvas: HTMLCanvasElement;
@@ -43,7 +64,7 @@ export class PoplarCanvas {
   xSpan: number = UNSET;
   ySpan: number = UNSET;
   /* sparse array of colors */
-  branchColors: string[] = [];
+  branchColors: NodeColor[] = [];
   selectedNode: number = UNSET;
   paddingRight: number = PADDING.right;
   paddingLeft: number = PADDING.left;
@@ -121,6 +142,7 @@ export class PoplarCanvas {
     const totalXSpan = this.width - PADDING.left - PADDING.right;
     const startPct = (minDate - minDateAcrossTrees) / totalDateRange;
     const endPct = (maxDate - minDateAcrossTrees) / totalDateRange;
+    this.setColors();
     this.paddingLeft = PADDING.left + startPct * totalXSpan;
     this.paddingRight = this.width - (PADDING.left + endPct * totalXSpan);
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
@@ -131,28 +153,101 @@ export class PoplarCanvas {
   }
 
   setColors() {
-    const { drawOrder, branchIndices } = this.popData;
+    // const { drawOrder, branchIndices, fileHash, baseTree } = this.popData;
+    // const { fileHash, baseTree, topNodes } = this.popData;
+    const { baseTree, topNodes, mutCounts } = this.popData;
+    if (!baseTree) return;
     const { branchColors } = this;
-    let colorIndex = 0;
+    // const hashChars = fileHash.toString(16);
+    // let hue = parseInt(hashChars.substring(1, 3), 16);
+    // let chroma = parseInt(hashChars.substring(3, 5), 16);
+    // let value = parseInt(hashChars.substring(5, 7), 16);
+    // hue = Math.floor(hue / 255.0 * rangeHue);
+    // chroma = chroma / 255.0 * rangeChr;
+    // value = value / 255.0 * rangeVal;
+    const hcvs: HCV[] = [];
+    const stack: ColorInputs[] = [];
+    const rootColor = new HCV(0, 0, 1);
+    const rootIndex = baseTree.getRootIndex();
+    let leftIndex = baseTree.getLeftChildIndexOf(rootIndex);
+    const rightIndex = baseTree.getRightChildIndexOf(rootIndex);
+    /*
+    force the first two nodes in the tree to have specific colors
+    */
+    if (!topNodes.includes(leftIndex)){
+      topNodes.push(leftIndex);
+      topNodes.push(rightIndex);
+    }
+    console.debug(`
+      setColors: ${topNodes.length} nodes, choosing from ${CORE_COLORS.length} colors
+      ${topNodes.join()}
+    `);
+    hcvs[rootIndex] = getColor(rootColor, true, true, false);
+    stack.push([leftIndex, rootColor, true, true]);
+    stack.push([rightIndex, rootColor, false, false]);
+    let info: ColorInputs;
     let nodeIndex: number;
-    for (let i = 0; i < drawOrder.length; i++) {
-      nodeIndex = drawOrder[i];
-      if (branchIndices.includes(nodeIndex) && branchColors[nodeIndex] === undefined) {
-        branchColors[nodeIndex] = COLORS[colorIndex];
-        // console.log(nodeIndex, i, branchColors[nodeIndex], [91,84].includes(nodeIndex)? '--------' : '');
-        colorIndex++;
-        colorIndex %= COLORS.length;
+    let parentColor: HCV;
+    let isLeft: boolean;
+    let isRootLeft: boolean;
+    let hasMutations: boolean;
+    let hcv: HCV;
+    let colordex = 0;
+    while (stack.length > 0) {
+      info = stack.shift() as ColorInputs;
+      nodeIndex = info[0];
+      parentColor = info[1];
+      isLeft = info[2];
+      isRootLeft = info[3];
+      leftIndex = baseTree.getLeftChildIndexOf(nodeIndex);
+      hasMutations = mutCounts[nodeIndex] > 0;
+      if (topNodes.includes(nodeIndex) && colordex < CORE_COLORS.length) {
+        const [h, c, v] = CORE_COLORS[colordex++];
+        hcv = new HCV(h, c, v);
+      } else {
+        hcv = getColor(parentColor, isLeft, hasMutations, isRootLeft);
+      }
+      hcvs[nodeIndex] = hcv;
+      if (leftIndex !== UNSET) {
+        stack.push([leftIndex, hcv, true, isRootLeft]);
+        stack.push([baseTree.getRightChildIndexOf(nodeIndex), hcv, false, isRootLeft]);
       }
     }
+
+
+    for (let i = 0; i< hcvs.length; i++) {
+      branchColors[i] = new NodeColor(hcvs[i]);
+    }
+
+
+    // let colorIndex = 0;
+    // let nodeIndex: number;
+    // for (let i = 0; i < drawOrder.length; i++) {
+    //   nodeIndex = drawOrder[i];
+    //   if (branchIndices.includes(nodeIndex) && branchColors[nodeIndex] === undefined) {
+    //     branchColors[nodeIndex] = COLORS[colorIndex];
+    //     colorIndex++;
+    //     colorIndex %= COLORS.length;
+    //   }
+    // }
   }
 
-  getColor(nodeIndex: number): string {
+  getNodeFill(nodeIndex: number): string {
     let c = this.branchColors[nodeIndex];
     if (!c) {
       this.setColors();
       c = this.branchColors[nodeIndex];
     }
-    return c;
+    return c.fill;
+  }
+
+  getStroke(nodeIndex: number): string {
+    let c = this.branchColors[nodeIndex];
+    if (!c) {
+      this.setColors();
+      c = this.branchColors[nodeIndex];
+    }
+    return c.stroke;
   }
 
   setSelectedNode(nodeIndex: number, src: PoplarChart) {
@@ -203,6 +298,7 @@ export class PoplarCanvas {
     this.ctx.drawImage(this.areaBuffer, 0, 0, width, height);
     this.ctx.drawImage(this.treeBuffer, 0, 0, width, height);
     this.drawDates();
+    // this.drawPopulationCurve(this.ctx);
   }
 
   drawAreas(ctx: CanvasRenderingContext2D) {
@@ -212,7 +308,7 @@ export class PoplarCanvas {
     for (let i = 0; i < drawOrder.length; i++) {
       nodeIndex = drawOrder[i];
       if (branchIndices.includes(nodeIndex)) {
-        ctx.fillStyle = this.getColor(nodeIndex);
+        ctx.fillStyle = this.getNodeFill(nodeIndex);
         ctx.beginPath();
         this.drawNodeArea(ctx, nodeIndex);
         ctx.fill();
@@ -285,13 +381,34 @@ export class PoplarCanvas {
     }
   }
 
+  drawPopulationCurve(ctx: CanvasRenderingContext2D) {
+    const { xSpan, ySpan, popData, paddingLeft } = this;
+    const pop = popData.populationScale;
+    const last = pop.length - 1;
+    ctx.beginPath();
+    let i = 0;
+    let x: number = paddingLeft;
+    let y: number = PADDING.top + ySpan * (1 - pop[0])
+    ctx.moveTo(x, y);
+    for (i = 1; i < pop.length; i++) {
+      x = paddingLeft + i / last * xSpan;
+      y = PADDING.top + ySpan * (1 - pop[i]);
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+  }
+
+
+
+
 
   drawNodeBranch(ctx: CanvasRenderingContext2D,
     nodeIndex: number,
     currentNodePos: number[],
     parentNodePos: number[]
   ) {
-    const { xSpan, ySpan, popData } = this;
+    const { xSpan, ySpan, popData, paddingLeft} = this;
     const binCount = popData.binCount;
     const lastIndex = binCount - 1;
     let i = 0;
@@ -300,14 +417,14 @@ export class PoplarCanvas {
     const [nodeX, nodeY] = currentNodePos;
     const [parentX, parentY] = parentNodePos;
     if (parentX === UNSET) {
-      x = this.paddingLeft;
+      x = paddingLeft;
       y = PADDING.top + ySpan * 0.5;
     } else {
-      x = this.paddingLeft + parentX / lastIndex * xSpan;
+      x = paddingLeft + parentX / lastIndex * xSpan;
       y = PADDING.top + parentY * ySpan;
     }
     ctx.moveTo(x, y);
-    const nodeXrender = this.paddingLeft + nodeX / lastIndex * xSpan;
+    const nodeXrender = paddingLeft + nodeX / lastIndex * xSpan;
     const nodeYrender = PADDING.top + nodeY * ySpan;
     let center: number;
     let splitTop: number;
@@ -315,7 +432,7 @@ export class PoplarCanvas {
       center = popData.getPoplarCoordCenter(nodeIndex, i);
       splitTop = popData.getPoplarCoordSplitTop(nodeIndex, i);
       if (center !== UNSET && splitTop === UNSET) {
-        x = this.paddingLeft + i / lastIndex * xSpan;
+        x = paddingLeft + i / lastIndex * xSpan;
         y = PADDING.top + center * ySpan;
         if (x < nodeXrender) ctx.lineTo(x, y);
       }
@@ -334,7 +451,7 @@ export class PoplarCanvas {
     let drawing = false;
     let x: number;
     let y: number;
-    let firstDrawn = UNSET;
+    // let firstDrawn = UNSET;
     let bottom: number;
     /* draw along the bottom, from right to left */
     for (i = lastIndex; i >= 0; i--) {
@@ -348,7 +465,7 @@ export class PoplarCanvas {
         } else {
           ctx.lineTo(x, y);
         }
-        firstDrawn = i;
+        // firstDrawn = i;
       }
     }
 
@@ -404,11 +521,8 @@ export class PoplarCanvas {
     } else {
       ctx.globalAlpha = 1;
       ctx.drawImage(this.treeBuffer, 0, 0, width, height);
-      let parentIndex: number;
-      let currentNodePos: number[];
-      let parentNodePos: number[];
-      ctx.strokeStyle = this.getColor(selectedNode);
-      ctx.fillStyle = this.getColor(selectedNode);
+      ctx.strokeStyle = this.getNodeFill(selectedNode);
+      ctx.fillStyle = this.getNodeFill(selectedNode);
       ctx.globalAlpha = 0.25;
       ctx.beginPath();
       this.drawNodeArea(ctx, selectedNode, true);
@@ -421,12 +535,13 @@ export class PoplarCanvas {
       ctx.stroke();
       ctx.strokeStyle = BRANCH_COLOR;
       ctx.beginPath();
-      parentIndex = baseTree.getParentIndexOf(selectedNode);
-      currentNodePos = nodePos[selectedNode];
-      parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
+      const parentIndex = baseTree.getParentIndexOf(selectedNode);
+      const currentNodePos = nodePos[selectedNode];
+      const parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : nodePos[parentIndex];
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
+      // this.reportSelected(selectedNode);
     }
   }
 
@@ -481,12 +596,12 @@ export class PoplarCanvas {
       fill for the selected node, and draw that over the
       node's descendants
       */
-      ctx.fillStyle = this.getColor(selectedNode);
+      ctx.fillStyle = this.getNodeFill(selectedNode);
       ctx.globalAlpha = 0.5;
       ctx.beginPath();
       this.drawNodeArea(ctx, selectedNode, true);
       ctx.fill();
-      ctx.strokeStyle = this.getColor(selectedNode);
+      ctx.strokeStyle = this.getNodeFill(selectedNode);
       ctx.globalAlpha = 0.5;
       ctx.stroke();
       /* draw the tree for the descendants of the selected node */
@@ -529,8 +644,97 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
+      // this.reportSelected(selectedNode);
     }
+  }
+
+  reportSelected(selectedNode: number) {
+    const ctx = this.ctx;
+    const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, areaAllottedMutsOnly, nodeSource] = this.popData.getReadoutData(selectedNode);
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'left';
+    const y = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 3;
+    ctx.fillText(`nodeIndex: ${selectedNode}`, 20, y);
+    ctx.fillText(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${(areaPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y+20);
+    ctx.fillText(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${(areaScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 40);
+    ctx.fillText(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${(areaScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 60);
+    ctx.fillText(`area allotted (muts only)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY ? '*' : ''}: ${(areaAllottedMutsOnly * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 80);
+    ctx.fillText(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 100);
+    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 120);
+    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
+    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 160);
 
   }
+
+
+}
+
+
+
+
+const minHue = 0;
+const minChr = 0.2;
+const minVal = 0.2;
+
+const rangeHue = 64;
+const rangeChr = 0.4;
+const rangeVal = 0.8;
+
+const stepHue = 1;
+const stepChr = 0.1;
+const stepVal = 0.2;
+
+
+const getColor = (parentColor: HCV, isLeft: boolean, hasMutations: boolean, isRootLeft: boolean) : HCV =>{
+  let { hue, chroma, value } = parentColor;
+  // if (!hasMutations) {
+  //   return new HCV(hue, chroma, value);
+  // }
+  let moveHue, moveChr, moveVal;
+  hue -= minHue;
+  chroma -= minChr;
+  value -= minVal;
+
+  moveHue = stepHue * 2;
+  moveChr = stepChr * (isLeft ? 2 : 1);
+  moveVal = stepVal * (isLeft ? 1 : 2);
+  if (!hasMutations) {
+    moveHue *= 0.5;
+    moveChr *= 0.5;
+    moveVal *= 0.5;
+  }
+
+  if (isRootLeft) { moveHue *= -1; }
+  if (moveChr > rangeChr * 0.5) { moveChr *= -1; }
+  if (moveVal > rangeVal * 0.5) { moveVal *= -1; }
+
+  hue = minHue + ((hue + moveHue) % rangeHue);
+  chroma = minChr + ((chroma + moveChr) % rangeChr);
+  value = minVal + ((value + moveVal) % rangeVal);
+  return new HCV(hue, chroma, value);
+};
+
+
+
+class NodeColor {
+  hcv: HCV;
+  lab: Lab;
+  fill = '';
+  stroke = '';
+
+  constructor(hcv: HCV) {
+    this.hcv = hcv;
+    this.lab = new Lab(1, 0, 0);
+    this.lab.setFromHCV(hcv.hue, hcv.chroma, hcv.value);
+    this.fill = this.lab.toRgb();
+    const strokeLab = this.lab.copy();
+    if (Math.max(Math.abs(strokeLab.ay), Math.abs(strokeLab.be)) >= 64) {
+      strokeLab.adjustChroma(0.5);
+    }
+    strokeLab.adjustChroma(2).mirrorMoveValue(20);
+    this.stroke = strokeLab.toRgb();
+  }
+
+
 
 }

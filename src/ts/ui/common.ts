@@ -354,16 +354,19 @@ export const resizeCanvas = (canvas: HTMLCanvasElement) => {
   const computed = window.getComputedStyle(canvas),
     width = parseInt(computed.width.replace('px', '')),
     height = parseInt(computed.height.replace('px', '')),
-    ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-  if (window.devicePixelRatio > 1) {
-    canvas.width = Math.round(window.devicePixelRatio * width);
-    canvas.height = Math.round(window.devicePixelRatio * height);
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  } else {
-    canvas.width = width;
-    canvas.height = height;
+    ctx = canvas.getContext('2d') as CanvasRenderingContext2D,
+    isChanged = width !== canvas.width || height !== canvas.height;
+  if (isChanged) {
+    if (window.devicePixelRatio > 1) {
+      canvas.width = Math.round(window.devicePixelRatio * width);
+      canvas.height = Math.round(window.devicePixelRatio * height);
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    } else {
+      canvas.width = width;
+      canvas.height = height;
+    }
   }
-  return {width, height};
+  return { width, height, isChanged };
 }
 
 
@@ -855,3 +858,43 @@ export const downloadTextFile = (filename: string, text: string ) : Promise<void
     resolve();
   })
 };
+
+
+// /*
+// not a secure hash, just a simple hash
+// https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript#
+// */
+// export const getHash = (s: string) : number => {
+//   let hash = 0;
+//   for (const char of s) {
+//     hash = (hash << 5) - hash + char.charCodeAt(0);
+//     hash |= 0; // Constrain to 32bit integer
+//   }
+//   return hash;
+// };
+
+
+export const getHash = (str:string, seed = 0) => {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    // h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  // For a single 53-bit numeric return value we could return
+  // 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  // but we instead return the full 64-bit value:
+  return h2 >>> 0;
+};
+
+// // An improved, *insecure* 64-bit hash that's short, fast, and has no dependencies.
+// // Output is always 14 characters.
+// export const getHash = (str: string, seed = 0): string => {
+//   const [h2, h1] = cyrb64(str, seed);
+//   return h2.toString(16).padStart(7, '0') + h1.toString(16).padStart(7, '0');
+// }

@@ -16,6 +16,7 @@ export class PoplarUI extends UIScreen {
   poplarData: PoplarData;
   selectedTree = 0;
   earliestRootDate = UNSET;
+  prevalenceLabel: HTMLLabelElement;
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
@@ -30,12 +31,12 @@ export class PoplarUI extends UIScreen {
 
 
     const prevalenceThreshold = this.poplarData.threshold * 100;
-    const prevInputLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
-    const prevInput = prevInputLabel.querySelector("input") as HTMLInputElement;
+    this.prevalenceLabel = this.div.querySelector("#poplar--minlinpct") as HTMLLabelElement;
+    const prevInput = this.prevalenceLabel.querySelector("input") as HTMLInputElement;
     prevInput.setAttribute("value", `${prevalenceThreshold}`);
-    const prevReadout = prevInputLabel.querySelector(".poplar-value") as HTMLSpanElement;
+    const prevReadout = this.prevalenceLabel.querySelector(".poplar-value") as HTMLSpanElement;
     prevReadout.textContent = `${prevalenceThreshold}%`;
-    prevInput.addEventListener("input", (event)=>{
+    prevInput.addEventListener("input", ()=>{
       const value = parseInt(prevInput.value);
       this.poplarData.setPrevalenceThreshold(value/100);
       this.poplarCanvas.resetColors();
@@ -44,9 +45,11 @@ export class PoplarUI extends UIScreen {
         this.poplarCanvas.draw();
       });
     });
-
-
   }
+
+
+
+
 
   activate() {
     super.activate();
@@ -65,15 +68,23 @@ export class PoplarUI extends UIScreen {
     }
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
-    this.poplarData.setPythia(this.pythia);
+    this.poplarData.setPythia(this.pythia, this.sharedState.filename);
     this.handleTreeSelect(this.selectedTree);
   }
 
 
   resize() {
-    this.baseTreeCanvas.sizeCanvas();
+    const isChanged = this.baseTreeCanvas.sizeCanvas();
     this.poplarCanvas.sizeCanvas();
-    this.handleTreeSelect(this.selectedTree);
+    if (isChanged && this.earliestRootDate !== UNSET && this.pythia) {
+      const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
+      requestAnimationFrame(()=>{
+        if (this.pythia) {
+          this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);
+          this.poplarCanvas.draw();
+        }
+      });
+    }
   }
 
 
@@ -94,8 +105,13 @@ export class PoplarUI extends UIScreen {
     const nodeYs = this.baseTreeCanvas.getNodeYs();
     const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
     this.poplarData.setSelectedTree(index, this.poplarCanvas.xSpan, nodeYs, this.earliestRootDate, this.pythia.maxDate, dateLabels);
+    // console.debug(`threshold: ${this.poplarData.threshold}, ${this.poplarData.topNodes.length} nodes`);
     this.poplarCanvas.resetColors();
+    // const threshold = Math.round(this.poplarData.threshold * 100);
+    // (this.prevalenceLabel.querySelector("input") as HTMLInputElement).value = `${threshold}`;
+    // (this.prevalenceLabel.querySelector(".poplar-value") as HTMLSpanElement).textContent = `${threshold}%`;
 
+    this.baseTreeCanvas.topNodes = this.poplarData.topNodes;
     requestAnimationFrame(() => {
       if (this.pythia) {
         const start = Date.now();

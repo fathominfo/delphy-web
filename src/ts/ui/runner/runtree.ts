@@ -65,8 +65,8 @@ export class RunTree extends MccTreeCanvas {
   }
 
 
-  sizeCanvas() {
-    super.sizeCanvas();
+  sizeCanvas() : boolean {
+    const isChanged = super.sizeCanvas();
     const { width, height } = this;
     const highlightCanvas = this.highlightCanvas as HTMLCanvasElement;
     const highlightCtx = this.highlightCtx as CanvasRenderingContext2D;
@@ -81,6 +81,7 @@ export class RunTree extends MccTreeCanvas {
         highlightCtx.scale(1, 1);
       }
     }
+    return isChanged;
   }
 
 

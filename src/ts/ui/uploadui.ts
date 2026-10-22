@@ -392,7 +392,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   document.body.addEventListener("drop", (event:DragEvent)=>{
     setStage(STAGES.loading);
     uploadDiv.classList.add('loading');
-    handleFileUpload(event).then(()=>{
+    handleFileUpload(event, sstate).then(()=>{
       setStage(STAGES.parsing);
       uploadDiv.classList.remove('loading');
       uploadDiv.classList.add('parsing');
@@ -486,6 +486,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     }
 
     console.log(`loading demo file ${fileToLoad}`);
+    sstate.setFilename(`${ folder }.maple`);
     setStage(STAGES.loading);
     hideEntryPoints();
     uploadDiv.classList.add('loading');
@@ -546,7 +547,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
         fileLabel.classList.add("disabled");
         fileInput.blur();
         uploadDiv.classList.add('loading');
-        checkFiles(fileInput.files);
+        checkFiles(fileInput.files, sstate);
       }
     });
   }
@@ -559,7 +560,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
   });
   urlForm.addEventListener("submit", (event:SubmitEvent)=>{
     event.preventDefault();
-    loadNow(urlInput.value);
+    loadNow(urlInput.value, sstate);
     return false;
   });
   let button: HTMLButtonElement = document.querySelector("#uploader--proxy-info-activate") as HTMLButtonElement;
@@ -578,7 +579,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
     ref https://github.com/fathominfo/delphy-web/issues/52 [mark 260115]
     */
     if (!/&/.test(dataUrl)) {
-      loadNow(dataUrl);
+      loadNow(dataUrl, sstate);
     } else {
       window.location.href = window.location.origin;
     }
@@ -590,7 +591,7 @@ function bindUpload(p:Pythia, sstate:SharedState, callback : ()=>void, setConfig
 
 
 
-const loadNow = (url:string)=>{
+const loadNow = (url:string, sharedState: SharedState)=>{
   setStage(STAGES.loading);
   hideEntryPoints();
   urlDiv.classList.add("opening");
@@ -624,7 +625,7 @@ const loadNow = (url:string)=>{
         const fname = url.split('/').pop() || '';
         const asFile = new File([blob], fname);
         // blob.text().then(txt=>console.log(txt));
-        checkFiles([asFile]);
+        checkFiles([asFile], sharedState);
       })
       .catch((err:TypeError)=>{
         console.log(err);
@@ -678,7 +679,7 @@ const handleDragLeave = ()=>{
   uploadDiv.classList.remove("dragging");
 }
 
-const handleFileUpload = (event: DragEvent)=>{
+const handleFileUpload = (event: DragEvent, sharedState: SharedState)=>{
   hideEntryPoints();
   return new Promise(()=>{
     if (event && event.dataTransfer) {
@@ -687,7 +688,7 @@ const handleFileUpload = (event: DragEvent)=>{
       uploadDiv.classList.add('loading');
       setStage(STAGES.loading);
       const files = event.dataTransfer.files;
-      checkFiles(files);
+      checkFiles(files, sharedState);
     }
   });
 }
@@ -698,7 +699,7 @@ const displayParsingState = ()=>{
   uploadDiv.classList.add('parsing');
 }
 
-const checkFiles = (files: File[] | FileList)=>{
+const checkFiles = (files: File[] | FileList, sharedstate: SharedState)=>{
   if (files) {
     const file = files[0];
     if (file) {
@@ -706,6 +707,7 @@ const checkFiles = (files: File[] | FileList)=>{
         tokens = fname.split('.'),
         extension = tokens[tokens.length - 1],
         reader = new FileReader();
+      sharedstate.setFilename(fname);
       if (extension === 'dphy') {
         /* we are loading a saved run */
         reader.addEventListener('load', event=>{

@@ -926,12 +926,14 @@ export class Pythia {
     }
     const start = Date.now();
     const branchPrevalence = this.delphy.popModelProbeWholeTree(tree, popModel, probeTimes, true);
+    const population = this.delphy.popModelRenderPopulationCurve(popModel, minDate, maxDate, resolution);
     console.debug(`popModelProbeWholeTree took ${Date.now() - start} ms`);
     return {
       minDate,
       maxDate,
       branchPrevalence,
-      tree
+      tree,
+      population
     };
   }
 

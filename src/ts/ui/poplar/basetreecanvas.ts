@@ -13,6 +13,7 @@ export class BaseTreeCanvas extends TreeCanvas {
 
   selectedNode: number = UNSET;
   labels: DateLabel[] = [];
+  topNodes: number[] = [];
 
   constructor(canvas: HTMLCanvasElement, nodeSelectCallback: SelectNodeCallback) {
     const ctx: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -30,8 +31,8 @@ export class BaseTreeCanvas extends TreeCanvas {
     });
   }
 
-  sizeCanvas(): void {
-    super.sizeCanvas();
+  sizeCanvas(): boolean {
+    return super.sizeCanvas();
   }
 
   setSelectedNode(nodeIndex: number) {
@@ -44,7 +45,21 @@ export class BaseTreeCanvas extends TreeCanvas {
     this.maxDate = latest;
     this.labels = dateLabels;
     this.drawTree();
+    // this.drawTops();
   }
+
+  drawTops() {
+    this.ctx.fillStyle = "red";
+    this.ctx.beginPath();
+    this.topNodes.forEach(nodeIndex => {
+      const [nx, ny] = this.getNodePosition(nodeIndex);
+      const actualY = ny + this.timelineSpacing;
+      this.ctx.moveTo(nx, actualY);
+      this.ctx.arc(nx, actualY, 3, 0, TAU, false);
+    });
+    this.ctx.fill();
+  }
+
 
   drawTree() {
     super.draw(this.minDate, this.maxDate, this.labels);
@@ -53,6 +68,7 @@ export class BaseTreeCanvas extends TreeCanvas {
   drawHighlight() {
     const { ctx, selectedNode } = this;
     this.drawTree();
+    // this.drawTops();
     if (selectedNode !== UNSET) {
       ctx.strokeStyle = 'black';
       this.drawSubtree(selectedNode, ctx, false);

@@ -1,9 +1,11 @@
 import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
-import { UNSET } from "../common";
+import { getHash, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 
 const DEFAULT_PREVALENCE = 0.1;
+const DEFAULT_HIGHLIGHT_NODE_COUNT = 8;
+
 
 const ix_center = 0;         // vertical center of the branch
 const ix_top = 1;            // top of the branch area
@@ -12,6 +14,32 @@ const ix_splitTop = 3;       // top of the lower branch area (if it is split)
 const ix_splitBottom = 4;    // bottom of the lower branch area (if it is split)
 const ix_childTop = 5;       // start y-position for the current child, used and updated during layout
 const NUM_POPLAR_COORDS = 6;
+
+/*
+for use with peakPrevalence and topAreas:
+  those are both 2d arrays, where each
+  entry is a pair of a nodeIndex, and the data
+  for that node. They are sorted by the data
+  values descending.
+*/
+const DATA_INDEX = 0;
+const NODE_INDEX = 1;
+
+
+export enum topNodeSources {
+  AREA,
+  AREA_SCALED,
+  AREA_SCALED_ALLOTED,
+  AREA_SCALED_ALLOTED_MUTS_ONLY,
+  PEAK,
+  ALLOTTED,
+  POP_SCALED,
+  POP_SCALED_ALLOTTED
+}
+
+const TOP_NODE_SOURCE: topNodeSources = topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY;
+
+
 
 
 export class PoplarData {
@@ -29,11 +57,25 @@ export class PoplarData {
   nodePos: number[][] = [];
   nodeCount: number = UNSET;
   binCount: number = UNSET;
-  allottedAreaHeap: number[] = [];
-  poplarCoordHeap: number[] = [];
+  allottedPrevalenceHeap: Float32Array = new Float32Array();
+  allottedPrevalenceMutsOnlyHeap: Float32Array = new Float32Array();
+  poplarCoordHeap: Float32Array = new Float32Array();
+  populationScale: number[] = [];
   dateLabels: DateLabel[] = [];
+  fileHash: number = UNSET;
+  topAreas: number[][] = [];
+  scaledAreas: number[][] = [];
+  peakPrevalences: number[][] = [];
+  peakAllottedPrevalences: number[][] = [];
+  peakScaledPrevalences: number[][] = [];
+  peakScaledAllottedPrevalences: number[][] = [];
+  scaledAllottedAreas: number[][] = [];
+  allottedAreasMutsOnly: number[][] = [];
+  topNodes: number[] = [];
+  mutCounts: Int16Array = new Int16Array();
 
-  setPythia(pythia: Pythia) {
+  setPythia(pythia: Pythia, filename: string) {
+    this.fileHash = getHash(filename);
     this.pythia = pythia;
   }
 
@@ -53,7 +95,15 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
-    const { minDate, maxDate, tree, branchPrevalence } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    const { minDate, maxDate, tree, branchPrevalence, population } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    let maxPop = 0;
+    for (let i = 0; i < population.length; i++) {
+      maxPop = Math.max(maxPop, population[i]);
+    }
+    this.populationScale.length = population.length;
+    for (let i = 0; i < population.length; i++) {
+      this.populationScale[i] = population[i] / maxPop;
+    }
     this.minDate = minDate;
     this.maxDate = maxDate;
     this.baseTree = tree;
@@ -62,10 +112,16 @@ export class PoplarData {
       this.initializeStorage();
     }
     this.binCount = branchPrevalence[0].length;
+    this.mutCounts = new Int16Array(this.nodeCount);
+    for (let i = 0; i < this.nodeCount; i++) {
+      this.mutCounts[i] = this.baseTree.getMutationsOf(i).length;
+    }
     this.setDrawOrderAndAllotted();
     this.prepareLayout();
     this.setNodePositions();
+    this.setTopNodes();
     this.findBranchesExceedPrevalenceThreshold();
+
   }
 
 
@@ -73,12 +129,10 @@ export class PoplarData {
     const nodeCount = this.baseTreeNodeYs.length;
     const numBins = this.branchPrevalence[0].length;
     const allottedHeapSize = nodeCount * numBins;
-    if (allottedHeapSize > this.allottedAreaHeap.length) {
-      const diff = allottedHeapSize - this.allottedAreaHeap.length;
-      let toAdd = new Array(diff).fill(UNSET);
-      this.allottedAreaHeap = this.allottedAreaHeap.concat(toAdd);
-      toAdd = new Array(diff * NUM_POPLAR_COORDS).fill(UNSET);
-      this.poplarCoordHeap = this.poplarCoordHeap.concat(toAdd);
+    if (allottedHeapSize > this.allottedPrevalenceHeap.length) {
+      this.allottedPrevalenceHeap = new Float32Array(allottedHeapSize).fill(UNSET);
+      this.allottedPrevalenceMutsOnlyHeap = new Float32Array(allottedHeapSize).fill(UNSET);
+      this.poplarCoordHeap = new Float32Array(allottedHeapSize * NUM_POPLAR_COORDS).fill(UNSET);
     }
     if (this.nodePos.length === 0) {
       this.nodePos = new Array(nodeCount);
@@ -94,25 +148,171 @@ export class PoplarData {
     this.findBranchesExceedPrevalenceThreshold();
   }
 
+
+
+
+  sumAreasAndGetPeaks() {
+    if (!this.baseTree) return;
+    const { branchPrevalence, allottedPrevalenceHeap, allottedPrevalenceMutsOnlyHeap,
+      binCount, populationScale } = this
+    const areas: number[] = new Array(branchPrevalence.length);
+    const peaks: number[] = new Array(branchPrevalence.length);
+    const exclusivePeaks: number[] = new Array(branchPrevalence.length);
+    const scaledAreas: number[] = new Array(branchPrevalence.length);
+    const scaledPeaks: number[] = new Array(branchPrevalence.length);
+    const scaledExclusivePeaks: number[] = new Array(branchPrevalence.length);
+    const scaledAllottedAreas: number[] = new Array(branchPrevalence.length);
+    const allottedAreasMutsOnly: number[] = new Array(branchPrevalence.length);
+    let row: number[];
+    let tot: number;
+    let totScaled: number;
+    let totScaledAllot: number;
+    let allottedMutsArea: number;
+    let max: number;
+    let allottedMax: number;
+    let scaledMax: number;
+    let scaledAllottedMax: number;
+    let j: number;
+
+    let val: number;
+    let scaled: number;
+    let allot: number;
+    let allotMut: number;
+    let pop: number;
+
+    const root = this.baseTree.getRootIndex();
+
+    for (let i = 0; i < branchPrevalence.length; i++) {
+      row = branchPrevalence[i];
+      tot = 0;
+      totScaled = 0;
+      totScaledAllot = 0;
+      allottedMutsArea = 0;
+      max = 0;
+      allottedMax = 0;
+      scaledMax = 0;
+      scaledAllottedMax = 0;
+
+      for (j = 0; j < row.length; j++) {
+        /*
+        the `|| 0` here is probably papering over a small discrepancy
+        [mark 261021]
+        */
+        pop = populationScale[j] || 0;
+        val = row[j];
+        allot = allottedPrevalenceHeap[i * binCount + j];
+        allotMut = allottedPrevalenceMutsOnlyHeap[i * binCount + j];
+        scaled = val * pop;
+        //
+        tot += val;
+        allottedMutsArea += allotMut * pop;
+        max = Math.max(max, val);
+        allottedMax = Math.max(allottedMax, allot);
+        totScaled += scaled;
+        scaledMax = Math.max(scaledMax, scaled);
+        scaledAllottedMax = Math.max(scaledAllottedMax, allot * pop);
+        totScaledAllot += allot * pop;
+      }
+      areas[i] = tot;
+      peaks[i] = max;
+      exclusivePeaks[i] = allottedMax;
+      scaledAreas[i] = totScaled;
+      scaledPeaks[i] = scaledMax;
+      scaledExclusivePeaks[i] = scaledAllottedMax;
+      scaledAllottedAreas[i] = totScaledAllot;
+      allottedAreasMutsOnly[i] = allottedMutsArea;
+    }
+    const totalArea = areas[root];
+    const totalScaled = scaledAreas[root];
+
+    /* set areas so they reflect the % of total */
+    for (let i = 0; i < areas.length; i++) {
+      areas[i] /= totalArea;
+      scaledAreas[i] /= totalScaled;
+      scaledAllottedAreas[i] /= totalScaled;
+      allottedAreasMutsOnly[i] /= totalScaled;
+    }
+    this.topAreas = getSortedTops(areas);
+    this.scaledAreas = getSortedTops(scaledAreas);
+    this.peakPrevalences = getSortedTops(peaks);
+    this.peakAllottedPrevalences = getSortedTops(exclusivePeaks);
+    this.peakScaledPrevalences = getSortedTops(scaledPeaks);
+    this.peakScaledAllottedPrevalences = getSortedTops(scaledExclusivePeaks);
+    this.scaledAllottedAreas = getSortedTops(scaledAllottedAreas);
+    this.allottedAreasMutsOnly = getSortedTops(allottedAreasMutsOnly);
+  }
+
+
+  getTopNodeSource() : number[][] {
+    let source = this.peakPrevalences;
+    switch (TOP_NODE_SOURCE) {
+    case topNodeSources.AREA: source = this.topAreas; break;
+    case topNodeSources.AREA_SCALED: source = this.scaledAreas; break;
+    case topNodeSources.PEAK: source = this.peakPrevalences; break;
+    case topNodeSources.POP_SCALED: source = this.peakScaledPrevalences; break;
+    case topNodeSources.ALLOTTED: source = this.peakAllottedPrevalences; break;
+    case topNodeSources.POP_SCALED_ALLOTTED: source = this.peakScaledAllottedPrevalences; break;
+    case topNodeSources.AREA_SCALED_ALLOTED: source = this.scaledAllottedAreas; break;
+    case topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY: source = this.allottedAreasMutsOnly; break;
+    }
+    return source;
+  }
+
+
+  setTopNodes() {
+    if (!this.baseTree) return;
+    this.sumAreasAndGetPeaks();
+    const { topNodes, baseTree, mutCounts } = this;
+    const theSource = this.getTopNodeSource();
+    const topThreshold = theSource[DEFAULT_HIGHLIGHT_NODE_COUNT][DATA_INDEX];
+    if (isNaN(topThreshold)) {
+      console.log(theSource)
+    }
+    topNodes.length = 0;
+    const rootIndex = baseTree.getRootIndex();
+    let nodeIndex: number;
+    for (let i = 0; i < theSource.length; i++) {
+      if (theSource[i][DATA_INDEX] >= topThreshold) {
+        nodeIndex = theSource[i][NODE_INDEX];
+        if (nodeIndex !== rootIndex && mutCounts[nodeIndex] > 0) {
+          topNodes.push(nodeIndex);
+          // const prev = prevalenceSource[i][DATA_INDEX];
+          // const srcAllotted = this.allottedAreaHeap.slice(nodeIndex * this.binCount, (nodeIndex +1) * this.binCount);
+          // const at = srcAllotted.indexOf(prev);
+          // const leftIndex = this.baseTree.getLeftChildIndexOf(nodeIndex);
+          // const rightIndex = this.baseTree.getRightChildIndexOf(nodeIndex);
+          // console.debug(`${nodeIndex} added with prev ${prev} at index ${at}:
+          //     ${this.allottedAreaHeap[nodeIndex * this.binCount + at]}
+          //     ${this.branchPrevalence[nodeIndex][at]}
+          //     ${leftIndex === UNSET ? '' : this.branchPrevalence[nodeIndex][at] - this.branchPrevalence[leftIndex][at] - this.branchPrevalence[rightIndex][at]}
+          //     `)
+        }
+      } else {
+        break;
+      }
+    }
+    console.debug(`set colors with threshold ${topThreshold}, ${this.topNodes.length} nodes found`)
+  }
+
+
   findBranchesExceedPrevalenceThreshold() {
     if (!this.baseTree) return;
-    const { branchPrevalence, threshold, branchIndices } = this;
+    const { threshold, branchIndices } = this;
+    // const theSource = this.getTopNodeSource();
+    const theSource = this.peakScaledPrevalences;
     branchIndices.length = 0;
     const rootIndex = this.baseTree.getRootIndex();
-    let row: number[];
-    let j: number;
-    for (let i = 0; i < branchPrevalence.length; i++) {
-      if (i !== rootIndex) {
-        row = branchPrevalence[i];
-        for (j = 0; j < row.length; j++) {
-          if (row[j] >= threshold) {
-            branchIndices.push(i);
-            break;
-          }
-        }
+    let nodeIndex: number;
+    for (let i = 0; i < theSource.length; i++) {
+      nodeIndex = theSource[i][NODE_INDEX];
+      if (nodeIndex !== rootIndex && theSource[i][DATA_INDEX] >= threshold) {
+        branchIndices.push(nodeIndex);
       }
     }
   }
+
+
+
 
   setNodePositions() {
     const { baseTree, minDate, maxDate, binCount, nodeCount } = this;
@@ -152,7 +352,7 @@ export class PoplarData {
 
 
   prepareLayout() {
-    const { baseTree, branchPrevalence, allottedAreaHeap, drawOrder, binCount, nodeCount } = this;
+    const { baseTree, branchPrevalence, allottedPrevalenceHeap, drawOrder, binCount, nodeCount } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
     const start = Date.now();
@@ -177,7 +377,7 @@ export class PoplarData {
           top = 0;
           bottom = 1.0;
           total = branchPrevalence[index][c];
-          allotted = allottedAreaHeap[index * binCount + c];
+          allotted = allottedPrevalenceHeap[index * binCount + c];
           if (total > allotted ) { // total > 0 is implied
             splitTop = top + allotted / 2;
             splitBottom = bottom - allotted / 2;
@@ -188,7 +388,7 @@ export class PoplarData {
       } else {
         for (let c = 0; c < binCount; c++) {
           total = branchPrevalence[index][c];
-          allotted = allottedAreaHeap[index * binCount + c];
+          allotted = allottedPrevalenceHeap[index * binCount + c];
           center = UNSET;
           top = UNSET;
           bottom = UNSET;
@@ -214,14 +414,15 @@ export class PoplarData {
   }
 
   setDrawOrderAndAllotted() {
-    const { drawOrder, baseTree, allottedAreaHeap, branchPrevalence, baseTreeNodeYs, binCount: numBins } = this;
+    const { drawOrder, baseTree, allottedPrevalenceHeap, allottedPrevalenceMutsOnlyHeap,
+      branchPrevalence, baseTreeNodeYs, binCount } = this;
     if (!baseTree) return;
     if (branchPrevalence.length === 0 || branchPrevalence[0].length === 0) return;
 
     /*
-      how much area is allotted to each branch, minus
-      the space allotted to its children?
-      */
+    how much area is allotted to each branch, minus
+    the space allotted to its children?
+    */
     const rootIndex = baseTree.getRootIndex();
 
     drawOrder.length = 0;
@@ -238,14 +439,14 @@ export class PoplarData {
     while (i < drawOrder.length) {
       index = drawOrder[i] as number;
       src = branchPrevalence[index];
-      aaBase = index * numBins;
+      aaBase = index * binCount;
       leftIndex = baseTree.getLeftChildIndexOf(index);
       if (leftIndex !== UNSET) {
         rightIndex = baseTree.getRightChildIndexOf(index);
         leftRow = branchPrevalence[leftIndex];
         rightRow = branchPrevalence[rightIndex];
-        for (col = 0; col < numBins; col++) {
-          allottedAreaHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
+        for (col = 0; col < binCount; col++) {
+          allottedPrevalenceHeap[aaBase + col] = src[col] - leftRow[col] - rightRow[col];
         }
         if (baseTreeNodeYs[leftIndex] < baseTreeNodeYs[rightIndex]) {
           drawOrder.push(leftIndex);
@@ -255,12 +456,56 @@ export class PoplarData {
           drawOrder.push(leftIndex);
         }
       } else {
-        for (col = 0; col < numBins; col++) {
-          allottedAreaHeap[aaBase + col] = src[col];
+        for (col = 0; col < binCount; col++) {
+          allottedPrevalenceHeap[aaBase + col] = src[col];
         }
       }
       i++;
     }
+    i = drawOrder.length - 1;
+    let hasMutations: boolean;
+    let parentIndex: number;
+    let parentBase: number;
+    let hasParent: boolean;
+    allottedPrevalenceMutsOnlyHeap.fill(0);
+    while (i >= 0) {
+      index = drawOrder[i] as number;
+      src = branchPrevalence[index];
+      aaBase = index * binCount;
+      hasMutations = this.mutCounts[index] > 0;
+      parentIndex = baseTree.getParentIndexOf(index);
+      hasParent = parentIndex !== UNSET;
+      parentBase = parentIndex * binCount;
+      if (hasMutations) {
+        for (col = 0; col < binCount; col++) {
+          allottedPrevalenceMutsOnlyHeap[aaBase + col] += src[col];
+          if (hasParent) {
+            allottedPrevalenceMutsOnlyHeap[parentBase + col] -= src[col];
+          }
+        }
+      } else {
+        /*
+        carry up the (negative) total of descendant nodes, and
+        set this prevalence to 0
+        */
+        for (col = 0; col < binCount; col++) {
+          if (hasParent) {
+            allottedPrevalenceMutsOnlyHeap[parentBase + col] += allottedPrevalenceMutsOnlyHeap[aaBase + col];
+          }
+          allottedPrevalenceMutsOnlyHeap[aaBase + col] = 0;
+        }
+      }
+      i--;
+    }
+    // const bintots: number[] = new Array(binCount).fill(0);
+    // for (col = 0; col < binCount; col++) {
+    //   for (let i = 0; i < this.nodeCount; i++) {
+    //     bintots[col] += allottedPrevalenceMutsOnlyHeap[i * binCount + col];
+    //   }
+    // }
+    // console.log(`
+    //   bin totals`, bintots)
+
   }
 
 
@@ -302,4 +547,33 @@ export class PoplarData {
   setPoplarCoordChildTop(nodeIndex: number, bin: number, childTop: number) {
     this.poplarCoordHeap[this.getCoordBaseIndex(nodeIndex, bin) + ix_childTop] = childTop;
   }
+
+
+  getReadoutData(nodeIndex: number) : number[] {
+    const areaPct = findData(nodeIndex, this.topAreas);
+    const peakPct = findData(nodeIndex, this.peakPrevalences);
+    const exclusivePeakPct = findData(nodeIndex, this.peakAllottedPrevalences);
+    const areaScaled = findData(nodeIndex, this.scaledAreas);
+    const peakScaled = findData(nodeIndex, this.peakScaledPrevalences);
+    const peakScaledAllotted = findData(nodeIndex, this.peakScaledAllottedPrevalences);
+    const areaScaledAllotted = findData(nodeIndex, this.scaledAllottedAreas);
+    const areaAllottedMutsOnly = findData(nodeIndex, this.allottedAreasMutsOnly);
+    return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted, areaScaledAllotted, areaAllottedMutsOnly, TOP_NODE_SOURCE];
+  }
+
 }
+
+
+const findData = (nodeIndex: number, data: number[][]) : number => {
+  const record = data.filter((pair)=>pair[NODE_INDEX] === nodeIndex)[0];
+  return record[DATA_INDEX];
+}
+
+
+const getSortedTops = (data: number[]) : number[][] => {
+  const sortable = data.map((datum, nodeIndex) => [datum, nodeIndex]);
+  sortable.sort((a, b) => b[DATA_INDEX] - a[DATA_INDEX]);
+  return sortable;
+}
+
+

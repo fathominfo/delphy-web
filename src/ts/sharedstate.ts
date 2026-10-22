@@ -19,6 +19,7 @@ export class SharedState {
   mutationsNeedReloading: boolean;
   kneeIsCurated: boolean;
   qc: RecordQuality;
+  filename: string;
 
   constructor(pythia: Pythia, goTo: NavigateFunctionType) {
     this.pythia = pythia;
@@ -32,6 +33,7 @@ export class SharedState {
     this.tipIds = [];
     this.mutationsNeedReloading = false;
     this.qc = new RecordQuality();
+    this.filename = "";
   }
 
 
@@ -86,6 +88,10 @@ export class SharedState {
 
   markMutationsUpdated() : void {
     this.mutationsNeedReloading = false;
+  }
+
+  setFilename(fname: string) : void {
+    this.filename = fname;
   }
 
 }
