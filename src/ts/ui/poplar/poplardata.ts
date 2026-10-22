@@ -1,5 +1,6 @@
 import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
+import { SoftFloat } from "../../util/softfloat";
 import { getHash, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
 
@@ -73,12 +74,13 @@ export class PoplarData {
   allottedAreasMutsOnly: number[][] = [];
   topNodes: number[] = [];
   mutCounts: Int16Array = new Int16Array();
+  popScaleAnimator: SoftFloat = new SoftFloat(1, 0.55, 0.15);
+  popScaleAmount = 0;
 
   setPythia(pythia: Pythia, filename: string) {
     this.fileHash = getHash(filename);
     this.pythia = pythia;
   }
-
 
   setSelectedTree(treeIndex: number, resolution: number, nodeYs: number[],
     minDateAcrossTrees: number, maxDateAcrossTrees: number, dateLabels: DateLabel[]
@@ -124,6 +126,9 @@ export class PoplarData {
 
   }
 
+  setPopscaled(isScaled: boolean) {
+    this.popScaleAnimator.setTarget(isScaled ? 1 : 0);
+  }
 
   initializeStorage() {
     const nodeCount = this.baseTreeNodeYs.length;
@@ -337,8 +342,10 @@ export class PoplarData {
       column1 = Math.floor(column);
       y1Unscaled = this.getUnscaledPoplarCoordCenter(nodeIndex, column1);
       y2Unscaled = column1 === lastBin ? y1Unscaled : this.getUnscaledPoplarCoordCenter(nodeIndex, column1 + 1);
-      y1 = this.getPoplarCoordCenter(nodeIndex, column1);
-      y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1);
+      // y1 = this.getPoplarCoordCenter(nodeIndex, column1);
+      // y2 = column1 === lastBin ? y1 : this.getPoplarCoordCenter(nodeIndex, column1 + 1);
+      y1 = this.popScale(y1Unscaled, column1, 1);
+      y2 = column1 === lastBin ? y1 : this.popScale(y2Unscaled, column1 + 1, 1);
       nodeY = UNSET;
       if (y1 === UNSET) {
         nodeY = y2;
@@ -526,10 +533,10 @@ export class PoplarData {
     top: number, bottom: number, splitTop: number, splitBottom: number,
     childTop: number
   ) {
-
-    if (Math.max.apply(null, [center, top,bottom,splitTop, splitBottom, childTop])>1) {
-      console.debug(nodeIndex, bin, [center, top, bottom, splitTop, splitBottom, childTop]);
-    }
+    /* seeing some values > 1 due to rounding errors, e.g. 1.0000000140533694 */
+    // if (Math.max.apply(null, [center, top,bottom,splitTop, splitBottom, childTop])>1) {
+    //   console.debug(nodeIndex, bin, [center, top, bottom, splitTop, splitBottom, childTop]);
+    // }
 
     const baseIndex = this.getCoordBaseIndex(nodeIndex, bin);
     this.poplarCoordHeap[baseIndex + ix_center] = center;
@@ -584,18 +591,21 @@ export class PoplarData {
   }
 
   /* take a y-value, and scale it according to the population at that bin */
-  popScale(y: number, bin: number) : number {
-    if (y === UNSET) return y;
-    const popPct: number = this.populationScale[bin];
+  popScale(y: number, bin: number, scaleAmt = this.popScaleAmount) : number {
+    if (y === UNSET || scaleAmt === 0) return y;
+    const popPct: number = this.populationScale[bin] * scaleAmt + (1-scaleAmt);
     const top = (1 - popPct) * 0.5;
     return top + y * popPct;
   }
 
-  getNodePos(nodeIndex:number, unscaled = false) : number[] {
+  getNodePos(nodeIndex:number) : number[] {
     if (!this.nodePos) return [UNSET, UNSET];
+    const amt = this.popScaleAmount;
     const [col, y, yUnscaled] = this.nodePos[nodeIndex];
-    if (unscaled) return [col, yUnscaled];
-    return [col, y];
+    const actualY = amt === 0 ? yUnscaled
+      : amt === 1 ? y
+        : y * amt + (1-amt) * yUnscaled;
+    return [col, actualY];
   }
 
 
@@ -612,6 +622,24 @@ export class PoplarData {
     return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted,
       areaScaledAllotted, areaAllottedMutsOnly, TOP_NODE_SOURCE, column, nodeY];
   }
+
+
+  animationComplete(): boolean {
+    return this.popScaleAnimator.atTarget();
+  }
+
+  /*
+  returns the population scaling factor:
+    0: not scaled by population
+    1: fully scaled by population
+  */
+  updateAnimation() : void {
+    this.popScaleAnimator.update();
+    if(this.popScaleAnimator.value > 1 && this.popScaleAnimator.target === 1) this.popScaleAnimator.set(1);
+    else if(this.popScaleAnimator.value < 0 && this.popScaleAnimator.target === 0) this.popScaleAnimator.set(0);
+    this.popScaleAmount = this.popScaleAnimator.value;
+  }
+
 
 }
 

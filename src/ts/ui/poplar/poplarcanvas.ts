@@ -301,6 +301,18 @@ export class PoplarCanvas {
     // this.drawPopulationCurve(this.ctx);
   }
 
+  animate() {
+    const { ctx, width, height } = this;
+    ctx.clearRect(0, 0, width, height);
+    this.areaBufferCtx.clearRect(0, 0, width, height);
+    this.treeBufferCtx.clearRect(0, 0, width, height);
+    this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawAreas(this.areaBufferCtx);
+    this.ctx.drawImage(this.areaBuffer, 0, 0, width, height);
+    this.ctx.drawImage(this.treeBuffer, 0, 0, width, height);
+    this.drawDates();
+  }
+
   drawAreas(ctx: CanvasRenderingContext2D) {
     const { drawOrder, branchIndices, baseTree } = this.popData;
     if (!baseTree) return;
@@ -678,7 +690,18 @@ export class PoplarCanvas {
     ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
     ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 160);
     ctx.fillText(`node position: ${column}, ${nodeY}%`, 20, y + 180);
+  }
 
+
+  startPopScaleAnimation() {
+    console.log("start animation");
+    const animationInterval = setInterval(()=>{
+      this.popData.updateAnimation();
+      requestAnimationFrame(()=>this.animate());
+      if (this.popData.animationComplete()) {
+        clearInterval(animationInterval);
+      }
+    }, 30);
   }
 
 

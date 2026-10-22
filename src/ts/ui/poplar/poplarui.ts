@@ -45,6 +45,13 @@ export class PoplarUI extends UIScreen {
         this.poplarCanvas.draw();
       });
     });
+    const populationInput = this.div.querySelector("#poplar--population input") as HTMLInputElement;
+    populationInput.addEventListener("change", ()=>{
+      const scaleIt = populationInput.checked;
+      this.poplarData.setPopscaled(scaleIt);
+      this.poplarCanvas.startPopScaleAnimation();
+
+    });
   }
 
 
