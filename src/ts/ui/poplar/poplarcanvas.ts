@@ -304,8 +304,8 @@ export class PoplarCanvas {
   animate() {
     const { ctx, width, height } = this;
     ctx.clearRect(0, 0, width, height);
-    this.drawTree(ctx, BRANCH_COLOR, BRANCH_WEIGHT);
     this.drawAreas(ctx);
+    this.drawTree(ctx, BRANCH_COLOR, BRANCH_WEIGHT);
     this.drawDates();
   }
 

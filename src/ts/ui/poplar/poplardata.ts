@@ -74,7 +74,7 @@ export class PoplarData {
   allottedAreasMutsOnly: number[][] = [];
   topNodes: number[] = [];
   mutCounts: Int16Array = new Int16Array();
-  popScaleAnimator: SoftFloat = new SoftFloat(1, 0.55, 0.15);
+  popScaleAnimator: SoftFloat = new SoftFloat(0, 0.55, 0.15);
   popScaleAmount = 0;
 
   setPythia(pythia: Pythia, filename: string) {
