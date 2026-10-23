@@ -61,7 +61,6 @@ export class PoplarUI extends UIScreen {
   activate() {
     super.activate();
     if (!this.pythia) return;
-    this.resize();
     const mccRef = this.pythia.getMcc();
     const mcc = mccRef.getMcc();
     const numBaseTrees = mcc.getNumBaseTrees();
@@ -76,23 +75,43 @@ export class PoplarUI extends UIScreen {
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
     this.poplarData.setPythia(this.pythia, this.sharedState.filename);
-    this.handleTreeSelect(this.selectedTree);
+    requestAnimationFrame(() => {
+      this.resize();
+    });
   }
 
 
   resize() {
-    const isChanged = this.baseTreeCanvas.sizeCanvas();
-    this.poplarCanvas.sizeCanvas();
-    if (isChanged && this.earliestRootDate !== UNSET && this.pythia) {
+    if (this.pythia) {
+      this.baseTreeCanvas.sizeCanvas();
+      this.poplarCanvas.sizeCanvas();
       const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
-      requestAnimationFrame(()=>{
-        if (this.pythia) {
-          this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);
-          this.poplarCanvas.draw();
-        }
+      requestAnimationFrame(() => {
+        /*
+        Hack alert: we use flexbox and other responsive techniques to layout
+        the page, but we want the canvas size to match it in order to accurately
+        read mouse positions. Sadly, this seems to require a couple iterations
+        for the layout to stabilize: the page gets laid out, we try to set the
+        size of the canvas to match the computed style, but that update to the
+        dom triggers another layout reflow. Setting the canvas size twice _seems_
+        to be enough, but there has to be a better way [mark 261023].
+        */
+        this.poplarCanvas.sizeCanvas();
+        /*
+        we use the number of pixels in the canvas to drive the number of date
+        samples in the chart, so retrigger the data collection step here
+        */
+        this.handleTreeSelect(this.selectedTree);
+        requestAnimationFrame(() => {
+          if (this.pythia) {
+            this.baseTreeCanvas.draw(this.earliestRootDate, this.pythia.maxDate, dateLabels);
+            this.poplarCanvas.draw();
+          }
+        });
       });
     }
   }
+
 
 
   handleTreeSelect(index: number) {
