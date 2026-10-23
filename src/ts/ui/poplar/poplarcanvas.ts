@@ -325,7 +325,7 @@ export class PoplarCanvas {
   }
 
   /* render the tree branches */
-  drawTree(ctx: CanvasRenderingContext2D, color: string, weight: number) {
+  drawTree_monochrome(ctx: CanvasRenderingContext2D, color: string, weight: number) {
     const popData = this.popData;
     const { drawOrder, baseTree } = popData;
     if (!baseTree) return;
@@ -345,6 +345,49 @@ export class PoplarCanvas {
     }
     ctx.stroke();
   }
+
+
+  /* render the tree branches */
+  drawTree(ctx: CanvasRenderingContext2D, color: string, weight: number) {
+    const popData = this.popData;
+    const { branchIndices, baseTree } = popData;
+    if (!baseTree) return;
+    /*
+    for each of the branch indices, color until you reach another branch index
+    */
+    const queue: number[] = [];
+    ctx.lineWidth = weight;
+    let nodeIndex: number;
+    let parentIndex: number;
+    let currentNodePos: number[];
+    let parentNodePos: number[];
+    let left: number;
+    let right: number;
+    for (let p = 0; p < branchIndices.length; p++) {
+      queue.length = 0;
+      nodeIndex = branchIndices[p];
+      queue.push(nodeIndex);
+      color = this.getStroke(nodeIndex);
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      while (queue.length > 0) {
+        nodeIndex = queue.shift() as number;
+        parentIndex = baseTree.getParentIndexOf(nodeIndex);
+        currentNodePos = popData.getNodePos(nodeIndex);
+        parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
+        this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
+        left = baseTree.getLeftChildIndexOf(nodeIndex);
+        if (left !== UNSET) {
+          right = baseTree.getRightChildIndexOf(nodeIndex);
+          if (!branchIndices.includes(left)) queue.push(left);
+          if (!branchIndices.includes(right)) queue.push(right);
+        }
+      }
+      ctx.stroke();
+    }
+
+  }
+
 
 
   drawDates() {
@@ -587,7 +630,7 @@ export class PoplarCanvas {
       let left: number;
       ctx.strokeStyle = BRANCH_COLOR;
       ctx.lineWidth = BRANCH_WEIGHT;
-      ctx.globalAlpha = 0.3;
+      ctx.globalAlpha = 0.1;
       ctx.beginPath();
       while (stack.length > 0) {
         pair = stack.shift() as [number, number];
