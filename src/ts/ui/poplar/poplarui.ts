@@ -6,7 +6,7 @@ import { UIScreen } from "../uiscreen";
 import { BaseTreeCanvas } from "./basetreecanvas";
 import { BaseTreeScrubber } from "./basetreescrubber";
 import { PoplarCanvas } from "./poplarcanvas";
-import { PoplarChart, SelectNodeCallback, SelectTreeCallback } from "./poplarcommon";
+import { PoplarChart, SelectNodeCallback, SelectCallback } from "./poplarcommon";
 import { PoplarData } from "./poplardata";
 
 export class PoplarUI extends UIScreen {
@@ -20,14 +20,15 @@ export class PoplarUI extends UIScreen {
 
   constructor(sharedState: SharedState, divSelector: string) {
     super(sharedState, divSelector);
-    const treeSelectCallback: SelectTreeCallback = (index: number)=>this.handleTreeSelect(index);
+    const treeSelectCallback: SelectCallback = (index: number)=>this.handleTreeSelect(index);
     const nodeSelectCallback: SelectNodeCallback = (index: number, src: PoplarChart) => this.handleNodeSelect(index, src);
+    const dateSelectCallback: SelectCallback = (index: number) => this.handleDateSelect(index);
     this.scrubber = new BaseTreeScrubber(treeSelectCallback);
     let canvas: HTMLCanvasElement = this.div.querySelector("#poplar--basetree-container canvas.poplar--main") as HTMLCanvasElement;
     this.baseTreeCanvas = new BaseTreeCanvas(canvas, nodeSelectCallback);
     canvas = this.div.querySelector("#poplar--container canvas.poplar--main") as HTMLCanvasElement;
     this.poplarData = new PoplarData();
-    this.poplarCanvas = new PoplarCanvas(canvas, this.poplarData, nodeSelectCallback);
+    this.poplarCanvas = new PoplarCanvas(canvas, this.poplarData, nodeSelectCallback, dateSelectCallback);
 
 
     const prevalenceThreshold = this.poplarData.threshold * 100;
@@ -152,5 +153,11 @@ export class PoplarUI extends UIScreen {
   handleNodeSelect(nodeIndex: number, src: PoplarChart) {
     this.poplarCanvas.setSelectedNode(nodeIndex, src);
     this.baseTreeCanvas.setSelectedNode(nodeIndex);
+  }
+
+
+  handleDateSelect(date: number) {
+    this.poplarData.setSelectedDate(date);
+    requestAnimationFrame(()=>this.poplarCanvas.drawHighlightArea());
   }
 }

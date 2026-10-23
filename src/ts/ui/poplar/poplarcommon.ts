@@ -5,5 +5,9 @@ export enum PoplarChart {
   poplarTree
 }
 
-export type SelectTreeCallback = (_: number) => void;
+export type SelectCallback = (_: number) => void;
 export type SelectNodeCallback = (nodeIndex: number, src: PoplarChart) => void;
+
+export const UNSET_DATE = Number.NEGATIVE_INFINITY;
+
+

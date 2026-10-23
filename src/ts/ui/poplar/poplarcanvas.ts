@@ -1,10 +1,11 @@
+import { toDateString, toFullDateString } from "../../pythia/dates";
 import { HCV, Lab } from "../../util/lab";
 import { resizeCanvas, UNSET, DASH_LENGTH, DASH_SPACING, DASH_WEIGHT,
   TREE_DATELINE_COLOR, TREE_DATELINE_COLOR_2, TREE_TEXT_COLOR, TREE_TEXT_COLOR_2,
   TREE_TEXT_FONT, TREE_TEXT_FONT_2, TREE_TEXT_LINE_SPACING, TREE_TEXT_TOP
 } from "../common";
 import { DateLabel } from "../datelabel";
-import { PoplarChart, SelectNodeCallback } from "./poplarcommon";
+import { PoplarChart, SelectCallback, SelectNodeCallback, UNSET_DATE } from "./poplarcommon";
 import { PoplarData, topNodeSources } from "./poplardata";
 
 
@@ -14,18 +15,6 @@ const PADDING = {
   left: 20,
   right: 25
 };
-
-// const COLORS = [
-//   "rgb(145,205,255)",
-//   "rgb(119,148,158)",
-//   "rgb(0,156,189)",
-//   "rgb(0,235,251)",
-//   "rgb(111,186,240)",
-//   "rgb(65,255,255)",
-//   "rgb(52,219,193)",
-//   "rgb(83,192,240)"
-// ];
-
 
 /* colors are in HCV */
 const CORE_COLORS = [
@@ -77,7 +66,8 @@ export class PoplarCanvas {
 
   constructor(canvas: HTMLCanvasElement,
     popData: PoplarData,
-    nodeSelectCallback: SelectNodeCallback
+    nodeSelectCallback: SelectNodeCallback,
+    dateSelectCallback: SelectCallback
   ) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -120,16 +110,26 @@ export class PoplarCanvas {
       }
       return closest;
     };
+    const getDate = (event: MouseEvent)=>{
+      const { minDate, maxDate } = this.popData;
+      const xPct = (event.offsetX - this.paddingLeft) / this.xSpan;
+      console.log("xPct", xPct)
+      const date = minDate + xPct * (maxDate - minDate);
+      return date;
+    };
+
     canvas.addEventListener("pointermove", (event: MouseEvent) => {
       const closest = getClosestNode(event);
       if (closest !== this.selectedNode) {
         nodeSelectCallback(closest, PoplarChart.poplarTree);
       }
+      dateSelectCallback(getDate(event));
     });
     canvas.addEventListener("pointerleave", () => {
       if (this.selectedNode !== UNSET) {
         nodeSelectCallback(UNSET, PoplarChart.poplarTree);
       }
+      dateSelectCallback(UNSET_DATE);
     });
   }
 
@@ -241,7 +241,7 @@ export class PoplarCanvas {
     return c.fill;
   }
 
-  getStroke(nodeIndex: number): string {
+  getNodeStroke(nodeIndex: number): string {
     let c = this.branchColors[nodeIndex];
     if (!c) {
       this.setColors();
@@ -265,6 +265,7 @@ export class PoplarCanvas {
 
   sizeCanvas() {
     const { width, height } = resizeCanvas(this.canvas);
+    console.log('sizeCanvas', width, height);
     this.width = width;
     this.height = height;
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
@@ -341,7 +342,10 @@ export class PoplarCanvas {
       parentIndex = baseTree.getParentIndexOf(nodeIndex);
       currentNodePos = popData.getNodePos(nodeIndex);
       parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
+      // ctx.strokeStyle = this.getNodeStroke(nodeIndex);
+      // ctx.beginPath();
       this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
+      // ctx.stroke();
     }
     ctx.stroke();
   }
@@ -437,7 +441,7 @@ export class PoplarCanvas {
     const [parentX, parentY] = parentNodePos;
     if (parentX === UNSET) {
       x = paddingLeft;
-      y = PADDING.top + ySpan * 0.5;
+      y = PADDING.top + nodeY * ySpan;
     } else {
       x = paddingLeft + parentX / lastIndex * xSpan;
       y = PADDING.top + parentY * ySpan;
@@ -560,18 +564,21 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      // this.reportSelected(selectedNode);
+      this.reportSelected(selectedNode);
       // this.drawPopulationCurve(this.ctx);
     }
   }
 
   drawHighlightArea() {
     const { ctx, selectedNode, width, height, popData } = this;
-    const { baseTree } = popData;
+    const { baseTree, selectedDate } = popData;
     if (!baseTree) return;
     ctx.clearRect(0, 0, width, height);
     if (selectedNode === UNSET) {
       this.draw();
+      if (selectedDate !== UNSET_DATE) {
+        this.drawDate(selectedDate);
+      }
     } else {
       /*
       draw tree branches from root to tips,
@@ -664,28 +671,81 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
+      if (selectedDate !== UNSET_DATE) {
+        this.drawDate(selectedDate);
+      }
       // this.drawPopulationCurve(this.ctx);
-      // this.reportSelected(selectedNode);
+      this.reportSelected(selectedNode);
     }
   }
 
+  drawDate(date: number) : void {
+    const halfLabelWidth = 45;
+    const { ctx, width, height, xSpan, popData, paddingLeft } = this;
+    const { minDate, maxDate } = popData;
+    let x = paddingLeft + (date - minDate) / (maxDate - minDate) * xSpan;
+    if (x < halfLabelWidth) x = halfLabelWidth;
+    else if (x > width - halfLabelWidth) x = width - halfLabelWidth;
+    ctx.fillStyle = 'black';
+    ctx.fillText(toFullDateString(date), x, height - 20);
+  }
+
+
   reportSelected(selectedNode: number) {
-    const ctx = this.ctx;
+    const { ctx, popData } = this;
     const [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted,
-      areaScaledAllotted, areaAllottedMutsOnly, nodeSource, column, nodeY] = this.popData.getReadoutData(selectedNode);
+      areaScaledAllotted, areaAllottedMutsOnly, nodeSource, column, nodeY] = popData.getReadoutData(selectedNode);
     ctx.fillStyle = 'black';
     ctx.textAlign = 'left';
-    const y = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 3;
-    ctx.fillText(`nodeIndex: ${selectedNode}`, 20, y);
-    ctx.fillText(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${(areaPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y+20);
-    ctx.fillText(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${(areaScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 40);
-    ctx.fillText(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${(areaScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 60);
-    ctx.fillText(`area allotted (muts only)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY ? '*' : ''}: ${(areaAllottedMutsOnly * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 80);
-    ctx.fillText(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 100);
-    ctx.fillText(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 120);
-    ctx.fillText(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 140);
-    ctx.fillText(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`, 20, y + 160);
-    ctx.fillText(`node position: ${column}, ${nodeY}%`, 20, y + 180);
+    let y = TREE_TEXT_TOP + TREE_TEXT_LINE_SPACING * 3;
+    const pl = (s: string) => { ctx.fillText(s, 20, y); y += 20; }
+    pl(`nodeIndex: ${selectedNode}`);
+    // pl(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${(areaPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${(areaScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${(areaScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    pl(`area scaled (expclusive, muts only)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED_MUTS_ONLY ? '*' : ''}: ${(areaAllottedMutsOnly * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    // pl(`node position: ${column}, ${nodeY}%`);
+    if (popData.selectedDate !== UNSET_DATE) {
+      const { selectedDate, ancestry, prevalenceReport, allottedReport, allottedMutsReport,
+        populationScale, mutCounts } = popData;
+      const bin = popData.getDateBin(selectedDate);
+      let nodeIndex: number;
+      let data: number[];
+      let row: string;
+      const fmt = (n:number)=>n=== undefined ? '-' : n.toLocaleString(undefined, {maximumFractionDigits: 2});
+      const fmt100 = (n: number) => n === undefined ? '-' : (n*100).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const r = (n: number) => Math.round(n);
+      const fds = (n: number) => toDateString(n);
+      const { minDate, maxDate, minDateAcrossTrees, maxDateAcrossTrees } = popData;
+      pl(`${fds(selectedDate)}    ${fds(minDate)}    ${fds(maxDate)}   ${fds(minDateAcrossTrees)}   ${fds(maxDateAcrossTrees)}`);
+      pl(`${fmt(selectedDate)}       ${r(minDate)}  –   ${r(maxDate)}      ${r(minDateAcrossTrees)}   –   ${r(maxDateAcrossTrees)}`);
+      pl(`bin: ${bin}   pop: ${fmt100(populationScale[bin])}  ${popData.binCount} ${populationScale.length}`);
+
+      for (let a = 0; a < ancestry.length; a++) {
+        nodeIndex = ancestry[a];
+        data = popData.getReadoutData(nodeIndex);
+        if (mutCounts[nodeIndex] > 0 || nodeIndex === selectedNode) {
+          row = `${nodeIndex} ${mutCounts[nodeIndex] > 0 ? 'm' : ' '}`;
+          row += `            ${fmt100(prevalenceReport[a][bin])}`;
+          row += `            ${fmt100(allottedReport[a][bin])}`;
+          row += `            ${fmt100(allottedMutsReport[a][bin])}`;
+          row += `            tot: ${fmt100(data[7])}`;
+          pl(row);
+        }
+      }
+    } else {
+      pl(`total area${nodeSource === topNodeSources.AREA ? '*' : ''}: ${(areaPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+      pl(`area scaled${nodeSource === topNodeSources.AREA_SCALED ? '*' : ''}: ${(areaScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+      pl(`area scaled (exclusive)${nodeSource === topNodeSources.AREA_SCALED_ALLOTED ? '*' : ''}: ${(areaScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+      pl(`peak${nodeSource === topNodeSources.PEAK ? '*' : ''}: ${(peakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+      pl(`peak (exclusive)${nodeSource === topNodeSources.ALLOTTED ? '*' : ''}: ${(exclusivePeakPct * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+      pl(`peak scaled${nodeSource === topNodeSources.POP_SCALED ? '*' : ''}: ${(peakScaled * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+      pl(`peak scaled (exclusive)${nodeSource === topNodeSources.POP_SCALED_ALLOTTED ? '*' : ''}: ${(peakScaledAllotted * 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`);
+    }
   }
 
 
@@ -731,24 +791,24 @@ const getColor = (parentColor: HCV, isLeft: boolean, hasMutations: boolean, isRo
   //   return new HCV(hue, chroma, value);
   // }
   let moveHue, moveChr, moveVal;
-  hue -= minHue;
+  // hue -= minHue;
   chroma -= minChr;
   value -= minVal;
 
-  moveHue = stepHue * 2;
+  // moveHue = stepHue * 2;
   moveChr = stepChr * (isLeft ? 2 : 1);
   moveVal = stepVal * (isLeft ? 1 : 2);
   if (!hasMutations) {
-    moveHue *= 0.5;
+    // moveHue *= 0.5;
     moveChr *= 0.5;
     moveVal *= 0.5;
   }
 
-  if (isRootLeft) { moveHue *= -1; }
+  // if (isRootLeft) { moveHue *= -1; }
   if (moveChr > rangeChr * 0.5) { moveChr *= -1; }
   if (moveVal > rangeVal * 0.5) { moveVal *= -1; }
 
-  hue = minHue + ((hue + moveHue) % rangeHue);
+  // hue = minHue + ((hue + moveHue) % rangeHue);
   chroma = minChr + ((chroma + moveChr) % rangeChr);
   value = minVal + ((value + moveVal) % rangeVal);
   return new HCV(hue, chroma, value);

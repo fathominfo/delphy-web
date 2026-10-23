@@ -12,7 +12,7 @@ const TAU = Math.PI * 2;
 for debugging: identify the nodes that are assigned principal colors
 in the poplar tree (but here they will be colored red).
 */
-const SHOW_TOPS = false;
+const SHOW_TOPS = true;
 
 
 export class BaseTreeCanvas extends TreeCanvas {

@@ -1,12 +1,12 @@
 import { PhyloTree } from "../../pythia/delphy_api";
 import { Pythia } from "../../pythia/pythia";
 import { SoftFloat } from "../../util/softfloat";
-import { getHash, UNSET } from "../common";
+import { getHash, UNDEF, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
+import { UNSET_DATE } from "./poplarcommon";
 
 const DEFAULT_PREVALENCE = 0.1;
 const DEFAULT_HIGHLIGHT_NODE_COUNT = 8;
-
 
 const ix_center = 0;         // vertical center of the branch
 const ix_top = 1;            // top of the branch area
@@ -46,6 +46,7 @@ const TOP_NODE_SOURCE: topNodeSources = topNodeSources.AREA_SCALED_ALLOTED_MUTS_
 export class PoplarData {
   pythia: Pythia | null = null;
   baseTree: PhyloTree | null = null;
+  selectedDate: number = UNSET_DATE;
   baseTreeNodeYs: number[] = [];
   minDateAcrossTrees: number = UNSET;
   maxDateAcrossTrees: number = UNSET;
@@ -76,6 +77,14 @@ export class PoplarData {
   mutCounts: Int16Array = new Int16Array();
   popScaleAnimator: SoftFloat = new SoftFloat(0, 0.55, 0.15);
   popScaleAmount = 0;
+  // debug info
+  ancestry: number[] = [];
+  prevalenceReport: Float32Array[] = [];
+  allottedReport: Float32Array[] = [];
+  allottedMutsReport: Float32Array[] = [];
+
+
+
 
   setPythia(pythia: Pythia, filename: string) {
     this.fileHash = getHash(filename);
@@ -123,8 +132,18 @@ export class PoplarData {
     this.setNodePositions();
     this.setTopNodes();
     this.findBranchesExceedPrevalenceThreshold();
-
   }
+
+  setSelectedDate(date: number) : void {
+    this.selectedDate = date;
+  }
+
+  getDateBin(date:number) : number {
+    if (date === UNSET_DATE) return UNSET;
+    return Math.floor((date - this.minDate) / (this.maxDate - this.minDate) * this.binCount);
+    // return Math.floor((date - this.minDateAcrossTrees) / (this.maxDateAcrossTrees - this.minDateAcrossTrees) * this.binCount);
+  }
+
 
   setPopscaled(isScaled: boolean) {
     this.popScaleAnimator.setTarget(isScaled ? 1 : 0);
@@ -245,6 +264,7 @@ export class PoplarData {
     this.peakScaledAllottedPrevalences = getSortedTops(scaledExclusivePeaks);
     this.scaledAllottedAreas = getSortedTops(scaledAllottedAreas);
     this.allottedAreasMutsOnly = getSortedTops(allottedAreasMutsOnly);
+    // console.log(this.allottedAreasMutsOnly)
   }
 
 
@@ -594,7 +614,10 @@ export class PoplarData {
   popScale(y: number, bin: number, scaleAmt = this.popScaleAmount) : number {
     if (y === UNSET || scaleAmt === 0) return y;
     const popPct: number = this.populationScale[bin] * scaleAmt + (1-scaleAmt);
-    const top = (1 - popPct) * 0.5;
+    // move up and down from the vertical center
+    // const top = (1 - popPct) * 0.5;
+    // move up from the bottom
+    const top = (1 - popPct);
     return top + y * popPct;
   }
 
@@ -619,6 +642,7 @@ export class PoplarData {
     const areaScaledAllotted = findData(nodeIndex, this.scaledAllottedAreas);
     const areaAllottedMutsOnly = findData(nodeIndex, this.allottedAreasMutsOnly);
     const [ column, nodeY ] = this.nodePos[nodeIndex];
+    this.reportDebugInfo(nodeIndex);
     return [areaPct, peakPct, exclusivePeakPct, areaScaled, peakScaled, peakScaledAllotted,
       areaScaledAllotted, areaAllottedMutsOnly, TOP_NODE_SOURCE, column, nodeY];
   }
@@ -640,6 +664,63 @@ export class PoplarData {
     this.popScaleAmount = this.popScaleAnimator.value;
   }
 
+
+  reportDebugInfo(nodeIndex: number) : void {
+    const { baseTree, branchPrevalence, allottedPrevalenceHeap,
+      allottedPrevalenceMutsOnlyHeap, binCount } = this;
+    if (!baseTree) return;
+
+    const ancestry: number[] = [];
+    let i = nodeIndex;
+    while (i !== UNSET) {
+      ancestry.push(i);
+      i = baseTree.getParentIndexOf(i);
+    }
+
+    const prevalenceReport: Float32Array[] = new Array(ancestry.length);
+    let row: Float32Array;
+    let ants: number;
+    for (let a = 0; a < ancestry.length; a++) {
+      ants = ancestry[a];
+      row = new Float32Array(binCount);
+      for (let b = 0; b < binCount; b++) {
+        row[b] = branchPrevalence[ants][b];
+      }
+      prevalenceReport[a] = row;
+    }
+
+    const allottedReport: Float32Array[] = new Array(ancestry.length);
+    let index: number;
+    for (let a = 0; a < ancestry.length; a++) {
+      ants = ancestry[a];
+      row = new Float32Array(binCount);
+      for (let b = 0; b < binCount; b++) {
+        index = ants * binCount + b;
+        row[b] = allottedPrevalenceHeap[index];
+      }
+      allottedReport[a] = row;
+    }
+
+    const allottedMutsReport: Float32Array[] = new Array(ancestry.length);
+    for (let a = 0; a < ancestry.length; a++) {
+      ants = ancestry[a];
+      row = new Float32Array(binCount);
+      for (let b = 0; b < binCount; b++) {
+        index = ants * binCount + b;
+        row[b] = allottedPrevalenceMutsOnlyHeap[index];
+      }
+      allottedMutsReport[a] = row;
+    }
+
+    this.ancestry = ancestry;
+    this.prevalenceReport = prevalenceReport;
+    this.allottedReport = allottedReport;
+    this.allottedMutsReport = allottedMutsReport;
+
+
+
+
+  }
 
 }
 
