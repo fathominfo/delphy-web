@@ -8,6 +8,12 @@ const TIP_RADIUS = 2.5;
 const INNER_RADIUS = 5;
 const TAU = Math.PI * 2;
 
+/*
+for debugging: identify the nodes that are assigned principal colors
+in the poplar tree (but here they will be colored red).
+*/
+const SHOW_TOPS = false;
+
 
 export class BaseTreeCanvas extends TreeCanvas {
 
@@ -45,19 +51,21 @@ export class BaseTreeCanvas extends TreeCanvas {
     this.maxDate = latest;
     this.labels = dateLabels;
     this.drawTree();
-    // this.drawTops();
+    this.drawTops();
   }
 
   drawTops() {
-    this.ctx.fillStyle = "red";
-    this.ctx.beginPath();
-    this.topNodes.forEach(nodeIndex => {
-      const [nx, ny] = this.getNodePosition(nodeIndex);
-      const actualY = ny + this.timelineSpacing;
-      this.ctx.moveTo(nx, actualY);
-      this.ctx.arc(nx, actualY, 3, 0, TAU, false);
-    });
-    this.ctx.fill();
+    if (SHOW_TOPS) {
+      this.ctx.fillStyle = "red";
+      this.ctx.beginPath();
+      this.topNodes.forEach(nodeIndex => {
+        const [nx, ny] = this.getNodePosition(nodeIndex);
+        const actualY = ny + this.timelineSpacing;
+        this.ctx.moveTo(nx, actualY);
+        this.ctx.arc(nx, actualY, 3, 0, TAU, false);
+      });
+      this.ctx.fill();
+    }
   }
 
 
@@ -68,7 +76,7 @@ export class BaseTreeCanvas extends TreeCanvas {
   drawHighlight() {
     const { ctx, selectedNode } = this;
     this.drawTree();
-    // this.drawTops();
+    this.drawTops();
     if (selectedNode !== UNSET) {
       ctx.strokeStyle = 'black';
       this.drawSubtree(selectedNode, ctx, false);
