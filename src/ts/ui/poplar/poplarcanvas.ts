@@ -241,7 +241,7 @@ export class PoplarCanvas {
     return c.fill;
   }
 
-  getStroke(nodeIndex: number): string {
+  getNodeStroke(nodeIndex: number): string {
     let c = this.branchColors[nodeIndex];
     if (!c) {
       this.setColors();
@@ -367,7 +367,7 @@ export class PoplarCanvas {
       queue.length = 0;
       nodeIndex = branchIndices[p];
       queue.push(nodeIndex);
-      color = this.getStroke(nodeIndex);
+      color = this.getNodeStroke(nodeIndex);
       ctx.strokeStyle = color;
       ctx.beginPath();
       while (queue.length > 0) {
@@ -581,21 +581,29 @@ export class PoplarCanvas {
     if (selectedNode === UNSET) {
       this.draw();
     } else {
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.5;
       ctx.drawImage(this.treeBuffer, 0, 0, width, height);
-      ctx.strokeStyle = this.getNodeFill(selectedNode);
       ctx.fillStyle = this.getNodeFill(selectedNode);
+      /* draw the descendants of the node with transparency */
       ctx.globalAlpha = 0.25;
       ctx.beginPath();
       this.drawNodeArea(ctx, selectedNode, true);
       ctx.fill();
+      /*
+      draw a border around this area the same color as the fill
+      but full opacity
+      */
       ctx.globalAlpha = 1;
+      ctx.strokeStyle = this.getNodeFill(selectedNode);
       ctx.stroke();
+      /* draw the single node area (no descendants) at full opacity */
       ctx.beginPath();
       this.drawNodeArea(ctx, selectedNode, false);
       ctx.fill();
       ctx.stroke();
-      ctx.strokeStyle = BRANCH_COLOR;
+      /* draw the branch of the current node  */
+      // ctx.strokeStyle = BRANCH_COLOR;
+      ctx.strokeStyle = this.getNodeStroke(selectedNode);
       ctx.beginPath();
       const parentIndex = baseTree.getParentIndexOf(selectedNode);
       const currentNodePos = popData.getNodePos(selectedNode);
@@ -616,44 +624,45 @@ export class PoplarCanvas {
     if (selectedNode === UNSET) {
       this.draw();
     } else {
-      /*
-      draw tree branches from root to tips,
-      but stop at the selected node (which will also
-      exclude all its descendants)
-      */
-      const stack: [number, number][] = [[baseTree.getRootIndex(), -1]];
-      let pair: [number, number];
-      let nodeIndex: number;
-      let parentIndex: number;
-      let currentNodePos: number[];
-      let parentNodePos: number[];
-      let left: number;
-      ctx.strokeStyle = BRANCH_COLOR;
-      ctx.lineWidth = BRANCH_WEIGHT;
-      ctx.globalAlpha = 0.1;
-      ctx.beginPath();
-      while (stack.length > 0) {
-        pair = stack.shift() as [number, number];
-        nodeIndex = pair[0];
-        if (nodeIndex !== selectedNode) {
-          parentIndex = pair[1];
-          currentNodePos = popData.getNodePos(nodeIndex);
-          parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
-          this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
-          left = baseTree.getLeftChildIndexOf(nodeIndex);
-          if (left !== UNSET) {
-            stack.push([left, nodeIndex]);
-            stack.push([baseTree.getRightChildIndexOf(nodeIndex), nodeIndex]);
-          }
-        }
-      }
-      ctx.stroke();
+      // /*
+      // draw tree branches from root to tips,
+      // but stop at the selected node (which will also
+      // exclude all its descendants)
+      // */
+      // const stack: [number, number][] = [[baseTree.getRootIndex(), -1]];
+      // let pair: [number, number];
+      // let nodeIndex: number;
+      // let parentIndex: number;
+      // let currentNodePos: number[];
+      // let parentNodePos: number[];
+      // let left: number;
+      // ctx.strokeStyle = BRANCH_COLOR;
+      // ctx.lineWidth = BRANCH_WEIGHT;
+      // ctx.globalAlpha = 0.1;
+      // ctx.beginPath();
+      // while (stack.length > 0) {
+      //   pair = stack.shift() as [number, number];
+      //   nodeIndex = pair[0];
+      //   if (nodeIndex !== selectedNode) {
+      //     parentIndex = pair[1];
+      //     currentNodePos = popData.getNodePos(nodeIndex);
+      //     parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
+      //     this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
+      //     left = baseTree.getLeftChildIndexOf(nodeIndex);
+      //     if (left !== UNSET) {
+      //       stack.push([left, nodeIndex]);
+      //       stack.push([baseTree.getRightChildIndexOf(nodeIndex), nodeIndex]);
+      //     }
+      //   }
+      // }
+      // ctx.stroke();
       /*
       draw the fill areas of the whole tree
       transparently over that
       */
       ctx.globalAlpha = 0.15;
       ctx.drawImage(this.areaBuffer, 0, 0, width, height);
+      ctx.drawImage(this.treeBuffer, 0, 0, width, height);
       /*
       set the color to a transparent version of the
       fill for the selected node, and draw that over the
@@ -668,14 +677,19 @@ export class PoplarCanvas {
       ctx.globalAlpha = 0.5;
       ctx.stroke();
       /* draw the tree for the descendants of the selected node */
-      ctx.strokeStyle = BRANCH_COLOR_LIGHT;
+      ctx.strokeStyle = this.getNodeStroke(selectedNode);
       ctx.lineWidth = BRANCH_WEIGHT;
-      ctx.beginPath();
-      left = baseTree.getLeftChildIndexOf(selectedNode);
+      let parentIndex: number;
+      let currentNodePos: number[];
+      let parentNodePos: number[];
+      let left = baseTree.getLeftChildIndexOf(selectedNode);
       if (left !== UNSET) {
-        stack.length = 0;
+        const stack: [number, number][] = [];
         stack.push([left, selectedNode]);
         stack.push([baseTree.getRightChildIndexOf(selectedNode), selectedNode]);
+        let nodeIndex: number;
+        let pair: [number, number];
+        ctx.beginPath();
         while (stack.length > 0) {
           pair = stack.shift() as [number, number];
           nodeIndex = pair[0];
@@ -692,14 +706,14 @@ export class PoplarCanvas {
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      /* draw the fill for the selected node */
+      /* draw the fill for the selected node, with the border as the fill color */
       ctx.beginPath();
+      ctx.strokeStyle = this.getNodeFill(selectedNode);
       this.drawNodeArea(ctx, selectedNode, false);
       ctx.fill();
       ctx.stroke();
       /* draw the tree for the selected node */
-      ctx.strokeStyle = BRANCH_COLOR_DARK;
-      ctx.lineWidth = BRANCH_WEIGHT;
+      ctx.strokeStyle = this.getNodeStroke(selectedNode);
       ctx.beginPath();
       parentIndex = baseTree.getParentIndexOf(selectedNode);
       currentNodePos = popData.getNodePos(selectedNode);
