@@ -10,6 +10,14 @@ import { nfc } from './common';
 
 const DEMO_FILES = './demofiles.json'
 
+/*
+user must acknowledge the citation requirements
+at least once every 30 "days". Once acknowledged,
+the citation can be bypassed by adding '#agreed'
+to the url.
+*/
+const ACKNOWLEDGE_CITATION_REQ_FREQ = 30 * 24 * 60 * 60 * 1000;
+
 export type configCallbackType = (config: ConfigExport)=>void;
 
 type DemoOption = {
@@ -790,7 +798,32 @@ citationCheckbox.addEventListener("change", ()=>{
 });
 citationButton.addEventListener("click", ()=>{
   uploadDiv.classList.add("citing-acknowledged");
+  const datestamp = new Date().toDateString();
+  window.localStorage.setItem("citing-acknowledged", datestamp);
 });
+
+if (!window.location.hash.startsWith('#agreed')) {
+  uploadDiv.classList.remove("citing-acknowledged");
+} else {
+  /*
+  user must acknowledge at least once every 30 days, where by
+  "day" we mean an easily calculatable interval based on milliseconds,
+  and totally ignoring the complexities of actual calendar calculations.
+  */
+  const lastAcknowledged = window.localStorage.getItem("citing-acknowledged");
+  let okToBypass = false;
+  if (lastAcknowledged) {
+    const when = new Date(lastAcknowledged);
+    const elapsed = Date.now() - when.getTime();
+    if (elapsed < ACKNOWLEDGE_CITATION_REQ_FREQ) {
+      okToBypass = true;
+    }
+  }
+  if (!okToBypass) {
+    uploadDiv.classList.remove("citing-acknowledged");
+  }
+}
+
 
 
 export { bindUpload, hideUpload, loadNow };
