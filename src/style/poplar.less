@@ -30,8 +30,8 @@
 }
 
 #poplar--ntych-container {
-	display: flex;
-	flex-direction: column;
+	// display: flex;
+	// flex-direction: column;
   flex-grow: 1;
   width: 100%;
   height: 100%;
@@ -41,21 +41,20 @@
 #poplar--basetree-container {
   aspect-ratio: 1;
   flex: 1;
-  height: 45vh;
+  height: 40vh;
   width: 45vh;
 }
 
 #poplar--container {
   width: 100%;
-  height: 45%;
-  flex: 1;
+  height: calc(100% - 40vh - 80px);
   position: relative;
   flex-grow: 1;
-}
 
-#poplar--container-inner {
-  flex: 1;
-  height: calc(100% - 50px);
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 /*
@@ -63,8 +62,9 @@ prevent the input from affecting the canvas size
 was throwing off the hover detection
 */
 #poplar--controls {
-  position: absolute;
-  bottom: 0;
+  // position: absolute;
+  // bottom: 0;
+  height: 40px;
   display: flex;
   gap: 30px;
   align-items: baseline;

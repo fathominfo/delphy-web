@@ -75,7 +75,7 @@ export class PoplarUI extends UIScreen {
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
     this.poplarData.setPythia(this.pythia, this.sharedState.filename);
-    requestAnimationFrame(() => {
+    requestAnimationFrame(()=>{
       this.resize();
     });
   }
@@ -86,7 +86,7 @@ export class PoplarUI extends UIScreen {
       this.baseTreeCanvas.sizeCanvas();
       this.poplarCanvas.sizeCanvas();
       const dateLabels: DateLabel[] = getTimelineIndices(this.earliestRootDate, this.pythia.maxDate);
-      requestAnimationFrame(() => {
+      requestAnimationFrame(()=>{
         /*
         Hack alert: we use flexbox and other responsive techniques to layout
         the page, but we want the canvas size to match it in order to accurately
