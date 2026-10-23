@@ -148,7 +148,7 @@ export class PoplarCanvas {
     this.xSpan = this.width - this.paddingLeft - this.paddingRight;
     this.treeBufferCtx.clearRect(0, 0, this.width, this.height);
     this.areaBufferCtx.clearRect(0, 0, this.width, this.height);
-    this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawTree(this.treeBufferCtx, BRANCH_WEIGHT);
     this.drawAreas(this.areaBufferCtx);
   }
 
@@ -287,7 +287,7 @@ export class PoplarCanvas {
     this.areaBuffer.height = this.canvasHeight;
     this.areaBufferCtx.scale(canvasScale, canvasScale);
     this.areaBufferCtx.lineWidth = BRANCH_WEIGHT;
-    this.drawTree(this.treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawTree(this.treeBufferCtx, BRANCH_WEIGHT);
     this.drawAreas(this.areaBufferCtx);
   }
 
@@ -305,7 +305,7 @@ export class PoplarCanvas {
     const { ctx, width, height } = this;
     ctx.clearRect(0, 0, width, height);
     this.drawAreas(ctx);
-    this.drawTree(ctx, BRANCH_COLOR, BRANCH_WEIGHT);
+    this.drawTree(ctx, BRANCH_WEIGHT);
     this.drawDates();
   }
 
@@ -348,7 +348,7 @@ export class PoplarCanvas {
 
 
   /* render the tree branches */
-  drawTree(ctx: CanvasRenderingContext2D, color: string, weight: number) {
+  drawTree(ctx: CanvasRenderingContext2D, weight: number) {
     const popData = this.popData;
     const { baseTree, branchIndices, branchDescendants } = popData;
     if (!baseTree) return;
@@ -357,6 +357,7 @@ export class PoplarCanvas {
     */
     ctx.lineWidth = weight;
     let nodeIndex: number;
+    let color: string;
     let parentIndex: number;
     let currentNodePos: number[];
     let parentNodePos: number[];
@@ -496,9 +497,10 @@ export class PoplarCanvas {
     nodeIndex: number,
     includeDecendants = true
   ) {
-    const { xSpan, ySpan, popData } = this;
+    const { xSpan, ySpan, popData, paddingLeft } = this;
     const binCount = popData.binCount;
     const lastIndex = binCount - 1;
+    const paddingTop = PADDING.top;
     let i = 0;
     let drawing = false;
     let x: number;
@@ -509,8 +511,8 @@ export class PoplarCanvas {
     for (i = lastIndex; i >= 0; i--) {
       bottom = popData.getPoplarCoordBottom(nodeIndex, i);
       if (bottom !== UNSET) {
-        x = this.paddingLeft + i / (lastIndex) * xSpan;
-        y = PADDING.top + bottom * ySpan;
+        x = paddingLeft + i / (lastIndex) * xSpan;
+        y = paddingTop + bottom * ySpan;
         if (!drawing) {
           ctx.moveTo(x, y);
           drawing = true;
@@ -529,8 +531,8 @@ export class PoplarCanvas {
     for (i = 0; i < binCount; i++) {
       top = popData.getPoplarCoordTop(nodeIndex, i);
       if (top !== UNSET) {
-        x = this.paddingLeft + i / (lastIndex) * xSpan;
-        y = PADDING.top + top * ySpan;
+        x = paddingLeft + i / (lastIndex) * xSpan;
+        y = paddingTop + top * ySpan;
         ctx.lineTo(x, y);
         // ctx.ellipse(x, y, 4, 4, Math.PI / 4, 0, 2 * Math.PI);
         lastDrawn = i;
@@ -545,8 +547,8 @@ export class PoplarCanvas {
       for (i = lastDrawn; i >= firstSplit; i--) {
         splitTop = popData.getPoplarCoordSplitTop(nodeIndex, i);
         if (splitTop !== UNSET) {
-          x = this.paddingLeft + i / lastIndex * xSpan;
-          y = PADDING.top + splitTop * ySpan;
+          x = paddingLeft + i / lastIndex * xSpan;
+          y = paddingTop + splitTop * ySpan;
           ctx.lineTo(x, y);
         }
       }
@@ -555,8 +557,8 @@ export class PoplarCanvas {
       for (; i <= lastDrawn; i++) {
         splitBottom = popData.getPoplarCoordSplitBottom(nodeIndex, i);
         if (splitBottom !== UNSET) {
-          x = this.paddingLeft + i / lastIndex * xSpan;
-          y = PADDING.top + splitBottom * ySpan;
+          x = paddingLeft + i / lastIndex * xSpan;
+          y = paddingTop + splitBottom * ySpan;
           ctx.lineTo(x, y);
         }
       }
@@ -764,7 +766,7 @@ export class PoplarCanvas {
         const { areaBufferCtx, treeBufferCtx, width, height } = this;
         areaBufferCtx.clearRect(0, 0, width, height);
         treeBufferCtx.clearRect(0, 0, width, height);
-        this.drawTree(treeBufferCtx, BRANCH_COLOR, BRANCH_WEIGHT);
+        this.drawTree(treeBufferCtx, BRANCH_WEIGHT);
         this.drawAreas(areaBufferCtx);
       }
     }, 30);
