@@ -350,42 +350,32 @@ export class PoplarCanvas {
   /* render the tree branches */
   drawTree(ctx: CanvasRenderingContext2D, color: string, weight: number) {
     const popData = this.popData;
-    const { branchIndices, baseTree } = popData;
+    const { baseTree, branchIndices, branchDescendants } = popData;
     if (!baseTree) return;
     /*
     for each of the branch indices, color until you reach another branch index
     */
-    const queue: number[] = [];
     ctx.lineWidth = weight;
     let nodeIndex: number;
     let parentIndex: number;
     let currentNodePos: number[];
     let parentNodePos: number[];
-    let left: number;
-    let right: number;
+    let descendants: number[];
     for (let p = 0; p < branchIndices.length; p++) {
-      queue.length = 0;
       nodeIndex = branchIndices[p];
-      queue.push(nodeIndex);
+      descendants = branchDescendants[p];
       color = this.getNodeStroke(nodeIndex);
       ctx.strokeStyle = color;
       ctx.beginPath();
-      while (queue.length > 0) {
-        nodeIndex = queue.shift() as number;
+      for (let d=0; d < descendants.length; d++) {
+        nodeIndex = descendants[d];
         parentIndex = baseTree.getParentIndexOf(nodeIndex);
         currentNodePos = popData.getNodePos(nodeIndex);
         parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
         this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
-        left = baseTree.getLeftChildIndexOf(nodeIndex);
-        if (left !== UNSET) {
-          right = baseTree.getRightChildIndexOf(nodeIndex);
-          if (!branchIndices.includes(left)) queue.push(left);
-          if (!branchIndices.includes(right)) queue.push(right);
-        }
       }
       ctx.stroke();
     }
-
   }
 
 
@@ -618,7 +608,7 @@ export class PoplarCanvas {
 
   drawHighlightArea() {
     const { ctx, selectedNode, width, height, popData } = this;
-    const { baseTree } = popData;
+    const { baseTree, branchIndices, branchDescendants } = popData;
     if (!baseTree) return;
     ctx.clearRect(0, 0, width, height);
     if (selectedNode === UNSET) {
@@ -679,31 +669,48 @@ export class PoplarCanvas {
       /* draw the tree for the descendants of the selected node */
       ctx.strokeStyle = this.getNodeStroke(selectedNode);
       ctx.lineWidth = BRANCH_WEIGHT;
+      let nodeIndex: number;
       let parentIndex: number;
+      let descendants: number[];
       let currentNodePos: number[];
       let parentNodePos: number[];
-      let left = baseTree.getLeftChildIndexOf(selectedNode);
-      if (left !== UNSET) {
-        const stack: [number, number][] = [];
-        stack.push([left, selectedNode]);
-        stack.push([baseTree.getRightChildIndexOf(selectedNode), selectedNode]);
-        let nodeIndex: number;
-        let pair: [number, number];
+
+      if (branchIndices.includes(selectedNode)) {
+        descendants = branchDescendants[branchIndices.indexOf(selectedNode)];
         ctx.beginPath();
-        while (stack.length > 0) {
-          pair = stack.shift() as [number, number];
-          nodeIndex = pair[0];
-          parentIndex = pair[1];
+        for (let d = 0; d < descendants.length; d++) {
+          nodeIndex = descendants[d];
+          parentIndex = baseTree.getParentIndexOf(nodeIndex);
           currentNodePos = popData.getNodePos(nodeIndex);
           parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
           this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
-          left = baseTree.getLeftChildIndexOf(nodeIndex);
-          if (left !== UNSET) {
-            stack.push([left, nodeIndex]);
-            stack.push([baseTree.getRightChildIndexOf(nodeIndex), nodeIndex]);
-          }
         }
         ctx.stroke();
+      } else {
+        console.warn("you thought `drawHighlightArea` could only be called for branchIndices, but you were wrong");
+        let left = baseTree.getLeftChildIndexOf(selectedNode);
+        if (left !== UNSET) {
+          const stack: [number, number][] = [];
+          stack.push([left, selectedNode]);
+          stack.push([baseTree.getRightChildIndexOf(selectedNode), selectedNode]);
+          let nodeIndex: number;
+          let pair: [number, number];
+          ctx.beginPath();
+          while (stack.length > 0) {
+            pair = stack.shift() as [number, number];
+            nodeIndex = pair[0];
+            parentIndex = pair[1];
+            currentNodePos = popData.getNodePos(nodeIndex);
+            parentNodePos = parentIndex === UNSET ? [UNSET, UNSET] : popData.getNodePos(parentIndex);
+            this.drawNodeBranch(ctx, nodeIndex, currentNodePos, parentNodePos);
+            left = baseTree.getLeftChildIndexOf(nodeIndex);
+            if (left !== UNSET) {
+              stack.push([left, nodeIndex]);
+              stack.push([baseTree.getRightChildIndexOf(nodeIndex), nodeIndex]);
+            }
+          }
+          ctx.stroke();
+        }
       }
       ctx.globalAlpha = 1;
       /* draw the fill for the selected node, with the border as the fill color */

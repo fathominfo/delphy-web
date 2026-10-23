@@ -53,6 +53,8 @@ export class PoplarData {
   maxDate: number = UNSET;
   branchPrevalence: number[][] = [];
   branchIndices: number[] = [];
+  /* when coloring by principal branch, what other branches are colored the same */
+  branchDescendants: number[][] = [];
   threshold: number = DEFAULT_PREVALENCE;
   drawOrder: number[] = [];
   nodePos: number[][] = [];
@@ -302,7 +304,7 @@ export class PoplarData {
 
   findBranchesExceedPrevalenceThreshold() {
     if (!this.baseTree) return;
-    const { threshold, branchIndices } = this;
+    const { threshold, branchIndices, branchDescendants, baseTree } = this;
     // const theSource = this.getTopNodeSource();
     const theSource = this.peakScaledPrevalences;
     branchIndices.length = 0;
@@ -312,6 +314,25 @@ export class PoplarData {
       nodeIndex = theSource[i][NODE_INDEX];
       if (nodeIndex !== rootIndex && theSource[i][DATA_INDEX] >= threshold) {
         branchIndices.push(nodeIndex);
+      }
+    }
+    branchDescendants.length = 0;
+    const queue: number[] = [];
+    let left: number;
+    let right: number;
+    for (let p = 0; p < branchIndices.length; p++) {
+      branchDescendants[p] = [];
+      queue.length = 0;
+      queue.push(branchIndices[p]);
+      while (queue.length > 0) {
+        nodeIndex = queue.shift() as number;
+        branchDescendants[p].push(nodeIndex);
+        left = baseTree.getLeftChildIndexOf(nodeIndex);
+        if (left !== UNSET) {
+          right = baseTree.getRightChildIndexOf(nodeIndex);
+          if (!branchIndices.includes(left)) queue.push(left);
+          if (!branchIndices.includes(right)) queue.push(right);
+        }
       }
     }
   }
