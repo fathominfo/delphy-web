@@ -594,7 +594,8 @@ export class PoplarData {
   popScale(y: number, bin: number, scaleAmt = this.popScaleAmount) : number {
     if (y === UNSET || scaleAmt === 0) return y;
     const popPct: number = this.populationScale[bin] * scaleAmt + (1-scaleAmt);
-    const top = (1 - popPct) * 0.5;
+    // const top = (1 - popPct) * 0.5; // to center vertically
+    const top = 1 - popPct; // to align along bottom
     return top + y * popPct;
   }
 
