@@ -174,9 +174,11 @@ export class PoplarCanvas {
     /*
     force the first two nodes in the tree to have specific colors
     */
-    if (!topNodes.includes(leftIndex)){
-      topNodes.push(leftIndex);
-      topNodes.push(rightIndex);
+    if (!topNodes.includes(rightIndex)) {
+      topNodes.unshift(rightIndex);
+    }
+    if (!topNodes.includes(leftIndex)) {
+      topNodes.unshift(leftIndex);
     }
     console.debug(`
       setColors: ${topNodes.length} nodes, choosing from ${CORE_COLORS.length} colors
@@ -603,7 +605,7 @@ export class PoplarCanvas {
       this.drawNodeBranch(ctx, selectedNode, currentNodePos, parentNodePos);
       ctx.stroke();
       this.drawDates();
-      // this.reportSelected(selectedNode);
+      this.reportSelected(selectedNode);
       // this.drawPopulationCurve(this.ctx);
     }
   }
@@ -731,7 +733,7 @@ export class PoplarCanvas {
       ctx.stroke();
       this.drawDates();
       // this.drawPopulationCurve(this.ctx);
-      // this.reportSelected(selectedNode);
+      this.reportSelected(selectedNode);
     }
   }
 

@@ -99,7 +99,7 @@ export class PoplarData {
     takes the absolute index (including burn-in)
     */
     const absoluteIndex = treeIndex + this.pythia.kneeIndex;
-    const { minDate, maxDate, tree, branchPrevalence, population } = this.pythia.getPoplarPrevalenceData(absoluteIndex, resolution);
+    const { minDate, maxDate, tree, branchPrevalence, population } = this.pythia.getPoplarPrevalenceData(absoluteIndex, minDateAcrossTrees, maxDateAcrossTrees, resolution);
     let maxPop = 0;
     for (let i = 0; i < population.length; i++) {
       maxPop = Math.max(maxPop, population[i]);
@@ -308,7 +308,7 @@ export class PoplarData {
     // const theSource = this.getTopNodeSource();
     const theSource = this.peakScaledPrevalences;
     branchIndices.length = 0;
-    const rootIndex = this.baseTree.getRootIndex();
+    const rootIndex = baseTree.getRootIndex();
     let nodeIndex: number;
     for (let i = 0; i < theSource.length; i++) {
       nodeIndex = theSource[i][NODE_INDEX];
@@ -316,10 +316,12 @@ export class PoplarData {
         branchIndices.push(nodeIndex);
       }
     }
+    let left: number = baseTree.getLeftChildIndexOf(rootIndex);
+    let right: number = baseTree.getRightChildIndexOf(rootIndex);
+    if (!branchIndices.includes(right)) branchIndices.unshift(right);
+    if (!branchIndices.includes(left)) branchIndices.unshift(left);
     branchDescendants.length = 0;
     const queue: number[] = [];
-    let left: number;
-    let right: number;
     for (let p = 0; p < branchIndices.length; p++) {
       branchDescendants[p] = [];
       queue.length = 0;
