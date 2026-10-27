@@ -796,30 +796,13 @@ citationCheckbox.addEventListener("change", ()=>{
 });
 citationButton.addEventListener("click", ()=>{
   uploadDiv.classList.add("citing-acknowledged");
-  const datestamp = new Date().toDateString();
-  window.localStorage.setItem("citing-acknowledged", datestamp);
 });
 
 if (!window.location.hash.startsWith('#agreed')) {
   uploadDiv.classList.remove("citing-acknowledged");
 } else {
-  /*
-  user must acknowledge at least once every 30 days, where by
-  "day" we mean an easily calculatable interval based on milliseconds,
-  and totally ignoring the complexities of actual calendar calculations.
-  */
-  const lastAcknowledged = window.localStorage.getItem("citing-acknowledged");
-  let okToBypass = false;
-  if (lastAcknowledged) {
-    const when = new Date(lastAcknowledged);
-    const elapsed = Date.now() - when.getTime();
-    if (elapsed < ACKNOWLEDGE_CITATION_REQ_FREQ) {
-      okToBypass = true;
-    }
-  }
-  if (!okToBypass) {
-    uploadDiv.classList.remove("citing-acknowledged");
-  }
+  /* hide the `#agreed` hash in the url */
+  window.history.pushState({},'', '/');
 }
 
 
