@@ -800,9 +800,9 @@ citationButton.addEventListener("click", ()=>{
 
 if (!window.location.hash.startsWith('#agreed')) {
   uploadDiv.classList.remove("citing-acknowledged");
-} else {
-  /* hide the `#agreed` hash in the url */
-  window.history.pushState({},'', '/');
+// } else {
+//   /* hide the `#agreed` hash in the url */
+//   window.history.pushState({},'', '/');
 }
 
 
