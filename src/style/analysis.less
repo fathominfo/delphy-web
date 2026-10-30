@@ -1445,14 +1445,19 @@
   flex-direction: column;
   gap: 5px;
 }
-.introduction-header, .introduction-row {
+.introduction-header, .introduction-row, .introduction-row--default {
   display: flex;
   gap: 10px;
 }
 
+.introduction-row, .introduction-row--chains {
+  display: flex;
+  flex-direction: column;
+}
+
 .introduction-md-name {
   display: inline-block;
-  width: 6em;
+  width: 13em;
 }
 .introduction-count {
   display: inline-block;

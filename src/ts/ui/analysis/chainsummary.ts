@@ -1,6 +1,8 @@
 import { Tree } from "../../pythia/delphy_api";
 import { TransmissionChain } from "../../pythia/introductions";
+import { Pythia } from "../../pythia/pythia";
 import { UNSET } from "../common";
+import { ChainDetail } from "./chaindetail";
 
 
 const container = document.querySelector("#analysis--introductions-container") as HTMLDivElement;
@@ -20,14 +22,23 @@ export class ChainSummary {
   chain: TransmissionChain;
   minDate: number;
   maxDate: number;
+  pythia: Pythia;
+  tipCounts: number[];
   svg: SVGElement;
   width: number = UNSET;
   nodes: NodeData[];
+  detail: ChainDetail | null = null;
+  expanded = false;
 
-  constructor(chain: TransmissionChain, minDate: number, maxDate: number, mcc: Tree, callingRow: HTMLDivElement ) {
+  constructor(chain: TransmissionChain, minDate: number, maxDate: number, mcc: Tree,
+    pythia: Pythia, tipCounts: number[], // needed to create the chain detail tree
+    callingRow: HTMLDivElement
+  ) {
     this.chain = chain;
     this.minDate = minDate;
     this.maxDate = maxDate;
+    this.pythia = pythia;
+    this.tipCounts = tipCounts;
     this.svg = summaryTemplate.cloneNode(true) as SVGElement;
     this.width = parseFloat(this.svg.getAttribute("width") as string);
     this.nodes = chain.nodes.map(n=>{
@@ -64,14 +75,40 @@ export class ChainSummary {
       svg.appendChild(circle);
     });
     // text.textContent = `${from}->, ${nfc(nodeCount)} node${nodeCount === 1 ? '' : 's'}`;
-    text.innerHTML = `<tspan dx="-10" dy="0">from</tspan>  ${from}`;
-    const nodeAfter = callingRow.nextSibling;
-    if (!nodeAfter) {
-      (callingRow.parentNode as HTMLDivElement).appendChild(svg);
-    } else {
-      (callingRow.parentNode as HTMLDivElement).insertBefore(svg, nodeAfter);
-    }
+    text.innerHTML = `<tspan dx="-10" dy="0">from</tspan>&nbsp;&nbsp;${from || '-'}`;
+    callingRow.appendChild(svg);
+
+
+    svg.addEventListener("click", (event) => {
+      event.stopImmediatePropagation();
+      if (chain.nodes.length > 1) {
+        if (this.expanded) {
+          this.hideDetail();
+        } else {
+          if (this.detail === null) {
+            this.detail = new ChainDetail(chain, minDate, maxDate, this.pythia, this.tipCounts, this);
+          }
+          this.showDetail();
+        }
+      }
+    });
+
 
   }
 
+  hideDetail() {
+    this.expanded = false;
+    this.svg.classList.remove("hidden");
+    if (!this.detail || !this.detail.svg) return;
+    this.detail.svg.classList.add("hidden");
+  }
+
+  showDetail() {
+    this.expanded = true;
+    this.svg.classList.add("hidden");
+    if (!this.detail || !this.detail.svg) return;
+    this.detail.svg.classList.remove("hidden");
+  }
+
 }
+

@@ -1,6 +1,7 @@
 import { TransmissionChain } from "../../pythia/introductions";
 import { Pythia } from "../../pythia/pythia";
 import { UNSET } from "../common";
+import { ChainSummary } from "./chainsummary";
 
 
 const container = document.querySelector("#analysis--introductions-container") as HTMLDivElement;
@@ -38,15 +39,18 @@ export class ChainDetail {
   maxDate: number;
   layout: IntroLayout;
   width: number = UNSET;
+  svg: SVGElement | null = null;
+  parent: ChainSummary;
 
   constructor(chain: TransmissionChain, minDate: number, maxDate: number,
-    pythia: Pythia, tipCounts: number[], summaryEle: SVGElement
+    pythia: Pythia, tipCounts: number[], parent: ChainSummary
   ) {
     this.chain = chain;
     this.minDate = minDate;
     this.maxDate = maxDate;
+    this.parent = parent;
     this.layout = this.generateLayout(pythia, tipCounts);
-    requestAnimationFrame(() => this.render(summaryEle));
+    requestAnimationFrame(() => this.render());
   }
 
   generateLayout(pythia: Pythia, tipCounts: number[]) : IntroLayout {
@@ -175,7 +179,7 @@ export class ChainDetail {
     };
   }
 
-  render(summaryEle: SVGElement) : void {
+  render() : void {
     const { layout, minDate, maxDate, chain } = this;
     const { root, rowCount } = layout;
     if (!root) return;
@@ -189,7 +193,7 @@ export class ChainDetail {
     const top = rowHeight;
     const range = width - leftSide;
     svg.setAttribute("height", `${height}`);
-    text.innerHTML = `<tspan dx="-10" dy="0">from</tspan>  ${chain.from}`;
+    text.innerHTML = `<tspan dx="-10" dy="0">from</tspan>&nbsp;&nbsp;${chain.from}`;
     let d = '';
     const xFor = (time: number) => leftSide + (time - minDate) / (maxDate - minDate) * range;
 
@@ -249,8 +253,24 @@ export class ChainDetail {
     }
 
     path.setAttribute("d", d);
-    (summaryEle.parentNode as HTMLDivElement).insertBefore(svg, summaryEle);
-    summaryEle.classList.add("hidden");
+    const parentSVG = this.parent.svg;
+    (parentSVG.parentNode as HTMLDivElement).insertBefore(svg, parentSVG);
+    svg.addEventListener("click", (event)=>{
+      event.stopImmediatePropagation();
+      this.parent.hideDetail()
+    });
+    this.svg = svg;
+
+  }
+
+  hide() {
+    if (!this.svg) return;
+    this.svg.classList.add("hidden");
+  }
+
+  show() {
+    if (!this.svg) return;
+    this.svg.classList.remove("hidden");
   }
 
 }

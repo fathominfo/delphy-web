@@ -43,6 +43,7 @@ export class IntroductionChart {
 
 
 
+
   constructor(hoverCallback: HoverCallback) {
     this.readout = container.querySelector(".alot-readout") as HTMLParagraphElement;
     // this.width = parseFloat(this.svg.getAttribute("width") as string);
@@ -160,7 +161,22 @@ export class IntroductionChart {
         countsDistChart.appendChild(tick);
       });
       listContainer.appendChild(row);
-      row.addEventListener("click", () => this.generateTrainSummary(chainList, row));
+      const introContainer = row.querySelector(".introduction-row--chains") as HTMLDivElement;
+      let expanded = false;
+      let chained = false;
+      row.addEventListener("click", () => {
+        if (!expanded) {
+          expanded = true;
+          if (!chained) {
+            chained = true;
+            this.generateTrainSummary(chainList, introContainer);
+          }
+          introContainer.classList.remove("hidden");
+        } else {
+          expanded = false;
+          introContainer.classList.add("hidden");
+        }
+      });
     });
   }
 
@@ -172,12 +188,7 @@ export class IntroductionChart {
     const mcc = mccRef.getMcc();
     chainList.sort((a, b)=>b.firstDate - a.firstDate);
     chainList.forEach(chain=>{
-      const summary = new ChainSummary(chain, minDate, maxDate, mcc, callingRow);
-      if (chain.nodes.length > 1) {
-        summary.svg.addEventListener("click", ()=>{
-          new ChainDetail(chain, minDate, maxDate, pythia, this.tipCounts, summary.svg);
-        });
-      }
+      new ChainSummary(chain, minDate, maxDate, mcc, pythia, this.tipCounts, callingRow);
     });
     mccRef.release();
   }
