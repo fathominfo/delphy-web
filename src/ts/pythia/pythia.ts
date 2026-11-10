@@ -1,4 +1,4 @@
-import {Delphy, Run, Tree, PhyloTree, MccTree, SummaryTree, Mutation,
+import {Delphy, Run, Tree, PhyloTree, MccTree, BlobTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
   SequenceWarningCode, PopModel, ExpPopModel, SkygridPopModel,
   SkygridPopModelType} from './delphy_api';
@@ -549,6 +549,17 @@ export class Pythia {
     const umbrella = new MccUmbrella(mcc, this.mccNodeBackLinks);
     return umbrella;
   }
+
+
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // !!!!!!!!!!!! BLOB TREE !!!!!!!!!!!!!!!!!!
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  deriveBlobTree(phyloTree: PhyloTree): BlobTree {
+    return this.delphy.deriveBlobTree(phyloTree);
+  }
+
 
 
 

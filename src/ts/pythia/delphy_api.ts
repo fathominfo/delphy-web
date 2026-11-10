@@ -171,11 +171,15 @@ export type PhyloTreePtr = number;
 export type PhyloTreePtrPtr = number;
 export type RunPtr = number;
 export type MccTreePtr = number;
+export type BlobTreePtr = number;
+export type BlobSequencePtr = number;
 export type BaseTreeIndex = number;
 export type BeastyOutputPtr = number;
 export type FbHolderPtr = number;
 export type NodeIndex = number;
 export type NodeIndexPtr = number;
+export type BranchIndex = number;
+export type BlobIndex = number;
 export type SiteIndex = number;
 export type RealSeqLetter = number;
 export const RealSeqLetter_A = 0;
@@ -188,6 +192,7 @@ export type MutationListIteratorPtr = number;
 export type PopModelPtr = number;
 
 export const kNoNode: NodeIndex = -1;
+export const kNoBranch: BranchIndex = -1;
 
 export enum SequenceWarningCode {
   NoValidDate = 1,
@@ -346,6 +351,11 @@ export class Delphy {
     return Delphy.delphyCoreRaw.derive_mcc_tree_async(this.ctx, treesWasm, phyloTrees.length)
       .then(mccTreePtr => new MccTree(this, mccTreePtr))
       .finally(() => Delphy.delphyCoreRaw.free(treesWasm));
+  }
+
+  deriveBlobTree(phyloTree: PhyloTree): BlobTree {
+    const blobTreePtr = Delphy.delphyCoreRaw.derive_blob_tree(this.ctx, phyloTree.phyloTreePtr_);
+    return new BlobTree(this, blobTreePtr, phyloTree.phyloTreePtr_);
   }
 
   // result[i] = avg effective population size (times generation time)
@@ -777,6 +787,36 @@ export class Delphy {
         => boolean,
     mcc_tree_export: (ctx: DelphyContextPtr, tree: MccTreePtr, innerNodesDefinedAsMrcasOfTips: boolean) => StringPtr,
 
+    // Blob_tree
+    derive_blob_tree:
+      (ctx: DelphyContextPtr,
+       phyloTree: PhyloTreePtr)
+      => BlobTreePtr,
+    blob_tree_delete: (ctx: DelphyContextPtr, blobTree: BlobTreePtr) => void,
+    blob_tree_get_size: (ctx: DelphyContextPtr, blobTree: BlobTreePtr) => BlobIndex,
+    blob_tree_get_root: (ctx: DelphyContextPtr, blobTree: BlobTreePtr) => BlobIndex,
+    blob_tree_get_parent_of: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => BlobIndex,
+    blob_tree_get_num_children_of: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => number,
+    blob_tree_get_nth_child_of: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex, n: number) => BlobIndex,
+    blob_tree_get_fingerprint_of: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => bigint,
+    blob_tree_get_seed_node_of: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => NodeIndex,
+    blob_tree_get_seed_branch_of: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => BranchIndex,
+    blob_tree_get_num_tree_nodes_behind: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => number,
+    blob_tree_get_nth_tree_node_behind: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex, n: number) => NodeIndex,
+    blob_tree_get_num_tree_branches_behind: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => number,
+    blob_tree_get_nth_tree_branch_behind: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex, n: number) => BranchIndex,
+    blob_tree_node_2_blob: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, nodeIndex: NodeIndex) => BlobIndex,
+    blob_tree_branch_2_blob: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, branchIndex: BranchIndex) => BlobIndex,
+    query_blob_sequence: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, phyloTree: PhyloTreePtr, blobIndex: BlobIndex) => BlobSequencePtr,
+    blob_sequence_delete: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr) => void,
+    blob_sequence_get_num_mutations: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr) => number,
+    blob_sequence_get_nth_mutation_site: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => SiteIndex,
+    blob_sequence_get_nth_mutation_state: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+    blob_sequence_get_num_ambiguities: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr) => number,
+    blob_sequence_get_nth_ambiguity_site: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobSequence: BlobSequencePtr, n: number) => SiteIndex,
+    blob_sequence_get_nth_ambiguity_state1: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+    blob_sequence_get_nth_ambiguity_state2: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+
     // Population model
     pop_model_get_class: (ctx: DelphyContextPtr, popModel: PopModelPtr) => InternalPopModelClass,
     pop_model_delete: (ctx: DelphyContextPtr, popModel: PopModelPtr) => void,
@@ -1036,6 +1076,33 @@ export class Delphy {
       mcc_tree_get_corresponding_node_in_base_tree: Module['_delphy_mcc_tree_get_corresponding_node_in_base_tree'],
       mcc_tree_is_exact_match_in_base_tree: Module['_delphy_mcc_tree_is_exact_match_in_base_tree'],
       mcc_tree_export: Module['_delphy_mcc_tree_export'],
+
+      // Blob tree
+      derive_blob_tree: Module['_delphy_derive_blob_tree'],
+      blob_tree_delete: Module['_delphy_blob_tree_delete'],
+      blob_tree_get_size: Module['_delphy_blob_tree_get_size'],
+      blob_tree_get_root: Module['_delphy_blob_tree_get_root'],
+      blob_tree_get_parent_of: Module['_delphy_blob_tree_get_parent_of'],
+      blob_tree_get_num_children_of: Module['_delphy_blob_tree_get_num_children_of'],
+      blob_tree_get_nth_child_of: Module['_delphy_blob_tree_get_nth_child_of'],
+      blob_tree_get_fingerprint_of: Module['_delphy_blob_tree_get_fingerprint_of'],
+      blob_tree_get_seed_node_of: Module['_delphy_blob_tree_get_seed_node_of'],
+      blob_tree_get_seed_branch_of: Module['_delphy_blob_tree_get_seed_branch_of'],
+      blob_tree_get_num_tree_nodes_behind: Module['_delphy_blob_tree_get_num_tree_nodes_behind'],
+      blob_tree_get_nth_tree_node_behind: Module['_delphy_blob_tree_get_nth_tree_node_behind'],
+      blob_tree_get_num_tree_branches_behind: Module['_delphy_blob_tree_get_num_tree_branches_behind'],
+      blob_tree_get_nth_tree_branch_behind: Module['_delphy_blob_tree_get_nth_tree_branch_behind'],
+      blob_tree_node_2_blob: Module['_delphy_blob_tree_node_2_blob'],
+      blob_tree_branch_2_blob: Module['_delphy_blob_tree_branch_2_blob'],
+      query_blob_sequence: Module['_delphy_query_blob_sequence'],
+      blob_sequence_delete: Module['_delphy_blob_sequence_delete'],
+      blob_sequence_get_num_mutations: Module['_delphy_blob_sequence_get_num_mutations'],
+      blob_sequence_get_nth_mutation_site: Module['_delphy_blob_sequence_get_nth_mutation_site'],
+      blob_sequence_get_nth_mutation_state: Module['_delphy_blob_sequence_get_nth_mutation_state'],
+      blob_sequence_get_num_ambiguities: Module['_delphy_blob_sequence_get_num_ambiguities'],
+      blob_sequence_get_nth_ambiguity_site: Module['_delphy_blob_sequence_get_nth_ambiguity_site'],
+      blob_sequence_get_nth_ambiguity_state1: Module['_delphy_blob_sequence_get_nth_ambiguity_state1'],
+      blob_sequence_get_nth_ambiguity_state2: Module['_delphy_blob_sequence_get_nth_ambiguity_state2'],
 
       // Population model
       pop_model_get_class: Module['_delphy_pop_model_get_class'],
@@ -1374,6 +1441,150 @@ export class MccTree implements SummaryTree {
   exportToNewick(innerNodesDefinedAsMrcasOfTips: boolean): ArrayBuffer {
     return this.delphy.exportStringHelper(() =>
       Delphy.delphyCoreRaw.mcc_tree_export(this.delphy.ctx, this.mccTreePtr_, innerNodesDefinedAsMrcasOfTips));
+  }
+}
+
+
+// Blob tree
+// ---------
+type BlobSequence = {
+  deltasFromRootSeq: Record<SiteIndex, RealSeqLetter>,
+  ambiguities: Record<SiteIndex, [RealSeqLetter, RealSeqLetter]>,
+};
+
+export class BlobTree {
+  constructor(private delphy: Delphy, public blobTreePtr_: BlobTreePtr, public phyloTreePtr_: PhyloTreePtr) {
+  }
+
+  delete(): void {
+    Delphy.delphyCoreRaw.blob_tree_delete(this.delphy.ctx, this.blobTreePtr_);
+  }
+
+  getSize(): BlobIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_size(this.delphy.ctx, this.blobTreePtr_);
+  }
+
+  getRootIndex(): BlobIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_root(this.delphy.ctx, this.blobTreePtr_);
+  }
+
+  getParentIndexOf(blobIndex: BlobIndex): BlobIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_parent_of(this.delphy.ctx, this.blobTreePtr_, blobIndex);
+  }
+
+  getNumChildrenOf(blobIndex: BlobIndex): number {
+    return Delphy.delphyCoreRaw.blob_tree_get_num_children_of(
+      this.delphy.ctx, this.blobTreePtr_, blobIndex);
+  }
+
+  getNthChildIndexOf(blobIndex: BlobIndex, n: number): BlobIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_nth_child_of(
+      this.delphy.ctx, this.blobTreePtr_, blobIndex, n);
+  }
+
+  getChildrenOf(blobIndex: BlobIndex): number[] {
+    const result = [];
+    const numChildren = this.getNumChildrenOf(blobIndex);
+    for (let i = 0; i !== numChildren; ++i) {
+      result.push(this.getNthChildIndexOf(blobIndex, i));
+    }
+    return result;
+  }
+
+  getFingerprintOf(blobIndex: BlobIndex): bigint {
+    const raw_result = Delphy.delphyCoreRaw.blob_tree_get_fingerprint_of(this.delphy.ctx, this.blobTreePtr_, blobIndex);
+    return BigInt.asUintN(64, raw_result);
+  }
+
+  // Exactly one of two things holds: either seed_node != kNoNode or seed_branch != kNoBranch
+  getSeedNodeOf(blobIndex: BlobIndex): NodeIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_seed_node_of(this.delphy.ctx, this.blobTreePtr_, blobIndex);
+  }
+
+  // Exactly one of two things holds: either seed_node != kNoNode or seed_branch != kNoBranch
+  getSeedBranchOf(blobIndex: BlobIndex): BranchIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_seed_branch_of(this.delphy.ctx, this.blobTreePtr_, blobIndex);
+  }
+
+  // A blob brings together a number of underlying tree nodes and branches
+  getNumTreeNodesBehind(blobIndex: BlobIndex): number {
+    return Delphy.delphyCoreRaw.blob_tree_get_num_tree_nodes_behind(
+      this.delphy.ctx, this.blobTreePtr_, blobIndex);
+  }
+
+  getNthTreeNodeBehind(blobIndex: BlobIndex, n: number): NodeIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_nth_tree_node_behind(
+      this.delphy.ctx, this.blobTreePtr_, blobIndex, n);
+  }
+
+  getTreeNodesBehind(blobIndex: BlobIndex): number[] {
+    const result = [];
+    const numNodes = this.getNumTreeNodesBehind(blobIndex);
+    for (let i = 0; i !== numNodes; ++i) {
+      result.push(this.getNthTreeNodeBehind(blobIndex, i));
+    }
+    return result;
+  }
+
+  getNumTreeBranchesBehind(blobIndex: BlobIndex): number {
+    return Delphy.delphyCoreRaw.blob_tree_get_num_tree_branches_behind(
+      this.delphy.ctx, this.blobTreePtr_, blobIndex);
+  }
+
+  getNthTreeBranchBehind(blobIndex: BlobIndex, n: number): BranchIndex {
+    return Delphy.delphyCoreRaw.blob_tree_get_nth_tree_branch_behind(
+      this.delphy.ctx, this.blobTreePtr_, blobIndex, n);
+  }
+
+  getTreeBranchesBehind(blobIndex: BlobIndex): number[] {
+    const result = [];
+    const numBranches = this.getNumTreeBranchesBehind(blobIndex);
+    for (let i = 0; i !== numBranches; ++i) {
+      result.push(this.getNthTreeBranchBehind(blobIndex, i));
+    }
+    return result;
+  }
+
+  node2blob(nodeIndex: NodeIndex): BlobIndex {
+    return Delphy.delphyCoreRaw.blob_tree_node_2_blob(this.delphy.ctx, this.blobTreePtr_, nodeIndex);
+  }
+
+  branch2blob(branchIndex: BranchIndex): BlobIndex {
+    return Delphy.delphyCoreRaw.blob_tree_branch_2_blob(this.delphy.ctx, this.blobTreePtr_, branchIndex);
+  }
+
+  queryBlobSequence(blobIndex: BlobIndex): BlobSequence {
+    const rawBlobSequence = Delphy.delphyCoreRaw.query_blob_sequence(
+      this.delphy.ctx, this.blobTreePtr_, this.phyloTreePtr_, blobIndex);
+    try {
+
+      const deltasFromRootSeq: Record<SiteIndex, RealSeqLetter> = {};
+      const numMutations = Delphy.delphyCoreRaw.blob_sequence_get_num_mutations(this.delphy.ctx, rawBlobSequence);
+      for (let i = 0; i !== numMutations; ++i) {
+        const site = Delphy.delphyCoreRaw.blob_sequence_get_nth_mutation_site(this.delphy.ctx, rawBlobSequence, i);
+        const state = Delphy.delphyCoreRaw.blob_sequence_get_nth_mutation_state(this.delphy.ctx, rawBlobSequence, i);
+        deltasFromRootSeq[site] = state;
+      }
+
+      const ambiguities: Record<SiteIndex, [RealSeqLetter, RealSeqLetter]> = {};
+      const numAmbiguities = Delphy.delphyCoreRaw.blob_sequence_get_num_ambiguities(this.delphy.ctx, rawBlobSequence);
+      for (let i = 0; i !== numAmbiguities; ++i) {
+        const site = Delphy.delphyCoreRaw.blob_sequence_get_nth_ambiguity_site(
+          this.delphy.ctx, this.blobTreePtr_, rawBlobSequence, i);
+        const state1 = Delphy.delphyCoreRaw.blob_sequence_get_nth_ambiguity_state1(
+          this.delphy.ctx, this.blobTreePtr_, rawBlobSequence, i);
+        const state2 = Delphy.delphyCoreRaw.blob_sequence_get_nth_ambiguity_state2(
+          this.delphy.ctx, this.blobTreePtr_, rawBlobSequence, i);
+        ambiguities[site] = [state1, state2];
+      }
+
+      return {
+        deltasFromRootSeq,
+        ambiguities,
+      };
+    } finally {
+      Delphy.delphyCoreRaw.blob_sequence_delete(this.delphy.ctx, rawBlobSequence);
+    }
   }
 }
 

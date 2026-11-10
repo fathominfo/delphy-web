@@ -1,4 +1,4 @@
-import { PhyloTree } from "../../pythia/delphy_api";
+import { PhyloTree, kNoNode, kNoBranch } from "../../pythia/delphy_api";
 import { SharedState } from "../../sharedstate";
 import { getTimelineIndices, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
@@ -147,6 +147,73 @@ export class PoplarUI extends UIScreen {
       }
     });
     console.debug(`handleTreeSelect took ${Date.now() - start} ms`);
+
+    const blobStart = Date.now();
+    const blobTree = this.pythia.deriveBlobTree(baseTree);
+    console.debug(`blob tree size: ${blobTree.getSize()} blobs`);
+
+    console.debug(``);
+    console.debug(`Base Tree`);
+    console.debug(`---------`);
+    function goTree(node: number, level: number) {
+      if (node == baseTree.getRootIndex()) {
+        console.debug(`${"|".repeat(level)} ${node} (in [${blobTree.node2blob(node)}])`);
+      } else {
+        const branch = node;
+        const branchEnd = branch;
+        const branchStart = baseTree.getParentIndexOf(branchEnd);
+        console.debug(`${"|".repeat(level)} ${node} (in [${blobTree.node2blob(node)}]) from branch ${branchStart}-${branchEnd} (in [${blobTree.branch2blob(branch)}])`);
+      }
+      if (baseTree.getNumChildrenOf(node) === 2) {
+        goTree(baseTree.getLeftChildIndexOf(node), level+1);
+        goTree(baseTree.getRightChildIndexOf(node), level+1);
+      }
+    }
+    goTree(baseTree.getRootIndex(), 0);
+
+    console.debug(``);
+    console.debug(`Blob Tree`);
+    console.debug(`---------`);
+    const blobsVisited = new Set<number>();
+    function go(node: number, level: number) {
+      console.debug(`${"|".repeat(level)} [${node}]`);
+      blobsVisited.add(node);
+      for (const child of blobTree.getChildrenOf(node)) {
+        go(child, level+1);
+      }
+    }
+    go(blobTree.getRootIndex(), 0);
+    const blobs = [...blobsVisited].sort((a, b) => a - b);
+
+    function seedOf(node: number): string {
+      const seedNode = blobTree.getSeedNodeOf(node);
+      const seedBranch = blobTree.getSeedBranchOf(node);
+      if (seedNode !== kNoNode) {
+        return `n${seedNode}`;
+      } else if (seedBranch !== kNoBranch) {
+        const branchEndNode = seedBranch;
+        const branchStartNode = baseTree.getParentIndexOf(seedBranch);
+        return `b${branchStartNode}-${branchEndNode}`;
+      } else {
+        return `THIS CAN'T HAPPEN!`;
+      }
+    }
+    const rows: Record<number, Record<string, unknown>> = {};
+    for (const blob of blobs) {
+      rows[blob] = {
+        fingerprint: blobTree.getFingerprintOf(blob).toString(16).padStart(16, "0"),
+        parent: blobTree.getParentIndexOf(blob),
+        children: blobTree.getChildrenOf(blob).join(","),
+        seed: seedOf(blob),
+        treeNodes: blobTree.getTreeNodesBehind(blob).map(node => `${node}`).join(","),
+        treeBranches: blobTree.getTreeBranchesBehind(blob).map(branch => `${baseTree.getParentIndexOf(branch)}-${branch}`).join(","),
+        blobSequence: blobTree.queryBlobSequence(blob),
+      };
+    }
+    console.table(rows);
+
+    blobTree.delete();
+    console.debug(`blob tree calculations took ${Date.now() - blobStart} ms`);
   }
 
   handleNodeSelect(nodeIndex: number, src: PoplarChart) {
