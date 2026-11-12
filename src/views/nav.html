@@ -19,6 +19,13 @@
       <button>Trees</button>
     </div>
     <div id="nav--right">
+    <button class="nav-download-button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+        <path
+          d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z">
+        </path>
+      </svg>
+    </button>
       <button id="nav--qc" class="uninspected">Data Issues</button>
       <button id="nav--about">About</button>
     </div>
@@ -30,5 +37,7 @@
       core version <span class="core-version"></span>-<span class="core-build"></span> #<span class="core-commit"></span><br/>
       <span class="save-file-version hidden">save version <span class="save-version"></span>-<span class="save-build"></span> #<span class="save-commit"></span></span>
     </p> -->
+
+    {{> download}}
   </nav>
 

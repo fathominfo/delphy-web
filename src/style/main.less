@@ -263,6 +263,97 @@ nav {
 
 #nav--right {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.mcc-download-menu {
+  width: fit-content;
+  height: max-content;
+  position: absolute;
+  top: 3rem;
+  right: 5rem;
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0.1s ease;
+
+}
+
+.mcc-download-menu.expanded {
+  visibility: visible;
+  pointer-events: all;
+}
+
+
+.mcc-download-menu input[type="checkbox"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.nav-download-button{
+  width: fit-content;
+  height: fit-content;
+  padding: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+
+  svg{
+    width: 20px;
+    height: 20px;
+    stroke-width: 2px;
+    fill: #999;
+  }
+}
+
+
+.nav-download-button:hover {
+  background-color: #ddd;
+}
+
+.export-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  margin-bottom: 1rem;
+}
+
+.export-options-checkbox {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.tree-export {
+display: flex;
+flex-direction: column;
+gap: 0.5em;
+padding: 1em;
+border: 1px solid #e3e3e3;
+background-color: #fcfcfc;
+
+h2{
+  font-weight: 700;
+}
+  h3 {
+    margin: 0.5em 0;
+  }
+
+  .export-button {
+    flex: 1;
+    padding: 0.5em;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 700;
+    background: #efefef;
+    border: 1px solid #e3e3e3;
+    .smoothly(background);
+
+    &:hover {
+      background: #e3e3e3;
+    }
+  }
 }
 
 .displaying-view-1 #nav--view-1,

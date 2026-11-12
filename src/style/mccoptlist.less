@@ -5,13 +5,16 @@
   bottom: 100px;
 
   .mcc-options-panel {
-      width: 90%;
-    }
+    width: 90%;
+  }
 }
+
 
 .mcc-display-options {
   display: flex;
-  align-items: end;
+  flex-direction: column-reverse;
+  gap: .5rem;
+  // align-items: end;
   height: 150px;
   min-height: 150px;
   position: relative;
@@ -19,18 +22,25 @@
   width: 100%;
   margin-top: 10px;
 
-  .panel-title{
+  .panel-title {
     color: #777;
     font-size: 12px;
   }
 
+  .mcc-opts-buttons {
+    display: flex;
+    gap: .5rem;
+    // position: absolute;
+    // bottom: 0;
+  }
+
   // &.expanded .toggle{
-    // background-color: #999;
-    // color: black;
-    // svg path{
-    //   stroke: @darkGrey;
-    //   fill:  @darkGrey;
-    // }
+  // background-color: #999;
+  // color: black;
+  // svg path{
+  //   stroke: @darkGrey;
+  //   fill:  @darkGrey;
+  // }
   // }
 
   .toggle {
@@ -40,7 +50,7 @@
     font-size: calc(var(--unit) * 1.25);
     font-weight: 500;
     line-height: calc(var(--unit) * 2);
-    position: absolute;
+    // position: absolute;
 
     display: flex;
     flex-direction: row;
@@ -96,7 +106,6 @@
 }
 
 .mcc-options-panel {
-  transform: translate(0, -2.5em);
   border: 1px solid #e3e3e3;
   background-color: #fcfcfc;
   width: 100%;
@@ -111,6 +120,7 @@
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
+  min-width: 300px;
 }
 
 
@@ -136,7 +146,8 @@
     color: #777;
   }
 
-  &.topology, &.nodes {
+  &.topology,
+  &.nodes {
     display: none;
   }
 
@@ -165,7 +176,7 @@
   label {
     padding: 0 4px;
     background-color: #fcfcfc;
-    border: solid 1px rgb(200,200,200);
+    border: solid 1px rgb(200, 200, 200);
     cursor: pointer;
     margin-right: -1px;
 

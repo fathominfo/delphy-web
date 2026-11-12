@@ -12,8 +12,11 @@ import { ConfigExport } from './ui/mccconfig';
 import { initErrors, setStage } from './errors';
 import { STAGES } from './constants';
 import { setQCPanel } from './ui/qcpanel';
-
-
+import { SummaryTree } from './pythia/delphy_api';
+import { MccTreeCanvas } from './ui/mcctreecanvas';
+import { MccUI } from './ui/mccui';
+import { getTimestampString } from './ui/common';
+import { PdfCanvas } from './util/pdfcanvas';
 
 function onReady(p:Pythia):void {
   const viewButtons: NavLabel[] = [];
@@ -77,6 +80,15 @@ function onReady(p:Pythia):void {
       }
     }
   })
+
+  const downloadBtn = document.querySelector(".nav-download-button") as HTMLButtonElement;
+  const downloadMenu = document.querySelector(".mcc-download-menu") as HTMLDivElement;
+  downloadBtn.addEventListener("click", () => downloadMenu.classList.toggle("expanded"));
+
+  const exportPNGBtn = document.querySelector("#export-png") as HTMLButtonElement;
+  exportPNGBtn.addEventListener('click', () => exportPNG(sharedState, runUI));
+  const exportPDFBtn = document.querySelector("#export-pdf") as HTMLButtonElement;
+  exportPDFBtn.addEventListener('click', () => exportPDF(sharedState, runUI))
 
   const runCallback = ()=>{
     sharedState.setTipIds();
@@ -146,3 +158,66 @@ const loadListener = ()=>{
 document.addEventListener('DOMContentLoaded', loadListener);
 
 
+function exportPNG(sharedState: SharedState, mccUI: MccUI) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D,
+    imgTreeCanvas = new MccTreeCanvas(canvas, ctx),
+    mccConfig = sharedState.mccConfig,
+    tree = mccUI.mccTreeCanvas.tree as SummaryTree,
+    conf = mccUI.mccTreeCanvas.creds;
+  canvas.width = 500;
+  canvas.height = 750;
+  imgTreeCanvas.width = 500;
+  imgTreeCanvas.height = 750;
+  if (mccConfig) {
+    imgTreeCanvas.setConfig(mccConfig);
+    // this is raising an error  — looks like something to do with metadata
+    mccConfig.updateInnerNodeMetadata(tree);
+  }
+  imgTreeCanvas.positionTreeNodes(tree, conf, mccUI.pythia?.getAbsoluteMccIndex());
+  imgTreeCanvas.setColors(tree);
+  // const mcccc = this.mccTreeCanvas.canvas;
+  // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
+  imgTreeCanvas.draw(mccUI.minDate, mccUI.maxDate, mccUI.timelineIndices);
+  const a = document.createElement("a"),
+    url = canvas.toDataURL('image/png', 1.0),
+    title = `delphy-${getTimestampString()}.png`;
+    // console.log('URL', url);
+  a.href = url;
+  a.download = title;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => a.remove(), 10000);
+}
+
+function exportPDF(sharedState: SharedState, mccUI: MccUI) {
+  const canvas = new PdfCanvas(500, 750),
+    ctx = canvas.getContext(),
+    imgTreeCanvas = new MccTreeCanvas(canvas, ctx),
+    mccConfig = sharedState.mccConfig,
+    tree = mccUI.mccTreeCanvas.tree as SummaryTree,
+    conf = mccUI.mccTreeCanvas.creds;
+  const promises: Promise<void>[] = [];
+  /*
+    jspdf does not support .otf files, so we have these home made .ttf conversions
+    */
+  promises.push(canvas.addFont('/assets/fonts/roboto/roboto-bold.ttf', 'Roboto', '700'));
+  promises.push(canvas.addFont('/assets/fonts/roboto/roboto-medium.ttf', 'Roboto', '500'));
+  Promise.all(promises).then(() => {
+    // console.debug(canvas.getFontList());
+    canvas.width = 500;
+    canvas.height = 750;
+    imgTreeCanvas.width = 500;
+    imgTreeCanvas.height = 750;
+    if (mccConfig) {
+      imgTreeCanvas.setConfig(mccConfig);
+      mccConfig.updateInnerNodeMetadata(tree);
+    }
+    imgTreeCanvas.positionTreeNodes(tree, conf, mccUI.pythia?.getAbsoluteMccIndex());
+    imgTreeCanvas.setColors(tree);
+    // const mcccc = this.mccTreeCanvas.canvas;
+    // (mcccc.parentNode as HTMLElement).insertBefore(canvas, mcccc);
+    imgTreeCanvas.draw(mccUI.minDate, mccUI.maxDate, mccUI.timelineIndices, canvas);
+    canvas.save(`delphy-${getTimestampString()}.pdf`);
+  });
+}
