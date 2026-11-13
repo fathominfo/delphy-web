@@ -97,6 +97,8 @@ export class TreeCanvas {
   minOpacity: number;
   maxOpacity: number;
 
+  uniformBranchWidth = false;
+
 
 
   constructor(canvas: HTMLCanvasElement | PdfCanvas, ctx: CanvasRenderingContext2D | Context2d) {
@@ -609,7 +611,8 @@ export class TreeCanvas {
       parent = this.nodeParents[index],
       nodeX = this.getZoomX(this.nodeTimes[index]);
     this.setBranchColor(index);
-    this.setBranchWeight(index);
+    if (this.uniformBranchWidth) ctx.lineWidth = 1;
+    else this.setBranchWeight(index);
     ctx.beginPath();
     if (parent !== UNSET) {
       const nodeY = this.getZoomY(index),

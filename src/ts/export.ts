@@ -7,21 +7,17 @@ import { MccConfig } from "./ui/mccconfig";
 import { MccTreeCanvas } from "./ui/mcctreecanvas";
 import { PdfCanvas } from "./util/pdfcanvas";
 
+
+type ExportOptions = {
+  colorOption: string,
+  includeZoom: boolean,
+  includeNodes: boolean,
+  branchWidthByTips: boolean
+}
 export function setupDownload(sharedState: SharedState) {
   const downloadBtn = document.querySelector(".nav-download-button") as HTMLButtonElement;
   const downloadMenu = document.querySelector(".mcc-download-menu") as HTMLDivElement;
-  downloadBtn.addEventListener("click", () => {
-
-    if (sharedState.mccConfig.colorOption === ColorOption.confidence) {
-      credRadio.checked = true;
-    } else if (sharedState.mccConfig.colorOption === ColorOption.metadata) {
-      metadatRadio.checked = true;
-    }else{
-      noneRadio.checked = true;
-    }
-    downloadMenu.classList.toggle("expanded");
-
-  });
+  downloadBtn.addEventListener("click", () => { downloadMenu.classList.toggle("expanded") });
 
   // TODO: clicking elsewhere should also dismiss this dialog
   const form = document.querySelector("#mcc-download-form") as HTMLFormElement;
@@ -30,77 +26,37 @@ export function setupDownload(sharedState: SharedState) {
     event.preventDefault();
     const formData = new FormData(form);
     const format = formData.get("export-format");
-    const options = {
+    const options: ExportOptions = {
+      colorOption: formData.get("branch-color") as string,
       includeZoom: formData.has("zoom-area"),
-      includeNodes: formData.has("selected-nodes")
+      includeNodes: formData.has("selected-nodes"),
+      branchWidthByTips: formData.has("branch-width")
     };
     const pythia = sharedState.pythia;
     const mccRef = pythia.getMcc();
     const mcc = mccRef.getMcc() as SummaryTree;
-    if (format === "pdf") exportPDF(pythia, sharedState.mccConfig, mcc, mccRef);
-    else exportPNG(pythia, sharedState.mccConfig, mcc, mccRef);
+
+    const exportMccConfig = sharedState.mccConfig;
+    exportMccConfig.colorOption = options.colorOption === "metadata" ? ColorOption.metadata : options.colorOption === "credibility" ? ColorOption.confidence : ColorOption.none;
+    if (format === "pdf") exportPDF(pythia, exportMccConfig, mcc, mccRef, options);
+    else exportPNG(pythia, exportMccConfig, mcc, mccRef, options);
   });
-
-
-  const credRadio = form.querySelector("#cred-radio") as HTMLInputElement,
-    metadatRadio = form.querySelector("#metadata-radio") as HTMLInputElement,
-    noneRadio = form.querySelector("#none-radio") as HTMLInputElement;
-
-  credRadio.addEventListener("change", (e) => {
-    const mccConfig = sharedState.mccConfig;
-    if (credRadio.checked) {
-      mccConfig.setColorSystem(ColorOption.confidence)
-    }
-  })
-  metadatRadio.addEventListener("change", (e) => {
-    const mccConfig = sharedState.mccConfig;
-    if (metadatRadio.checked) {
-      mccConfig.setColorSystem(ColorOption.metadata)
-    }
-  })
-  noneRadio.addEventListener("change", (e) => {
-    const mccConfig = sharedState.mccConfig;
-    if (noneRadio.checked) {
-      mccConfig.setColorSystem(ColorOption.none)
-    }
-  })
 }
 
-function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRef: MccRef) {
+function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRef: MccRef, options: ExportOptions) {
   const scale = 3;
-
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   const imgTreeCanvas = new MccTreeCanvas(canvas, ctx);
-  const conf = mccRef.getNodeConfidence();
-
   canvas.width = 500 * scale;
   canvas.height = 750 * scale;
-
   imgTreeCanvas.width = 500;
   imgTreeCanvas.height = 750;
-
   ctx.scale(scale, scale);
-
-  if (mccConfig) {
-    imgTreeCanvas.setConfig(mccConfig);
-    mccConfig.updateInnerNodeMetadata(mcc);
-  }
-
-  imgTreeCanvas.positionTreeNodes(mcc, conf, pythia?.getAbsoluteMccIndex());
-  imgTreeCanvas.setColors(mcc);
-
-  const rootIndex = mcc.getRootIndex();
-  const minDate = mcc.getTimeOf(rootIndex);
-  const maxDate = pythia.maxDate;
-  const timelineIndices = getTimelineIndices(minDate, maxDate);
-
-  imgTreeCanvas.draw(minDate, maxDate, timelineIndices);
-
+  prepareAndDrawTree(mccRef,mccConfig,imgTreeCanvas,mcc,pythia,options);
   const a = document.createElement("a");
   const url = canvas.toDataURL("image/png");
   const title = `delphy-${getTimestampString()}.png`;
-
   a.href = url;
   a.download = title;
   document.body.appendChild(a);
@@ -110,12 +66,11 @@ function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
   setTimeout(() => a.remove(), 10000);
 }
 
-function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRef: MccRef) {
+function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRef: MccRef, options: ExportOptions) {
 
   const canvas = new PdfCanvas(500, 750),
     ctx = canvas.getContext(),
-    imgTreeCanvas = new MccTreeCanvas(canvas, ctx),
-    conf = mccRef.getNodeConfidence();
+    imgTreeCanvas = new MccTreeCanvas(canvas, ctx)
   const promises: Promise<void>[] = [];
   /*
     jspdf does not support .otf files, so we have these home made .ttf conversions
@@ -128,20 +83,27 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
     canvas.height = 750;
     imgTreeCanvas.width = 500;
     imgTreeCanvas.height = 750;
-    if (mccConfig) {
-      imgTreeCanvas.setConfig(mccConfig);
-      mccConfig.updateInnerNodeMetadata(mcc);
-    }
-    imgTreeCanvas.positionTreeNodes(mcc, conf, pythia?.getAbsoluteMccIndex());
-    imgTreeCanvas.setColors(mcc);
-
-    const rootIndex = mcc.getRootIndex();
-    const minDate = mcc.getTimeOf(rootIndex);
-    const maxDate = pythia.maxDate;
-    const timelineIndices = getTimelineIndices(minDate, maxDate);
-    imgTreeCanvas.draw(minDate, maxDate, timelineIndices);
-
-    imgTreeCanvas.draw(minDate, maxDate, timelineIndices, canvas);
+    prepareAndDrawTree(mccRef, mccConfig, imgTreeCanvas, mcc, pythia, options, canvas);
     canvas.save(`delphy-${getTimestampString()}.pdf`);
   });
+}
+
+
+function prepareAndDrawTree(mccRef: MccRef, mccConfig: MccConfig, imgTreeCanvas: MccTreeCanvas, mcc: SummaryTree, pythia: Pythia, options: ExportOptions, canvas: PdfCanvas | null = null) {
+  const conf = mccRef.getNodeConfidence();
+  if (!options.branchWidthByTips) imgTreeCanvas.uniformBranchWidth = true;
+
+  if (mccConfig) {
+    imgTreeCanvas.setConfig(mccConfig);
+    mccConfig.updateInnerNodeMetadata(mcc);
+  }
+
+  imgTreeCanvas.positionTreeNodes(mcc, conf, pythia?.getAbsoluteMccIndex());
+  imgTreeCanvas.setColors(mcc);
+  const rootIndex = mcc.getRootIndex();
+  const minDate = mcc.getTimeOf(rootIndex);
+  const maxDate = pythia.maxDate;
+  const timelineIndices = getTimelineIndices(minDate, maxDate);
+  imgTreeCanvas.draw(minDate, maxDate, timelineIndices);
+  if (canvas) imgTreeCanvas.draw(minDate, maxDate, timelineIndices, canvas);
 }
