@@ -16,7 +16,8 @@ export enum Topology {
 }
 export enum ColorOption {
   confidence = 1,
-  metadata = 2
+  metadata = 2,
+  none = 99
 }
 export enum Presentation {
   all = 1,

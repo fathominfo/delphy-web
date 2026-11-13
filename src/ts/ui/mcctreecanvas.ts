@@ -249,13 +249,15 @@ export class MccTreeCanvas extends TreeCanvas {
   }
 
 
-  setColors(tree:Tree): void {
+  setColors(tree: Tree): void {
     // console.debug('setColorrs');
     const mccConfig = this.mccConfig;
     if (!mccConfig || mccConfig.colorOption === ColorOption.confidence) {
       this.setColorsByConfidence(tree);
-    } else if (mccConfig.metadataColors) {
+    } else if (mccConfig.metadataColors && mccConfig.colorOption === ColorOption.metadata) {
       this.setColorsByMetadata(tree);
+    } else {
+      this.setColorsByNothing(tree);
     }
   }
 
@@ -296,6 +298,21 @@ export class MccTreeCanvas extends TreeCanvas {
     for (let index = 0; index < size; index++) {
       const value = nodeValues[index],
         color = mccConfig.getMetadataColor(value);
+      this.nodeColors[index] = color;
+      this.branchColors[index] = color;
+    }
+    this.colorsUnSet = false;
+  }
+
+
+  setColorsByNothing(_tree: Tree): void { // eslint-disable-line @typescript-eslint/no-unused-vars
+    const mccConfig = this.mccConfig,
+      size = this.nodeYs.length;
+    if (!mccConfig) return;
+    this.metadataNodeValues = mccConfig.getMetadataValues();
+    this.metadataNodeValueOptions = mccConfig.getMetadataTipCounts();
+    for (let index = 0; index < size; index++) {
+      const color = HI_CONFIDENCE_COLOR;
       this.nodeColors[index] = color;
       this.branchColors[index] = color;
     }

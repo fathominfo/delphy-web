@@ -1,17 +1,44 @@
-<div class="mcc-download-menu">
+<form class="mcc-download-menu" id="mcc-download-form">
   <div class="tree-export">
     <h2>Export tree as</h2>
-    <div class="export-buttons">
-      <button type="button" class="export-button" id="export-png">PNG</button>
-      <button type="button" class="export-button" id="export-pdf">PDF</button>
-    </div>
+
+    <fieldset class="export-options-radio">
+      <div>
+        <input type="radio" id="export-png-radio" name="export-format" value="png" checked>
+        <label for="export-png-radio">PNG</label>
+      </div>
+      <div>
+        <input type="radio" id="export-pdf-radio" name="export-format" value="pdf">
+        <label for="export-pdf-radio">PDF</label>
+      </div>
+    </fieldset>
+
+    <fieldset class="export-options-radio">
+      <legend>Color branches by</legend>
+      <div>
+        <input type="radio" id="cred-radio" name="branch-color" value="credibility" checked>
+        <label for="cred-radio">Credibility</label>
+      </div>
+      <div>
+        <input type="radio" id="metadata-radio" name="branch-color" value="metadata">
+        <label for="metadata-radio">Metadata</label>
+      </div>
+      <div>
+        <input type="radio" id="none-radio" name="branch-color" value="none">
+        <label for="none-radio">None</label>
+      </div>
+    </fieldset>
+
     <div class="export-options-checkbox">
       <input type="checkbox" id="zoom" name="zoom-area" checked>
-      <label for="zoom-area">include zoom area</label>
+      <label for="zoom">Include zoom area</label>
     </div>
+
     <div class="export-options-checkbox">
-      <input type="checkbox" id="color-by-cred" name="color-by-cred" checked>
-      <label for="color-by-cred">color branch by credibility</label>
+      <input type="checkbox" id="nodes" name="selected-nodes" checked>
+      <label for="nodes">Include selected node(s)</label>
     </div>
   </div>
-</div>
+
+  <button type="submit" class="export-button">Let's go!</button>
+</form>

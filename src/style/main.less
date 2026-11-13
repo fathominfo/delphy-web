@@ -276,7 +276,13 @@ nav {
   visibility: hidden;
   pointer-events: none;
   transition: visibility 0.1s ease;
+  border: 1px solid #e3e3e3;
+  background-color: #fcfcfc;
+  padding: 1em;
+}
 
+fieldset{
+  border: none;
 }
 
 .mcc-download-menu.expanded {
@@ -319,19 +325,28 @@ nav {
   margin-bottom: 1rem;
 }
 
-.export-options-checkbox {
+.export-options-radio {
   display: flex;
   flex-direction: row;
-  gap: 5px;
+  align-items: center;
+  padding: .5rem 0;
+
+  label {
+    background-color: #efefef;
+    cursor: pointer;
+    border: 1px solid #e3e3e3;
+    padding: 0.3em;
+  }
+
+  input[type="radio"]:checked + label {
+    background-color: #ccc;
+  }
 }
 
 .tree-export {
 display: flex;
 flex-direction: column;
-gap: 0.5em;
-padding: 1em;
-border: 1px solid #e3e3e3;
-background-color: #fcfcfc;
+gap: .8rem;
 
 h2{
   font-weight: 700;
