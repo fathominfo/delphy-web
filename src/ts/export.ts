@@ -2,7 +2,7 @@ import { SummaryTree } from "./pythia/delphy_api";
 import { MccRef } from "./pythia/mccref";
 import { Pythia } from "./pythia/pythia";
 import { SharedState } from "./sharedstate";
-import { ColorOption, getTimelineIndices, getTimestampString } from "./ui/common";
+import { ColorOption, getDenseTimelineIndices, getTimestampString } from "./ui/common";
 import { MccConfig } from "./ui/mccconfig";
 import { MccTreeCanvas } from "./ui/mcctreecanvas";
 import { PdfCanvas } from "./util/pdfcanvas";
@@ -15,8 +15,29 @@ type ExportOptions = {
   branchWidthByTips: boolean
 }
 
-const treeWidth = 500;
-const height = 750;
+const pdf_dimensions = {
+  landscape: {
+    width: 1200,
+    height: 800,
+    margin: {
+      top: 20,
+      bottom: 20,
+      left: 20,
+      right: 20
+    }
+  },
+  portrait: {
+    width: 612,
+    height: 792,
+    margin: {
+      top: 20,
+      bottom: 20,
+      left: 20,
+      right: 20
+    }
+  }
+}
+const PADDING = 30;
 
 export function setupDownload(sharedState: SharedState) {
   const downloadBtn = document.querySelector(".nav-download-button") as HTMLButtonElement;
@@ -58,6 +79,8 @@ function prepareAndDrawTree(
   sizeBranchWidth: boolean,
   zoom: boolean
 ) {
+
+  //TODO: crop the canvas
   const conf = mccRef.getNodeConfidence();
   if (!sizeBranchWidth) {
     imgTreeCanvas.uniformBranchWidth = true;
@@ -74,9 +97,9 @@ function prepareAndDrawTree(
   const rootIndex = mcc.getRootIndex();
   const minDate = mcc.getTimeOf(rootIndex);
   const maxDate = pythia.maxDate;
-  const timelineIndices = getTimelineIndices(minDate, maxDate);
-  imgTreeCanvas.draw(minDate, maxDate, timelineIndices);
+  const timelineIndices = getDenseTimelineIndices(minDate, maxDate);
   if (canvas) imgTreeCanvas.draw(minDate, maxDate, timelineIndices, canvas);
+  else imgTreeCanvas.draw(minDate, maxDate, timelineIndices);
 }
 
 
@@ -104,17 +127,25 @@ function renderTreeToCanvas(
 }
 
 function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRef: MccRef, options: ExportOptions) {
+  const { width, height, margin } = pdf_dimensions.landscape;
+  const { horizontalZoom, verticalZoom } = mccConfig;
+
   const scale = 3;
-  const panels = [renderTreeToCanvas(pythia, mccConfig, mcc, mccRef, options, false, treeWidth, height, scale)];
-  if (options.includeZoom) {
-    panels.push(renderTreeToCanvas(pythia, mccConfig, mcc, mccRef, options, true, treeWidth, height, scale));
-  }
+  const mccTreeCanvas = renderTreeToCanvas(pythia, mccConfig, mcc, mccRef, options, false, width / 2, height, scale);
 
   const outCanvas = document.createElement('canvas');
-  outCanvas.width = treeWidth * scale * panels.length;
+  outCanvas.width = width * scale;
   outCanvas.height = height * scale;
   const outctx = outCanvas.getContext('2d') as CanvasRenderingContext2D;
-  panels.forEach((p, i) => outctx.drawImage(p, i * treeWidth * scale, 0));
+  outctx.fillStyle = "#fff";
+  outctx.fillRect(0, 0, width * scale, height * scale);
+  outctx.drawImage(mccTreeCanvas, margin.left * scale, margin.top * scale);
+
+  if (options.includeZoom && (verticalZoom > 1 || horizontalZoom > 1)) {
+    // include zoom
+    const zoomedCanvas = renderTreeToCanvas(pythia, mccConfig, mcc, mccRef, options, true, width / 2, height, scale);
+    outctx.drawImage(zoomedCanvas, (margin.left + width / 2 + PADDING) * scale, margin.top * scale);
+  }
 
   const a = document.createElement('a');
   a.href = outCanvas.toDataURL('image/png');
@@ -125,8 +156,9 @@ function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
 }
 
 function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRef: MccRef, options: ExportOptions) {
+  const { width, height, margin } = pdf_dimensions.landscape;
   const includeZoom = options.includeZoom;
-  const canvas = new PdfCanvas(treeWidth * (includeZoom ? 2 : 1), height);
+  const canvas = new PdfCanvas(width, height, "landscape");
   const ctx = canvas.getContext();
 
   /*
@@ -140,16 +172,20 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
   Promise.all(promises)
     .then(() => {
       const imgTreeCanvas = new MccTreeCanvas(canvas, ctx);
-      imgTreeCanvas.width = treeWidth;
+      imgTreeCanvas.width = (width - margin.left - margin.right) / 2;
       imgTreeCanvas.height = height;
+      ctx.translate(margin.left, margin.top);
       prepareAndDrawTree(mccRef, mccConfig, mcc, pythia, imgTreeCanvas, canvas, options.branchWidthByTips, false);
+      ctx.restore();
 
-      if (includeZoom) {
+      const { verticalZoom, horizontalZoom } = mccConfig;
+      if (includeZoom && (verticalZoom > 1 || horizontalZoom > 1)) {
+        // landscape
         const zoomedTreeCanvas = new MccTreeCanvas(canvas, ctx);
-        zoomedTreeCanvas.width = treeWidth;
-        zoomedTreeCanvas.height = height;
+        zoomedTreeCanvas.width = width / 4;
+        zoomedTreeCanvas.height = height / 2;
         ctx.save();
-        ctx.translate(treeWidth, 0);
+        ctx.translate(margin.left + width / 2 + PADDING, margin.top);
         prepareAndDrawTree(mccRef, mccConfig, mcc, pythia, zoomedTreeCanvas, canvas, options.branchWidthByTips, true);
         ctx.restore();
       }

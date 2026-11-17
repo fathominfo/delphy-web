@@ -267,17 +267,35 @@ export const MONTHLY = 1,
   FIVE_YEARLY = 4,
   TEN_YEARLY = 5;
 
+const MONTH_STEPS = [1, 2, 3, 6, 12, 24, 60, 120, 240];
 
-export const getTimelineIndices = (minDate:number, maxDate:number)=>{
+export const getDenseTimelineIndices = (
+  minDate: number,
+  maxDate: number,
+  maxLabels = 12
+) => {
+  const range = maxDate - minDate + 1;
+  const daysPerLabel = range / maxLabels;
+  const step =
+    MONTH_STEPS.find(s => s * 30.44 >= daysPerLabel) ??
+    MONTH_STEPS[MONTH_STEPS.length - 1];
+
+  const timelineIndices: DateLabel[] = [new DateLabel(maxDate)];
+  for (let d = maxDate - 1; d > minDate; d--) {
+    const dl = new DateLabel(d);
+    if (dl.day === 1 && (dl.year * 12 + dl.month) % step === 0) {
+      timelineIndices.push(dl);
+    }
+  }
+  return timelineIndices;
+};
+
+export const getTimelineIndices = (minDate: number, maxDate: number) => {
   const timelineIndices = [],
     range = maxDate - minDate + 1,
-    /*
-    how often do we want to add an actual label?
-    Let's assume we have room for up to 5 labels
-    */
     daysPerLabel = Math.ceil(range / 5);
   let d = maxDate,
-    dl  = new DateLabel(d),
+    dl = new DateLabel(d),
     prev = new DateLabel(d),
     labelFreq = TEN_YEARLY;
   timelineIndices.push(dl);
@@ -291,8 +309,7 @@ export const getTimelineIndices = (minDate:number, maxDate:number)=>{
     labelFreq = FIVE_YEARLY;
   }
 
-  for (let i = 0; i < range * 3; i++) {
-    d--;
+  for (d = maxDate - 1; d > minDate; d--) {
     dl = new DateLabel(d);
     if (dl.day === 1) {
       switch (labelFreq) {
@@ -324,11 +341,10 @@ export const getTimelineIndices = (minDate:number, maxDate:number)=>{
         }
         break;
       }
-
     }
   }
   return timelineIndices;
-}
+};
 
 /* expects a number between 0 and 1 */
 export const getPercentLabel = (n:number)=>{

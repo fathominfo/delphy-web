@@ -3,22 +3,26 @@ import { jsPDF, Context2d } from "jspdf";
 // import {MD700FontFile} from '../lib/mdsystem-700.js';
 // console.debug("jsPdf font files", MD500FontFile, MD700FontFile);
 
+type Orientation = "landscape" | "portrait"
 export class PdfCanvas {
 
   width: number;
   height: number;
+  orientation: Orientation;
   doc: jsPDF;
   ctx: Context2d;
   parentNode = null;
   style: any = {}; // eslint-disable-line  @typescript-eslint/no-explicit-any
   offsetTop = 0;
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, orientation: Orientation = "portrait") {
     this.width = width;
     this.height = height;
+    this.orientation = orientation;
     this.doc = new jsPDF({  // eslint-disable-line new-cap
       unit: "px",
-      format: [width, height]
+      format: [width, height],
+      orientation: orientation
     });
     this.ctx = this.doc.context2d;
   }

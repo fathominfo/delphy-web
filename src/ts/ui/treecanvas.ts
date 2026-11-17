@@ -435,7 +435,7 @@ export class TreeCanvas {
 
 
 
-  draw(earliest:number, latest:number, dates:DateLabel[], pdf: PdfCanvas | null = null) {
+  draw(earliest: number, latest: number, dates: DateLabel[], pdf: PdfCanvas | null = null) {
     if (earliest === undefined) earliest = this.minDate;
     if (latest === undefined) latest = this.maxDate;
     const drawBranch = this.drawBranch;
@@ -467,7 +467,6 @@ export class TreeCanvas {
     ctx.globalAlpha = 1;
     this.drawTimelineLines(dates);
     this.drawTimelineLabels(dates, pdf);
-
   }
 
   drawTimelineLines(dates:DateLabel[]):void {
@@ -535,7 +534,7 @@ export class TreeCanvas {
       minGap = Math.min(minGap, labels[i - 1].x - labels[i].x);
     }
 
-    const isTooDense = minGap !== Infinity && minGap < maxLabelWidth;
+    const isTooDense = false;//minGap !== Infinity && minGap < maxLabelWidth;
 
     const skipping = new Set<DateLabel>();
     if (isTooDense) { //show every other label
