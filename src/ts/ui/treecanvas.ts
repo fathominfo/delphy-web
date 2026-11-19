@@ -402,6 +402,33 @@ export class TreeCanvas {
     return this.nodeYs[index] * this.verticalZoom - offset + this.timelineSpacing;
   }
 
+  getTreeArea() {
+    const left = TREE_PADDING_LEFT;
+    const right = this.width - TREE_PADDING_RIGHT - 0.5;
+    const top = this.timelineSpacing;
+    const bottom = this.height - this.paddingBottom;
+    return { x: left, y: top, width: right - left, height: bottom - top };
+  }
+
+  getZoomBoundsNormalized() {
+    const area = this.getTreeArea();
+    const hz = Math.max(1, this.horizontalZoom);
+    const vz = Math.max(1, this.verticalZoom);
+
+    // horizontal
+    const zW = hz * area.width;
+    const xOffset = Math.max(Math.min(this.zoomCenterX * zW - area.width * 0.5, zW - area.width), 0);
+    const width = 1 / hz;
+    const x = 1 - xOffset / zW - width;
+    // vertical
+    const zH = vz * area.height;
+    const yOffset = Math.max(Math.min(this.zoomCenterY * zH - area.height * 0.5, zH - area.height), 0);
+    const y = yOffset / zH;
+    const height = 1 / vz;
+
+    return { x, y, width, height };
+  }
+
   getZoomedDateRange() : number[] {
     const dateRange = this.maxDate - this.minDate,
       centerDate = this.maxDate - dateRange * this.zoomCenterX,
@@ -463,7 +490,6 @@ export class TreeCanvas {
     //     ctx.fill();
     //   }
     // }
-
     ctx.globalAlpha = 1;
     this.drawTimelineLines(dates);
     this.drawTimelineLabels(dates, pdf);

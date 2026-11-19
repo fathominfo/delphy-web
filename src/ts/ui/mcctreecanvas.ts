@@ -6,7 +6,9 @@ import {HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR,
 import {MccConfig} from "./mccconfig";
 import { isTip } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
-import { Context2d } from "jspdf";
+import jsPDF, { Context2d } from "jspdf";
+import { DateLabel } from './datelabel';
+import { LegendOptions } from '../export';
 
 const GENETIC_DISTANCE_MIN_DIST = 1;
 
@@ -35,7 +37,8 @@ export class MccTreeCanvas extends TreeCanvas {
   metadataNodeValues: string[];
   metadataNodeValueOptions: OptionCount[];
   totalTipMutations: number[];
-
+  // labels: string[];
+  labelsType: ColorOption;
   selectable: boolean;
 
   constructor(canvas: HTMLCanvasElement | PdfCanvas, ctx: CanvasRenderingContext2D | Context2d) {
@@ -48,7 +51,7 @@ export class MccTreeCanvas extends TreeCanvas {
     this.metadataNodeValues = [];
     this.metadataNodeValueOptions = [];
     this.totalTipMutations = [];
-
+    this.labelsType = ColorOption.none;
     this.selectable = true;
   }
 
@@ -85,9 +88,64 @@ export class MccTreeCanvas extends TreeCanvas {
     this.verticalTips = sortable;
   }
 
+  draw(earliest: number, latest: number, dates: DateLabel[], pdf?: PdfCanvas | null, legendOptions?: LegendOptions | null): void {
+    super.draw(earliest, latest, dates, pdf);
+    if (pdf) {
+      if (this.labelsType === ColorOption.confidence) {
+        this.drawTipLabels(pdf);
+      }
+    }
+  }
 
+  insideZoomBounds(index: number): boolean {
+    const nx = this.getZoomX(this.nodeTimes[index]);
+    const ny = this.getZoomY(index);
+    const area = this.getTreeArea();
 
-  rescaleGeneticDistance(mcc: SummaryTree, mccIndex: number):void {
+    return nx >= area.x && nx <= area.x + area.width &&
+      ny >= area.y && ny <= area.y + area.height;
+  }
+
+  getLegendColors(): Map<string, string> {
+    const labels = this.mccConfig?.getMetadataValues() ?? [];
+    const colorByLabel = new Map<string, string>();
+
+    labels.forEach((label, i) => {
+      if (!colorByLabel.has(label)) {
+        if (this.insideZoomBounds(i)) colorByLabel.set(label, this.nodeColors[i]);
+      }
+    });
+    return colorByLabel;
+  }
+
+  setTipLabelsType(type: ColorOption) {
+    this.labelsType = type;
+  }
+
+  drawTipLabels(pdf: PdfCanvas) {
+    const labels = this.mccConfig?.metadata?.ids ?? [];
+    if (labels.length === 0) return;
+
+    const { ctx, nodeYs } = this, nodeCount = nodeYs.length;
+    pdf.setFontSize(8);
+    ctx.textAlign = "left";
+    ctx.fillStyle = this.tipColor;
+    for (let i = 0; i !== nodeCount; i++) {
+      if (this.nodeChildren[i].length === 0) {
+        const ny = this.getZoomY(i),
+          nx = this.getZoomX(this.nodeTimes[i]);
+        this.setNodeColor(i, ctx);
+        ctx.save();
+        ctx.translate(nx + 5, ny);
+
+        ctx.fillText(labels[i], 0, 0);
+        ctx.restore();
+      }
+    }
+    ctx.textAlign = "center";
+  }
+
+  rescaleGeneticDistance(mcc: SummaryTree, mccIndex: number): void {
 
     /*
     what is the genetic distance between one tip and another?
@@ -320,7 +378,7 @@ export class MccTreeCanvas extends TreeCanvas {
   }
 
 
-  setNodeColor(index:number, ctx:CanvasRenderingContext2D):void {
+  setNodeColor(index: number, ctx: CanvasRenderingContext2D | Context2d): void {
     // if (this.colorsUnSet) {
     //   this.setColors(tree);
     // }

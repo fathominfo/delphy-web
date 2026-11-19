@@ -11,6 +11,10 @@
         <input type="radio" id="export-pdf-radio" name="export-format" value="pdf">
         <label for="export-pdf-radio">PDF</label>
       </div>
+       <div>
+        <input type="radio" id="export-pdf-radio" name="export-format" value="pdf">
+        <label for="export-pdf-radio">Newick</label>
+      </div>
     </fieldset>
 
     <fieldset class="export-options-radio">
@@ -33,17 +37,17 @@
       <input type="checkbox" id="branch-stroke-width" name="branch-width" checked>
       <label for="branch-stroke-width">Size branches by tip counts</label>
     </div>
-
+<!-- 
     <div class="export-options-checkbox">
       <input type="checkbox" id="zoom" name="zoom-area" checked>
       <label for="zoom">Include zoom area</label>
-    </div>
+    </div> -->
 
-    <div class="export-options-checkbox">
+    <!-- <div class="export-options-checkbox">
       <input type="checkbox" id="nodes" name="selected-nodes" checked>
       <label for="nodes">Include selected node(s)</label>
-    </div>
+    </div> -->
   </div>
 
-  <button type="submit" class="export-button">Let's go!</button>
+  <button type="submit" class="export-button">Export</button>
 </form>

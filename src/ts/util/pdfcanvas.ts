@@ -71,7 +71,11 @@ export class PdfCanvas {
     this.doc.setFontSize(size);
   }
 
-
+  drawTitle(title: string, x = 0, y = 0, fontSize = 24, fontWeight = 700) {
+    this.doc.setFont("Roboto", `${fontWeight}`);
+    this.doc.setFontSize(fontSize);
+    this.ctx.fillText(title, x, y);
+  }
 }
 
 
