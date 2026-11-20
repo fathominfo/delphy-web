@@ -355,7 +355,7 @@ export class Delphy {
 
   deriveBlobTree(phyloTree: PhyloTree): BlobTree {
     const blobTreePtr = Delphy.delphyCoreRaw.derive_blob_tree(this.ctx, phyloTree.phyloTreePtr_);
-    return new BlobTree(this, blobTreePtr, phyloTree.phyloTreePtr_);
+    return new BlobTree(this, blobTreePtr);
   }
 
   // result[i] = avg effective population size (times generation time)
@@ -807,15 +807,16 @@ export class Delphy {
     blob_tree_get_nth_tree_branch_behind: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex, n: number) => BranchIndex,
     blob_tree_node_2_blob: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, nodeIndex: NodeIndex) => BlobIndex,
     blob_tree_branch_2_blob: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, branchIndex: BranchIndex) => BlobIndex,
-    query_blob_sequence: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, phyloTree: PhyloTreePtr, blobIndex: BlobIndex) => BlobSequencePtr,
+    query_blob_sequence: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobIndex: BlobIndex) => BlobSequencePtr,
     blob_sequence_delete: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr) => void,
     blob_sequence_get_num_mutations: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr) => number,
     blob_sequence_get_nth_mutation_site: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => SiteIndex,
-    blob_sequence_get_nth_mutation_state: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+    blob_sequence_get_nth_mutation_from_state: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+    blob_sequence_get_nth_mutation_to_state: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
     blob_sequence_get_num_ambiguities: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr) => number,
-    blob_sequence_get_nth_ambiguity_site: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobSequence: BlobSequencePtr, n: number) => SiteIndex,
-    blob_sequence_get_nth_ambiguity_state1: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
-    blob_sequence_get_nth_ambiguity_state2: (ctx: DelphyContextPtr, blobTree: BlobTreePtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+    blob_sequence_get_nth_ambiguity_site: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => SiteIndex,
+    blob_sequence_get_nth_ambiguity_state1: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
+    blob_sequence_get_nth_ambiguity_state2: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
 
     // Population model
     pop_model_get_class: (ctx: DelphyContextPtr, popModel: PopModelPtr) => InternalPopModelClass,
@@ -1098,7 +1099,8 @@ export class Delphy {
       blob_sequence_delete: Module['_delphy_blob_sequence_delete'],
       blob_sequence_get_num_mutations: Module['_delphy_blob_sequence_get_num_mutations'],
       blob_sequence_get_nth_mutation_site: Module['_delphy_blob_sequence_get_nth_mutation_site'],
-      blob_sequence_get_nth_mutation_state: Module['_delphy_blob_sequence_get_nth_mutation_state'],
+      blob_sequence_get_nth_mutation_from_state: Module['_delphy_blob_sequence_get_nth_mutation_from_state'],
+      blob_sequence_get_nth_mutation_to_state: Module['_delphy_blob_sequence_get_nth_mutation_to_state'],
       blob_sequence_get_num_ambiguities: Module['_delphy_blob_sequence_get_num_ambiguities'],
       blob_sequence_get_nth_ambiguity_site: Module['_delphy_blob_sequence_get_nth_ambiguity_site'],
       blob_sequence_get_nth_ambiguity_state1: Module['_delphy_blob_sequence_get_nth_ambiguity_state1'],
@@ -1447,13 +1449,21 @@ export class MccTree implements SummaryTree {
 
 // Blob tree
 // ---------
+type BlobSequenceMutation = {
+  fromState: RealSeqLetter,  // State in the tree's reference sequence
+  toState: RealSeqLetter,    // State in the blob
+};
+
 type BlobSequence = {
-  deltasFromRootSeq: Record<SiteIndex, RealSeqLetter>,
+  // Sites where the blob's state is certain and different from the tree's reference sequence
+  mutations: Record<SiteIndex, BlobSequenceMutation>,
+
+  // Sites where the blob's state is ambiguous between two states
   ambiguities: Record<SiteIndex, [RealSeqLetter, RealSeqLetter]>,
 };
 
 export class BlobTree {
-  constructor(private delphy: Delphy, public blobTreePtr_: BlobTreePtr, public phyloTreePtr_: PhyloTreePtr) {
+  constructor(private delphy: Delphy, public blobTreePtr_: BlobTreePtr) {
   }
 
   delete(): void {
@@ -1555,31 +1565,32 @@ export class BlobTree {
 
   queryBlobSequence(blobIndex: BlobIndex): BlobSequence {
     const rawBlobSequence = Delphy.delphyCoreRaw.query_blob_sequence(
-      this.delphy.ctx, this.blobTreePtr_, this.phyloTreePtr_, blobIndex);
+      this.delphy.ctx, this.blobTreePtr_, blobIndex);
     try {
 
-      const deltasFromRootSeq: Record<SiteIndex, RealSeqLetter> = {};
+      const mutations: Record<SiteIndex, BlobSequenceMutation> = {};
       const numMutations = Delphy.delphyCoreRaw.blob_sequence_get_num_mutations(this.delphy.ctx, rawBlobSequence);
       for (let i = 0; i !== numMutations; ++i) {
         const site = Delphy.delphyCoreRaw.blob_sequence_get_nth_mutation_site(this.delphy.ctx, rawBlobSequence, i);
-        const state = Delphy.delphyCoreRaw.blob_sequence_get_nth_mutation_state(this.delphy.ctx, rawBlobSequence, i);
-        deltasFromRootSeq[site] = state;
+        const fromState = Delphy.delphyCoreRaw.blob_sequence_get_nth_mutation_from_state(this.delphy.ctx, rawBlobSequence, i);
+        const toState = Delphy.delphyCoreRaw.blob_sequence_get_nth_mutation_to_state(this.delphy.ctx, rawBlobSequence, i);
+        mutations[site] = {fromState, toState};
       }
 
       const ambiguities: Record<SiteIndex, [RealSeqLetter, RealSeqLetter]> = {};
       const numAmbiguities = Delphy.delphyCoreRaw.blob_sequence_get_num_ambiguities(this.delphy.ctx, rawBlobSequence);
       for (let i = 0; i !== numAmbiguities; ++i) {
         const site = Delphy.delphyCoreRaw.blob_sequence_get_nth_ambiguity_site(
-          this.delphy.ctx, this.blobTreePtr_, rawBlobSequence, i);
+          this.delphy.ctx, rawBlobSequence, i);
         const state1 = Delphy.delphyCoreRaw.blob_sequence_get_nth_ambiguity_state1(
-          this.delphy.ctx, this.blobTreePtr_, rawBlobSequence, i);
+          this.delphy.ctx, rawBlobSequence, i);
         const state2 = Delphy.delphyCoreRaw.blob_sequence_get_nth_ambiguity_state2(
-          this.delphy.ctx, this.blobTreePtr_, rawBlobSequence, i);
+          this.delphy.ctx, rawBlobSequence, i);
         ambiguities[site] = [state1, state2];
       }
 
       return {
-        deltasFromRootSeq,
+        mutations,
         ambiguities,
       };
     } finally {
