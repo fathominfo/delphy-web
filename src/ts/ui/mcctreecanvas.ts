@@ -8,8 +8,6 @@ import { isTip } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
 import jsPDF, { Context2d } from "jspdf";
 import { DateLabel } from './datelabel';
-import { LegendOptions } from '../export';
-
 const GENETIC_DISTANCE_MIN_DIST = 1;
 
 class TipInfo {
@@ -26,6 +24,9 @@ class TipInfo {
 type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
+const TIP_LABEL_FONT_SIZE = 11;
+const TIP_MARKER_RADIUS = 3;
+const TIP_LABEL_OFFSET_X = 5;
 
 
 export class MccTreeCanvas extends TreeCanvas {
@@ -88,22 +89,24 @@ export class MccTreeCanvas extends TreeCanvas {
     this.verticalTips = sortable;
   }
 
-  draw(earliest: number, latest: number, dates: DateLabel[], pdf?: PdfCanvas | null, legendOptions?: LegendOptions | null): void {
+  draw(earliest: number, latest: number, dates: DateLabel[], pdf?: PdfCanvas | null): void {
     super.draw(earliest, latest, dates, pdf);
-    if (pdf) {
-      if (this.labelsType === ColorOption.confidence) {
-        this.drawTipLabels(pdf);
-      }
+    if (!pdf) return;
+    this.sortTips();
+    const [first, second] = this.verticalTips;
+    const tooclose = first && second && Math.abs(this.getZoomY(second.index) - this.getZoomY(first.index)) <= TIP_LABEL_FONT_SIZE * 1.5;
+    if (!tooclose) {
+      this.drawTipLabels(pdf);
     }
   }
 
   insideZoomBounds(index: number): boolean {
-    const nx = this.getZoomX(this.nodeTimes[index]);
+    // const nx = this.getZoomX(this.nodeTimes[index]);
     const ny = this.getZoomY(index);
     const area = this.getTreeArea();
 
-    return nx >= area.x && nx <= area.x + area.width &&
-      ny >= area.y && ny <= area.y + area.height;
+    return ny >= area.y && ny <= area.y + area.height;
+    // nx >= area.x && nx <= area.x + area.width &&
   }
 
   getLegendColors(): Map<string, string> {
@@ -122,27 +125,46 @@ export class MccTreeCanvas extends TreeCanvas {
     this.labelsType = type;
   }
 
-  drawTipLabels(pdf: PdfCanvas) {
-    const labels = this.mccConfig?.metadata?.ids ?? [];
-    if (labels.length === 0) return;
+  getTipId(nodeIndex: number): string | null {
+    const tree = this.tree as SummaryTree;
+    if (!isTip(tree, nodeIndex)) return null;
+    return tree.getBaseTree(0).getNameOf(nodeIndex).split('|')[0];
+  }
 
-    const { ctx, nodeYs } = this, nodeCount = nodeYs.length;
-    pdf.setFontSize(8);
+  drawTipLabels(pdf: PdfCanvas): void {
+    const isZoomed = this.horizontalZoom > 1 || this.verticalZoom > 1;
+    if (!isZoomed) return;
+
+    const { ctx } = this;
+    const nodeCount = this.nodeYs.length;
+
+    pdf.setFontSize(TIP_LABEL_FONT_SIZE);
+    ctx.save();
     ctx.textAlign = "left";
     ctx.fillStyle = this.tipColor;
-    for (let i = 0; i !== nodeCount; i++) {
-      if (this.nodeChildren[i].length === 0) {
-        const ny = this.getZoomY(i),
-          nx = this.getZoomX(this.nodeTimes[i]);
-        this.setNodeColor(i, ctx);
-        ctx.save();
-        ctx.translate(nx + 5, ny);
 
-        ctx.fillText(labels[i], 0, 0);
-        ctx.restore();
+    for (let i = 0; i < nodeCount; i++) {
+      const isTipNode = this.nodeChildren[i].length === 0;
+      if (!isTipNode || !this.insideZoomBounds(i)) continue;
+
+      const x = this.getZoomX(this.nodeTimes[i]);
+      const y = this.getZoomY(i);
+
+      // dot
+      this.setNodeColor(i, ctx);
+      ctx.beginPath();
+      ctx.moveTo(x + TIP_MARKER_RADIUS, y);
+      ctx.arc(x, y, TIP_MARKER_RADIUS, 0, 2 * Math.PI, false);
+      ctx.fill();
+
+      // label
+      const label = this.getTipId(i);
+      if (label) {
+        ctx.fillText(label, x + TIP_LABEL_OFFSET_X, y + TIP_LABEL_FONT_SIZE / 3);
       }
     }
-    ctx.textAlign = "center";
+
+    ctx.restore();
   }
 
   rescaleGeneticDistance(mcc: SummaryTree, mccIndex: number): void {

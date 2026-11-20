@@ -92,54 +92,73 @@ function measure(ctx: Context2d | CanvasRenderingContext2D, text: string): numbe
 }
 
 export function drawLegend(
+  mccconfig: MccConfig,
   ctx: Context2d | CanvasRenderingContext2D,
   entries: Map<string, string>, // label -> color
   bounds: LegendBounds,
   options: LegendOptions
 ): void {
   const { fontSize, lineHeight, applyFont } = options;
-  const labels = [...entries.keys()];
-  if (labels.length === 0) return;
 
   ctx.save();
-
   if (applyFont) {
     applyFont(ctx, fontSize);
   } else {
     (ctx as CanvasRenderingContext2D).font = `${fontSize}px Roboto, sans-serif`;
   }
 
-  const boxSize = lineHeight / 5;
-  const textOffset = boxSize * 2;
+  if (mccconfig.colorOption === ColorOption.confidence) {
+    const boxW = 20, boxH = 10;
+    const x = bounds.x + bounds.width / 2 - boxW * 4;
+    const y = bounds.y + bounds.height / 2 - boxH * 4;
+    ctx.fillStyle = "#000";
+    ctx.fillText("Credibility", x, y - 30);
 
-  const longestLabelWidth = labels.reduce((max, l) => Math.max(max, measure(ctx, l)), 0) * 0.7;
-  const columnWidth = textOffset + longestLabelWidth ;
+    ctx.fillStyle = "#c8c8c8";
+    ctx.fillRect(x, y, boxW, boxH);
+    ctx.fillText(`Under ${100 * mccconfig.confidenceThreshold}%`, x + boxW * 1.5, y + boxH);
 
-  const rowsPerColumn = Math.max(1, Math.floor(bounds.height / lineHeight));
-  const columns = Math.ceil(labels.length / rowsPerColumn);
-  const visibleRows = Math.min(labels.length, rowsPerColumn);
+    ctx.fillStyle = "#132f2d";
+    ctx.fillRect(x, y + boxH * 2, boxW, boxH);
+    ctx.fillText(`Over ${100 * mccconfig.confidenceThreshold}%`, x + boxW * 1.5, y + boxH + boxH * 2);
 
-  const legendWidth = columns * columnWidth;
-  const legendHeight = visibleRows * lineHeight;
+  } else if (mccconfig.colorOption === ColorOption.metadata) {
+    const labels = [...entries.keys()];
+    if (labels.length === 0) return;
 
-  // center the legend inside the bounds
-  const left = bounds.x + Math.max(0, (bounds.width - legendWidth) / 2);
-  const top = bounds.y + Math.max(0, (bounds.height - legendHeight) / 2);
 
-  ctx.textAlign = 'left';
+    const boxSize = lineHeight / 3;
+    const textOffset = boxSize * 2;
 
-  labels.forEach((label, i) => {
-    const column = Math.floor(i / rowsPerColumn);
-    const row = i % rowsPerColumn;
+    const longestLabelWidth = labels.reduce((max, l) => Math.max(max, measure(ctx, l)), 0) * 0.7;
+    const columnWidth = textOffset + longestLabelWidth;
 
-    const baselineY = top + row * lineHeight + lineHeight * 0.75;
-    const colX = left + column * columnWidth;
+    const rowsPerColumn = Math.max(1, Math.floor(bounds.height / lineHeight));
+    const columns = Math.ceil(labels.length / rowsPerColumn);
+    const visibleRows = Math.min(labels.length, rowsPerColumn);
 
-    ctx.fillStyle = entries.get(label)!;
-    ctx.fillRect(colX, baselineY - boxSize, boxSize, boxSize);
-    ctx.fillText(label, colX + textOffset, baselineY);
-  });
+    const legendWidth = columns * columnWidth;
+    const legendHeight = visibleRows * lineHeight;
 
+    // center the legend inside the bounds
+    const left = bounds.x + Math.max(0, (bounds.width - legendWidth) / 2);
+    const top = bounds.y + Math.max(0, (bounds.height - legendHeight) / 2);
+
+    ctx.textAlign = 'left';
+
+    labels.forEach((label, i) => {
+      const column = Math.floor(i / rowsPerColumn);
+      const row = i % rowsPerColumn;
+
+      const baselineY = top + row * lineHeight + lineHeight * 0.35;
+      const colX = left + column * columnWidth;
+
+      ctx.fillStyle = entries.get(label)!;
+      ctx.fillRect(colX, baselineY - boxSize, boxSize, boxSize);
+      ctx.fillText(label, colX + textOffset, baselineY);
+    });
+
+  }
   ctx.restore();
 }
 
@@ -177,7 +196,7 @@ function drawTreeOnCanvas(
   if (pdfCanvas && ctx) {
     if (zoom) {
       ctx.beginPath();
-      ctx.rect(0, 0, imgTreeCanvas.width, imgTreeCanvas.height);
+      ctx.rect(0, 0, imgTreeCanvas.width * 1.5, imgTreeCanvas.height);
       ctx.clip();
     }
     imgTreeCanvas.draw(minDate, maxDate, timelineIndices, pdfCanvas);
@@ -233,7 +252,7 @@ function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
     );
 
     outctx.drawImage(zoomedCanvas, (margin.left + width / 2 + PADDING) * scale, margin.top * scale);
-  } else if (mccConfig.colorOption === ColorOption.metadata) {
+  } else {
     const legendBounds: LegendBounds = {
       x: margin.left + width / 2 + PADDING,
       y: margin.top,
@@ -242,7 +261,7 @@ function exportPNG(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
     };
     outctx.save();
     outctx.scale(scale, scale);
-    drawLegend(outctx, tree.getLegendColors(), legendBounds, { fontSize: 18, lineHeight: 20 });
+    drawLegend(mccConfig, outctx, tree.getLegendColors(), legendBounds, { fontSize: 18, lineHeight: 20 });
     outctx.restore();
   }
 
@@ -269,8 +288,8 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
 
   Promise.all(promises)
     .then(() => {
-      const drawLegendToPage = (legendBounds: LegendBounds, treeCanvas: MccTreeCanvas) => {
-        drawLegend(ctx, treeCanvas.getLegendColors(), legendBounds, {
+      const drawLegendToPage = (legendBounds: LegendBounds, treeCanvas: MccTreeCanvas, mccConfig: MccConfig) => {
+        drawLegend(mccConfig, ctx, treeCanvas.getLegendColors(), legendBounds, {
           fontSize: 18,
           lineHeight: 20,
           applyFont: (_, size) => {
@@ -293,15 +312,14 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
       imgTreeCanvas.height = drawingHeight;
       drawTreeOnCanvas(mccRef, mccConfig, mcc, pythia, imgTreeCanvas, options.branchWidthByTips, false, canvas, ctx);
 
-      if (mccConfig.colorOption === ColorOption.metadata){
-        const bounds: LegendBounds = {
-          x: imgTreeCanvas.width + PADDING,
-          y: 0,
-          width: drawingWidth / 2 - PADDING,
-          height: drawingHeight,
-        };
-        drawLegendToPage(bounds,imgTreeCanvas);
-      }
+      const bounds: LegendBounds = {
+        x: imgTreeCanvas.width + PADDING,
+        y: 0,
+        width: drawingWidth / 2 - PADDING,
+        height: drawingHeight,
+      };
+      drawLegendToPage(bounds,imgTreeCanvas,mccConfig);
+
 
       ctx.restore();
 
@@ -331,9 +349,6 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
         ctx.translate(margin.left + miniTreeMap.width + PADDING * 2, margin.top);
         ctx.fillStyle = UI_COLORS.title;
         ctx.translate(0, PADDING);
-        ctx.beginPath();
-        ctx.rect(0, 0, zoomedTreeCanvas.width, zoomedTreeCanvas.height);
-        ctx.clip();
         drawTreeOnCanvas(mccRef, mccConfig, mcc, pythia, zoomedTreeCanvas, options.branchWidthByTips, true, canvas, ctx);
         ctx.restore();
 
@@ -366,21 +381,20 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
         drawTreeOnCanvas(mccRef, mccConfig, mcc, pythia, miniTreeMap, options.branchWidthByTips, false, canvas, ctx);
         ctx.restore();
 
-        ctx.strokeStyle = '#999';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#62a6ee';
+        ctx.lineWidth = 1.5;
         ctx.strokeRect(rx, ry, rw, rh);
         ctx.restore();
 
-        if (mccConfig.colorOption === ColorOption.metadata) {
-          const bounds: LegendBounds = {
-            x: miniTreeMap.width + zoomedTreeCanvas.width + PADDING,
-            y: margin.top,
-            width: drawingWidth - (miniTreeMap.width + zoomedTreeCanvas.width + PADDING),
-            height: drawingHeight,
-          };
-          drawLegendToPage(bounds, zoomedTreeCanvas);
-        }
+        const bounds: LegendBounds = {
+          x: miniTreeMap.width + zoomedTreeCanvas.width + PADDING,
+          y: margin.top,
+          width: drawingWidth - (miniTreeMap.width + zoomedTreeCanvas.width + PADDING),
+          height: drawingHeight,
+        };
+        drawLegendToPage(bounds, zoomedTreeCanvas, mccConfig);
       }
+
 
       canvas.save(`delphy-${getTimestampString()}.pdf`);
     })
