@@ -150,7 +150,7 @@ export class PoplarUI extends UIScreen {
 
     const blobStart = Date.now();
     const blobTree = this.pythia.deriveBlobTree(baseTree);
-    console.debug(`blob tree calculations took ${Date.now() - blobStart} ms`);
+    const blobElapsed = Date.now() - blobStart;  // Only the derivation, but reported at the very end
 
     console.debug(`blob tree size: ${blobTree.getSize()} blobs`);
 
@@ -215,6 +215,8 @@ export class PoplarUI extends UIScreen {
     console.table(rows);
 
     blobTree.delete();
+
+    console.debug(`blob tree calculations took ${blobElapsed} ms`);
   }
 
   handleNodeSelect(nodeIndex: number, src: PoplarChart) {
