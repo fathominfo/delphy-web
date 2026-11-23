@@ -6,8 +6,9 @@ import {HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR,
 import {MccConfig} from "./mccconfig";
 import { isTip } from '../util/treeutils';
 import { PdfCanvas } from '../util/pdfcanvas';
-import jsPDF, { Context2d } from "jspdf";
+import { Context2d } from "jspdf";
 import { DateLabel } from './datelabel';
+import { toDateString } from '../pythia/dates';
 const GENETIC_DISTANCE_MIN_DIST = 1;
 
 class TipInfo {
@@ -24,7 +25,7 @@ class TipInfo {
 type OptionCount = {[name: string]: number};
 
 const FADE_OPACITY = 0.3;
-const TIP_LABEL_FONT_SIZE = 11;
+const TIP_LABEL_FONT_SIZE = 12;
 const TIP_MARKER_RADIUS = 3;
 const TIP_LABEL_OFFSET_X = 5;
 
@@ -94,19 +95,19 @@ export class MccTreeCanvas extends TreeCanvas {
     if (!pdf) return;
     this.sortTips();
     const [first, second] = this.verticalTips;
-    const tooclose = first && second && Math.abs(this.getZoomY(second.index) - this.getZoomY(first.index)) <= TIP_LABEL_FONT_SIZE * 1.5;
+    const tooclose = first && second && Math.abs(this.getZoomY(second.index) - this.getZoomY(first.index)) <= TIP_LABEL_FONT_SIZE ;
     if (!tooclose) {
       this.drawTipLabels(pdf);
     }
   }
 
   insideZoomBounds(index: number): boolean {
-    // const nx = this.getZoomX(this.nodeTimes[index]);
+    const nx = this.getZoomX(this.nodeTimes[index]);
     const ny = this.getZoomY(index);
     const area = this.getTreeArea();
 
-    return ny >= area.y && ny <= area.y + area.height;
-    // nx >= area.x && nx <= area.x + area.width &&
+    return ny >= area.y && ny <= area.y + area.height &&
+      nx >= area.x;// && nx <= area.x + area.width;
   }
 
   getLegendColors(): Map<string, string> {
@@ -158,7 +159,7 @@ export class MccTreeCanvas extends TreeCanvas {
       ctx.fill();
 
       // label
-      const label = this.getTipId(i);
+      const label = `${this.getTipId(i)} (${toDateString(this.nodeTimes[i])})`;
       if (label) {
         ctx.fillText(label, x + TIP_LABEL_OFFSET_X, y + TIP_LABEL_FONT_SIZE / 3);
       }

@@ -126,7 +126,6 @@ export function drawLegend(
     const labels = [...entries.keys()];
     if (labels.length === 0) return;
 
-
     const boxSize = lineHeight / 3;
     const textOffset = boxSize * 2;
 
@@ -157,7 +156,6 @@ export function drawLegend(
       ctx.fillRect(colX, baselineY - boxSize, boxSize, boxSize);
       ctx.fillText(label, colX + textOffset, baselineY);
     });
-
   }
   ctx.restore();
 }
@@ -387,9 +385,9 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
         ctx.restore();
 
         const bounds: LegendBounds = {
-          x: miniTreeMap.width + zoomedTreeCanvas.width + PADDING,
+          x: miniTreeMap.width + zoomedTreeCanvas.width + PADDING * 3,
           y: margin.top,
-          width: drawingWidth - (miniTreeMap.width + zoomedTreeCanvas.width + PADDING),
+          width: drawingWidth + PADDING - (miniTreeMap.width + zoomedTreeCanvas.width),
           height: drawingHeight,
         };
         drawLegendToPage(bounds, zoomedTreeCanvas, mccConfig);
