@@ -1,4 +1,4 @@
-import { PhyloTree, kNoNode, kNoBranch } from "../../pythia/delphy_api";
+import { PhyloTree, MccTree, BlobTree, SummaryBlobTree, kNoNode, kNoBranch } from "../../pythia/delphy_api";
 import { SharedState } from "../../sharedstate";
 import { getTimelineIndices, UNSET } from "../common";
 import { DateLabel } from "../datelabel";
@@ -72,6 +72,7 @@ export class PoplarUI extends UIScreen {
       rootIndex = tree.getRootIndex();
       this.earliestRootDate = Math.min(this.earliestRootDate, tree.getTimeOf(rootIndex));
     }
+    this.logSummaryBlobTree(mcc);
     mccRef.release();
     this.scrubber.setData(numBaseTrees);
     this.poplarData.setPythia(this.pythia, this.sharedState.filename);
@@ -80,6 +81,76 @@ export class PoplarUI extends UIScreen {
     });
   }
 
+
+  /*
+  Example usage of a SummaryBlobTree: derive a blob tree for each of the base
+  trees of the MCC tree (i.e., all the post-burn-in trees), accumulate how often
+  each blob fingerprint shows up in an aggregator, derive a summary blob tree
+  from the last blob tree and the supports accumulated, and print it to the
+  console.
+  */
+  logSummaryBlobTree(mcc: MccTree) {
+    if (!this.pythia) return;
+    const numBaseTrees = mcc.getNumBaseTrees();
+    if (numBaseTrees === 0) return;
+
+    const start = Date.now();
+    const aggregator = this.pythia.newBlobSupportAggregator();
+    const blobTrees: BlobTree[] = [];
+    let summaryBlobTree: SummaryBlobTree | undefined = undefined;
+    try {
+      for (let i = 0; i < numBaseTrees; i++) {
+        const blobTree = this.pythia.deriveBlobTree(mcc.getBaseTree(i));
+        blobTrees.push(blobTree);
+        aggregator.addBlobTree(blobTree);
+      }
+      const aggregateElapsed = Date.now() - start;
+
+      // Any blob tree can donate the topology, but typically it's the most recent one
+      const topologyIndex = numBaseTrees - 1;
+      const topologyBlobTree = blobTrees[topologyIndex];
+      const summaryStart = Date.now();
+      summaryBlobTree = this.pythia.deriveSummaryBlobTree(aggregator, topologyBlobTree);  // Default threshold: 99%
+      const summaryElapsed = Date.now() - summaryStart;
+
+      const summary = summaryBlobTree;
+      console.debug(``);
+      console.debug(`Summary Blob Tree`);
+      console.debug(`-----------------`);
+      console.debug(`${numBaseTrees} post-burn-in trees, topology from tree ${topologyIndex}: ` +
+                    `${summary.getSize()} of ${topologyBlobTree.getSize()} blobs kept`);
+      const go = (summaryBlob: number, level: number): void => {
+        const support = summary.getPosteriorSupportOf(summaryBlob);
+        console.debug(`${"|".repeat(level)} [${summaryBlob}] = blob [${summary.getBlobOf(summaryBlob)}] ` +
+                      `in topology tree, support ${(100 * support).toFixed(1)}%`);
+        for (const child of summary.getChildrenOf(summaryBlob)) {
+          go(child, level+1);
+        }
+      };
+      go(summary.getRootIndex(), 0);
+
+      const rows: Record<number, Record<string, unknown>> = {};
+      for (let summaryBlob = 0; summaryBlob < summary.getSize(); summaryBlob++) {
+        rows[summaryBlob] = {
+          fingerprint: summary.getFingerprintOf(summaryBlob).toString(16).padStart(16, "0"),
+          blob: summary.getBlobOf(summaryBlob),
+          parent: summary.getParentIndexOf(summaryBlob),
+          children: summary.getChildrenOf(summaryBlob).join(","),
+          posteriorSupport: summary.getPosteriorSupportOf(summaryBlob),
+        };
+      }
+      console.table(rows);
+      console.debug(`blob trees + support aggregation took ${aggregateElapsed} ms, ` +
+                    `summary blob tree derivation took ${summaryElapsed} ms`);
+    } finally {
+      // The summary blob tree refers to the aggregator and the topology blob tree, so delete it first
+      summaryBlobTree?.delete();
+      aggregator.delete();
+      for (const blobTree of blobTrees) {
+        blobTree.delete();
+      }
+    }
+  }
 
   resize() {
     if (this.pythia) {
@@ -158,7 +229,7 @@ export class PoplarUI extends UIScreen {
     console.debug(`Base Tree`);
     console.debug(`---------`);
     function goTree(node: number, level: number) {
-      if (node == baseTree.getRootIndex()) {
+      if (node === baseTree.getRootIndex()) {
         console.debug(`${"|".repeat(level)} ${node} (in [${blobTree.node2blob(node)}])`);
       } else {
         const branch = node;

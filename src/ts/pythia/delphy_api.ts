@@ -173,6 +173,8 @@ export type RunPtr = number;
 export type MccTreePtr = number;
 export type BlobTreePtr = number;
 export type BlobSequencePtr = number;
+export type BlobSupportAggregatorPtr = number;
+export type SummaryBlobTreePtr = number;
 export type BaseTreeIndex = number;
 export type BeastyOutputPtr = number;
 export type FbHolderPtr = number;
@@ -180,6 +182,7 @@ export type NodeIndex = number;
 export type NodeIndexPtr = number;
 export type BranchIndex = number;
 export type BlobIndex = number;
+export type SummaryBlobIndex = number;  // Not to be confused with a BlobIndex into a BlobTree
 export type SiteIndex = number;
 export type RealSeqLetter = number;
 export const RealSeqLetter_A = 0;
@@ -356,6 +359,22 @@ export class Delphy {
   deriveBlobTree(phyloTree: PhyloTree): BlobTree {
     const blobTreePtr = Delphy.delphyCoreRaw.derive_blob_tree(this.ctx, phyloTree.phyloTreePtr_);
     return new BlobTree(this, blobTreePtr);
+  }
+
+  newBlobSupportAggregator(): BlobSupportAggregator {
+    const aggregatorPtr = Delphy.delphyCoreRaw.blob_support_aggregator_new(this.ctx);
+    return new BlobSupportAggregator(this, aggregatorPtr);
+  }
+
+  // The result keeps references to `aggregator` and `topologyBlobTree`, which must outlive it (don't `delete()` them
+  // while the summary blob tree is in use).  Derive a new summary blob tree whenever the aggregator is updated.
+  deriveSummaryBlobTree(
+    aggregator: BlobSupportAggregator,
+    topologyBlobTree: BlobTree,
+    threshold = 0.99): SummaryBlobTree {
+    const summaryBlobTreePtr = Delphy.delphyCoreRaw.derive_summary_blob_tree(
+      this.ctx, aggregator.aggregatorPtr_, topologyBlobTree.blobTreePtr_, threshold);
+    return new SummaryBlobTree(this, summaryBlobTreePtr, aggregator, topologyBlobTree);
   }
 
   // result[i] = avg effective population size (times generation time)
@@ -818,6 +837,36 @@ export class Delphy {
     blob_sequence_get_nth_ambiguity_state1: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
     blob_sequence_get_nth_ambiguity_state2: (ctx: DelphyContextPtr, blobSequence: BlobSequencePtr, n: number) => RealSeqLetter,
 
+    // Blob_support_aggregator and Summary_blob_tree
+    blob_support_aggregator_new: (ctx: DelphyContextPtr) => BlobSupportAggregatorPtr,
+    blob_support_aggregator_delete: (ctx: DelphyContextPtr, aggregator: BlobSupportAggregatorPtr) => void,
+    blob_support_aggregator_add_blob_tree:
+      (ctx: DelphyContextPtr, aggregator: BlobSupportAggregatorPtr, blobTree: BlobTreePtr) => void,
+    blob_support_aggregator_get_posterior_support_of:
+      (ctx: DelphyContextPtr, aggregator: BlobSupportAggregatorPtr, fingerprint: bigint) => number,
+    derive_summary_blob_tree:
+      (ctx: DelphyContextPtr,
+       aggregator: BlobSupportAggregatorPtr,
+       topologyBlobTree: BlobTreePtr,
+       threshold: number)
+      => SummaryBlobTreePtr,
+    summary_blob_tree_delete: (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr) => void,
+    summary_blob_tree_get_size: (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr) => SummaryBlobIndex,
+    summary_blob_tree_get_root: (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr) => SummaryBlobIndex,
+    summary_blob_tree_get_parent_of:
+      (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr, summaryBlobIndex: SummaryBlobIndex) => SummaryBlobIndex,
+    summary_blob_tree_get_num_children_of:
+      (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr, summaryBlobIndex: SummaryBlobIndex) => number,
+    summary_blob_tree_get_nth_child_of:
+      (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr, summaryBlobIndex: SummaryBlobIndex, n: number)
+      => SummaryBlobIndex,
+    summary_blob_tree_get_blob_of:
+      (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr, summaryBlobIndex: SummaryBlobIndex) => BlobIndex,
+    summary_blob_tree_get_fingerprint_of:
+      (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr, summaryBlobIndex: SummaryBlobIndex) => bigint,
+    summary_blob_tree_get_posterior_support_of:
+      (ctx: DelphyContextPtr, summaryBlobTree: SummaryBlobTreePtr, summaryBlobIndex: SummaryBlobIndex) => number,
+
     // Population model
     pop_model_get_class: (ctx: DelphyContextPtr, popModel: PopModelPtr) => InternalPopModelClass,
     pop_model_delete: (ctx: DelphyContextPtr, popModel: PopModelPtr) => void,
@@ -1105,6 +1154,20 @@ export class Delphy {
       blob_sequence_get_nth_ambiguity_site: Module['_delphy_blob_sequence_get_nth_ambiguity_site'],
       blob_sequence_get_nth_ambiguity_state1: Module['_delphy_blob_sequence_get_nth_ambiguity_state1'],
       blob_sequence_get_nth_ambiguity_state2: Module['_delphy_blob_sequence_get_nth_ambiguity_state2'],
+      blob_support_aggregator_new: Module['_delphy_blob_support_aggregator_new'],
+      blob_support_aggregator_delete: Module['_delphy_blob_support_aggregator_delete'],
+      blob_support_aggregator_add_blob_tree: Module['_delphy_blob_support_aggregator_add_blob_tree'],
+      blob_support_aggregator_get_posterior_support_of: Module['_delphy_blob_support_aggregator_get_posterior_support_of'],
+      derive_summary_blob_tree: Module['_delphy_derive_summary_blob_tree'],
+      summary_blob_tree_delete: Module['_delphy_summary_blob_tree_delete'],
+      summary_blob_tree_get_size: Module['_delphy_summary_blob_tree_get_size'],
+      summary_blob_tree_get_root: Module['_delphy_summary_blob_tree_get_root'],
+      summary_blob_tree_get_parent_of: Module['_delphy_summary_blob_tree_get_parent_of'],
+      summary_blob_tree_get_num_children_of: Module['_delphy_summary_blob_tree_get_num_children_of'],
+      summary_blob_tree_get_nth_child_of: Module['_delphy_summary_blob_tree_get_nth_child_of'],
+      summary_blob_tree_get_blob_of: Module['_delphy_summary_blob_tree_get_blob_of'],
+      summary_blob_tree_get_fingerprint_of: Module['_delphy_summary_blob_tree_get_fingerprint_of'],
+      summary_blob_tree_get_posterior_support_of: Module['_delphy_summary_blob_tree_get_posterior_support_of'],
 
       // Population model
       pop_model_get_class: Module['_delphy_pop_model_get_class'],
@@ -1596,6 +1659,99 @@ export class BlobTree {
     } finally {
       Delphy.delphyCoreRaw.blob_sequence_delete(this.delphy.ctx, rawBlobSequence);
     }
+  }
+}
+
+
+// Blob support aggregator and summary blob tree
+
+// Accumulates, over blob trees that are samples from the posterior of one dataset, how many of them contain a blob
+// with each fingerprint
+export class BlobSupportAggregator {
+  constructor(private delphy: Delphy, public aggregatorPtr_: BlobSupportAggregatorPtr) {
+  }
+
+  delete(): void {
+    Delphy.delphyCoreRaw.blob_support_aggregator_delete(this.delphy.ctx, this.aggregatorPtr_);
+  }
+
+  // A fingerprint that occurs in several blobs of the same blob tree still only counts once for that blob tree
+  addBlobTree(blobTree: BlobTree): void {
+    Delphy.delphyCoreRaw.blob_support_aggregator_add_blob_tree(
+      this.delphy.ctx, this.aggregatorPtr_, blobTree.blobTreePtr_);
+  }
+
+  // Fraction of the blob trees added so far that contain a blob with this fingerprint (0 for fingerprints never seen).
+  // Requires at least 1 blob tree to have been added.
+  getPosteriorSupportOf(fingerprint: bigint): number {
+    return Delphy.delphyCoreRaw.blob_support_aggregator_get_posterior_support_of(
+      this.delphy.ctx, this.aggregatorPtr_, fingerprint);
+  }
+}
+
+// Keeps only the blobs of a topology-donating `BlobTree` whose fingerprints have high posterior support, compacting
+// away all the others.  Named `SummaryBlobTree` to avoid a clash with the `SummaryTree` interface, which is specific to
+// MCC-like trees.  The C++ side only holds raw pointers to the aggregator and topology blob tree it was derived from,
+// so we keep references to them here; neither may be `delete()`d while this summary blob tree is in use.
+export class SummaryBlobTree {
+  constructor(
+    private delphy: Delphy,
+    public summaryBlobTreePtr_: SummaryBlobTreePtr,
+    public aggregator: BlobSupportAggregator,
+    public topologyBlobTree: BlobTree) {
+  }
+
+  delete(): void {
+    Delphy.delphyCoreRaw.summary_blob_tree_delete(this.delphy.ctx, this.summaryBlobTreePtr_);
+  }
+
+  getSize(): SummaryBlobIndex {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_size(this.delphy.ctx, this.summaryBlobTreePtr_);
+  }
+
+  getRootIndex(): SummaryBlobIndex {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_root(this.delphy.ctx, this.summaryBlobTreePtr_);
+  }
+
+  getParentIndexOf(summaryBlobIndex: SummaryBlobIndex): SummaryBlobIndex {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_parent_of(
+      this.delphy.ctx, this.summaryBlobTreePtr_, summaryBlobIndex);
+  }
+
+  getNumChildrenOf(summaryBlobIndex: SummaryBlobIndex): number {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_num_children_of(
+      this.delphy.ctx, this.summaryBlobTreePtr_, summaryBlobIndex);
+  }
+
+  getNthChildIndexOf(summaryBlobIndex: SummaryBlobIndex, n: number): SummaryBlobIndex {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_nth_child_of(
+      this.delphy.ctx, this.summaryBlobTreePtr_, summaryBlobIndex, n);
+  }
+
+  getChildrenOf(summaryBlobIndex: SummaryBlobIndex): SummaryBlobIndex[] {
+    const result = [];
+    const numChildren = this.getNumChildrenOf(summaryBlobIndex);
+    for (let i = 0; i !== numChildren; ++i) {
+      result.push(this.getNthChildIndexOf(summaryBlobIndex, i));
+    }
+    return result;
+  }
+
+  // Corresponding blob in the topology blob tree
+  getBlobOf(summaryBlobIndex: SummaryBlobIndex): BlobIndex {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_blob_of(
+      this.delphy.ctx, this.summaryBlobTreePtr_, summaryBlobIndex);
+  }
+
+  getFingerprintOf(summaryBlobIndex: SummaryBlobIndex): bigint {
+    const rawResult = Delphy.delphyCoreRaw.summary_blob_tree_get_fingerprint_of(
+      this.delphy.ctx, this.summaryBlobTreePtr_, summaryBlobIndex);
+    return BigInt.asUintN(64, rawResult);
+  }
+
+  getPosteriorSupportOf(summaryBlobIndex: SummaryBlobIndex): number {
+    return Delphy.delphyCoreRaw.summary_blob_tree_get_posterior_support_of(
+      this.delphy.ctx, this.summaryBlobTreePtr_, summaryBlobIndex);
   }
 }
 

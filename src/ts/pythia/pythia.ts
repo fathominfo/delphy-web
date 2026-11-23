@@ -1,4 +1,4 @@
-import {Delphy, Run, Tree, PhyloTree, MccTree, BlobTree, SummaryTree, Mutation,
+import {Delphy, Run, Tree, PhyloTree, MccTree, BlobTree, BlobSupportAggregator, SummaryBlobTree, SummaryTree, Mutation,
   RealSeqLetter_A, RealSeqLetter_C, RealSeqLetter_G, RealSeqLetter_T,
   SequenceWarningCode, PopModel, ExpPopModel, SkygridPopModel,
   SkygridPopModelType} from './delphy_api';
@@ -558,6 +558,17 @@ export class Pythia {
 
   deriveBlobTree(phyloTree: PhyloTree): BlobTree {
     return this.delphy.deriveBlobTree(phyloTree);
+  }
+
+  newBlobSupportAggregator(): BlobSupportAggregator {
+    return this.delphy.newBlobSupportAggregator();
+  }
+
+  deriveSummaryBlobTree(
+    aggregator: BlobSupportAggregator,
+    topologyBlobTree: BlobTree,
+    threshold = 0.99): SummaryBlobTree {
+    return this.delphy.deriveSummaryBlobTree(aggregator, topologyBlobTree, threshold);
   }
 
 
