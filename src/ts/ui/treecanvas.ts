@@ -540,8 +540,7 @@ export class TreeCanvas {
 
     const labels = dates
       .filter(dl => dl.index > this.minDate)
-      .map(dl => ({ dl, x: this.getZoomX(dl.index), visible: dl.index === this.maxDate || dl.index < this.maxDate - 30 }))
-      .filter(l => l.visible);
+      .map(dl => ({ dl, x: this.getZoomX(dl.index) }));
 
     let maxLabelWidth = 0;
     labels.forEach(({ dl }) => {
@@ -551,32 +550,26 @@ export class TreeCanvas {
       // whereas js canvas retuns TextMetrics that has a width prop
       const w1 = typeof measured1 === "number" ? measured1 : measured1.width;
       const w2 = typeof measured2 === "number" ? measured2 : measured2.width;
-      maxLabelWidth = Math.max(maxLabelWidth, w1, w2);
+      maxLabelWidth = Math.max(maxLabelWidth, w1, w2) / 1.5;
     });
 
-    let minGap = Infinity;
-
-    for (let i = 1; i < labels.length; i++) {
-      minGap = Math.min(minGap, labels[i - 1].x - labels[i].x);
-    }
-
-    const isTooDense = false;//minGap !== Infinity && minGap < maxLabelWidth;
+    const gap = labels.length > 1 ? labels[0].x - labels[1].x : Infinity;
+    const showEvery = Math.ceil(maxLabelWidth / gap);
+    console.log("gap: ", gap, maxLabelWidth, "showing every: ", showEvery);
 
     const skipping = new Set<DateLabel>();
-    if (isTooDense) { //show every other label
+    if (showEvery>1) {
       labels.forEach(({ dl }, i) => {
-        if (i % 2 !== 0) skipping.add(dl);
+        if (i % showEvery !== 0) skipping.add(dl);
       });
     }
 
     dates.forEach((dl: DateLabel) => {
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
-        if (dl.index === this.maxDate || dl.index < this.maxDate - 30) {
-          if (!skipping.has(dl)) {
-            this.ctx.fillText(dl.label1, x, y1);
-            this.ctx.fillText(dl.label2, x, y2);
-          }
+        if (!skipping.has(dl)) {
+          this.ctx.fillText(dl.label1, x, y1);
+          this.ctx.fillText(dl.label2, x, y2);
         }
         if (first) {
           first = false;

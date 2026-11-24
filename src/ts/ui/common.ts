@@ -283,9 +283,18 @@ export const getDenseTimelineIndices = (
   const timelineIndices: DateLabel[] = [new DateLabel(maxDate)];
   for (let d = maxDate - 1; d > minDate; d--) {
     const dl = new DateLabel(d);
-    if (dl.day === 1 && (dl.year * 12 + dl.month) % step === 0) {
-      timelineIndices.push(dl);
+    if (step === 1) {
+      // one tick per N days
+      if (dl.day % Math.ceil(daysPerLabel) === 0) {
+        timelineIndices.push(dl);
+      }
+    } else {
+      // one tick per month
+      if (dl.day === 1 && (dl.year * 12 + dl.month) % step === 0) {
+        timelineIndices.push(dl);
+      }
     }
+
   }
   return timelineIndices;
 };

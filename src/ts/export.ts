@@ -11,8 +11,6 @@ import { PdfCanvas } from "./util/pdfcanvas";
 
 type ExportOptions = {
   colorOption: string,
-  // includeZoom: boolean,
-  // includeNodes: boolean,
   branchWidthByTips: boolean
 }
 
@@ -287,6 +285,7 @@ function exportPDF(pythia: Pythia, mccConfig: MccConfig, mcc: SummaryTree, mccRe
   Promise.all(promises)
     .then(() => {
       const drawLegendToPage = (legendBounds: LegendBounds, treeCanvas: MccTreeCanvas, mccConfig: MccConfig) => {
+
         drawLegend(mccConfig, ctx, treeCanvas.getLegendColors(), legendBounds, {
           fontSize: 18,
           lineHeight: 20,

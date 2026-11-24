@@ -152,7 +152,7 @@ export class MccTreeCanvas extends TreeCanvas {
       const y = this.getZoomY(i);
 
       // dot
-      this.setNodeColor(i, ctx);
+      ctx.fillStyle = HI_CONFIDENCE_COLOR;
       ctx.beginPath();
       ctx.moveTo(x + TIP_MARKER_RADIUS, y);
       ctx.arc(x, y, TIP_MARKER_RADIUS, 0, 2 * Math.PI, false);
