@@ -76,6 +76,9 @@ export class PdfCanvas {
     this.doc.setFontSize(fontSize);
     this.ctx.fillText(title, x, y);
   }
+  addPage(): void {
+    this.doc.addPage();
+  }
 }
 
 

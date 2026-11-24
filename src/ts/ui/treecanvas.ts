@@ -555,7 +555,7 @@ export class TreeCanvas {
 
     const gap = labels.length > 1 ? labels[0].x - labels[1].x : Infinity;
     const showEvery = Math.ceil(maxLabelWidth / gap);
-    console.log("gap: ", gap, maxLabelWidth, "showing every: ", showEvery);
+    // console.log("gap: ", gap, maxLabelWidth, "showing every: ", showEvery);
 
     const skipping = new Set<DateLabel>();
     if (showEvery>1) {

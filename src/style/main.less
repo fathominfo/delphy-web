@@ -332,17 +332,25 @@ fieldset{
   padding: .5rem 0;
 
   label {
-    background-color: #efefef;
     cursor: pointer;
-    border: 1px solid #e3e3e3;
+    border: 1px solid var(--header-option-stroke-static);
     padding: 0.3em;
   }
 
-  input[type="radio"]:checked + label {
-    background-color: #ccc;
+  input[type="radio"]:checked+label {
+    background-color: var(--header-option-stroke-static);
   }
 }
 
+.mcc-download-menu .disabled {
+  // pointer-events: all;
+  label {
+    cursor: not-allowed !important;
+    border: 1px solid #eee;
+    color: #aaa;
+    background-color: #e4e4e4;
+  }
+}
 .tree-export {
 display: flex;
 flex-direction: column;
