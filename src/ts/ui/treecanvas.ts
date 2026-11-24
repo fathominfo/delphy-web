@@ -495,13 +495,13 @@ export class TreeCanvas {
     this.drawTimelineLabels(dates, pdf);
   }
 
-  drawTimelineLines(dates:DateLabel[]):void {
+  drawTimelineLines(dates: DateLabel[]): void {
     this.ctx.fillStyle = 'rgba(255,255,255,0.97)';
     this.ctx.fillRect(0, 0, this.width, this.timelineSpacing);
-    this.ctx.strokeStyle = TREE_DATELINE_COLOR_2;
+    this.ctx.strokeStyle = TREE_DATELINE_COLOR;
     const y1 = TREE_TEXT_TOP,
       bottom = this.height - this.paddingBottom;
-    let first = true;
+    const first = true;
     this.ctx.lineWidth = DASH_WEIGHT;
     const lineTop = y1 + TREE_TEXT_LINE_SPACING * 2 + DASH_LENGTH - 1;
     dates.forEach((dl:DateLabel)=>{
@@ -516,10 +516,10 @@ export class TreeCanvas {
           y += DASH_SPACING;
         }
         this.ctx.stroke();
-        if (first) {
-          first = false;
-          this.ctx.strokeStyle = TREE_DATELINE_COLOR;
-        }
+        // if (first) {
+        //   first = false;
+        //   this.ctx.strokeStyle = TREE_DATELINE_COLOR;
+        // }
       }
     });
   }
@@ -532,10 +532,11 @@ export class TreeCanvas {
       const fontTokens = TREE_TEXT_FONT_2.split(' ');
       pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '700' ? PDF_700_WT : PDF_500_WT);
       pdf.setFontSize(parseInt(fontTokens[1]));
+      this.ctx.fillStyle = TREE_TEXT_COLOR_2;
     }
     const y1 = TREE_TEXT_TOP,
       y2 = y1 + TREE_TEXT_LINE_SPACING;
-    let first = true;
+    // const first = true;
     this.ctx.lineWidth = DASH_WEIGHT;
 
     const labels = dates
@@ -563,7 +564,6 @@ export class TreeCanvas {
         if (i % showEvery !== 0) skipping.add(dl);
       });
     }
-
     dates.forEach((dl: DateLabel) => {
       if (dl.index > this.minDate) {
         const x = this.getZoomX(dl.index);
@@ -571,17 +571,17 @@ export class TreeCanvas {
           this.ctx.fillText(dl.label1, x, y1);
           this.ctx.fillText(dl.label2, x, y2);
         }
-        if (first) {
-          first = false;
-          if (pdf === null) {
-            this.ctx.font = TREE_TEXT_FONT;
-          } else {
-            const fontTokens = TREE_TEXT_FONT.split(' ');
-            pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '500' ? PDF_500_WT : PDF_700_WT);
-            pdf.setFontSize(parseInt(fontTokens[1]));
-          }
-          this.ctx.fillStyle = TREE_TEXT_COLOR;
-        }
+        // if (first) {
+        //   first = false;
+        //   if (pdf === null) {
+        //     this.ctx.font = TREE_TEXT_FONT;
+        //   } else {
+        //     const fontTokens = TREE_TEXT_FONT.split(' ');
+        //     pdf.setFont(PDF_TYPEFACE, fontTokens[0] === '500' ? PDF_500_WT : PDF_700_WT);
+        //     pdf.setFontSize(parseInt(fontTokens[1]));
+        //   }
+        //   this.ctx.fillStyle = TREE_TEXT_COLOR;
+        // }
       }
     });
   }

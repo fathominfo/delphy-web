@@ -3,6 +3,7 @@ import { MccConfig, ConfigExport } from './ui/mccconfig';
 import { Mutation } from './pythia/delphy_api';
 import { NavigateFunctionType } from './ui/common';
 import { RecordQuality } from './recordquality';
+import { NodeComparisonData } from './ui/lineages/lineagescommon';
 
 
 
@@ -11,6 +12,7 @@ export class SharedState {
   pythia: Pythia;
   mccConfig: MccConfig;
   nodeList: number[];
+  mrcaOfNodes: number | null;
   mutationList: Mutation[];
   selectedMutation: Mutation | null;
   hideBurnIn: boolean;
@@ -32,6 +34,7 @@ export class SharedState {
     this.tipIds = [];
     this.mutationsNeedReloading = false;
     this.qc = new RecordQuality();
+    this.mrcaOfNodes = null;
   }
 
 
@@ -42,6 +45,10 @@ export class SharedState {
 
   setNodeSelection(nodes: number[]) : void {
     this.nodeList = nodes.slice(0);
+  }
+
+  setMrcaOfSelection(mrca: number): void {
+    this.mrcaOfNodes = mrca;
   }
 
   setMutationList(mutations: Mutation[]): void {

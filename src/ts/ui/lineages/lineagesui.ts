@@ -559,6 +559,19 @@ export class LineagesUI extends MccUI {
     this.requestDrawHighlights(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index, nodeIndex);
     this.requestDrawNodeRelationChart();
     this.setChartData(this.rootIndex, this.mrcaIndex, this.node1Index, this.node2Index);
+
+    // maybe hack alert? previously we only update sharestate on deactivate()
+    // but now we need to inform the MccExporter (pdf export) [kz 261124]
+    const nodes = [this.node1Index, this.node2Index].filter(n => n !== UNSET);
+
+    // const selectedNodes = this.nodeComparisons.map(node=>{
+    //   node.nodePair, node.nodeTimesCanvas
+    // })
+    if (nodes.length > 0) {
+      // this.sharedState.node(this.nodeComparisons);
+      this.sharedState.setNodeSelection(nodes);
+      this.sharedState.setMrcaOfSelection(this.mrcaIndex);
+    }
   }
 
   getMRCA(index1: number, index2: number): number {

@@ -4,6 +4,10 @@ import { jsPDF, Context2d } from "jspdf";
 // console.debug("jsPdf font files", MD500FontFile, MD700FontFile);
 
 type Orientation = "landscape" | "portrait"
+
+const UI_COLORS = {
+  title: "#111"
+}
 export class PdfCanvas {
 
   width: number;
@@ -72,10 +76,12 @@ export class PdfCanvas {
   }
 
   drawTitle(title: string, x = 0, y = 0, fontSize = 24, fontWeight = 700) {
+    this.ctx.fillStyle = UI_COLORS.title;
     this.doc.setFont("Roboto", `${fontWeight}`);
     this.doc.setFontSize(fontSize);
     this.ctx.fillText(title, x, y);
   }
+
   addPage(): void {
     this.doc.addPage();
   }

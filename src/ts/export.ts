@@ -3,7 +3,7 @@ import { MccTree, SummaryTree } from "./pythia/delphy_api";
 import { MccRef } from "./pythia/mccref";
 import { Pythia } from "./pythia/pythia";
 import { SharedState } from "./sharedstate";
-import { ColorOption, getDenseTimelineIndices, getTimestampString, HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR } from "./ui/common";
+import { ColorOption, DisplayNode, getDenseTimelineIndices, getNodeColor, getTimestampString, HI_CONFIDENCE_COLOR, LOW_CONFIDENCE_COLOR } from "./ui/common";
 import { MccConfig } from "./ui/mccconfig";
 import { MccTreeCanvas } from "./ui/mcctreecanvas";
 import { PdfCanvas } from "./util/pdfcanvas";
@@ -41,9 +41,6 @@ const pdf_dimensions = {
 
 const PADDING = 10;
 
-const UI_COLORS = {
-  title: "#111"
-}
 
 export function setupDownload(sharedState: SharedState) {
   const downloadBtn = document.querySelector(".nav-download-button") as HTMLButtonElement;
@@ -71,8 +68,8 @@ export function setupDownload(sharedState: SharedState) {
       branchWidthByTips: formData.has("branch-width")
     };
 
-    new MccExporter(sharedState.pythia, sharedState.mccConfig, options)
-      .export(format)
+    const exporter = new MccExporter(options)
+      .export(format, sharedState)
       .catch((err) => console.error("Export failed", err));
   });
 }
@@ -153,31 +150,35 @@ export function drawLegend(
   }
   ctx.restore();
 }
-
 export class MccExporter {
   private mccRef!: MccRef;
-  private mcc!: SummaryTree;
+  private mcc!: MccTree;
+  private mccConfig!: MccConfig;
+  private pythia!: Pythia;
+  private options: ExportOptions;
+  private selectedNodes!: number[];
+  private mrcaIndex!: number | null;
 
-  constructor(
-    private readonly pythia: Pythia,
-    private readonly mccConfig: MccConfig,
-    private readonly options: ExportOptions
-  ) { }
 
-  async export(format: ExportFormat): Promise<void> {
+  constructor(options: ExportOptions) {
+    this.options = options;
+  }
+
+  async export(format: ExportFormat, sharedState: SharedState): Promise<void> {
+    this.pythia = sharedState.pythia;
+    this.mccConfig = sharedState.mccConfig;
+    this.selectedNodes = sharedState.nodeList;
+    this.mrcaIndex = sharedState.mrcaOfNodes;
     this.mccRef = this.pythia.getMcc();
-    try {
-      this.mcc = this.mccRef.getMcc() as MccTree;
-      this.applyColorOption();
+    this.mcc = this.mccRef.getMcc();
+    this.applyColorOption();
 
-      if (format === "pdf") {
-        await this.exportPDF();
-      } else {
-        this.exportPNG();
-      }
-    } finally {
-      this.mccRef.release();
+    if (format === "pdf") {
+      await this.exportPDF();
+    } else {
+      this.exportPNG();
     }
+    this.mccRef.release();
   }
 
   private applyColorOption(): void {
@@ -220,7 +221,6 @@ export class MccExporter {
     const minDate = mcc.getTimeOf(rootIndex);
     const maxDate = pythia.maxDate;
     const timelineIndices = getDenseTimelineIndices(minDate, maxDate);
-
     if (pdfCanvas) {
       if (zoom) {
         const ctx = pdfCanvas.getContext();
@@ -232,6 +232,20 @@ export class MccExporter {
     } else {
       treeCanvas.draw(minDate, maxDate, timelineIndices);
     }
+  }
+
+  private drawNodeOnTree(treeCanvas: MccTreeCanvas, ctx: CanvasCtx, nodeIndex: number, color: string, mrca = false) {
+    const x = treeCanvas.getZoomX(this.mcc.getTimeOf(nodeIndex)),
+      y = treeCanvas.getZoomY(nodeIndex);
+    const radius = mrca ? 4 : 6;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.moveTo(x + radius, y);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    ctx.fillStyle = mrca ? color : `rgb(255,255,255)`;
+    ctx.fill();
+    ctx.stroke();
   }
 
   private renderTreeToCanvas(
@@ -313,12 +327,83 @@ export class MccExporter {
     const drawingHeight = height - margin.top - margin.bottom - PADDING;
 
     this.drawPdfMainPage(canvas, ctx, drawingWidth, drawingHeight);
+
+
     if (this.isZoomed) {
       canvas.addPage();
       this.drawPdfZoomPage(canvas, ctx, drawingWidth, drawingHeight);
     }
 
+    if (this.selectedNodes.length > 0) {
+      canvas.addPage();
+      this.drawSelectedNodePage(canvas, ctx, drawingWidth, drawingHeight);
+
+    }
     canvas.save(`delphy-${getTimestampString()}.pdf`);
+  }
+
+  private drawSelectedNodePage(canvas: PdfCanvas, ctx: CanvasCtx, drawingWidth: number, drawingHeight: number) {
+    const { margin } = pdf_dimensions;
+    ctx.save();
+    ctx.translate(margin.left, margin.top);
+    canvas.drawTitle("Selected Nodes");
+
+    // left: draw tree and nodes on tree
+    const treeCanvas = new MccTreeCanvas(canvas, ctx);
+    treeCanvas.width = drawingWidth / 3;
+    treeCanvas.height = drawingHeight;
+    ctx.translate(0, PADDING);
+    this.drawTree(treeCanvas, false, canvas);
+    const displayNodes = [DisplayNode.node1, DisplayNode.node2];
+    const node1Color = getNodeColor(DisplayNode.node1),
+      node2Color = getNodeColor(DisplayNode.node2), mrcaColor = getNodeColor(DisplayNode.mrca);
+
+    for (let i = 0; i < this.selectedNodes.length; i++) {
+      const nodeIndex = this.selectedNodes[i];
+      this.drawNodeOnTree(treeCanvas, ctx, nodeIndex, getNodeColor(displayNodes[i]));
+    }
+
+    if (this.mrcaIndex) {
+      this.drawNodeOnTree(treeCanvas, ctx, this.mrcaIndex, getNodeColor(DisplayNode.mrca), true);
+    }
+    ctx.restore();
+    ctx.translate(treeCanvas.width + 100 + margin.left, margin.top + PADDING);
+
+    // right: for each selected node
+    const sectionHeight = 150;
+
+    for (let i = 0; i < this.selectedNodes.length; i++) {
+      const nodeIndex = this.selectedNodes[i];
+      ctx.fillStyle = getNodeColor(displayNodes[i]);
+      const tips = this.pythia.getMccNodeTips(nodeIndex);
+      ctx.translate(0, i * sectionHeight);
+      canvas.setFontSize(20);
+      canvas.setFont("Roboto", "700");
+
+      ctx.fillText(`Node ${i === 0 ? "A" : "B"}`, 0, 0);
+      canvas.setFontSize(14);
+      canvas.setFont("Roboto", "500");
+      ctx.translate(0, 20);
+      ctx.fillText(`${tips.length} tips, monophyletic in ${2}% of base trees.`, 0, 0);
+      ctx.translate(0, 20);
+      tips.forEach((tip, index) => {
+        const tipID = this.mcc.getBaseTree(0).getNameOf(tip);
+        ctx.fillText(`${tipID}`, 50, index * 20);
+      })
+    }
+
+    if (this.mrcaIndex) {
+      canvas.setFontSize(20);
+      canvas.setFont("Roboto", "700");
+      ctx.fillStyle = getNodeColor(DisplayNode.mrca);
+      const tips = this.pythia.getMccNodeTips(this.mrcaIndex);
+      ctx.fillText(`MRCA:  ${tips.length} tips`, 0, sectionHeight * this.selectedNodes.length);
+    }
+    // monophyletic in n% of base trees
+    // tip id(s)
+
+
+    ctx.restore();
   }
 
   private drawPdfLegend(canvas: PdfCanvas, bounds: LegendBounds, treeCanvas: MccTreeCanvas): void {
@@ -338,7 +423,6 @@ export class MccExporter {
     const treeCanvas = new MccTreeCanvas(canvas, ctx);
     ctx.save();
     ctx.translate(margin.left, margin.top);
-    ctx.fillStyle = UI_COLORS.title;
     canvas.drawTitle('Maximum Clade Credibility Tree');
     ctx.translate(0, PADDING);
 
@@ -366,7 +450,6 @@ export class MccExporter {
 
     ctx.save();
     ctx.translate(margin.left, margin.top);
-    ctx.fillStyle = UI_COLORS.title;
     canvas.drawTitle('MCC Tree (selected area)');
     ctx.translate(0, PADDING);
     this.drawTree(miniTreeMap, false, canvas);
@@ -379,7 +462,6 @@ export class MccExporter {
 
     ctx.save();
     ctx.translate(margin.left + miniTreeMap.width + PADDING * 2, margin.top);
-    ctx.fillStyle = UI_COLORS.title;
     ctx.translate(0, PADDING);
     this.drawTree(zoomedTreeCanvas, true, canvas);
     ctx.restore();
